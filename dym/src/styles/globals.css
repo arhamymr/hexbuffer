@@ -1,0 +1,306 @@
+@import "tailwindcss";
+@source "../../../apps/**/*.{ts,tsx}";
+@source "../../../components/**/*.{ts,tsx}";
+@source "../**/*.{ts,tsx}";
+
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+
+/* ===== Tailwind v4 tokens → map ke CSS vars (shadcn) ===== */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  --font-sans: 'Geist', 'Geist Fallback', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: 'Geist Mono', 'Geist Mono Fallback', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+  --color-brand: var(--brand);
+  --color-highlight: var(--highlight);
+}
+
+:root {
+  --background: oklch(99% 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(0.96 0 0);
+  /* Neutral gray */
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(0.96 0 0);
+  /* Neutral gray */
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: #00c950;
+  /* Green */
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --destructive-foreground: oklch(0.577 0.245 27.325);
+  --border: oklch(0.85 0 0);
+  --input: oklch(0.85 0 0);
+  --ring: #00c950;
+  /* Green ring */
+  --chart-1: oklch(0.646 0.222 41.116);
+  --chart-2: oklch(0.6 0.118 184.704);
+  --chart-3: oklch(0.398 0.07 227.392);
+  --chart-4: oklch(0.828 0.189 84.429);
+  --chart-5: oklch(0.769 0.188 70.08);
+  --radius: 0.625rem;
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: #00c950;
+  /* Green */
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: #00c950;
+  /* Green ring */
+
+  --font-sans: 'Geist', 'Geist Fallback', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+  --font-serif: "Geist", "Geist Fallback", ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+  --font-mono: "Geist Mono", "Geist Mono Fallback", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+
+  --shadow-2xs: 0 1px 3px 0px oklch(0.00 0 0 / 0.05);
+  --shadow-xs: 0 1px 3px 0px oklch(0.00 0 0 / 0.05);
+  --shadow-sm: 0 1px 3px 0px oklch(0.00 0 0 / 0.10), 0 1px 2px -1px oklch(0.00 0 0 / 0.10);
+  --shadow: 0 1px 3px 0px oklch(0.00 0 0 / 0.10), 0 1px 2px -1px oklch(0.00 0 0 / 0.10);
+  --shadow-md: 0 1px 3px 0px oklch(0.00 0 0 / 0.10), 0 2px 4px -1px oklch(0.00 0 0 / 0.10);
+  --shadow-lg: 0 1px 3px 0px oklch(0.00 0 0 / 0.10), 0 4px 6px -1px oklch(0.00 0 0 / 0.10);
+  --shadow-xl: 0 1px 3px 0px oklch(0.00 0 0 / 0.10), 0 8px 10px -1px oklch(0.00 0 0 / 0.10);
+  --shadow-2xl: 0 1px 3px 0px oklch(0.00 0 0 / 0.25);
+}
+
+.dark {
+  --background: oklch(0.0 0 0);
+  /* Pure black like 404 page */
+  --foreground: oklch(1.0 0 0);
+  /* Pure white */
+  --card: oklch(0.12 0 0);
+  /* Very dark gray */
+  --card-foreground: oklch(1.0 0 0);
+  --popover: oklch(0.12 0 0);
+  --popover-foreground: oklch(1.0 0 0);
+  --primary: #00c950;
+  /* Green */
+  --primary-foreground: oklch(0.0 0 0);
+  /* Black text on green */
+  --secondary: oklch(1.0 0 0);
+  /* White secondary */
+  --secondary-foreground: oklch(0.0 0 0);
+  /* Black text */
+  --muted: oklch(0.18 0 0);
+  /* Dark muted bg */
+  --muted-foreground: oklch(0.63 0 0);
+  /* gray-400 equivalent */
+  --accent: oklch(0.18 0 0);
+  --accent-foreground: oklch(1.0 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  /* red-500 */
+  --destructive-foreground: oklch(1.0 0 0);
+  --border: oklch(0.25 0 0);
+  /* Subtle border */
+  --input: oklch(0.18 0 0);
+  --ring: #00c950;
+  /* Green ring */
+  --chart-1: oklch(0.488 0.243 264.376);
+  --chart-2: oklch(0.696 0.17 162.48);
+  --chart-3: oklch(0.769 0.188 70.08);
+  --chart-4: oklch(0.627 0.265 303.9);
+  --chart-5: oklch(0.645 0.246 16.439);
+  --sidebar: oklch(0.08 0 0);
+  /* Near black sidebar */
+  --sidebar-foreground: oklch(1.0 0 0);
+  --sidebar-primary: #00c950;
+  /* Green */
+  --sidebar-primary-foreground: oklch(0.0 0 0);
+  --sidebar-accent: oklch(0.18 0 0);
+  --sidebar-accent-foreground: oklch(1.0 0 0);
+  --sidebar-border: oklch(0.25 0 0);
+  --sidebar-ring: #00c950;
+  /* Green ring */
+}
+
+@layer utilities {
+
+  /* force Tailwind's font-sans to follow your CSS var */
+  .font-sans {
+    font-family: var(--font-sans) !important;
+  }
+
+  .font-serif {
+    font-family: var(--font-serif, var(--font-sans)) !important;
+  }
+
+  .font-mono {
+    font-family: var(--font-mono, var(--font-sans)) !important;
+  }
+
+  /* convenience: one class to ensure the subtree uses the var even if no font-* class present */
+  .typo {
+    font-family: var(--font-sans);
+  }
+
+  /* Slow pulse animation for hero gradients */
+  @keyframes pulse-slow {
+
+    0%,
+    100% {
+      opacity: 0.2;
+    }
+
+    50% {
+      opacity: 0.3;
+    }
+  }
+
+  .animate-pulse-slow {
+    animation: pulse-slow 8s ease-in-out infinite;
+  }
+
+  /* Ripple effect animation */
+  @keyframes ripple {
+    0% {
+      transform: scale(0);
+      opacity: 0.4;
+    }
+    100% {
+      transform: scale(1);
+      opacity: 0;
+    }
+  }
+
+  .animate-ripple {
+    animation: ripple 0.6s ease-out forwards;
+  }
+
+  /* Hero gradient backgrounds */
+  .hero-gradient-bg {
+    background: linear-gradient(to bottom right, rgba(0, 201, 80, 0.2), transparent, rgba(59, 130, 246, 0.2));
+  }
+
+  .hero-gradient-orb-1 {
+    background: radial-gradient(circle, rgba(0, 201, 80, 0.4), rgba(0, 201, 80, 0.2), transparent);
+  }
+
+  .hero-gradient-orb-2 {
+    background: radial-gradient(circle, rgba(59, 130, 246, 0.3), rgba(59, 130, 246, 0.15), transparent);
+  }
+
+  .hero-gradient-orb-3 {
+    background: radial-gradient(circle, rgba(0, 201, 80, 0.25), rgba(0, 201, 80, 0.1), transparent);
+  }
+
+  /* Window resize handles */
+  .resize-handle-bottom,
+  .resize-handle-top,
+  .resize-handle-left,
+  .resize-handle-right,
+  .resize-handle-corner {
+    transition: background-color 0.2s;
+  }
+
+  .resize-handle-bottom:hover,
+  .resize-handle-top:hover {
+    background-color: rgba(59, 130, 246, 0.5);
+  }
+
+  .resize-handle-left:hover,
+  .resize-handle-right:hover {
+    background-color: rgba(59, 130, 246, 0.5);
+  }
+
+  .resize-handle-corner:hover {
+    background-color: rgba(59, 130, 246, 0.7);
+    border-radius: 2px;
+  }
+}
+
+/* ---break---  */
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+
+  /* Custom Scrollbar Styles */
+  /* Webkit browsers (Chrome, Safari, Edge) */
+  ::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: var(--background);
+    border-radius: 10px;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--muted);
+    border-radius: 10px;
+    border: 2px solid var(--background);
+    transition: background 0.2s ease;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--primary);
+  }
+
+  ::-webkit-scrollbar-thumb:active {
+    background: var(--primary);
+  }
+
+  /* Firefox */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--muted) var(--background);
+  }
+
+  /* Thin scrollbar variant for specific elements */
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    border: 1px solid var(--background);
+  }
+
+  /* Hide scrollbar variant */
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}

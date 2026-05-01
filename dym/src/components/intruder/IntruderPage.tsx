@@ -1,0 +1,665 @@
+'use client';
+
+import * as React from 'react';
+import { invoke } from '@tauri-apps/api/core';
+import { listen } from '@tauri-apps/api/event';
+import { Play, Square, Download, Upload, Trash2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
+  AttackConfig,
+  AttackMode,
+  PayloadType,
+  AttackResult,
+  AttackProgress,
+  createDefaultAttackConfig,
+} from './types';
+import { parseRawRequest } from '@/components/repeater/types';
+import Editor from '@monaco-editor/react';
+
+export function IntruderPage() {
+  const [config, setConfig] = React.useState<AttackConfig>(createDefaultAttackConfig());
+  const [results, setResults] = React.useState<AttackResult[]>([]);
+  const [isRunning, setIsRunning] = React.useState(false);
+  const [attackId, setAttackId] = React.useState<string | null>(null);
+  const [progress, setProgress] = React.useState<{ current: number; total: number } | null>(null);
+  const [selectedResult, setSelectedResult] = React.useState<AttackResult | null>(null);
+  const [configDialogOpen, setConfigDialogOpen] = React.useState(false);
+  const [rawRequestDialogOpen, setRawRequestDialogOpen] = React.useState(false);
+  const [rawRequestContent, setRawRequestContent] = React.useState('');
+  const [payloadDialogOpen, setPayloadDialogOpen] = React.useState(false);
+  const [filterStatus, setFilterStatus] = React.useState<string>('');
+  const [filterPayload, setFilterPayload] = React.useState<string>('');
+
+  const unlistenProgress = React.useRef<(() => void) | null>(null);
+  const unlistenResult = React.useRef<(() => void) | null>(null);
+
+  React.useEffect(() => {
+    return () => {
+      if (unlistenProgress.current) unlistenProgress.current();
+      if (unlistenResult.current) unlistenResult.current();
+    };
+  }, []);
+
+  const startAttack = async () => {
+    if (!config.base_request.url) return;
+
+    try {
+      const id = await invoke<string>('start_intruder_attack', { config });
+      setAttackId(id);
+      setIsRunning(true);
+      setResults([]);
+
+      unlistenProgress.current = await listen<AttackProgress>(
+        `intruder-progress-${id}`,
+        (event) => {
+          const p = event.payload;
+          if (p.type === 'Update' && p.current !== undefined && p.total !== undefined) {
+            setProgress({ current: p.current, total: p.total });
+          } else if (p.type === 'Complete') {
+            setIsRunning(false);
+            setProgress(null);
+          }
+        }
+      );
+
+      unlistenResult.current = await listen<AttackResult>(
+        `intruder-result-${id}`,
+        (event) => {
+          setResults((prev) => [...prev, event.payload]);
+        }
+      );
+    } catch (error) {
+      console.error('Failed to start attack:', error);
+    }
+  };
+
+  const stopAttack = async () => {
+    if (!attackId) return;
+
+    try {
+      await invoke('stop_intruder_attack', { attackId });
+      setIsRunning(false);
+      if (unlistenProgress.current) {
+        unlistenProgress.current();
+        unlistenProgress.current = null;
+      }
+      if (unlistenResult.current) {
+        unlistenResult.current();
+        unlistenResult.current = null;
+      }
+    } catch (error) {
+      console.error('Failed to stop attack:', error);
+    }
+  };
+
+  const handleParseRawRequest = () => {
+    const parsed = parseRawRequest(rawRequestContent);
+    if (parsed) {
+      setConfig((prev) => ({
+        ...prev,
+        base_request: parsed,
+      }));
+    }
+    setRawRequestDialogOpen(false);
+    setRawRequestContent('');
+  };
+
+  const handleLoadPayloads = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const content = event.target?.result as string;
+      const values = content.split('\n').filter((line) => line.trim());
+      setConfig((prev) => ({
+        ...prev,
+        payload_config: {
+          ...prev.payload_config,
+          values,
+        },
+      }));
+    };
+    reader.readAsText(file);
+  };
+
+  const filteredResults = results.filter((result) => {
+    if (filterStatus && result.status?.toString() !== filterStatus) return false;
+    if (filterPayload && !result.payload.toLowerCase().includes(filterPayload.toLowerCase())) return false;
+    return true;
+  });
+
+  const exportResults = (format: 'csv' | 'json') => {
+    if (format === 'json') {
+      const data = JSON.stringify(results, null, 2);
+      const blob = new Blob([data], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `intruder-results-${Date.now()}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } else {
+      const headers = ['#', 'Payload', 'Status', 'Length', 'Time (ms)', 'Error'];
+      const rows = results.map((r, i) => [
+        i + 1,
+        r.payload,
+        r.status || '',
+        r.response_length || '',
+        r.response_time_ms || '',
+        r.error || '',
+      ]);
+      const csv = [headers, ...rows].map((row) => row.join(',')).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `intruder-results-${Date.now()}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+  };
+
+  return (
+    <div className="flex flex-col h-full">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-3">
+          <h1 className="text-3xl font-bold">Intruder</h1>
+          {isRunning && progress && (
+            <Badge variant="secondary" className="animate-pulse">
+              {progress.current} / {progress.total}
+            </Badge>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setConfigDialogOpen(true)}
+          >
+            Configure
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setRawRequestDialogOpen(true)}
+          >
+            <Upload className="h-4 w-4 mr-1" />
+            Import Request
+          </Button>
+          <div className="h-6 w-px bg-border" />
+          {isRunning ? (
+            <Button variant="destructive" size="sm" onClick={stopAttack}>
+              <Square className="h-4 w-4 mr-1" />
+              Stop
+            </Button>
+          ) : (
+            <Button size="sm" onClick={startAttack} disabled={!config.base_request.url}>
+              <Play className="h-4 w-4 mr-1" />
+              Start Attack
+            </Button>
+          )}
+        </div>
+      </div>
+
+      {progress && (
+        <div className="mb-4">
+          <div className="flex items-center justify-between text-sm mb-1">
+            <span>Progress</span>
+            <span>
+              {progress.current} / {progress.total} ({Math.round((progress.current / progress.total) * 100)}%)
+            </span>
+          </div>
+          <div className="h-2 bg-muted rounded-full overflow-hidden">
+            <div
+              className="h-full bg-primary transition-all duration-300"
+              style={{ width: `${(progress.current / progress.total) * 100}%` }}
+            />
+          </div>
+        </div>
+      )}
+
+      <div className="flex items-center gap-4 mb-4">
+        <div className="flex items-center gap-2">
+          <Label className="text-xs">Status:</Label>
+          <Input
+            placeholder="Filter by status..."
+            className="h-8 w-24 text-sm"
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value)}
+          />
+        </div>
+        <div className="flex items-center gap-2">
+          <Label className="text-xs">Payload:</Label>
+          <Input
+            placeholder="Filter by payload..."
+            className="h-8 w-40 text-sm"
+            value={filterPayload}
+            onChange={(e) => setFilterPayload(e.target.value)}
+          />
+        </div>
+        <div className="flex-1" />
+        <Button variant="outline" size="sm" onClick={() => exportResults('csv')} disabled={results.length === 0}>
+          <Download className="h-4 w-4 mr-1" />
+          CSV
+        </Button>
+        <Button variant="outline" size="sm" onClick={() => exportResults('json')} disabled={results.length === 0}>
+          <Download className="h-4 w-4 mr-1" />
+          JSON
+        </Button>
+        <Button variant="outline" size="sm" onClick={() => setResults([])} disabled={results.length === 0}>
+          <Trash2 className="h-4 w-4 mr-1" />
+          Clear
+        </Button>
+      </div>
+
+      <div className="flex-1 grid grid-cols-2 gap-4 min-h-0">
+        <div className="border rounded-lg overflow-hidden">
+          <div className="bg-muted/50 px-3 py-2 border-b">
+            <span className="text-sm font-medium">Results ({filteredResults.length})</span>
+          </div>
+          <div className="overflow-auto h-[calc(100%-40px)]">
+            <table className="w-full text-sm">
+              <thead className="bg-muted/30 sticky top-0">
+                <tr>
+                  <th className="px-3 py-2 text-left font-medium w-12">#</th>
+                  <th className="px-3 py-2 text-left font-medium">Payload</th>
+                  <th className="px-3 py-2 text-left font-medium w-16">Status</th>
+                  <th className="px-3 py-2 text-left font-medium w-20">Length</th>
+                  <th className="px-3 py-2 text-left font-medium w-20">Time</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredResults.map((result, index) => (
+                  <tr
+                    key={result.id}
+                    className={`border-b cursor-pointer hover:bg-muted/50 ${
+                      selectedResult?.id === result.id ? 'bg-muted' : ''
+                    } ${result.error ? 'text-destructive' : ''}`}
+                    onClick={() => setSelectedResult(result)}
+                  >
+                    <td className="px-3 py-2">{index + 1}</td>
+                    <td className="px-3 py-2 font-mono text-xs truncate max-w-[200px]">
+                      {result.payload}
+                    </td>
+                    <td className="px-3 py-2">
+                      {result.status && (
+                        <Badge
+                          variant={
+                            result.status >= 200 && result.status < 300
+                              ? 'default'
+                              : result.status >= 400
+                              ? 'destructive'
+                              : 'secondary'
+                          }
+                          className="text-xs"
+                        >
+                          {result.status}
+                        </Badge>
+                      )}
+                      {result.error && <span className="text-xs">Error</span>}
+                    </td>
+                    <td className="px-3 py-2 text-muted-foreground">
+                      {result.response_length ?? '-'}
+                    </td>
+                    <td className="px-3 py-2 text-muted-foreground">
+                      {result.response_time_ms ? `${result.response_time_ms}ms` : '-'}
+                    </td>
+                  </tr>
+                ))}
+                {filteredResults.length === 0 && (
+                  <tr>
+                    <td colSpan={5} className="px-3 py-8 text-center text-muted-foreground">
+                      {isRunning ? 'Running attack...' : 'No results yet'}
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div className="border rounded-lg overflow-hidden flex flex-col">
+          <div className="bg-muted/50 px-3 py-2 border-b">
+            <span className="text-sm font-medium">Preview</span>
+          </div>
+          <div className="flex-1 overflow-auto">
+            {selectedResult ? (
+              <div className="p-4 space-y-4">
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div>
+                    <span className="text-muted-foreground">Payload:</span>{' '}
+                    <span className="font-mono">{selectedResult.payload}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Status:</span>{' '}
+                    <Badge
+                      variant={
+                        (selectedResult.status || 0) >= 200 && (selectedResult.status || 0) < 300
+                          ? 'default'
+                          : (selectedResult.status || 0) >= 400
+                          ? 'destructive'
+                          : 'secondary'
+                      }
+                    >
+                      {selectedResult.status || 'Error'}
+                    </Badge>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Length:</span>{' '}
+                    {selectedResult.response_length ?? '-'}
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Time:</span>{' '}
+                    {selectedResult.response_time_ms
+                      ? `${selectedResult.response_time_ms}ms`
+                      : '-'}
+                  </div>
+                </div>
+                {selectedResult.error && (
+                  <div className="text-sm text-destructive">Error: {selectedResult.error}</div>
+                )}
+                {selectedResult.response && (
+                  <div>
+                    <Label className="text-xs text-muted-foreground mb-1 block">Response Body</Label>
+                    <div className="border rounded-md h-64">
+                      <Editor
+                        height="100%"
+                        defaultLanguage="json"
+                        value={(() => {
+                          try {
+                            return JSON.stringify(JSON.parse(selectedResult.response!.body), null, 2);
+                          } catch {
+                            return selectedResult.response!.body;
+                          }
+                        })()}
+                        theme="vs-dark"
+                        options={{
+                          readOnly: true,
+                          minimap: { enabled: false },
+                          fontSize: 12,
+                          lineNumbers: 'on',
+                          wordWrap: 'on',
+                          automaticLayout: true,
+                        }}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
+                Select a result to preview
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <Dialog open={configDialogOpen} onOpenChange={setConfigDialogOpen}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Attack Configuration</DialogTitle>
+            <DialogDescription>Configure the intruder attack settings</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label>Attack Name</Label>
+                <Input
+                  value={config.name}
+                  onChange={(e) => setConfig((prev) => ({ ...prev, name: e.target.value }))}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label>Attack Mode</Label>
+                <Select
+                  value={config.mode}
+                  onValueChange={(value) =>
+                    setConfig((prev) => ({ ...prev, mode: value as AttackMode }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Sniper">Sniper</SelectItem>
+                    <SelectItem value="BatteringRam">Battering Ram</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-4 gap-4">
+              <div className="grid gap-2">
+                <Label>Concurrency</Label>
+                <Input
+                  type="number"
+                  value={config.concurrency}
+                  onChange={(e) =>
+                    setConfig((prev) => ({ ...prev, concurrency: parseInt(e.target.value) || 1 }))
+                  }
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label>Delay (ms)</Label>
+                <Input
+                  type="number"
+                  value={config.delay_ms}
+                  onChange={(e) =>
+                    setConfig((prev) => ({ ...prev, delay_ms: parseInt(e.target.value) || 0 }))
+                  }
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label>Max Delay</Label>
+                <Input
+                  type="number"
+                  value={config.delay_max_ms || ''}
+                  onChange={(e) =>
+                    setConfig((prev) => ({
+                      ...prev,
+                      delay_max_ms: e.target.value ? parseInt(e.target.value) : undefined,
+                    }))
+                  }
+                  placeholder="Optional"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label>Retries</Label>
+                <Input
+                  type="number"
+                  value={config.retries}
+                  onChange={(e) =>
+                    setConfig((prev) => ({ ...prev, retries: parseInt(e.target.value) || 0 }))
+                  }
+                />
+              </div>
+            </div>
+
+            <div className="grid gap-2">
+              <Label>Payload Type</Label>
+              <Select
+                value={config.payload_config.payload_type}
+                onValueChange={(value) =>
+                  setConfig((prev) => ({
+                    ...prev,
+                    payload_config: {
+                      ...prev.payload_config,
+                      payload_type: value as PayloadType,
+                    },
+                  }))
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="SimpleList">Simple List</SelectItem>
+                  <SelectItem value="RuntimeFile">Runtime File</SelectItem>
+                  <SelectItem value="NumberRange">Number Range</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {config.payload_config.payload_type === 'SimpleList' && (
+              <div className="grid gap-2">
+                <Label>Payloads (one per line)</Label>
+                <textarea
+                  className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono h-32"
+                  placeholder="payload1&#10;payload2&#10;payload3"
+                  value={config.payload_config.values.join('\n')}
+                  onChange={(e) =>
+                    setConfig((prev) => ({
+                      ...prev,
+                      payload_config: {
+                        ...prev.payload_config,
+                        values: e.target.value.split('\n').filter((v) => v.trim()),
+                      },
+                    }))
+                  }
+                />
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" onClick={() => setPayloadDialogOpen(true)}>
+                    Load from File
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {config.payload_config.payload_type === 'NumberRange' && (
+              <div className="grid grid-cols-4 gap-4">
+                <div className="grid gap-2">
+                  <Label>Start</Label>
+                  <Input
+                    type="number"
+                    value={config.payload_config.number_start || 0}
+                    onChange={(e) =>
+                      setConfig((prev) => ({
+                        ...prev,
+                        payload_config: {
+                          ...prev.payload_config,
+                          number_start: parseInt(e.target.value) || 0,
+                        },
+                      }))
+                    }
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label>End</Label>
+                  <Input
+                    type="number"
+                    value={config.payload_config.number_end || 100}
+                    onChange={(e) =>
+                      setConfig((prev) => ({
+                        ...prev,
+                        payload_config: {
+                          ...prev.payload_config,
+                          number_end: parseInt(e.target.value) || 100,
+                        },
+                      }))
+                    }
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label>Step</Label>
+                  <Input
+                    type="number"
+                    value={config.payload_config.number_step || 1}
+                    onChange={(e) =>
+                      setConfig((prev) => ({
+                        ...prev,
+                        payload_config: {
+                          ...prev.payload_config,
+                          number_step: parseInt(e.target.value) || 1,
+                        },
+                      }))
+                    }
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label>Format</Label>
+                  <Input
+                    value={config.payload_config.number_format || '{}'}
+                    onChange={(e) =>
+                      setConfig((prev) => ({
+                        ...prev,
+                        payload_config: {
+                          ...prev.payload_config,
+                          number_format: e.target.value,
+                        },
+                      }))
+                    }
+                    placeholder="{}"
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfigDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={() => setConfigDialogOpen(false)}>Save Configuration</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={rawRequestDialogOpen} onOpenChange={setRawRequestDialogOpen}>
+        <DialogContent className="sm:max-w-[800px]">
+          <DialogHeader>
+            <DialogTitle>Import Raw HTTP Request</DialogTitle>
+            <DialogDescription>Paste a raw HTTP request to use as the base</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label>Raw Request</Label>
+              <textarea
+                className="flex min-h-[200px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono"
+                placeholder="GET /path HTTP/1.1&#10;Host: example.com&#10;&#10;"
+                value={rawRequestContent}
+                onChange={(e) => setRawRequestContent(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRawRequestDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleParseRawRequest} disabled={!rawRequestContent.trim()}>
+              Import
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={payloadDialogOpen} onOpenChange={setPayloadDialogOpen}>
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle>Load Payloads from File</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <input type="file" onChange={handleLoadPayloads} accept=".txt,.lst,.wordlist" />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPayloadDialogOpen(false)}>
+              Cancel
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}

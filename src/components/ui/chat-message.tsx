@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { cn } from '../lib/utils';
+import { cn } from "@/lib/utils";
 
 export interface ChatMessageProps extends React.HTMLAttributes<HTMLDivElement> {
   role?: 'user' | 'assistant' | 'system';

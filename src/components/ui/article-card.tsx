@@ -2,16 +2,16 @@
 
 import * as React from 'react';
 
-import { cn } from '@workspace/ui/lib/utils';
-import { Badge } from '@workspace/ui/components/badge';
-import { Button } from '@workspace/ui/components/button';
+import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
   CardFooter,
   CardHeader,
   CardTitle,
-} from '@workspace/ui/components/card';
+} from "@/components/ui/card";
 
 export interface ArticleCardProps {
   title: string;

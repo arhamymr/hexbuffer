@@ -24,8 +24,13 @@ import {
   createNewTab,
   parseRawRequest,
 } from './types';
+import type { Target } from '@/types';
 
-export function RepeaterPage() {
+interface RepeaterPageProps {
+  selectedTarget: Target | null;
+}
+
+export function RepeaterPage({ selectedTarget }: RepeaterPageProps) {
   const [tabs, setTabs] = React.useState<RepeaterTab[]>([createNewTab()]);
   const [activeTabId, setActiveTabId] = React.useState<string>(tabs[0].id);
   const [rawPasteDialogOpen, setRawPasteDialogOpen] = React.useState(false);

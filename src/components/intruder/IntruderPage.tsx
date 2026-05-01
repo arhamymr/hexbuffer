@@ -26,9 +26,14 @@ import {
   createDefaultAttackConfig,
 } from './types';
 import { parseRawRequest } from '@/components/repeater/types';
+import type { Target } from '@/types';
 import Editor from '@monaco-editor/react';
 
-export function IntruderPage() {
+interface IntruderPageProps {
+  selectedTarget: Target | null;
+}
+
+export function IntruderPage({ selectedTarget }: IntruderPageProps) {
   const [config, setConfig] = React.useState<AttackConfig>(createDefaultAttackConfig());
   const [results, setResults] = React.useState<AttackResult[]>([]);
   const [isRunning, setIsRunning] = React.useState(false);

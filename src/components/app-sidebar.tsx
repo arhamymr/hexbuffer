@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import * as React from 'react';
 import { invoke } from '@tauri-apps/api/core';
@@ -45,7 +45,9 @@ import {
   Sun,
 } from 'lucide-react';
 import { useTheme } from './theme-provider';
-
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { useAppState } from '@/app/context/AppContext';
 
 const mainNavItems = [
   { label: 'Live', icon: Zap, href: '/' },
@@ -55,17 +57,8 @@ const mainNavItems = [
   { label: 'Debugger', icon: Bug, href: '/debugger' },
 ];
 
-export function AppSidebar({
-  currentPage = '/',
-  onNavigate,
-}: {
-  targets?: Target[];
-  selectedTarget?: Target | null;
-  onTargetSelect?: (target: Target | null) => void;
-  onTargetUpdated?: () => void;
-  currentPage?: string;
-  onNavigate?: (page: string) => void;
-}) {
+export function AppSidebar() {
+  const pathname = usePathname();
   const { theme, toggleTheme } = useTheme();
   const { state, toggleSidebar } = useSidebar();
   const [proxyRunning, setProxyRunning] = React.useState(false);
@@ -89,11 +82,11 @@ export function AppSidebar({
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton asChild isActive={currentPage === '/'}>
-              <a href="#" onClick={(e) => { e.preventDefault(); onNavigate?.('/'); }}>
+            <SidebarMenuButton asChild isActive={pathname === '/'}>
+              <Link href="/">
                 <Zap className="size-4" />
                 <span>Bug Bounty Tools</span>
-              </a>
+              </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
@@ -111,19 +104,13 @@ export function AppSidebar({
                   <SidebarMenuItem key={item.href}>
                     <SidebarMenuButton
                       asChild
-                      isActive={currentPage === item.href}
+                      isActive={pathname === item.href}
                       tooltip={item.label}
                     >
-                      <a
-                        href="#"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          onNavigate?.(item.href);
-                        }}
-                      >
+                      <Link href={item.href}>
                         <Icon className="size-4" />
                         <span>{item.label}</span>
-                      </a>
+                      </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 );
@@ -138,19 +125,13 @@ export function AppSidebar({
           <SidebarMenuItem>
             <SidebarMenuButton
               asChild
-              isActive={currentPage === '/settings'}
+              isActive={pathname === '/settings'}
               tooltip="Settings"
             >
-              <a
-                href="#"
-                onClick={(e) => {
-                  e.preventDefault();
-                  onNavigate?.('/settings');
-                }}
-              >
+              <Link href="/settings">
                 <Settings className="size-4" />
                 <span>Settings</span>
-              </a>
+              </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
@@ -172,33 +153,16 @@ export function AppSidebar({
   );
 }
 
-export function AppLayout({
-  targets,
-  selectedTarget,
-  onTargetSelect,
-  onTargetUpdated,
-  currentPage = '/',
-  onNavigate,
-  children,
-}: {
-  targets: Target[];
-  selectedTarget: Target | null;
-  onTargetSelect: (target: Target | null) => void;
-  onTargetUpdated: () => void;
-  currentPage?: string;
-  onNavigate?: (page: string) => void;
-  children?: React.ReactNode;
-}) {
+export function AppLayout({ children }: { children?: React.ReactNode }) {
+  const { targets, selectedTarget, fetchTargets } = useAppState();
+  const { onTargetSelect, onTargetUpdated } = React.useMemo(() => ({
+    onTargetSelect: () => {},
+    onTargetUpdated: fetchTargets,
+  }), [fetchTargets]);
+
   return (
     <SidebarProvider>
-      <AppSidebar
-        targets={targets}
-        selectedTarget={selectedTarget}
-        onTargetSelect={onTargetSelect}
-        onTargetUpdated={onTargetUpdated}
-        currentPage={currentPage}
-        onNavigate={onNavigate}
-      />
+      <AppSidebar />
       <SidebarInset>
         <Navbar
           targets={targets}

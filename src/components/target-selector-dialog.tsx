@@ -43,11 +43,6 @@ export function TargetSelectorDialog({
     setShowCreateNew(false);
   };
 
-  const handleSelectExisting = (target: Target) => {
-    onTargetSelected(target);
-    setOpen(false);
-  };
-
   return (
     <Dialog open={open} onOpenChange={(isOpen) => {
       setOpen(isOpen);
@@ -59,7 +54,6 @@ export function TargetSelectorDialog({
       <DialogTrigger asChild>
         <Button size="sm" variant="outline" className="gap-2">
           <Plus className="h-4 w-4" />
-          Add Tab
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
@@ -100,10 +94,10 @@ export function TargetSelectorDialog({
                   filteredTargets.map((target) => (
                     <button
                       key={target.id}
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleSelectExisting(target);
+                      onClick={() => {
+                        console.log('[TargetSelector] Selected:', target);
+                        onTargetSelected(target);
+                        setOpen(false);
                       }}
                       className="w-full text-left px-3 py-2 rounded-md hover:bg-muted transition-colors"
                     >

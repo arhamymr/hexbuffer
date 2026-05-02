@@ -12,6 +12,7 @@ interface TrafficState {
   updateConnection: (id: string, updates: Partial<ProxyConnection>) => void;
   addLog: (log: DebugLog) => void;
   addProxyLog: (entry: ProxyLogEntry) => void;
+  removeLog: (id: string) => void;
   clearCalls: () => void;
   clearConnections: () => void;
   clearLogs: () => void;
@@ -75,6 +76,11 @@ export const useTrafficStore = create<TrafficState>((set) => ({
       };
       return { logs: [log, ...state.logs].slice(0, MAX_LOGS) };
     }),
+
+  removeLog: (id) =>
+    set((state) => ({
+      logs: state.logs.filter((log) => log.id !== id),
+    })),
 
   clearCalls: () => set({ calls: [] }),
   clearConnections: () => set({ connections: [] }),

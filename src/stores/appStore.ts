@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { invoke } from '@tauri-apps/api/core';
 import type { Target } from '@/types';
+import type { HttpRequestTemplate } from '@/components/repeater/types';
 
 export interface Tab {
   id: string;
@@ -13,6 +14,7 @@ interface AppState {
   selectedTarget: Target | null;
   routeTabs: Record<string, Tab[]>;
   activeTabId: Record<string, string>;
+  pendingRepeaterRequest: HttpRequestTemplate | null;
   fetchTargets: () => Promise<void>;
   selectTarget: (target: Target | null) => void;
   addTab: (route: string, target: Target) => void;
@@ -21,6 +23,7 @@ interface AppState {
   clearRouteTabs: (route: string) => void;
   getRouteTabs: (route: string) => Tab[];
   getActiveTab: (route: string) => Tab | null;
+  setPendingRepeaterRequest: (request: HttpRequestTemplate | null) => void;
 }
 
 function generateId(): string {
@@ -32,6 +35,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   selectedTarget: null,
   routeTabs: {},
   activeTabId: {},
+  pendingRepeaterRequest: null,
 
   fetchTargets: async () => {
     try {
@@ -131,5 +135,9 @@ export const useAppStore = create<AppState>((set, get) => ({
       delete newActiveTabId[route];
       return { routeTabs: newRouteTabs, activeTabId: newActiveTabId };
     });
+  },
+
+  setPendingRepeaterRequest: (request) => {
+    set({ pendingRepeaterRequest: request });
   },
 }));

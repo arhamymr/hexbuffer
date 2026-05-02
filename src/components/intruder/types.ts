@@ -1,8 +1,17 @@
 import { HttpRequest } from '@/components/repeater/types';
 
-export type AttackMode = 'Sniper' | 'BatteringRam';
+export type AttackMode = 'Sniper' | 'BatteringRam' | 'Pitchfork' | 'ClusterBomb';
 
 export type PayloadType = 'SimpleList' | 'RuntimeFile' | 'NumberRange';
+
+export type PayloadProcessingStep =
+  | 'UrlEncode'
+  | 'UrlDecode'
+  | 'Base64Encode'
+  | 'Base64Decode'
+  | 'Md5Hash'
+  | 'Sha1Hash'
+  | 'Sha256Hash';
 
 export interface PayloadPosition {
   name: string;
@@ -18,6 +27,26 @@ export interface PayloadConfig {
   number_end?: number;
   number_step?: number;
   number_format?: string;
+  processing: PayloadProcessingStep[];
+}
+
+export interface GrepMatchConfig {
+  enabled: boolean;
+  keyword: string;
+  case_sensitive: boolean;
+}
+
+export interface GrepExtractConfig {
+  enabled: boolean;
+  regex: string;
+  replacement?: string;
+}
+
+export interface SessionHandlingConfig {
+  enabled: boolean;
+  extract_token_name?: string;
+  extract_from_response?: string;
+  update_header_name?: string;
 }
 
 export interface AttackConfig {
@@ -30,6 +59,9 @@ export interface AttackConfig {
   delay_ms: number;
   delay_max_ms?: number;
   retries: number;
+  grep_match: GrepMatchConfig;
+  grep_extract: GrepExtractConfig;
+  session_handling: SessionHandlingConfig;
 }
 
 export interface AttackProgress {
@@ -40,7 +72,7 @@ export interface AttackProgress {
 
 export interface AttackResult {
   id: string;
-  payload: string;
+  payload_values: Record<string, string>;
   status?: number;
   response_length?: number;
   response_time_ms?: number;
@@ -54,6 +86,8 @@ export interface AttackResult {
     time_ms: number;
     final_url: string;
   };
+  grep_match: boolean;
+  grep_extracted?: string;
 }
 
 export function createDefaultAttackConfig(): AttackConfig {
@@ -72,10 +106,27 @@ export function createDefaultAttackConfig(): AttackConfig {
     payload_config: {
       payload_type: 'SimpleList',
       values: [],
+      processing: [],
     },
     concurrency: 10,
     delay_ms: 0,
     retries: 0,
+    grep_match: {
+      enabled: false,
+      keyword: '',
+      case_sensitive: false,
+    },
+    grep_extract: {
+      enabled: false,
+      regex: '',
+      replacement: undefined,
+    },
+    session_handling: {
+      enabled: false,
+      extract_token_name: undefined,
+      extract_from_response: undefined,
+      update_header_name: undefined,
+    },
   };
 }
 

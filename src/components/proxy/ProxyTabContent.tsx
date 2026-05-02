@@ -148,6 +148,7 @@ export function ProxyTabContent({ target, targets, filterMode, onFilterModeChang
                   log={log}
                   expanded={expandedLogs.has(log.id)}
                   onToggle={() => toggleExpanded(log.id)}
+                  activeTargetId={target.id}
                 />
               ))}
             </div>

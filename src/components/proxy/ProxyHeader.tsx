@@ -28,7 +28,7 @@ export function ProxyHeader({ target, targets, onTargetsUpdated, filterMode, onF
   return (
     <div className="flex items-center justify-between mb-4">
       <div className="flex items-center gap-3">
-        <div>
+        <div className='flex gap-2 items-center'>
           <h1 className="text-xl font-bold">{target.name}</h1>
           <div className="flex items-center gap-2 mt-1">
             <Badge variant='secondary' className="font-normal text-xs">

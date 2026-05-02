@@ -12,7 +12,7 @@ export function CookieDisplay({ cookies }: CookieDisplayProps) {
     <div className="bg-background p-2 rounded border border-border/50 overflow-auto max-h-48">
       <div className="flex flex-wrap gap-2 break-words">
         {[...cookies].reverse().map((cookie, i) => {
-          const color = COOKIE_COLORS[i];
+          const color = COOKIE_COLORS[i % COOKIE_COLORS.length];
           return (
             <span
               key={i}

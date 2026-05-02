@@ -44,7 +44,7 @@ interface LayoutProps {
 const mainNavItems = [
   { label: 'Live', icon: Zap, href: '/' },
   { label: 'Repeater', icon: Send, href: '/repeater' },
-  { label: 'Intruder', icon: Crosshair, href: '/intruder' },
+  { label: 'Brute Force', icon: Crosshair, href: '/intruder' },
   { label: 'Findings', icon: FileText, href: '/findings' },
   { label: 'History', icon: History, href: '/history' },
   { label: 'Debugger', icon: Bug, href: '/debugger' },

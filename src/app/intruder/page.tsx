@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { useAppStore } from '@/stores/appStore';
 import { AppLayout } from '@/components/app-sidebar';
-import { IntruderPage } from '@/components/intruder';
+import { BruteForcePage } from '@/components/intruder';
 import { TabBar } from '@/components/tab-bar';
 import { TargetSelectorDialog } from '@/components/target-selector-dialog';
 import { Card, CardContent } from '@/components/ui/card';
@@ -46,7 +46,7 @@ function IntruderPageWrapper() {
           <CardContent className="py-12">
             <div className="text-center text-muted-foreground">
               <p className="mb-2">No target selected</p>
-              <p className="text-sm mb-4">Create or select a target to use Intruder</p>
+              <p className="text-sm mb-4">Create or select a target to use Brute Force</p>
               <TargetSelectorDialog
                 existingTargets={targets}
                 onTargetSelected={(target) => {
@@ -58,7 +58,7 @@ function IntruderPageWrapper() {
           </CardContent>
         </Card>
       ) : (
-        <IntruderPage selectedTarget={activeTarget} />
+        <BruteForcePage selectedTarget={activeTarget} />
       )}
     </>
   );

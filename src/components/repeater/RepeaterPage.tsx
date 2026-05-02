@@ -22,16 +22,19 @@ import {
   HttpResponse,
   ViewMode,
   createNewTab,
+  createTabWithRequest,
   parseRawRequest,
+  HttpRequestTemplate,
 } from './types';
-import type { Target } from '@/types';
 
 interface RepeaterPageProps {
-  selectedTarget: Target | null;
+  initialRequest?: HttpRequestTemplate | null;
 }
 
-export function RepeaterPage({ selectedTarget }: RepeaterPageProps) {
-  const [tabs, setTabs] = React.useState<RepeaterTab[]>([createNewTab()]);
+export function RepeaterPage({ initialRequest }: RepeaterPageProps) {
+  const [tabs, setTabs] = React.useState<RepeaterTab[]>(
+    initialRequest ? [createTabWithRequest(initialRequest)] : [createNewTab()]
+  );
   const [activeTabId, setActiveTabId] = React.useState<string>(tabs[0].id);
   const [rawPasteDialogOpen, setRawPasteDialogOpen] = React.useState(false);
   const [rawPasteContent, setRawPasteContent] = React.useState('');

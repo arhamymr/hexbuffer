@@ -15,17 +15,19 @@ export default function HomePage() {
   const pathname = usePathname();
 
   const targets = useAppStore((s) => s.targets);
+  const routeTabs = useAppStore((s) => s.routeTabs);
+  const activeTabId = useAppStore((s) => s.activeTabId);
   const fetchTargets = useAppStore((s) => s.fetchTargets);
-  const getRouteTabs = useAppStore((s) => s.getRouteTabs);
-  const getActiveTab = useAppStore((s) => s.getActiveTab);
   const addTab = useAppStore((s) => s.addTab);
 
   const filterMode = useProxyStore((s) => s.filterMode);
   const setFilterMode = useProxyStore((s) => s.setFilterMode);
   const clearLogs = useTrafficStore((s) => s.clearLogs);
 
-  const tabs = getRouteTabs(pathname);
-  const activeTab = getActiveTab(pathname);
+  const tabs = routeTabs[pathname] || [];
+  const activeTab = (tabs.length > 0 && activeTabId[pathname])
+    ? tabs.find(t => t.id === activeTabId[pathname]) || tabs[0]
+    : tabs[0] || null;
 
   useEffect(() => {
     fetchTargets();
@@ -40,7 +42,7 @@ export default function HomePage() {
   };
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col border-b">
       <div className="flex items-center gap-2 mb-4">
         <TabBar route={pathname} />
         <TargetSelectorDialog

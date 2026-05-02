@@ -1,2 +1,2 @@
-export { IntruderPage } from './IntruderPage';
+export { BruteForcePage } from './BruteForcePage';
 export * from './types';

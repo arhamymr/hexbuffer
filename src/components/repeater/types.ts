@@ -7,6 +7,25 @@ export interface HttpRequest {
   max_hops: number;
 }
 
+export interface HttpRequestTemplate {
+  method: string;
+  url: string;
+  headers: Record<string, string>;
+  body: string;
+}
+
+export function createTabWithRequest(req: HttpRequestTemplate, name?: string): RepeaterTab {
+  return {
+    id: `tab-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+    name: name || `Tab ${Date.now()}`,
+    request: { ...req, follow_redirects: true, max_hops: 10 },
+    response: null,
+    isLoading: false,
+    history: [],
+    historyIndex: -1,
+  };
+}
+
 export interface HttpResponse {
   status: number;
   status_text: string;

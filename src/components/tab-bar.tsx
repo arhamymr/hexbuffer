@@ -12,17 +12,20 @@ interface TabBarProps {
 }
 
 export function TabBar({ route, className }: TabBarProps) {
-  const getRouteTabs = useAppStore((s) => s.getRouteTabs);
-  const getActiveTab = useAppStore((s) => s.getActiveTab);
+  const routeTabs = useAppStore((s) => s.routeTabs);
+  const activeTabId = useAppStore((s) => s.activeTabId);
   const removeTab = useAppStore((s) => s.removeTab);
   const setActiveTab = useAppStore((s) => s.setActiveTab);
-  const tabs = getRouteTabs(route);
-  const activeTab = getActiveTab(route);
+
+  const tabs = routeTabs[route] || [];
+  const activeTab = (tabs.length > 0 && activeTabId[route])
+    ? tabs.find(t => t.id === activeTabId[route]) || tabs[0]
+    : tabs[0] || null;
 
   if (tabs.length === 0) return null;
 
   return (
-    <div className={cn('flex items-center gap-1 border-b bg-muted/30 p-1 overflow-x-auto', className)}>
+    <div className={cn('flex items-center gap-1 bg-muted/30 p-1 overflow-x-auto', className)}>
       <div className="flex items-center gap-1 flex-1 min-w-0">
         {tabs.map((tab) => (
           <TabItem

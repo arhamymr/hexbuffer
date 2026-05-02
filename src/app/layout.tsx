@@ -1,9 +1,8 @@
 'use client';
 
 import { ThemeProvider } from '@/components/theme-provider';
-import { AppProvider } from '@/app/context/AppContext';
-import { TabsProvider } from '@/app/context/TabsContext';
 import { useTrafficSync } from '@/hooks/useTrafficSync';
+import { AppLayout } from '@/components/app-sidebar';
 import './globals.css';
 
 function TrafficSyncProvider({ children }: { children: React.ReactNode }) {
@@ -21,11 +20,9 @@ export default function RootLayout({
       <body>
         <ThemeProvider>
           <TrafficSyncProvider>
-            <AppProvider>
-              <TabsProvider>
-                {children}
-              </TabsProvider>
-            </AppProvider>
+            <AppLayout>
+              {children}
+            </AppLayout>
           </TrafficSyncProvider>
         </ThemeProvider>
       </body>

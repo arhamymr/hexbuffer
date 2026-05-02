@@ -57,7 +57,7 @@ export const useTrafficStore = create<TrafficState>((set) => ({
 
   addLog: (log) =>
     set((state) => ({
-      logs: [...state.logs, log].slice(-MAX_LOGS),
+      logs: [log, ...state.logs].slice(0, MAX_LOGS),
     })),
 
   addProxyLog: (entry) =>
@@ -73,7 +73,7 @@ export const useTrafficStore = create<TrafficState>((set) => ({
         type: 'proxy-log',
         data: entry,
       };
-      return { logs: [...state.logs, log].slice(-MAX_LOGS) };
+      return { logs: [log, ...state.logs].slice(0, MAX_LOGS) };
     }),
 
   clearCalls: () => set({ calls: [] }),

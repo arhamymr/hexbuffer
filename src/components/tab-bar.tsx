@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { useTabs, Tab } from '@/app/context/TabsContext';
+import { useAppStore, Tab } from '@/stores/appStore';
 import { Button } from '@/components/ui/button';
 import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -12,7 +12,10 @@ interface TabBarProps {
 }
 
 export function TabBar({ route, className }: TabBarProps) {
-  const { getRouteTabs, getActiveTab, removeTab, setActiveTab } = useTabs();
+  const getRouteTabs = useAppStore((s) => s.getRouteTabs);
+  const getActiveTab = useAppStore((s) => s.getActiveTab);
+  const removeTab = useAppStore((s) => s.removeTab);
+  const setActiveTab = useAppStore((s) => s.setActiveTab);
   const tabs = getRouteTabs(route);
   const activeTab = getActiveTab(route);
 

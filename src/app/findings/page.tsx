@@ -2,8 +2,7 @@
 
 import { useEffect } from 'react';
 import { usePathname } from 'next/navigation';
-import { useAppState } from '@/app/context/AppContext';
-import { useTabs } from '@/app/context/TabsContext';
+import { useAppStore } from '@/stores/appStore';
 import { AppLayout } from '@/components/app-sidebar';
 import { FindingsPage } from '@/components/findings';
 import { TabBar } from '@/components/tab-bar';
@@ -12,8 +11,11 @@ import { Card, CardContent } from '@/components/ui/card';
 
 function FindingsPageWrapper() {
   const pathname = usePathname();
-  const { targets, fetchTargets } = useAppState();
-  const { getActiveTab, getRouteTabs, addTab } = useTabs();
+  const targets = useAppStore((s) => s.targets);
+  const fetchTargets = useAppStore((s) => s.fetchTargets);
+  const getActiveTab = useAppStore((s) => s.getActiveTab);
+  const getRouteTabs = useAppStore((s) => s.getRouteTabs);
+  const addTab = useAppStore((s) => s.addTab);
   const tabs = getRouteTabs(pathname);
   const activeTab = getActiveTab(pathname);
 

@@ -21,7 +21,7 @@ import {
   SidebarTrigger,
   useSidebar,
 } from './ui/sidebar';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Target as TargetIcon } from 'lucide-react';
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -31,11 +31,9 @@ import {
   BreadcrumbSeparator,
 } from './ui/breadcrumb';
 import { Separator } from './ui/separator';
-import { Navbar } from './navbar';
 import { Footer } from './footer';
 import type { Target } from '@/types';
 import {
-  Zap,
   History,
   Settings,
   Send,
@@ -49,11 +47,11 @@ import {
 import { useTheme } from './theme-provider';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useAppState } from '@/app/context/AppContext';
+import { useAppStore } from '@/stores/appStore';
 import { Button } from './ui/button';
 
 const mainNavItems = [
-  { label: 'Live', icon: Zap, href: '/' },
+  { label: 'Proxy', icon: TargetIcon, href: '/' },
   { label: 'Repeater', icon: Send, href: '/repeater' },
   { label: 'Intruder', icon: Crosshair, href: '/intruder' },
   { label: 'History', icon: History, href: '/history' },
@@ -112,8 +110,7 @@ export function AppSidebar() {
           <SidebarMenuItem>
             <SidebarMenuButton asChild isActive={pathname === '/'} tooltip="Bug Bounty Tools" className="group-data-[collapsible=icon]:![width:2rem] group-data-[collapsible=icon]:!p-0">
               <Link href="/">
-                <Zap className="size-4 shrink-0" />
-                <span className="group-data-[collapsible=icon]:hidden">Bug Bounty Tools</span>
+                <img src="https://assets.apsaradigital.com/logo-white.png" className="h-3 w-6 shrink-0" alt="Logo" />
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -171,7 +168,7 @@ export function AppSidebar() {
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
-            <SidebarMenuButton onClick={toggleSidebar}>
+            <SidebarMenuButton onClick={toggleTheme} tooltip={theme === 'dark' ? 'Light Mode' : 'Dark Mode'}>
               {theme === 'dark' ? <Sun className="size-4 shrink-0" /> : <Moon className="size-4 shrink-0" />}
               <span className="ml-2 group-data-[collapsible=icon]:hidden">{theme === 'dark' ? 'Light' : 'Dark'}</span>
             </SidebarMenuButton>
@@ -190,7 +187,9 @@ export function AppSidebar() {
 }
 
 export function AppLayout({ children }: { children?: React.ReactNode }) {
-  const { targets, selectedTarget, fetchTargets } = useAppState();
+  const targets = useAppStore((s) => s.targets);
+  const selectedTarget = useAppStore((s) => s.selectedTarget);
+  const fetchTargets = useAppStore((s) => s.fetchTargets);
   const { onTargetSelect, onTargetUpdated } = React.useMemo(() => ({
     onTargetSelect: () => {},
     onTargetUpdated: fetchTargets,
@@ -200,13 +199,7 @@ export function AppLayout({ children }: { children?: React.ReactNode }) {
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
-        <Navbar
-          targets={targets}
-          selectedTarget={selectedTarget}
-          onTargetSelect={onTargetSelect}
-          onTargetUpdated={onTargetUpdated}
-        />
-        <div className="flex flex-1 flex-col gap-4 p-4">
+        <div className="flex flex-col gap-4 p-4">
           {children}
         </div>
         <Footer />

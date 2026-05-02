@@ -100,7 +100,11 @@ export function TargetSelectorDialog({
                   filteredTargets.map((target) => (
                     <button
                       key={target.id}
-                      onClick={() => handleSelectExisting(target)}
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleSelectExisting(target);
+                      }}
                       className="w-full text-left px-3 py-2 rounded-md hover:bg-muted transition-colors"
                     >
                       <span className="font-medium">{target.name}</span>

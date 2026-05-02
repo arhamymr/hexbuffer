@@ -2,20 +2,28 @@
 
 import { useEffect } from 'react';
 import { usePathname } from 'next/navigation';
-import { useAppState } from '@/app/context/AppContext';
-import { useTabs } from '@/app/context/TabsContext';
-import { AppLayout } from '@/components/app-sidebar';
-import { DashboardContent } from '@/components/dashboard-content';
+import { useAppStore } from '@/stores/appStore';
+import { useTrafficStore } from '@/stores/trafficStore';
+import { useProxyStore } from '@/stores/proxyStore';
 import { TabBar } from '@/components/tab-bar';
 import { TargetSelectorDialog } from '@/components/target-selector-dialog';
+import { ProxyTabContent } from '@/components/proxy/ProxyTabContent';
 import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
+import type { FilterMode } from '@/stores/proxyStore';
 
-function DashboardPage() {
+export default function HomePage() {
   const pathname = usePathname();
-  const { targets, connections, calls, fetchTargets } = useAppState();
-  const { getActiveTab, getRouteTabs, addTab } = useTabs();
+
+  const targets = useAppStore((s) => s.targets);
+  const fetchTargets = useAppStore((s) => s.fetchTargets);
+  const getRouteTabs = useAppStore((s) => s.getRouteTabs);
+  const getActiveTab = useAppStore((s) => s.getActiveTab);
+  const addTab = useAppStore((s) => s.addTab);
+
+  const filterMode = useProxyStore((s) => s.filterMode);
+  const setFilterMode = useProxyStore((s) => s.setFilterMode);
+  const clearLogs = useTrafficStore((s) => s.clearLogs);
+
   const tabs = getRouteTabs(pathname);
   const activeTab = getActiveTab(pathname);
 
@@ -32,7 +40,7 @@ function DashboardPage() {
   };
 
   return (
-    <>
+    <div className="h-full flex flex-col">
       <div className="flex items-center gap-2 mb-4">
         <TabBar route={pathname} />
         <TargetSelectorDialog
@@ -41,6 +49,7 @@ function DashboardPage() {
           onTargetsUpdated={fetchTargets}
         />
       </div>
+
       {tabs.length === 0 ? (
         <Card>
           <CardContent className="py-12">
@@ -57,22 +66,17 @@ function DashboardPage() {
             </div>
           </CardContent>
         </Card>
-      ) : (
-        <DashboardContent
-          selectedTarget={activeTarget}
-          connections={connections}
-          calls={calls}
-          onScopeUpdated={fetchTargets}
+      ) : activeTarget ? (
+        <ProxyTabContent
+          key={activeTab?.id}
+          target={activeTarget}
+          targets={targets}
+          filterMode={filterMode}
+          onFilterModeChange={setFilterMode}
+          clearLogs={clearLogs}
+          onTargetsUpdated={fetchTargets}
         />
-      )}
-    </>
-  );
-}
-
-export default function HomePage() {
-  return (
-    <AppLayout>
-      <DashboardPage />
-    </AppLayout>
+      ) : null}
+    </div>
   );
 }

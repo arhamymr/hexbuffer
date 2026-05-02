@@ -17,7 +17,6 @@ import {
   SidebarRail,
   SidebarSeparator,
 } from './ui/sidebar';
-import { Navbar } from './navbar';
 import type { Target } from '@/types';
 import {
   Zap,
@@ -153,13 +152,6 @@ export function Layout({
   return (
     <SidebarProvider>
       <div className="flex h-screen flex-col">
-        <Navbar
-          targets={targets}
-          selectedTarget={selectedTarget}
-          onTargetSelect={onTargetSelect}
-          onTargetUpdated={onTargetUpdated}
-        />
-
         <div className="flex flex-1 overflow-hidden">
           <AppSidebar currentPage={currentPage} onNavigate={onNavigate} />
 

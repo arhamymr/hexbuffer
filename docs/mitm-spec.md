@@ -1003,95 +1003,107 @@ The splice approach cannot be salvaged — it fundamentally cannot capture respo
 
 ## Implementation Summary
 
-### The Splice Problem
+### Unified Single Event: `proxy-log`
 
-The original MITM proxy approach used `tokio::io::copy` for bidirectional byte splicing:
-
-```rust
-// ❌ WRONG - Cannot capture responses
-tokio::try_join!(
-    tokio::io::copy(&mut client_read, &mut server_write),
-    tokio::io::copy(&mut server_read, &mut client_write),
-)?;
-```
-
-**Why this fails:**
-- Bytes flow in both directions simultaneously
-- No point to pause and parse response
-- Response data is immediately forwarded to client
-- `api-call` events emit with `response_status: None`
-- Response headers, body, and status are never captured
-
-### The Correct Approach
+Instead of multiple events (`logger-request`, `logger-curl`, `logger-response`, `api-call`, `proxy-connection-close`), all traffic info is emitted as one `proxy-log` event:
 
 ```rust
-// ✅ CORRECT - Response capture before forwarding
+struct ProxyLogEntry {
+    pub id: String,                    // Unique call ID
+    pub timestamp: String,             // "HH:MM:SS.mmm"
+    pub event_type: String,            // "complete"
+    pub connection_id: String,         // Connection identifier
+    pub host: String,                  // Target host
+    pub port: u16,                     // Target port (443)
+    pub target_id: String,             // Target scope ID
 
-// 1. Forward request to upstream
-upstream_tls.write_all(&request_data).await?;
+    // Request info
+    pub method: Option<String>,        // GET, POST, etc.
+    pub url: Option<String>,           // Full URL
+    pub headers: Vec<(String, String)>,// All request headers
+    pub body: Option<String>,          // Request body
+    pub body_size: usize,              // Request body size
+    pub curl: Option<String>,          // Ready-to-use curl command
 
-// 2. Read COMPLETE response from upstream
-let mut response_buf = Vec::new();
-loop {
-    let n = upstream_tls.read(&mut read_buf).await?;
-    if n == 0 { break; }
-    response_buf.extend_from_slice(&read_buf[..n]);
-    // Check if body is complete (Content-Length or chunked)
+    // Request details (for UI tabs)
+    pub request_headers: Option<Vec<(String, String)>>,
+    pub request_body: Option<String>,
+    pub request_body_size: Option<usize>,
+
+    // Response info
+    pub status: Option<u16>,           // HTTP status code
+    pub status_text: Option<String>,   // "OK", "Not Found", etc.
+    pub response_headers: Option<Vec<(String, String)>>,
+    pub response_body: Option<String>,
+    pub response_body_size: Option<usize>,
+    pub content_type: Option<String>,
+
+    // Connection stats
+    pub client_addr: String,           // Client IP
+    pub duration_ms: Option<u64>,      // Response time
+    pub client_bytes: u64,             // Bytes sent by client
+    pub server_bytes: u64,             // Bytes sent by server
 }
-
-// 3. Parse response status, headers, body
-let (status, status_text, body_offset) = parse_response_status(&response_buf);
-
-// 4. Emit events
-emit_logger_response(&parsed_resp, &app_handle);
-emit_api_call(&api_call_with_response, &app_handle);
-
-// 5. Forward response to client
-client_tls.write_all(&response_buf).await?;
 ```
-
-### Key Implementation Points
-
-| Component | Purpose |
-|-----------|---------|
-| `find_header_end()` | Locate `\r\n\r\n` separator in raw buffer |
-| `parse_content_length()` | Extract `Content-Length` from headers |
-| `parse_response_status()` | Extract status code and text |
-| Response loop | Read until body complete (CL or chunked or connection close) |
-| Event emission | `logger-request` → forward → `logger-response` → `api-call` |
 
 ### Event Flow
 
 ```
-1. Client CONNECT → proxy
-2. Proxy 200 → Client
-3. Client TLS handshake (fake cert) → Proxy
-4. Proxy TLS handshake (real cert) → Server
-5. Client HTTP request → Proxy → emit "logger-request"
-6. Proxy HTTP request → Server
-7. Server HTTP response → Proxy → emit "logger-response"
-8. Proxy HTTP response → Client → emit "api-call" (full data)
+Client CONNECT              → proxy-connection (optional, for connection tracking)
+Client HTTP Request         → Parse headers/body
+                            → Forward to upstream
+Upstream HTTP Response      → Read complete response
+                            → Build ProxyLogEntry with all data
+                            → emit "proxy-log" ← Single unified event
+                            → Forward to client
+```
+
+### Frontend Handler (Debugger)
+
+```javascript
+// Listen for the single unified event
+tauri.listen('proxy-log', (event) => {
+    const log = event.payload;
+
+    // Display in debugger UI:
+    // - Method + URL in request list
+    // - Status code badge (200=green, 404=orange, 500=red)
+    // - Duration timing
+    // - Headers/body tabs on click
+
+    addToDebuggerTable({
+        timestamp: log.timestamp,
+        method: log.method,
+        url: log.url,
+        status: log.status,
+        duration: log.duration_ms,
+        size: log.server_bytes,
+    });
+});
 ```
 
 ### What Gets Captured
 
-| Field | Spliced | Proper |
-|-------|---------|--------|
-| Request Method | ✅ | ✅ |
-| Request URL | ✅ | ✅ |
-| Request Headers | ✅ | ✅ |
-| Request Body | ✅ | ✅ |
-| Response Status | ❌ | ✅ |
-| Response Headers | ❌ | ✅ |
-| Response Body | ❌ | ✅ |
-| Latency/Timing | ❌ | ✅ |
+| Field | Status |
+|-------|--------|
+| Request Method | ✅ |
+| Request URL | ✅ |
+| Request Headers | ✅ |
+| Request Body | ✅ |
+| curl command | ✅ |
+| Response Status | ✅ |
+| Response Headers | ✅ |
+| Response Body | ✅ |
+| Timing/Latency | ✅ |
+| Bytes transferred | ✅ |
 
-### Files Reference
+### Splice vs Proper Approach
 
-- `src/proxy.rs` — Main proxy logic with `handle_mitm_request()` and `handle_http_request()`
-- `src/cert.rs` — CA generation and domain cert signing
-- `src/db.rs` — SQLite storage for traffic
-- `src/main.rs` — Tauri command handlers
+| Approach | Request Capture | Response Capture | Single Event |
+|----------|----------------|------------------|--------------|
+| **Splice (broken)** | ❌ None | ❌ None | ❌ |
+| **Old multi-event** | ✅ Partial | ✅ Partial | ❌ 4+ events |
+| **New unified** | ✅ Full | ✅ Full | ✅ 1 event |
 
 ---
 

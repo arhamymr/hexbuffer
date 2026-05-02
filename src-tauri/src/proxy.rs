@@ -568,23 +568,15 @@ fn generate_curl(
     parts.join(" \\\n  ")
 }
 
-fn emit_logger_request(req: &ParsedRequest, app: &tauri::AppHandle) {
-    let _ = app.emit("logger-request", req);
-}
-
-fn emit_logger_curl(curl: &str, app: &tauri::AppHandle) {
-    let _ = app.emit("logger-curl", serde_json::json!({ "curl": curl }));
-}
-
-fn emit_logger_response(resp: &ParsedResponse, app: &tauri::AppHandle) {
-    let _ = app.emit("logger-response", resp);
-}
-
 #[derive(Clone, Serialize, Deserialize)]
 pub struct ProxyLogEntry {
     pub id: String,
     pub timestamp: String,
-    pub event_type: String,        // "request" | "response" | "complete"
+    pub event_type: String,
+    pub connection_id: String,
+    pub host: String,
+    pub port: u16,
+    pub target_id: String,
     pub method: Option<String>,
     pub url: Option<String>,
     pub status: Option<u16>,
@@ -602,49 +594,62 @@ pub struct ProxyLogEntry {
     pub content_type: Option<String>,
     pub client_addr: String,
     pub duration_ms: Option<u64>,
+    pub client_bytes: u64,
+    pub server_bytes: u64,
 }
 
 impl ProxyLogEntry {
-    pub fn from_request(req: &ParsedRequest) -> Self {
+    pub fn new_complete(
+        connection_id: String,
+        host: String,
+        port: u16,
+        target_id: String,
+        id: String,
+        method: String,
+        url: String,
+        req_headers: Vec<(String, String)>,
+        req_body: Option<String>,
+        req_body_size: usize,
+        curl: String,
+        status: u16,
+        status_text: String,
+        resp_headers: Vec<(String, String)>,
+        resp_body: Option<String>,
+        resp_body_size: usize,
+        content_type: Option<String>,
+        client_addr: String,
+        duration_ms: u64,
+        client_bytes: u64,
+        server_bytes: u64,
+    ) -> Self {
         Self {
-            id: req.id.clone(),
-            timestamp: req.timestamp.clone(),
-            event_type: "request".to_string(),
-            method: Some(req.method.clone()),
-            url: Some(req.url.clone()),
-            status: None,
-            status_text: None,
-            headers: req.headers.clone(),
-            body: req.body.clone(),
-            body_size: req.body.as_ref().map(|b| b.len()).unwrap_or(0),
-            curl: Some(req.curl.clone()),
-            request_headers: None,
-            request_body: None,
-            request_body_size: None,
-            response_headers: None,
-            response_body: None,
-            response_body_size: None,
-            content_type: req.content_type.clone(),
-            client_addr: req.peer.clone(),
-            duration_ms: None,
+            id,
+            timestamp: Local::now().format("%H:%M:%S%.3f").to_string(),
+            event_type: "complete".to_string(),
+            connection_id,
+            host,
+            port,
+            target_id,
+            method: Some(method),
+            url: Some(url),
+            status: Some(status),
+            status_text: Some(status_text),
+            headers: req_headers.clone(),
+            body: req_body.clone(),
+            body_size: req_body_size,
+            curl: Some(curl),
+            request_headers: Some(req_headers),
+            request_body: req_body,
+            request_body_size: Some(req_body_size),
+            response_headers: Some(resp_headers),
+            response_body: resp_body,
+            response_body_size: Some(resp_body_size),
+            content_type,
+            client_addr,
+            duration_ms: Some(duration_ms),
+            client_bytes,
+            server_bytes,
         }
-    }
-
-    pub fn with_response(mut self, resp: &ParsedResponse) -> Self {
-        self.event_type = "complete".to_string();
-        self.status = Some(resp.status);
-        self.status_text = Some(resp.status_text.clone());
-        self.response_headers = Some(resp.headers.clone());
-        self.response_body = resp.body.clone();
-        self.response_body_size = Some(resp.body_size);
-        self.content_type = resp.content_type.clone();
-        self.duration_ms = None;
-        self
-    }
-
-    pub fn with_timing(mut self, duration_ms: u64) -> Self {
-        self.duration_ms = Some(duration_ms);
-        self
     }
 }
 
@@ -1109,8 +1114,6 @@ async fn handle_mitm_request(
 
     let url = format!("https://{}{}", host, path);
     let parsed_req = parse_request_for_logger(&method, &url, &http_version, &headers, body, &peer_addr.to_string(), &String::from_utf8_lossy(&request_data));
-    emit_logger_request(&parsed_req, &app_handle);
-    emit_logger_curl(&parsed_req.curl, &app_handle);
 
     let req_body = body.and_then(|b| String::from_utf8(b.to_vec()).ok());
     let api_call_id = format!("call_{}_{}", timestamp, rand_id());
@@ -1230,14 +1233,8 @@ async fn handle_mitm_request(
 
     log::info!("[MITM] Response: {} {} body_size={}", response_status, response_status_text, response_body_size);
 
-    let _parsed_resp = ParsedResponse {
-        status: response_status,
-        status_text: response_status_text.clone(),
-        headers: response_headers_map.clone().into_iter().map(|(k, v)| (k, v)).collect(),
-        body: response_body.clone(),
-        body_size: response_body_size,
-        content_type: response_content_type.clone(),
-    };
+let req_headers: Vec<(String, String)> = headers.clone().into_iter().map(|(k, v)| (k, v)).collect();
+    let resp_headers: Vec<(String, String)> = response_headers_map.clone().into_iter().map(|(k, v)| (k, v)).collect();
 
     let start_time = std::time::Instant::now();
     let _ = client_tls.write_all(&response_buf).await;
@@ -1250,73 +1247,33 @@ async fn handle_mitm_request(
     let accept = headers.get("accept").map(|s| s.as_str());
     let request_type = RequestType::from_headers(sec_fetch_mode, accept, None, &url);
 
-    let req_headers: Vec<(String, String)> = headers.clone().into_iter().map(|(k, v)| (k, v)).collect();
-    let resp_headers: Vec<(String, String)> = response_headers_map.clone().into_iter().map(|(k, v)| (k, v)).collect();
+    let req_body_size = body.map(|b| b.len()).unwrap_or(0);
 
-    let log_entry = ProxyLogEntry {
-        id: api_call_id.clone(),
-        timestamp: Local::now().format("%H:%M:%S%.3f").to_string(),
-        event_type: "complete".to_string(),
-        method: Some(method.clone()),
-        url: Some(url.clone()),
-        status: Some(response_status),
-status_text: Some(response_status_text.clone()),
-        headers: req_headers.clone(),
-        body: req_body.clone(),
-        body_size: body.map(|b| b.len()).unwrap_or(0),
-        curl: Some(parsed_req.curl),
-        request_headers: Some(req_headers),
-        request_body: req_body.clone(),
-        request_body_size: Some(body.map(|b| b.len()).unwrap_or(0)),
-        response_headers: Some(resp_headers),
-        response_body: response_body.clone(),
-        response_body_size: Some(response_body_size),
-        content_type: response_content_type.clone(),
-        client_addr: peer_addr.to_string(),
-        duration_ms: Some(duration),
-    };
+    let log_entry = ProxyLogEntry::new_complete(
+        connection.id.clone(),
+        host.clone(),
+        443,
+        target_id.clone(),
+        api_call_id.clone(),
+        method.clone(),
+        url.clone(),
+        req_headers.clone(),
+        req_body.clone(),
+        req_body_size,
+        parsed_req.curl,
+        response_status,
+response_status_text.clone(),
+        resp_headers,
+        response_body.clone(),
+        response_body_size,
+        response_content_type.clone(),
+        peer_addr.to_string(),
+        duration,
+        request_data.len() as u64,
+        response_buf.len() as u64,
+    );
 
     emit_proxy_log(&log_entry, &app_handle);
-
-    let api_call = ApiCall {
-        id: api_call_id.clone(),
-        session_id: api_call_session,
-        target_id: target_id.clone(),
-        timestamp,
-        request_type,
-        method: method.clone(),
-        url: url.clone(),
-        host: host.clone(),
-        path: path.clone(),
-        query_params: parse_query_params(&url),
-        headers: headers.clone(),
-        cookies: parse_cookies(headers.get("cookie").map(|s| s.as_str())),
-        request_body: req_body.clone(),
-        request_body_size: body.map(|b| b.len() as u64).unwrap_or(0),
-        response_status: Some(response_status),
-        response_status_text: Some(response_status_text),
-        response_headers: response_headers_map.clone(),
-        response_cookies: extract_response_cookies(&response_headers_map),
-        response_body: response_body.clone(),
-        response_body_size: response_body_size as u64,
-        response_content_type: response_content_type.clone(),
-        security_state: "secure".to_string(),
-        server_ip: None,
-    };
-
-    let _ = app_handle.emit("api-call", &api_call);
-    api_call.log_raw_data();
-
-    let _ = app_handle.emit("proxy-connection-close", serde_json::json!({
-        "id": connection.id,
-        "timestamp": timestamp,
-        "host": host,
-        "port": 443,
-        "targetId": target_id,
-        "clientBytes": request_data.len(),
-        "serverBytes": response_buf.len(),
-        "duration": duration
-    }));
 }
 
 fn parse_response_status(buffer: &[u8]) -> (u16, String, usize) {
@@ -1421,8 +1378,6 @@ async fn handle_http_request(
         &peer_addr.to_string(),
         &request_str,
     );
-    emit_logger_request(&parsed_req, &app_handle);
-    emit_logger_curl(&parsed_req.curl, &app_handle);
 
     let timestamp = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
@@ -1513,44 +1468,34 @@ async fn handle_http_request(
 
     let response_body_size = response_body.as_ref().map(|b| b.len()).unwrap_or(0);
 
-    let api_call = ApiCall {
-        id: api_call_id,
-        session_id: api_call_session,
-        target_id: target_id.clone(),
-        timestamp,
-        request_type,
-        method: api_call_method,
-        url: api_call_url,
-        host: api_call_host,
-        path: api_call_path,
-        query_params: req_query_params,
-        headers: api_call_headers.clone(),
-        cookies: parse_cookies(api_call_headers.get("cookie").map(|s| s.as_str())),
-        request_body: req_body,
-        request_body_size: body.map(|b| b.len() as u64).unwrap_or(0),
-        response_status: Some(response_status),
-        response_status_text: Some(response_status_text.clone()),
-        response_headers: response_headers_map.clone(),
-        response_cookies: extract_response_cookies(&response_headers_map),
-        response_body: response_body.clone(),
-        response_body_size: response_body_size as u64,
-        response_content_type: response_content_type.clone(),
-        security_state: "unknown".to_string(),
-        server_ip: None,
-    };
+    let req_headers: Vec<(String, String)> = api_call_headers.clone().into_iter().map(|(k, v)| (k, v)).collect();
+    let resp_headers: Vec<(String, String)> = response_headers_map.clone().into_iter().map(|(k, v)| (k, v)).collect();
 
-    let parsed_resp = ParsedResponse {
-        status: response_status,
-        status_text: response_status_text,
-        headers: response_headers_map.into_iter().map(|(k, v)| (k, v)).collect(),
-        body: response_body,
-        body_size: response_body_size,
-        content_type: response_content_type,
-    };
-    emit_logger_response(&parsed_resp, &app_handle);
+    let log_entry = ProxyLogEntry::new_complete(
+        format!("conn_{}", timestamp),
+        api_call_host.clone(),
+        80,
+        target_id.clone(),
+        api_call_id.clone(),
+        api_call_method.clone(),
+        api_call_url.clone(),
+        req_headers.clone(),
+        req_body.clone(),
+        body.map(|b| b.len()).unwrap_or(0),
+        format!("curl -X {} '{}'", api_call_method, api_call_url),
+        response_status,
+        response_status_text.clone(),
+        resp_headers,
+        response_body.clone(),
+        response_body_size,
+        response_content_type.clone(),
+        peer_addr.to_string(),
+        0,
+        full_data.len() as u64,
+        response_buf.len() as u64,
+    );
 
-    let _ = app_handle.emit("api-call", &api_call);
-    api_call.log_raw_data();
+    emit_proxy_log(&log_entry, &app_handle);
 }
 
 fn rand_id() -> String {

@@ -2,39 +2,41 @@
 
 import { useState, useEffect } from 'react';
 import { listen } from '@tauri-apps/api/event';
-import type { ApiCall, ProxyConnection } from '@/types';
+import type { ProxyConnection } from '@/types';
 
-export interface ParsedRequest {
+export interface ProxyLogEntry {
   id: string;
   timestamp: string;
-  method: string;
-  url: string;
-  http_version: string;
+  event_type: string;
+  connection_id: string;
   host: string;
-  path: string;
-  query: string | null;
-  headers: [string, string][];
-  cookies: [string, string][];
-  body: string | null;
-  content_type: string | null;
-  peer: string;
-  curl: string;
-  raw: string;
-}
-
-export interface ParsedResponse {
-  status: number;
-  status_text: string;
+  port: number;
+  target_id: string;
+  method: string | null;
+  url: string | null;
+  status: number | null;
+  status_text: string | null;
   headers: [string, string][];
   body: string | null;
   body_size: number;
+  curl: string | null;
+  request_headers: [string, string][] | null;
+  request_body: string | null;
+  request_body_size: number | null;
+  response_headers: [string, string][] | null;
+  response_body: string | null;
+  response_body_size: number | null;
   content_type: string | null;
+  client_addr: string;
+  duration_ms: number | null;
+  client_bytes: number;
+  server_bytes: number;
 }
 
 export interface DebugLog {
   id: string;
   timestamp: number;
-  type: 'api-call' | 'connection' | 'connection-close' | 'error' | 'logger-request' | 'logger-curl' | 'logger-response';
+  type: 'proxy-log' | 'connection' | 'connection-close' | 'error';
   data: unknown;
 }
 
@@ -44,36 +46,30 @@ export function useDebugLogs() {
   useEffect(() => {
     console.log('[Debugger] Setting up event listeners');
 
-    const unlistenApiCall = listen<ApiCall>('api-call', (event) => {
+    const unlistenProxyLog = listen<ProxyLogEntry>('proxy-log', (event) => {
       const payload = event.payload;
-      console.log('[Debugger] === API Call Received ===');
+      console.log('[Debugger] === Proxy Log ===');
       console.log('[Debugger] id:', payload.id);
+      console.log('[Debugger] event_type:', payload.event_type);
       console.log('[Debugger] method:', payload.method);
       console.log('[Debugger] url:', payload.url);
+      console.log('[Debugger] status:', payload.status);
       console.log('[Debugger] host:', payload.host);
-      console.log('[Debugger] path:', payload.path);
-      console.log('[Debugger] timestamp:', payload.timestamp);
-      console.log('[Debugger] request_type:', payload.request_type);
-      console.log('[Debugger] session_id:', payload.session_id);
-      console.log('[Debugger] target_id:', payload.target_id);
-      console.log('[Debugger] headers:', payload.headers);
-      console.log('[Debugger] headers.cookie:', payload.headers?.cookie);
-      console.log('[Debugger] cookies:', payload.cookies);
-      console.log('[Debugger] query_params:', payload.query_params);
-      console.log('[Debugger] request_body:', payload.request_body);
-      console.log('[Debugger] response_status:', payload.response_status);
-      console.log('[Debugger] response_headers:', payload.response_headers);
-      console.log('[Debugger] response_body:', payload.response_body ? '(present)' : null);
-      console.log('[Debugger] ==============================');
+      console.log('[Debugger] duration_ms:', payload.duration_ms);
+      console.log('[Debugger] ==================');
+
+      const timestamp = typeof payload.timestamp === 'string'
+        ? new Date(payload.timestamp).getTime()
+        : (payload.timestamp as unknown as number) || Date.now();
 
       const log: DebugLog = {
         id: payload.id || `log_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        timestamp: payload.timestamp || Date.now(),
-        type: 'api-call',
+        timestamp,
+        type: 'proxy-log',
         data: payload,
       };
       setLogs(prev => {
-        const newLogs = [...prev, log].slice(-100);
+        const newLogs = [...prev, log].slice(-200);
         console.log('[Debugger] Total logs in state:', newLogs.length);
         return newLogs;
       });
@@ -87,7 +83,7 @@ export function useDebugLogs() {
         type: 'connection',
         data: event.payload,
       };
-      setLogs(prev => [...prev, log].slice(-100));
+      setLogs(prev => [...prev, log].slice(-200));
     });
 
     const unlistenConnectionClose = listen<ProxyConnection & { clientBytes: number; serverBytes: number; duration: number }>('proxy-connection-close', (event) => {
@@ -98,62 +94,13 @@ export function useDebugLogs() {
         type: 'connection-close',
         data: event.payload,
       };
-      setLogs(prev => [...prev, log].slice(-100));
-    });
-
-    const unlistenLoggerRequest = listen<ParsedRequest>('logger-request', (event) => {
-      const payload = event.payload;
-      console.log('[Debugger] === Logger Request ===');
-      console.log('[Debugger] method:', payload.method);
-      console.log('[Debugger] url:', payload.url);
-      console.log('[Debugger] headers:', payload.headers);
-      console.log('[Debugger] cookies:', payload.cookies);
-      console.log('[Debugger] body:', payload.body);
-      console.log('[Debugger] raw:', payload.raw);
-      console.log('[Debugger] =========================');
-      const log: DebugLog = {
-        id: payload.id,
-        timestamp: Date.now(),
-        type: 'logger-request',
-        data: payload,
-      };
-      setLogs(prev => [...prev, log].slice(-100));
-    });
-
-    const unlistenLoggerCurl = listen<{ curl: string }>('logger-curl', (event) => {
-      console.log('[Debugger] === Logger Curl ===', event.payload);
-      const log: DebugLog = {
-        id: `curl_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        timestamp: Date.now(),
-        type: 'logger-curl',
-        data: event.payload,
-      };
-      setLogs(prev => [...prev, log].slice(-100));
-    });
-
-    const unlistenLoggerResponse = listen<ParsedResponse>('logger-response', (event) => {
-      const payload = event.payload;
-      console.log('[Debugger] === Logger Response ===');
-      console.log('[Debugger] status:', payload.status);
-      console.log('[Debugger] headers:', payload.headers);
-      console.log('[Debugger] body_size:', payload.body_size);
-      console.log('[Debugger] =========================');
-      const log: DebugLog = {
-        id: `resp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        timestamp: Date.now(),
-        type: 'logger-response',
-        data: payload,
-      };
-      setLogs(prev => [...prev, log].slice(-100));
+      setLogs(prev => [...prev, log].slice(-200));
     });
 
     return () => {
-      unlistenApiCall.then(fn => fn());
+      unlistenProxyLog.then(fn => fn());
       unlistenConnection.then(fn => fn());
       unlistenConnectionClose.then(fn => fn());
-      unlistenLoggerRequest.then(fn => fn());
-      unlistenLoggerCurl.then(fn => fn());
-      unlistenLoggerResponse.then(fn => fn());
     };
   }, []);
 

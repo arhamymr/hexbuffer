@@ -91,19 +91,19 @@ function LogEntry({ log, expanded, onToggle }: { log: DebugLog; expanded: boolea
             {formatTime(log.timestamp)}
           </span>
           {getTypeBadge(log.type)}
-          <span className="text-sm truncate flex-1">
+          <span className="text-sm flex-1">
             {log.type === 'api-call' && (
-              <span className="font-mono">
+              <span className="font-mono truncate w-full max-w-[100px]">
                 {((log.data as ApiCall).method)} {((log.data as ApiCall).host)}{((log.data as ApiCall).path)}
               </span>
             )}
             {log.type === 'connection' && (
-              <span className="font-mono">
+              <span className="font-mono truncate w-full  max-w-[100px]">
                 conn {((log.data as ProxyConnection).host)}:{((log.data as ProxyConnection).port)}
               </span>
             )}
             {log.type === 'connection-close' && (
-              <span className="font-mono">
+              <span className="font-mono truncate  w-full max-w-[100px]">
                 closed {((log.data as ProxyConnection).host)}
               </span>
             )}
@@ -299,7 +299,7 @@ export function DebuggerPage() {
             </div>
           ) : (
             <ScrollArea className="h-full">
-              {logs.map((log) => (
+              {logs.reverse().map((log) => (
                 <LogEntry
                   key={log.id}
                   log={log}

@@ -43,11 +43,14 @@ import {
   Bug,
   Moon,
   Sun,
+  Play,
+  Loader2,
 } from 'lucide-react';
 import { useTheme } from './theme-provider';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAppState } from '@/app/context/AppContext';
+import { Button } from './ui/button';
 
 const mainNavItems = [
   { label: 'Live', icon: Zap, href: '/' },
@@ -62,6 +65,7 @@ export function AppSidebar() {
   const { theme, toggleTheme } = useTheme();
   const { state, toggleSidebar } = useSidebar();
   const [proxyRunning, setProxyRunning] = React.useState(false);
+  const [proxyLoading, setProxyLoading] = React.useState(false);
 
   React.useEffect(() => {
     const checkStatus = async () => {
@@ -77,15 +81,39 @@ export function AppSidebar() {
     return () => clearInterval(interval);
   }, []);
 
+  const startProxy = async () => {
+    setProxyLoading(true);
+    try {
+      await invoke('start_proxy', { port: 8888, targetId: null });
+      setProxyRunning(true);
+    } catch (e) {
+      console.error('Failed to start proxy:', e);
+    } finally {
+      setProxyLoading(false);
+    }
+  };
+
+  const stopProxy = async () => {
+    setProxyLoading(true);
+    try {
+      await invoke('stop_proxy');
+      setProxyRunning(false);
+    } catch (e) {
+      console.error('Failed to stop proxy:', e);
+    } finally {
+      setProxyLoading(false);
+    }
+  };
+
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton asChild isActive={pathname === '/'}>
+            <SidebarMenuButton asChild isActive={pathname === '/'} tooltip="Bug Bounty Tools" className="group-data-[collapsible=icon]:![width:2rem] group-data-[collapsible=icon]:!p-0">
               <Link href="/">
-                <Zap className="size-4" />
-                <span>Bug Bounty Tools</span>
+                <Zap className="size-4 shrink-0" />
+                <span className="group-data-[collapsible=icon]:hidden">Bug Bounty Tools</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -94,12 +122,11 @@ export function AppSidebar() {
       <SidebarSeparator />
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Tools</SidebarGroupLabel>
+          <SidebarGroupLabel className="group-data-[collapsible=icon]:hidden">Tools</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {mainNavItems.map((item) => {
                 const Icon = item.icon;
-                const showBadge = item.href === '/' && proxyRunning;
                 return (
                   <SidebarMenuItem key={item.href}>
                     <SidebarMenuButton
@@ -108,8 +135,8 @@ export function AppSidebar() {
                       tooltip={item.label}
                     >
                       <Link href={item.href}>
-                        <Icon className="size-4" />
-                        <span>{item.label}</span>
+                        <Icon className="size-4 shrink-0" />
+                        <span className="group-data-[collapsible=icon]:hidden">{item.label}</span>
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -123,27 +150,36 @@ export function AppSidebar() {
       <SidebarFooter>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton
-              asChild
-              isActive={pathname === '/settings'}
-              tooltip="Settings"
-            >
+            {!proxyRunning ? (
+              <Button onClick={startProxy} disabled={proxyLoading} size="sm" className="w-full justify-center">
+                {proxyLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
+                <span className="group-data-[collapsible=icon]:hidden">Start Proxy</span>
+              </Button>
+            ) : (
+              <Button onClick={stopProxy} disabled={proxyLoading} variant="destructive" size="sm" className="w-full justify-start">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span className="group-data-[collapsible=icon]:hidden">Stop Proxy</span>
+              </Button>
+            )}
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton asChild isActive={pathname === '/settings'} tooltip="Settings">
               <Link href="/settings">
-                <Settings className="size-4" />
-                <span>Settings</span>
+                <Settings className="size-4 shrink-0" />
+                <span className="group-data-[collapsible=icon]:hidden">Settings</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
-            <SidebarMenuButton onClick={toggleTheme} tooltip={theme === 'dark' ? 'Light Mode' : 'Dark Mode'}>
-              {theme === 'dark' ? <Sun className="size-4" /> : <Moon className="size-4" />}
-              <span>{theme === 'dark' ? 'Light' : 'Dark'}</span>
+            <SidebarMenuButton onClick={toggleSidebar}>
+              {theme === 'dark' ? <Sun className="size-4 shrink-0" /> : <Moon className="size-4 shrink-0" />}
+              <span className="ml-2 group-data-[collapsible=icon]:hidden">{theme === 'dark' ? 'Light' : 'Dark'}</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
-            <SidebarMenuButton onClick={toggleSidebar} tooltip={state === 'expanded' ? 'Collapse Sidebar' : 'Expand Sidebar'}>
-              {state === 'expanded' ? <ChevronLeft className="size-4" /> : <ChevronRight className="size-4" />}
-              <span>{state === 'expanded' ? 'Collapse' : 'Expand'}</span>
+            <SidebarMenuButton onClick={toggleSidebar} tooltip={state === 'expanded' ? 'Collapse' : 'Expand'}>
+              {state === 'expanded' ? <ChevronLeft className="size-4 shrink-0" /> : <ChevronRight className="size-4 shrink-0" />}
+              <span className="group-data-[collapsible=icon]:hidden">{state === 'expanded' ? 'Collapse' : 'Expand'}</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>

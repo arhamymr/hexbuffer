@@ -5,19 +5,135 @@ use std::net::SocketAddr;
 use std::sync::Arc;
 use tokio::net::{TcpListener, TcpStream};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
+use tokio::time::sleep;
 use tauri::Emitter;
 use chrono::Local;
-use rustls::ServerConfig;
-use rustls::pki_types::{CertificateDer, PrivateKeyDer};
-use tokio_rustls::TlsAcceptor;
+use rustls::{ClientConfig, RootCertStore, ServerConfig};
+use rustls::pki_types::{CertificateDer, PrivateKeyDer, ServerName};
+use tokio_rustls::{TlsAcceptor, TlsConnector};
 use pem;
 use rcgen::KeyPair;
+
+fn build_upstream_client_config() -> Arc<ClientConfig> {
+    let mut roots = RootCertStore::empty();
+    roots.extend(webpki_roots::TLS_SERVER_ROOTS.iter().cloned());
+    let config = ClientConfig::builder()
+        .with_root_certificates(roots)
+        .with_no_client_auth();
+    Arc::new(config)
+}
+
+async fn connect_upstream_tls(stream: TcpStream, host: &str, config: Arc<ClientConfig>) -> std::io::Result<tokio_rustls::client::TlsStream<TcpStream>> {
+    let connector = TlsConnector::from(config);
+    let server_name = ServerName::try_from(host.to_string()).map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidInput, e))?;
+    connector.connect(server_name, stream).await.map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))
+}
+
+fn find_header_end(buffer: &[u8]) -> Option<usize> {
+    for i in 0..buffer.len().saturating_sub(3) {
+        if buffer[i] == b'\r' && buffer[i+1] == b'\n' &&
+           buffer[i+2] == b'\r' && buffer[i+3] == b'\n' {
+            return Some(i + 4);
+        }
+    }
+    None
+}
+
+fn find_body_start(buffer: &[u8], body_offset: usize) -> Option<usize> {
+    if body_offset == 0 || body_offset >= buffer.len() {
+        return None;
+    }
+    let mut pos = 0;
+    let mut offset_count = 0;
+    while pos < buffer.len() {
+        if buffer[pos] == b'\r' && pos + 1 < buffer.len() && buffer[pos + 1] == b'\n' {
+            if pos + 2 < buffer.len() && buffer[pos + 2] == b'\r' && pos + 3 < buffer.len() && buffer[pos + 3] == b'\n' {
+                return Some(pos + 4);
+            }
+            if body_offset > 0 && offset_count == body_offset - 1 {
+                return Some(pos + 2);
+            }
+            offset_count += 1;
+            pos += 2;
+        } else {
+            pos += 1;
+        }
+    }
+    None
+}
 
 #[derive(Clone, Serialize, Deserialize, Default)]
 pub struct ProxyState {
     pub running: bool,
     pub port: Option<u16>,
     pub connections: u32,
+}
+
+fn parse_content_length(headers_data: &[u8]) -> Option<usize> {
+    let headers_str = String::from_utf8_lossy(headers_data);
+    for line in headers_str.lines() {
+        let lower = line.to_lowercase();
+        if lower.starts_with("content-length:") {
+            let value = lower.trim_start_matches("content-length:").trim();
+            return value.parse().ok();
+        }
+    }
+    None
+}
+
+async fn read_complete_request(stream: &mut TcpStream, initial_data: &[u8]) -> Result<Vec<u8>, std::io::Error> {
+    let mut buffer = initial_data.to_vec();
+    loop {
+        if let Some(header_end) = find_header_end(&buffer) {
+            if let Some(cl) = parse_content_length(&buffer[..header_end]) {
+                let body_end = header_end + cl;
+                if buffer.len() >= body_end {
+                    buffer.truncate(body_end);
+                    return Ok(buffer);
+                }
+                while buffer.len() < body_end {
+                    let mut add = vec![0u8; body_end - buffer.len()];
+                    let n = AsyncReadExt::read(stream, &mut add).await?;
+                    if n == 0 { return Ok(buffer); }
+                    buffer.extend_from_slice(&add[..n]);
+                }
+                return Ok(buffer);
+            }
+            return Ok(buffer);
+        }
+        let mut add = vec![0u8; 8192];
+        let n = AsyncReadExt::read(stream, &mut add).await?;
+        if n == 0 { return Ok(buffer); }
+        buffer.extend_from_slice(&add[..n]);
+    }
+}
+
+async fn read_complete_response(stream: &mut TcpStream) -> Result<Vec<u8>, std::io::Error> {
+    let mut buffer = Vec::new();
+    loop {
+        if let Some(header_end) = find_header_end(&buffer) {
+            let cl = parse_content_length(&buffer[..header_end]);
+            if let Some(len) = cl {
+                let body_end = header_end + len;
+                if buffer.len() >= body_end {
+                    buffer.truncate(body_end);
+                    return Ok(buffer);
+                }
+                while buffer.len() < body_end {
+                    let mut add = vec![0u8; body_end - buffer.len()];
+                    let n = AsyncReadExt::read(stream, &mut add).await?;
+                    if n == 0 { return Ok(buffer); }
+                    buffer.extend_from_slice(&add[..n]);
+                }
+                return Ok(buffer);
+            }
+            return Ok(buffer);
+        }
+        let mut add = vec![0u8; 16384];
+        let n = AsyncReadExt::read(stream, &mut add).await?;
+        if n == 0 { return Ok(buffer); }
+        buffer.extend_from_slice(&add[..n]);
+    }
 }
 
 #[derive(Clone, Serialize, Deserialize, PartialEq)]
@@ -464,6 +580,78 @@ fn emit_logger_response(resp: &ParsedResponse, app: &tauri::AppHandle) {
     let _ = app.emit("logger-response", resp);
 }
 
+#[derive(Clone, Serialize, Deserialize)]
+pub struct ProxyLogEntry {
+    pub id: String,
+    pub timestamp: String,
+    pub event_type: String,        // "request" | "response" | "complete"
+    pub method: Option<String>,
+    pub url: Option<String>,
+    pub status: Option<u16>,
+    pub status_text: Option<String>,
+    pub headers: Vec<(String, String)>,
+    pub body: Option<String>,
+    pub body_size: usize,
+    pub curl: Option<String>,
+    pub request_headers: Option<Vec<(String, String)>>,
+    pub request_body: Option<String>,
+    pub request_body_size: Option<usize>,
+    pub response_headers: Option<Vec<(String, String)>>,
+    pub response_body: Option<String>,
+    pub response_body_size: Option<usize>,
+    pub content_type: Option<String>,
+    pub client_addr: String,
+    pub duration_ms: Option<u64>,
+}
+
+impl ProxyLogEntry {
+    pub fn from_request(req: &ParsedRequest) -> Self {
+        Self {
+            id: req.id.clone(),
+            timestamp: req.timestamp.clone(),
+            event_type: "request".to_string(),
+            method: Some(req.method.clone()),
+            url: Some(req.url.clone()),
+            status: None,
+            status_text: None,
+            headers: req.headers.clone(),
+            body: req.body.clone(),
+            body_size: req.body.as_ref().map(|b| b.len()).unwrap_or(0),
+            curl: Some(req.curl.clone()),
+            request_headers: None,
+            request_body: None,
+            request_body_size: None,
+            response_headers: None,
+            response_body: None,
+            response_body_size: None,
+            content_type: req.content_type.clone(),
+            client_addr: req.peer.clone(),
+            duration_ms: None,
+        }
+    }
+
+    pub fn with_response(mut self, resp: &ParsedResponse) -> Self {
+        self.event_type = "complete".to_string();
+        self.status = Some(resp.status);
+        self.status_text = Some(resp.status_text.clone());
+        self.response_headers = Some(resp.headers.clone());
+        self.response_body = resp.body.clone();
+        self.response_body_size = Some(resp.body_size);
+        self.content_type = resp.content_type.clone();
+        self.duration_ms = None;
+        self
+    }
+
+    pub fn with_timing(mut self, duration_ms: u64) -> Self {
+        self.duration_ms = Some(duration_ms);
+        self
+    }
+}
+
+fn emit_proxy_log(log: &ProxyLogEntry, app: &tauri::AppHandle) {
+    let _ = app.emit("proxy-log", log);
+}
+
 fn parse_url(url: &str) -> (String, String) {
     if let Some(start) = url.find("://") {
         let after_scheme = &url[start + 3..];
@@ -735,7 +923,7 @@ async fn handle_connect_mitm(mut stream: TcpStream, initial_data: &[u8], app_han
             log::error!("Failed to set cert: {:?}", e);
         }).ok().unwrap();
 
-    server_config.alpn_protocols.push(b"http/1.1".to_vec());
+    server_config.alpn_protocols.clear();
 
     log::info!("TLS server config created for {} with {} certs in chain", host, cert_chain_len);
 
@@ -760,54 +948,77 @@ async fn handle_connect_mitm(mut stream: TcpStream, initial_data: &[u8], app_han
 
     let mut http_request_buf = Vec::new();
     let mut handshake_complete = false;
+    let mut preface_seen = false;
 
     loop {
         let mut read_buf = [0u8; 8192];
-        match AsyncReadExt::read(&mut tls_stream, &mut read_buf).await {
-            Ok(0) => {
-                log::debug!("TLS connection closed");
+        let read_future = AsyncReadExt::read(&mut tls_stream, &mut read_buf);
+
+        tokio::select! {
+            _ = sleep(tokio::time::Duration::from_secs(10)) => {
+                log::warn!("[MITM] Connection timeout for {}, closing", host);
                 break;
             }
-            Ok(n) => {
-                http_request_buf.extend_from_slice(&read_buf[..n]);
+            result = read_future => {
+                match result {
+                    Ok(0) => {
+                        log::debug!("TLS connection closed");
+                        break;
+                    }
+                    Ok(n) => {
+                        http_request_buf.extend_from_slice(&read_buf[..n]);
 
-                if !handshake_complete {
-                    handshake_complete = true;
-                    log::info!("TLS handshake complete for {}", host);
-                }
+                        if !handshake_complete {
+                            handshake_complete = true;
+                            log::info!("TLS handshake complete for {}", host);
+                        }
 
-                if let Some(header_end) = find_header_end(&http_request_buf) {
-                    let headers_data = &http_request_buf[..header_end];
-                    let headers_str = String::from_utf8_lossy(headers_data).to_string();
-                    let req_lines: Vec<&str> = headers_str.lines().collect();
+                        if let Some(header_end) = find_header_end(&http_request_buf) {
+                            let headers_data = &http_request_buf[..header_end];
+                            let headers_str = String::from_utf8_lossy(headers_data).to_string();
+                            let req_lines: Vec<&str> = headers_str.lines().collect();
 
-                    if !req_lines.is_empty() {
-                        let first_line: Vec<&str> = req_lines[0].split_whitespace().collect();
-                        if first_line.len() >= 2 {
-                            let method = first_line[0].to_string();
-                            let path = first_line[1].to_string();
-                            let http_version = first_line.get(2).unwrap_or(&"HTTP/1.1").to_string();
+                            if !req_lines.is_empty() {
+                                let first_line: Vec<&str> = req_lines[0].split_whitespace().collect();
+                                if first_line.len() >= 3 {
+                                    let method = first_line[0].to_string();
+                                    let path = first_line[1].to_string();
+                                    let http_version = first_line.get(2).unwrap_or(&"HTTP/1.1").to_string();
 
-                            if method == "CONNECT" {
-                                let mut new_buf = Vec::new();
-                                new_buf.extend_from_slice(b"GET ");
-                                new_buf.extend_from_slice(path.as_bytes());
-                                new_buf.extend_from_slice(b" HTTP/1.1\r\n");
-                                new_buf.extend_from_slice(&http_request_buf[header_end..]);
-                                http_request_buf = new_buf;
-                                let headers_str_new = String::from_utf8_lossy(&http_request_buf).to_string();
-                                let req_lines_new: Vec<&str> = headers_str_new.lines().collect();
-                                if !req_lines_new.is_empty() {
-                                    let new_first: Vec<&str> = req_lines_new[0].split_whitespace().collect();
-                                    if new_first.len() >= 2 {
-                                        let new_method = new_first[0].to_string();
-                                        let new_path = new_first[1].to_string();
+                                    if method == "PRI" && path == "*" && http_version == "HTTP/2.0" {
+                                        if !preface_seen {
+                                            log::info!("[MITM] HTTP/2 connection preface received for {}, waiting for actual requests", host);
+                                            preface_seen = true;
+                                        }
+                                        http_request_buf.clear();
+                                        continue;
+                                    }
+
+                                    if method == "CONNECT" {
+                                        log::info!("[MITM] Received CONNECT for {}, forwarding as-is", path);
                                         handle_mitm_request(
                                             host.clone(),
                                             port,
                                             http_request_buf.clone(),
-                                            new_method,
-                                            new_path,
+                                            method,
+                                            path,
+                                            http_version,
+                                            app_handle.clone(),
+                                            target_id.clone(),
+                                            connection.clone(),
+                                            timestamp,
+                                            peer_addr,
+                                            tls_stream,
+                                            cert_manager.clone(),
+                                        ).await;
+                                        return;
+                                    } else {
+                                        handle_mitm_request(
+                                            host.clone(),
+                                            port,
+                                            http_request_buf.clone(),
+                                            method,
+                                            path,
                                             http_version,
                                             app_handle.clone(),
                                             target_id.clone(),
@@ -820,39 +1031,22 @@ async fn handle_connect_mitm(mut stream: TcpStream, initial_data: &[u8], app_han
                                         return;
                                     }
                                 }
-                            } else {
-                                handle_mitm_request(
-                                    host.clone(),
-                                    port,
-                                    http_request_buf.clone(),
-                                    method,
-                                    path,
-                                    http_version,
-                                    app_handle.clone(),
-                                    target_id.clone(),
-                                    connection.clone(),
-                                    timestamp,
-                                    peer_addr,
-                                    tls_stream,
-                                    cert_manager.clone(),
-                                ).await;
-                                return;
                             }
+
+                            break;
+                        }
+
+                        if http_request_buf.len() > 65536 {
+                            log::warn!("Request buffer too large, truncating");
+                            http_request_buf.truncate(65536);
+                            break;
                         }
                     }
-
-                    break;
+                    Err(e) => {
+                        log::error!("TLS read error: {:?}", e);
+                        break;
+                    }
                 }
-
-                if http_request_buf.len() > 65536 {
-                    log::warn!("Request buffer too large, truncating");
-                    http_request_buf.truncate(65536);
-                    break;
-                }
-            }
-            Err(e) => {
-                log::error!("TLS read error: {:?}", e);
-                break;
             }
         }
     }
@@ -872,20 +1066,19 @@ async fn handle_connect_mitm(mut stream: TcpStream, initial_data: &[u8], app_han
 
 async fn handle_mitm_request(
     host: String,
-    port: u16,
-    request_data: Vec<u8>,
+    _port: u16,
+    mut request_data: Vec<u8>,
     method: String,
     path: String,
-    _http_version: String,
+    http_version: String,
     app_handle: tauri::AppHandle,
     target_id: String,
     connection: ProxyConnection,
     timestamp: u64,
     peer_addr: SocketAddr,
-    mut tls_stream: tokio_rustls::server::TlsStream<TcpStream>,
+    mut client_tls: tokio_rustls::server::TlsStream<TcpStream>,
     _cert_manager: Arc<CertManager>,
 ) {
-    let request_str = String::from_utf8_lossy(&request_data);
     log::info!("[MITM] {} {} from {}", method, path, host);
 
     let header_end = match find_header_end(&request_data) {
@@ -904,9 +1097,7 @@ async fn handle_mitm_request(
             break;
         }
         if let Some((key, value)) = line_trimmed.split_once(':') {
-            let key = key.trim().to_lowercase();
-            let value = value.trim().to_string();
-            headers.insert(key, value);
+            headers.insert(key.trim().to_lowercase(), value.trim().to_string());
         }
     }
 
@@ -917,125 +1108,178 @@ async fn handle_mitm_request(
     };
 
     let url = format!("https://{}{}", host, path);
-
-    let parsed_req = parse_request_for_logger(
-        &method,
-        &url,
-        "HTTP/1.1",
-        &headers,
-        body,
-        &peer_addr.to_string(),
-        &request_str,
-    );
+    let parsed_req = parse_request_for_logger(&method, &url, &http_version, &headers, body, &peer_addr.to_string(), &String::from_utf8_lossy(&request_data));
     emit_logger_request(&parsed_req, &app_handle);
     emit_logger_curl(&parsed_req.curl, &app_handle);
 
     let req_body = body.and_then(|b| String::from_utf8(b.to_vec()).ok());
-    let req_query_params = parse_query_params(&url);
-
     let api_call_id = format!("call_{}_{}", timestamp, rand_id());
     let api_call_session = format!("session_{}", timestamp);
 
-    let dest_addr = format!("{}:80", host);
-    log::info!("[MITM] Connecting to {}", dest_addr);
+    let upstream_addr = format!("{}:443", host);
+    log::info!("[MITM] Connecting to {}", upstream_addr);
 
-    let mut dest_stream = match TcpStream::connect(&dest_addr).await {
+    let upstream_tcp = match TcpStream::connect(&upstream_addr).await {
         Ok(s) => s,
         Err(e) => {
-            log::error!("[MITM] Connect error: {}", e);
+            log::error!("[MITM] Upstream connect error: {}", e);
             return;
         }
     };
 
-    if let Err(e) = dest_stream.write_all(&request_data).await {
-        log::error!("[MITM] Forward error: {}", e);
+    let client_cfg = build_upstream_client_config();
+    let mut upstream_tls = match connect_upstream_tls(upstream_tcp, &host, client_cfg).await {
+        Ok(s) => s,
+        Err(e) => {
+            log::error!("[MITM] Upstream TLS error: {}", e);
+            return;
+        }
+    };
+
+    log::info!("[MITM] Forwarding request to upstream");
+    if let Err(e) = upstream_tls.write_all(&request_data).await {
+        log::error!("[MITM] Failed to forward request: {}", e);
         return;
     }
 
-    let response_buf = match read_complete_response(&mut dest_stream).await {
-        Ok(buf) => buf,
-        Err(e) => {
-            log::error!("[MITM] Read response error: {}", e);
-            return;
-        }
-    };
-
-    let response_str = String::from_utf8_lossy(&response_buf);
-    let resp_lines: Vec<&str> = response_str.lines().collect();
-
-    let mut response_status: u16 = 0;
-    let mut response_status_text = String::new();
+    log::info!("[MITM] Reading response from upstream");
+    let mut response_buf = Vec::new();
+    let mut body_offset = 0;
+    let mut status_line = String::new();
     let mut response_headers_map = HashMap::new();
-    let mut response_body_offset: usize = 0;
-    let mut response_content_type: Option<String> = None;
 
-    if !resp_lines.is_empty() {
-        let status_line: Vec<&str> = resp_lines[0].split_whitespace().collect();
-        if status_line.len() >= 2 {
-            response_status = status_line[1].parse().unwrap_or(0);
-            response_status_text = status_line.get(2).unwrap_or(&"").to_string();
-        }
-    }
+    loop {
+        let mut read_buf = [0u8; 8192];
+        match upstream_tls.read(&mut read_buf).await {
+            Ok(0) => break,
+            Ok(n) => {
+                response_buf.extend_from_slice(&read_buf[..n]);
 
-    for (i, line) in resp_lines.iter().enumerate().skip(1) {
-        if line.is_empty() {
-            response_body_offset = i + 1;
-            break;
-        }
-        if let Some((key, value)) = line.split_once(':') {
-            let key = key.trim().to_lowercase();
-            let value = value.trim().to_string();
-            if key == "content-type" {
-                response_content_type = Some(value.clone());
+                if body_offset == 0 {
+                    if let Some(header_end_pos) = find_header_end(&response_buf) {
+                        let header_str = String::from_utf8_lossy(&response_buf[..header_end_pos]);
+                        let resp_lines: Vec<&str> = header_str.lines().collect();
+
+                        if !resp_lines.is_empty() {
+                            status_line = resp_lines[0].to_string();
+                        }
+
+                        for line in resp_lines.iter().skip(1) {
+                            let line_trimmed = line.trim();
+                            if line_trimmed.is_empty() {
+                                body_offset = header_end_pos;
+                                break;
+                            }
+                            if let Some((key, value)) = line_trimmed.split_once(':') {
+                                response_headers_map.insert(key.trim().to_lowercase(), value.trim().to_string());
+                            }
+                        }
+
+                        let content_length = response_headers_map.get("content-length").and_then(|v| v.parse::<usize>().ok());
+                        let chunked = response_headers_map.get("transfer-encoding").map(|v| v.contains("chunked")).unwrap_or(false);
+
+                        if content_length.is_some() || chunked {
+                            if let Some(cl) = content_length {
+                                if response_buf.len() >= header_end_pos + cl {
+                                    response_buf.truncate(header_end_pos + cl);
+                                    break;
+                                }
+                            }
+                        } else {
+                            if response_buf.len() > header_end_pos {
+                                break;
+                            }
+                        }
+                    }
+                } else {
+                    if let Some(cl) = response_headers_map.get("content-length").and_then(|v| v.parse::<usize>().ok()) {
+                        if response_buf.len() >= body_offset + cl {
+                            response_buf.truncate(body_offset + cl);
+                            break;
+                        }
+                    } else if response_headers_map.get("transfer-encoding").map(|v| v.contains("chunked")).unwrap_or(false) {
+                        let chunk_end: &[u8] = b"0\r\n\r\n";
+                        if response_buf.len() >= 5 && response_buf[response_buf.len() - 5..] == *chunk_end {
+                            break;
+                        }
+                    } else {
+                        break;
+                    }
+                }
+
+                if response_buf.len() > 50 * 1024 * 1024 {
+                    log::warn!("[MITM] Response buffer too large, truncating");
+                    break;
+                }
             }
-            response_headers_map.insert(key, value);
+            Err(e) => {
+                log::error!("[MITM] Upstream read error: {}", e);
+                break;
+            }
         }
     }
 
-    let response_body = if response_body_offset > 0 && response_body_offset < resp_lines.len() {
-        let body_start = resp_lines[..response_body_offset].join("\n").len() + response_body_offset;
-        if body_start < response_buf.len() {
-            Some(String::from_utf8_lossy(&response_buf[body_start..]).to_string())
-        } else {
-            None
-        }
+    let (response_status, response_status_text, response_body_offset) = parse_response_status(&response_buf);
+    let response_body = if response_body_offset > 0 && response_body_offset < response_buf.len() {
+        Some(String::from_utf8_lossy(&response_buf[response_body_offset..]).to_string())
     } else {
         None
     };
-
     let response_body_size = response_body.as_ref().map(|b| b.len()).unwrap_or(0);
+    let response_content_type = response_headers_map.get("content-type").cloned();
 
-    let mut response_buf_to_send = response_buf.clone();
+    log::info!("[MITM] Response: {} {} body_size={}", response_status, response_status_text, response_body_size);
 
-    if let Some(location) = response_headers_map.get("location") {
-        if location.starts_with("https://") {
-            let new_location = format!("http://{}:8888{}", host, location.strip_prefix("https://").unwrap_or(location));
-            log::info!("[MITM] Rewriting redirect Location: {} -> {}", location, new_location);
+    let _parsed_resp = ParsedResponse {
+        status: response_status,
+        status_text: response_status_text.clone(),
+        headers: response_headers_map.clone().into_iter().map(|(k, v)| (k, v)).collect(),
+        body: response_body.clone(),
+        body_size: response_body_size,
+        content_type: response_content_type.clone(),
+    };
 
-            let response_str = String::from_utf8_lossy(&response_buf_to_send).to_string();
-            let new_response_str = response_str.replace(location, &new_location);
-            response_buf_to_send = new_response_str.into_bytes();
-            response_headers_map.insert("location".to_string(), new_location);
-        }
-    }
+    let start_time = std::time::Instant::now();
+    let _ = client_tls.write_all(&response_buf).await;
+    let _ = client_tls.flush().await;
+    let duration = start_time.elapsed().as_millis() as u64;
 
-    log::info!("[MITM] Response for {} {}: status={} Location={:?}",
-        method, url, response_status,
-        response_headers_map.get("location"));
-
-    if let Err(e) = tls_stream.write_all(&response_buf_to_send).await {
-        log::error!("[MITM] Write to client error: {}", e);
-    }
-    if let Err(e) = tls_stream.flush().await {
-        log::error!("[MITM] Flush error: {}", e);
-    }
+    drop(upstream_tls);
 
     let sec_fetch_mode = headers.get("sec-fetch-mode").map(|s| s.as_str());
     let accept = headers.get("accept").map(|s| s.as_str());
-    let request_type = RequestType::from_headers(sec_fetch_mode, accept, response_content_type.as_deref(), &url);
+    let request_type = RequestType::from_headers(sec_fetch_mode, accept, None, &url);
+
+    let req_headers: Vec<(String, String)> = headers.clone().into_iter().map(|(k, v)| (k, v)).collect();
+    let resp_headers: Vec<(String, String)> = response_headers_map.clone().into_iter().map(|(k, v)| (k, v)).collect();
+
+    let log_entry = ProxyLogEntry {
+        id: api_call_id.clone(),
+        timestamp: Local::now().format("%H:%M:%S%.3f").to_string(),
+        event_type: "complete".to_string(),
+        method: Some(method.clone()),
+        url: Some(url.clone()),
+        status: Some(response_status),
+status_text: Some(response_status_text.clone()),
+        headers: req_headers.clone(),
+        body: req_body.clone(),
+        body_size: body.map(|b| b.len()).unwrap_or(0),
+        curl: Some(parsed_req.curl),
+        request_headers: Some(req_headers),
+        request_body: req_body.clone(),
+        request_body_size: Some(body.map(|b| b.len()).unwrap_or(0)),
+        response_headers: Some(resp_headers),
+        response_body: response_body.clone(),
+        response_body_size: Some(response_body_size),
+        content_type: response_content_type.clone(),
+        client_addr: peer_addr.to_string(),
+        duration_ms: Some(duration),
+    };
+
+    emit_proxy_log(&log_entry, &app_handle);
 
     let api_call = ApiCall {
-        id: api_call_id,
+        id: api_call_id.clone(),
         session_id: api_call_session,
         target_id: target_id.clone(),
         timestamp,
@@ -1044,13 +1288,13 @@ async fn handle_mitm_request(
         url: url.clone(),
         host: host.clone(),
         path: path.clone(),
-        query_params: req_query_params,
+        query_params: parse_query_params(&url),
         headers: headers.clone(),
         cookies: parse_cookies(headers.get("cookie").map(|s| s.as_str())),
         request_body: req_body.clone(),
         request_body_size: body.map(|b| b.len() as u64).unwrap_or(0),
         response_status: Some(response_status),
-        response_status_text: Some(response_status_text.clone()),
+        response_status_text: Some(response_status_text),
         response_headers: response_headers_map.clone(),
         response_cookies: extract_response_cookies(&response_headers_map),
         response_body: response_body.clone(),
@@ -1060,139 +1304,39 @@ async fn handle_mitm_request(
         server_ip: None,
     };
 
-    let parsed_resp = ParsedResponse {
-        status: response_status,
-        status_text: response_status_text,
-        headers: response_headers_map.into_iter().map(|(k, v)| (k, v)).collect(),
-        body: response_body,
-        body_size: response_body_size,
-        content_type: response_content_type,
-    };
-    emit_logger_response(&parsed_resp, &app_handle);
-
     let _ = app_handle.emit("api-call", &api_call);
     api_call.log_raw_data();
 
-    let close_event = serde_json::json!({
+    let _ = app_handle.emit("proxy-connection-close", serde_json::json!({
         "id": connection.id,
         "timestamp": timestamp,
         "host": host,
-        "port": port,
+        "port": 443,
         "targetId": target_id,
         "clientBytes": request_data.len(),
         "serverBytes": response_buf.len(),
-        "duration": 0
-    });
-    let _ = app_handle.emit("proxy-connection-close", &close_event);
+        "duration": duration
+    }));
 }
 
-fn find_header_end(buffer: &[u8]) -> Option<usize> {
-    for i in 0..buffer.len().saturating_sub(3) {
-        if buffer[i] == b'\r' && buffer[i+1] == b'\n' &&
-           buffer[i+2] == b'\r' && buffer[i+3] == b'\n' {
-            return Some(i + 4);
-        }
+fn parse_response_status(buffer: &[u8]) -> (u16, String, usize) {
+    let header_end = match find_header_end(buffer) {
+        Some(pos) => pos,
+        None => return (0, String::new(), 0),
+    };
+
+    let header_str = String::from_utf8_lossy(&buffer[..header_end]);
+    let lines: Vec<&str> = header_str.lines().collect();
+
+    if lines.is_empty() {
+        return (0, String::new(), 0);
     }
-    None
-}
 
-fn parse_content_length(headers_data: &[u8]) -> Option<usize> {
-    let headers_str = String::from_utf8_lossy(headers_data);
-    for line in headers_str.lines() {
-        let lower = line.to_lowercase();
-        if lower.starts_with("content-length:") {
-            let value = lower.trim_start_matches("content-length:").trim();
-            return value.parse().ok();
-        }
-    }
-    None
-}
+    let status_parts: Vec<&str> = lines[0].split_whitespace().collect();
+    let status = status_parts.get(1).and_then(|s| s.parse().ok()).unwrap_or(0);
+    let status_text = status_parts.get(2).unwrap_or(&"").to_string();
 
-async fn read_complete_request(stream: &mut TcpStream, initial_data: &[u8]) -> Result<Vec<u8>, std::io::Error> {
-    let mut buffer = initial_data.to_vec();
-
-    loop {
-        if let Some(header_end) = find_header_end(&buffer) {
-            let content_length = parse_content_length(&buffer[..header_end]);
-            if let Some(cl) = content_length {
-                let body_start = header_end;
-                let body_end = body_start + cl;
-                if buffer.len() >= body_end {
-                    buffer.truncate(body_end);
-                    return Ok(buffer);
-                }
-                let needed = body_end - buffer.len();
-                let mut additional = vec![0u8; needed];
-                match tokio::io::AsyncReadExt::read(stream, &mut additional).await {
-                    Ok(n) => {
-                        if n == 0 {
-                            return Ok(buffer);
-                        }
-                        buffer.extend_from_slice(&additional[..n]);
-                        continue;
-                    }
-                    Err(_) => return Ok(buffer),
-                }
-            } else {
-                buffer.truncate(header_end);
-                return Ok(buffer);
-            }
-        }
-
-        let mut additional = vec![0u8; 8192];
-        match tokio::io::AsyncReadExt::read(stream, &mut additional).await {
-            Ok(n) => {
-                if n == 0 {
-                    return Ok(buffer);
-                }
-                buffer.extend_from_slice(&additional[..n]);
-            }
-            Err(_) => return Ok(buffer),
-        }
-    }
-}
-
-async fn read_complete_response(stream: &mut TcpStream) -> Result<Vec<u8>, std::io::Error> {
-    let mut buffer = Vec::new();
-
-    loop {
-        if let Some(header_end) = find_header_end(&buffer) {
-            let content_length = parse_content_length(&buffer[..header_end]);
-            if let Some(cl) = content_length {
-                let body_start = header_end;
-                let body_end = body_start + cl;
-                if buffer.len() >= body_end {
-                    buffer.truncate(body_end);
-                    return Ok(buffer);
-                }
-                let needed = body_end - buffer.len();
-                let mut additional = vec![0u8; needed];
-                match tokio::io::AsyncReadExt::read(stream, &mut additional).await {
-                    Ok(n) => {
-                        if n == 0 {
-                            return Ok(buffer);
-                        }
-                        buffer.extend_from_slice(&additional[..n]);
-                        continue;
-                    }
-                    Err(_) => return Ok(buffer),
-                }
-            } else {
-                return Ok(buffer);
-            }
-        }
-
-        let mut additional = vec![0u8; 16384];
-        match tokio::io::AsyncReadExt::read(stream, &mut additional).await {
-            Ok(n) => {
-                if n == 0 {
-                    return Ok(buffer);
-                }
-                buffer.extend_from_slice(&additional[..n]);
-            }
-            Err(_) => return Ok(buffer),
-        }
-    }
+    (status, status_text, header_end)
 }
 
 async fn handle_http_request(
@@ -1361,13 +1505,8 @@ async fn handle_http_request(
         }
     }
 
-    let response_body = if response_buf.len() > response_body_offset {
-        let body_start = resp_lines[..response_body_offset].join("\n").len() + response_body_offset;
-        if body_start < response_buf.len() {
-            Some(String::from_utf8_lossy(&response_buf[body_start..]).to_string())
-        } else {
-            None
-        }
+    let response_body = if let Some(body_start) = find_body_start(&response_buf, response_body_offset) {
+        Some(String::from_utf8_lossy(&response_buf[body_start..]).to_string())
     } else {
         None
     };

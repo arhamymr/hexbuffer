@@ -451,16 +451,6 @@ pub struct ParsedRequest {
     pub raw: String,
 }
 
-#[derive(Clone, Serialize, Deserialize)]
-pub struct ParsedResponse {
-    pub status: u16,
-    pub status_text: String,
-    pub headers: Vec<(String, String)>,
-    pub body: Option<String>,
-    pub body_size: usize,
-    pub content_type: Option<String>,
-}
-
 fn parse_request_for_logger(
     method: &str,
     uri: &str,
@@ -1072,7 +1062,7 @@ async fn handle_connect_mitm(mut stream: TcpStream, initial_data: &[u8], app_han
 async fn handle_mitm_request(
     host: String,
     _port: u16,
-    mut request_data: Vec<u8>,
+    request_data: Vec<u8>,
     method: String,
     path: String,
     http_version: String,
@@ -1117,7 +1107,7 @@ async fn handle_mitm_request(
 
     let req_body = body.and_then(|b| String::from_utf8(b.to_vec()).ok());
     let api_call_id = format!("call_{}_{}", timestamp, rand_id());
-    let api_call_session = format!("session_{}", timestamp);
+    let _api_call_session = format!("session_{}", timestamp);
 
     let upstream_addr = format!("{}:443", host);
     log::info!("[MITM] Connecting to {}", upstream_addr);
@@ -1148,7 +1138,7 @@ async fn handle_mitm_request(
     log::info!("[MITM] Reading response from upstream");
     let mut response_buf = Vec::new();
     let mut body_offset = 0;
-    let mut status_line = String::new();
+    let mut _status_line = String::new();
     let mut response_headers_map = HashMap::new();
 
     loop {
@@ -1164,7 +1154,7 @@ async fn handle_mitm_request(
                         let resp_lines: Vec<&str> = header_str.lines().collect();
 
                         if !resp_lines.is_empty() {
-                            status_line = resp_lines[0].to_string();
+                            _status_line = resp_lines[0].to_string();
                         }
 
                         for line in resp_lines.iter().skip(1) {
@@ -1245,7 +1235,7 @@ let req_headers: Vec<(String, String)> = headers.clone().into_iter().map(|(k, v)
 
     let sec_fetch_mode = headers.get("sec-fetch-mode").map(|s| s.as_str());
     let accept = headers.get("accept").map(|s| s.as_str());
-    let request_type = RequestType::from_headers(sec_fetch_mode, accept, None, &url);
+    let _request_type = RequestType::from_headers(sec_fetch_mode, accept, None, &url);
 
     let req_body_size = body.map(|b| b.len()).unwrap_or(0);
 
@@ -1369,7 +1359,7 @@ async fn handle_http_request(
     let peer_addr = stream.peer_addr().unwrap_or(SocketAddr::from(([0, 0, 0, 0], 0)));
     let url = format!("http://{}{}", host, path);
 
-    let parsed_req = parse_request_for_logger(
+    let _parsed_req = parse_request_for_logger(
         &method,
         &url,
         &http_version,
@@ -1386,16 +1376,16 @@ async fn handle_http_request(
 
     let sec_fetch_mode = headers.get("sec-fetch-mode").map(|s| s.as_str());
     let accept = headers.get("accept").map(|s| s.as_str());
-    let request_type = RequestType::from_headers(sec_fetch_mode, accept, None, &url);
+    let _request_type = RequestType::from_headers(sec_fetch_mode, accept, None, &url);
     let req_body = body.and_then(|b| String::from_utf8(b.to_vec()).ok());
-    let req_query_params = parse_query_params(&url);
+    let _req_query_params = parse_query_params(&url);
 
     let api_call_id = format!("call_{}_{}", timestamp, rand_id());
-    let api_call_session = format!("session_{}", timestamp);
+    let _api_call_session = format!("session_{}", timestamp);
     let api_call_method = method.clone();
     let api_call_url = url.clone();
     let api_call_host = host.clone();
-    let api_call_path = path.clone();
+    let _api_call_path = path.clone();
     let api_call_headers = headers.clone();
 
     let dest_addr = format!("{}:80", host);

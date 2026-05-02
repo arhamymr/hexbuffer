@@ -102,6 +102,31 @@ export function LogEntryContextMenu({ log, children, onToggle, activeTargetId }:
     }
   };
 
+  const handleOpenInBruteForce = () => {
+    if (proxyData) {
+      const protocol = proxyData.port === 443 ? 'https' : 'http';
+      const port = proxyData.port === 443 || proxyData.port === 80 ? '' : `:${proxyData.port}`;
+      const fullUrl = `${protocol}://${proxyData.host}${port}${proxyData.url}`;
+
+      const headersObj: Record<string, string> = {};
+      if (proxyData.request_headers) {
+        for (const [k, v] of proxyData.request_headers) {
+          headersObj[k] = v;
+        }
+      }
+
+      const request = {
+        method: proxyData.method || 'GET',
+        url: fullUrl,
+        headers: headersObj,
+        body: proxyData.request_body || '',
+      };
+
+      useAppStore.getState().setPendingBruteForceRequest(request);
+      router.push('/brute-force');
+    }
+  };
+
   const handleDelete = () => {
     const removeLog = useTrafficStore.getState().removeLog;
     removeLog(log.id);
@@ -137,6 +162,9 @@ export function LogEntryContextMenu({ log, children, onToggle, activeTargetId }:
         </ContextMenuItem>
         <ContextMenuItem onClick={handleOpenInRepeater}>
           <ExternalLink className="mr-2 h-4 w-4" /> Open in Repeater
+        </ContextMenuItem>
+        <ContextMenuItem onClick={handleOpenInBruteForce}>
+          <ExternalLink className="mr-2 h-4 w-4" /> Open in Brute Force
         </ContextMenuItem>
         <ContextMenuSeparator />
         <ContextMenuItem onClick={onToggle}>

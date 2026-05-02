@@ -1,9 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { invoke } from '@tauri-apps/api/core';
-import { listen } from '@tauri-apps/api/event';
-import { Play, Square, Download, Upload, Trash2, Plus, X } from 'lucide-react';
+import { Play, Square, Download, Upload, Trash2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -19,107 +17,72 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import {
-  AttackConfig,
-  AttackMode,
-  PayloadType,
-  PayloadProcessingStep,
-  AttackResult,
-  AttackProgress,
-  createDefaultAttackConfig,
-} from './types';
+import { useBruteForceConfig, useBruteForceAttack } from './hooks';
 import { parseRawRequest } from '@/components/repeater/types';
-import type { Target } from '@/types';
+import { useAppStore } from '@/stores/appStore';
 import Editor from '@monaco-editor/react';
 
-interface BruteForcePageProps {
-  selectedTarget: Target | null;
-}
+export function BruteForcePage() {
+  const {
+    config,
+    setConfig,
+    updateConfig,
+    updateAttackMode,
+    updatePayloadType,
+    updatePayloadValues,
+    updateNumberRange,
+    addProcessingStep,
+    removeProcessingStep,
+    updateGrepMatch,
+    updateGrepExtract,
+    updateSessionHandling,
+    setBaseRequest,
+  } = useBruteForceConfig();
 
-export function BruteForcePage({ selectedTarget }: BruteForcePageProps) {
-  const [config, setConfig] = React.useState<AttackConfig>(createDefaultAttackConfig());
-  const [results, setResults] = React.useState<AttackResult[]>([]);
-  const [isRunning, setIsRunning] = React.useState(false);
-  const [attackId, setAttackId] = React.useState<string | null>(null);
-  const [progress, setProgress] = React.useState<{ current: number; total: number } | null>(null);
-  const [selectedResult, setSelectedResult] = React.useState<AttackResult | null>(null);
+  const {
+    results,
+    isRunning,
+    progress,
+    selectedResult,
+    setSelectedResult,
+    startAttack,
+    stopAttack,
+    clearResults,
+  } = useBruteForceAttack();
+
   const [configDialogOpen, setConfigDialogOpen] = React.useState(false);
   const [rawRequestDialogOpen, setRawRequestDialogOpen] = React.useState(false);
   const [rawRequestContent, setRawRequestContent] = React.useState('');
   const [payloadDialogOpen, setPayloadDialogOpen] = React.useState(false);
-  const [filterStatus, setFilterStatus] = React.useState<string>('');
-  const [filterPayload, setFilterPayload] = React.useState<string>('');
-  const [filterGrep, setFilterGrep] = React.useState<boolean>(false);
+  const [filterStatus, setFilterStatus] = React.useState('');
+  const [filterPayload, setFilterPayload] = React.useState('');
+  const [filterGrep, setFilterGrep] = React.useState(false);
 
-  const unlistenProgress = React.useRef<(() => void) | null>(null);
-  const unlistenResult = React.useRef<(() => void) | null>(null);
+  const pendingRequest = useAppStore((s) => s.pendingBruteForceRequest);
 
   React.useEffect(() => {
-    return () => {
-      if (unlistenProgress.current) unlistenProgress.current();
-      if (unlistenResult.current) unlistenResult.current();
-    };
-  }, []);
-
-  const startAttack = async () => {
-    if (!config.base_request.url) return;
-
-    try {
-      const id = await invoke<string>('start_intruder_attack', { config });
-      setAttackId(id);
-      setIsRunning(true);
-      setResults([]);
-
-      unlistenProgress.current = await listen<AttackProgress>(
-        `intruder-progress-${id}`,
-        (event) => {
-          const p = event.payload;
-          if (p.type === 'Update' && p.current !== undefined && p.total !== undefined) {
-            setProgress({ current: p.current, total: p.total });
-          } else if (p.type === 'Complete') {
-            setIsRunning(false);
-            setProgress(null);
-          }
-        }
-      );
-
-      unlistenResult.current = await listen<AttackResult>(
-        `intruder-result-${id}`,
-        (event) => {
-          setResults((prev) => [...prev, event.payload]);
-        }
-      );
-    } catch (error) {
-      console.error('Failed to start attack:', error);
+    if (pendingRequest) {
+      setBaseRequest({
+        ...pendingRequest,
+        follow_redirects: true,
+        max_hops: 10,
+      } as any);
+      useAppStore.getState().setPendingBruteForceRequest(null);
     }
+  }, [pendingRequest, setBaseRequest]);
+
+  const handleStartAttack = () => {
+    startAttack(config);
   };
 
-  const stopAttack = async () => {
-    if (!attackId) return;
-
-    try {
-      await invoke('stop_intruder_attack', { attackId });
-      setIsRunning(false);
-      if (unlistenProgress.current) {
-        unlistenProgress.current();
-        unlistenProgress.current = null;
-      }
-      if (unlistenResult.current) {
-        unlistenResult.current();
-        unlistenResult.current = null;
-      }
-    } catch (error) {
-      console.error('Failed to stop attack:', error);
-    }
+  const handleStopAttack = () => {
+    stopAttack();
   };
 
   const handleParseRawRequest = () => {
     const parsed = parseRawRequest(rawRequestContent);
     if (parsed) {
-      setConfig((prev) => ({
-        ...prev,
-        base_request: parsed,
-      }));
+      setBaseRequest(parsed as any);
     }
     setRawRequestDialogOpen(false);
     setRawRequestContent('');
@@ -133,13 +96,7 @@ export function BruteForcePage({ selectedTarget }: BruteForcePageProps) {
     reader.onload = (event) => {
       const content = event.target?.result as string;
       const values = content.split('\n').filter((line) => line.trim());
-      setConfig((prev) => ({
-        ...prev,
-        payload_config: {
-          ...prev.payload_config,
-          values,
-        },
-      }));
+      updatePayloadValues(values);
     };
     reader.readAsText(file);
   };
@@ -154,7 +111,7 @@ export function BruteForcePage({ selectedTarget }: BruteForcePageProps) {
     return true;
   });
 
-  const exportResults = (format: 'csv' | 'json') => {
+  const handleExportResults = (format: 'csv' | 'json') => {
     if (format === 'json') {
       const data = JSON.stringify(results, null, 2);
       const blob = new Blob([data], { type: 'application/json' });
@@ -184,26 +141,6 @@ export function BruteForcePage({ selectedTarget }: BruteForcePageProps) {
       a.click();
       URL.revokeObjectURL(url);
     }
-  };
-
-  const addProcessingStep = (step: PayloadProcessingStep) => {
-    setConfig((prev) => ({
-      ...prev,
-      payload_config: {
-        ...prev.payload_config,
-        processing: [...prev.payload_config.processing, step],
-      },
-    }));
-  };
-
-  const removeProcessingStep = (index: number) => {
-    setConfig((prev) => ({
-      ...prev,
-      payload_config: {
-        ...prev.payload_config,
-        processing: prev.payload_config.processing.filter((_, i) => i !== index),
-      },
-    }));
   };
 
   const formatPayloadValues = (payloadValues: Record<string, string>) => {
@@ -239,12 +176,12 @@ export function BruteForcePage({ selectedTarget }: BruteForcePageProps) {
           </Button>
           <div className="h-6 w-px bg-border" />
           {isRunning ? (
-            <Button variant="destructive" size="sm" onClick={stopAttack}>
+            <Button variant="destructive" size="sm" onClick={handleStopAttack}>
               <Square className="h-4 w-4 mr-1" />
               Stop
             </Button>
           ) : (
-            <Button size="sm" onClick={startAttack} disabled={!config.base_request.url}>
+            <Button size="sm" onClick={handleStartAttack} disabled={!config.base_request.url}>
               <Play className="h-4 w-4 mr-1" />
               Start Attack
             </Button>
@@ -297,15 +234,15 @@ export function BruteForcePage({ selectedTarget }: BruteForcePageProps) {
           <Label htmlFor="filterGrep" className="text-xs cursor-pointer">Grep Match Only</Label>
         </div>
         <div className="flex-1" />
-        <Button variant="outline" size="sm" onClick={() => exportResults('csv')} disabled={results.length === 0}>
+        <Button variant="outline" size="sm" onClick={() => handleExportResults('csv')} disabled={results.length === 0}>
           <Download className="h-4 w-4 mr-1" />
           CSV
         </Button>
-        <Button variant="outline" size="sm" onClick={() => exportResults('json')} disabled={results.length === 0}>
+        <Button variant="outline" size="sm" onClick={() => handleExportResults('json')} disabled={results.length === 0}>
           <Download className="h-4 w-4 mr-1" />
           JSON
         </Button>
-        <Button variant="outline" size="sm" onClick={() => setResults([])} disabled={results.length === 0}>
+        <Button variant="outline" size="sm" onClick={clearResults} disabled={results.length === 0}>
           <Trash2 className="h-4 w-4 mr-1" />
           Clear
         </Button>
@@ -492,16 +429,14 @@ export function BruteForcePage({ selectedTarget }: BruteForcePageProps) {
                   <Label>Attack Name</Label>
                   <Input
                     value={config.name}
-                    onChange={(e) => setConfig((prev) => ({ ...prev, name: e.target.value }))}
+                    onChange={(e) => updateConfig({ name: e.target.value })}
                   />
                 </div>
                 <div className="grid gap-2">
                   <Label>Attack Mode</Label>
                   <Select
                     value={config.mode}
-                    onValueChange={(value) =>
-                      setConfig((prev) => ({ ...prev, mode: value as AttackMode }))
-                    }
+                    onValueChange={(value) => updateAttackMode(value as any)}
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -522,9 +457,7 @@ export function BruteForcePage({ selectedTarget }: BruteForcePageProps) {
                   <Input
                     type="number"
                     value={config.concurrency}
-                    onChange={(e) =>
-                      setConfig((prev) => ({ ...prev, concurrency: parseInt(e.target.value) || 1 }))
-                    }
+                    onChange={(e) => updateConfig({ concurrency: parseInt(e.target.value) || 1 })}
                   />
                 </div>
                 <div className="grid gap-2">
@@ -532,9 +465,7 @@ export function BruteForcePage({ selectedTarget }: BruteForcePageProps) {
                   <Input
                     type="number"
                     value={config.delay_ms}
-                    onChange={(e) =>
-                      setConfig((prev) => ({ ...prev, delay_ms: parseInt(e.target.value) || 0 }))
-                    }
+                    onChange={(e) => updateConfig({ delay_ms: parseInt(e.target.value) || 0 })}
                   />
                 </div>
                 <div className="grid gap-2">
@@ -543,10 +474,7 @@ export function BruteForcePage({ selectedTarget }: BruteForcePageProps) {
                     type="number"
                     value={config.delay_max_ms || ''}
                     onChange={(e) =>
-                      setConfig((prev) => ({
-                        ...prev,
-                        delay_max_ms: e.target.value ? parseInt(e.target.value) : undefined,
-                      }))
+                      updateConfig({ delay_max_ms: e.target.value ? parseInt(e.target.value) : undefined })
                     }
                     placeholder="Optional"
                   />
@@ -556,9 +484,7 @@ export function BruteForcePage({ selectedTarget }: BruteForcePageProps) {
                   <Input
                     type="number"
                     value={config.retries}
-                    onChange={(e) =>
-                      setConfig((prev) => ({ ...prev, retries: parseInt(e.target.value) || 0 }))
-                    }
+                    onChange={(e) => updateConfig({ retries: parseInt(e.target.value) || 0 })}
                   />
                 </div>
               </div>
@@ -569,15 +495,7 @@ export function BruteForcePage({ selectedTarget }: BruteForcePageProps) {
                 <Label>Payload Type</Label>
                 <Select
                   value={config.payload_config.payload_type}
-                  onValueChange={(value) =>
-                    setConfig((prev) => ({
-                      ...prev,
-                      payload_config: {
-                        ...prev.payload_config,
-                        payload_type: value as PayloadType,
-                      },
-                    }))
-                  }
+                  onValueChange={(value) => updatePayloadType(value as any)}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -597,15 +515,7 @@ export function BruteForcePage({ selectedTarget }: BruteForcePageProps) {
                     className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono h-32"
                     placeholder="payload1&#10;payload2&#10;payload3"
                     value={config.payload_config.values.join('\n')}
-                    onChange={(e) =>
-                      setConfig((prev) => ({
-                        ...prev,
-                        payload_config: {
-                          ...prev.payload_config,
-                          values: e.target.value.split('\n').filter((v) => v.trim()),
-                        },
-                      }))
-                    }
+                    onChange={(e) => updatePayloadValues(e.target.value.split('\n').filter((v) => v.trim()))}
                   />
                   <div className="flex gap-2">
                     <Button variant="outline" size="sm" onClick={() => setPayloadDialogOpen(true)}>
@@ -622,15 +532,7 @@ export function BruteForcePage({ selectedTarget }: BruteForcePageProps) {
                     <Input
                       type="number"
                       value={config.payload_config.number_start || 0}
-                      onChange={(e) =>
-                        setConfig((prev) => ({
-                          ...prev,
-                          payload_config: {
-                            ...prev.payload_config,
-                            number_start: parseInt(e.target.value) || 0,
-                          },
-                        }))
-                      }
+                      onChange={(e) => updateNumberRange({ number_start: parseInt(e.target.value) || 0 })}
                     />
                   </div>
                   <div className="grid gap-2">
@@ -638,15 +540,7 @@ export function BruteForcePage({ selectedTarget }: BruteForcePageProps) {
                     <Input
                       type="number"
                       value={config.payload_config.number_end || 100}
-                      onChange={(e) =>
-                        setConfig((prev) => ({
-                          ...prev,
-                          payload_config: {
-                            ...prev.payload_config,
-                            number_end: parseInt(e.target.value) || 100,
-                          },
-                        }))
-                      }
+                      onChange={(e) => updateNumberRange({ number_end: parseInt(e.target.value) || 100 })}
                     />
                   </div>
                   <div className="grid gap-2">
@@ -654,30 +548,14 @@ export function BruteForcePage({ selectedTarget }: BruteForcePageProps) {
                     <Input
                       type="number"
                       value={config.payload_config.number_step || 1}
-                      onChange={(e) =>
-                        setConfig((prev) => ({
-                          ...prev,
-                          payload_config: {
-                            ...prev.payload_config,
-                            number_step: parseInt(e.target.value) || 1,
-                          },
-                        }))
-                      }
+                      onChange={(e) => updateNumberRange({ number_step: parseInt(e.target.value) || 1 })}
                     />
                   </div>
                   <div className="grid gap-2">
                     <Label>Format</Label>
                     <Input
                       value={config.payload_config.number_format || '{}'}
-                      onChange={(e) =>
-                        setConfig((prev) => ({
-                          ...prev,
-                          payload_config: {
-                            ...prev.payload_config,
-                            number_format: e.target.value,
-                          },
-                        }))
-                      }
+                      onChange={(e) => updateNumberRange({ number_format: e.target.value })}
                       placeholder="{}"
                     />
                   </div>
@@ -737,45 +615,21 @@ export function BruteForcePage({ selectedTarget }: BruteForcePageProps) {
                   <Checkbox
                     id="grepMatchEnabled"
                     checked={config.grep_match.enabled}
-                    onCheckedChange={(checked) =>
-                      setConfig((prev) => ({
-                        ...prev,
-                        grep_match: {
-                          ...prev.grep_match,
-                          enabled: checked as boolean,
-                        },
-                      }))
-                    }
+                    onCheckedChange={(checked) => updateGrepMatch(checked as boolean, config.grep_match.keyword, config.grep_match.case_sensitive)}
                   />
                   <div className="grid gap-2 flex-1">
                     <Label htmlFor="grepMatchEnabled">Grep - Match</Label>
                     <Input
                       placeholder="Keyword to search in response..."
                       value={config.grep_match.keyword}
-                      onChange={(e) =>
-                        setConfig((prev) => ({
-                          ...prev,
-                          grep_match: {
-                            ...prev.grep_match,
-                            keyword: e.target.value,
-                          },
-                        }))
-                      }
+                      onChange={(e) => updateGrepMatch(config.grep_match.enabled, e.target.value, config.grep_match.case_sensitive)}
                       disabled={!config.grep_match.enabled}
                     />
                     <div className="flex items-center gap-2">
                       <Checkbox
                         id="grepMatchCaseSensitive"
                         checked={config.grep_match.case_sensitive}
-                        onCheckedChange={(checked) =>
-                          setConfig((prev) => ({
-                            ...prev,
-                            grep_match: {
-                              ...prev.grep_match,
-                              case_sensitive: checked as boolean,
-                            },
-                          }))
-                        }
+                        onCheckedChange={(checked) => updateGrepMatch(config.grep_match.enabled, config.grep_match.keyword, checked as boolean)}
                         disabled={!config.grep_match.enabled}
                       />
                       <Label htmlFor="grepMatchCaseSensitive" className="text-xs">Case Sensitive</Label>
@@ -787,44 +641,20 @@ export function BruteForcePage({ selectedTarget }: BruteForcePageProps) {
                   <Checkbox
                     id="grepExtractEnabled"
                     checked={config.grep_extract.enabled}
-                    onCheckedChange={(checked) =>
-                      setConfig((prev) => ({
-                        ...prev,
-                        grep_extract: {
-                          ...prev.grep_extract,
-                          enabled: checked as boolean,
-                        },
-                      }))
-                    }
+                    onCheckedChange={(checked) => updateGrepExtract(checked as boolean, config.grep_extract.regex, config.grep_extract.replacement)}
                   />
                   <div className="grid gap-2 flex-1">
                     <Label htmlFor="grepExtractEnabled">Grep - Extract</Label>
                     <Input
                       placeholder='Regex pattern (e.g., csrf_token" value="([^"]+)")...'
                       value={config.grep_extract.regex}
-                      onChange={(e) =>
-                        setConfig((prev) => ({
-                          ...prev,
-                          grep_extract: {
-                            ...prev.grep_extract,
-                            regex: e.target.value,
-                          },
-                        }))
-                      }
+                      onChange={(e) => updateGrepExtract(config.grep_extract.enabled, e.target.value, config.grep_extract.replacement)}
                       disabled={!config.grep_extract.enabled}
                     />
                     <Input
                       placeholder="Replacement (optional, leave empty to capture full match)..."
                       value={config.grep_extract.replacement || ''}
-                      onChange={(e) =>
-                        setConfig((prev) => ({
-                          ...prev,
-                          grep_extract: {
-                            ...prev.grep_extract,
-                            replacement: e.target.value || undefined,
-                          },
-                        }))
-                      }
+                      onChange={(e) => updateGrepExtract(config.grep_extract.enabled, config.grep_extract.regex, e.target.value || undefined)}
                       disabled={!config.grep_extract.enabled}
                     />
                   </div>
@@ -834,44 +664,20 @@ export function BruteForcePage({ selectedTarget }: BruteForcePageProps) {
                   <Checkbox
                     id="sessionEnabled"
                     checked={config.session_handling.enabled}
-                    onCheckedChange={(checked) =>
-                      setConfig((prev) => ({
-                        ...prev,
-                        session_handling: {
-                          ...prev.session_handling,
-                          enabled: checked as boolean,
-                        },
-                      }))
-                    }
+                    onCheckedChange={(checked) => updateSessionHandling(checked as boolean, config.session_handling.extract_token_name, config.session_handling.update_header_name)}
                   />
                   <div className="grid gap-2 flex-1">
                     <Label htmlFor="sessionEnabled">Session Handling</Label>
                     <Input
                       placeholder="Token/Cookie name to extract..."
                       value={config.session_handling.extract_token_name || ''}
-                      onChange={(e) =>
-                        setConfig((prev) => ({
-                          ...prev,
-                          session_handling: {
-                            ...prev.session_handling,
-                            extract_token_name: e.target.value || undefined,
-                          },
-                        }))
-                      }
+                      onChange={(e) => updateSessionHandling(config.session_handling.enabled, e.target.value || undefined, config.session_handling.update_header_name)}
                       disabled={!config.session_handling.enabled}
                     />
                     <Input
                       placeholder="Header name to update (e.g., Authorization)..."
                       value={config.session_handling.update_header_name || ''}
-                      onChange={(e) =>
-                        setConfig((prev) => ({
-                          ...prev,
-                          session_handling: {
-                            ...prev.session_handling,
-                            update_header_name: e.target.value || undefined,
-                          },
-                        }))
-                      }
+                      onChange={(e) => updateSessionHandling(config.session_handling.enabled, config.session_handling.extract_token_name, e.target.value || undefined)}
                       disabled={!config.session_handling.enabled}
                     />
                   </div>

@@ -92,7 +92,7 @@
 }
 
 .dark {
-  --background: oklch(0.0 0 0);
+  --background: oklch(14.115% 0.02895 166.963);
   /* Pure black like 404 page */
   --foreground: oklch(1.0 0 0);
   /* Pure white */

@@ -670,7 +670,7 @@ async fn send_with_retry(
 
                 if grep_extract.enabled && !grep_extract.regex.is_empty() {
                     if let Some(captures) = regex_match(&grep_extract.regex, &resp.body) {
-                        if let Some(replacement) = &grep_extract.replacement {
+                        if let Some(_replacement) = &grep_extract.replacement {
                             if let Some(cap) = captures.get(1) {
                                 grep_extracted = Some(cap.as_str().to_string());
                             }

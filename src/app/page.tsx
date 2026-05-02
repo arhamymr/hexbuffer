@@ -43,7 +43,7 @@ export default function HomePage() {
 
   return (
     <div className="h-full flex flex-col border-b">
-      <div className="flex items-center gap-2 mb-4">
+      <div className="flex items-center gap-2 mb-2">
         <TabBar route={pathname} />
         <TargetSelectorDialog
           existingTargets={targets}

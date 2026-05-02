@@ -39,8 +39,7 @@ export function formatTimestamp(timestamp: string | number) {
     minute: '2-digit',
     second: '2-digit',
   });
-  const m = date.getMilliseconds().toString().padStart(3, '0');
-  return `${time}.${m}`;
+  return time;
 }
 
 export function getMethodBadge(method: string) {

@@ -29,7 +29,7 @@ import { Button } from './ui/button';
 const mainNavItems = [
   { label: 'Proxy', icon: TargetIcon, href: '/' },
   { label: 'Repeater', icon: Send, href: '/repeater' },
-  { label: 'Brute Force', icon: Crosshair, href: '/intruder' },
+  { label: 'Brute Force', icon: Crosshair, href: '/brute-force' },
   { label: 'History', icon: History, href: '/history' },
   { label: 'Debugger', icon: Bug, href: '/debugger' },
 ];
@@ -81,7 +81,7 @@ function FooterButtons() {
       <SidebarMenuItem>
         <SidebarMenuButton onClick={toggleTheme} tooltip={theme === 'dark' ? 'Light Mode' : 'Dark Mode'}>
           {theme === 'dark' ? <Sun className="size-4 shrink-0" /> : <Moon className="size-4 shrink-0" />}
-          <span className="ml-2 group-data-[collapsible=icon]:hidden">{theme === 'dark' ? 'Light' : 'Dark'}</span>
+          <span className="group-data-[collapsible=icon]:hidden">{theme === 'dark' ? 'Light' : 'Dark'}</span>
         </SidebarMenuButton>
       </SidebarMenuItem>
       <SidebarMenuItem>
@@ -128,7 +128,7 @@ export function AppLayout({ children }: { children?: React.ReactNode }) {
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
-        <div className="flex flex-col gap-4 p-4">{children}</div>
+        <div className="flex flex-col gap-4 p-4 h-full h-min-[100%]">{children}</div>
         <Footer />
       </SidebarInset>
     </SidebarProvider>

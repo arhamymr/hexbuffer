@@ -25,7 +25,7 @@ export function TabBar({ route, className }: TabBarProps) {
   if (tabs.length === 0) return null;
 
   return (
-    <div className={cn('flex items-center gap-1 bg-muted/30 p-1 overflow-x-auto', className)}>
+    <div className={cn('flex items-center gap-1 bg-muted/30 overflow-x-auto', className)}>
       <div className="flex items-center gap-1 flex-1 min-w-0">
         {tabs.map((tab) => (
           <TabItem
@@ -58,7 +58,7 @@ function TabItem({ tab, isActive, onClick, onClose }: TabItemProps) {
       className={cn(
         'flex items-center gap-2 px-3 py-1.5 rounded-md text-sm transition-colors min-w-0',
         'hover:bg-muted/50',
-        isActive ? 'bg-background shadow-sm font-medium' : 'text-muted-foreground'
+        isActive ? 'bg-background shadow-sm font-medium border' : 'text-muted-foreground'
       )}
     >
       <span className="truncate max-w-[150px]">{tab.targetName}</span>

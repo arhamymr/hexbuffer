@@ -32,7 +32,7 @@ interface RepeaterPageProps {
 }
 
 export function RepeaterPage({ initialRequest }: RepeaterPageProps) {
-  const [tabs, setTabs] = React.useState<RepeaterTab[]>(
+  const [tabs, setTabs] = React.useState<RepeaterTab[]>(() =>
     initialRequest ? [createTabWithRequest(initialRequest)] : [createNewTab()]
   );
   const [activeTabId, setActiveTabId] = React.useState<string>(tabs[0].id);

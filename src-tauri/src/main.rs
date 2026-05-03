@@ -12,13 +12,18 @@ use std::sync::Arc;
 use parking_lot::RwLock;
 use tauri::Emitter;
 use tokio::sync::{mpsc, RwLock as TokioRwLock};
+use tokio_util::sync::CancellationToken;
 
 pub use cert::CertManager;
 pub use db::{Call, Database, Finding};
-pub use intruder::{AttackConfig, AttackProgress, AttackResult, AttackMode, GrepMatchConfig, GrepExtractConfig, IntruderEngine, PayloadConfig, PayloadPosition, PayloadProcessingStep, PayloadType, SessionHandlingConfig};
-pub use proxy::{ApiCall, ProxyConnection, ProxyServer, ProxyState};
+pub use intruder::{AttackConfig, AttackProgress, AttackResult, IntruderEngine, PayloadConfig, PayloadPosition, PayloadType};
+pub use proxy::{ApiCall, ProxyConnection, ProxyServer, ProxyState, InterceptConfig};
 pub use repeater::{HttpRequest, HttpResponse, Repeater};
 pub use target::{Target, TargetManager};
+
+use crate::proxy::intercept::InterceptConfig as InterceptConfigTrait;
+use crate::proxy::types::InterceptDecision;
+use crate::proxy::events::ProxyEvent;
 
 pub struct AppState {
     pub proxy: Arc<RwLock<ProxyState>>,
@@ -28,6 +33,9 @@ pub struct AppState {
     pub repeater: Arc<Repeater>,
     pub intruder_engine: Arc<IntruderEngine>,
     pub active_attacks: Arc<TokioRwLock<std::collections::HashMap<String, bool>>>,
+    pub cancel_token: CancellationToken,
+    pub intercept_config: Arc<InterceptConfig>,
+    pub event_tx: Arc<parking_lot::Mutex<Option<mpsc::Sender<ProxyEvent>>>>,
 }
 
 impl Default for AppState {
@@ -41,6 +49,9 @@ impl Default for AppState {
             repeater: Arc::new(Repeater::new()),
             intruder_engine: Arc::new(IntruderEngine::new()),
             active_attacks: Arc::new(TokioRwLock::new(std::collections::HashMap::new())),
+            cancel_token: CancellationToken::new(),
+            intercept_config: InterceptConfig::new(),
+            event_tx: Arc::new(parking_lot::Mutex::new(None)),
         }
     }
 }
@@ -67,8 +78,11 @@ async fn start_proxy(
     proxy_state.port = Some(port);
 
     let app_handle = app.clone();
+    let cancel_token = state.cancel_token.clone();
+    let intercept = state.intercept_config.clone();
+    let event_tx_arc = state.event_tx.clone();
     tokio::spawn(async move {
-        if let Err(e) = proxy.start(app_handle).await {
+        if let Err(e) = proxy.start(app_handle, cancel_token, intercept, event_tx_arc).await {
             log::error!("Proxy server error: {}", e);
         }
     });
@@ -79,6 +93,7 @@ async fn start_proxy(
 #[tauri::command]
 async fn stop_proxy(state: tauri::State<'_, AppState>) -> Result<String, String> {
     log::info!("Stopping proxy server");
+    state.cancel_token.cancel();
     let mut proxy_state = state.proxy.write();
     proxy_state.running = false;
     proxy_state.port = None;
@@ -89,6 +104,88 @@ async fn stop_proxy(state: tauri::State<'_, AppState>) -> Result<String, String>
 fn get_proxy_status(state: tauri::State<'_, AppState>) -> Result<ProxyState, String> {
     let proxy_state = state.proxy.read();
     Ok(proxy_state.clone())
+}
+
+#[tauri::command]
+fn enable_intercept(state: tauri::State<'_, AppState>) -> Result<bool, String> {
+    state.intercept_config.set_enabled(true);
+    Ok(true)
+}
+
+#[tauri::command]
+fn disable_intercept(state: tauri::State<'_, AppState>) -> Result<bool, String> {
+    state.intercept_config.set_enabled(false);
+    Ok(true)
+}
+
+#[tauri::command]
+fn toggle_intercept(state: tauri::State<'_, AppState>) -> Result<bool, String> {
+    Ok(state.intercept_config.toggle())
+}
+
+#[tauri::command]
+fn get_intercept_status(state: tauri::State<'_, AppState>) -> Result<bool, String> {
+    Ok(state.intercept_config.is_enabled())
+}
+
+#[tauri::command]
+fn get_intercept_pending(state: tauri::State<'_, AppState>) -> Result<usize, String> {
+    Ok(state.intercept_config.pending_count())
+}
+
+#[tauri::command]
+fn resolve_intercept(
+    id: u64,
+    decision: InterceptDecisionInput,
+    state: tauri::State<'_, AppState>,
+) -> Result<bool, String> {
+    let decision = match decision.action.as_str() {
+        "forward" => InterceptDecision::forward(),
+        "modify" => {
+            let req = decision.request.ok_or("Missing request in modify decision")?;
+            InterceptDecision::modified(
+                req.method,
+                req.url,
+                req.headers.unwrap_or_default(),
+                req.body.unwrap_or_default(),
+            )
+        }
+        "block" => {
+            let resp = decision.response.ok_or("Missing response in block decision")?;
+            InterceptDecision::block(
+                resp.status.unwrap_or(418),
+                resp.status_text.unwrap_or_else(|| "I'm a teapot".to_string()),
+                resp.headers.unwrap_or_default(),
+                resp.body.unwrap_or_default(),
+            )
+        }
+        _ => return Err(format!("Unknown action: {}", decision.action)),
+    };
+
+    Ok(state.intercept_config.resolve(id, decision))
+}
+
+#[derive(serde::Deserialize)]
+struct InterceptDecisionInput {
+    action: String,
+    request: Option<InterceptModifyRequest>,
+    response: Option<InterceptBlockResponse>,
+}
+
+#[derive(serde::Deserialize)]
+struct InterceptModifyRequest {
+    method: String,
+    url: String,
+    headers: Option<std::collections::HashMap<String, String>>,
+    body: Option<String>,
+}
+
+#[derive(serde::Deserialize)]
+struct InterceptBlockResponse {
+    status: Option<u16>,
+    status_text: Option<String>,
+    headers: Option<std::collections::HashMap<String, String>>,
+    body: Option<String>,
 }
 
 #[tauri::command]
@@ -287,6 +384,12 @@ fn main() {
             start_proxy,
             stop_proxy,
             get_proxy_status,
+            enable_intercept,
+            disable_intercept,
+            toggle_intercept,
+            get_intercept_status,
+            get_intercept_pending,
+            resolve_intercept,
             get_targets,
             create_target,
             delete_target,

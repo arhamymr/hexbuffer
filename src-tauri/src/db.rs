@@ -45,10 +45,15 @@ pub struct Database {
 
 impl Database {
     pub fn new() -> Self {
-        let app_root = std::env::current_dir()
-            .unwrap_or_else(|_| PathBuf::from("."));
+        let data_dir = std::env::current_dir()
+            .unwrap_or_else(|_| PathBuf::from("."))
+            .join("data");
 
-        let db_path = app_root.join("apsara_data.db");
+        if !data_dir.exists() {
+            std::fs::create_dir_all(&data_dir).ok();
+        }
+
+        let db_path = data_dir.join("apsara_data.db");
         let conn = Connection::open(&db_path).expect("Failed to open database");
 
         let db = Self {

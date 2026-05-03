@@ -1,7 +1,12 @@
 use reqwest::{Client, Method, header::{HeaderMap, HeaderName, HeaderValue, CONTENT_LENGTH}};
 use std::time::{Duration, Instant};
+use std::collections::HashMap;
+use std::sync::Arc;
+use tokio::sync::mpsc;
 
 use super::types::{HttpRequest, HttpResponse};
+use crate::proxy::types::{ProxiedRequest, ProxiedResponse};
+use crate::proxy::events::{ProxyEvent, next_id};
 
 pub struct Repeater {
     client: Client,
@@ -95,6 +100,82 @@ impl Repeater {
                 final_url,
             });
         }
+    }
+
+    pub async fn replay_request(
+        &self,
+        request: &ProxiedRequest,
+        event_tx: mpsc::Sender<ProxyEvent>,
+    ) -> Result<ProxiedResponse, String> {
+        let id = next_id();
+        let start = Instant::now();
+
+        let method = Method::from_bytes(request.method.as_bytes())
+            .map_err(|_| format!("Invalid HTTP method: {}", request.method))?;
+
+        let headers = build_header_map(&request.headers)?;
+
+        let body = request.body.clone().unwrap_or_default();
+        let mut headers_with_content = headers;
+        if !body.is_empty() && !headers_with_content.contains_key(CONTENT_LENGTH) {
+            headers_with_content.insert(
+                CONTENT_LENGTH,
+                HeaderValue::from_str(&body.len().to_string()).unwrap(),
+            );
+        }
+
+        let url = reqwest::Url::parse(&request.url)
+            .map_err(|e| format!("Invalid URL: {}", e))?;
+
+        let mut req_builder = self.client.request(method, url.as_str())
+            .headers(headers_with_content);
+
+        if !body.is_empty() {
+            req_builder = req_builder.body(body);
+        }
+
+        let response = req_builder.send().await
+            .map_err(|e| {
+                let event = ProxyEvent::error(id, format!("Replay failed: {}", e), "replay".to_string(), Some(request.url.clone()));
+                let _ = event_tx.try_send(event);
+                format!("Request failed: {}", e)
+            })?;
+
+        let status = response.status().as_u16();
+        let status_text = response.status().canonical_reason().unwrap_or("Unknown").to_string();
+
+        let mut response_headers: HashMap<String, String> = HashMap::new();
+        for (key, value) in response.headers() {
+            if let Ok(v) = value.to_str() {
+                response_headers.insert(key.to_string(), v.to_string());
+            }
+        }
+
+        let response_body = response.text().await
+            .map_err(|e| format!("Failed to read response body: {}", e))?;
+
+        let time_ms = start.elapsed().as_millis() as u64;
+        let size = response_body.len();
+
+        let proxied_response = ProxiedResponse::new(
+            status,
+            status_text,
+            request.version.clone(),
+            response_headers,
+            Some(response_body),
+            chrono::Local::now().timestamp_millis(),
+        );
+
+        let event = ProxyEvent::replay_complete(
+            id,
+            request.clone(),
+            proxied_response.clone(),
+            time_ms,
+            size,
+        );
+        let _ = event_tx.try_send(event).map_err(|_| "Event channel full".to_string());
+
+        Ok(proxied_response)
     }
 }
 

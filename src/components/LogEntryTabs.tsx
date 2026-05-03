@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import type { ProxyLogEntry } from '@/stores/trafficStore';
+import type { ApiCall } from '@/types';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LogEntryDetails } from './LogEntryDetails';
 import { LogEntryHeaders } from './LogEntryHeaders';
@@ -12,10 +12,10 @@ import { LogEntryCurl } from './LogEntryCurl';
 type TabValue = 'details' | 'headers' | 'body' | 'cookies' | 'curl';
 
 interface LogEntryTabsProps {
-  proxyData: ProxyLogEntry;
+  call: ApiCall;
 }
 
-export function LogEntryTabs({ proxyData }: LogEntryTabsProps) {
+export function LogEntryTabs({ call }: LogEntryTabsProps) {
   const [activeTab, setActiveTab] = useState<TabValue>('details');
 
   return (
@@ -28,11 +28,11 @@ export function LogEntryTabs({ proxyData }: LogEntryTabsProps) {
         <TabsTrigger value="curl">cURL</TabsTrigger>
       </TabsList>
 
-      {activeTab === 'details' && <LogEntryDetails proxyData={proxyData} />}
-      {activeTab === 'headers' && <LogEntryHeaders proxyData={proxyData} />}
-      {activeTab === 'body' && <LogEntryBody proxyData={proxyData} />}
-      {activeTab === 'cookies' && <LogEntryCookies proxyData={proxyData} />}
-      {activeTab === 'curl' && <LogEntryCurl proxyData={proxyData} />}
+      {activeTab === 'details' && <LogEntryDetails call={call} />}
+      {activeTab === 'headers' && <LogEntryHeaders call={call} />}
+      {activeTab === 'body' && <LogEntryBody call={call} />}
+      {activeTab === 'cookies' && <LogEntryCookies call={call} />}
+      {activeTab === 'curl' && <LogEntryCurl call={call} />}
     </Tabs>
   );
 }

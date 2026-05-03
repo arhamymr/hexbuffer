@@ -7,7 +7,6 @@ mod intruder;
 mod proxy;
 mod repeater;
 mod target;
-mod websocket;
 
 use std::sync::Arc;
 use parking_lot::RwLock;
@@ -20,7 +19,6 @@ pub use intruder::{AttackConfig, AttackProgress, AttackResult, AttackMode, GrepM
 pub use proxy::{ApiCall, ProxyConnection, ProxyServer, ProxyState};
 pub use repeater::{HttpRequest, HttpResponse, Repeater};
 pub use target::{Target, TargetManager};
-pub use websocket::WsServer;
 
 pub struct AppState {
     pub proxy: Arc<RwLock<ProxyState>>,

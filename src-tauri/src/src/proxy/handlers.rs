@@ -71,7 +71,7 @@ pub async fn handle_http_request(mut stream: TcpStream, initial_data: &[u8], app
     let _ = stream.write_all(&response_buf).await;
 
     api_call = api_call.with_response(status, status_text, resp_headers.clone(), resp_body.clone(), resp_ct.clone());
-    let _ = app_handle.emit("api-call", &api_call);
+    let _ = app_handle.emit("http-log", &api_call);
     api_call.log_raw_data();
 }
 

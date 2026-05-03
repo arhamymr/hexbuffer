@@ -104,27 +104,6 @@ pub struct ParsedResponse {
     pub body: Option<String>, pub body_size: usize, pub content_type: Option<String>,
 }
 
-#[derive(Clone, Serialize, Deserialize)]
-pub enum WsDirection { ClientToServer, ServerToClient }
-
-#[derive(Clone, Serialize, Deserialize)]
-pub enum WsOpcode { Text, Binary, Ping, Pong, Close, Continuation }
-
-#[derive(Clone, Serialize, Deserialize)]
-pub struct WsFrame {
-    pub direction: WsDirection,
-    pub opcode: WsOpcode,
-    pub time: u64,
-    pub payload: bytes::Bytes,
-    pub truncated: bool,
-}
-
-impl WsFrame {
-    pub fn new(direction: WsDirection, opcode: WsOpcode, time: u64, payload: bytes::Bytes, truncated: bool) -> Self {
-        Self { direction, opcode, time, payload, truncated }
-    }
-}
-
 pub struct ProxyServer {
     port: u16,
     target_id: Option<String>,

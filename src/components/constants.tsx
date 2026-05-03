@@ -1,4 +1,4 @@
-import type { ProxyLogEntry } from '@/stores/trafficStore';
+import type { ApiCall } from '@/types';
 
 export const METHOD_FILTERS = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD'] as const;
 
@@ -79,20 +79,16 @@ export function parseCookieHeader(cookieString: string | null | undefined): { na
   });
 }
 
-export function buildCurlCommand(proxyData: ProxyLogEntry): string {
-  if (!proxyData) return '';
-  const lines: string[] = [`curl -X ${proxyData.method || 'GET'}`];
-  if (proxyData.request_headers) {
-    for (const [k, v] of proxyData.request_headers) {
-      lines.push(`  -H '${k}: ${v}'`);
-    }
+export function buildCurlCommand(call: ApiCall): string {
+  if (!call) return '';
+  const lines: string[] = [`curl -X ${call.method || 'GET'}`];
+  for (const [k, v] of Object.entries(call.headers)) {
+    lines.push(`  -H '${k}: ${v}'`);
   }
-  if (proxyData.request_body) {
-    const escaped = proxyData.request_body.replace(/'/g, "'\\''");
+  if (call.request_body) {
+    const escaped = call.request_body.replace(/'/g, "'\\''");
     lines.push(`  -d '${escaped}'`);
   }
-  const protocol = proxyData.port === 443 ? 'https' : 'http';
-  const port = proxyData.port === 443 || proxyData.port === 80 ? '' : `:${proxyData.port}`;
-  lines.push(`  '${protocol}://${proxyData.host}${port}${proxyData.url || '/'}'`);
+  lines.push(`  '${call.url}'`);
   return lines.join(' \\\n');
 }

@@ -43,6 +43,7 @@ export interface ApiCall {
 
   security_state: string;
   server_ip: string | null;
+  duration_ms: number | null;
 }
 
 export interface ProxyConnection {

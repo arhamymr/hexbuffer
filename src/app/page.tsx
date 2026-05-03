@@ -22,7 +22,7 @@ export default function HomePage() {
 
   const filterMode = useProxyStore((s) => s.filterMode);
   const setFilterMode = useProxyStore((s) => s.setFilterMode);
-  const clearLogs = useTrafficStore((s) => s.clearLogs);
+  const clearCalls = useTrafficStore((s) => s.clearCalls);
 
   const tabs = routeTabs[pathname] || [];
   const activeTab = (tabs.length > 0 && activeTabId[pathname])
@@ -75,7 +75,7 @@ export default function HomePage() {
           targets={targets}
           filterMode={filterMode}
           onFilterModeChange={setFilterMode}
-          clearLogs={clearLogs}
+          clearLogs={clearCalls}
           onTargetsUpdated={fetchTargets}
         />
       ) : null}

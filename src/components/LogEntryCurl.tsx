@@ -1,15 +1,15 @@
 'use client';
 
 import { useState } from 'react';
-import type { ProxyLogEntry } from '@/stores/trafficStore';
+import type { ApiCall } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Copy, Check } from 'lucide-react';
 
 interface LogEntryCurlProps {
-  proxyData: ProxyLogEntry;
+  call: ApiCall;
 }
 
-export function LogEntryCurl({ proxyData }: LogEntryCurlProps) {
+export function LogEntryCurl({ call }: LogEntryCurlProps) {
   const [copied, setCopied] = useState(false);
 
   const copyToClipboard = async (text: string) => {
@@ -22,7 +22,18 @@ export function LogEntryCurl({ proxyData }: LogEntryCurlProps) {
     }
   };
 
-  const curl = proxyData.curl;
+  const buildCurlCommand = (): string => {
+    let cmd = `curl -X ${call.method} '${call.url}'`;
+    for (const [k, v] of Object.entries(call.headers)) {
+      cmd += ` \\\n  -H '${k}: ${v}'`;
+    }
+    if (call.request_body) {
+      cmd += ` \\\n  -d '${call.request_body}'`;
+    }
+    return cmd;
+  };
+
+  const curl = buildCurlCommand();
 
   return (
     <div className="relative">
@@ -33,15 +44,11 @@ export function LogEntryCurl({ proxyData }: LogEntryCurlProps) {
           className="h-8 w-8"
           onClick={(e) => {
             e.stopPropagation();
-            if (curl) copyToClipboard(curl);
+            copyToClipboard(curl);
           }}
           title="Copy cURL"
         >
-          {copied ? (
-            <Check className="h-4 w-4 text-green-500" />
-          ) : (
-            <Copy className="h-4 w-4" />
-          )}
+          {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
         </Button>
       </div>
       <div className="bg-background p-3 rounded text-xs font-mono whitespace-pre-wrap overflow-auto max-h-48">

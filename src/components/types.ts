@@ -1,5 +1,3 @@
-export type { DebugLog, ProxyLogEntry } from '@/stores/trafficStore';
-
 export interface FilterState {
   search: string;
   methods: Set<string>;

@@ -1,17 +1,13 @@
-import type { ProxyLogEntry } from '@/stores/trafficStore';
+import type { ApiCall } from '@/types';
 import { CookieDisplay, parseCookieHeader } from './CookieDisplay';
 
 interface LogEntryCookiesProps {
-  proxyData: ProxyLogEntry;
+  call: ApiCall;
 }
 
-export function LogEntryCookies({ proxyData }: LogEntryCookiesProps) {
-  const requestCookies = parseCookieHeader(
-    proxyData.request_headers?.find(([k]) => k.toLowerCase() === 'cookie')?.[1]
-  );
-  const responseCookies = parseCookieHeader(
-    proxyData.response_headers?.find(([k]) => k.toLowerCase() === 'set-cookie')?.[1]
-  );
+export function LogEntryCookies({ call }: LogEntryCookiesProps) {
+  const requestCookies = parseCookieHeader(call.headers['cookie']);
+  const responseCookies = parseCookieHeader(call.response_headers['set-cookie']);
 
   return (
     <div className="space-y-3 text-xs font-mono">

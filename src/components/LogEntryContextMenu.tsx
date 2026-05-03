@@ -10,22 +10,24 @@ import {
   ContextMenuSeparator,
 } from '@/components/ui/context-menu';
 import { Copy, ExternalLink, Plus, Eye, Trash2 } from 'lucide-react';
-import type { DebugLog, ProxyLogEntry } from '@/stores/trafficStore';
-import { buildCurlCommand } from './constants';
+import type { ApiCall } from '@/types';
 import { useAppStore } from '@/stores/appStore';
 import { useTrafficStore } from '@/stores/trafficStore';
 
 interface LogEntryContextMenuProps {
-  log: DebugLog;
+  call: ApiCall;
   children: React.ReactNode;
   onToggle: () => void;
   activeTargetId?: string | null;
 }
 
-export function LogEntryContextMenu({ log, children, onToggle, activeTargetId }: LogEntryContextMenuProps) {
+export function LogEntryContextMenu({
+  call,
+  children,
+  onToggle,
+  activeTargetId,
+}: LogEntryContextMenuProps) {
   const router = useRouter();
-  const isProxyLog = log.type === 'proxy-log';
-  const proxyData = isProxyLog ? log.data as ProxyLogEntry : null;
 
   const copyToClipboard = async (text: string | null | undefined) => {
     if (text) {
@@ -33,39 +35,38 @@ export function LogEntryContextMenu({ log, children, onToggle, activeTargetId }:
     }
   };
 
-  const handleCopyCurl = () => {
-    if (proxyData) {
-      copyToClipboard(buildCurlCommand(proxyData));
+  const buildCurlCommand = (call: ApiCall): string => {
+    let cmd = `curl -X ${call.method} '${call.url}'`;
+    for (const [k, v] of Object.entries(call.headers)) {
+      cmd += ` \\\n  -H '${k}: ${v}'`;
     }
+    if (call.request_body) {
+      cmd += ` \\\n  -d '${call.request_body}'`;
+    }
+    return cmd;
+  };
+
+  const handleCopyCurl = () => {
+    copyToClipboard(buildCurlCommand(call));
   };
 
   const handleCopyUrl = () => {
-    if (proxyData?.url) {
-      const protocol = proxyData.port === 443 ? 'https' : 'http';
-      const port = proxyData.port === 443 || proxyData.port === 80 ? '' : `:${proxyData.port}`;
-      copyToClipboard(`${protocol}://${proxyData.host}${port}${proxyData.url}`);
-    }
+    const port = call.url.includes(':443') ? 443 : 80;
+    const protocol = port === 443 ? 'https' : 'http';
+    copyToClipboard(`${protocol}://${call.host}${call.path}`);
   };
 
   const handleCopyRequestHeaders = () => {
-    if (proxyData?.request_headers) {
-      const headersObj: Record<string, string> = {};
-      for (const [k, v] of proxyData.request_headers) {
-        headersObj[k] = v;
-      }
-      copyToClipboard(JSON.stringify(headersObj, null, 2));
-    }
+    copyToClipboard(JSON.stringify(call.headers, null, 2));
   };
 
   const handleCopyResponseBody = () => {
-    if (proxyData?.response_body) {
-      copyToClipboard(proxyData.response_body);
-    }
+    copyToClipboard(call.response_body);
   };
 
   const handleAddToScope = async () => {
-    if (proxyData?.host && activeTargetId) {
-      const host = proxyData.host.split(':')[0];
+    if (call.host && activeTargetId) {
+      const host = call.host.split(':')[0];
       try {
         await invoke('add_target_scope', {
           id: activeTargetId,
@@ -78,70 +79,40 @@ export function LogEntryContextMenu({ log, children, onToggle, activeTargetId }:
   };
 
   const handleOpenInRepeater = () => {
-    if (proxyData) {
-      const protocol = proxyData.port === 443 ? 'https' : 'http';
-      const port = proxyData.port === 443 || proxyData.port === 80 ? '' : `:${proxyData.port}`;
-      const fullUrl = `${protocol}://${proxyData.host}${port}${proxyData.url}`;
+    const protocol = call.url.includes(':443') ? 'https' : 'http';
+    const request = {
+      method: call.method,
+      url: `${protocol}://${call.host}${call.path}`,
+      headers: call.headers,
+      body: call.request_body || '',
+    };
 
-      const headersObj: Record<string, string> = {};
-      if (proxyData.request_headers) {
-        for (const [k, v] of proxyData.request_headers) {
-          headersObj[k] = v;
-        }
-      }
-
-      const request = {
-        method: proxyData.method || 'GET',
-        url: fullUrl,
-        headers: headersObj,
-        body: proxyData.request_body || '',
-      };
-
-      useAppStore.getState().setPendingRepeaterRequest(request);
-      router.push('/repeater');
-    }
+    useAppStore.getState().setPendingRepeaterRequest(request);
+    router.push('/repeater');
   };
 
   const handleOpenInBruteForce = () => {
-    if (proxyData) {
-      const protocol = proxyData.port === 443 ? 'https' : 'http';
-      const port = proxyData.port === 443 || proxyData.port === 80 ? '' : `:${proxyData.port}`;
-      const fullUrl = `${protocol}://${proxyData.host}${port}${proxyData.url}`;
+    const protocol = call.url.includes(':443') ? 'https' : 'http';
+    const request = {
+      method: call.method,
+      url: `${protocol}://${call.host}${call.path}`,
+      headers: call.headers,
+      body: call.request_body || '',
+    };
 
-      const headersObj: Record<string, string> = {};
-      if (proxyData.request_headers) {
-        for (const [k, v] of proxyData.request_headers) {
-          headersObj[k] = v;
-        }
-      }
-
-      const request = {
-        method: proxyData.method || 'GET',
-        url: fullUrl,
-        headers: headersObj,
-        body: proxyData.request_body || '',
-      };
-
-      useAppStore.getState().setPendingBruteForceRequest(request);
-      router.push('/brute-force');
-    }
+    useAppStore.getState().setPendingBruteForceRequest(request);
+    router.push('/brute-force');
   };
 
   const handleDelete = () => {
-    const removeLog = useTrafficStore.getState().removeLog;
-    removeLog(log.id);
+    const calls = useTrafficStore.getState().calls;
+    useTrafficStore.setState({ calls: calls.filter((c) => c.id !== call.id) });
   };
-
-  if (!isProxyLog || !proxyData) {
-    return <div onClick={onToggle}>{children}</div>;
-  }
 
   return (
     <ContextMenu>
       <ContextMenuTrigger asChild onContextMenu={(e) => e.stopPropagation()}>
-        <div onClick={onToggle}>
-          {children}
-        </div>
+        <div onClick={onToggle}>{children}</div>
       </ContextMenuTrigger>
       <ContextMenuContent>
         <ContextMenuItem onClick={handleCopyCurl}>
@@ -150,10 +121,10 @@ export function LogEntryContextMenu({ log, children, onToggle, activeTargetId }:
         <ContextMenuItem onClick={handleCopyUrl}>
           <Copy className="mr-2 h-4 w-4" /> Copy URL
         </ContextMenuItem>
-        <ContextMenuItem onClick={handleCopyRequestHeaders} disabled={!proxyData.request_headers}>
+        <ContextMenuItem onClick={handleCopyRequestHeaders}>
           <Copy className="mr-2 h-4 w-4" /> Copy Request Headers
         </ContextMenuItem>
-        <ContextMenuItem onClick={handleCopyResponseBody} disabled={!proxyData.response_body}>
+        <ContextMenuItem onClick={handleCopyResponseBody} disabled={!call.response_body}>
           <Copy className="mr-2 h-4 w-4" /> Copy Response Body
         </ContextMenuItem>
         <ContextMenuSeparator />

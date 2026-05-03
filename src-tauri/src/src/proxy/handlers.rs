@@ -1,11 +1,13 @@
 use crate::proxy::types::{ApiCall, ParsedRequest, ParsedResponse, ProxyConnection, ProxyServer};
 use crate::CertManager;
 use std::sync::Arc;
-use tokio::io::{AsyncWriteExt};
+use tokio::io::{AsyncWriteExt, AsyncReadExt};
 use tokio::net::TcpStream;
 use tauri::Emitter;
+use tokio_util::sync::CancellationToken;
 
-pub async fn handle_connection(mut stream: TcpStream, app_handle: tauri::AppHandle, target_id: String, cert_manager: Arc<CertManager>) {
+pub async fn handle_connection(mut stream: TcpStream, app_handle: tauri::AppHandle, target_id: String, cert_manager: Arc<CertManager>, cancel_token: CancellationToken) {
+    if cancel_token.is_cancelled() { return; }
     let mut buf = [0u8; 8192];
     if let Ok(n) = stream.read(&mut buf).await {
         if n == 0 { return; }
@@ -26,14 +28,15 @@ pub async fn handle_connection(mut stream: TcpStream, app_handle: tauri::AppHand
         }
 
         if request_str.starts_with("CONNECT ") {
-            crate::proxy::mitm::handle_connect_mitm(stream, &buf[..n], app_handle, target_id, cert_manager).await;
+            crate::proxy::mitm::handle_connect_mitm(stream, &buf[..n], app_handle, target_id, cert_manager, cancel_token).await;
         } else {
-            handle_http_request(stream, &buf[..n], app_handle, target_id).await;
+            handle_http_request(stream, &buf[..n], app_handle, target_id, cancel_token).await;
         }
     }
 }
 
-pub async fn handle_http_request(mut stream: TcpStream, initial_data: &[u8], app_handle: tauri::AppHandle, target_id: String) {
+pub async fn handle_http_request(mut stream: TcpStream, initial_data: &[u8], app_handle: tauri::AppHandle, target_id: String, cancel_token: CancellationToken) {
+    if cancel_token.is_cancelled() { return; }
     let full_data = match crate::utils::read_request(&mut stream, initial_data).await {
         Ok(d) => d, Err(e) => { log::error!("[HTTP] Read error: {}", e); return; }
     };
@@ -57,8 +60,6 @@ pub async fn handle_http_request(mut stream: TcpStream, initial_data: &[u8], app
     let mut api_call = ApiCall::new(method.clone(), url.clone(), headers.clone(), req_body.clone(), target_id.clone(), sec_ch, acc);
     api_call.cookies = crate::utils::parse_cookie_str(headers.get("cookie").map(|s| s.as_str()).unwrap_or(""));
 
-    crate::proxy::mitm::emit_logger_request(&parse_request_for_logger(&method, &url, &http_ver, &headers, body, "0.0.0.0", &String::from_utf8_lossy(&full_data)), &app_handle);
-
     let mut dest_stream = match TcpStream::connect(format!("{}:80", host)).await {
         Ok(s) => s, Err(e) => { log::error!("[HTTP] Connect error: {}", e); let _ = stream.write_all(b"HTTP/1.1 502 Bad Gateway\r\n\r\n").await; return; }
     };
@@ -70,7 +71,6 @@ pub async fn handle_http_request(mut stream: TcpStream, initial_data: &[u8], app
     let _ = stream.write_all(&response_buf).await;
 
     api_call = api_call.with_response(status, status_text, resp_headers.clone(), resp_body.clone(), resp_ct.clone());
-    crate::proxy::mitm::emit_logger_response(&ParsedResponse { status, status_text, headers: resp_headers.iter().map(|(k, v)| (k.clone(), v.clone())).collect(), body: resp_body.clone(), body_size: resp_body.as_ref().map(|b| b.len()).unwrap_or(0), content_type: resp_ct.clone() }, &app_handle);
     let _ = app_handle.emit("api-call", &api_call);
     api_call.log_raw_data();
 }

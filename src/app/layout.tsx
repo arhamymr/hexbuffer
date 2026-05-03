@@ -1,14 +1,9 @@
 'use client';
 
 import { ThemeProvider } from '@/components/theme-provider';
-import { useTrafficSync } from '@/hooks/useTrafficSync';
+import { TrafficProvider } from '@/providers/TrafficProvider';
 import { AppLayout } from '@/components/app-sidebar';
 import './globals.css';
-
-function TrafficSyncProvider({ children }: { children: React.ReactNode }) {
-  useTrafficSync();
-  return <>{children}</>;
-}
 
 export default function RootLayout({
   children,
@@ -19,11 +14,11 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body>
         <ThemeProvider>
-          <TrafficSyncProvider>
+          <TrafficProvider>
             <AppLayout>
               {children}
             </AppLayout>
-          </TrafficSyncProvider>
+          </TrafficProvider>
         </ThemeProvider>
       </body>
     </html>

@@ -53,7 +53,7 @@ impl Database {
             std::fs::create_dir_all(&data_dir).ok();
         }
 
-        let db_path = data_dir.join("bug_bounty.db");
+        let db_path = data_dir.join("apsara_data.db");
         let conn = Connection::open(&db_path).expect("Failed to open database");
 
         let db = Self {

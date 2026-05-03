@@ -2,7 +2,7 @@
 
 import { ChevronRight, ChevronDown } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import type { DebugLog, ProxyLogEntry } from '@/hooks/useDebugLogs';
+import type { DebugLog, ProxyLogEntry } from '@/stores/trafficStore';
 import { formatTimestamp, getMethodBadge, getStatusColor, formatBytes } from './constants';
 import { LogEntryTabs } from './LogEntryTabs';
 import { LogEntryContextMenu } from './LogEntryContextMenu';

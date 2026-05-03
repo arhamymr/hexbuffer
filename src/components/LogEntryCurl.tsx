@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import type { ProxyLogEntry } from '@/hooks/useDebugLogs';
+import type { ProxyLogEntry } from '@/stores/trafficStore';
 import { Button } from '@/components/ui/button';
 import { Copy, Check } from 'lucide-react';
 

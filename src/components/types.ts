@@ -1,4 +1,4 @@
-export type { DebugLog, ProxyLogEntry } from '@/hooks/useDebugLogs';
+export type { DebugLog, ProxyLogEntry } from '@/stores/trafficStore';
 
 export interface FilterState {
   search: string;

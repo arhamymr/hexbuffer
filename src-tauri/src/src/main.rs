@@ -13,6 +13,7 @@ use std::sync::Arc;
 use parking_lot::RwLock;
 use tauri::Emitter;
 use tokio::sync::{mpsc, RwLock as TokioRwLock};
+use tokio_util::sync::CancellationToken;
 
 pub use cert::CertManager;
 pub use db::{Call, Database, Finding};
@@ -30,6 +31,7 @@ pub struct AppState {
     pub repeater: Arc<Repeater>,
     pub intruder_engine: Arc<IntruderEngine>,
     pub active_attacks: Arc<TokioRwLock<std::collections::HashMap<String, bool>>>,
+    pub cancel_token: CancellationToken,
 }
 
 impl Default for AppState {
@@ -43,6 +45,7 @@ impl Default for AppState {
             repeater: Arc::new(Repeater::new()),
             intruder_engine: Arc::new(IntruderEngine::new()),
             active_attacks: Arc::new(TokioRwLock::new(std::collections::HashMap::new())),
+            cancel_token: CancellationToken::new(),
         }
     }
 }
@@ -69,8 +72,9 @@ async fn start_proxy(
     proxy_state.port = Some(port);
 
     let app_handle = app.clone();
+    let cancel_token = state.cancel_token.clone();
     tokio::spawn(async move {
-        if let Err(e) = proxy.start(app_handle).await {
+        if let Err(e) = proxy.start(app_handle, cancel_token).await {
             log::error!("Proxy server error: {}", e);
         }
     });
@@ -81,6 +85,7 @@ async fn start_proxy(
 #[tauri::command]
 async fn stop_proxy(state: tauri::State<'_, AppState>) -> Result<String, String> {
     log::info!("Stopping proxy server");
+    state.cancel_token.cancel();
     let mut proxy_state = state.proxy.write();
     proxy_state.running = false;
     proxy_state.port = None;

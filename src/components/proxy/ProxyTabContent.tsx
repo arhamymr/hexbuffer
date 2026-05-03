@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react';
 import { useTrafficStore } from '@/stores/trafficStore';
 import type { Target } from '@/types';
-import type { DebugLog, ProxyLogEntry } from '@/hooks/useDebugLogs';
+import type { DebugLog, ProxyLogEntry } from '@/stores/trafficStore';
 import type { FilterState } from '@/components/types';
 import { DEFAULT_FILTER_STATE } from '@/components/types';
 import { STATUS_FILTERS } from '@/components/constants';

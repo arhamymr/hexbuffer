@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use tokio_util::sync::CancellationToken;
 
 #[derive(Clone, Serialize, Deserialize, Default)]
 pub struct ProxyState {
@@ -49,6 +50,7 @@ pub struct ApiCall {
     pub response_headers: HashMap<String, String>, pub response_cookies: HashMap<String, String>,
     pub response_body: Option<String>, pub response_body_size: u64, pub response_content_type: Option<String>,
     pub security_state: String, pub server_ip: Option<String>,
+    pub duration_ms: Option<u64>,
 }
 
 impl ApiCall {
@@ -67,9 +69,12 @@ impl ApiCall {
             response_headers: HashMap::new(), response_cookies: HashMap::new(),
             response_body: None, response_body_size: 0, response_content_type: None,
             security_state: "unknown".to_string(), server_ip: None,
+            duration_ms: None,
         }
     }
     pub fn with_response(mut self, status: u16, status_text: String, headers: HashMap<String, String>, body: Option<String>, ct: Option<String>) -> Self {
+        let now = super::super::utils::now_ms();
+        self.duration_ms = Some(now.saturating_sub(self.timestamp));
         self.response_status = Some(status); self.response_status_text = Some(status_text);
         self.response_headers = headers.clone(); self.response_cookies = super::super::utils::extract_cookies(&headers);
         self.response_body = body.clone(); self.response_body_size = body.as_ref().map(|b| b.len() as u64).unwrap_or(0);
@@ -99,6 +104,27 @@ pub struct ParsedResponse {
     pub body: Option<String>, pub body_size: usize, pub content_type: Option<String>,
 }
 
+#[derive(Clone, Serialize, Deserialize)]
+pub enum WsDirection { ClientToServer, ServerToClient }
+
+#[derive(Clone, Serialize, Deserialize)]
+pub enum WsOpcode { Text, Binary, Ping, Pong, Close, Continuation }
+
+#[derive(Clone, Serialize, Deserialize)]
+pub struct WsFrame {
+    pub direction: WsDirection,
+    pub opcode: WsOpcode,
+    pub time: u64,
+    pub payload: bytes::Bytes,
+    pub truncated: bool,
+}
+
+impl WsFrame {
+    pub fn new(direction: WsDirection, opcode: WsOpcode, time: u64, payload: bytes::Bytes, truncated: bool) -> Self {
+        Self { direction, opcode, time, payload, truncated }
+    }
+}
+
 pub struct ProxyServer {
     port: u16,
     target_id: Option<String>,
@@ -111,7 +137,7 @@ impl ProxyServer {
     }
     pub fn with_target_id(mut self, target_id: String) -> Self { self.target_id = Some(target_id); self }
 
-    pub async fn start(&mut self, app_handle: tauri::AppHandle) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn start(&mut self, app_handle: tauri::AppHandle, cancel_token: CancellationToken) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let listener = tokio::net::TcpListener::bind(std::net::SocketAddr::from(([0, 0, 0, 0], self.port))).await?;
         log::info!("Proxy listening on {}", listener.local_addr().unwrap());
         let target_id = self.target_id.clone().unwrap_or_else(|| "default".to_string());
@@ -119,8 +145,9 @@ impl ProxyServer {
         let cert = self.cert_manager.clone();
         tokio::spawn(async move {
             while let Ok((stream, _)) = listener.accept().await {
-                let app = app.clone(); let tid = target_id.clone(); let cert = cert.clone();
-                tokio::spawn(super::handlers::handle_connection(stream, app, tid, cert));
+                if cancel_token.is_cancelled() { break; }
+                let app = app.clone(); let tid = target_id.clone(); let cert = cert.clone(); let ct = cancel_token.clone();
+                tokio::spawn(super::handlers::handle_connection(stream, app, tid, cert, ct));
             }
         });
         Ok(())

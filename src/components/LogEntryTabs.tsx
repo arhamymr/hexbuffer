@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import type { ProxyLogEntry } from '@/hooks/useDebugLogs';
+import type { ProxyLogEntry } from '@/stores/trafficStore';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LogEntryDetails } from './LogEntryDetails';
 import { LogEntryHeaders } from './LogEntryHeaders';

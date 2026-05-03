@@ -1,4 +1,4 @@
-import type { ProxyLogEntry } from '@/hooks/useDebugLogs';
+import type { ProxyLogEntry } from '@/stores/trafficStore';
 
 interface LogEntryHeadersProps {
   proxyData: ProxyLogEntry;

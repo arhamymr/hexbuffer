@@ -205,3 +205,11 @@ fn find_chunk_end(buffer: &[u8]) -> Option<usize> {
 
 fn parse_hex(data: &[u8]) -> Result<usize, std::num::ParseIntError> { usize::from_str_radix(String::from_utf8_lossy(data).trim(), 16) }
 fn is_hex(b: u8) -> bool { (b >= b'0' && b <= b'9') || (b >= b'a' && b <= b'f') || (b >= b'A' && b <= b'F') }
+
+pub fn normalize_request(req: &mut HashMap<String, String>) {
+    req.remove("host");
+    if let Some(cookies) = req.get_mut("cookie") {
+        let joined = cookies.split("; ").collect::<Vec<_>>().join("; ");
+        *cookies = joined;
+    }
+}

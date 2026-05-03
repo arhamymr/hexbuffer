@@ -10,7 +10,7 @@ import {
   ContextMenuSeparator,
 } from '@/components/ui/context-menu';
 import { Copy, ExternalLink, Plus, Eye, Trash2 } from 'lucide-react';
-import type { DebugLog, ProxyLogEntry } from '@/hooks/useDebugLogs';
+import type { DebugLog, ProxyLogEntry } from '@/stores/trafficStore';
 import { buildCurlCommand } from './constants';
 import { useAppStore } from '@/stores/appStore';
 import { useTrafficStore } from '@/stores/trafficStore';

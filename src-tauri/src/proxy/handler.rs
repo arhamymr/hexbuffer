@@ -27,10 +27,6 @@ pub enum CapturedRequest {
 }
 
 impl CapturedRequest {
-    fn buffered(request: ProxiedRequest) -> Self {
-        Self::Buffered(request)
-    }
-
     pub fn into_proxied_request(self) -> ProxiedRequest {
         match self {
             Self::Buffered(request) => request,
@@ -45,27 +41,8 @@ impl CapturedRequest {
             } => {
                 let snapshot = body.snapshot();
                 log_truncated_capture("request", &snapshot);
-                ProxiedRequest::new(method, url, version, headers, snapshot_to_string(snapshot), time)
-            }
-        }
-    }
-
-    async fn into_proxied_request_after_capture(self) -> ProxiedRequest {
-        match self {
-            Self::Buffered(request) => request,
-            Self::Streaming {
-                method,
-                url,
-                version,
-                headers,
-                body,
-                done,
-                time,
-            } => {
-                done.notified().await;
-                let snapshot = body.snapshot();
-                log_truncated_capture("request", &snapshot);
-                ProxiedRequest::new(method, url, version, headers, snapshot_to_string(snapshot), time)
+                let path = url.split("://").nth(1).unwrap_or("/").split('/').skip(1).collect::<Vec<_>>().join("/");
+                ProxiedRequest::new(method, url, path, version, headers, snapshot_to_string(snapshot), time)
             }
         }
     }
@@ -189,10 +166,12 @@ impl CapturingHandler {
                 let capture = BodyCapture::new(body_limit);
                 capture.append(&data);
                 let snapshot = capture.snapshot();
+                let path = url.split("://").nth(1).unwrap_or("/").split('/').skip(1).collect::<Vec<_>>().join("/");
                 if self.should_buffer_request() {
                     CapturedRequest::Buffered(ProxiedRequest::new(
                         method.clone(),
                         url.clone(),
+                        path.clone(),
                         version.clone(),
                         headers.clone(),
                         snapshot_to_string(snapshot),
@@ -211,14 +190,18 @@ impl CapturingHandler {
                     }
                 }
             }
-            None => CapturedRequest::Buffered(ProxiedRequest::new(
-                method.clone(),
-                url.clone(),
-                version.clone(),
-                headers.clone(),
-                None,
-                chrono::Local::now().timestamp_millis(),
-            )),
+            None => {
+                let path = url.split("://").nth(1).unwrap_or("/").split('/').skip(1).collect::<Vec<_>>().join("/");
+                CapturedRequest::Buffered(ProxiedRequest::new(
+                    method.clone(),
+                    url.clone(),
+                    path,
+                    version.clone(),
+                    headers.clone(),
+                    None,
+                    chrono::Local::now().timestamp_millis(),
+                ))
+            }
         };
 
         if let Some(ref cfg) = self.intercept {
@@ -264,9 +247,11 @@ impl CapturingHandler {
                         let h = headers.unwrap_or_else(|| proxied_req.headers.clone());
                         let b = body.unwrap_or_else(|| proxied_req.body.clone().unwrap_or_default());
 
+                        let modified_path = u.split("://").nth(1).unwrap_or("/").split('/').skip(1).collect::<Vec<_>>().join("/");
                         let modified_req = ProxiedRequest::new(
                             m,
                             u,
+                            modified_path,
                             proxied_req.version.clone(),
                             h,
                             Some(b),
@@ -326,7 +311,7 @@ impl CapturingHandler {
                 let capture = BodyCapture::new(response_body_limit);
                 capture.append(&data);
                 let snapshot = capture.snapshot();
-                let truncated = snapshot.truncated;
+                let _truncated = snapshot.truncated;
                 let body_str = snapshot_to_string(snapshot.clone());
                 let response = ProxiedResponse::new(
                     status,
@@ -352,7 +337,7 @@ impl CapturingHandler {
         };
 
         let request = self.take_captured_request();
-        let duration_ms = response.timestamp.saturating_sub(request.as_ref().map(|r| r.timestamp).unwrap_or(0)) as u64;
+        let _duration_ms = response.timestamp.saturating_sub(request.as_ref().map(|r| r.timestamp).unwrap_or(0)) as u64;
         let size = body_out.total_seen;
 
         if let Some(req) = request {
@@ -385,7 +370,7 @@ impl CapturingHandler {
                     let rt = tokio::runtime::Handle::current();
                     let rx = Arc::new(parking_lot::Mutex::new(Some(rx)));
                     let mut rx_guard = rx.lock();
-                    if let Some(mut rx) = rx_guard.take() {
+                    if let Some(rx) = rx_guard.take() {
                         drop(rx_guard);
                         let result = rt.block_on(async {
                             timeout(Duration::from_secs(INTERCEPT_TIMEOUT_SECS), rx).await
@@ -414,10 +399,12 @@ impl CapturingHandler {
                 let url = decision.url.unwrap_or(request.url);
                 let headers = decision.headers.unwrap_or(request.headers);
                 let body = decision.body.unwrap_or_else(|| request.body.clone().unwrap_or_default());
+                let path = url.split("://").nth(1).unwrap_or("/").split('/').skip(1).collect::<Vec<_>>().join("/");
 
                 Some(ProxiedRequest::new(
                     method,
                     url,
+                    path,
                     request.version,
                     headers,
                     Some(body),
@@ -493,6 +480,7 @@ mod tests {
         handler.captured_request = Some(CapturedRequest::Buffered(ProxiedRequest::new(
             "GET".to_string(),
             "https://example.com".to_string(),
+            "/".to_string(),
             "HTTP/1.1".to_string(),
             HashMap::new(),
             Some("body".to_string()),

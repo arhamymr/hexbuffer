@@ -38,8 +38,7 @@ export function LogEntry({ call, expanded, onToggle, activeTargetId }: LogEntryP
               )}
               <span className="text-sm max-w-[500px] flex-1 truncate">
                 <span className="font-mono text-xs">
-                  {call.host}
-                  {call.url?.split(call.host)?.[1] || call.url}
+                  {call.host}{call.path}
                 </span>
               </span>
             </div>

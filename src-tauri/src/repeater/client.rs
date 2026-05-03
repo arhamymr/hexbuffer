@@ -1,7 +1,6 @@
 use reqwest::{Client, Method, header::{HeaderMap, HeaderName, HeaderValue, CONTENT_LENGTH}};
 use std::time::{Duration, Instant};
 use std::collections::HashMap;
-use std::sync::Arc;
 use tokio::sync::mpsc;
 
 use super::types::{HttpRequest, HttpResponse};
@@ -42,8 +41,8 @@ impl Repeater {
             .map_err(|e| format!("Invalid URL: {}", e))?;
 
         let mut hop_count = 0;
-        let mut final_url = String::new();
         let start = Instant::now();
+        let final_url = String::new();
 
         loop {
             if hop_count >= request.max_hops {
@@ -74,7 +73,6 @@ impl Repeater {
                 .map_err(|e| format!("Failed to read response body: {}", e))?;
 
             let time_ms = start.elapsed().as_millis() as u64;
-            final_url = url.to_string();
 
             if request.follow_redirects && is_redirect_status(status) {
                 if let Some(location) = response_headers.get("location") {

@@ -74,16 +74,6 @@ impl BodyCapture {
 pub const DEFAULT_REQUEST_BODY_LIMIT: Option<usize> = Some(1024 * 1024);
 pub const DEFAULT_RESPONSE_BODY_LIMIT: Option<usize> = Some(2 * 1024 * 1024);
 
-pub fn capture_request_body(body: &[u8], limit: Option<usize>) -> BodySnapshot {
-    let capture = BodyCapture::new(limit);
-    capture.append(body);
-    capture.snapshot()
-}
-
-pub fn capture_response_body(body: &[u8], limit: Option<usize>) -> BodySnapshot {
-    capture_request_body(body, limit)
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;

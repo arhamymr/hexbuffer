@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 use super::types::{ProxiedRequest, ProxiedResponse};
-use super::utils::{now_ms, rand_id, parse_url, parse_query_params, extract_cookies};
+use super::utils::{now_ms, rand_id, parse_url, parse_query_params};
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct ApiCall {

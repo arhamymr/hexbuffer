@@ -3,7 +3,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use tokio::sync::oneshot;
 
-use super::types::{InterceptAction, InterceptDecision};
+use super::types::InterceptDecision;
 
 pub type PendingMap = Mutex<HashMap<u64, oneshot::Sender<InterceptDecision>>>;
 

@@ -8,7 +8,6 @@ use tokio::sync::mpsc;
 use tauri::Emitter;
 use tokio_util::sync::CancellationToken;
 
-use crate::proxy::handler::create_event_channel;
 use crate::proxy::utils::{
     find_header_end, parse_headers, parse_response, read_request, read_response,
 };
@@ -85,7 +84,7 @@ pub async fn handle_http_request(
     mut stream: TcpStream,
     initial_data: &[u8],
     app_handle: tauri::AppHandle,
-    target_id: String,
+    _target_id: String,
     cancel_token: CancellationToken,
     event_tx: mpsc::Sender<crate::proxy::events::ProxyEvent>,
     intercept: Arc<InterceptConfig>,
@@ -159,16 +158,25 @@ pub async fn handle_http_request(
         Ok(s) => s,
         Err(e) => {
             log::error!("[HTTP] Connect error: {}", e);
-            handler.send_error(0, format!("Connect failed: {}", e), "connecting".to_string(), Some(url));
+            handler.send_error(0, format!("Connect failed: {}", e), "connecting".to_string(), Some(proxied_req.url.clone()));
             let _ = stream.write_all(b"HTTP/1.1 502 Bad Gateway\r\n\r\n").await;
             return;
         }
     };
 
-    let request_bytes = build_raw_request(&method, &path, &http_ver, &headers, body.as_deref());
+    let actual_path = if proxied_req.path.is_empty() { "/" } else { &proxied_req.path };
+    tracing::debug!("[HTTP] Forwarding: method={}, path={}, host={}", proxied_req.method, actual_path, host);
+
+    let request_bytes = build_raw_request(
+        &proxied_req.method,
+        actual_path,
+        &proxied_req.version,
+        &proxied_req.headers,
+        proxied_req.body.as_ref().map(|b| b.as_bytes()),
+    );
     if let Err(e) = dest_stream.write_all(&request_bytes).await {
         log::error!("[HTTP] Forward error: {}", e);
-        handler.send_error(0, format!("Forward failed: {}", e), "forwarding".to_string(), Some(url));
+        handler.send_error(0, format!("Forward failed: {}", e), "forwarding".to_string(), Some(proxied_req.url.clone()));
         return;
     }
 
@@ -176,12 +184,12 @@ pub async fn handle_http_request(
         Ok(b) => b,
         Err(e) => {
             log::error!("[HTTP] Read error: {}", e);
-            handler.send_error(0, format!("Read response failed: {}", e), "reading_response".to_string(), Some(url));
+            handler.send_error(0, format!("Read response failed: {}", e), "reading_response".to_string(), Some(proxied_req.url.clone()));
             return;
         }
     };
 
-    let (status, status_text, resp_headers, resp_body, resp_ct) = parse_response(&response_buf);
+    let (status, status_text, resp_headers, _resp_body, _resp_ct) = parse_response(&response_buf);
 
     let _ = stream.write_all(&response_buf).await;
 

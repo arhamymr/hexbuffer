@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import type { Target } from '@/types';
 import type { FilterMode } from '@/stores/proxyStore';
 import { ScopeManager } from '@/components/scope-manager';
+import { InterceptIndicator } from '@/components/intercept/InterceptIndicator';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -39,6 +40,7 @@ export function ProxyHeader({ target, targets, onTargetsUpdated, filterMode, onF
       </div>
 
       <div className="flex items-center gap-2">
+        <InterceptIndicator />
         <ScopeManager
           target={target}
           targets={targets}

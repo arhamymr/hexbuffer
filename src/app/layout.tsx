@@ -2,6 +2,7 @@
 
 import { ThemeProvider } from '@/components/theme-provider';
 import { TrafficProvider } from '@/providers/TrafficProvider';
+import { InterceptProvider } from '@/components/intercept/InterceptProvider';
 import { AppLayout } from '@/components/app-sidebar';
 import './globals.css';
 
@@ -15,9 +16,11 @@ export default function RootLayout({
       <body>
         <ThemeProvider>
           <TrafficProvider>
-            <AppLayout>
-              {children}
-            </AppLayout>
+            <InterceptProvider>
+              <AppLayout>
+                {children}
+              </AppLayout>
+            </InterceptProvider>
           </TrafficProvider>
         </ThemeProvider>
       </body>

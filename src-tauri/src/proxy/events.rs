@@ -1,6 +1,5 @@
 use serde::{Deserialize, Serialize};
 use std::sync::atomic::{AtomicU64, Ordering};
-use std::collections::HashMap;
 
 use super::types::{ProxiedRequest, ProxiedResponse};
 
@@ -146,7 +145,7 @@ mod tests {
 
     #[test]
     fn test_request_complete_serialization() {
-        let request = ProxiedRequest::new("GET", "https://example.com", "HTTP/1.1", HashMap::new(), None, 100);
+        let request = ProxiedRequest::new("GET", "https://example.com", "/", "HTTP/1.1", HashMap::new(), None, 100);
         let response = ProxiedResponse::new(200, "OK", "HTTP/1.1", HashMap::new(), None, 200);
         let event = ProxyEvent::request_complete(42, request, response, 123, 456);
 

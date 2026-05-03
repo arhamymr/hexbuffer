@@ -14,7 +14,7 @@ export function TrafficProvider({ children }: TrafficProviderProps) {
 
   useEffect(() => {
     const setup = async () => {
-      const unlisten = await listen<ApiCall>('http-log', (event) => {
+      const unlisten = await listen<ApiCall>('proxy-log', (event) => {
         addHttpLog(event.payload);
       });
       return unlisten;

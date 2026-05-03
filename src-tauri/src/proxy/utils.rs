@@ -52,20 +52,6 @@ pub fn url_decode(s: &str) -> String {
     result
 }
 
-pub fn parse_cookie_str(header: &str) -> HashMap<String, String> {
-    let mut cookies = HashMap::new();
-    for pair in header.split(';') { if let Some((k, v)) = pair.trim().split_once('=') { cookies.insert(k.trim().to_string(), v.trim().to_string()); } }
-    cookies
-}
-
-pub fn extract_cookies(headers: &HashMap<String, String>) -> HashMap<String, String> {
-    let mut cookies = HashMap::new();
-    if let Some(sc) = headers.get("set-cookie") {
-        for part in sc.split(',') { if let Some((k, v)) = part.trim().split_once('=') { cookies.insert(k.trim().to_string(), v.split(';').next().unwrap_or("").trim().to_string()); } }
-    }
-    cookies
-}
-
 pub fn parse_response(buf: &[u8]) -> (u16, String, HashMap<String, String>, Option<String>, Option<String>) {
     let mut status = 0u16;
     let mut status_text = String::new();
@@ -205,11 +191,3 @@ fn find_chunk_end(buffer: &[u8]) -> Option<usize> {
 
 fn parse_hex(data: &[u8]) -> Result<usize, std::num::ParseIntError> { usize::from_str_radix(String::from_utf8_lossy(data).trim(), 16) }
 fn is_hex(b: u8) -> bool { (b >= b'0' && b <= b'9') || (b >= b'a' && b <= b'f') || (b >= b'A' && b <= b'F') }
-
-pub fn normalize_request(req: &mut HashMap<String, String>) {
-    req.remove("host");
-    if let Some(cookies) = req.get_mut("cookie") {
-        let joined = cookies.split("; ").collect::<Vec<_>>().join("; ");
-        *cookies = joined;
-    }
-}

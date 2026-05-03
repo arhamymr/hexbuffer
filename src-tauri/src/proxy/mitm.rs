@@ -7,7 +7,6 @@ use std::sync::Arc;
 use tokio::io::AsyncWriteExt;
 use tokio::net::TcpStream;
 use tokio::sync::mpsc;
-use tokio_rustls::TlsAcceptor;
 use tauri::Emitter;
 use tokio_util::sync::CancellationToken;
 use hyper::service::service_fn;
@@ -77,6 +76,9 @@ pub async fn handle_connect_mitm(
     };
     let _ = cert_manager.get_or_create_ca_cert();
 
+    tracing::debug!("Generated cert for host={}, cert_len={}, key_len={}",
+        host, domain_cert_pem.len(), domain_key_pem.len());
+
     let pem_parsed = match pem::parse(domain_cert_pem.as_bytes()) {
         Ok(p) => p,
         Err(e) => {
@@ -110,10 +112,27 @@ pub async fn handle_connect_mitm(
 
     let tls_acceptor = tokio_rustls::TlsAcceptor::from(Arc::new(server_config));
 
+    tracing::debug!("Starting TLS accept for host={}, port={}", host, port);
     let tls_stream = match tls_acceptor.accept(stream).await {
-        Ok(s) => s,
+        Ok(s) => {
+            tracing::debug!("TLS accept successful for {}", host);
+            s
+        }
         Err(e) => {
-            log::error!("TLS accept error: {:?}", e);
+            let err_msg = format!("{:?}", e);
+            let is_eof = err_msg.contains("UnexpectedEof") || err_msg.contains("eof");
+            let is_timeout = err_msg.contains("timeout") || err_msg.contains("TimedOut");
+            let is_closed = err_msg.contains("closed");
+
+            if is_eof {
+                tracing::warn!("TLS handshake EOF - client closed connection before handshake completed. host={}, error={}", host, err_msg);
+            } else if is_timeout {
+                tracing::warn!("TLS handshake timeout - client did not complete handshake. host={}, error={}", host, err_msg);
+            } else if is_closed {
+                tracing::warn!("TLS handshake failed - connection closed by peer. host={}, error={}", host, err_msg);
+            } else {
+                tracing::error!("TLS accept error for host={}: error={}", host, err_msg);
+            }
             return;
         }
     };
@@ -180,12 +199,12 @@ pub async fn handle_connect_mitm(
 
 async fn handle_mitm_request(
     req: Request<Incoming>,
-    app_handle: tauri::AppHandle,
-    target_id: String,
-    conn_id: String,
+    _app_handle: tauri::AppHandle,
+    _target_id: String,
+    _conn_id: String,
     host: String,
     port: u16,
-    timestamp: u64,
+    _timestamp: u64,
     event_tx: mpsc::Sender<ProxyEvent>,
     intercept: Arc<InterceptConfig>,
 ) -> Result<Response<Full<Bytes>>, std::convert::Infallible> {
@@ -233,13 +252,32 @@ async fn handle_mitm_request(
         }
     };
 
-    let _proxied_req = captured.into_proxied_request();
+let proxied_req = captured.into_proxied_request();
 
-    let dest_stream = match TcpStream::connect(format!("{}:{}", host, port)).await {
-        Ok(s) => s,
+    let forward_host = proxied_req.url
+        .split("://")
+        .nth(1)
+        .unwrap_or(&proxied_req.url)
+        .split('/')
+        .next()
+        .unwrap_or(&proxied_req.url)
+        .to_string();
+    let forward_path = if proxied_req.path.is_empty() { "/".to_string() } else { proxied_req.path.clone() };
+
+    tracing::debug!("Forwarding request: method={}, host={}, path={}", proxied_req.method, forward_host, forward_path);
+
+    if forward_host.contains("facebook") || forward_host.contains("google") {
+        tracing::info!("[MITM] Request to sensitive host: {} via {}", forward_host, proxied_req.method);
+    }
+
+    let dest_stream = match TcpStream::connect(format!("{}:{}", forward_host, port)).await {
+        Ok(s) => {
+            tracing::debug!("[MITM] TCP connected to {}:{}", forward_host, port);
+            s
+        }
         Err(e) => {
-            log::error!("[MITM] Connect error: {}", e);
-            handler.send_error(0, format!("Connect failed: {}", e), "connecting".to_string(), Some(url));
+            log::error!("[MITM] Connect error to {}:{}: {}", forward_host, port, e);
+            handler.send_error(0, format!("Connect failed: {}", e), "connecting".to_string(), Some(proxied_req.url.clone()));
             return Ok(Response::builder()
                 .status(502)
                 .body(Full::new(Bytes::new()))
@@ -247,36 +285,48 @@ async fn handle_mitm_request(
         }
     };
 
-    let _upstream = TokioIo::new(dest_stream);
-    let connector = HttpConnector::new();
-    let mut client = Client::builder(TokioExecutor::new()).build_http();
+    let io = TokioIo::new(dest_stream);
+    tracing::debug!("[MITM] Created TokioIo for upstream connection");
 
-    let uri: hyper::Uri = url.parse().unwrap();
+    let client = Client::builder(TokioExecutor::new()).build_http();
+
+    let uri_str = if proxied_req.path.is_empty() { "/" } else { &proxied_req.path };
+    let uri: hyper::Uri = uri_str.parse().unwrap();
+    tracing::debug!("[MITM] Constructed URI: {} -> {}", uri_str, uri);
     let mut request_builder = Request::builder()
-        .method(method.as_str())
+        .method(proxied_req.method.as_str())
         .uri(uri);
 
-    for (key, value) in &headers {
+    for (key, value) in &proxied_req.headers {
         if key != "host" {
             request_builder = request_builder.header(key.as_str(), value.as_str());
         }
     }
 
-    let request = match request_builder.body(Full::new(if let Some(ref data) = body_vec {
-            Bytes::copy_from_slice(data)
-        } else {
-            Bytes::new()
-        })) {
-            Ok(req) => req,
-            Err(e) => {
-                log::error!("[MITM] Request build error: {}", e);
-                return Ok(Response::builder()
-                    .status(500)
-                    .body(Full::new(Bytes::new()))
-                    .unwrap());
-            }
-        };
+    if let Some(host_header) = proxied_req.headers.get("host") {
+        tracing::debug!("[MITM] Using Host header: {}", host_header);
+    }
 
+    let request_body = proxied_req.body
+        .as_ref()
+        .map(|b| Bytes::copy_from_slice(b.as_bytes()))
+        .unwrap_or_else(Bytes::new);
+
+    let request = match request_builder.body(Full::new(request_body)) {
+        Ok(req) => {
+            tracing::debug!("[MITM] Request built successfully");
+            req
+        }
+        Err(e) => {
+            log::error!("[MITM] Request build error: {}", e);
+            return Ok(Response::builder()
+                .status(500)
+                .body(Full::new(Bytes::new()))
+                .unwrap());
+        }
+    };
+
+    tracing::info!("[MITM] Sending request to {}:{}{}", forward_host, port, uri_str);
     let response_result = tokio::time::timeout(
         std::time::Duration::from_secs(30),
         client.request(request)
@@ -312,7 +362,7 @@ async fn handle_mitm_request(
         }
         Ok(Err(e)) => {
             log::error!("[MITM] Client request error: {}", e);
-            handler.send_error(0, format!("Request failed: {}", e), "forwarding".to_string(), Some(url));
+            handler.send_error(0, format!("Request failed: {}", e), "forwarding".to_string(), Some(proxied_req.url.clone()));
             Ok(Response::builder()
                 .status(502)
                 .body(Full::new(Bytes::new()))
@@ -320,7 +370,7 @@ async fn handle_mitm_request(
         }
         Err(_) => {
             log::error!("[MITM] Request timed out");
-            handler.send_error(0, "Request timed out".to_string(), "timeout".to_string(), Some(url));
+            handler.send_error(0, "Request timed out".to_string(), "timeout".to_string(), Some(proxied_req.url.clone()));
             Ok(Response::builder()
                 .status(504)
                 .body(Full::new(Bytes::new()))

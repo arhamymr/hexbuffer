@@ -5,6 +5,7 @@ use std::collections::HashMap;
 pub struct ProxiedRequest {
     pub method: String,
     pub url: String,
+    pub path: String,
     pub version: String,
     pub headers: HashMap<String, String>,
     pub body: Option<String>,
@@ -15,6 +16,7 @@ impl ProxiedRequest {
     pub fn new(
         method: impl Into<String>,
         url: impl Into<String>,
+        path: impl Into<String>,
         version: impl Into<String>,
         headers: HashMap<String, String>,
         body: Option<String>,
@@ -23,6 +25,7 @@ impl ProxiedRequest {
         Self {
             method: method.into(),
             url: url.into(),
+            path: path.into(),
             version: version.into(),
             headers,
             body,
@@ -156,7 +159,7 @@ impl InterceptDecision {
         status: u16,
         status_text: String,
         headers: HashMap<String, String>,
-        body: String,
+        _body: String,
     ) -> Self {
         Self {
             action: InterceptAction::Block,

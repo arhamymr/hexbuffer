@@ -1,5 +1,6 @@
 mod adapter;
 mod body;
+pub mod client;
 pub mod events;
 pub mod handler;
 pub mod handlers;

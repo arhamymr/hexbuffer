@@ -81,6 +81,7 @@ async fn start_proxy(
     let cancel_token = state.cancel_token.clone();
     let intercept = state.intercept_config.clone();
     let event_tx_arc = state.event_tx.clone();
+    
     tokio::spawn(async move {
         if let Err(e) = proxy.start(app_handle, cancel_token, intercept, event_tx_arc).await {
             log::error!("Proxy server error: {}", e);
@@ -377,7 +378,7 @@ fn main() {
 
     log::info!("Starting Bug Bounty Tools...");
 
-    tauri::Builder::default()
+    let result = tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .manage(AppState::default())
         .invoke_handler(tauri::generate_handler![
@@ -407,6 +408,10 @@ fn main() {
             update_finding,
             delete_finding
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .run(tauri::generate_context!());
+
+    match result {
+        Ok(_) => log::info!("Tauri app exited normally"),
+        Err(e) => log::error!("Tauri app error: {}", e),
+    }
 }

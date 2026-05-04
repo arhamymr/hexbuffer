@@ -1,4 +1,5 @@
 use crate::CertManager;
+use crate::proxy::client::create_https_client;
 use crate::proxy::handler::CapturingHandler;
 use crate::proxy::intercept::InterceptConfig;
 use crate::proxy::events::ProxyEvent;
@@ -12,9 +13,7 @@ use tokio_util::sync::CancellationToken;
 use hyper::service::service_fn;
 use hyper::{Method, Request, Response};
 use hyper::body::Incoming;
-use hyper_util::rt::{TokioExecutor, TokioIo};
-use hyper_util::client::legacy::Client;
-use hyper_util::client::legacy::connect::HttpConnector;
+use hyper_util::rt::TokioIo;
 use http_body_util::{BodyExt, Full};
 use bytes::Bytes;
 
@@ -59,13 +58,15 @@ pub async fn handle_connect_mitm(
         }),
     );
 
+    tracing::info!("[MITM] Sending 200 Connection Established to client");
     if let Err(e) = stream
         .write_all(b"HTTP/1.1 200 Connection Established\r\n\r\n")
         .await
     {
-        log::error!("Failed to send 200 response: {}", e);
+        tracing::error!("[MITM] Failed to send 200 response: {}", e);
         return;
     }
+    tracing::info!("[MITM] 200 response sent, about to start TLS accept");
 
     let (domain_cert_pem, domain_key_pem) = match cert_manager.generate_domain_cert(&host) {
         Ok(c) => c,
@@ -107,12 +108,13 @@ pub async fn handle_connect_mitm(
         .map_err(|e| log::error!("Cert config error: {:?}", e))
         .ok()
         .unwrap();
-    server_config.alpn_protocols.push(b"h2".to_vec());
+    server_config.alpn_protocols.clear();
     server_config.alpn_protocols.push(b"http/1.1".to_vec());
 
     let tls_acceptor = tokio_rustls::TlsAcceptor::from(Arc::new(server_config));
 
-    tracing::debug!("Starting TLS accept for host={}, port={}", host, port);
+    tracing::info!("[MITM] Starting TLS accept for host={}, port={}", host, port);
+    tracing::info!("[MITM] Stream is TcpStream, calling tls_acceptor.accept()");
     let tls_stream = match tls_acceptor.accept(stream).await {
         Ok(s) => {
             tracing::debug!("TLS accept successful for {}", host);
@@ -197,6 +199,215 @@ pub async fn handle_connect_mitm(
     );
 }
 
+pub async fn handle_connect_upgraded(
+    upgraded: hyper::upgrade::Upgraded,
+    target_host: String,
+    app_handle: tauri::AppHandle,
+    target_id: String,
+    cert_manager: Arc<CertManager>,
+    cancel_token: CancellationToken,
+    event_tx: mpsc::Sender<ProxyEvent>,
+    intercept: Arc<InterceptConfig>,
+) {
+    tracing::info!("[MITM] ========== handle_connect_upgraded ENTRY ==========");
+    tracing::info!("[MITM] target_host={}", target_host);
+
+    if cancel_token.is_cancelled() {
+        tracing::warn!("[MITM] cancel_token cancelled, returning early");
+        return;
+    }
+
+    tracing::info!("[MITM] CONNECT upgraded for host={}", target_host);
+
+    let (host, port) = if target_host.contains(':') {
+        let p: Vec<&str> = target_host.split(':').collect();
+        tracing::info!("[MITM] Host contains port: {}", target_host);
+        (p[0].to_string(), p[1].parse().unwrap_or(443))
+    } else {
+        tracing::info!("[MITM] Host has no explicit port, using 443");
+        (target_host.clone(), 443)
+    };
+
+    tracing::info!("[MITM] Parsed host={}, port={}", host, port);
+
+    let timestamp = crate::proxy::utils::now_ms();
+    let conn_id = format!("conn_{}_{}", timestamp, rand_id());
+    let _ = app_handle.emit(
+        "proxy-connection",
+        &serde_json::json!({
+            "id": conn_id,
+            "timestamp": timestamp,
+            "host": host,
+            "port": port,
+            "targetId": target_id,
+        }),
+    );
+
+    tracing::info!("[MITM] Generating certificate for host={}", host);
+    let (domain_cert_pem, domain_key_pem) = match cert_manager.generate_domain_cert(&host) {
+        Ok(c) => {
+            tracing::info!("[MITM] Certificate generated, len={}", c.0.len());
+            c
+        }
+        Err(e) => {
+            tracing::error!("[MITM] Cert generation FAILED for {}: {}", host, e);
+            return;
+        }
+    };
+
+    tracing::info!("[MITM] Getting CA certificate...");
+    match cert_manager.get_or_create_ca_cert() {
+        Ok(_) => tracing::info!("[MITM] CA cert ready"),
+        Err(e) => tracing::warn!("[MITM] CA cert issue: {}", e),
+    }
+
+    tracing::info!("[MITM] Parsing PEM certificate...");
+    let pem_parsed = match pem::parse(domain_cert_pem.as_bytes()) {
+        Ok(p) => {
+            tracing::info!("[MITM] PEM parsed, tag={}", p.tag());
+            p
+        }
+        Err(e) => {
+            tracing::error!("[MITM] Cert parse error: {:?}", e);
+            return;
+        }
+    };
+
+    tracing::info!("[MITM] Parsing private key...");
+    let key_pair = match rcgen::KeyPair::from_pem(&domain_key_pem) {
+        Ok(k) => {
+            tracing::info!("[MITM] Key pair parsed");
+            k
+        }
+        Err(e) => {
+            tracing::error!("[MITM] Key parse error: {:?}", e);
+            return;
+        }
+    };
+
+    tracing::info!("[MITM] Building TLS server config...");
+    let mut server_config = match rustls::ServerConfig::builder()
+        .with_no_client_auth()
+        .with_single_cert(
+            vec![rustls::pki_types::CertificateDer::from(
+                pem_parsed.contents().to_vec(),
+            )],
+            rustls::pki_types::PrivateKeyDer::from(rustls::pki_types::PrivatePkcs8KeyDer::from(
+                key_pair.serialize_der(),
+            )),
+        ) {
+        Ok(cfg) => cfg,
+        Err(e) => {
+            tracing::error!("[MITM] Cert config error: {:?}", e);
+            return;
+        }
+    };
+    server_config.alpn_protocols.clear();
+    server_config.alpn_protocols.push(b"http/1.1".to_vec());
+
+    let tls_acceptor = tokio_rustls::TlsAcceptor::from(Arc::new(server_config));
+
+    tracing::info!("[MITM] ========== TLS HANDSHAKE PHASE ==========");
+    tracing::info!("[MITM] Starting TLS accept for host={}, port={}", host, port);
+
+    tracing::info!("[MITM] Creating TokioIo wrapper...");
+    let mut io = TokioIo::new(upgraded);
+
+    tracing::info!("[MITM] Calling tls_acceptor.accept()...");
+    let tls_stream = match tls_acceptor.accept(&mut io).await {
+        Ok(s) => {
+            tracing::info!("[MITM] TLS accept SUCCESS for host={}", host);
+            s
+        }
+        Err(e) => {
+            let err_msg = format!("{:?}", e);
+            let err_display = format!("{}", e);
+            tracing::error!("[MITM] ========== TLS ACCEPT ERROR ==========");
+            tracing::error!("[MITM] TLS accept FAILED for host={}", host);
+            tracing::error!("[MITM] Error kind: {:?}", e.kind());
+            tracing::error!("[MITM] Error: {}", err_display);
+
+            if err_msg.contains("UnexpectedEof") || err_msg.contains("eof") {
+                tracing::warn!("[MITM] Diagnosis: EOF - client closed before handshake");
+            } else if err_msg.contains("timeout") || err_msg.contains("TimedOut") {
+                tracing::warn!("[MITM] Diagnosis: Timeout - client didn't complete handshake");
+            } else if err_msg.contains("closed") {
+                tracing::warn!("[MITM] Diagnosis: Connection closed by peer");
+            }
+            tracing::error!("[MITM] =======================================");
+            return;
+        }
+    };
+
+    tracing::info!("[MITM] TLS connection established, creating HTTP service");
+
+    let io = TokioIo::new(tls_stream);
+    let app = app_handle.clone();
+    let target = target_id.clone();
+    let conn_id_clone = conn_id.clone();
+    let host_clone = host.clone();
+    let port_clone = port;
+    let ts_clone = timestamp;
+    let event_tx_clone = event_tx.clone();
+    let intercept_clone = intercept.clone();
+
+    let service = service_fn(move |req: Request<Incoming>| {
+        tracing::info!("[MITM] Received request: {} {} via host={}",
+            req.method(), req.uri().path(), host_clone);
+        let handler = app.clone();
+        let target = target.clone();
+        let conn_id = conn_id_clone.clone();
+        let host = host_clone.clone();
+        let port = port_clone;
+        let timestamp = ts_clone;
+        let event_tx = event_tx_clone.clone();
+        let intercept = intercept_clone.clone();
+
+        async move {
+            handle_mitm_request(
+                req,
+                handler,
+                target,
+                conn_id,
+                host,
+                port,
+                timestamp,
+                event_tx,
+                intercept,
+            )
+            .await
+        }
+    });
+
+    tracing::info!("[MITM] ========== STARTING HTTP SERVER ==========");
+    if let Err(e) = hyper::server::conn::http1::Builder::new()
+        .preserve_header_case(true)
+        .title_case_headers(true)
+        .serve_connection(io, service)
+        .await
+    {
+        if !is_benign_shutdown_error(&e) {
+            tracing::error!("[MITM] HTTP serve error: {}", e);
+        }
+    }
+
+    tracing::info!("[MITM] Connection closing");
+
+    let _ = app_handle.emit(
+        "proxy-connection-close",
+        serde_json::json!({
+            "id": conn_id,
+            "timestamp": timestamp,
+            "host": host,
+            "port": port,
+            "targetId": target_id,
+            "duration": crate::proxy::utils::now_ms() - timestamp
+        }),
+    );
+
+    tracing::info!("[MITM] ========== handle_connect_upgraded EXIT ==========");
+}
+
 async fn handle_mitm_request(
     req: Request<Incoming>,
     _app_handle: tauri::AppHandle,
@@ -270,29 +481,13 @@ let proxied_req = captured.into_proxied_request();
         tracing::info!("[MITM] Request to sensitive host: {} via {}", forward_host, proxied_req.method);
     }
 
-    let dest_stream = match TcpStream::connect(format!("{}:{}", forward_host, port)).await {
-        Ok(s) => {
-            tracing::debug!("[MITM] TCP connected to {}:{}", forward_host, port);
-            s
-        }
-        Err(e) => {
-            log::error!("[MITM] Connect error to {}:{}: {}", forward_host, port, e);
-            handler.send_error(0, format!("Connect failed: {}", e), "connecting".to_string(), Some(proxied_req.url.clone()));
-            return Ok(Response::builder()
-                .status(502)
-                .body(Full::new(Bytes::new()))
-                .unwrap());
-        }
-    };
-
-    let io = TokioIo::new(dest_stream);
-    tracing::debug!("[MITM] Created TokioIo for upstream connection");
-
-    let client = Client::builder(TokioExecutor::new()).build_http();
+    let https_client = create_https_client();
+    tracing::info!("[MITM] Created HTTPS client for upstream connection");
 
     let uri_str = if proxied_req.path.is_empty() { "/" } else { &proxied_req.path };
-    let uri: hyper::Uri = uri_str.parse().unwrap();
-    tracing::debug!("[MITM] Constructed URI: {} -> {}", uri_str, uri);
+    let full_url = format!("https://{}{}", forward_host, uri_str);
+    let uri: hyper::Uri = full_url.parse().unwrap();
+    tracing::info!("[MITM] Constructed URI: {}", uri);
     let mut request_builder = Request::builder()
         .method(proxied_req.method.as_str())
         .uri(uri);
@@ -329,7 +524,7 @@ let proxied_req = captured.into_proxied_request();
     tracing::info!("[MITM] Sending request to {}:{}{}", forward_host, port, uri_str);
     let response_result = tokio::time::timeout(
         std::time::Duration::from_secs(30),
-        client.request(request)
+        https_client.request(request)
     ).await;
 
     match response_result {

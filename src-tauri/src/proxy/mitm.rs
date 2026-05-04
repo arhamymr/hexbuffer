@@ -14,6 +14,7 @@ use hyper::service::service_fn;
 use hyper::{Method, Request, Response};
 use hyper::body::Incoming;
 use hyper_util::rt::TokioIo;
+use hyper_util::rt::TokioExecutor;
 use http_body_util::{BodyExt, Full};
 use bytes::Bytes;
 
@@ -66,7 +67,11 @@ pub async fn handle_connect_mitm(
         tracing::error!("[MITM] Failed to send 200 response: {}", e);
         return;
     }
-    tracing::info!("[MITM] 200 response sent, about to start TLS accept");
+    if let Err(e) = stream.flush().await {
+        tracing::error!("[MITM] Failed to flush 200 response: {}", e);
+        return;
+    }
+    tracing::info!("[MITM] 200 response sent and flushed, about to generate certificate");
 
     let (domain_cert_pem, domain_key_pem) = match cert_manager.generate_domain_cert(&host) {
         Ok(c) => c,
@@ -81,21 +86,38 @@ pub async fn handle_connect_mitm(
         host, domain_cert_pem.len(), domain_key_pem.len());
 
     let pem_parsed = match pem::parse(domain_cert_pem.as_bytes()) {
-        Ok(p) => p,
+        Ok(p) => {
+            tracing::debug!("[MITM] PEM parsed, tag={}", p.tag());
+            p
+        },
         Err(e) => {
-            log::error!("Cert parse error: {:?}", e);
+            tracing::error!("[MITM] Cert parse error for {}: {:?}", host, e);
             return;
         }
     };
     let key_pair = match rcgen::KeyPair::from_pem(&domain_key_pem) {
-        Ok(k) => k,
+        Ok(k) => {
+            tracing::debug!("[MITM] Key pair parsed from PEM");
+            k
+        },
         Err(e) => {
-            log::error!("Key parse error: {:?}", e);
+            tracing::error!("[MITM] Key parse error for {}: {:?}", host, e);
             return;
         }
     };
 
-    let mut server_config = rustls::ServerConfig::builder()
+    tracing::info!("[MITM] Verifying certificate and key compatibility...");
+    let cert_der = pem_parsed.contents();
+    let key_der = key_pair.serialize_der();
+    tracing::info!("[MITM] Cert DER length: {}, Key DER length: {}", cert_der.len(), key_der.len());
+
+    fn hex_encode(data: &[u8]) -> String {
+        data.iter().take(64).map(|b| format!("{:02x}", b)).collect::<String>()
+    }
+    tracing::debug!("[MITM] Cert DER first 64 bytes (hex): {}", hex_encode(cert_der));
+    tracing::debug!("[MITM] Key DER first 64 bytes (hex): {}", hex_encode(&key_der));
+
+    let server_config = match rustls::ServerConfig::builder()
         .with_no_client_auth()
         .with_single_cert(
             vec![rustls::pki_types::CertificateDer::from(
@@ -104,18 +126,25 @@ pub async fn handle_connect_mitm(
             rustls::pki_types::PrivateKeyDer::from(rustls::pki_types::PrivatePkcs8KeyDer::from(
                 key_pair.serialize_der(),
             )),
-        )
-        .map_err(|e| log::error!("Cert config error: {:?}", e))
-        .ok()
-        .unwrap();
+        ) {
+        Ok(cfg) => cfg,
+        Err(e) => {
+            tracing::error!("[MITM] TLS server config error for {}: {:?}", host, e);
+            return;
+        }
+    };
+    let mut server_config = server_config;
     server_config.alpn_protocols.clear();
+    server_config.alpn_protocols.push(b"h2".to_vec());
     server_config.alpn_protocols.push(b"http/1.1".to_vec());
 
     let tls_acceptor = tokio_rustls::TlsAcceptor::from(Arc::new(server_config));
 
     tracing::info!("[MITM] Starting TLS accept for host={}, port={}", host, port);
     tracing::info!("[MITM] Stream is TcpStream, calling tls_acceptor.accept()");
-    let tls_stream = match tls_acceptor.accept(stream).await {
+
+    let tls_acceptor_ref = &tls_acceptor;
+    let tls_stream = match tls_acceptor_ref.accept(stream).await {
         Ok(s) => {
             tracing::debug!("TLS accept successful for {}", host);
             s
@@ -175,9 +204,7 @@ pub async fn handle_connect_mitm(
         }
     });
 
-    if let Err(e) = hyper::server::conn::http1::Builder::new()
-        .preserve_header_case(true)
-        .title_case_headers(true)
+    if let Err(e) = hyper::server::conn::http2::Builder::new(TokioExecutor::new())
         .serve_connection(io, service)
         .await
     {
@@ -303,6 +330,7 @@ pub async fn handle_connect_upgraded(
         }
     };
     server_config.alpn_protocols.clear();
+    server_config.alpn_protocols.push(b"h2".to_vec());
     server_config.alpn_protocols.push(b"http/1.1".to_vec());
 
     let tls_acceptor = tokio_rustls::TlsAcceptor::from(Arc::new(server_config));
@@ -380,9 +408,7 @@ pub async fn handle_connect_upgraded(
     });
 
     tracing::info!("[MITM] ========== STARTING HTTP SERVER ==========");
-    if let Err(e) = hyper::server::conn::http1::Builder::new()
-        .preserve_header_case(true)
-        .title_case_headers(true)
+    if let Err(e) = hyper::server::conn::http2::Builder::new(TokioExecutor::new())
         .serve_connection(io, service)
         .await
     {

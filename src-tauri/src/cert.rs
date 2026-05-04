@@ -1,20 +1,19 @@
 use rcgen::{
-   BasicConstraints, Certificate, CertificateParams, DistinguishedName, DnType, IsCa, KeyPair,
-   KeyUsagePurpose, SanType,
+    BasicConstraints, Certificate, CertificateParams, DistinguishedName, DnType, IsCa,
+    KeyPair, KeyUsagePurpose, SanType, PKCS_ECDSA_P256_SHA256,
 };
-use ring::rand::{SecureRandom, SystemRandom};
-use sha2::{Sha256, Digest};
 use std::fs;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 use std::time::{SystemTime, UNIX_EPOCH};
+use time::{OffsetDateTime, Duration as TimeDuration};
 
 const CERT_VALIDITY_SECS: u64 = 86400;
 
 pub struct CertManager {
     data_dir: PathBuf,
     ca_cert: Arc<Mutex<Option<Arc<Certificate>>>>,
-    ca_key_pair: Arc<Mutex<Option<Arc<KeyPair>>>>,
+    ca_key_pem: Arc<Mutex<Option<String>>>,
 }
 
 impl CertManager {
@@ -39,7 +38,7 @@ impl CertManager {
         Self {
             data_dir,
             ca_cert: Arc::new(Mutex::new(None)),
-            ca_key_pair: Arc::new(Mutex::new(None)),
+            ca_key_pem: Arc::new(Mutex::new(None)),
         }
     }
 
@@ -59,19 +58,26 @@ impl CertManager {
     fn ensure_ca_initialized(&self) -> Result<(), String> {
         {
             let cert_guard = self.ca_cert.lock().map_err(|e| e.to_string())?;
-            let key_guard = self.ca_key_pair.lock().map_err(|e| e.to_string())?;
+            let key_guard = self.ca_key_pem.lock().map_err(|e| e.to_string())?;
             if cert_guard.is_some() && key_guard.is_some() {
                 return Ok(());
             }
         }
 
         let (_, ca_key_pem) = self.get_or_create_ca_cert()?;
-        let ca_key_pair = KeyPair::from_pem(&ca_key_pem).map_err(|e| format!("CA key parse error: {:?}", e))?;
 
         let mut params = CertificateParams::default();
         params.is_ca = IsCa::Ca(BasicConstraints::Unconstrained);
-        params.key_usages.push(KeyUsagePurpose::KeyCertSign);
-        params.key_usages.push(KeyUsagePurpose::CrlSign);
+        params.key_usages = vec![
+            KeyUsagePurpose::KeyCertSign,
+            KeyUsagePurpose::DigitalSignature,
+            KeyUsagePurpose::CrlSign,
+        ];
+
+        let now = OffsetDateTime::now_utc();
+        params.not_before = now;
+        params.not_after = now + TimeDuration::days(3650);
+
         params.subject_alt_names.push(SanType::DnsName(
             "Bug Bounty Tools".try_into().map_err(|e| format!("{:?}", e))?,
         ));
@@ -81,35 +87,34 @@ impl CertManager {
         dist_name.push(DnType::OrganizationName, "Bug Bounty Tools");
         dist_name.push(DnType::CountryName, "US");
         params.distinguished_name = dist_name;
-        let rng = SystemRandom::new();
-        let mut serial = [0u8; 16];
-        rng.fill(&mut serial).map_err(|e| format!("RNG error: {:?}", e))?;
-        params.serial_number = Some(rcgen::SerialNumber::from(serial.to_vec()));
 
-        let ca_cert = params.self_signed(&ca_key_pair).map_err(|e| format!("CA self-signed error: {:?}", e))?;
+        let ca_key_pair = KeyPair::generate_for(&PKCS_ECDSA_P256_SHA256)
+            .map_err(|e| format!("CA key gen error: {:?}", e))?;
+        let cert = params.self_signed(&ca_key_pair)
+            .map_err(|e| format!("CA cert error: {:?}", e))?;
 
         {
             let mut cert_guard = self.ca_cert.lock().map_err(|e| e.to_string())?;
-            let mut key_guard = self.ca_key_pair.lock().map_err(|e| e.to_string())?;
-            *cert_guard = Some(Arc::new(ca_cert));
-            *key_guard = Some(Arc::new(ca_key_pair));
+            let mut key_guard = self.ca_key_pem.lock().map_err(|e| e.to_string())?;
+            *cert_guard = Some(Arc::new(cert));
+            *key_guard = Some(ca_key_pem);
         }
 
         Ok(())
     }
 
     pub fn generate_ca_cert(&self) -> Result<(String, String), String> {
-        let rng = SystemRandom::new();
-        let mut serial = [0u8; 16];
-        rng.fill(&mut serial).map_err(|e| format!("RNG error: {:?}", e))?;
-
         let mut params = CertificateParams::default();
         params.is_ca = IsCa::Ca(BasicConstraints::Unconstrained);
-        params.key_usages.push(KeyUsagePurpose::KeyCertSign);
-        params.key_usages.push(KeyUsagePurpose::CrlSign);
-        params.subject_alt_names.push(SanType::DnsName(
-            "Bug Bounty Tools".try_into().map_err(|e| format!("{:?}", e))?,
-        ));
+        params.key_usages = vec![
+            KeyUsagePurpose::KeyCertSign,
+            KeyUsagePurpose::DigitalSignature,
+            KeyUsagePurpose::CrlSign,
+        ];
+
+        let now = OffsetDateTime::now_utc();
+        params.not_before = now;
+        params.not_after = now + TimeDuration::days(3650);
 
         let mut dist_name = DistinguishedName::new();
         dist_name.push(DnType::CommonName, "Bug Bounty Tools MITM CA");
@@ -117,16 +122,23 @@ impl CertManager {
         dist_name.push(DnType::CountryName, "US");
         params.distinguished_name = dist_name;
 
-        params.serial_number = Some(rcgen::SerialNumber::from(serial.to_vec()));
-
-        let key_pair = KeyPair::generate_for(&rcgen::PKCS_ECDSA_P256_SHA256).map_err(|e| format!("Key gen error: {:?}", e))?;
-        let cert = params.self_signed(&key_pair).map_err(|e| format!("Cert error: {:?}", e))?;
+        let key_pair = KeyPair::generate_for(&PKCS_ECDSA_P256_SHA256)
+            .map_err(|e| format!("CA key gen error: {:?}", e))?;
+        let cert = params.self_signed(&key_pair)
+            .map_err(|e| format!("CA self-signed error: {:?}", e))?;
 
         let pem_cert = cert.pem();
         let pem_key = key_pair.serialize_pem();
 
         fs::write(self.data_dir.join("ca_cert.pem"), &pem_cert).map_err(|e| e.to_string())?;
         fs::write(self.data_dir.join("ca_key.pem"), &pem_key).map_err(|e| e.to_string())?;
+
+        {
+            let mut cert_guard = self.ca_cert.lock().map_err(|e| e.to_string())?;
+            let mut key_guard = self.ca_key_pem.lock().map_err(|e| e.to_string())?;
+            *cert_guard = Some(Arc::new(cert));
+            *key_guard = Some(pem_key.clone());
+        }
 
         Ok((pem_cert, pem_key))
     }
@@ -197,19 +209,20 @@ impl CertManager {
             let cert_guard = self.ca_cert.lock().map_err(|e| e.to_string())?;
             Arc::clone(cert_guard.as_ref().unwrap())
         };
-        let ca_key_pair = {
-            let key_guard = self.ca_key_pair.lock().map_err(|e| e.to_string())?;
-            Arc::clone(key_guard.as_ref().unwrap())
+        let ca_key_pem = {
+            let key_guard = self.ca_key_pem.lock().map_err(|e| e.to_string())?;
+            key_guard.as_ref().unwrap().clone()
         };
 
-        let rng = SystemRandom::new();
-        let mut serial = [0u8; 16];
-        rng.fill(&mut serial).map_err(|e| format!("RNG error: {:?}", e))?;
+        let ca_key_pair = KeyPair::from_pem(&ca_key_pem)
+            .map_err(|e| format!("CA key parse error: {:?}", e))?;
 
         let mut params = CertificateParams::default();
         params.is_ca = IsCa::NoCa;
-        params.key_usages.push(KeyUsagePurpose::DigitalSignature);
-        params.key_usages.push(KeyUsagePurpose::KeyEncipherment);
+        params.key_usages = vec![
+            KeyUsagePurpose::DigitalSignature,
+            KeyUsagePurpose::KeyEncipherment,
+        ];
 
         let mut san_names = Vec::new();
         san_names.push(SanType::DnsName(domain.try_into().map_err(|e| format!("{:?}", e))?));
@@ -229,10 +242,12 @@ impl CertManager {
         dist_name.push(DnType::CommonName, domain);
         params.distinguished_name = dist_name;
 
-        params.serial_number = Some(rcgen::SerialNumber::from(serial.to_vec()));
+        let now = OffsetDateTime::now_utc();
+        params.not_before = now;
+        params.not_after = now + TimeDuration::days(365);
 
-        let key_pair = KeyPair::generate_for(&rcgen::PKCS_ECDSA_P256_SHA256).map_err(|e| format!("Key gen error: {:?}", e))?;
-
+        let key_pair = KeyPair::generate_for(&PKCS_ECDSA_P256_SHA256)
+            .map_err(|e| format!("Domain key gen error: {:?}", e))?;
         let cert = params.signed_by(&key_pair, &ca_cert, &ca_key_pair)
             .map_err(|e| format!("Domain cert sign error: {:?}", e))?;
 
@@ -242,11 +257,11 @@ impl CertManager {
         fs::write(&cert_file, &pem_cert).map_err(|e| e.to_string())?;
         fs::write(&key_file, &pem_key).map_err(|e| e.to_string())?;
 
-        let now = SystemTime::now()
+        let now_secs = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .map_err(|e| e.to_string())?
             .as_secs();
-        let expiry = now + CERT_VALIDITY_SECS;
+        let expiry = now_secs + CERT_VALIDITY_SECS;
         fs::write(&meta_file, expiry.to_string()).map_err(|e| e.to_string())?;
 
         Ok((pem_cert, pem_key))
@@ -260,6 +275,7 @@ impl Default for CertManager {
 }
 
 fn sha256_hex(input: &str) -> String {
+    use sha2::{Sha256, Digest};
     let mut hasher = Sha256::new();
     hasher.update(input.as_bytes());
     let result = hasher.finalize();

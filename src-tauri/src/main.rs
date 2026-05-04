@@ -376,6 +376,10 @@ fn main() {
         .format_timestamp_millis()
         .init();
 
+    rustls::crypto::aws_lc_rs::default_provider()
+        .install_default()
+        .expect("Failed to install rustls crypto provider");
+
     log::info!("Starting Bug Bounty Tools...");
 
     let result = tauri::Builder::default()

@@ -4,12 +4,13 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
+use tokio::time::{timeout, Duration};
 use tokio::sync::mpsc;
 use tauri::Emitter;
 use tokio_util::sync::CancellationToken;
 
 use crate::proxy::utils::{
-    find_header_end, parse_headers, parse_response, read_request, read_response,
+    find_header_end, parse_headers, parse_response, parse_url, read_request, read_response,
 };
 
 pub async fn handle_connection(
@@ -134,7 +135,12 @@ pub async fn handle_http_request(
     } else {
         None
     };
-    let url = format!("http://{}{}", host, path);
+
+    let url = if path.starts_with("http://") || path.starts_with("https://") {
+        path.clone()
+    } else {
+        format!("http://{}{}", host, path)
+    };
 
     let mut handler = CapturingHandler::new(event_tx).with_intercept(intercept);
 
@@ -154,37 +160,75 @@ pub async fn handle_http_request(
 
     let proxied_req = captured.into_proxied_request();
 
-    let mut dest_stream = match TcpStream::connect(format!("{}:80", host)).await {
-        Ok(s) => s,
-        Err(e) => {
+    let connect_result = timeout(
+        Duration::from_secs(10),
+        TcpStream::connect(format!("{}:80", host))
+    ).await;
+
+    let mut dest_stream = match connect_result {
+        Ok(Ok(s)) => s,
+        Ok(Err(e)) => {
             log::error!("[HTTP] Connect error: {}", e);
             handler.send_error(0, format!("Connect failed: {}", e), "connecting".to_string(), Some(proxied_req.url.clone()));
             let _ = stream.write_all(b"HTTP/1.1 502 Bad Gateway\r\n\r\n").await;
             return;
         }
+        Err(_) => {
+            log::error!("[HTTP] Connect timeout to host={}", host);
+            handler.send_error(0, format!("Connect timeout to {}", host), "connecting".to_string(), Some(proxied_req.url.clone()));
+            let _ = stream.write_all(b"HTTP/1.1 504 Gateway Timeout\r\n\r\n").await;
+            return;
+        }
     };
 
-    let actual_path = if proxied_req.path.is_empty() { "/" } else { &proxied_req.path };
-    tracing::debug!("[HTTP] Forwarding: method={}, path={}, host={}", proxied_req.method, actual_path, host);
+    let (_, actual_path) = parse_url(&proxied_req.url);
+    let actual_path = if actual_path.is_empty() { "/" } else { &actual_path };
+    tracing::info!("[HTTP] Forwarding: method={}, path={}, host={}", method, actual_path, host);
 
-    let request_bytes = build_raw_request(
-        &proxied_req.method,
-        actual_path,
-        &proxied_req.version,
-        &proxied_req.headers,
-        proxied_req.body.as_ref().map(|b| b.as_bytes()),
-    );
+    let request_line = format!("{} {} {}\r\n", method, actual_path, http_ver);
+
+    let stripped_headers: HashMap<String, String> = headers
+        .iter()
+        .filter(|(k, _)| !["proxy-connection", "proxy-authorization", "te", "trailers", "transfer-encoding"].contains(&k.as_str()))
+        .map(|(k, v)| (k.clone(), v.clone()))
+        .collect();
+
+    let mut header_bytes = Vec::new();
+    for (k, v) in &stripped_headers {
+        header_bytes.extend_from_slice(format!("{}: {}\r\n", k, v).as_bytes());
+    }
+    header_bytes.extend_from_slice(b"\r\n");
+
+    let mut request_bytes = request_line.into_bytes();
+    request_bytes.extend_from_slice(&header_bytes);
+    if let Some(ref b) = body {
+        request_bytes.extend_from_slice(b);
+    }
+
+    tracing::info!("[HTTP] Forwarding {} bytes to upstream ({} headers stripped)", request_bytes.len(), headers.len() - stripped_headers.len());
+
     if let Err(e) = dest_stream.write_all(&request_bytes).await {
         log::error!("[HTTP] Forward error: {}", e);
         handler.send_error(0, format!("Forward failed: {}", e), "forwarding".to_string(), Some(proxied_req.url.clone()));
         return;
     }
 
-    let response_buf = match read_response(&mut dest_stream).await {
-        Ok(b) => b,
-        Err(e) => {
+    let read_result = timeout(
+        Duration::from_secs(30),
+        read_response(&mut dest_stream)
+    ).await;
+
+    let response_buf = match read_result {
+        Ok(Ok(b)) => b,
+        Ok(Err(e)) => {
             log::error!("[HTTP] Read error: {}", e);
             handler.send_error(0, format!("Read response failed: {}", e), "reading_response".to_string(), Some(proxied_req.url.clone()));
+            return;
+        }
+        Err(_) => {
+            log::error!("[HTTP] Read timeout from host={}", host);
+            handler.send_error(0, format!("Read timeout from {}", host), "reading_response".to_string(), Some(proxied_req.url.clone()));
+            let _ = stream.write_all(b"HTTP/1.1 504 Gateway Timeout\r\n\r\n").await;
             return;
         }
     };
@@ -216,17 +260,4 @@ pub async fn handle_http_request(
             "response_body_size": response_body_vec.as_ref().map(|b| b.len()).unwrap_or(0),
         }),
     );
-}
-
-fn build_raw_request(method: &str, path: &str, version: &str, headers: &HashMap<String, String>, body: Option<&[u8]>) -> Vec<u8> {
-    let mut request = format!("{} {} {}\r\n", method, path, version);
-    for (key, value) in headers {
-        request.push_str(&format!("{}: {}\r\n", key, value));
-    }
-    request.push_str("\r\n");
-    let mut request_bytes = request.into_bytes();
-    if let Some(body) = body {
-        request_bytes.extend_from_slice(body);
-    }
-    request_bytes
 }

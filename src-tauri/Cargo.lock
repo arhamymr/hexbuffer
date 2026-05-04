@@ -138,6 +138,7 @@ dependencies = [
  "tauri",
  "tauri-build",
  "tauri-plugin-opener",
+ "time",
  "tokio",
  "tokio-rustls",
  "tokio-tungstenite",

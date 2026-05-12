@@ -4,6 +4,7 @@ import * as React from 'react';
 import { useAppStore, Tab } from '@/stores/appStore';
 import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 
 interface TabBarProps {
   route: string;
@@ -52,19 +53,29 @@ interface TabItemProps {
 
 function TabItem({ tab, isActive, onClick, onClose }: TabItemProps) {
   return (
-    <button
-      onClick={onClick}
+    <div
       className={cn(
-        'flex items-center gap-2 px-3 py-1.5 rounded-md text-sm transition-colors min-w-0',
+        'flex items-center gap-1 rounded-md text-sm transition-colors min-w-0',
         'hover:bg-muted/50',
         isActive ? 'bg-background shadow-sm font-medium border' : 'text-muted-foreground'
       )}
     >
-      <span className="truncate max-w-[150px]">{tab.targetName}</span>
-      <X
-        className="h-3.5 w-3.5 shrink-0 hover:text-foreground transition-colors"
+      <Button
+        variant="ghost"
+        size="sm"
+        className="h-8 px-3 font-normal"
+        onClick={onClick}
+      >
+        <span className="truncate max-w-[150px]">{tab.targetName}</span>
+      </Button>
+      <Button
+        variant="ghost"
+        size="icon"
+        className="h-8 w-6 shrink-0"
         onClick={onClose}
-      />
-    </button>
+      >
+        <X className="h-3.5 w-3.5" />
+      </Button>
+    </div>
   );
 }

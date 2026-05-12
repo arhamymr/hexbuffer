@@ -4,8 +4,7 @@ import { useAppStore } from "@/stores/appStore";
 import { TabBar } from "@/components/tab-bar";
 import { TargetSelectorDialog } from "@/components/target-selector-dialog";
 import { Card, CardContent } from "@/components/ui/card";
-import { RepeaterPage } from "@/components/repeater";
-import { BruteForcePage } from "@/components/brute-force";
+import { BruteForcePage } from "@/pages/brute-force";
 import { FindingsPage } from "@/components/findings";
 import { DebuggerPage } from "@/components/DebuggerPage";
 import { Settings } from "@/components/settings";
@@ -202,7 +201,6 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/" element={<HomePage />} />
-      <Route path="/repeater" element={<RepeaterPageWrapper />} />
       <Route path="/brute-force" element={<BruteForcePage />} />
       <Route path="/history" element={<HistoryPageContent />} />
       <Route path="/debugger" element={<DebuggerPage />} />
@@ -212,19 +210,5 @@ function AppRoutes() {
   );
 }
 
-function RepeaterPageWrapper() {
-  const pendingRepeaterRequest = useAppStore((s) => s.pendingRepeaterRequest);
-  const setPendingRepeaterRequest = useAppStore((s) => s.setPendingRepeaterRequest);
-  const [initialRequest, setInitialRequest] = React.useState<any>(null);
-
-  React.useEffect(() => {
-    if (pendingRepeaterRequest) {
-      setInitialRequest(pendingRepeaterRequest);
-      setPendingRepeaterRequest(null);
-    }
-  }, [pendingRepeaterRequest, setPendingRepeaterRequest]);
-
-  return <RepeaterPage initialRequest={initialRequest} />;
-}
 
 export default AppRoutes;

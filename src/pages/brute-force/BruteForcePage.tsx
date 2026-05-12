@@ -18,7 +18,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { useBruteForceConfig, useBruteForceAttack } from './hooks';
-import { parseRawRequest } from '@/components/repeater/types';
+import { parseRawRequest } from './types';
 import { useAppStore } from '@/stores/appStore';
 import Editor from '@monaco-editor/react';
 
@@ -151,7 +151,7 @@ export function BruteForcePage() {
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
-          <h1 className="text-3xl font-bold">Brute Force</h1>
+          <h1 className="text-xl">Brute Force</h1>
           {isRunning && progress && (
             <Badge variant="secondary" className="animate-pulse">
               {progress.current} / {progress.total}

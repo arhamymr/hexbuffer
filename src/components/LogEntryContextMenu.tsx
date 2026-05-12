@@ -1,7 +1,6 @@
 'use client';
 
 import { useNavigate } from 'react-router-dom';
-import { invoke } from '@tauri-apps/api/core';
 import {
   ContextMenu,
   ContextMenuTrigger,
@@ -65,30 +64,7 @@ export function LogEntryContextMenu({
   };
 
   const handleAddToScope = async () => {
-    if (call.host && activeTargetId) {
-      const host = call.host.split(':')[0];
-      try {
-        await invoke('add_target_scope', {
-          id: activeTargetId,
-          scope: [`*.${host}`],
-        });
-      } catch (e) {
-        console.error('Failed to add to scope:', e);
-      }
-    }
-  };
-
-  const handleOpenInRepeater = () => {
-    const protocol = call.url.includes(':443') ? 'https' : 'http';
-    const request = {
-      method: call.method,
-      url: `${protocol}://${call.host}${call.path}`,
-      headers: call.headers,
-      body: call.request_body || '',
-    };
-
-    useAppStore.getState().setPendingRepeaterRequest(request);
-    navigate('/repeater');
+    console.log('Add to scope not available in dev mode');
   };
 
   const handleOpenInBruteForce = () => {
@@ -130,9 +106,6 @@ export function LogEntryContextMenu({
         <ContextMenuSeparator />
         <ContextMenuItem onClick={handleAddToScope} disabled={!activeTargetId}>
           <Plus className="mr-2 h-4 w-4" /> Add to Scope
-        </ContextMenuItem>
-        <ContextMenuItem onClick={handleOpenInRepeater}>
-          <ExternalLink className="mr-2 h-4 w-4" /> Open in Repeater
         </ContextMenuItem>
         <ContextMenuItem onClick={handleOpenInBruteForce}>
           <ExternalLink className="mr-2 h-4 w-4" /> Open in Brute Force

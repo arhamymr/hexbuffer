@@ -6,7 +6,7 @@ import { AppLayout } from "@/components/top-nav";
 import { Toaster } from "@/components/ui/sonner";
 import { DummyDataLoader } from "@/components/dummy-data-loader";
 import AppRoutes from "@/App";
-import "@/app/globals.css";
+import "@/styles/globals.css";
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>

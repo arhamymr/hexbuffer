@@ -1,13 +1,12 @@
 "use client";
 
-import { useCallback, useEffect } from "react";
+import { useCallback } from "react";
 import { useAppStore } from "@/stores/appStore";
 import { useTrafficStore } from "@/stores/trafficStore";
 import {
   generateDummyTargets,
   generateDummyApiCalls,
   generateDummyFindings,
-  generateDummyRepeaterTabs,
   generateDummyAttackResults,
   generateDummyAttackConfig,
 } from "@/lib/dummy-data";
@@ -16,20 +15,15 @@ const DUMMY_DATA_KEY = "apprecon_dummy_loaded";
 
 interface DummyDataState {
   findings: ReturnType<typeof generateDummyFindings>;
-  repeaterTabs: ReturnType<typeof generateDummyRepeaterTabs>;
   attackResults: ReturnType<typeof generateDummyAttackResults>;
   attackConfig: ReturnType<typeof generateDummyAttackConfig>;
 }
 
 export function useDummyData() {
-  const targets = useAppStore((s) => s.targets);
-  const calls = useTrafficStore((s) => s.calls);
-
   const loadDummyData = useCallback(() => {
     const dummyTargets = generateDummyTargets();
     const dummyApiCalls = generateDummyApiCalls(dummyTargets.map((t) => t.id), 30);
     const dummyFindings = generateDummyFindings(dummyTargets.map((t) => t.id));
-    const dummyRepeaterTabs = generateDummyRepeaterTabs();
     const dummyAttackResults = generateDummyAttackResults(20);
     const dummyAttackConfig = generateDummyAttackConfig();
 
@@ -44,7 +38,6 @@ export function useDummyData() {
 
     const dummyState: DummyDataState = {
       findings: dummyFindings,
-      repeaterTabs: dummyRepeaterTabs,
       attackResults: dummyAttackResults,
       attackConfig: dummyAttackConfig,
     };
@@ -93,12 +86,6 @@ export function useDummyFindings() {
   const { getDummyState } = useDummyData();
   const dummyState = getDummyState();
   return dummyState?.findings || [];
-}
-
-export function useDummyRepeaterTabs() {
-  const { getDummyState } = useDummyData();
-  const dummyState = getDummyState();
-  return dummyState?.repeaterTabs || [];
 }
 
 export function useDummyAttackResults() {

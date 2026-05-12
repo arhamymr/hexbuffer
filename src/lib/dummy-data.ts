@@ -1,7 +1,6 @@
 import { Target, ApiCall, RequestType } from "@/types";
 import { Finding, Severity, FindingStatus, HttpRequestData, HttpResponseData } from "@/components/findings/types";
-import { RepeaterTab, HttpRequest, HttpResponse, createNewTab } from "@/components/repeater/types";
-import { AttackConfig, AttackResult, AttackProgress } from "@/components/brute-force/types";
+import { HttpRequest, AttackConfig, AttackResult, AttackProgress } from "@/pages/brute-force/types";
 
 function generateId(): string {
   return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
@@ -242,95 +241,6 @@ export function generateDummyFindings(targetIds: string[]): Finding[] {
       updated_at: Date.now() - randomInt(0, 7) * 24 * 60 * 60 * 1000,
     };
   });
-}
-
-export function generateDummyRepeaterTabs(): RepeaterTab[] {
-  const tabs: RepeaterTab[] = [];
-
-  const tab1 = createNewTab();
-  tab1.name = "GET Users";
-  tab1.request = {
-    method: "GET",
-    url: "https://api.example.com/users?page=1&limit=20",
-    headers: {
-      "Accept": "application/json",
-      "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-    },
-    body: "",
-    follow_redirects: true,
-    max_hops: 10,
-  };
-  tab1.response = {
-    status: 200,
-    status_text: "OK",
-    headers: {
-      "content-type": "application/json",
-      "x-total-count": "156",
-      "x-page": "1",
-    },
-    body: JSON.stringify({
-      data: [
-        { id: 1, name: "John Doe", email: "john@example.com", role: "admin" },
-        { id: 2, name: "Jane Smith", email: "jane@example.com", role: "user" },
-        { id: 3, name: "Bob Wilson", email: "bob@example.com", role: "user" },
-      ],
-      meta: { page: 1, limit: 20, total: 156 },
-    }, null, 2),
-    time_ms: 245,
-    final_url: "https://api.example.com/users?page=1&limit=20",
-  };
-  tab1.history = [tab1.request];
-  tab1.historyIndex = 0;
-  tabs.push(tab1);
-
-  const tab2 = createNewTab();
-  tab2.name = "POST Login";
-  tab2.request = {
-    method: "POST",
-    url: "https://api.example.com/auth/login",
-    headers: {
-      "Content-Type": "application/json",
-      "Accept": "application/json",
-    },
-    body: JSON.stringify({ email: "john@example.com", password: "••••••••" }),
-    follow_redirects: false,
-    max_hops: 5,
-  };
-  tab2.response = {
-    status: 200,
-    status_text: "OK",
-    headers: {
-      "content-type": "application/json",
-      "set-cookie": "session_id=abc123; HttpOnly; Secure",
-    },
-    body: JSON.stringify({
-      success: true,
-      token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-      user: { id: 1, name: "John Doe", email: "john@example.com" },
-    }, null, 2),
-    time_ms: 312,
-    final_url: "https://api.example.com/auth/login",
-  };
-  tab2.history = [tab2.request];
-  tab2.historyIndex = 0;
-  tabs.push(tab2);
-
-  const tab3 = createNewTab();
-  tab3.name = "PUT Profile";
-  tab3.request = {
-    method: "PUT",
-    url: "https://api.example.com/users/1/profile",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-    },
-    body: JSON.stringify({ name: "John Doe Updated", bio: "Software developer passionate about security" }),
-    follow_redirects: true,
-    max_hops: 10,
-  };
-  tabs.push(tab3);
-
-  return tabs;
 }
 
 export function generateDummyAttackResults(count: number = 15): AttackResult[] {

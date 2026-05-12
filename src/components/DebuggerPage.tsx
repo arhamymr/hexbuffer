@@ -77,7 +77,7 @@ export function DebuggerPage() {
           <Bug className="h-6 w-6" />
           <div>
             <h1 className="text-2xl font-bold">Event Debugger</h1>
-            <p className="text-sm text-muted-foreground">Real-time proxy traffic log</p>
+            <p className="text-sm text-muted-foreground">Real-time traffic log</p>
           </div>
         </div>
         <div className="flex items-center gap-2">

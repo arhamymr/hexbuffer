@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { invoke } from '@tauri-apps/api/core';
+import { devInvoke } from '@/lib/dev-invoke';
 import { RepeaterTab, HttpResponse } from '../types';
 
 export function useRepeaterRequest(
@@ -21,7 +21,7 @@ export function useRepeaterRequest(
     });
 
     try {
-      const response = await invoke<HttpResponse>('send_http_request', { request });
+      const response = await devInvoke<HttpResponse>('send_http_request', { request });
       updateTab(activeTab.id, {
         response,
         isLoading: false,

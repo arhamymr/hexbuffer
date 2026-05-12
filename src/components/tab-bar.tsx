@@ -2,7 +2,6 @@
 
 import * as React from 'react';
 import { useAppStore, Tab } from '@/stores/appStore';
-import { Button } from '@/components/ui/button';
 import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 

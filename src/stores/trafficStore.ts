@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import type { ApiCall, ProxyConnection } from '@/types';
+import type { ApiCall } from '@/types';
 
 const MAX_CALLS = 1000;
 
@@ -16,10 +16,8 @@ interface TrafficState {
 
 export const useTrafficStore = create<TrafficState>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       calls: [],
-      filterHost: '',
-      filterMethod: '',
 
       addHttpLog: (call) =>
         set((state) => {

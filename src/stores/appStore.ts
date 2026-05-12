@@ -1,8 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { invoke } from '@tauri-apps/api/core';
 import type { Target } from '@/types';
-import type { HttpRequestTemplate } from '@/components/repeater/types';
 
 export interface Tab {
   id: string;
@@ -15,9 +13,7 @@ interface AppState {
   selectedTarget: Target | null;
   routeTabs: Record<string, Tab[]>;
   activeTabId: Record<string, string>;
-  pendingRepeaterRequest: HttpRequestTemplate | null;
-  pendingBruteForceRequest: HttpRequestTemplate | null;
-  fetchTargets: () => Promise<void>;
+  fetchTargets: () => void;
   selectTarget: (target: Target | null) => void;
   addTab: (route: string, target: Target) => void;
   removeTab: (route: string, tabId: string) => void;
@@ -25,8 +21,6 @@ interface AppState {
   clearRouteTabs: (route: string) => void;
   getRouteTabs: (route: string) => Tab[];
   getActiveTab: (route: string) => Tab | null;
-  setPendingRepeaterRequest: (request: HttpRequestTemplate | null) => void;
-  setPendingBruteForceRequest: (request: HttpRequestTemplate | null) => void;
 }
 
 function generateId(): string {
@@ -40,16 +34,8 @@ export const useAppStore = create<AppState>()(
       selectedTarget: null,
       routeTabs: {},
       activeTabId: {},
-      pendingRepeaterRequest: null,
-      pendingBruteForceRequest: null,
 
-      fetchTargets: async () => {
-        try {
-          const data = await invoke<Target[]>('get_targets');
-          set({ targets: data });
-        } catch (e) {
-          console.error('Failed to fetch targets:', e);
-        }
+      fetchTargets: () => {
       },
 
       selectTarget: (target) => {
@@ -141,14 +127,6 @@ export const useAppStore = create<AppState>()(
           delete newActiveTabId[route];
           return { routeTabs: newRouteTabs, activeTabId: newActiveTabId };
         });
-      },
-
-      setPendingRepeaterRequest: (request) => {
-        set({ pendingRepeaterRequest: request });
-      },
-
-      setPendingBruteForceRequest: (request) => {
-        set({ pendingBruteForceRequest: request });
       },
     }),
     {

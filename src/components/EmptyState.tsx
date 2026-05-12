@@ -10,7 +10,7 @@ export function EmptyState({ variant }: EmptyStateProps) {
       <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
         <Bug className="h-12 w-12 mb-4 opacity-20" />
         <p className="text-lg font-medium mb-2">No traffic captured</p>
-        <p className="text-sm">Start proxy and make HTTP requests to see logs here</p>
+        <p className="text-sm">Make HTTP requests to see logs here</p>
       </div>
     );
   }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -10,7 +10,7 @@ import { connectionsColumns } from '@/components/connections-columns';
 import { callsColumns } from '@/components/calls-columns';
 import { Globe, Activity } from 'lucide-react';
 import { matchesScope } from '@/lib/utils';
-import type { Target, ProxyStatus, ProxyConnection, ApiCall } from '@/types';
+import type { Target, ProxyConnection, ApiCall } from '@/types';
 
 interface DashboardContentProps {
   selectedTarget: Target | null;
@@ -25,36 +25,9 @@ export function DashboardContent({
   calls,
   onScopeUpdated,
 }: DashboardContentProps) {
-  const [proxyRunning, setProxyRunning] = useState(false);
   const [loading, setLoading] = useState(false);
   const [newDomain, setNewDomain] = useState('');
   const [includeSubdomain, setIncludeSubdomain] = useState(true);
-
-  useEffect(() => {
-    const startProxy = async () => {
-      if (!selectedTarget) return;
-      try {
-        await invoke('start_proxy', { port: 8888, targetId: selectedTarget.id });
-        setProxyRunning(true);
-      } catch (e) {
-        console.error('Failed to start proxy:', e);
-      }
-    };
-
-    startProxy();
-
-    const checkStatus = async () => {
-      try {
-        const status = await invoke<ProxyStatus>('get_proxy_status');
-        setProxyRunning(status.running);
-      } catch (e) {
-        console.error('Failed to get proxy status:', e);
-      }
-    };
-    checkStatus();
-    const interval = setInterval(checkStatus, 2000);
-    return () => clearInterval(interval);
-  }, [selectedTarget?.id]);
 
   const handleAddToNewTarget = async (host: string) => {
     if (!host) return;
@@ -181,7 +154,7 @@ export function DashboardContent({
           <div>
             <h1 className="text-3xl font-bold">Live Monitor</h1>
             <p className="text-sm text-muted-foreground">
-              {proxyRunning ? 'Proxy active on localhost:8888' : 'Proxy inactive'}
+              Target: {selectedTarget?.name || 'None'}
             </p>
           </div>
         </div>

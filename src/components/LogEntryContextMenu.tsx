@@ -1,6 +1,6 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
+import { useNavigate } from 'react-router-dom';
 import { invoke } from '@tauri-apps/api/core';
 import {
   ContextMenu,
@@ -27,7 +27,7 @@ export function LogEntryContextMenu({
   onToggle,
   activeTargetId,
 }: LogEntryContextMenuProps) {
-  const router = useRouter();
+  const navigate = useNavigate();
 
   const copyToClipboard = async (text: string | null | undefined) => {
     if (text) {
@@ -88,7 +88,7 @@ export function LogEntryContextMenu({
     };
 
     useAppStore.getState().setPendingRepeaterRequest(request);
-    router.push('/repeater');
+    navigate('/repeater');
   };
 
   const handleOpenInBruteForce = () => {
@@ -101,7 +101,7 @@ export function LogEntryContextMenu({
     };
 
     useAppStore.getState().setPendingBruteForceRequest(request);
-    router.push('/brute-force');
+    navigate('/brute-force');
   };
 
   const handleDelete = () => {

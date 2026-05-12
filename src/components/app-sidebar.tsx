@@ -18,16 +18,14 @@ import {
   SidebarInset,
   useSidebar,
 } from './ui/sidebar';
-import { ChevronLeft, ChevronRight, Target as TargetIcon, History, Settings, Send, Crosshair, Bug, Moon, Sun, Play, Loader2, Asterisk } from 'lucide-react';
+import { ChevronLeft, ChevronRight, History, Settings, Send, Crosshair, Bug, Moon, Sun, Asterisk } from 'lucide-react';
 import { Footer } from './footer';
 import { useTheme } from './theme-provider';
-import { useProxyStatus } from '@/hooks';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { Link, useLocation } from 'react-router-dom';
 import { Button } from './ui/button';
 
 const mainNavItems = [
-  { label: 'Proxy', icon: TargetIcon, href: '/' },
+  { label: 'Home', icon: Bug, href: '/' },
   { label: 'Repeater', icon: Send, href: '/repeater' },
   { label: 'Brute Force', icon: Crosshair, href: '/brute-force' },
   { label: 'History', icon: History, href: '/history' },
@@ -35,7 +33,8 @@ const mainNavItems = [
 ];
 
 function NavButton({ item }: { item: typeof mainNavItems[0] }) {
-  const pathname = usePathname();
+  const location = useLocation();
+  const pathname = location.pathname;
   const Icon = item.icon;
   return (
     <SidebarMenuItem>
@@ -50,26 +49,13 @@ function NavButton({ item }: { item: typeof mainNavItems[0] }) {
 }
 
 function FooterButtons() {
-  const pathname = usePathname();
+  const location = useLocation();
+  const pathname = location.pathname;
   const { theme, toggleTheme } = useTheme();
   const { state, toggleSidebar } = useSidebar();
-  const { running, loading, start, stop } = useProxyStatus();
 
   return (
     <>
-      <SidebarMenuItem>
-        {!running ? (
-          <Button onClick={start} disabled={loading} size="sm" className="w-full justify-center">
-            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
-            <span className="group-data-[collapsible=icon]:hidden">Start Proxy</span>
-          </Button>
-        ) : (
-          <Button onClick={stop} disabled={loading} variant="destructive" size="sm" className="w-full justify-start">
-            <Loader2 className="h-4 w-4 animate-spin" />
-            <span className="group-data-[collapsible=icon]:hidden">Stop Proxy</span>
-          </Button>
-        )}
-      </SidebarMenuItem>
       <SidebarMenuItem>
         <SidebarMenuButton asChild isActive={pathname === '/settings'} tooltip="Settings">
           <Link href="/settings">

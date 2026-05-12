@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { invoke } from '@tauri-apps/api/core';
+import { devInvoke } from '@/lib/dev-invoke';
 import { X, Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -99,7 +99,7 @@ export function RepeaterPage({ initialRequest }: RepeaterPageProps) {
     });
 
     try {
-      const response = await invoke<HttpResponse>('send_http_request', { request });
+      const response = await devInvoke<HttpResponse>('send_http_request', { request });
       updateTab(activeTab.id, {
         response,
         isLoading: false,

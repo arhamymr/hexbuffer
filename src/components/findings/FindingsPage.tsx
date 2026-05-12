@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { invoke } from '@tauri-apps/api/core';
+import { devInvoke, isMockMode } from '@/lib/dev-invoke';
 import { Plus, Search, Filter, FileJson, FileText } from 'lucide-react';
 import { Finding } from './types';
 import { Button } from '@/components/ui/button';
@@ -46,7 +46,7 @@ export function FindingsPage({ targets, selectedTargetId }: FindingsPageProps) {
     setLoading(true);
     try {
       const targetId = filterTarget === 'all' ? null : filterTarget;
-      const data = await invoke<Finding[]>('get_findings', { targetId });
+      const data = await devInvoke<Finding[]>('get_findings', { targetId });
       setFindings(data);
     } catch (error) {
       console.error('Failed to load findings:', error);
@@ -73,7 +73,7 @@ export function FindingsPage({ targets, selectedTargetId }: FindingsPageProps) {
     if (!confirm('Are you sure you want to delete this finding?')) return;
 
     try {
-      await invoke('delete_finding', { id });
+      await devInvoke('delete_finding', { id });
       setFindings((prev) => prev.filter((f) => f.id !== id));
     } catch (error) {
       console.error('Failed to delete finding:', error);

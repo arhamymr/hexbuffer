@@ -52,6 +52,7 @@ export interface ProxyConnection {
   host: string;
   port: number;
   targetId: string;
+  mode?: string;
   clientBytes?: number;
   serverBytes?: number;
   duration?: number;

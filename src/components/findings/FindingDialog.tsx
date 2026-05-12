@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { invoke } from '@tauri-apps/api/core';
+import { devInvoke } from '@/lib/dev-invoke';
 import { Finding, Severity, FindingStatus, HttpRequestData, HttpResponseData, createNewFinding } from './types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -62,9 +62,9 @@ export function FindingDialog({
 
     try {
       if (mode === 'create') {
-        await invoke('create_finding', { finding: updatedFinding });
+        await devInvoke('create_finding', { finding: updatedFinding });
       } else {
-        await invoke('update_finding', { finding: updatedFinding });
+        await devInvoke('update_finding', { finding: updatedFinding });
       }
       onSave(updatedFinding);
       onOpenChange(false);

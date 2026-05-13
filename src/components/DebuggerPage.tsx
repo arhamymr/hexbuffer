@@ -4,34 +4,22 @@ import { useState, useMemo } from 'react';
 import { Bug, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { useTrafficStore, useFilteredCalls } from '@/stores/trafficStore';
-import type { FilterState } from './types';
-import { STATUS_FILTERS } from './constants';
-import { DEFAULT_FILTER_STATE } from './types';
-import { LogEntry } from './LogEntry';
-import { LogFilters } from './LogFilters';
+import type { FilterState } from './log-table/types';
+import { STATUS_FILTERS } from '@/components/log-table/constants';
+import { DEFAULT_FILTER_STATE } from './log-table/types';
+import { TrafficTable } from './log-table/calls-columns';
+import { LogFilters } from './log-table/log-filters';
 import { EmptyState } from './EmptyState';
+import { JsonDetailDrawer } from './log-table/json-detail-drawer';
 
 export function DebuggerPage() {
   const calls = useTrafficStore((s) => s.calls);
   const clearCalls = useTrafficStore((s) => s.clearCalls);
   const filteredCalls = useFilteredCalls();
 
-  const [expandedLogs, setExpandedLogs] = useState<Set<string>>(new Set());
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [filter, setFilter] = useState<FilterState>(DEFAULT_FILTER_STATE);
-
-  const toggleExpanded = (id: string) => {
-    setExpandedLogs((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
-      return next;
-    });
-  };
 
   const filteredLogs = useMemo(() => {
     return filteredCalls.filter((log) => {
@@ -70,11 +58,12 @@ export function DebuggerPage() {
     setFilter(DEFAULT_FILTER_STATE);
   };
 
+  const selectedCall = selectedId ? calls.find(c => c.id === selectedId) || null : null;
+
   return (
     <div className="h-full flex flex-col">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
-          <Bug className="h-6 w-6" />
           <div>
             <h1 className="text-xl">Event Debugger</h1>
           </div>
@@ -93,26 +82,22 @@ export function DebuggerPage() {
       <LogFilters filter={filter} onFilterChange={setFilter} onClearFilters={clearFilters} />
 
       <Card className="flex-1 flex flex-col overflow-hidden mt-3">
-        <CardHeader className="pb-2 flex-shrink-0">
-          <CardTitle className="text-base">Traffic Log</CardTitle>
-        </CardHeader>
         <CardContent className="flex-1 overflow-hidden p-0">
           {filteredLogs.length === 0 ? (
             <EmptyState variant={calls.length === 0 ? 'no-traffic' : 'no-matches'} />
           ) : (
-            <ScrollArea className="h-full">
-              {[...filteredLogs].reverse().map((log) => (
-                <LogEntry
-                  key={log.id}
-                  call={log}
-                  expanded={expandedLogs.has(log.id)}
-                  onToggle={() => toggleExpanded(log.id)}
-                />
-              ))}
-            </ScrollArea>
+            <TrafficTable
+              calls={[...filteredLogs].reverse()}
+              onSelect={setSelectedId}
+            />
           )}
         </CardContent>
       </Card>
+
+      <JsonDetailDrawer
+        call={selectedCall}
+        onClose={() => setSelectedId(null)}
+      />
     </div>
   );
 }

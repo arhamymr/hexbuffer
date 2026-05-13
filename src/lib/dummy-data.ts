@@ -17,7 +17,7 @@ function randomInt(min: number, max: number): number {
 export function generateDummyTargets(): Target[] {
   return [
     {
-      id: generateId(),
+      id: "target-prod-api",
       name: "Production API",
       description: "Main production API server",
       scope: ["api.example.com", "*.api.example.com"],
@@ -25,7 +25,7 @@ export function generateDummyTargets(): Target[] {
       updatedAt: new Date().toISOString(),
     },
     {
-      id: generateId(),
+      id: "target-staging",
       name: "Staging Server",
       description: "Staging environment for testing",
       scope: ["staging.example.com", "*.staging.example.com"],
@@ -33,7 +33,7 @@ export function generateDummyTargets(): Target[] {
       updatedAt: new Date().toISOString(),
     },
     {
-      id: generateId(),
+      id: "target-dev",
       name: "Dev Environment",
       description: "Local development server",
       scope: ["localhost", "127.0.0.1"],

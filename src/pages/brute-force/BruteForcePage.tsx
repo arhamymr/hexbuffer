@@ -151,7 +151,6 @@ export function BruteForcePage() {
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
-          <h1 className="text-xl">Brute Force</h1>
           {isRunning && progress && (
             <Badge variant="secondary" className="animate-pulse">
               {progress.current} / {progress.total}
@@ -161,14 +160,14 @@ export function BruteForcePage() {
         <div className="flex items-center gap-2">
           <Button
             variant="outline"
-            size="sm"
+            size="xs"
             onClick={() => setConfigDialogOpen(true)}
           >
             Configure
           </Button>
           <Button
             variant="outline"
-            size="sm"
+            size="xs"
             onClick={() => setRawRequestDialogOpen(true)}
           >
             <Upload className="h-4 w-4 mr-1" />
@@ -176,12 +175,12 @@ export function BruteForcePage() {
           </Button>
           <div className="h-6 w-px bg-border" />
           {isRunning ? (
-            <Button variant="destructive" size="sm" onClick={handleStopAttack}>
+            <Button variant="destructive" size="xs" onClick={handleStopAttack}>
               <Square className="h-4 w-4 mr-1" />
               Stop
             </Button>
           ) : (
-            <Button size="sm" onClick={handleStartAttack} disabled={!config.base_request.url}>
+            <Button size="xs" onClick={handleStartAttack} disabled={!config.base_request.url}>
               <Play className="h-4 w-4 mr-1" />
               Start Attack
             </Button>
@@ -234,15 +233,15 @@ export function BruteForcePage() {
           <Label htmlFor="filterGrep" className="text-xs cursor-pointer">Grep Match Only</Label>
         </div>
         <div className="flex-1" />
-        <Button variant="outline" size="sm" onClick={() => handleExportResults('csv')} disabled={results.length === 0}>
+        <Button variant="outline" size="xs" onClick={() => handleExportResults('csv')} disabled={results.length === 0}>
           <Download className="h-4 w-4 mr-1" />
           CSV
         </Button>
-        <Button variant="outline" size="sm" onClick={() => handleExportResults('json')} disabled={results.length === 0}>
+        <Button variant="outline" size="xs" onClick={() => handleExportResults('json')} disabled={results.length === 0}>
           <Download className="h-4 w-4 mr-1" />
           JSON
         </Button>
-        <Button variant="outline" size="sm" onClick={clearResults} disabled={results.length === 0}>
+        <Button variant="outline" size="xs" onClick={clearResults} disabled={results.length === 0}>
           <Trash2 className="h-4 w-4 mr-1" />
           Clear
         </Button>
@@ -518,7 +517,7 @@ export function BruteForcePage() {
                     onChange={(e) => updatePayloadValues(e.target.value.split('\n').filter((v) => v.trim()))}
                   />
                   <div className="flex gap-2">
-                    <Button variant="outline" size="sm" onClick={() => setPayloadDialogOpen(true)}>
+                    <Button variant="outline" size="xs" onClick={() => setPayloadDialogOpen(true)}>
                       Load from File
                     </Button>
                   </div>
@@ -584,25 +583,25 @@ export function BruteForcePage() {
                   )}
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <Button variant="outline" size="sm" onClick={() => addProcessingStep('UrlEncode')}>
+                  <Button variant="outline" size="xs" onClick={() => addProcessingStep('UrlEncode')}>
                     URL Encode
                   </Button>
-                  <Button variant="outline" size="sm" onClick={() => addProcessingStep('UrlDecode')}>
+                  <Button variant="outline" size="xs" onClick={() => addProcessingStep('UrlDecode')}>
                     URL Decode
                   </Button>
-                  <Button variant="outline" size="sm" onClick={() => addProcessingStep('Base64Encode')}>
+                  <Button variant="outline" size="xs" onClick={() => addProcessingStep('Base64Encode')}>
                     Base64 Encode
                   </Button>
-                  <Button variant="outline" size="sm" onClick={() => addProcessingStep('Base64Decode')}>
+                  <Button variant="outline" size="xs" onClick={() => addProcessingStep('Base64Decode')}>
                     Base64 Decode
                   </Button>
-                  <Button variant="outline" size="sm" onClick={() => addProcessingStep('Md5Hash')}>
+                  <Button variant="outline" size="xs" onClick={() => addProcessingStep('Md5Hash')}>
                     MD5 Hash
                   </Button>
-                  <Button variant="outline" size="sm" onClick={() => addProcessingStep('Sha1Hash')}>
+                  <Button variant="outline" size="xs" onClick={() => addProcessingStep('Sha1Hash')}>
                     SHA1 Hash
                   </Button>
-                  <Button variant="outline" size="sm" onClick={() => addProcessingStep('Sha256Hash')}>
+                  <Button variant="outline" size="xs" onClick={() => addProcessingStep('Sha256Hash')}>
                     SHA256 Hash
                   </Button>
                 </div>
@@ -686,10 +685,10 @@ export function BruteForcePage() {
             </TabsContent>
           </Tabs>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setConfigDialogOpen(false)}>
+            <Button variant="outline" size="xs" onClick={() => setConfigDialogOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={() => setConfigDialogOpen(false)}>Save Configuration</Button>
+            <Button size="xs" onClick={() => setConfigDialogOpen(false)}>Save Configuration</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -712,10 +711,10 @@ export function BruteForcePage() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setRawRequestDialogOpen(false)}>
+            <Button variant="outline" size="xs" onClick={() => setRawRequestDialogOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleParseRawRequest} disabled={!rawRequestContent.trim()}>
+            <Button size="xs" onClick={handleParseRawRequest} disabled={!rawRequestContent.trim()}>
               Import
             </Button>
           </DialogFooter>
@@ -731,7 +730,7 @@ export function BruteForcePage() {
             <input type="file" onChange={handleLoadPayloads} accept=".txt,.lst,.wordlist" />
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setPayloadDialogOpen(false)}>
+            <Button variant="outline" size="xs" onClick={() => setPayloadDialogOpen(false)}>
               Cancel
             </Button>
           </DialogFooter>

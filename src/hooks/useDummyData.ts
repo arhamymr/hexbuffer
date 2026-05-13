@@ -30,6 +30,8 @@ export function useDummyData() {
     useAppStore.setState({
       targets: dummyTargets,
       selectedTarget: dummyTargets[0] || null,
+      routeTabs: {},
+      activeTabId: {},
     });
 
     useTrafficStore.setState({

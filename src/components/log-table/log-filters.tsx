@@ -4,7 +4,7 @@ import { Search, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import type { FilterState } from './types';
-import { METHOD_FILTERS, STATUS_FILTERS } from './constants';
+import { METHOD_FILTERS, STATUS_FILTERS } from '@/components/log-table/constants';
 
 interface LogFiltersProps {
   filter: FilterState;

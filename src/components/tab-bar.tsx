@@ -55,23 +55,22 @@ function TabItem({ tab, isActive, onClick, onClose }: TabItemProps) {
   return (
     <div
       className={cn(
-        'flex items-center gap-1 rounded-md text-sm transition-colors min-w-0',
+        'flex items-center rounded-t-md text-sm transition-colors min-w-0',
         'hover:bg-muted/50',
-        isActive ? 'bg-background shadow-sm font-medium border' : 'text-muted-foreground'
+        isActive ? 'bg-background font-medium border-x border-t border-green-500 font-semibold' : 'text-muted-foreground'
       )}
     >
       <Button
         variant="ghost"
-        size="sm"
+        size="xs"
         className="h-8 px-3 font-normal"
         onClick={onClick}
       >
-        <span className="truncate max-w-[150px]">{tab.targetName}</span>
+        <span className="truncate text-xs font-mono max-w-[150px]">{tab.targetName}</span>
       </Button>
       <Button
         variant="ghost"
-        size="icon"
-        className="h-8 w-6 shrink-0"
+        size="xs"
         onClick={onClose}
       >
         <X className="h-3.5 w-3.5" />

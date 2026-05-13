@@ -55,7 +55,7 @@ export function getMethodBadge(method: string) {
     TRACE: 'bg-cyan-600',
   };
   return (
-    <span className={`text-xs px-1.5 py-0.5 rounded font-mono font-bold text-white ${colors[method.toUpperCase()] || 'bg-gray-600'}`}>
+    <span className={`text-xs px-1 py-0.5 rounded font-mono text-white ${colors[method.toUpperCase()] || 'bg-gray-600'}`}>
       {method.toUpperCase()}
     </span>
   );

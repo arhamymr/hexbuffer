@@ -1,5 +1,5 @@
 import type { ApiCall } from '@/types';
-import { CookieDisplay, parseCookieHeader } from './CookieDisplay';
+import { CookieDisplay, parseCookieHeader } from './cookie-display';
 
 interface LogEntryCookiesProps {
   call: ApiCall;

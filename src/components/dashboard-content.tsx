@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { DataTable } from '@/components/ui/data-table';
 import { connectionsColumns } from '@/components/connections-columns';
-import { callsColumns } from '@/components/calls-columns';
+import { callsColumns } from '@/components/log-table/calls-columns';
 import { Globe, Activity } from 'lucide-react';
 import { matchesScope } from '@/lib/utils';
 import type { Target, ProxyConnection, ApiCall } from '@/types';

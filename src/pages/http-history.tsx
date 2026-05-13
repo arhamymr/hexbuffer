@@ -2,18 +2,16 @@
 
 import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
-import { Trash2 } from "lucide-react";
-import { useAppStore } from "@/stores/appStore";
-import { useTrafficStore } from "@/stores/trafficStore";
+import { useAppStore } from "@/stores/app";
+import { useProxyStore } from "@/stores/proxyStore";
 import { TabBar } from "@/components/tab-bar";
 import { TargetSelectorDialog } from "@/components/target-selector-dialog";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { TrafficTable } from "@/components/log-table/calls-columns";
 import { LogFilters } from "@/components/log-table/log-filters";
 import { LogDetailDrawer } from "@/components/log-table/log-detail-drawer";
 import type { FilterState } from "@/components/log-table/types";
-import { STATUS_FILTERS } from "@/components/log-table/constants";
+import { STATUS_FILTERS } from "@/components/log-table/utils";
 import { DEFAULT_FILTER_STATE } from "@/components/log-table/types";
 
 export function HttpHistoryPage() {
@@ -26,8 +24,8 @@ export function HttpHistoryPage() {
   const fetchTargets = useAppStore((s) => s.fetchTargets);
   const addTab = useAppStore((s) => s.addTab);
 
-  const calls = useTrafficStore((s) => s.calls);
-  const clearCalls = useTrafficStore((s) => s.clearCalls);
+  const calls = useProxyStore((s) => s.calls);
+  const clearCalls = useProxyStore((s) => s.clearCalls);
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [filter, setFilter] = useState<FilterState>(DEFAULT_FILTER_STATE);
@@ -88,7 +86,7 @@ export function HttpHistoryPage() {
 
   return (
     <div className="h-full flex flex-col">
-      <div className="flex items-center gap-2 mb-4 border-b border-green-500">
+      <div className="flex items-center gap-2 mb-2 border-b border-green-500 sticky top-9 z-20 bg-background pt-2">
         <TabBar route={pathname} />
         <TargetSelectorDialog
           existingTargets={targets}
@@ -96,23 +94,15 @@ export function HttpHistoryPage() {
           onTargetsUpdated={fetchTargets}
         />
       </div>
-
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <div className="text-sm text-muted-foreground mr-4">
-            {filteredLogs.length} / {calls.length} requests
-          </div>
-          <Button variant="outline" size="xs" onClick={clearCalls}>
-            <Trash2 className="h-4 w-4 mr-2" />
-            Clear All
-          </Button>
-        </div>
-      </div>
-
-      <LogFilters filter={filter} onFilterChange={setFilter} onClearFilters={clearFilters} />
-
-      <Card className="flex-1 flex flex-col overflow-hidden mt-3">
-        <CardContent className="flex-1 overflow-hidden p-0">
+      <LogFilters 
+        filter={filter} 
+        onFilterChange={setFilter} 
+        onClearFilters={clearFilters} 
+        filteredLogs={filteredLogs} 
+        calls={calls} 
+      clearCalls={clearCalls} 
+      />
+      <Card className="flex-1 flex flex-col overflow-hidden mt-3 !py-1">
           {filteredLogs.length === 0 ? (
             <div className="py-12 text-center text-muted-foreground">
               {calls.length === 0 ? 'No traffic captured yet' : 'No matches found'}
@@ -123,13 +113,12 @@ export function HttpHistoryPage() {
               onSelect={setSelectedId}
             />
           )}
-        </CardContent>
       </Card>
-
       <LogDetailDrawer
         call={selectedCall}
         onClose={() => setSelectedId(null)}
       />
+
     </div>
   );
 }

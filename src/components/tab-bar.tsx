@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { useAppStore, Tab } from '@/stores/appStore';
+import { useAppStore, Tab } from '@/stores/app';
 import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';

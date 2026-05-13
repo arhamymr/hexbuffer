@@ -2,10 +2,10 @@
 
 import type { ApiCall } from '@/types';
 import { InspectorSection, buildHeadersList, buildCookiesList, buildParamsList } from './inspector';
-import { CookieDisplay, parseCookieHeader } from '@/components/log-table/cookie-display';
-import { getMethodBadge, getStatusColor, formatBytes } from '@/components/log-table/constants';
-import { Copy, Check } from 'lucide-react';
-import { useState } from 'react';
+import { parseCookieHeader } from '@/components/log-table/cookie-display';
+import { getMethodBadge, getStatusColor, formatBytes } from '@/components/log-table/utils';
+import { Copy } from 'lucide-react';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 
 interface LogEntryBurpViewProps {
@@ -13,15 +13,12 @@ interface LogEntryBurpViewProps {
 }
 
 function PrettyCurl({ call }: { call: ApiCall }) {
-  const [copied, setCopied] = useState(false);
-
   const copyToClipboard = async (text: string) => {
     try {
       await navigator.clipboard.writeText(text);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      toast.success('cURL command copied to clipboard');
     } catch {
-      console.error('Failed to copy');
+      toast.error('Failed to copy');
     }
   };
 
@@ -49,7 +46,7 @@ function PrettyCurl({ call }: { call: ApiCall }) {
           }}
           title="Copy cURL"
         >
-          {copied ? <Check className="h-3 w-3 text-green-500" /> : <Copy className="h-3 w-3" />}
+          <Copy className="h-3 w-3" />
         </Button>
       </div>
       <pre className="bg-background p-3 rounded text-xs font-mono whitespace-pre-wrap overflow-auto max-h-40">
@@ -85,23 +82,19 @@ export function LogEntryBurpView({ call }: LogEntryBurpViewProps) {
   const responseCookies = parseCookieHeader(call.response_headers['set-cookie']);
 
   return (
-    <div className="grid grid-cols-2 gap-3 h-full">
-      <div className="border rounded-lg flex flex-col">
+    <div className="flex-1 grid grid-cols-2 gap-0 min-h-0">
+      <div className="border rounded-l-md border-r-0 overflow-hidden flex flex-col">
         <div className="p-3 border-b bg-muted/30">
-          <div className="flex items-center gap-2 mb-2">
+          <div className="flex items-center gap-2">
             {call.method && getMethodBadge(call.method)}
             <span className="text-xs font-mono truncate flex-1" title={call.url}>
               {call.url}
             </span>
           </div>
-          <div className="text-xs text-muted-foreground">
-            {formatBytes(call.request_body_size)} sent
-          </div>
         </div>
 
         <div className="p-3 flex-1 overflow-auto">
           <div className="mb-3">
-            <div className="text-xs font-semibold text-muted-foreground mb-1">INSPECTOR</div>
             <InspectorSection title="Headers" items={requestHeaders} />
             <InspectorSection title="Cookies" items={requestCookies.map(c => ({ name: c.name, value: c.value }))} />
             {requestParams.length > 0 && (
@@ -116,7 +109,7 @@ export function LogEntryBurpView({ call }: LogEntryBurpViewProps) {
         </div>
       </div>
 
-      <div className="border rounded-lg flex flex-col">
+      <div className="border rounded-r-md overflow-hidden flex flex-col">
         <div className="p-3 border-b bg-muted/30">
           <div className="flex items-center gap-2">
             {call.response_status && (
@@ -134,7 +127,6 @@ export function LogEntryBurpView({ call }: LogEntryBurpViewProps) {
 
         <div className="p-3 flex-1 overflow-auto">
           <div className="mb-3">
-            <div className="text-xs font-semibold text-muted-foreground mb-1">INSPECTOR</div>
             <InspectorSection title="Headers" items={responseHeaders} defaultOpen={false} />
             {responseCookies.length > 0 && (
               <InspectorSection

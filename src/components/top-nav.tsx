@@ -5,18 +5,19 @@ import { Link, useLocation } from 'react-router-dom';
 import { Bug, Crosshair, Settings, Moon, Sun, ArrowUpDown, RefreshCw } from 'lucide-react';
 import { useTheme } from './theme-provider';
 import { Button } from './ui/button';
+import { useProxyStore } from '@/stores/proxy';
 
 const mainNavItems = [
   { label: 'HTTP History', icon: ArrowUpDown, href: '/' },
   { label: 'Brute Force', icon: Crosshair, href: '/brute-force' },
   { label: 'Repeater', icon: RefreshCw, href: '/repeater' },
-  { label: 'Debugger', icon: Bug, href: '/debugger' },
-];
+]
 
 export function TopNav() {
   const location = useLocation();
   const pathname = location.pathname;
   const { theme, toggleTheme } = useTheme();
+  const status = useProxyStore((s) => s.status);
 
   return (
     <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
@@ -65,6 +66,10 @@ export function TopNav() {
         </div>
 
         <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1.5 mr-2">
+            <div className={`h-2 w-2 rounded-full ${status === 'connected' ? 'bg-green-500' : status === 'starting' ? 'bg-yellow-500 animate-pulse' : 'bg-red-500'}`} />
+            <span className="text-xs text-muted-foreground">{status === 'connected' ? 'Connected' : status === 'starting' ? 'Starting...' : 'Disconnected'}</span>
+          </div>
           <Button
             variant="ghost"
             size="sm"

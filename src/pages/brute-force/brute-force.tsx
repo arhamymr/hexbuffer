@@ -19,7 +19,7 @@ import {
 } from '@/components/ui/dialog';
 import { useBruteForceConfig, useBruteForceAttack } from './hooks';
 import { parseRawRequest } from './types';
-import { useAppStore } from '@/stores/appStore';
+import { useAppStore } from '@/stores/app';
 import Editor from '@monaco-editor/react';
 
 export function BruteForcePage() {

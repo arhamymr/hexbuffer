@@ -67,6 +67,35 @@ export function formatBytes(bytes: number) {
   return `${(bytes / (1024 * 1024)).toFixed(1)}MB`;
 }
 
+export function formatDuration(ms: number | null): string {
+  if (ms === null || ms === undefined) return "-";
+  return `${ms}ms`;
+}
+
+export function StatusBadge({ status }: { status: number | null }) {
+  if (status === null || status === undefined) {
+    return <span className="text-muted-foreground">-</span>;
+  }
+  const colorClass = getStatusColor(status);
+  return (
+    <span className={`text-xs px-1 py-0.5 rounded font-mono text-white ${colorClass}`}>
+      {status}
+    </span>
+  );
+}
+
+export function getExtension(url: string): string {
+  if (!url) return "-";
+  try {
+    const pathname = new URL(url).pathname;
+    const lastDot = pathname.lastIndexOf('.');
+    if (lastDot > -1 && lastDot < pathname.length - 1) {
+      return pathname.substring(lastDot);
+    }
+  } catch {}
+  return "-";
+}
+
 export function parseCookieHeader(cookieString: string | null | undefined): { name: string; value: string }[] {
   if (!cookieString) return [];
   return cookieString.split(';').map((pair) => {

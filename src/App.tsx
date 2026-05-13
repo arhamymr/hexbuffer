@@ -1,7 +1,6 @@
 import { Routes, Route } from "react-router-dom";
 import { HttpHistoryPage } from "@/pages/http-history";
-import { BruteForcePage } from "@/pages/brute-force";
-import { DebuggerPage } from "@/components/DebuggerPage";
+import { BruteForcePage } from "@/pages/brute-force/brute-force";
 import { Settings } from "@/components/settings";
 import { RepeaterPage } from "@/pages/repeater/RepeaterPage";
 
@@ -11,7 +10,6 @@ function AppRoutes() {
       <Route path="/" element={<HttpHistoryPage />} />
       <Route path="/repeater" element={<RepeaterPage />} />
       <Route path="/brute-force" element={<BruteForcePage />} />
-      <Route path="/debugger" element={<DebuggerPage />} />
       <Route path="/settings" element={<Settings />} />
     </Routes>
   );

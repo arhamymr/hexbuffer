@@ -10,9 +10,8 @@ import {
 } from '@/components/ui/context-menu';
 import { Copy, ExternalLink, Plus, Eye, Trash2, Send } from 'lucide-react';
 import type { ApiCall } from '@/types';
-import { useAppStore } from '@/stores/appStore';
-import { useTrafficStore } from '@/stores/trafficStore';
-import { useRepeaterStore } from '@/stores/repeaterStore';
+import { useAppStore } from '@/stores/app';
+import { useProxyStore } from '@/stores/proxyStore';
 
 interface LogEntryContextMenuProps {
   call: ApiCall;
@@ -83,48 +82,24 @@ export function LogEntryContextMenu({
 
   const handleOpenInRepeater = () => {
     const protocol = call.url.includes(':443') ? 'https' : 'http';
+    const url = `${protocol}://${call.host}${call.path}`;
     const headersString = Object.entries(call.headers)
       .map(([k, v]) => `${k}: ${v}`)
       .join('\n');
 
-    const newTab = {
-      id: `repeater-tab-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
-      name: call.method,
-      request: {
-        method: call.method,
-        url: `${protocol}://${call.host}${call.path}`,
-        headers: headersString,
-        body: call.request_body || '',
-      },
-      response: null,
-      isLoading: false,
-      error: null,
-    };
-
-    useRepeaterStore.getState().addTab();
-    const tabs = useRepeaterStore.getState().tabs;
-    const addedTab = tabs[tabs.length - 1];
-
-    useRepeaterStore.setState((state) => ({
-      tabs: state.tabs.map((t) =>
-        t.id === addedTab.id
-          ? { ...newTab, id: addedTab.id }
-          : t
-      ),
-    }));
-
+    console.log('Open in Repeater:', { method: call.method, url, headers: headersString });
     navigate('/repeater');
   };
 
   const handleDelete = () => {
-    const calls = useTrafficStore.getState().calls;
-    useTrafficStore.setState({ calls: calls.filter((c) => c.id !== call.id) });
+    const calls = useProxyStore.getState().calls;
+    useProxyStore.setState({ calls: calls.filter((c) => c.id !== call.id) });
   };
 
   return (
     <ContextMenu>
       <ContextMenuTrigger asChild onContextMenu={(e) => e.stopPropagation()}>
-        <div onClick={onToggle}>{children}</div>
+        <div onClick={onToggle} className="contents">{children}</div>
       </ContextMenuTrigger>
       <ContextMenuContent>
         <ContextMenuItem onClick={handleCopyCurl}>

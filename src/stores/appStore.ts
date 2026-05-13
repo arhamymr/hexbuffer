@@ -8,11 +8,19 @@ export interface Tab {
   targetName: string;
 }
 
+interface PendingBruteForceRequest {
+  method: string;
+  url: string;
+  headers: Record<string, string>;
+  body: string;
+}
+
 interface AppState {
   targets: Target[];
   selectedTarget: Target | null;
   routeTabs: Record<string, Tab[]>;
   activeTabId: Record<string, string>;
+  pendingBruteForceRequest: PendingBruteForceRequest | null;
   fetchTargets: () => void;
   selectTarget: (target: Target | null) => void;
   addTab: (route: string, target: Target) => void;
@@ -21,6 +29,7 @@ interface AppState {
   clearRouteTabs: (route: string) => void;
   getRouteTabs: (route: string) => Tab[];
   getActiveTab: (route: string) => Tab | null;
+  setPendingBruteForceRequest: (request: PendingBruteForceRequest | null) => void;
 }
 
 function generateId(): string {
@@ -34,6 +43,7 @@ export const useAppStore = create<AppState>()(
       selectedTarget: null,
       routeTabs: {},
       activeTabId: {},
+      pendingBruteForceRequest: null,
 
       fetchTargets: () => {
       },
@@ -127,6 +137,10 @@ export const useAppStore = create<AppState>()(
           delete newActiveTabId[route];
           return { routeTabs: newRouteTabs, activeTabId: newActiveTabId };
         });
+      },
+
+      setPendingBruteForceRequest: (request) => {
+        set({ pendingBruteForceRequest: request });
       },
     }),
     {

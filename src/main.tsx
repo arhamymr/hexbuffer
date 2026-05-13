@@ -5,8 +5,11 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { AppLayout } from "@/components/top-nav";
 import { Toaster } from "@/components/ui/sonner";
 import { DummyDataLoader } from "@/components/dummy-data-loader";
+import { useProxyStore } from "@/stores/proxy";
 import AppRoutes from "@/App";
 import "@/styles/globals.css";
+
+useProxyStore.getState().startProxy();
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>

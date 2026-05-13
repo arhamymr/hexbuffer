@@ -52,7 +52,7 @@ export function TargetSelectorDialog({
       }
     }}>
       <DialogTrigger asChild>
-        <Button size="sm" variant="outline" className="gap-2">
+        <Button size="sm" variant="outline" className="gap-2 h-6 w-6">
           <Plus className="h-4 w-4" />
         </Button>
       </DialogTrigger>

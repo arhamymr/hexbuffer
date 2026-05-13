@@ -1,8 +1,8 @@
 "use client";
 
 import { useCallback } from "react";
-import { useAppStore } from "@/stores/appStore";
-import { useTrafficStore } from "@/stores/trafficStore";
+import { useAppStore } from "@/stores/app";
+import { useProxyStore } from "@/stores/proxyStore";
 import {
   generateDummyTargets,
   generateDummyApiCalls,
@@ -34,7 +34,7 @@ export function useDummyData() {
       activeTabId: {},
     });
 
-    useTrafficStore.setState({
+    useProxyStore.setState({
       calls: dummyApiCalls,
     });
 
@@ -71,7 +71,7 @@ export function useDummyData() {
       targets: [],
       selectedTarget: null,
     });
-    useTrafficStore.setState({
+    useProxyStore.setState({
       calls: [],
     });
   }, []);

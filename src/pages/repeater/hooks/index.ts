@@ -1,1 +1,0 @@
-export { useSendRequest } from './useSendRequest';

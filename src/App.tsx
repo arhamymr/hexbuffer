@@ -1,6 +1,6 @@
 import { Routes, Route } from "react-router-dom";
 import { HttpHistoryPage } from "@/pages/http-history";
-import { BruteForcePage } from "@/pages/brute-force/brute-force";
+import { BruteForcePage } from "@/pages/brute-force";
 import { Settings } from "@/components/settings";
 import { RepeaterPage } from "@/pages/repeater/RepeaterPage";
 

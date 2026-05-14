@@ -1,167 +1,116 @@
 'use client';
 
 import * as React from 'react';
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarHeader,
-  SidebarInset,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarProvider,
-  SidebarRail,
-  SidebarSeparator,
-} from './ui/sidebar';
-import type { Target } from '@/types';
-import {
-  Zap,
-  History,
-  Settings,
-  Send,
-  Crosshair,
-  Bug,
-  Moon,
-  Sun,
-  FileText,
-} from 'lucide-react';
+import { Link, useLocation } from 'react-router-dom';
+import { Bug, Crosshair, Settings, Moon, Sun, ArrowUpDown, RefreshCw } from 'lucide-react';
 import { useTheme } from './theme-provider';
-
-interface LayoutProps {
-  targets: Target[];
-  selectedTarget: Target | null;
-  onTargetSelect: (target: Target | null) => void;
-  onTargetUpdated: () => void;
-  currentPage?: string;
-  onNavigate?: (page: string) => void;
-  children?: React.ReactNode;
-}
+import { Button } from './ui/button';
+import { useProxyStore } from '@/stores/proxyStore';
 
 const mainNavItems = [
-  { label: 'Live', icon: Zap, href: '/' },
-  { label: 'Repeater', icon: Send, href: '/repeater' },
-  { label: 'Brute Force', icon: Crosshair, href: '/intruder' },
-  { label: 'Findings', icon: FileText, href: '/findings' },
-  { label: 'History', icon: History, href: '/history' },
-  { label: 'Debugger', icon: Bug, href: '/debugger' },
-];
+  { label: 'HTTP History', icon: ArrowUpDown, href: '/' },
+  { label: 'Brute Force', icon: Crosshair, href: '/brute-force' },
+  { label: 'Repeater', icon: RefreshCw, href: '/repeater' },
+]
 
-function AppSidebar({
-  currentPage = '/',
-  onNavigate,
-}: {
-  currentPage?: string;
-  onNavigate?: (page: string) => void;
-}) {
+export function TopNav() {
+  const location = useLocation();
+  const pathname = location.pathname;
   const { theme, toggleTheme } = useTheme();
+  const status = useProxyStore((s) => s.status);
 
   return (
-    <Sidebar collapsible="icon">
-      <SidebarHeader>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton asChild isActive={currentPage === '/'}>
-              <a href="#" onClick={(e) => { e.preventDefault(); onNavigate?.('/'); }}>
-                <Zap className="size-4" />
-                <span>Bug Bounty Tools</span>
-              </a>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
-      </SidebarHeader>
-      <SidebarSeparator />
-      <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel>Tools</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {mainNavItems.map((item) => {
-                const Icon = item.icon;
-                return (
-                  <SidebarMenuItem key={item.href}>
-                    <SidebarMenuButton
-                      asChild
-                      isActive={currentPage === item.href}
-                      tooltip={item.label}
-                    >
-                      <a
-                        href="#"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          onNavigate?.(item.href);
-                        }}
-                      >
-                        <Icon className="size-4" />
-                        <span>{item.label}</span>
-                      </a>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                );
-              })}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-      </SidebarContent>
-      <SidebarSeparator />
-      <SidebarFooter>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              asChild
-              isActive={currentPage === '/settings'}
-              tooltip="Settings"
+    <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
+      <div className="flex items-center justify-between h-8.5 px-4">
+        <div className='flex items-center align-center gap-4'>
+          <div className="flex items-center gap-1">
+            {/* Light mode */}
+            <img
+              src="https://assets.apsaradigital.com/logo.png"
+              className="h-3 w-18 shrink-0 dark:hidden"
+              alt="Logo"
+            />
+
+            {/* Dark mode */}
+            <img
+              src="https://assets.apsaradigital.com/logo-white.png"
+              className="hidden h-3 w-18 shrink-0 dark:block"
+              alt="Logo"
+            />
+          </div>
+
+          <nav className="flex items-center gap-0.5">
+            {mainNavItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = pathname === item.href;
+              return (
+                <Link
+                  key={item.href}
+                  to={item.href}
+                  className={`
+                  flex items-center gap-2 px-4 py-2 text-sm transition-colors
+                  border-b -mb-px
+                  ${isActive
+                      ? 'border-green-500 text-foreground bg-muted/30'
+                      : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-t-md'
+                    }
+                `}
+                >
+                  <Icon className="h-3 w-3" />
+                  <span>{item.label}</span>
+                </Link>
+              );
+            })}
+          </nav>
+
+        </div>
+
+        <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1.5 mr-2">
+            <div className={`h-2 w-2 rounded-full ${status === 'connected' ? 'bg-green-500' : status === 'starting' ? 'bg-yellow-500 animate-pulse' : 'bg-red-500'}`} />
+            <span className="text-xs text-muted-foreground">{status === 'connected' ? 'Connected' : status === 'starting' ? 'Starting...' : 'Disconnected'}</span>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 w-8 p-0"
+            onClick={toggleTheme}
+            title={theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
+          >
+            {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+          </Button>
+          <Link to="/settings">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 p-0"
+              title="Settings"
             >
-              <a
-                href="#"
-                onClick={(e) => {
-                  e.preventDefault();
-                  onNavigate?.('/settings');
-                }}
-              >
-                <Settings className="size-4" />
-                <span>Settings</span>
-              </a>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-          <SidebarMenuItem>
-            <SidebarMenuButton onClick={toggleTheme} tooltip={theme === 'dark' ? 'Light Mode' : 'Dark Mode'}>
-              {theme === 'dark' ? <Sun className="size-4" /> : <Moon className="size-4" />}
-              <span>{theme === 'dark' ? 'Light' : 'Dark'}</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
-      </SidebarFooter>
-      <SidebarRail />
-    </Sidebar>
+              <Settings className="h-4 w-4" />
+            </Button>
+          </Link>
+        </div>
+      </div>
+    </header>
   );
 }
 
-export function Layout({
-  targets,
-  selectedTarget,
-  onTargetSelect,
-  onTargetUpdated,
-  currentPage = '/',
-  onNavigate,
-  children,
-}: LayoutProps) {
+export function AppLayout({ children }: { children?: React.ReactNode }) {
+  const status = useProxyStore((s) => s.status);
   return (
-    <SidebarProvider>
-      <div className="flex h-screen flex-col">
-        <div className="flex flex-1 overflow-hidden">
-          <AppSidebar currentPage={currentPage} onNavigate={onNavigate} />
-
-          <SidebarInset>
-            <main className="flex-1 overflow-auto p-6 bg-background">
-              {children}
-            </main>
-          </SidebarInset>
+    <div className="h-screen flex flex-col">
+      <TopNav />
+      <main className="flex-1 overflow-hidden p-2">{children}</main>
+      <footer className="border-t px-4 py-1.5 flex items-center justify-between text-xs text-muted-foreground">
+        <div className="flex items-center gap-4">
+          <span className="font-medium text-foreground">AppRecon</span>
+          <div className="flex items-center gap-1.5">
+            <div className={`h-2 w-2 rounded-full ${status === 'connected' ? 'bg-green-500' : status === 'starting' ? 'bg-yellow-500 animate-pulse' : 'bg-red-500'}`} />
+            <span>{status === 'connected' ? 'Connected' : status === 'starting' ? 'Starting...' : 'Disconnected'}</span>
+          </div>
         </div>
-      </div>
-    </SidebarProvider>
+        <span>© 2024 ApSara Digital</span>
+      </footer>
+    </div>
   );
 }

@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { useAppStore, Tab } from '@/stores/app';
+import { useHttpHistoryStore, Tab } from '@/stores/http-history';
 import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -12,10 +12,10 @@ interface TabBarProps {
 }
 
 export function TabBar({ route, className }: TabBarProps) {
-  const routeTabs = useAppStore((s) => s.routeTabs);
-  const activeTabId = useAppStore((s) => s.activeTabId);
-  const removeTab = useAppStore((s) => s.removeTab);
-  const setActiveTab = useAppStore((s) => s.setActiveTab);
+  const routeTabs = useHttpHistoryStore((s) => s.routeTabs);
+  const activeTabId = useHttpHistoryStore((s) => s.activeTabId);
+  const removeTab = useHttpHistoryStore((s) => s.removeTab);
+  const setActiveTab = useHttpHistoryStore((s) => s.setActiveTab);
 
   const tabs = routeTabs[route] || [];
   const activeTab = (tabs.length > 0 && activeTabId[route])

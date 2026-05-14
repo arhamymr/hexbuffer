@@ -1,6 +1,6 @@
 'use client';
 
-import { Search, X, Trash2 } from 'lucide-react';
+import {  X, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import type { FilterState } from './types';
@@ -14,12 +14,14 @@ interface LogFiltersProps {
   filteredLogs: ApiCall[];
   calls: ApiCall[];
   clearCalls: () => void;
+  toggleMethod?: (method: string) => void;
+  toggleStatus?: (status: string) => void;
 }
 
-export function LogFilters({ filter, onFilterChange, onClearFilters, filteredLogs, calls, clearCalls }: LogFiltersProps) {
+export function LogFilters({ filter, onFilterChange, onClearFilters, filteredLogs, calls, clearCalls, toggleMethod, toggleStatus }: LogFiltersProps) {
   const hasActiveFilters = filter.search || filter.methods.size > 0 || filter.statusCodes.size > 0;
 
-  const toggleMethod = (method: string) => {
+  const handleToggleMethod = toggleMethod || ((method: string) => {
     const next = new Set(filter.methods);
     if (next.has(method)) {
       next.delete(method);
@@ -27,9 +29,9 @@ export function LogFilters({ filter, onFilterChange, onClearFilters, filteredLog
       next.add(method);
     }
     onFilterChange({ ...filter, methods: next });
-  };
+  });
 
-  const toggleStatus = (status: string) => {
+  const handleToggleStatus = toggleStatus || ((status: string) => {
     const next = new Set(filter.statusCodes);
     if (next.has(status)) {
       next.delete(status);
@@ -37,7 +39,7 @@ export function LogFilters({ filter, onFilterChange, onClearFilters, filteredLog
       next.add(status);
     }
     onFilterChange({ ...filter, statusCodes: next });
-  };
+  });
 
   return (
     <div className="space-y-3">
@@ -65,7 +67,7 @@ export function LogFilters({ filter, onFilterChange, onClearFilters, filteredLog
             {METHOD_FILTERS.map(method => (
               <button
                 key={method}
-                onClick={() => toggleMethod(method)}
+                onClick={() => handleToggleMethod(method)}
                 className={`text-xs px-2 py-1 cursor-pointer rounded border transition-colors ${
                   filter.methods.has(method)
                     ? 'bg-primary text-primary-foreground border-primary'
@@ -84,7 +86,7 @@ export function LogFilters({ filter, onFilterChange, onClearFilters, filteredLog
             {STATUS_FILTERS.map(status => (
               <button
                 key={status.label}
-                onClick={() => toggleStatus(status.label)}
+                onClick={() => handleToggleStatus(status.label)}
                 className={`text-xs px-2 py-1 rounded border cursor-pointer transition-colors ${
                   filter.statusCodes.has(status.label)
                     ? 'bg-primary text-primary-foreground border-primary'

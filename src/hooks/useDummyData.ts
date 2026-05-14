@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback } from "react";
-import { useAppStore } from "@/stores/app";
+import { useAppStore } from "@/stores/appStore";
 import { useProxyStore } from "@/stores/proxyStore";
 import {
   generateDummyTargets,

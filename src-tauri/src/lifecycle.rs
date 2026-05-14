@@ -37,7 +37,7 @@ impl ProxyHttp for Rusxy {
     type CTX = Ctx;
 
     fn new_ctx(&self) -> Self::CTX {
-        Ctx {
+        let ctx = Ctx {
             transaction_id: uuid::Uuid::new_v4(),
             client_addr: String::new(),
             server_addr: String::new(),
@@ -52,10 +52,13 @@ impl ProxyHttp for Rusxy {
             res_headers: std::collections::HashMap::new(),
             res_body: Vec::new(),
             paused_id: None,
-        }
+        };
+        println!("[lifecycle] new_ctx txn_id={}", ctx.transaction_id);
+        ctx
     }
 
     async fn upstream_peer(&self, session: &mut Session, ctx: &mut Ctx) -> Result<Box<HttpPeer>> {
+        println!("[lifecycle] upstream_peer start txn_id={}", ctx.transaction_id);
 
         ctx.client_addr = session.client_addr().map(|a| a.to_string()).unwrap_or_default();
 
@@ -73,37 +76,43 @@ impl ProxyHttp for Rusxy {
        let host = session
             .get_header("Host")
             .and_then(|v| v.to_str().ok())
-            .map(|s| s.to_string())
-            .or_else(|| session.req_header().uri.host().map(|h| h.to_string()))
-            .unwrap_or_else(|| "localhost".to_string());
+            .filter(|s| !s.is_empty() && !s.starts_with(':'))
+            .or_else(|| session.req_header().uri.host())
+            .unwrap_or("localhost");
 
         let port = session.req_header().uri.port_u16().unwrap_or(80);
 
+        let addr = format!("{host}:{port}");
+        println!("[lifecycle] upstream_peer connecting to {}", addr);
+
         let peer = HttpPeer::new(
-            format!("{host}:{port}"),
+            &addr,
             false,
-            host.clone(),
+            host.to_string(),
         );
 
-        println!("Upstream peer: {host}:{port}");
-        
+        println!("[lifecycle] upstream_peer end txn_id={}", ctx.transaction_id);
+
         Ok(Box::new(peer))
     }
 
     async fn upstream_request_filter(
         &self,
-        session: &mut Session,
+        _session: &mut Session,
         upstream_request: &mut RequestHeader,
         ctx: &mut Ctx,
     ) -> Result<()> {
+        println!("[lifecycle] upstream_request_filter start txn_id={}", ctx.transaction_id);
         intercept::on_request(upstream_request);
 
         if intercept::should_bypass(&ctx.req_uri) {
+            println!("[lifecycle] bypassed txn_id={}", ctx.transaction_id);
             return Ok(());
         }
 
         let mode = intercept::get_mode().await;
         if mode != intercept::InterceptMode::Enabled {
+            println!("[lifecycle] intercept disabled txn_id={} mode={:?}", ctx.transaction_id, mode);
             return Ok(());
         }
 
@@ -135,6 +144,7 @@ impl ProxyHttp for Rusxy {
             }
         }
 
+        println!("[lifecycle] upstream_request_filter end txn_id={}", ctx.transaction_id);
         Ok(())
     }
 
@@ -148,15 +158,17 @@ impl ProxyHttp for Rusxy {
         if let Some(b) = body {
             ctx.req_body.extend_from_slice(b);
         }
+        println!("[lifecycle] request_body_filter txn_id={} body_len={} end={}", ctx.transaction_id, ctx.req_body.len(), end_of_stream);
         Ok(())
     }
 
     async fn response_filter(
         &self,
-        session: &mut Session,
+        _session: &mut Session,
         upstream_response: &mut ResponseHeader,
         ctx: &mut Ctx,
     ) -> Result<()> {
+        println!("[lifecycle] response_filter start txn_id={} status={}", ctx.transaction_id, upstream_response.status.as_u16());
         ctx.res_status_code = upstream_response.status.as_u16();
         ctx.res_status_text = upstream_response
             .status
@@ -172,6 +184,7 @@ impl ProxyHttp for Rusxy {
         }
 
         intercept::on_response(upstream_response);
+        println!("[lifecycle] response_filter end txn_id={}", ctx.transaction_id);
         Ok(())
     }
 
@@ -190,6 +203,7 @@ impl ProxyHttp for Rusxy {
         }
 
         if end_of_stream {
+            println!("[lifecycle] response_body_filter end txn_id={} status={}", ctx.transaction_id, ctx.res_status_code);
             let txn = state::ProxyRecord {
                 id: ctx.transaction_id,
                 timestamp: chrono::Utc::now(),

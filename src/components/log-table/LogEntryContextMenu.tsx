@@ -10,8 +10,8 @@ import {
 } from '@/components/ui/context-menu';
 import { Copy, ExternalLink, Plus, Eye, Trash2, Send } from 'lucide-react';
 import type { ApiCall } from '@/types';
-import { useAppStore } from '@/stores/app';
-import { useProxyStore } from '@/stores/proxyStore';
+import { useAppStore } from '@/stores/appStore';
+import { useHttpHistoryStore } from '@/stores/http-history';
 
 interface LogEntryContextMenuProps {
   call: ApiCall;
@@ -92,8 +92,8 @@ export function LogEntryContextMenu({
   };
 
   const handleDelete = () => {
-    const calls = useProxyStore.getState().calls;
-    useProxyStore.setState({ calls: calls.filter((c) => c.id !== call.id) });
+    const calls = useHttpHistoryStore.getState().calls;
+    useHttpHistoryStore.setState({ calls: calls.filter((c) => c.id !== call.id) });
   };
 
   return (

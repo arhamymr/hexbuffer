@@ -4,7 +4,7 @@ import { useState, useMemo } from 'react';
 import { Bug, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useProxyStore } from '@/stores/proxyStore';
+import { useHttpHistoryStore } from '@/stores/http-history';
 import type { FilterState } from './log-table/types';
 import { STATUS_FILTERS } from '@/components/log-table/utils';
 import { DEFAULT_FILTER_STATE } from './log-table/types';
@@ -14,14 +14,14 @@ import { EmptyState } from './EmptyState';
 import { JsonDetailDrawer } from './log-table/json-detail-drawer';
 
 export function DebuggerPage() {
-  const calls = useProxyStore((s) => s.calls);
-  const clearCalls = useProxyStore((s) => s.clearCalls);
+  const calls = useHttpHistoryStore((s) => s.calls);
+  const clearCalls = useHttpHistoryStore((s) => s.clearCalls);
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [filter, setFilter] = useState<FilterState>(DEFAULT_FILTER_STATE);
 
   const filteredLogs = useMemo(() => {
-    return filteredCalls.filter((log) => {
+    return calls.filter((log) => {
       if (filter.search) {
         const searchLower = filter.search.toLowerCase();
         const matchesSearch =
@@ -51,7 +51,7 @@ export function DebuggerPage() {
 
       return true;
     });
-  }, [filteredCalls, filter]);
+  }, [calls, filter]);
 
   const clearFilters = () => {
     setFilter(DEFAULT_FILTER_STATE);
@@ -78,7 +78,7 @@ export function DebuggerPage() {
         </div>
       </div>
 
-      <LogFilters filter={filter} onFilterChange={setFilter} onClearFilters={clearFilters} />
+      <LogFilters filter={filter} onFilterChange={setFilter} onClearFilters={clearFilters} filteredLogs={filteredLogs} calls={calls} clearCalls={clearCalls} />
 
       <Card className="flex-1 flex flex-col overflow-hidden mt-3">
         <CardContent className="flex-1 overflow-hidden p-0">

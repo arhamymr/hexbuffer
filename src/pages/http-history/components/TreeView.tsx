@@ -82,16 +82,6 @@ function TreeNodeComponent({
         <span className={cn("text-xs truncate flex-1", isEndpoint && "font-mono")}>
           {node.label}
         </span>
-        {isEndpoint && node.method && (
-          <Badge variant={getMethodVariant(node.method)} className="text-[10px] px-1.5 py-0 h-4">
-            {node.method}
-          </Badge>
-        )}
-        {isEndpoint && node.status && (
-          <Badge variant={getStatusVariant(node.status)} className="text-[10px] px-1.5 py-0 h-4">
-            {node.status}
-          </Badge>
-        )}
       </div>
       {hasChildren && isExpanded && (
         <div>

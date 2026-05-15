@@ -1,4 +1,4 @@
-import { COOKIE_COLORS, parseCookieHeader } from '@/components/log-table/utils';
+import { COOKIE_COLORS, parseCookieHeader } from './utils';
 
 interface CookieDisplayProps {
   cookies: { name: string; value: string }[];

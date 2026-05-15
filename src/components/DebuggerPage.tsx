@@ -5,13 +5,13 @@ import { Bug, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useHttpHistoryStore } from '@/stores/http-history';
-import type { FilterState } from './log-table/types';
-import { STATUS_FILTERS } from '@/components/log-table/utils';
-import { DEFAULT_FILTER_STATE } from './log-table/types';
-import { TrafficTable } from './log-table/calls-columns';
-import { LogFilters } from './log-table/log-filters';
+import type { FilterState } from '../pages/http-history/components/log-table/types';
+import { STATUS_FILTERS } from '@/pages/http-history/components/log-table/utils';
+import { DEFAULT_FILTER_STATE } from '../pages/http-history/components/log-table/types';
+import { TrafficTable } from '../pages/http-history/components/log-table/calls-columns';
+import { LogFilters } from '../pages/http-history/components/log-table/log-filters';
 import { EmptyState } from './EmptyState';
-import { JsonDetailDrawer } from './log-table/json-detail-drawer';
+import { JsonDetailDrawer } from '../pages/http-history/components/log-table/json-detail-drawer';
 
 export function DebuggerPage() {
   const calls = useHttpHistoryStore((s) => s.calls);

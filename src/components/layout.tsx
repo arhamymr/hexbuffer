@@ -2,13 +2,14 @@
 
 import * as React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Bug, Crosshair, Settings, Moon, Sun, ArrowUpDown, RefreshCw } from 'lucide-react';
+import { Crosshair, Settings, Moon, Sun, ArrowUpDown, RefreshCw, Map } from 'lucide-react';
 import { useTheme } from './theme-provider';
 import { Button } from './ui/button';
-import { useProxyStore } from '@/stores/proxyStore';
+import { useHttpHistoryStore } from '@/stores/http-history';
 
 const mainNavItems = [
   { label: 'HTTP History', icon: ArrowUpDown, href: '/' },
+  { label: 'Sitemap', icon: Map, href: '/sitemap' },
   { label: 'Brute Force', icon: Crosshair, href: '/brute-force' },
   { label: 'Repeater', icon: RefreshCw, href: '/repeater' },
 ]
@@ -17,8 +18,6 @@ export function TopNav() {
   const location = useLocation();
   const pathname = location.pathname;
   const { theme, toggleTheme } = useTheme();
-  const status = useProxyStore((s) => s.status);
-
   return (
     <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
       <div className="flex items-center justify-between h-8.5 px-4">
@@ -66,10 +65,6 @@ export function TopNav() {
         </div>
 
         <div className="flex items-center gap-1">
-          <div className="flex items-center gap-1.5 mr-2">
-            <div className={`h-2 w-2 rounded-full ${status === 'connected' ? 'bg-green-500' : status === 'starting' ? 'bg-yellow-500 animate-pulse' : 'bg-red-500'}`} />
-            <span className="text-xs text-muted-foreground">{status === 'connected' ? 'Connected' : status === 'starting' ? 'Starting...' : 'Disconnected'}</span>
-          </div>
           <Button
             variant="ghost"
             size="sm"
@@ -96,7 +91,7 @@ export function TopNav() {
 }
 
 export function AppLayout({ children }: { children?: React.ReactNode }) {
-  const status = useProxyStore((s) => s.status);
+  const status = useHttpHistoryStore((s) => s.status);
   return (
     <div className="h-screen flex flex-col">
       <TopNav />
@@ -109,7 +104,7 @@ export function AppLayout({ children }: { children?: React.ReactNode }) {
             <span>{status === 'connected' ? 'Connected' : status === 'starting' ? 'Starting...' : 'Disconnected'}</span>
           </div>
         </div>
-        <span>© 2024 ApSara Digital</span>
+        <span>© 2024 Apprecon Version 0.1</span>
       </footer>
     </div>
   );

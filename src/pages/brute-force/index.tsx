@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { Play, Square, Download, Upload, Trash2, X } from 'lucide-react';
+import { Play, Square, Download, Trash2, X, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -17,15 +17,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { useBruteForceConfig, useBruteForceAttack } from './hooks';
 import { parseRawRequest } from './types';
-import { useAppStore } from '@/stores/appStore';
+import { useBruteForceStore } from '@/stores/bruto-force';
+import { useHttpHistoryStore } from '@/stores/http-history';
 import Editor from '@monaco-editor/react';
 
 export function BruteForcePage() {
   const {
     config,
-    setConfig,
     updateConfig,
     updateAttackMode,
     updatePayloadType,
@@ -37,7 +36,7 @@ export function BruteForcePage() {
     updateGrepExtract,
     updateSessionHandling,
     setBaseRequest,
-  } = useBruteForceConfig();
+  } = useBruteForceStore();
 
   const {
     results,
@@ -48,7 +47,7 @@ export function BruteForcePage() {
     startAttack,
     stopAttack,
     clearResults,
-  } = useBruteForceAttack();
+  } = useBruteForceStore();
 
   const [configDialogOpen, setConfigDialogOpen] = React.useState(false);
   const [rawRequestDialogOpen, setRawRequestDialogOpen] = React.useState(false);
@@ -58,7 +57,7 @@ export function BruteForcePage() {
   const [filterPayload, setFilterPayload] = React.useState('');
   const [filterGrep, setFilterGrep] = React.useState(false);
 
-  const pendingRequest = useAppStore((s) => s.pendingBruteForceRequest);
+  const pendingRequest = useHttpHistoryStore((s) => s.pendingBruteForceRequest);
 
   React.useEffect(() => {
     if (pendingRequest) {
@@ -67,12 +66,12 @@ export function BruteForcePage() {
         follow_redirects: true,
         max_hops: 10,
       } as any);
-      useAppStore.getState().setPendingBruteForceRequest(null);
+      useHttpHistoryStore.getState().setPendingBruteForceRequest(null);
     }
   }, [pendingRequest, setBaseRequest]);
 
   const handleStartAttack = () => {
-    startAttack(config);
+    startAttack();
   };
 
   const handleStopAttack = () => {

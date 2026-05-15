@@ -1,3 +1,4 @@
+use std::sync::Mutex;
 use std::time::Duration;
 
 use async_trait::async_trait;
@@ -7,12 +8,22 @@ use pingora_core::upstreams::peer::HttpPeer;
 use pingora_core::Result;
 use pingora_http::{RequestHeader, ResponseHeader};
 use pingora_proxy::{ProxyHttp, Session};
+use tauri::AppHandle;
 
 use crate::intercept;
 use crate::logger;
-use crate::state;
+use crate::state::{self, ProxyRecord, ProxyState};
+use tauri::Manager;
 
-pub struct Rusxy;
+pub struct Rusxy {
+    pub app_handle: AppHandle,
+}
+
+impl Rusxy {
+    pub fn new(app_handle: AppHandle) -> Self {
+        Self { app_handle }
+    }
+}
 
 #[derive(Clone)]
 pub struct Ctx {
@@ -30,6 +41,7 @@ pub struct Ctx {
     pub res_headers: std::collections::HashMap<String, String>,
     pub res_body: Vec<u8>,
     pub paused_id: Option<uuid::Uuid>,
+    pub app_handle: AppHandle,
 }
 
 #[async_trait]
@@ -52,6 +64,7 @@ impl ProxyHttp for Rusxy {
             res_headers: std::collections::HashMap::new(),
             res_body: Vec::new(),
             paused_id: None,
+            app_handle: self.app_handle.clone(),
         };
         println!("[lifecycle] new_ctx txn_id={}", ctx.transaction_id);
         ctx
@@ -110,8 +123,9 @@ impl ProxyHttp for Rusxy {
             return Ok(());
         }
 
-        let mode = intercept::get_mode().await;
-        if mode != intercept::InterceptMode::Enabled {
+        let state = ctx.app_handle.state::<Mutex<ProxyState>>();
+        let mode = state.lock().unwrap().get_mode();
+        if mode != state::InterceptMode::Enabled {
             println!("[lifecycle] intercept disabled txn_id={} mode={:?}", ctx.transaction_id, mode);
             return Ok(());
         }
@@ -119,7 +133,7 @@ impl ProxyHttp for Rusxy {
         let paused_id = ctx.transaction_id;
         ctx.paused_id = Some(paused_id);
 
-        let paused_req = intercept::PausedRequest {
+        let paused_req = state::PausedRequest {
             id: paused_id,
             timestamp: chrono::Utc::now(),
             client_addr: ctx.client_addr.clone(),
@@ -134,11 +148,11 @@ impl ProxyHttp for Rusxy {
             response: None,
         };
 
-        intercept::add_paused_request(paused_req).await;
+        state.lock().unwrap().add_paused_request(paused_req);
 
         loop {
             tokio::time::sleep(Duration::from_millis(100)).await;
-            let still_exists = intercept::get_paused_request(&paused_id).await;
+            let still_exists = state.lock().unwrap().get_paused_request(&paused_id);
             if still_exists.is_none() {
                 break;
             }
@@ -204,7 +218,7 @@ impl ProxyHttp for Rusxy {
 
         if end_of_stream {
             println!("[lifecycle] response_body_filter end txn_id={} status={}", ctx.transaction_id, ctx.res_status_code);
-            let txn = state::ProxyRecord {
+            let txn = ProxyRecord {
                 id: ctx.transaction_id,
                 timestamp: chrono::Utc::now(),
                 client_addr: ctx.client_addr.clone(),
@@ -225,7 +239,8 @@ impl ProxyHttp for Rusxy {
                 }),
             };
 
-            state::PROXY_STORE.write().unwrap().push(txn.clone());
+            let state = ctx.app_handle.state::<Mutex<ProxyState>>();
+            state.lock().unwrap().add_record(txn.clone());
 
             logger::log_request_body(&txn);
 

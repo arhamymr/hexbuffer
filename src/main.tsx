@@ -4,11 +4,11 @@ import { BrowserRouter } from "react-router-dom";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AppLayout } from "@/components/layout";
 import { Toaster } from "@/components/ui/sonner";
-import { useProxyStore } from "@/stores/proxyStore";
+import { useHttpHistoryStore } from "@/stores/http-history";
 import AppRoutes from "@/App";
 import "@/styles/globals.css";
 
-useProxyStore.getState().startProxy();
+useHttpHistoryStore.getState().startProxy();
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>

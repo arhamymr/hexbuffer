@@ -10,23 +10,20 @@ import {
 } from '@/components/ui/context-menu';
 import { Copy, ExternalLink, Plus, Eye, Trash2, Send } from 'lucide-react';
 import type { ApiCall } from '@/types';
-import { useAppStore } from '@/stores/appStore';
 import { useHttpHistoryStore } from '@/stores/http-history';
+import { useLogTableStore } from './store';
 
 interface LogEntryContextMenuProps {
   call: ApiCall;
   children: React.ReactNode;
-  onToggle: () => void;
-  activeTargetId?: string | null;
 }
 
 export function LogEntryContextMenu({
   call,
   children,
-  onToggle,
-  activeTargetId,
 }: LogEntryContextMenuProps) {
   const navigate = useNavigate();
+  const setSelectedCallId = useLogTableStore((state) => state.setSelectedCallId);
 
   const copyToClipboard = async (text: string | null | undefined) => {
     if (text) {
@@ -74,9 +71,11 @@ export function LogEntryContextMenu({
       url: `${protocol}://${call.host}${call.path}`,
       headers: call.headers,
       body: call.request_body || '',
+      follow_redirects: true,
+      max_hops: 10,
     };
 
-    useAppStore.getState().setPendingBruteForceRequest(request);
+    useHttpHistoryStore.getState().setPendingBruteForceRequest(request);
     navigate('/brute-force');
   };
 
@@ -96,10 +95,14 @@ export function LogEntryContextMenu({
     useHttpHistoryStore.setState({ calls: calls.filter((c) => c.id !== call.id) });
   };
 
+  const handleInspect = () => {
+    setSelectedCallId(call.id);
+  };
+
   return (
     <ContextMenu>
       <ContextMenuTrigger asChild onContextMenu={(e) => e.stopPropagation()}>
-        <div onClick={onToggle} className="contents">{children}</div>
+        <div onClick={handleInspect} className="contents">{children}</div>
       </ContextMenuTrigger>
       <ContextMenuContent>
         <ContextMenuItem onClick={handleCopyCurl}>
@@ -115,7 +118,7 @@ export function LogEntryContextMenu({
           <Copy className="mr-2 h-4 w-4" /> Copy Response Body
         </ContextMenuItem>
         <ContextMenuSeparator />
-        <ContextMenuItem onClick={handleAddToScope} disabled={!activeTargetId}>
+        <ContextMenuItem onClick={handleAddToScope}>
           <Plus className="mr-2 h-4 w-4" /> Add to Scope
         </ContextMenuItem>
         <ContextMenuItem onClick={handleOpenInBruteForce}>
@@ -125,7 +128,7 @@ export function LogEntryContextMenu({
           <Send className="mr-2 h-4 w-4" /> Open in Repeater
         </ContextMenuItem>
         <ContextMenuSeparator />
-        <ContextMenuItem onClick={onToggle}>
+        <ContextMenuItem onClick={handleInspect}>
           <Eye className="mr-2 h-4 w-4" /> Inspect
         </ContextMenuItem>
         <ContextMenuSeparator />

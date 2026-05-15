@@ -136,7 +136,6 @@ dependencies = [
  "colored",
  "futures-util",
  "http",
- "once_cell",
  "pingora",
  "pingora-core",
  "pingora-http",

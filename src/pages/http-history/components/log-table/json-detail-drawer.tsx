@@ -1,8 +1,6 @@
 "use client";
 
-import { X } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerClose } from '@/components/ui/drawer';
+import { Drawer, DrawerContent } from '@/components/ui/drawer';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import type { ApiCall } from '@/types';
 

@@ -3,6 +3,7 @@ export interface Target {
   name: string;
   description: string;
   scope: string[];
+  tabActive?: boolean;
   createdAt: string;
   updatedAt: string;
 }

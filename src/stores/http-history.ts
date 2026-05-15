@@ -1,6 +1,10 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { invoke } from '@tauri-apps/api/core';
 import type { ApiCall, Target } from '@/types';
+import type { HttpRequest } from '@/pages/brute-force/types';
+
+export type ProxyStatus = 'connected' | 'disconnected' | 'starting';
 
 export interface Tab {
   id: string;
@@ -9,19 +13,28 @@ export interface Tab {
 }
 
 interface HttpHistoryState {
+  status: ProxyStatus;
+  port: number;
   calls: ApiCall[];
   targets: Target[];
   routeTabs: Record<string, Tab[]>;
   activeTabId: Record<string, string>;
+  pendingBruteForceRequest: HttpRequest | null;
+  setStatus: (status: ProxyStatus) => void;
   setCalls: (calls: ApiCall[]) => void;
   clearCalls: () => void;
-  fetchTargets: () => void;
+  fetchTargets: () => Promise<void>;
+  addTarget: (target: Target) => void;
+  removeTarget: (targetId: string) => void;
+  updateTarget: (targetId: string, updates: Partial<Target>) => void;
   addTab: (route: string, target: Target) => void;
   removeTab: (route: string, tabId: string) => void;
   setActiveTab: (route: string, tabId: string) => void;
   clearRouteTabs: (route: string) => void;
   getRouteTabs: (route: string) => Tab[];
   getActiveTab: (route: string) => Tab | null;
+  startProxy: () => Promise<void>;
+  setPendingBruteForceRequest: (request: HttpRequest | null) => void;
 }
 
 function generateId(): string {
@@ -31,15 +44,53 @@ function generateId(): string {
 export const useHttpHistoryStore = create<HttpHistoryState>()(
   persist(
     (set, get) => ({
+      status: 'disconnected',
+      port: 8888,
       calls: [],
       targets: [],
       routeTabs: {},
       activeTabId: {},
+      pendingBruteForceRequest: null,
+
+      setStatus: (status) => set({ status }),
 
       setCalls: (calls) => set({ calls }),
       clearCalls: () => set({ calls: [] }),
 
-      fetchTargets: () => {},
+      startProxy: async () => {
+        set({ status: 'starting' });
+        try {
+          await invoke('start_proxy', { port: get().port });
+          set({ status: 'connected' });
+        } catch (error) {
+          console.error('Failed to start proxy:', error);
+          set({ status: 'disconnected' });
+        }
+      },
+
+      fetchTargets: async () => {
+        try {
+          const targets = await invoke<Target[]>('get_targets');
+          set({ targets });
+        } catch (error) {
+          console.error('Failed to fetch targets:', error);
+        }
+      },
+
+      addTarget: (target) =>
+        set((state) => ({ targets: [...state.targets, target] })),
+
+      removeTarget: (targetId) =>
+        set((state) => ({
+          targets: state.targets.filter((t) => t.id !== targetId),
+        })),
+
+      updateTarget: (targetId, updates) =>
+        set((state) => ({
+          targets: state.targets.map((t) =>
+            t.id === targetId ? { ...t, ...updates } : t
+          ),
+        })),
 
       getRouteTabs: (route) => {
         return get().routeTabs[route] || [];
@@ -68,7 +119,6 @@ export const useHttpHistoryStore = create<HttpHistoryState>()(
             targetName: target.name,
           };
           return {
-            ...state,
             routeTabs: { ...state.routeTabs, [route]: [...existing, newTab] },
             activeTabId: { ...state.activeTabId, [route]: newTab.id },
           };
@@ -127,10 +177,15 @@ export const useHttpHistoryStore = create<HttpHistoryState>()(
           return { routeTabs: newRouteTabs, activeTabId: newActiveTabId };
         });
       },
+
+      setPendingBruteForceRequest: (request) => set({ pendingBruteForceRequest: request }),
     }),
     {
       name: 'apprecon-http-history',
       partialize: (state) => ({
+        status: state.status,
+        port: state.port,
+        targets: state.targets,
         routeTabs: state.routeTabs,
         activeTabId: state.activeTabId,
       }),

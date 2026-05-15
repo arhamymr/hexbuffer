@@ -1,9 +1,7 @@
 use chrono::{DateTime, Utc};
-use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::sync::{Arc, RwLock as StdRwLock};
-use tokio::sync::RwLock;
+use std::sync::Mutex;
 use uuid::Uuid;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -34,13 +32,11 @@ pub struct ProxyRecord {
     pub server_addr: String,
 }
 
-pub static PROXY_STORE: Lazy<Arc<StdRwLock<Vec<ProxyRecord>>>> =
-    Lazy::new(|| Arc::new(StdRwLock::new(Vec::new())));
-
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
 pub enum InterceptMode {
-    Enabled,
+    #[default]
     Disabled,
+    Enabled,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -59,59 +55,80 @@ pub struct PausedRequest {
     pub response: Option<ProxyResponse>,
 }
 
-pub static INTERCEPT_MODE: Lazy<Arc<RwLock<InterceptMode>>> =
-    Lazy::new(|| Arc::new(RwLock::new(InterceptMode::Disabled)));
-
-pub static PAUSED_REQUESTS: Lazy<Arc<RwLock<Vec<PausedRequest>>>> =
-    Lazy::new(|| Arc::new(RwLock::new(Vec::new())));
-
-pub async fn get_mode() -> InterceptMode {
-    let mode = INTERCEPT_MODE.read().await;
-    mode.clone()
+#[derive(Default)]
+pub struct ProxyStateInner {
+    pub records: Vec<ProxyRecord>,
+    pub intercept_mode: InterceptMode,
+    pub paused_requests: Vec<PausedRequest>,
 }
 
-pub async fn set_mode(new_mode: InterceptMode) {
-    let mut mode = INTERCEPT_MODE.write().await;
-    *mode = new_mode;
-}
+pub struct ProxyState(Mutex<ProxyStateInner>);
 
-pub async fn enable_intercept() {
-    set_mode(InterceptMode::Enabled).await;
-}
+impl ProxyState {
+    pub fn new() -> Self {
+        Self(Mutex::new(ProxyStateInner::default()))
+    }
 
-pub async fn disable_intercept() {
-    set_mode(InterceptMode::Disabled).await;
-}
+    pub fn get_records(&self) -> Vec<ProxyRecord> {
+        self.0.lock().unwrap().records.clone()
+    }
 
-pub async fn get_status() -> InterceptStatus {
-    let mode = INTERCEPT_MODE.read().await;
-    let paused = PAUSED_REQUESTS.read().await;
-    InterceptStatus {
-        mode: mode.clone(),
-        paused_count: paused.len(),
+    pub fn add_record(&self, record: ProxyRecord) {
+        self.0.lock().unwrap().records.push(record);
+    }
+
+    pub fn get_mode(&self) -> InterceptMode {
+        self.0.lock().unwrap().intercept_mode.clone()
+    }
+
+    pub fn set_mode(&self, mode: InterceptMode) {
+        self.0.lock().unwrap().intercept_mode = mode;
+    }
+
+    pub fn enable_intercept(&self) {
+        self.0.lock().unwrap().intercept_mode = InterceptMode::Enabled;
+    }
+
+    pub fn disable_intercept(&self) {
+        self.0.lock().unwrap().intercept_mode = InterceptMode::Disabled;
+    }
+
+    pub fn get_status(&self) -> InterceptStatus {
+        let inner = self.0.lock().unwrap();
+        InterceptStatus {
+            mode: inner.intercept_mode.clone(),
+            paused_count: inner.paused_requests.len(),
+        }
+    }
+
+    pub fn add_paused_request(&self, req: PausedRequest) {
+        self.0.lock().unwrap().paused_requests.push(req);
+    }
+
+    pub fn get_paused_request(&self, id: &Uuid) -> Option<PausedRequest> {
+        self.0.lock().unwrap()
+            .paused_requests
+            .iter()
+            .find(|r| r.id == *id)
+            .cloned()
+    }
+
+    pub fn remove_paused_request(&self, id: &Uuid) -> Option<PausedRequest> {
+        let mut inner = self.0.lock().unwrap();
+        if let Some(pos) = inner.paused_requests.iter().position(|r| r.id == *id) {
+            Some(inner.paused_requests.remove(pos))
+        } else {
+            None
+        }
+    }
+
+    pub fn get_all_paused(&self) -> Vec<PausedRequest> {
+        self.0.lock().unwrap().paused_requests.clone()
     }
 }
 
-pub async fn add_paused_request(req: PausedRequest) {
-    let mut paused = PAUSED_REQUESTS.write().await;
-    paused.push(req);
-}
-
-pub async fn get_paused_request(id: &Uuid) -> Option<PausedRequest> {
-    let paused = PAUSED_REQUESTS.read().await;
-    paused.iter().find(|r| r.id == *id).cloned()
-}
-
-pub async fn remove_paused_request(id: &Uuid) -> Option<PausedRequest> {
-    let mut paused = PAUSED_REQUESTS.write().await;
-    if let Some(pos) = paused.iter().position(|r| r.id == *id) {
-        Some(paused.remove(pos))
-    } else {
-        None
+impl Default for ProxyState {
+    fn default() -> Self {
+        Self::new()
     }
-}
-
-pub async fn get_all_paused() -> Vec<PausedRequest> {
-    let paused = PAUSED_REQUESTS.read().await;
-    paused.clone()
 }

@@ -1,16 +1,13 @@
 'use client';
 
 import type { ApiCall } from '@/types';
-import { InspectorSection, buildHeadersList, buildCookiesList, buildParamsList } from './inspector';
-import { parseCookieHeader } from '@/components/log-table/cookie-display';
-import { getMethodBadge, getStatusColor, formatBytes } from '@/components/log-table/utils';
+import { InspectorSection, buildHeadersList, buildParamsList } from './inspector';
+import { parseCookieHeader } from './cookie-display';
+import { getMethodBadge, getStatusColor, formatBytes } from './utils';
 import { Copy } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
-
-interface LogEntryBurpViewProps {
-  call: ApiCall;
-}
+import { useLogTableStore } from './store';
 
 function PrettyCurl({ call }: { call: ApiCall }) {
   const copyToClipboard = async (text: string) => {
@@ -73,7 +70,18 @@ function PrettyJson({ content }: { content: string }) {
   }
 }
 
-export function LogEntryBurpView({ call }: LogEntryBurpViewProps) {
+export function LogEntryBurpView() {
+  const getSelectedCall = useLogTableStore((state) => state.getSelectedCall);
+  const call = getSelectedCall();
+
+  if (!call) {
+    return (
+      <div className="flex h-full items-center justify-center text-muted-foreground text-sm">
+        Select a request to view details
+      </div>
+    );
+  }
+
   const requestHeaders = buildHeadersList(call.headers);
   const requestCookies = parseCookieHeader(call.headers['cookie']);
   const requestParams = buildParamsList(call.query_params);

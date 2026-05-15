@@ -3,6 +3,7 @@ import { HttpHistoryPage } from "@/pages/http-history";
 import { BruteForcePage } from "@/pages/brute-force";
 import { Settings } from "@/components/settings";
 import { RepeaterPage } from "@/pages/repeater/RepeaterPage";
+import { SitemapPage } from "@/pages/sitemap";
 
 function AppRoutes() {
   return (
@@ -11,6 +12,7 @@ function AppRoutes() {
       <Route path="/repeater" element={<RepeaterPage />} />
       <Route path="/brute-force" element={<BruteForcePage />} />
       <Route path="/settings" element={<Settings />} />
+      <Route path="/sitemap" element={<SitemapPage />} />
     </Routes>
   );
 }

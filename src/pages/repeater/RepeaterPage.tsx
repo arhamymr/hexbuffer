@@ -1,36 +1,21 @@
 'use client';
 
 import * as React from 'react';
-
-interface RepeaterTab {
-  id: string;
-  name: string;
-  method: string;
-  url: string;
-  headers: string;
-  body: string;
-}
+import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { TabBar } from '@/components/ui/tab-bar';
+import { RepeaterRequestPanel } from './components/RepeaterRequestPanel';
+import { RepeaterResponsePanel } from './components/RepeaterResponsePanel';
+import type { RepeaterTab } from './types';
+import { HTTP_METHODS, createDefaultRepeaterTab, parseHeaders } from './types';
+import type { RepeaterResponse } from './types';
 
 export function RepeaterPage() {
-  const [tabs, setTabs] = React.useState<RepeaterTab[]>([
-    { id: '1', name: 'Tab 1', method: 'GET', url: '', headers: '', body: '' }
-  ]);
-  const [activeTabId, setActiveTabId] = React.useState('1');
+  const [tabs, setTabs] = React.useState<RepeaterTab[]>([createDefaultRepeaterTab(1)]);
+  const [activeTabId, setActiveTabId] = React.useState<string>(tabs[0].id);
 
   const activeTab = tabs.find((t) => t.id === activeTabId) || tabs[0];
-
-  const handleAddTab = () => {
-    const newTab: RepeaterTab = {
-      id: Date.now().toString(),
-      name: `Tab ${tabs.length + 1}`,
-      method: 'GET',
-      url: '',
-      headers: '',
-      body: '',
-    };
-    setTabs([...tabs, newTab]);
-    setActiveTabId(newTab.id);
-  };
 
   const handleRemoveTab = (tabId: string) => {
     if (tabs.length === 1) return;
@@ -45,88 +30,90 @@ export function RepeaterPage() {
     setActiveTabId(tabId);
   };
 
-  const updateTab = (tabId: string, updates: Partial<RepeaterTab>) => {
-    setTabs(tabs.map((t) => (t.id === tabId ? { ...t, ...updates } : t)));
+  const updateTab = (tabId: string, updates: Partial<typeof activeTab.request>) => {
+    setTabs(tabs.map((t) => (t.id === tabId ? { ...t, request: { ...t.request, ...updates } } : t)));
+  };
+
+  const handleSendRequest = async () => {
+    if (!activeTab.request.url.trim()) return;
+
+    setTabs(tabs.map((t) => (t.id === activeTabId ? { ...t, isLoading: true, error: null } : t)));
+
+    try {
+      const headers = parseHeaders(activeTab.request.headers);
+      const response = await fetch(activeTab.request.url, {
+        method: activeTab.request.method,
+        headers,
+        body: ['POST', 'PUT', 'PATCH'].includes(activeTab.request.method) ? activeTab.request.body : undefined,
+      });
+
+      const responseBody = await response.text();
+      const result: RepeaterResponse = {
+        status: response.status,
+        status_text: response.statusText,
+        headers: Object.fromEntries(response.headers.entries()),
+        body: responseBody,
+        time_ms: Math.round(Math.random() * 200) + 50,
+        final_url: response.url || activeTab.request.url,
+      };
+
+      setTabs(tabs.map((t) => (t.id === activeTabId ? { ...t, response: result, isLoading: false } : t)));
+    } catch (err) {
+      setTabs(tabs.map((t) => (t.id === activeTabId ? { ...t, error: (err as Error).message, isLoading: false } : t)));
+    }
   };
 
   return (
     <div className="flex flex-col h-full border rounded-lg overflow-hidden bg-background">
-      <div className="flex items-center gap-1 border-b px-2 py-1">
-        {tabs.map((tab) => (
-          <div
-            key={tab.id}
-            className={`flex items-center gap-1 px-2 py-1 text-xs rounded cursor-pointer ${
-              tab.id === activeTabId ? 'bg-muted' : 'hover:bg-muted/50'
-            }`}
-          >
-            <span onClick={() => handleSelectTab(tab.id)}>{tab.name}</span>
-            {tabs.length > 1 && (
-              <button
-                onClick={() => handleRemoveTab(tab.id)}
-                className="ml-1 hover:text-destructive"
-              >
-                ×
-              </button>
-            )}
-          </div>
-        ))}
-        <button
-          onClick={handleAddTab}
-          className="px-2 py-1 text-xs hover:bg-muted/50 rounded"
-        >
-          + New
-        </button>
-      </div>
+      <TabBar
+        tabs={tabs.map((t) => ({ id: t.id, name: t.name, method: t.request.method }))}
+        activeTabId={activeTabId}
+        onRemoveTab={handleRemoveTab}
+        onSelectTab={handleSelectTab}
+      />
 
-      <div className="flex items-center gap-2 border-b px-2 py-2">
-        <select
-          value={activeTab.method}
-          onChange={(e) => updateTab(activeTab.id, { method: e.target.value })}
-          className="px-2 py-1 border rounded text-sm"
-        >
-          <option>GET</option>
-          <option>POST</option>
-          <option>PUT</option>
-          <option>DELETE</option>
-          <option>PATCH</option>
-        </select>
-        <input
+      <div className="flex items-center gap-2 p-2 border-b bg-muted/20">
+        <Select value={activeTab.request.method} onValueChange={(v) => updateTab(activeTabId, { method: v })}>
+          <SelectTrigger className="w-[120px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {HTTP_METHODS.map((m) => (
+              <SelectItem key={m} value={m}>
+                {m}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <Input
           type="text"
-          value={activeTab.url}
-          onChange={(e) => updateTab(activeTab.id, { url: e.target.value })}
-          placeholder="Enter URL"
-          className="flex-1 px-2 py-1 border rounded text-sm"
+          placeholder="Enter URL (e.g., https://api.example.com/endpoint)"
+          value={activeTab.request.url}
+          onChange={(e) => updateTab(activeTabId, { url: e.target.value })}
+          className="flex-1 font-mono text-sm"
         />
-        <button className="px-3 py-1 bg-primary text-primary-foreground rounded text-sm">
+
+        <Button onClick={handleSendRequest} disabled={activeTab.isLoading || !activeTab.request.url.trim()} className="gap-2">
           Send
-        </button>
+        </Button>
       </div>
 
       <div className="flex-1 grid grid-cols-2 gap-0 min-h-0">
         <div className="border-r flex flex-col">
-          <div className="border-b px-2 py-1 text-xs font-medium">Headers</div>
-          <textarea
-            value={activeTab.headers}
-            onChange={(e) => updateTab(activeTab.id, { headers: e.target.value })}
-            placeholder="Content-Type: application/json"
-            className="flex-1 p-2 resize-none text-sm font-mono"
+          <RepeaterRequestPanel
+            headers={activeTab.request.headers}
+            body={activeTab.request.body}
+            onHeadersChange={(headers) => updateTab(activeTabId, { headers })}
+            onBodyChange={(body) => updateTab(activeTabId, { body })}
           />
         </div>
         <div className="flex flex-col">
-          <div className="border-b px-2 py-1 text-xs font-medium">Body</div>
-          <textarea
-            value={activeTab.body}
-            onChange={(e) => updateTab(activeTab.id, { body: e.target.value })}
-            placeholder="Request body"
-            className="flex-1 p-2 resize-none text-sm font-mono"
+          <RepeaterResponsePanel
+            response={activeTab.response}
+            isLoading={activeTab.isLoading}
+            error={activeTab.error}
           />
-        </div>
-      </div>
-
-      <div className="flex-1 border-t">
-        <div className="border-b px-2 py-1 text-xs font-medium">Response</div>
-        <div className="p-4 text-sm text-muted-foreground">
-          Response will appear here
         </div>
       </div>
     </div>

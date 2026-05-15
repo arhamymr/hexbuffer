@@ -2,28 +2,66 @@
 
 import { formatTimestamp, formatBytes, formatDuration, getMethodBadge, StatusBadge, getExtension } from "./utils";
 import { LogEntryContextMenu } from "./log-context-menu";
+import { invoke } from '@tauri-apps/api/core';
+import { listen } from '@tauri-apps/api/event';
+import { useEffect, useState } from "react";
+import type { ProxyRecord } from '../../../../types';
+import type { ApiCall } from '@/types';
+import { useHttpHistoryStore } from '@/stores/http-history';
 
-interface Call {
-  id: string;
-  timestamp: number;
-  method: string;
-  response_status: number;
-  host: string;
-  path: string;
-  response_body_size: number;
-  duration_ms: number;
-  request_body_size: number;
-  response_content_type?: string;
-  url: string;
-  server_ip?: string;
+function adaptProxyRecordToApiCall(record: ProxyRecord): ApiCall {
+  const uri = record.request.uri;
+  const urlObj = uri.includes('://') ? new URL(uri) : null;
+  return {
+    id: record.id,
+    session_id: '',
+    target_id: '',
+    timestamp: new Date(record.timestamp).getTime(),
+    request_type: 'Other',
+    method: record.request.method,
+    url: uri,
+    host: urlObj?.host || uri.split('://').pop()?.split('/')[0] || '',
+    path: urlObj?.pathname || '/',
+    query_params: {},
+    headers: record.request.headers,
+    cookies: {},
+    request_body: new TextDecoder().decode(new Uint8Array(record.request.body)),
+    request_body_size: record.request.body.length,
+    response_status: record.response?.status_code ?? null,
+    response_status_text: record.response?.status_text || null,
+    response_headers: record.response?.headers || {},
+    response_cookies: {},
+    response_body: record.response ? new TextDecoder().decode(new Uint8Array(record.response.body)) : null,
+    response_body_size: record.response?.body.length ?? 0,
+    response_content_type: record.response?.headers['content-type'] || null,
+    security_state: '',
+    server_ip: record.server_addr || null,
+    duration_ms: null,
+  };
 }
 
-interface TrafficTableProps {
-  calls: Call[];
-  onSelectCall?: (id: string) => void;
-}
+export function TrafficTable() {
+  const [logs, setLogs] = useState<ProxyRecord[]>([]);
 
-export function TrafficTable({ calls, onSelectCall }: TrafficTableProps) {
+  useEffect(() => {
+    invoke<ProxyRecord[]>('get_proxy_all').then((records) => {
+      const calls = records.map(adaptProxyRecordToApiCall);
+      useHttpHistoryStore.getState().setCalls(calls);
+      setLogs(records);
+    });
+
+    const unlistenPromise = listen<ProxyRecord>('proxy-record', (event) => {
+      setLogs((prev) => [...prev, event.payload]);
+      const call = adaptProxyRecordToApiCall(event.payload);
+      useHttpHistoryStore.setState((state) => ({ calls: [...state.calls, call] }));
+    });
+
+    return () => {
+      unlistenPromise.then((unlisten) => unlisten());
+    };
+  }, []);
+
+  console.log(logs, "los")
 
   return (
     <div className="overflow-auto h-full">
@@ -44,48 +82,46 @@ export function TrafficTable({ calls, onSelectCall }: TrafficTableProps) {
           </tr>
         </thead>
         <tbody>
-          {calls.map((call, index) => (
+          {logs.map((record) => {
+            const call = adaptProxyRecordToApiCall(record);
+            return (
             <LogEntryContextMenu key={call.id} call={call}>
-              <tr
-                className={`cursor-pointer hover:bg-muted/50 transition-colors ${index !== calls.length - 1 ? 'border-b' : ''}`}
-                onClick={() => onSelectCall?.(call.id)}
-              >
+              <tr className="hover:bg-muted/50 transition-colors border-b cursor-pointer">
                 <td className="text-xs font-mono text-muted-foreground px-3 py-2">
-                  {formatTimestamp(call.timestamp)}
+                  {formatTimestamp(record.timestamp)}
                 </td>
                 <td className="px-3 py-2">
-                  {getMethodBadge(call.method)}
+                  {getMethodBadge(record.request.method)}
                 </td>
                 <td className="px-3 py-2">
-                  <StatusBadge status={call.response_status} />
+                  <StatusBadge status={record.response?.status_code ?? 0} />
                 </td>
-                <td className="text-xs truncate max-w-[150px] px-3 py-2" title={call.host}>
-                  {call.host}
+                <td className="text-xs truncate max-w-[150px] px-3 py-2" title={record.request.uri}>
+                  {record.request.uri.split('://').pop()?.split('/')[0] || '-'}
                 </td>
-                <td className="text-xs text-muted-foreground truncate max-w-[200px] px-3 py-2" title={call.path}>
-                  {call.path}
-                </td>
-                <td className="text-xs text-muted-foreground text-right px-3 py-2">
-                  {formatBytes(call.response_body_size)}
+                <td className="text-xs text-muted-foreground truncate max-w-[200px] px-3 py-2" title={record.request.uri}>
+                  {record.request.uri.split('/').slice(3).join('/') || '/'}
                 </td>
                 <td className="text-xs text-muted-foreground text-right px-3 py-2">
-                  {formatDuration(call.duration_ms)}
+                  {formatBytes(record.response?.body.length ?? 0)}
                 </td>
+                <td className="text-xs text-muted-foreground text-right px-3 py-2">-</td>
                 <td className="text-xs text-muted-foreground text-right px-3 py-2">
-                  {formatBytes(call.request_body_size)}
+                  {formatBytes(record.request.body.length)}
                 </td>
-                <td className="text-xs text-muted-foreground px-3 py-2 truncate max-w-[150px]" title={call.response_content_type || "-"}>
-                  {call.response_content_type || "-"}
+                <td className="text-xs text-muted-foreground px-3 py-2 truncate max-w-[150px]" title={record.response?.headers['content-type']}>
+                  {record.response?.headers['content-type'] || "-"}
                 </td>
                 <td className="text-xs font-mono text-muted-foreground px-3 py-2">
-                  {getExtension(call.url)}
+                  {getExtension(record.request.uri)}
                 </td>
                 <td className="text-xs font-mono text-muted-foreground px-3 py-2">
-                  {call.server_ip || "-"}
+                  {record.server_addr || "-"}
                 </td>
               </tr>
             </LogEntryContextMenu>
-          ))}
+            );
+          })}
         </tbody>
       </table>
     </div>

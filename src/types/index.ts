@@ -59,3 +59,28 @@ export interface ProxyConnection {
   duration?: number;
   status?: 'active' | 'closed';
 }
+
+export interface ProxyRequest {
+  method: string;
+  uri: string;
+  http_version: string;
+  headers: Record<string, string>;
+  body: number[];
+}
+
+export interface ProxyResponse {
+  status_code: number;
+  status_text: string;
+  http_version: string;
+  headers: Record<string, string>;
+  body: number[];
+}
+
+export interface ProxyRecord {
+  id: string;
+  timestamp: string;
+  request: ProxyRequest;
+  response: ProxyResponse | null;
+  client_addr: string;
+  server_addr: string;
+}

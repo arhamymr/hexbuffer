@@ -31,8 +31,8 @@ export function getStatusColor(status: number | null | undefined) {
 
 export function formatTimestamp(timestamp: string | number) {
   const ms = typeof timestamp === 'string' ? timestamp : String(timestamp);
-  if (ms.includes('.')) return ms;
-  const date = new Date(Number(ms));
+  const date = new Date(ms);
+  if (isNaN(date.getTime())) return ms;
   const time = date.toLocaleTimeString('en-US', {
     hour12: false,
     hour: '2-digit',

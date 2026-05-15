@@ -28,9 +28,8 @@ export function TargetSelectorDialog() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button size="sm" variant="outline" className="gap-2 h-7 mb-1 gap-1 text-muted-foreground">
+        <Button size="sm" variant="outline" className="gap-2 h-7 w-7 mb-1 gap-1 text-muted-foreground">
           <Plus className="h-4 w-4" />
-          <p className='text-xs text-secondary-500'>New Target</p>
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">

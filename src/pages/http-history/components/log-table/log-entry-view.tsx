@@ -5,15 +5,16 @@ import { InspectorSection, buildHeadersList, buildParamsList } from './inspector
 import { parseCookieHeader } from './cookie-display';
 import { getMethodBadge, getStatusColor, formatBytes } from './utils';
 import { Copy } from 'lucide-react';
+import { Empty, EmptyTitle, EmptyDescription } from "@/components/ui/empty";
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
-import { useLogTableStore } from './store';
+import { useHttpHistoryStore } from '@/stores/http-history';
 
 function PrettyCurl({ call }: { call: ApiCall }) {
   const copyToClipboard = async (text: string) => {
     try {
       await navigator.clipboard.writeText(text);
-      toast.success('cURL command copied to clipboard');
+      toast.success('Copied to clipboard');
     } catch {
       toast.error('Failed to copy');
     }
@@ -31,7 +32,7 @@ function PrettyCurl({ call }: { call: ApiCall }) {
   };
 
   return (
-    <div className="relative mt-2">
+    <div className="relative mt-2 border rounded-md overflow-hidden">
       <div className="absolute right-1 top-1 z-10">
         <Button
           variant="ghost"
@@ -63,22 +64,24 @@ function PrettyJson({ content }: { content: string }) {
     );
   } catch {
     return (
-      <pre className="bg-background p-3 rounded text-xs font-mono whitespace-pre-wrap overflow-auto max-h-40">
-        {content.length > 500 ? content.substring(0, 500) + '...' : content}
+      <pre className="bg-background p-3 rounded-md border text-xs font-mono whitespace-pre-wrap overflow-auto max-h-40">
+        {content}
       </pre>
     );
   }
 }
 
 export function LogEntryBurpView() {
-  const getSelectedCall = useLogTableStore((state) => state.getSelectedCall);
-  const call = getSelectedCall();
+  const selectedCallId = useHttpHistoryStore((state) => state.selectedCallId);
+  const calls = useHttpHistoryStore((state) => state.calls);
+  const call = calls.find((c) => c.id === selectedCallId) || null;
 
   if (!call) {
     return (
-      <div className="flex h-full items-center justify-center text-muted-foreground text-sm">
-        Select a request to view details
-      </div>
+      <Empty>
+        <EmptyTitle>No request selected</EmptyTitle>
+        <EmptyDescription>Select a request from the table to view its details.</EmptyDescription>
+      </Empty>
     );
   }
 
@@ -90,7 +93,7 @@ export function LogEntryBurpView() {
   const responseCookies = parseCookieHeader(call.response_headers['set-cookie']);
 
   return (
-    <div className="flex-1 grid grid-cols-2 gap-0 min-h-0">
+    <div className="flex-1 grid grid-cols-2 gap-0 min-h-0 p-1">
       <div className="border rounded-l-md border-r-0 overflow-hidden flex flex-col">
         <div className="p-3 border-b bg-muted/30">
           <div className="flex items-center gap-2">

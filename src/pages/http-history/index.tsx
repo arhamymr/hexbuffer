@@ -7,14 +7,16 @@ import { LogEntryBurpView } from "./components/log-table/log-entry-view";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import { TabBar } from "@/pages/http-history/components/tab-bar";
 import { TargetSelectorDialog } from "./components/target-selector";
-import { useLogTableStore } from "./components/log-table/store";
+import { useHttpHistoryStore } from "@/stores/http-history";
 import { TreeView } from "./components/TreeView";
-import { MOCK_TREE_DATA } from "./mock";
+import { buildSiteMapTree } from "./utils";
 import { useState } from "react";
 
 export function HttpHistoryPage() {
   const [sitemapVisible, setSitemapVisible] = useState(true);
-  const setSelectedCallId = useLogTableStore((state) => state.setSelectedCallId);
+  const setSelectedCallId = useHttpHistoryStore((state) => state.setSelectedCallId);
+  const calls = useHttpHistoryStore((state) => state.calls);
+  const treeData = buildSiteMapTree(calls);
 
   return (
     <div className="h-full flex flex-col">
@@ -23,13 +25,13 @@ export function HttpHistoryPage() {
         <TargetSelectorDialog />
       </div>
       <LogFilters sitemapVisible={sitemapVisible} setSitemapVisible={setSitemapVisible} />
-      <Card className="flex-1 flex flex-col overflow-hidden mt-3 !py-1">
+      <Card className="flex-1 flex flex-col overflow-hidden mt-3 !py-0">
         <ResizablePanelGroup orientation="horizontal" className="flex-1">
           {sitemapVisible && (
             <>
               <ResizablePanel defaultSize={20} minSize={20}>
                 <TreeView
-                  data={MOCK_TREE_DATA}
+                  data={treeData}
                   onSelectEndpoint={(node) => {
                     setSelectedCallId(node.id);
                   }}

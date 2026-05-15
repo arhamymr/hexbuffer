@@ -1,8 +1,6 @@
 @import "tailwindcss";
-@source "../../src/**/*.{ts,tsx}";
 
 @custom-variant dark (&:is(.dark *));
-
 
 /* ===== Tailwind v4 tokens → map ke CSS vars (shadcn) ===== */
 @theme inline {

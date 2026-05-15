@@ -11,7 +11,6 @@ import {
 import { Copy, ExternalLink, Plus, Eye, Trash2, Send } from 'lucide-react';
 import type { ApiCall } from '@/types';
 import { useHttpHistoryStore } from '@/stores/http-history';
-import { useLogTableStore } from './store';
 
 interface LogEntryContextMenuProps {
   call: ApiCall;
@@ -23,7 +22,7 @@ export function LogEntryContextMenu({
   children,
 }: LogEntryContextMenuProps) {
   const navigate = useNavigate();
-  const setSelectedCallId = useLogTableStore((state) => state.setSelectedCallId);
+  const setSelectedCallId = useHttpHistoryStore((state) => state.setSelectedCallId);
 
   const copyToClipboard = async (text: string | null | undefined) => {
     if (text) {
@@ -101,8 +100,8 @@ export function LogEntryContextMenu({
 
   return (
     <ContextMenu>
-      <ContextMenuTrigger asChild onContextMenu={(e) => e.stopPropagation()}>
-        <div onClick={handleInspect} className="contents">{children}</div>
+      <ContextMenuTrigger asChild>
+        {children}
       </ContextMenuTrigger>
       <ContextMenuContent>
         <ContextMenuItem onClick={handleCopyCurl}>

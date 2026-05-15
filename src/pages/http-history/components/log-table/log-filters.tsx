@@ -1,11 +1,22 @@
 'use client';
 
-import { X, Trash2, Map } from 'lucide-react';
+import { useState } from 'react';
+import { X, Trash2, Map, SeparatorVertical } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { METHOD_FILTERS, STATUS_FILTERS } from './utils';
-import { useLogTableStore } from './store';
-import type { FilterState } from './types';
+import { useHttpHistoryStore } from '@/stores/http-history';
+import type { FilterState } from '@/stores/http-history';
 
 interface LogFiltersProps {
   filter?: FilterState;
@@ -24,12 +35,13 @@ export function LogFilters({
   sitemapVisible = true,
   setSitemapVisible,
 }: LogFiltersProps) {
-  const storeFilter = useLogTableStore((state) => state.filter);
-  const storeSetFilter = useLogTableStore((state) => state.setFilter);
-  const toggleMethod = useLogTableStore((state) => state.toggleMethod);
-  const toggleStatus = useLogTableStore((state) => state.toggleStatus);
-  const storeClearFilters = useLogTableStore((state) => state.clearFilters);
-  const storeClearCalls = useLogTableStore((state) => state.clearCalls);
+  const [clearDialogOpen, setClearDialogOpen] = useState(false);
+  const storeFilter = useHttpHistoryStore((state) => state.filter);
+  const storeSetFilter = useHttpHistoryStore((state) => state.setFilter);
+  const toggleMethod = useHttpHistoryStore((state) => state.toggleMethod);
+  const toggleStatus = useHttpHistoryStore((state) => state.toggleStatus);
+  const storeClearFilters = useHttpHistoryStore((state) => state.clearFilters);
+  const storeClearCalls = useHttpHistoryStore((state) => state.clearCalls);
 
   const filter = filterProp ?? storeFilter;
   const setFilter = onFilterChange ?? storeSetFilter;
@@ -75,7 +87,12 @@ export function LogFilters({
             </Button>
           )}
 
+          
+        </div>
+
+        <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2">
             <span className="text-xs text-muted-foreground">Filter by:</span>
             <div className="flex gap-1">
               {METHOD_FILTERS.map(method => (
@@ -112,17 +129,29 @@ export function LogFilters({
               ))}
             </div>
           </div>
-        </div>
-
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="xs" onClick={clearCalls} className='text-xs text-muted-foreground'>
+          <p className='text-muted-foreground'>|</p>
+            <Button variant="outline" size="xs" onClick={() => setClearDialogOpen(true)} className='text-xs text-muted-foreground'>
               <Trash2 className="h-3 w-3" />
               Clear All
             </Button>
           </div>
         </div>
       </div>
+
+      <AlertDialog open={clearDialogOpen} onOpenChange={setClearDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Clear All Logs?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete all logged HTTP requests and responses. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={clearCalls}>Clear All</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

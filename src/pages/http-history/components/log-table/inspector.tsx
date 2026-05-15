@@ -55,7 +55,7 @@ export function InspectorSection({ title, items, defaultOpen = true }: Inspector
                     <TableCell className="py-1 px-2 font-mono text-blue-600 break-all">
                       {item.name}
                     </TableCell>
-                    <TableCell className="py-1 px-2 font-mono break-all">
+                    <TableCell className="py-1 px-2 font-mono">
                       {item.value}
                     </TableCell>
                     {item.domain !== undefined && (

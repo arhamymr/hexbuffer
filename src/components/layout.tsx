@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Crosshair, Settings, Moon, Sun, ArrowUpDown, RefreshCw, Map } from 'lucide-react';
+import { Crosshair, Settings, Moon, Sun, ArrowUpDown, RefreshCw, Map, Wrench } from 'lucide-react';
 import { useTheme } from './theme-provider';
 import { Button } from './ui/button';
 import { useHttpHistoryStore } from '@/stores/http-history';
@@ -11,6 +11,7 @@ const mainNavItems = [
   { label: 'HTTP History', icon: ArrowUpDown, href: '/' },
   { label: 'Brute Force', icon: Crosshair, href: '/brute-force' },
   { label: 'Repeater', icon: RefreshCw, href: '/repeater' },
+  { label: 'Tools', icon: Wrench, href: '/tools' },
 ]
 
 export function TopNav() {

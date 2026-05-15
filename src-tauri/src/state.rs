@@ -55,6 +55,13 @@ pub struct PausedRequest {
     pub response: Option<ProxyResponse>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct ProxyFilter {
+    pub search: Option<String>,
+    pub methods: Option<Vec<String>>,
+    pub status_codes: Option<Vec<u16>>,
+}
+
 #[derive(Default)]
 pub struct ProxyStateInner {
     pub records: Vec<ProxyRecord>,
@@ -124,6 +131,59 @@ impl ProxyState {
 
     pub fn get_all_paused(&self) -> Vec<PausedRequest> {
         self.0.lock().unwrap().paused_requests.clone()
+    }
+
+    pub fn get_records_filtered(&self, filter: &ProxyFilter) -> Vec<ProxyRecord> {
+        let inner = self.0.lock().unwrap();
+        inner.records.iter()
+            .filter(|record| {
+                if let Some(ref methods) = filter.methods {
+                    if !methods.is_empty() && !methods.contains(&record.request.method) {
+                        return false;
+                    }
+                }
+                if let Some(ref status_codes) = filter.status_codes {
+                    if !status_codes.is_empty() {
+                        let status = record.response.as_ref().map(|r| r.status_code).unwrap_or(0);
+                        if !status_codes.contains(&status) {
+                            return false;
+                        }
+                    }
+                }
+                if let Some(ref search) = filter.search {
+                    if !search.is_empty() {
+                        let search_lower = search.to_lowercase();
+                        let uri_lower = record.request.uri.to_lowercase();
+                        let host = record.request.uri.split("://").nth(1).unwrap_or("").split('/').next().unwrap_or("");
+                        let host_lower = host.to_lowercase();
+                        let path = record.request.uri.split('/').skip(3).collect::<Vec<_>>().join("/");
+                        let path_lower = path.to_lowercase();
+
+                        if !uri_lower.contains(&search_lower)
+                            && !host_lower.contains(&search_lower)
+                            && !path_lower.contains(&search_lower)
+                        {
+                            return false;
+                        }
+                    }
+                }
+                true
+            })
+            .cloned()
+            .collect()
+    }
+
+    pub fn clear_records(&self) {
+        self.0.lock().unwrap().records.clear();
+    }
+
+    pub fn delete_record(&self, id: &Uuid) -> Option<ProxyRecord> {
+        let mut inner = self.0.lock().unwrap();
+        if let Some(pos) = inner.records.iter().position(|r| r.id == *id) {
+            Some(inner.records.remove(pos))
+        } else {
+            None
+        }
     }
 }
 

@@ -2,7 +2,7 @@ import { cn } from "@/lib/utils";
 import { ChevronDown, ChevronRight, Globe, Folder, FileText } from "lucide-react";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
-import type { TreeNodeData } from "../data/mock";
+import type { TreeNodeData } from "../mock";
 
 interface TreeViewProps {
   data: TreeNodeData[];

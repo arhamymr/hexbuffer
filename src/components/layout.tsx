@@ -9,7 +9,6 @@ import { useHttpHistoryStore } from '@/stores/http-history';
 
 const mainNavItems = [
   { label: 'HTTP History', icon: ArrowUpDown, href: '/' },
-  { label: 'Sitemap', icon: Map, href: '/sitemap' },
   { label: 'Brute Force', icon: Crosshair, href: '/brute-force' },
   { label: 'Repeater', icon: RefreshCw, href: '/repeater' },
 ]
@@ -98,13 +97,12 @@ export function AppLayout({ children }: { children?: React.ReactNode }) {
       <main className="flex-1 overflow-hidden p-2">{children}</main>
       <footer className="border-t px-4 py-1.5 flex items-center justify-between text-xs text-muted-foreground">
         <div className="flex items-center gap-4">
-          <span className="font-medium text-foreground">AppRecon</span>
           <div className="flex items-center gap-1.5">
             <div className={`h-2 w-2 rounded-full ${status === 'connected' ? 'bg-green-500' : status === 'starting' ? 'bg-yellow-500 animate-pulse' : 'bg-red-500'}`} />
             <span>{status === 'connected' ? 'Connected' : status === 'starting' ? 'Starting...' : 'Disconnected'}</span>
           </div>
         </div>
-        <span>© 2024 Apprecon Version 0.1</span>
+        <span>© 2024 | Apprecon Version 0.1</span>
       </footer>
     </div>
   );

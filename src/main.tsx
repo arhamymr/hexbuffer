@@ -5,7 +5,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { AppLayout } from "@/components/layout";
 import { Toaster } from "@/components/ui/sonner";
 import { useHttpHistoryStore } from "@/stores/http-history";
-import AppRoutes from "@/App";
+import AppRoutes from "./app";
 import "@/styles/globals.css";
 
 useHttpHistoryStore.getState().startProxy();

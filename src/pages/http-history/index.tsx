@@ -8,9 +8,16 @@ import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/componen
 import { TabBar } from "@/pages/http-history/components/tab-bar";
 import { TargetSelectorDialog } from "./components/target-selector";
 import { useFilteredCalls } from "./components/log-table/store";
+import { useLogTableStore } from "./components/log-table/store";
+import { TreeView } from "./components/TreeView";
+import { MOCK_TREE_DATA } from "./mock";
+import { useState } from "react";
 
 export function HttpHistoryPage() {
   const filteredLogs = useFilteredCalls();
+  const [sitemapVisible, setSitemapVisible] = useState(true);
+  const setSelectedCallId = useLogTableStore((state) => state.setSelectedCallId);
+  const hasLogs = filteredLogs.length > 0;
 
   return (
     <div className="h-full flex flex-col">
@@ -18,23 +25,41 @@ export function HttpHistoryPage() {
         <TabBar />
         <TargetSelectorDialog />
       </div>
-      <LogFilters />
+      <LogFilters sitemapVisible={sitemapVisible} setSitemapVisible={setSitemapVisible} />
       <Card className="flex-1 flex flex-col overflow-hidden mt-3 !py-1">
-        {filteredLogs.length === 0 ? (
-          <div className="py-12 text-center text-muted-foreground">
-            No traffic captured yet
-          </div>
-        ) : (
-          <ResizablePanelGroup orientation="horizontal" className="flex-1">
-            <ResizablePanel defaultSize={60}>
-              <TrafficTable />
-            </ResizablePanel>
-            <ResizableHandle withHandle />
-            <ResizablePanel defaultSize={40}>
-              <LogEntryBurpView />
-            </ResizablePanel>
-          </ResizablePanelGroup>
-        )}
+        <ResizablePanelGroup orientation="horizontal" className="flex-1">
+          {sitemapVisible && (
+            <>
+              <ResizablePanel defaultSize={20} minSize={20}>
+                <TreeView
+                  data={MOCK_TREE_DATA}
+                  onSelectEndpoint={(node) => {
+                    setSelectedCallId(node.id);
+                  }}
+                  selectedId={null}
+                />
+              </ResizablePanel>
+              <ResizableHandle withHandle />
+            </>
+          )}
+          <ResizablePanel defaultSize={sitemapVisible ? 80 : 100}>
+            {!hasLogs ? (
+              <div className="py-12 text-center text-muted-foreground">
+                No traffic captured yet
+              </div>
+            ) : (
+              <ResizablePanelGroup orientation="vertical" className="flex-1">
+                <ResizablePanel defaultSize={60}>
+                  <TrafficTable />
+                </ResizablePanel>
+                <ResizableHandle withHandle />
+                <ResizablePanel defaultSize={40}>
+                  <LogEntryBurpView />
+                </ResizablePanel>
+              </ResizablePanelGroup>
+            )}
+          </ResizablePanel>
+        </ResizablePanelGroup>
       </Card>
     </div>
   );

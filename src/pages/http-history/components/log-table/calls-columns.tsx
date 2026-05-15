@@ -2,11 +2,28 @@
 
 import { formatTimestamp, formatBytes, formatDuration, getMethodBadge, StatusBadge, getExtension } from "./utils";
 import { LogEntryContextMenu } from "./log-context-menu";
-import { useLogTableStore, useFilteredCalls } from "./store";
 
-export function TrafficTable() {
-  const filteredCalls = useFilteredCalls();
-  const setSelectedCallId = useLogTableStore((state) => state.setSelectedCallId);
+interface Call {
+  id: string;
+  timestamp: number;
+  method: string;
+  response_status: number;
+  host: string;
+  path: string;
+  response_body_size: number;
+  duration_ms: number;
+  request_body_size: number;
+  response_content_type?: string;
+  url: string;
+  server_ip?: string;
+}
+
+interface TrafficTableProps {
+  calls: Call[];
+  onSelectCall?: (id: string) => void;
+}
+
+export function TrafficTable({ calls, onSelectCall }: TrafficTableProps) {
 
   return (
     <div className="overflow-auto h-full">
@@ -27,11 +44,11 @@ export function TrafficTable() {
           </tr>
         </thead>
         <tbody>
-          {filteredCalls.map((call, index) => (
+          {calls.map((call, index) => (
             <LogEntryContextMenu key={call.id} call={call}>
               <tr
-                className={`cursor-pointer hover:bg-muted/50 transition-colors ${index !== filteredCalls.length - 1 ? 'border-b' : ''}`}
-                onClick={() => setSelectedCallId(call.id)}
+                className={`cursor-pointer hover:bg-muted/50 transition-colors ${index !== calls.length - 1 ? 'border-b' : ''}`}
+                onClick={() => onSelectCall?.(call.id)}
               >
                 <td className="text-xs font-mono text-muted-foreground px-3 py-2">
                   {formatTimestamp(call.timestamp)}

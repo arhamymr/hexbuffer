@@ -87,15 +87,19 @@ impl ProxyHttp for Rusxy {
         }
 
        let host = session
-            .get_header("Host")
-            .and_then(|v| v.to_str().ok())
+            .req_header()
+            .uri
+            .host()
+            .map(|s| s.to_string())
             .filter(|s| !s.is_empty() && !s.starts_with(':'))
-            .or_else(|| session.req_header().uri.host())
-            .unwrap_or("localhost");
+            .or_else(|| session.get_header("Host").and_then(|v| v.to_str().ok()).filter(|s| !s.is_empty() && !s.starts_with(':')).map(|s| s.to_string()))
+            .unwrap_or_else(|| "localhost".to_string());
 
         let port = session.req_header().uri.port_u16().unwrap_or(80);
 
         let addr = format!("{host}:{port}");
+
+        
         println!("[lifecycle] upstream_peer connecting to {}", addr);
 
         let peer = HttpPeer::new(
@@ -243,6 +247,8 @@ impl ProxyHttp for Rusxy {
             state.lock().unwrap().add_record(txn.clone());
 
             logger::log_request_body(&txn);
+
+            println!("[lifecycle] request_complete txn_id={}", ctx.transaction_id);
 
             *body = Some(Bytes::copy_from_slice(&ctx.res_body));
         }

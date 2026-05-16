@@ -1,10 +1,10 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+use apprecon::{
+    ProxyRecord, ProxyState, ProxyFilter, run, ProxyConfig, PausedRequest,
+};
 use std::sync::Mutex;
-
-use apprecon::state::{ProxyRecord, ProxyState, ProxyFilter};
-use apprecon::{run, ProxyConfig};
 use tauri::State;
 use uuid::Uuid;
 

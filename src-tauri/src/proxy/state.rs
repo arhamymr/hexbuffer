@@ -60,6 +60,29 @@ pub struct ProxyFilter {
     pub search: Option<String>,
     pub methods: Option<Vec<String>>,
     pub status_codes: Option<Vec<u16>>,
+    pub scope: Option<Vec<String>>,
+}
+
+impl ProxyFilter {
+    pub fn host_matches_scope(&self, host: &str) -> bool {
+        let Some(ref scope) = self.scope else {
+            return true;
+        };
+        if scope.is_empty() {
+            return true;
+        }
+        for pattern in scope {
+            if pattern.starts_with("*.") {
+                let domain = &pattern[2..];
+                if host.ends_with(domain) {
+                    return true;
+                }
+            } else if host.contains(pattern.as_str()) {
+                return true;
+            }
+        }
+        false
+    }
 }
 
 #[derive(Default)]
@@ -137,6 +160,10 @@ impl ProxyState {
         let inner = self.0.lock().unwrap();
         inner.records.iter()
             .filter(|record| {
+                let host = record.request.uri.split("://").nth(1).unwrap_or("").split('/').next().unwrap_or("");
+                if !filter.host_matches_scope(host) {
+                    return false;
+                }
                 if let Some(ref methods) = filter.methods {
                     if !methods.is_empty() && !methods.contains(&record.request.method) {
                         return false;
@@ -154,7 +181,6 @@ impl ProxyState {
                     if !search.is_empty() {
                         let search_lower = search.to_lowercase();
                         let uri_lower = record.request.uri.to_lowercase();
-                        let host = record.request.uri.split("://").nth(1).unwrap_or("").split('/').next().unwrap_or("");
                         let host_lower = host.to_lowercase();
                         let path = record.request.uri.split('/').skip(3).collect::<Vec<_>>().join("/");
                         let path_lower = path.to_lowercase();

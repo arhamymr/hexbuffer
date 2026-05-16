@@ -21,12 +21,15 @@ interface FormValues {
 
 export function TargetDialogForm({ onCancel }: TargetDialogFormProps) {
   const addTarget = useTargetStore((state) => state.addTarget);
+  const updateTarget = useTargetStore((state) => state.updateTarget);
+  const targets = useTargetStore((state) => state.targets);
   const { register, handleSubmit, formState: { errors, isValid } } = useForm<FormValues>({
     mode: 'onChange',
   });
 
   const onSubmit = async (data: FormValues) => {
     const now = new Date().toISOString();
+    targets.forEach(t => updateTarget(t.id, { tabActive: false }));
     const target = {
       id: crypto.randomUUID(),
       name: data.name,

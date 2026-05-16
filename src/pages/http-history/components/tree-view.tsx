@@ -1,7 +1,6 @@
 import { cn } from "@/lib/utils";
 import { ChevronDown, ChevronRight, Globe, Folder, FileText } from "lucide-react";
 import { useState } from "react";
-import { Badge } from "@/components/ui/badge";
 import type { TreeNodeData } from "../mock";
 
 interface TreeViewProps {
@@ -19,13 +18,6 @@ function getMethodVariant(method: string) {
     PATCH: "secondary",
   };
   return variants[method] || "secondary";
-}
-
-function getStatusVariant(status: number) {
-  if (status >= 200 && status < 300) return "default" as const;
-  if (status >= 300 && status < 400) return "secondary" as const;
-  if (status >= 400 && status < 500) return "outline" as const;
-  return "destructive" as const;
 }
 
 function TreeNodeComponent({
@@ -57,10 +49,10 @@ function TreeNodeComponent({
     <div>
       <div
         className={cn(
-          "flex items-center gap-1.5 px-2 py-1 hover:bg-muted/50 cursor-pointer rounded-sm transition-colors",
+          "flex items-center font-mono gap-1.5 px-2 py-1 hover:bg-muted/50 cursor-pointer rounded-sm transition-colors",
           selectedId === node.id && "bg-muted"
         )}
-        style={{ paddingLeft: `${level * 12 + 6}px` }}
+        style={{ paddingLeft: `${level * 12}px` }}
         onClick={() => {
           if (isEndpoint) {
             onSelectEndpoint(node);

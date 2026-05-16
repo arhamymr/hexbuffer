@@ -5,8 +5,8 @@ use pingora_http::RequestHeader;
 use pingora_proxy::Session;
 use tauri::{AppHandle, Manager};
 
-use crate::intercept;
-use crate::state::{self, InterceptMode, PausedRequest, ProxyState};
+use super::super::intercept;
+use super::super::state::{self, InterceptMode, PausedRequest, ProxyState};
 use super::Ctx;
 
 pub async fn handle_request_filter(

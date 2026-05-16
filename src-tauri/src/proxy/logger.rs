@@ -1,7 +1,7 @@
 use chrono::Local;
 use colored::*;
 
-use crate::state::ProxyRecord;
+use super::state::ProxyRecord;
 
 fn method_color(m: &str) -> ColoredString {
     match m {
@@ -33,7 +33,7 @@ pub fn log_request_body(record: &ProxyRecord) {
     let ts = Local::now().format("%H:%M:%S%.3f");
 
     let method = req.method.as_str();
-    let host = req.headers.get("host").map(|v| v.as_str()).unwrap_or("-");
+    let host = req.headers.get("host").map(|v: &String| v.as_str()).unwrap_or("-");
     let path = req.uri.split('?').next().unwrap_or("/");
 
     println!("{} {} {}", format!("[{ts}]").dimmed(), method_color(method), format!("{host}{path}").white());

@@ -55,12 +55,13 @@ function TabItem({ tab, isActive, onClick, onClose }: TabItemProps) {
       >
         <span className="truncate text-xs max-w-[150px]">{tab}</span>
       </div>
-      <div
+      { onClose ? <div
         onClick={onClose}
         className='hover:bg-red-500/20 rounded-sm p-0.5'
       >
         <X className="h-3.5 w-3.5" />
-      </div>
+      </div> : null }
+      
     </div>
   );
 }

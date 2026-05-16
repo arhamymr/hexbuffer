@@ -8,6 +8,10 @@ import type { ProxyRecord } from '@/types';
 import type { ApiCall } from '@/types';
 import { useHttpHistoryStore } from '@/stores/http-history';
 
+interface TrafficTableProps {
+  targetScope?: string[];
+}
+
 export const callsColumns: ColumnDef<ApiCall>[] = [
   {
     accessorKey: "timestamp",
@@ -78,16 +82,15 @@ export const callsColumns: ColumnDef<ApiCall>[] = [
   },
 ];
 
-export function TrafficTable() {
+export function TrafficTable({ targetScope }: TrafficTableProps) {
   const calls = useHttpHistoryStore((state) => state.calls);
   const filter = useHttpHistoryStore((state) => state.filter);
   const fetchFilteredCalls = useHttpHistoryStore((state) => state.fetchFilteredCalls);
   const addCall = useHttpHistoryStore((state) => state.addCall);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const prevScopeRef = useRef<string[] | undefined>(undefined);
 
   useEffect(() => {
-    fetchFilteredCalls();
-
     const unlistenPromise = listen<ProxyRecord>('proxy-record', (event) => {
       addCall(event.payload);
     });
@@ -95,22 +98,27 @@ export function TrafficTable() {
     return () => {
       unlistenPromise.then((unlisten) => unlisten());
     };
-  }, [fetchFilteredCalls, addCall]);
+  }, [addCall]);
 
   useEffect(() => {
     if (debounceRef.current) {
       clearTimeout(debounceRef.current);
     }
-    debounceRef.current = setTimeout(() => {
-      fetchFilteredCalls();
-    }, 300);
+    if (prevScopeRef.current !== targetScope) {
+      prevScopeRef.current = targetScope;
+      fetchFilteredCalls(targetScope);
+    } else {
+      debounceRef.current = setTimeout(() => {
+        fetchFilteredCalls(targetScope);
+      }, 300);
+    }
 
     return () => {
       if (debounceRef.current) {
         clearTimeout(debounceRef.current);
       }
     };
-  }, [filter, fetchFilteredCalls]);
+  }, [filter, targetScope, fetchFilteredCalls]);
 
   if (calls.length === 0) {
   return (

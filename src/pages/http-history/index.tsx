@@ -8,15 +8,17 @@ import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/componen
 import { TabBar } from "@/pages/http-history/components/tab-bar";
 import { TargetSelectorDialog } from "./components/target-selector";
 import { useHttpHistoryStore } from "@/stores/http-history";
-import { TreeView } from "./components/TreeView";
+import { TreeView } from "./components/tree-view";
 import { buildSiteMapTree } from "./utils";
 import { useState } from "react";
+import { useTabBar } from "./components/tab-bar/hooks";
 
 export function HttpHistoryPage() {
   const [sitemapVisible, setSitemapVisible] = useState(true);
   const setSelectedCallId = useHttpHistoryStore((state) => state.setSelectedCallId);
   const calls = useHttpHistoryStore((state) => state.calls);
   const treeData = buildSiteMapTree(calls);
+  const { activeTab } = useTabBar();
 
   return (
     <div className="h-full flex flex-col">
@@ -44,7 +46,7 @@ export function HttpHistoryPage() {
           <ResizablePanel defaultSize={sitemapVisible ? 80 : 100}>
               <ResizablePanelGroup orientation="vertical" className="flex-1">
                 <ResizablePanel defaultSize={60}>
-                  <TrafficTable />
+                  <TrafficTable targetScope={activeTab?.scope} />
                 </ResizablePanel>
                 <ResizableHandle withHandle />
                 <ResizablePanel defaultSize={40}>

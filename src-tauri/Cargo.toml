@@ -10,7 +10,7 @@ tauri-build = { version = "2", features = [] }
 
 [dependencies]
 tauri = { version = "2", features = [] }
-tauri-plugin-opener = "2"
+rusqlite = { version = "0.32", features = ["bundled"] }
 
 
 pingora = { version = "0.8", features = ["proxy", "lb"] }
@@ -31,3 +31,4 @@ futures-util = "0.3"
 http = "1"
 clap = { version = "4", features = ["derive"] }
 url = "2.5.8"
+flate2 = "1.0"

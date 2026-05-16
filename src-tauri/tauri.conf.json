@@ -21,7 +21,11 @@
       "csp": null
     }
   },
-  "bundle": {
+  "plugins": {
+    "sql": {
+      "preload": ["sqlite:apprecon.db"]
+    }
+  },
     "active": true,
     "targets": "all",
     "icon": [

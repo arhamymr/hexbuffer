@@ -17,6 +17,7 @@ interface ProxyFilter {
   search: string | null;
   methods: string[] | null;
   status_codes: number[] | null;
+  scope: string[] | null;
 }
 
 function adaptProxyRecordToApiCall(record: ProxyRecord): ApiCall {
@@ -50,7 +51,7 @@ function adaptProxyRecordToApiCall(record: ProxyRecord): ApiCall {
   };
 }
 
-function filterStateToProxyFilter(filter: FilterState): ProxyFilter {
+function filterStateToProxyFilter(filter: FilterState, scope?: string[]): ProxyFilter {
   const methods = filter.methods.size > 0 ? Array.from(filter.methods) : null;
   let status_codes: number[] | null = null;
 
@@ -75,6 +76,7 @@ function filterStateToProxyFilter(filter: FilterState): ProxyFilter {
     search: filter.search || null,
     methods,
     status_codes,
+    scope: scope && scope.length > 0 ? scope : null,
   };
 }
 
@@ -92,7 +94,7 @@ interface HttpHistoryState {
   toggleMethod: (method: string) => void;
   toggleStatus: (status: string) => void;
   clearFilters: () => void;
-  fetchFilteredCalls: () => Promise<void>;
+  fetchFilteredCalls: (scope?: string[]) => Promise<void>;
   fetchCalls: () => Promise<void>;
   getSelectedCall: () => ApiCall | null;
   startProxy: () => Promise<void>;
@@ -160,9 +162,9 @@ export const useHttpHistoryStore = create<HttpHistoryState>()(
         });
       },
 
-      fetchFilteredCalls: async () => {
+      fetchFilteredCalls: async (scope?: string[]) => {
         const filter = get().filter;
-        const proxyFilter = filterStateToProxyFilter(filter);
+        const proxyFilter = filterStateToProxyFilter(filter, scope);
         const records = await invoke<ProxyRecord[]>('get_proxy_filtered', { filter: proxyFilter });
         const calls = records.map(adaptProxyRecordToApiCall);
         set({ calls });

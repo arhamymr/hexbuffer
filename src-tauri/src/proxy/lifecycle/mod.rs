@@ -101,6 +101,7 @@ impl ProxyHttp for Rusxy {
         ctx: &mut Ctx,
     ) -> Result<()> {
         handle_request_filter(session, upstream_request, ctx, &self.app_handle).await;
+        let _ = upstream_request.insert_header("X-App", "apprecon");
         Ok(())
     }
 
@@ -140,13 +141,13 @@ impl ProxyHttp for Rusxy {
     {
         println!("[lifecycle] response_body_filter txn_id={} body_len={} end={}", ctx.transaction_id, body.as_ref().map(|b| b.len()).unwrap_or(0), end_of_stream);
 
+        handle_response_body(body, end_of_stream, ctx, &self.app_handle);
+
         if !ctx.response_recorded && end_of_stream {
             println!("[lifecycle] response_body_filter calling save_and_emit for txn_id={}", ctx.transaction_id);
             save_and_emit(ctx, &self.app_handle);
             ctx.response_recorded = true;
         }
-
-        handle_response_body(body, end_of_stream, ctx, &self.app_handle);
         Ok(None)
     }
 }

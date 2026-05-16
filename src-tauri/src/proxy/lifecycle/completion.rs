@@ -3,8 +3,8 @@ use std::sync::Mutex;
 use bytes::Bytes;
 use tauri::{Emitter, Manager};
 
-use crate::logger;
-use crate::state::{ProxyRecord, ProxyState};
+use super::super::logger;
+use super::super::state::{ProxyRecord, ProxyState};
 use super::Ctx;
 
 pub fn build_record(ctx: &Ctx) -> ProxyRecord {
@@ -13,14 +13,14 @@ pub fn build_record(ctx: &Ctx) -> ProxyRecord {
         timestamp: chrono::Utc::now(),
         client_addr: ctx.client_addr.clone(),
         server_addr: ctx.server_addr.clone(),
-        request: crate::state::ProxyRequest {
+        request: super::super::state::ProxyRequest {
             method: ctx.req_method.clone(),
             uri: ctx.req_uri.clone(),
             http_version: ctx.req_http_version.clone(),
             headers: ctx.req_headers.clone(),
             body: ctx.req_body.clone(),
         },
-        response: Some(crate::state::ProxyResponse {
+        response: Some(super::super::state::ProxyResponse {
             status_code: ctx.res_status_code,
             status_text: ctx.res_status_text.clone(),
             http_version: ctx.res_http_version.clone(),
@@ -54,6 +54,19 @@ pub fn handle_response_body(
     }
 
     if end_of_stream {
+        let is_gzip = ctx.res_headers.iter()
+            .any(|(k, v)| k.to_lowercase() == "content-encoding" && v.to_lowercase() == "gzip");
+
+        if is_gzip {
+            use flate2::read::GzDecoder;
+            use std::io::Read;
+            let mut decoder = GzDecoder::new(&ctx.res_body[..]);
+            let mut decoded = Vec::new();
+            if decoder.read_to_end(&mut decoded).is_ok() {
+                ctx.res_body = decoded;
+            }
+        }
+
         println!("[completion] end txn_id={} status={}", ctx.transaction_id, ctx.res_status_code);
         println!("[completion] request_complete txn_id={}", ctx.transaction_id);
 

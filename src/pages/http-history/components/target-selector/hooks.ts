@@ -6,12 +6,14 @@ export function useTargetSelectorDialog() {
   const [open, setOpen] = useState(false);
   const [showCreateNew, setShowCreateNew] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const {targets , updateTarget}  = useTargetStore();
+  const { targets, updateTarget } = useTargetStore();
 
   const handleSelectTarget = (target: Target) => {
-    updateTarget(target.id, target);
-    setOpen(false)
-    setShowCreateNew(false)
+    targets.forEach(t => {
+      updateTarget(t.id, { tabActive: t.id === target.id });
+    });
+    setOpen(false);
+    setShowCreateNew(false);
   };
 
   const handleCreateNew = () => {

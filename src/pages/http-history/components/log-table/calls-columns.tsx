@@ -1,12 +1,23 @@
-import { ColumnDef } from "@tanstack/react-table";
+import { useReactTable } from "@tanstack/react-table";
+import { ColumnDef, getCoreRowModel, getSortedRowModel, SortingState, flexRender } from "@tanstack/react-table";
+import { ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { Empty, EmptyTitle, EmptyDescription } from "@/components/ui/empty";
 import { formatTimestamp, formatBytes, getMethodBadge, StatusBadge, getExtension } from "./utils";
 import { LogEntryContextMenu } from "./log-context-menu";
 import { listen } from '@tauri-apps/api/event';
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { ProxyRecord } from '@/types';
 import type { ApiCall } from '@/types';
 import { useHttpHistoryStore } from '@/stores/http-history';
+import { Button } from "@/components/ui/button";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 interface TrafficTableProps {
   targetScope?: string[];
@@ -85,10 +96,26 @@ export const callsColumns: ColumnDef<ApiCall>[] = [
 export function TrafficTable({ targetScope }: TrafficTableProps) {
   const calls = useHttpHistoryStore((state) => state.calls);
   const filter = useHttpHistoryStore((state) => state.filter);
-  const fetchFilteredCalls = useHttpHistoryStore((state) => state.fetchFilteredCalls);
+  const fetchLogs = useHttpHistoryStore((state) => state.fetchLogs);
+  const loadMore = useHttpHistoryStore((state) => state.loadMore);
   const addCall = useHttpHistoryStore((state) => state.addCall);
+  const pagination = useHttpHistoryStore((state) => state.pagination);
+  const isLoadingMore = useHttpHistoryStore((state) => state.isLoadingMore);
+  const sortOrder = useHttpHistoryStore((state) => state.sortOrder);
+  const toggleSortOrder = useHttpHistoryStore((state) => state.toggleSortOrder);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const prevScopeRef = useRef<string[] | undefined>(undefined);
+
+  const [sorting, setSorting] = useState<SortingState>([]);
+
+  const table = useReactTable({
+    data: calls,
+    columns: callsColumns,
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    state: { sorting },
+    onSortingChange: setSorting,
+  });
 
   useEffect(() => {
     const unlistenPromise = listen<ProxyRecord>('proxy-record', (event) => {
@@ -106,10 +133,10 @@ export function TrafficTable({ targetScope }: TrafficTableProps) {
     }
     if (prevScopeRef.current !== targetScope) {
       prevScopeRef.current = targetScope;
-      fetchFilteredCalls(targetScope);
+      fetchLogs(targetScope);
     } else {
       debounceRef.current = setTimeout(() => {
-        fetchFilteredCalls(targetScope);
+        fetchLogs(targetScope);
       }, 300);
     }
 
@@ -118,23 +145,38 @@ export function TrafficTable({ targetScope }: TrafficTableProps) {
         clearTimeout(debounceRef.current);
       }
     };
-  }, [filter, targetScope, fetchFilteredCalls]);
+  }, [filter, targetScope, fetchLogs]);
 
   if (calls.length === 0) {
-  return (
-    <Empty>
-      <EmptyTitle>No traffic yet</EmptyTitle>
-      <EmptyDescription>HTTP requests will appear here once captured.</EmptyDescription>
-    </Empty>
-  );
-}
+    return (
+      <Empty>
+        <EmptyTitle>No traffic yet</EmptyTitle>
+        <EmptyDescription>HTTP requests will appear here once captured.</EmptyDescription>
+      </Empty>
+    );
+  }
 
-return (
-  <div className="overflow-auto h-full">
-    <table className="w-full">
+  const timeColumn = table.getColumn("timestamp");
+  const isSorted = sorting.length > 0;
+
+  return (
+    <div className="overflow-auto h-full flex flex-col">
+      <table className="w-full">
         <thead className="sticky top-0 backdrop-blur z-10 border-b">
           <tr>
-            <th className="text-left text-xs font-medium text-muted-foreground px-3 py-2 w-[90px]">Time</th>
+            <th className="text-left text-xs font-medium text-muted-foreground px-3 py-2 w-[90px]">
+              <button
+                className="flex items-center gap-1 hover:text-foreground transition-colors"
+                onClick={toggleSortOrder}
+              >
+                Time
+                {sortOrder === 'desc' ? (
+                  <ArrowDown className="h-3 w-3" />
+                ) : (
+                  <ArrowUp className="h-3 w-3" />
+                )}
+              </button>
+            </th>
             <th className="text-left text-xs font-medium text-muted-foreground px-3 py-2 w-[70px]">Method</th>
             <th className="text-left text-xs font-medium text-muted-foreground px-3 py-2 w-[150px]">Host</th>
             <th className="text-left text-xs font-medium text-muted-foreground px-3 py-2 flex-1">Path</th>
@@ -186,6 +228,17 @@ return (
           })}
         </tbody>
       </table>
+      {pagination.hasMore && (
+        <div className="flex justify-center py-4 border-t">
+          <Button
+            variant="outline"
+            onClick={() => loadMore(targetScope)}
+            disabled={isLoadingMore}
+          >
+            {isLoadingMore ? "Loading..." : "Load More"}
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

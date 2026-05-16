@@ -1,3 +1,6 @@
+import { invoke } from '@tauri-apps/api/core';
+import type { ProxyRecord, PaginatedResponse } from '@/types';
+
 export interface Target {
   id: string;
   name: string;
@@ -5,23 +8,6 @@ export interface Target {
   scope: string[];
   createdAt: string;
   updatedAt: string;
-}
-
-export interface ApiCall {
-  id: string;
-  timestamp: number;
-  method: string;
-  url: string;
-  host: string;
-  path: string;
-  headers: Record<string, string>;
-  requestBody?: string;
-  responseStatus?: number;
-  responseHeaders?: Record<string, string>;
-  responseBody?: string;
-  duration: number;
-  sessionId: string;
-  targetId: string;
 }
 
 export async function getTargets(): Promise<Target[]> {
@@ -34,4 +20,33 @@ export async function createTarget(name: string, scope: string[]): Promise<Targe
 
 export async function deleteTarget(id: string): Promise<boolean> {
   return true;
+}
+
+export interface ProxyFilter {
+  search: string | null;
+  methods: string[] | null;
+  status_codes: number[] | null;
+  scope: string[] | null;
+}
+
+export async function getHttpLogs(
+  page: number,
+  perPage: number = 100,
+  filter?: ProxyFilter,
+  sortOrder: 'asc' | 'desc' = 'desc'
+): Promise<PaginatedResponse<ProxyRecord>> {
+  return invoke('get_proxy_paginated', {
+    page,
+    per_page: perPage,
+    filter,
+    sort_order: sortOrder,
+  });
+}
+
+export async function getCaCert(): Promise<string> {
+  return invoke<string>('get_ca_cert');
+}
+
+export async function saveCaCert(path: string, content: string): Promise<void> {
+  return invoke('save_ca_cert', { path, content });
 }

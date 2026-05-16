@@ -84,3 +84,11 @@ export interface ProxyRecord {
   client_addr: string;
   server_addr: string;
 }
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  total: number;
+  page: number;
+  per_page: number;
+  has_more: boolean;
+}

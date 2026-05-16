@@ -1,9 +1,9 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { invoke } from '@tauri-apps/api/core';
-import type { ApiCall } from '@/types';
+import type { ApiCall, ProxyRecord, PaginatedResponse } from '@/types';
 import type { HttpRequest } from '@/pages/brute-force/types';
-import type { ProxyRecord } from '@/types';
+import { getHttpLogs, type ProxyFilter } from '@/lib/api';
 
 export type ProxyStatus = 'connected' | 'disconnected' | 'starting';
 
@@ -11,13 +11,6 @@ export interface FilterState {
   search: string;
   methods: Set<string>;
   statusCodes: Set<string>;
-}
-
-interface ProxyFilter {
-  search: string | null;
-  methods: string[] | null;
-  status_codes: number[] | null;
-  scope: string[] | null;
 }
 
 function adaptProxyRecordToApiCall(record: ProxyRecord): ApiCall {
@@ -86,6 +79,15 @@ interface HttpHistoryState {
   selectedCallId: string | null;
   filter: FilterState;
   pendingBruteForceRequest: HttpRequest | null;
+  pagination: {
+    page: number;
+    perPage: number;
+    total: number;
+    hasMore: boolean;
+  };
+  isLoading: boolean;
+  isLoadingMore: boolean;
+  sortOrder: 'asc' | 'desc';
   setStatus: (status: ProxyStatus) => void;
   setCalls: (calls: ApiCall[]) => void;
   clearCalls: () => Promise<void>;
@@ -94,12 +96,14 @@ interface HttpHistoryState {
   toggleMethod: (method: string) => void;
   toggleStatus: (status: string) => void;
   clearFilters: () => void;
-  fetchFilteredCalls: (scope?: string[]) => Promise<void>;
-  fetchCalls: () => Promise<void>;
+  fetchLogs: (scope?: string[]) => Promise<void>;
+  loadMore: (scope?: string[]) => Promise<void>;
   getSelectedCall: () => ApiCall | null;
   startProxy: () => Promise<void>;
   setPendingBruteForceRequest: (request: HttpRequest | null) => void;
   addCall: (record: ProxyRecord) => void;
+  setSortOrder: (order: 'asc' | 'desc') => void;
+  toggleSortOrder: () => void;
 }
 
 export const useHttpHistoryStore = create<HttpHistoryState>()(
@@ -114,6 +118,15 @@ export const useHttpHistoryStore = create<HttpHistoryState>()(
         statusCodes: new Set(),
       },
       pendingBruteForceRequest: null,
+      pagination: {
+        page: 1,
+        perPage: 100,
+        total: 0,
+        hasMore: false,
+      },
+      isLoading: false,
+      isLoadingMore: false,
+      sortOrder: 'desc',
 
       setStatus: (status) => set({ status }),
 
@@ -121,7 +134,7 @@ export const useHttpHistoryStore = create<HttpHistoryState>()(
 
       clearCalls: async () => {
         await invoke('clear_proxy_all');
-        set({ calls: [] });
+        set({ calls: [], pagination: { page: 1, perPage: 100, total: 0, hasMore: false } });
       },
 
       setSelectedCallId: (id) => set({ selectedCallId: id }),
@@ -162,18 +175,51 @@ export const useHttpHistoryStore = create<HttpHistoryState>()(
         });
       },
 
-      fetchFilteredCalls: async (scope?: string[]) => {
-        const filter = get().filter;
-        const proxyFilter = filterStateToProxyFilter(filter, scope);
-        const records = await invoke<ProxyRecord[]>('get_proxy_filtered', { filter: proxyFilter });
-        const calls = records.map(adaptProxyRecordToApiCall);
-        set({ calls });
+      fetchLogs: async (scope?: string[]) => {
+        const { filter, pagination, sortOrder } = get();
+        set({ isLoading: true });
+        try {
+          const proxyFilter = filterStateToProxyFilter(filter, scope);
+          const result = await getHttpLogs(1, pagination.perPage, proxyFilter, sortOrder);
+          set({
+            calls: result.data.map(adaptProxyRecordToApiCall),
+            pagination: {
+              ...pagination,
+              page: 1,
+              total: result.total,
+              hasMore: result.has_more,
+            },
+          });
+        } catch (error) {
+          console.error('Failed to fetch logs:', error);
+        } finally {
+          set({ isLoading: false });
+        }
       },
 
-      fetchCalls: async () => {
-        const records = await invoke<ProxyRecord[]>('get_proxy_all');
-        const calls = records.map(adaptProxyRecordToApiCall);
-        set({ calls });
+      loadMore: async (scope?: string[]) => {
+        const { filter, pagination, sortOrder, calls } = get();
+        if (!pagination.hasMore || get().isLoadingMore) return;
+
+        set({ isLoadingMore: true });
+        try {
+          const proxyFilter = filterStateToProxyFilter(filter, scope);
+          const nextPage = pagination.page + 1;
+          const result = await getHttpLogs(nextPage, pagination.perPage, proxyFilter, sortOrder);
+          set({
+            calls: [...calls, ...result.data.map(adaptProxyRecordToApiCall)],
+            pagination: {
+              ...pagination,
+              page: nextPage,
+              total: result.total,
+              hasMore: result.has_more,
+            },
+          });
+        } catch (error) {
+          console.error('Failed to load more logs:', error);
+        } finally {
+          set({ isLoadingMore: false });
+        }
       },
 
       getSelectedCall: () => {
@@ -186,7 +232,7 @@ export const useHttpHistoryStore = create<HttpHistoryState>()(
       startProxy: async () => {
         set({ status: 'starting' });
         try {
-          await invoke('start_proxy', { port: 8888 });
+          await invoke('start_proxy', { port: 8888, tls_port: 8889 });
           set({ status: 'connected' });
         } catch (error) {
           console.error('Failed to start proxy:', error);
@@ -198,7 +244,15 @@ export const useHttpHistoryStore = create<HttpHistoryState>()(
 
       addCall: (record) => {
         const call = adaptProxyRecordToApiCall(record);
-        set((state) => ({ calls: [...state.calls, call] }));
+        set((state) => ({ calls: [call, ...state.calls] }));
+      },
+
+      setSortOrder: (order) => set({ sortOrder: order }),
+
+      toggleSortOrder: () => {
+        set((state) => ({
+          sortOrder: state.sortOrder === 'asc' ? 'desc' : 'asc',
+        }));
       },
     }),
     {

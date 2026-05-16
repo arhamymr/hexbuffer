@@ -4,7 +4,7 @@ use bytes::Bytes;
 use tauri::{Emitter, Manager};
 
 use super::super::logger;
-use super::super::state::{ProxyRecord, ProxyState};
+use super::super::state::ProxyRecord;
 use super::Ctx;
 
 pub fn build_record(ctx: &Ctx) -> ProxyRecord {
@@ -32,7 +32,14 @@ pub fn build_record(ctx: &Ctx) -> ProxyRecord {
 
 pub fn save_and_emit(ctx: &Ctx, app_handle: &tauri::AppHandle) {
     let txn = build_record(ctx);
-    app_handle.state::<Mutex<ProxyState>>().lock().unwrap().add_record(txn.clone());
+
+    if let Some(db) = app_handle.try_state::<Mutex<crate::Database>>() {
+        if let Err(e) = db.lock().unwrap().insert_log(&txn) {
+            println!("[completion] failed to insert to DB: {}", e);
+        } else {
+            println!("[completion] saved to DB txn_id={}", ctx.transaction_id);
+        }
+    }
 
     if let Err(e) = app_handle.emit("proxy-record", &txn) {
         println!("[completion] failed to emit event: {}", e);

@@ -10,12 +10,18 @@ tauri-build = { version = "2", features = [] }
 
 [dependencies]
 tauri = { version = "2", features = [] }
+tauri-plugin-opener = "2"
+tauri-plugin-dialog = "2"
+tauri-plugin-fs = "2"
 rusqlite = { version = "0.32", features = ["bundled"] }
 
 
-pingora = { version = "0.8", features = ["proxy", "lb"] }
-pingora-proxy = "0.8"
-pingora-core = "0.8"
+rcgen = "0.14"
+dirs = "5"
+
+pingora = { version = "0.8", features = ["proxy", "lb", "openssl"] }
+pingora-proxy = { version = "0.8", features = ["openssl"] }
+pingora-core = { version = "0.8", features = ["openssl"] }
 pingora-http = "0.8"
 tokio = { version = "1", features = ["full"] }
 async-trait = "0.1"

@@ -40,6 +40,8 @@ pub struct Ctx {
     pub paused_id: Option<uuid::Uuid>,
     pub app_handle: AppHandle,
     pub response_recorded: bool,
+    pub is_mitm_loopback: bool,
+    pub sni_override: Option<String>,
 }
 
 impl Ctx {
@@ -61,6 +63,8 @@ impl Ctx {
             paused_id: None,
             app_handle,
             response_recorded: false,
+            is_mitm_loopback: false,
+            sni_override: None,
         }
     }
 }
@@ -86,11 +90,12 @@ impl ProxyHttp for Rusxy {
     }
 
     async fn upstream_peer(&self, session: &mut Session, ctx: &mut Ctx) -> Result<Box<HttpPeer>> {
-        println!("[lifecycle] upstream_peer start txn_id={}", ctx.transaction_id);
+        eprintln!("[lifecycle] upstream_peer start txn_id={}", ctx.transaction_id);
         parse_request(session, ctx);
-        let peer = create_peer(session, ctx)?;
-        println!("[host] connect on {}", peer);
-        println!("[lifecycle] upstream_peer end txn_id={}", ctx.transaction_id);
+        eprintln!("[lifecycle] calling create_peer");
+        let peer = create_peer(session, ctx).await?;
+        eprintln!("[lifecycle] create_peer returned: {}", peer);
+        eprintln!("[lifecycle] upstream_peer end txn_id={}", ctx.transaction_id);
         Ok(peer)
     }
 

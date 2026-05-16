@@ -230,12 +230,15 @@ export const useHttpHistoryStore = create<HttpHistoryState>()(
       },
 
       startProxy: async () => {
+        console.log('[store] startProxy called');
         set({ status: 'starting' });
         try {
-          await invoke('start_proxy', { port: 8888, tls_port: 8889 });
+          console.log('[store] calling invoke with port=8888, tls_port=8889');
+          const result = await invoke('start_proxy', { port: 8888, tls_port: 8889 });
+          console.log('[store] invoke result:', result);
           set({ status: 'connected' });
         } catch (error) {
-          console.error('Failed to start proxy:', error);
+          console.error('[store] Failed to start proxy:', error);
           set({ status: 'disconnected' });
         }
       },

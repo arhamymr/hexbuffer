@@ -71,6 +71,9 @@ pub fn handle_response_body(
             let mut decoded = Vec::new();
             if decoder.read_to_end(&mut decoded).is_ok() {
                 ctx.res_body = decoded;
+                println!("[completion] gzip decoded body for txn_id={}", ctx.transaction_id);
+            } else {
+                eprintln!("[completion] ERROR gzip decode failed for txn_id={}", ctx.transaction_id);
             }
         }
 

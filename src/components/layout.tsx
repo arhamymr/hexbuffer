@@ -11,8 +11,8 @@ const mainNavItems = [
   { label: 'HTTP History', icon: ArrowUpDown, href: '/' },
   { label: 'Brute Force', icon: Crosshair, href: '/brute-force' },
   { label: 'Repeater', icon: RefreshCw, href: '/repeater' },
-  { label: 'Tools', icon: Wrench, href: '/tools' },
   { label: 'AI Tools', icon: Bot, href: '/ai-tools' },
+   { label: 'Tools', icon: Wrench, href: '/tools' },
 ]
 
 export function TopNav() {
@@ -48,7 +48,7 @@ export function TopNav() {
                   key={item.href}
                   to={item.href}
                   className={`
-                  flex items-center gap-2 px-4 py-2 text-sm transition-colors
+                  flex items-center gap-2 px-2 py-2 text-sm transition-colors
                   border-b -mb-px
                   ${isActive
                       ? 'border-green-500 text-foreground bg-muted/30'

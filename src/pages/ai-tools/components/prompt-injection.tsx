@@ -305,16 +305,16 @@ Content-Type: application/json
   const anomalyCount = results.filter(r => r.isAnomaly).length;
 
   return (
-    <div className="flex flex-col h-full overflow-hidden">
-      <div className="flex flex-col lg:flex-row flex-1 gap-4 p-4 min-h-0 overflow-auto">
-        <Card className="flex flex-col w-full lg:w-1/4 min-h-[500px] overflow-hidden">
+    <div className="flex flex-col h-full min-h-0 p-4 gap-4 overflow-auto">
+      <div className="flex flex-col gap-4 min-h-0">
+        <Card className="flex flex-col w-full min-h-0">
           <CardHeader className="pb-3 shrink-0">
             <CardTitle className="text-base flex items-center gap-2">
               <Target className="h-4 w-4" />
               Payload List
             </CardTitle>
           </CardHeader>
-          <CardContent className="flex flex-col flex-1 min-h-0 overflow-hidden">
+          <CardContent className="flex flex-col flex-1 min-h-0 overflow-auto">
             <Tabs value={activePayloadTab} onValueChange={(v) => setActivePayloadTab(v as any)}>
               <TabsList className="grid w-full grid-cols-3 shrink-0">
                 <TabsTrigger value="manual">Manual</TabsTrigger>
@@ -322,20 +322,20 @@ Content-Type: application/json
                 <TabsTrigger value="predefined">Predefined</TabsTrigger>
               </TabsList>
 
-              <TabsContent value="manual" className="flex flex-col flex-1 min-h-0 mt-3 overflow-hidden">
+              <TabsContent value="manual" className="flex flex-col flex-1 min-h-0 mt-3 overflow-auto">
                 <Textarea
-                  className="flex-1 font-mono text-xs min-h-0"
+                  className="flex-1 font-mono text-xs min-h-[100px]"
                   placeholder="Enter payloads (one per line)..."
                   value={manualPayloads}
                   onChange={(e) => setManualPayloads(e.target.value)}
                 />
               </TabsContent>
 
-              <TabsContent value="import" className="flex flex-col flex-1 min-h-0 mt-3 overflow-hidden">
+              <TabsContent value="import" className="flex flex-col flex-1 min-h-0 mt-3 overflow-auto">
                 <Button variant="outline" size="sm" onClick={handleLoadFromFile} className="mb-2 shrink-0">
                   Load from File
                 </Button>
-                <ScrollArea className="flex-1 min-h-0 border rounded-md p-2">
+                <ScrollArea className="flex-1 min-h-[100px] border rounded-md p-2">
                   {importedPayloads.length === 0 ? (
                     <p className="text-xs text-muted-foreground p-2">No payloads loaded. Click "Load from File" to import.</p>
                   ) : (
@@ -357,14 +357,14 @@ Content-Type: application/json
                 </ScrollArea>
               </TabsContent>
 
-              <TabsContent value="predefined" className="flex flex-col flex-1 min-h-0 mt-3 overflow-hidden">
+              <TabsContent value="predefined" className="flex flex-col flex-1 min-h-0 mt-3 overflow-auto">
                 <div className="flex items-center justify-between mb-2 shrink-0">
                   <span className="text-xs text-muted-foreground">{predefinedSelected.size} selected</span>
                   <Button variant="ghost" size="sm" onClick={handlePredefinedSelectAll}>
                     {predefinedSelected.size === PREDEFINED_PAYLOADS.length ? 'Deselect All' : 'Select All'}
                   </Button>
                 </div>
-                <ScrollArea className="flex-1 min-h-0 border rounded-md p-2">
+                <ScrollArea className="flex-1 min-h-[100px] border rounded-md p-2">
                   <div className="flex flex-col gap-1">
                     {PREDEFINED_PAYLOADS.map((payload, idx) => (
                       <label
@@ -407,207 +407,209 @@ Content-Type: application/json
           </CardContent>
         </Card>
 
-        <Card className="flex flex-col w-full lg:w-1/2 min-h-[500px] overflow-hidden">
-          <CardHeader className="pb-3 shrink-0">
-            <CardTitle className="text-base">Request Editor</CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-col flex-1 min-h-0 overflow-hidden">
-            <div className="flex flex-col lg:flex-row gap-2 mb-3 shrink-0">
-              <div className="flex items-center gap-2 flex-1">
-                <Label className="text-xs whitespace-nowrap">Placeholder:</Label>
+        <div className="flex flex-col lg:flex-row gap-4 min-h-0">
+          <Card className="flex flex-col w-full lg:w-1/2 min-h-0">
+            <CardHeader className="pb-3 shrink-0">
+              <CardTitle className="text-base">Request Editor</CardTitle>
+            </CardHeader>
+            <CardContent className="flex flex-col flex-1 min-h-0 overflow-auto">
+              <div className="flex flex-col lg:flex-row gap-2 mb-3 shrink-0">
+                <div className="flex items-center gap-2 flex-1">
+                  <Label className="text-xs whitespace-nowrap">Placeholder:</Label>
+                  <Input
+                    className="h-8 font-mono text-xs"
+                    placeholder="{{input}}"
+                    value={placeholder}
+                    onChange={(e) => setPlaceholder(e.target.value)}
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <Label className="text-xs whitespace-nowrap">Attack:</Label>
+                  <Select value={attackType} onValueChange={(v: AttackType) => setAttackType(v)}>
+                    <SelectTrigger className="h-8 w-[120px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="sniper">Sniper</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <Collapsible open={attackSettingsOpen} onOpenChange={setAttackSettingsOpen}>
+                <CollapsibleTrigger className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground mb-2 shrink-0">
+                  {attackSettingsOpen ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+                  Attack Settings
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <div className="grid grid-cols-2 gap-2 p-3 bg-muted/30 rounded-md mb-3">
+                    <div className="flex items-center gap-2">
+                      <Label className="text-xs whitespace-nowrap">Throttle (ms):</Label>
+                      <Input
+                        className="h-7 font-mono text-xs"
+                        type="number"
+                        value={attackSettings.throttle}
+                        onChange={(e) => setAttackSettings(s => ({ ...s, throttle: parseInt(e.target.value) || 0 }))}
+                      />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Label className="text-xs whitespace-nowrap">Timeout (ms):</Label>
+                      <Input
+                        className="h-7 font-mono text-xs"
+                        type="number"
+                        value={attackSettings.timeout}
+                        onChange={(e) => setAttackSettings(s => ({ ...s, timeout: parseInt(e.target.value) || 30000 }))}
+                      />
+                    </div>
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
+
+              <Textarea
+                className="flex-1 font-mono text-xs min-h-[150px]"
+                placeholder="Enter raw HTTP request..."
+                value={requestBody}
+                onChange={(e) => setRequestBody(e.target.value)}
+              />
+
+              <div className="flex items-center gap-2 mt-3 shrink-0">
+                <Label className="text-xs whitespace-nowrap">Endpoint:</Label>
                 <Input
-                  className="h-8 font-mono text-xs"
-                  placeholder="{{input}}"
-                  value={placeholder}
-                  onChange={(e) => setPlaceholder(e.target.value)}
+                  className="flex-1 h-8 font-mono text-xs"
+                  placeholder="http://localhost:3000"
+                  value={endpoint}
+                  onChange={(e) => setEndpoint(e.target.value)}
                 />
               </div>
-              <div className="flex items-center gap-2">
-                <Label className="text-xs whitespace-nowrap">Attack:</Label>
-                <Select value={attackType} onValueChange={(v: AttackType) => setAttackType(v)}>
-                  <SelectTrigger className="h-8 w-[120px]">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="sniper">Sniper</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
 
-            <Collapsible open={attackSettingsOpen} onOpenChange={setAttackSettingsOpen}>
-              <CollapsibleTrigger className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground mb-2 shrink-0">
-                {attackSettingsOpen ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
-                Attack Settings
-              </CollapsibleTrigger>
-              <CollapsibleContent>
-                <div className="grid grid-cols-2 gap-2 p-3 bg-muted/30 rounded-md mb-3">
-                  <div className="flex items-center gap-2">
-                    <Label className="text-xs whitespace-nowrap">Throttle (ms):</Label>
-                    <Input
-                      className="h-7 font-mono text-xs"
-                      type="number"
-                      value={attackSettings.throttle}
-                      onChange={(e) => setAttackSettings(s => ({ ...s, throttle: parseInt(e.target.value) || 0 }))}
-                    />
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Label className="text-xs whitespace-nowrap">Timeout (ms):</Label>
-                    <Input
-                      className="h-7 font-mono text-xs"
-                      type="number"
-                      value={attackSettings.timeout}
-                      onChange={(e) => setAttackSettings(s => ({ ...s, timeout: parseInt(e.target.value) || 30000 }))}
-                    />
-                  </div>
-                </div>
-              </CollapsibleContent>
-            </Collapsible>
-
-            <Textarea
-              className="flex-1 font-mono text-xs min-h-0"
-              placeholder="Enter raw HTTP request..."
-              value={requestBody}
-              onChange={(e) => setRequestBody(e.target.value)}
-            />
-
-            <div className="flex items-center gap-2 mt-3 shrink-0">
-              <Label className="text-xs whitespace-nowrap">Endpoint:</Label>
-              <Input
-                className="flex-1 h-8 font-mono text-xs"
-                placeholder="http://localhost:3000"
-                value={endpoint}
-                onChange={(e) => setEndpoint(e.target.value)}
-              />
-            </div>
-
-            <div className="flex gap-2 mt-3 shrink-0">
-              <Button
-                className="flex-1"
-                onClick={handleRunSelected}
-                disabled={selectedPayloadsList.length === 0 || isRunning}
-              >
-                {isRunning ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Running...
-                  </>
-                ) : (
-                  <>
-                    <Zap className="h-4 w-4 mr-2" />
-                    Start Attack
-                  </>
+              <div className="flex gap-2 mt-3 shrink-0">
+                <Button
+                  className="flex-1"
+                  onClick={handleRunSelected}
+                  disabled={selectedPayloadsList.length === 0 || isRunning}
+                >
+                  {isRunning ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Running...
+                    </>
+                  ) : (
+                    <>
+                      <Zap className="h-4 w-4 mr-2" />
+                      Start Attack
+                    </>
+                  )}
+                </Button>
+                {isRunning && (
+                  <Button variant="outline" onClick={handleCancel}>
+                    <Square className="h-4 w-4 mr-2" />
+                    Cancel
+                  </Button>
                 )}
-              </Button>
-              {isRunning && (
-                <Button variant="outline" onClick={handleCancel}>
-                  <Square className="h-4 w-4 mr-2" />
-                  Cancel
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="flex flex-col w-full lg:w-1/2 min-h-0">
+            <CardHeader className="pb-3 flex flex-row items-center justify-between shrink-0">
+              <CardTitle className="text-base flex items-center gap-2">
+                Response
+                {anomalyCount > 0 && (
+                  <Badge variant="destructive" className="flex items-center gap-1 ml-2">
+                    <AlertTriangle className="h-3 w-3" />
+                    {anomalyCount} anomaly
+                  </Badge>
+                )}
+              </CardTitle>
+              {results.length > 0 && (
+                <Button variant="ghost" size="sm" onClick={handleClearResults}>
+                  Clear
                 </Button>
               )}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="flex flex-col w-full lg:w-1/4 min-h-[500px] overflow-hidden">
-          <CardHeader className="pb-3 flex flex-row items-center justify-between shrink-0">
-            <CardTitle className="text-base flex items-center gap-2">
-              Response
-              {anomalyCount > 0 && (
-                <Badge variant="destructive" className="flex items-center gap-1 ml-2">
-                  <AlertTriangle className="h-3 w-3" />
-                  {anomalyCount} anomaly
-                </Badge>
-              )}
-            </CardTitle>
-            {results.length > 0 && (
-              <Button variant="ghost" size="sm" onClick={handleClearResults}>
-                Clear
-              </Button>
-            )}
-          </CardHeader>
-          <CardContent className="flex flex-col flex-1 min-h-0 overflow-hidden">
-            {isRunning && currentRunningIndex >= 0 && (
-              <div className="flex items-center gap-2 mb-2 shrink-0">
-                <Loader2 className="h-3 w-3 animate-spin" />
-                <span className="text-xs">
-                  Testing {currentRunningIndex + 1} of {selectedPayloadsList.length || allPayloads.length}
-                </span>
-              </div>
-            )}
-
-            <ScrollArea className="flex-1 min-h-0">
-              {results.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
-                  <Target className="h-8 w-8 mb-2" />
-                  <p className="text-xs">No results yet. Start an attack to see responses.</p>
+            </CardHeader>
+            <CardContent className="flex flex-col flex-1 min-h-0 overflow-auto">
+              {isRunning && currentRunningIndex >= 0 && (
+                <div className="flex items-center gap-2 mb-2 shrink-0">
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                  <span className="text-xs">
+                    Testing {currentRunningIndex + 1} of {selectedPayloadsList.length || allPayloads.length}
+                  </span>
                 </div>
-              ) : (
-                <div className="flex flex-col gap-2">
-                  <div className="grid grid-cols-4 gap-2 text-xs font-medium text-muted-foreground pb-2 border-b shrink-0">
-                    <span>#</span>
-                    <span>Payload</span>
-                    <span>Len</span>
-                    <span>Delta</span>
+              )}
+
+              <ScrollArea className="flex-1 min-h-[100px]">
+                {results.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
+                    <Target className="h-8 w-8 mb-2" />
+                    <p className="text-xs">No results yet. Start an attack to see responses.</p>
                   </div>
-                  {results.map((result, idx) => (
-                    <div
-                      key={result.id}
-                      className={`grid grid-cols-4 gap-2 p-2 rounded text-xs ${result.isAnomaly ? 'bg-destructive/10 border border-destructive/30' : 'border'}`}
-                    >
-                      <span className="text-muted-foreground">{result.index + 1}</span>
-                      <span className="font-mono truncate" title={result.payload}>
-                        {result.payload.substring(0, 15)}{result.payload.length > 15 ? '...' : ''}
-                      </span>
-                      <span>{result.length}</span>
-                      <span className={`flex items-center gap-1 ${result.lengthDelta > 0 ? 'text-green-500' : result.lengthDelta < 0 ? 'text-red-500' : 'text-muted-foreground'}`}>
-                        {result.lengthDelta > 0 ? (
-                          <ArrowUp className="h-3 w-3" />
-                        ) : result.lengthDelta < 0 ? (
-                          <ArrowDown className="h-3 w-3" />
-                        ) : (
-                          <Minus className="h-3 w-3" />
-                        )}
-                        {result.lengthDelta !== 0 ? Math.abs(result.lengthDelta) : '-'}
-                      </span>
+                ) : (
+                  <div className="flex flex-col gap-2">
+                    <div className="grid grid-cols-4 gap-2 text-xs font-medium text-muted-foreground pb-2 border-b shrink-0">
+                      <span>#</span>
+                      <span>Payload</span>
+                      <span>Len</span>
+                      <span>Delta</span>
                     </div>
-                  ))}
-                  <div className="mt-3 pt-3 border-t shrink-0">
-                    <div className="text-xs text-muted-foreground mb-2">Last Response</div>
-                    {results.length > 0 && results[results.length - 1] && (
-                      <div className="border rounded-md p-2">
-                        <div className="flex items-center justify-between mb-2">
-                          {results[results.length - 1].success ? (
-                            <Badge variant="default" className="flex items-center gap-1">
-                              <CheckCircle className="h-3 w-3" />
-                              {results[results.length - 1].status}
-                            </Badge>
+                    {results.map((result, idx) => (
+                      <div
+                        key={result.id}
+                        className={`grid grid-cols-4 gap-2 p-2 rounded text-xs ${result.isAnomaly ? 'bg-destructive/10 border border-destructive/30' : 'border'}`}
+                      >
+                        <span className="text-muted-foreground">{result.index + 1}</span>
+                        <span className="font-mono truncate" title={result.payload}>
+                          {result.payload.substring(0, 15)}{result.payload.length > 15 ? '...' : ''}
+                        </span>
+                        <span>{result.length}</span>
+                        <span className={`flex items-center gap-1 ${result.lengthDelta > 0 ? 'text-green-500' : result.lengthDelta < 0 ? 'text-red-500' : 'text-muted-foreground'}`}>
+                          {result.lengthDelta > 0 ? (
+                            <ArrowUp className="h-3 w-3" />
+                          ) : result.lengthDelta < 0 ? (
+                            <ArrowDown className="h-3 w-3" />
                           ) : (
-                            <Badge variant="destructive" className="flex items-center gap-1">
-                              <XCircle className="h-3 w-3" />
-                              Error
-                            </Badge>
+                            <Minus className="h-3 w-3" />
                           )}
-                          <span className="text-xs text-muted-foreground">
-                            {results[results.length - 1].latency}ms
-                          </span>
-                        </div>
-                        {results[results.length - 1].error ? (
-                          <div className="text-destructive text-xs">{results[results.length - 1].error}</div>
-                        ) : (
-                          <pre className="text-xs font-mono bg-muted p-2 rounded overflow-x-auto max-h-[150px]">
-                            {results[results.length - 1].body.substring(0, 1000)}
-                            {results[results.length - 1].body.length > 1000 && '...'}
-                          </pre>
-                        )}
+                          {result.lengthDelta !== 0 ? Math.abs(result.lengthDelta) : '-'}
+                        </span>
                       </div>
-                    )}
+                    ))}
+                    <div className="mt-3 pt-3 border-t shrink-0">
+                      <div className="text-xs text-muted-foreground mb-2">Last Response</div>
+                      {results.length > 0 && results[results.length - 1] && (
+                        <div className="border rounded-md p-2">
+                          <div className="flex items-center justify-between mb-2">
+                            {results[results.length - 1].success ? (
+                              <Badge variant="default" className="flex items-center gap-1">
+                                <CheckCircle className="h-3 w-3" />
+                                {results[results.length - 1].status}
+                              </Badge>
+                            ) : (
+                              <Badge variant="destructive" className="flex items-center gap-1">
+                                <XCircle className="h-3 w-3" />
+                                Error
+                              </Badge>
+                            )}
+                            <span className="text-xs text-muted-foreground">
+                              {results[results.length - 1].latency}ms
+                            </span>
+                          </div>
+                          {results[results.length - 1].error ? (
+                            <div className="text-destructive text-xs">{results[results.length - 1].error}</div>
+                          ) : (
+                            <pre className="text-xs font-mono bg-muted p-2 rounded overflow-x-auto max-h-[150px]">
+                              {results[results.length - 1].body.substring(0, 1000)}
+                              {results[results.length - 1].body.length > 1000 && '...'}
+                            </pre>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              )}
-            </ScrollArea>
-          </CardContent>
-        </Card>
+                )}
+              </ScrollArea>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );

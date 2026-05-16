@@ -10,13 +10,25 @@ use tauri::{State, AppHandle};
 
 #[tauri::command]
 async fn start_proxy(app: AppHandle, port: u16, tls_port: u16) -> Result<String, String> {
-    eprintln!("[command] start_proxy called with port={}, tls_port={}", port, tls_port);
+    use std::io::Write;
+    let mut file = std::fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open("/tmp/apprecon.log")
+        .map_err(|e| e.to_string())?;
+    writeln!(file, "start_proxy called: port={}, tls_port={}", port, tls_port).map_err(|e| e.to_string())?;
+
     let handle = app.clone();
-    tokio::task::spawn_blocking(move || {
-        eprintln!("[command] Inside spawn_blocking");
+    std::thread::spawn(move || {
+        let mut file = std::fs::OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open("/tmp/apprecon.log")
+            .unwrap();
+        writeln!(file, "thread spawned, calling run()").unwrap();
         run(ProxyConfig { port, reuse: true, tls_port }, handle);
+        writeln!(file, "run() returned").unwrap();
     });
-    eprintln!("[command] spawn_blocking returned");
     Ok(format!("Proxy starting on port {} (HTTP) and {} (HTTPS MITM)", port, tls_port))
 }
 
@@ -69,9 +81,20 @@ async fn get_ca_cert() -> Result<String, String> {
 }
 
 fn main() {
+    eprintln!("[main] Application starting...");
+
+    std::panic::set_hook(Box::new(|panic_info| {
+        let msg = format!("PANIC: {:?}", panic_info);
+        eprintln!("{}", msg);
+        let _ = std::fs::write("/tmp/apprecon_panic.log", msg);
+    }));
+
+    eprintln!("[main] Opening database...");
     let db = Database::new(std::path::PathBuf::from("apprecon.db"))
         .expect("Failed to open database");
+    eprintln!("[main] Initializing database...");
     db.init().expect("Failed to initialize database");
+    eprintln!("[main] Building Tauri app...");
 
     tauri::Builder::default()
         .manage(Mutex::new(ProxyState::new()))
@@ -89,6 +112,15 @@ fn main() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
+        .setup(move |_app| {
+            eprintln!("[main] Tauri setup complete, spawning proxy thread...");
+            let handle = _app.handle().clone();
+            std::thread::spawn(move || {
+                eprintln!("[main] Inside new thread, calling run()...");
+                run(ProxyConfig { port: 8888, reuse: true, tls_port: 8889 }, handle);
+            });
+            Ok(())
+        })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

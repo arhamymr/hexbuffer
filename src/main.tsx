@@ -8,7 +8,8 @@ import { useHttpHistoryStore } from "@/stores/http-history";
 import AppRoutes from "./app";
 import "@/styles/globals.css";
 
-useHttpHistoryStore.getState().startProxy();
+// Uncomment below to auto-start proxy on app load
+// useHttpHistoryStore.getState().startProxy();
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>

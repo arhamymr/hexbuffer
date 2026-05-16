@@ -1,54 +1,59 @@
 use pingora_core::upstreams::peer::HttpPeer;
-use pingora_core::Result;
 use pingora_proxy::Session;
+use crate::proxy::lifecycle::Ctx;
 
-use super::Ctx;
+pub fn resolve_host(session: &Session) -> (String, u16, bool) {
+    let req_header = session.req_header();
 
-pub fn resolve_host(session: &mut Session) -> (String, u16, bool) {
-    let uri_string = session.req_header().uri.to_string();
+    let is_connect = req_header.method == "CONNECT";
+    let uri = &req_header.uri;
 
-    let parsed_uri: Option<url::Url> = url::Url::parse(&uri_string).ok();
+    let is_https = uri.scheme_str() == Some("https") || is_connect;
 
-    let is_https = parsed_uri
-        .as_ref()
-        .map(|u| u.scheme() == "https")
-        .unwrap_or(false);
+    let host = if is_connect {
+        uri.path().split(':').next().unwrap_or("localhost").to_string()
+    } else {
+        uri.host()
+            .or_else(|| req_header.headers.get("Host").and_then(|v| v.to_str().ok()))
+            .unwrap_or("localhost")
+            .to_string()
+    };
 
-    let host = parsed_uri
-        .as_ref()
-        .and_then(|u: &url::Url| u.host_str().map(|s| s.to_string()))
-        .filter(|s| !s.is_empty())
-        .or_else(|| {
-            session
-                .get_header("Host")
-                .and_then(|v| v.to_str().ok())
-                .and_then(|h| {
-                    h.split(':').next().map(|s| s.to_string())
-                })
-                .filter(|s| !s.is_empty())
-        })
-        .unwrap_or_else(|| "localhost".to_string());
-
-    let port = parsed_uri
-        .as_ref()
-        .and_then(|u: &url::Url| u.port())
-        .or_else(|| session.req_header().uri.port_u16())
-        .unwrap_or_else(|| if is_https { 443 } else { 80 });
+    let port = uri.port_u16().unwrap_or_else(|| if is_https { 443 } else { 80 });
 
     (host, port, is_https)
 }
 
-pub fn build_peer(addr: &str, host: &str, tls: bool) -> HttpPeer {
-    HttpPeer::new(addr, tls, host.to_string())
-}
-
-pub fn create_peer(session: &mut Session, _ctx: &mut Ctx) -> Result<Box<HttpPeer>> {
+pub async fn create_peer(session: &mut Session, ctx: &mut Ctx) -> Result<Box<HttpPeer>, pingora_core::Error> {
     let (host, port, is_https) = resolve_host(session);
-    let addr = format!("{host}:{port}");
 
-    println!("[peer] connecting to {} (host={}, port={}, tls={})", addr, host, port, is_https);
+    eprintln!("[peer] create_peer | method={} host={} port={} is_https={} is_mitm_loopback={}",
+        session.req_header().method, host, port, is_https, ctx.is_mitm_loopback);
 
-    let host_for_header = host.as_str();
+    // PASS 1: CONNECT tunnel establishment - route to loopback TLS MITM
+    if session.req_header().method == "CONNECT" && !ctx.is_mitm_loopback {
+        eprintln!("[peer] PASS 1: Routing CONNECT to loopback 127.0.0.1:8889");
+        let internal_mitm_addr = "127.0.0.1:8889";
+        let mut peer = HttpPeer::new(internal_mitm_addr, false, "".to_string());
+        peer.sni = host.clone();
+        ctx.is_mitm_loopback = true;
+        ctx.sni_override = Some(host);
+        return Ok(Box::new(peer));
+    }
 
-    Ok(Box::new(build_peer(&addr, host_for_header, is_https)))
+    // PASS 2: Already looped back - use sni_override to connect to real target
+    if ctx.is_mitm_loopback {
+        let target_host = ctx.sni_override.clone().unwrap_or(host);
+        eprintln!("[peer] PASS 2: Direct TLS to {}:443", target_host);
+        let target_addr = format!("{}:443", target_host);
+        let peer = HttpPeer::new(target_addr, true, target_host);
+        return Ok(Box::new(peer));
+    }
+
+    // Regular HTTP/HTTPS request - use resolved host/port
+    let target_addr = format!("{}:{}", host, port);
+    eprintln!("[peer] Regular: {}:{} tls={}", host, port, is_https);
+    let peer = HttpPeer::new(target_addr, is_https, host);
+
+    Ok(Box::new(peer))
 }

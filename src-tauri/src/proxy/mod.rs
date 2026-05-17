@@ -7,16 +7,13 @@ pub mod https;
 
 pub use state::{ProxyState, ProxyRecord, ProxyFilter, ProxyRequest, ProxyResponse, PausedRequest, InterceptMode};
 pub use utils::ensure_port_free;
-pub use https::cert::{export_ca_cert_pem, get_ca_cert_x509};
+pub use https::cert::export_ca_cert_pem;
 
-use std::sync::Arc;
-use pingora::listeners::tls::TlsSettings;
-use pingora_core::server::configuration::Opt;
-use pingora_core::server::Server;
-use pingora_proxy::http_proxy_service;
 use tauri::AppHandle;
+use hudsucker::{Proxy, rustls::crypto::aws_lc_rs};
+use std::net::SocketAddr;
 
-use crate::proxy::https::{TlsManager, TlsCertCallback};
+use crate::proxy::https::cert::ensure_ca_exists;
 
 pub struct ProxyConfig {
     pub port: u16,
@@ -31,57 +28,56 @@ impl Default for ProxyConfig {
 }
 
 pub fn run(config: ProxyConfig, app_handle: AppHandle) {
-    eprintln!("[proxy] ========== Starting ==========");
+    eprintln!("[proxy] ========== Starting Hudsucker Proxy ==========");
+
+    ensure_ca_exists();
 
     if let Err(e) = ensure_port_free(config.port, config.reuse) {
         eprintln!("[proxy] FATAL port {}: {}", config.port, e);
         return;
     }
 
-    if let Err(e) = ensure_port_free(config.tls_port, config.reuse) {
-        eprintln!("[proxy] FATAL tls_port {}: {}", config.tls_port, e);
-        return;
-    }
-
-    let opt = Opt::parse_args();
-    let mut server = match Server::new(Some(opt)) {
-        Ok(s) => s,
+    // Create AppHandler instance
+    let handler = lifecycle::AppHandler::new(app_handle.clone());
+    
+    // Create CA authority from existing rcgen CA
+    let authority = match https::cert::create_hudsucker_authority() {
+        Ok(auth) => auth,
         Err(e) => {
-            eprintln!("[proxy] FATAL server: {:?}", e);
+            eprintln!("[proxy] FATAL: Failed to create CA authority: {}", e);
             return;
         }
     };
-
-    server.bootstrap();
-
-    let proxy_service = http_proxy_service(&server.configuration, lifecycle::Rusxy::new(app_handle));
-    let mut proxy = proxy_service;
-
-    proxy.add_tcp(&format!("127.0.0.1:{}", config.port));
-    println!("[proxy] HTTP proxy bound to port {} (CONNECT tunneling for HTTP/HTTPS)", config.port);
-
-    let tls_manager = Arc::new(TlsManager::new());
-    let callback = Box::new(TlsCertCallback::new(tls_manager));
-    println!("[proxy] TlsCertCallback created");
-
-    let mut tls_settings = match TlsSettings::with_callbacks(callback) {
-        Ok(s) => s,
+    
+    // Build proxy with Hudsucker
+    let proxy = match Proxy::builder()
+        .with_addr(SocketAddr::from(([0, 0, 0, 0], config.port)))
+        .with_ca(authority)
+        .with_rustls_connector(aws_lc_rs::default_provider())
+        .with_http_handler(handler)
+        .build()
+    {
+        Ok(p) => p,
         Err(e) => {
-            eprintln!("[proxy] FATAL TLS settings creation failed: {:?}", e);
+            eprintln!("[proxy] FATAL: Failed to build proxy: {}", e);
             return;
         }
     };
-    println!("[proxy] TLS settings created successfully");
-    tls_settings.enable_h2();
-    println!("[proxy] HTTP/2 enabled on TLS settings");
-
-    proxy.add_tls_with_settings(&format!("127.0.0.1:{}", config.tls_port), None, tls_settings);
-    println!("[proxy] HTTPS MITM proxy bound to port {}", config.tls_port);
-
-    server.add_service(proxy);
-
-    eprintln!("[proxy] ========== Starting Server ==========");
-    println!("Proxy listening on port {} (HTTP tunnel) and port {} (HTTPS MITM)", config.port, config.tls_port);
-
-    server.run_forever();
+    
+    eprintln!("[proxy] Proxy listening on port {} (HTTP and HTTPS MITM)", config.port);
+    
+    // Start proxy with tokio runtime (blocking)
+    let runtime = match tokio::runtime::Runtime::new() {
+        Ok(rt) => rt,
+        Err(e) => {
+            eprintln!("[proxy] FATAL: Failed to create tokio runtime: {}", e);
+            return;
+        }
+    };
+    
+    runtime.block_on(async {
+        if let Err(e) = proxy.start().await {
+            eprintln!("[proxy] FATAL: Proxy error: {}", e);
+        }
+    });
 }

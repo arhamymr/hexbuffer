@@ -1,5 +1,3 @@
-use pingora_http::{RequestHeader, ResponseHeader};
-
 const CAPTIVE_PORTAL_PATTERNS: &[&str] = &[
     "connectivitycheck.gstatic.com",
     "www.msftconnecttest.com",
@@ -13,12 +11,4 @@ const CAPTIVE_PORTAL_PATTERNS: &[&str] = &[
 
 pub fn should_bypass(uri: &str) -> bool {
     CAPTIVE_PORTAL_PATTERNS.iter().any(|pattern| uri.contains(pattern))
-}
-
-pub fn on_request(req: &mut RequestHeader) {
-    let _ = req.insert_header("x-rusxy", "1");
-}
-
-pub fn on_response(res: &mut ResponseHeader) {
-    let _ = res.insert_header("x-rusxy", "1");
 }

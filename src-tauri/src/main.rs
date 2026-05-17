@@ -117,7 +117,7 @@ fn main() {
             let handle = _app.handle().clone();
             std::thread::spawn(move || {
                 eprintln!("[main] Inside new thread, calling run()...");
-                run(ProxyConfig { port: 8888, reuse: true, tls_port: 8889 }, handle);
+                run(ProxyConfig { port: 8888, reuse: true, tls_port: 8888 }, handle);
             });
             Ok(())
         })

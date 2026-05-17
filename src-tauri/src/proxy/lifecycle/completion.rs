@@ -31,6 +31,11 @@ pub fn build_record(ctx: &Ctx) -> ProxyRecord {
 }
 
 pub fn save_and_emit(ctx: &Ctx, app_handle: &tauri::AppHandle) {
+    eprintln!("[completion] save_and_emit called for txn_id={}", ctx.transaction_id);
+    eprintln!("[completion] Request: {} {} (body: {} bytes)", ctx.req_method, ctx.req_uri, ctx.req_body.len());
+    eprintln!("[completion] Response: {} {} (body: {} bytes)", ctx.res_status_code, ctx.res_status_text, ctx.res_body.len());
+    eprintln!("[completion] Server addr: {}", ctx.server_addr);
+    
     let txn = build_record(ctx);
 
     if let Some(db) = app_handle.try_state::<Mutex<crate::Database>>() {

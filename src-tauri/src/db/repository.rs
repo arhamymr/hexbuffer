@@ -208,7 +208,7 @@ impl Database {
                     params_vec.push(Box::new(m.clone()));
                     param_idx += 1;
                 }
-                sql.push_str(")");
+                sql.push(')');
             }
         }
 
@@ -223,7 +223,7 @@ impl Database {
                     params_vec.push(Box::new(*s as i64));
                     param_idx += 1;
                 }
-                sql.push_str(")");
+                sql.push(')');
             }
         }
 

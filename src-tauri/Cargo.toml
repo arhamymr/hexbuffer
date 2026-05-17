@@ -19,10 +19,11 @@ rusqlite = { version = "0.32", features = ["bundled"] }
 rcgen = { version = "0.14", features = ["x509-parser"] }
 dirs = "5"
 
-pingora = { version = "0.8", features = ["proxy", "lb", "openssl"] }
-pingora-proxy = { version = "0.8", features = ["openssl"] }
-pingora-core = { version = "0.8", features = ["openssl"] }
-pingora-http = "0.8"
+hudsucker = { version = "0.24", features = ["rustls-client", "rcgen-ca"] }
+hyper = { version = "1", features = ["full"] }
+hyper-util = { version = "0.1", features = ["full"] }
+http-body-util = "0.1"
+tower = "0.5"
 tokio = { version = "1", features = ["full"] }
 async-trait = "0.1"
 colored = "3"
@@ -38,3 +39,7 @@ http = "1"
 clap = { version = "4", features = ["derive"] }
 url = "2.5.8"
 flate2 = "1.0"
+
+[dev-dependencies]
+proptest = "1.5"
+tokio-test = "0.4"

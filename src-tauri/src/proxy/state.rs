@@ -72,8 +72,7 @@ impl ProxyFilter {
             return true;
         }
         for pattern in scope {
-            if pattern.starts_with("*.") {
-                let domain = &pattern[2..];
+            if let Some(domain) = pattern.strip_prefix("*.") {
                 if host.ends_with(domain) {
                     return true;
                 }
@@ -145,11 +144,7 @@ impl ProxyState {
 
     pub fn remove_paused_request(&self, id: &Uuid) -> Option<PausedRequest> {
         let mut inner = self.0.lock().unwrap();
-        if let Some(pos) = inner.paused_requests.iter().position(|r| r.id == *id) {
-            Some(inner.paused_requests.remove(pos))
-        } else {
-            None
-        }
+        inner.paused_requests.iter().position(|r| r.id == *id).map(|pos| inner.paused_requests.remove(pos))
     }
 
     pub fn get_all_paused(&self) -> Vec<PausedRequest> {
@@ -205,11 +200,7 @@ impl ProxyState {
 
     pub fn delete_record(&self, id: &Uuid) -> Option<ProxyRecord> {
         let mut inner = self.0.lock().unwrap();
-        if let Some(pos) = inner.records.iter().position(|r| r.id == *id) {
-            Some(inner.records.remove(pos))
-        } else {
-            None
-        }
+        inner.records.iter().position(|r| r.id == *id).map(|pos| inner.records.remove(pos))
     }
 }
 

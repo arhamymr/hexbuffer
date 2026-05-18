@@ -5,7 +5,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { Crosshair, Settings, Moon, Sun, ArrowUpDown, RefreshCw, Map, Wrench, Bot } from 'lucide-react';
 import { useTheme } from './theme-provider';
 import { Button } from './ui/button';
-import { useHttpHistoryStore } from '@/stores/http-history';
+import { AppFooter } from './footer';
 
 const mainNavItems = [
   { label: 'HTTP History', icon: ArrowUpDown, href: '/' },
@@ -92,20 +92,11 @@ export function TopNav() {
 }
 
 export function AppLayout({ children }: { children?: React.ReactNode }) {
-  const status = useHttpHistoryStore((s) => s.status);
   return (
     <div className="h-screen flex flex-col">
       <TopNav />
       <main className="flex-1 overflow-hidden p-2">{children}</main>
-      <footer className="border-t px-4 py-1.5 flex items-center justify-between text-xs text-muted-foreground">
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-1.5">
-            <div className={`h-2 w-2 rounded-full ${status === 'connected' ? 'bg-green-500' : status === 'starting' ? 'bg-yellow-500 animate-pulse' : 'bg-red-500'}`} />
-            <span>{status === 'connected' ? 'Connected' : status === 'starting' ? 'Starting...' : 'Disconnected'}</span>
-          </div>
-        </div>
-        <span>© 2024 | Apprecon Version 0.1</span>
-      </footer>
+      <AppFooter />
     </div>
   );
 }

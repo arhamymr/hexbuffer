@@ -186,14 +186,13 @@ impl Database {
 
         let mut sql = String::from("SELECT * FROM http_logs WHERE 1=1");
         let mut params_vec: Vec<Box<dyn rusqlite::ToSql>> = Vec::new();
-        let mut param_idx = 1;
 
         if let Some(ref search) = filter.search {
             if !search.is_empty() {
-                sql.push_str(&format!(" AND (url LIKE ${}", param_idx));
-                params_vec.push(Box::new(format!("%{}%", search)));
-                param_idx += 1;
-                sql.push_str(&format!(" OR method LIKE ${})", param_idx - 1));
+                let search_pattern = format!("%{}%", search);
+                sql.push_str(" AND (url LIKE ? OR method LIKE ?)");
+                params_vec.push(Box::new(search_pattern.clone()));
+                params_vec.push(Box::new(search_pattern));
             }
         }
 
@@ -204,9 +203,8 @@ impl Database {
                     if i > 0 {
                         sql.push_str(", ");
                     }
-                    sql.push_str(&format!("${}", param_idx));
+                    sql.push_str("?");
                     params_vec.push(Box::new(m.clone()));
-                    param_idx += 1;
                 }
                 sql.push(')');
             }
@@ -219,9 +217,8 @@ impl Database {
                     if i > 0 {
                         sql.push_str(", ");
                     }
-                    sql.push_str(&format!("${}", param_idx));
+                    sql.push_str("?");
                     params_vec.push(Box::new(*s as i64));
-                    param_idx += 1;
                 }
                 sql.push(')');
             }
@@ -298,6 +295,130 @@ impl Database {
             .map_err(|e| e.to_string())?;
         Ok(total as usize)
     }
+
+    pub fn get_tree(&self, filter: &ProxyFilter) -> Result<Vec<TreeNode>, String> {
+        let conn = self.conn.lock().unwrap();
+
+        let mut sql = String::from("SELECT url, method FROM http_logs WHERE 1=1");
+        let mut params_vec: Vec<Box<dyn rusqlite::ToSql>> = Vec::new();
+
+        if let Some(ref search) = filter.search {
+            if !search.is_empty() {
+                let search_pattern = format!("%{}%", search);
+                sql.push_str(" AND (url LIKE ? OR method LIKE ?)");
+                params_vec.push(Box::new(search_pattern.clone()));
+                params_vec.push(Box::new(search_pattern));
+            }
+        }
+
+        if let Some(ref methods) = filter.methods {
+            if !methods.is_empty() {
+                sql.push_str(" AND method IN (");
+                for (i, m) in methods.iter().enumerate() {
+                    if i > 0 {
+                        sql.push_str(", ");
+                    }
+                    sql.push_str("?");
+                    params_vec.push(Box::new(m.clone()));
+                }
+                sql.push(')');
+            }
+        }
+
+        if let Some(ref status_codes) = filter.status_codes {
+            if !status_codes.is_empty() {
+                sql.push_str(" AND response_status IN (");
+                for (i, s) in status_codes.iter().enumerate() {
+                    if i > 0 {
+                        sql.push_str(", ");
+                    }
+                    sql.push_str("?");
+                    params_vec.push(Box::new(*s as i64));
+                }
+                sql.push(')');
+            }
+        }
+
+        let all_params: Vec<&dyn rusqlite::ToSql> = params_vec
+            .iter()
+            .map(|b| b.as_ref())
+            .collect();
+
+        let mut stmt = conn.prepare(&sql).map_err(|e| e.to_string())?;
+        let rows = stmt.query_map(all_params.as_slice(), |row| {
+            let url: String = row.get(0)?;
+            let method: String = row.get(1)?;
+            Ok((url, method))
+        }).map_err(|e| e.to_string())?;
+
+        #[derive(Default)]
+        struct PathInfo {
+            count: u32,
+            methods: std::collections::HashSet<String>,
+        }
+
+        let mut host_paths: std::collections::HashMap<String, std::collections::HashMap<String, PathInfo>> = Default::default();
+
+        for row in rows {
+            let (url, method) = row.map_err(|e| e.to_string())?;
+            let uri = if url.contains("://") {
+                match url.split("://").nth(1) {
+                    Some(u) => u,
+                    _ => &url,
+                }
+            } else {
+                &url
+            };
+            let host = uri.split('/').next().unwrap_or("");
+            let path = uri.strip_prefix(host).unwrap_or("/");
+            let path = if path.is_empty() { "/" } else { path };
+
+            let host_entry = host_paths.entry(host.to_string()).or_default();
+            let path_entry = host_entry.entry(path.to_string()).or_default();
+            path_entry.count += 1;
+            path_entry.methods.insert(method);
+        }
+
+        let mut tree: Vec<TreeNode> = Vec::new();
+        let mut hosts: Vec<_> = host_paths.into_iter().collect();
+        hosts.sort_by(|a, b| a.0.cmp(&b.0));
+
+        for (host, paths_map) in hosts {
+            let mut paths_vec: Vec<TreePath> = Vec::new();
+            let mut paths: Vec<_> = paths_map.into_iter().collect();
+            paths.sort_by(|a, b| b.1.count.cmp(&a.1.count));
+
+            for (path, info) in paths {
+                let mut methods: Vec<String> = info.methods.into_iter().collect();
+                methods.sort();
+                paths_vec.push(TreePath {
+                    path,
+                    count: info.count,
+                    methods,
+                });
+            }
+
+            tree.push(TreeNode {
+                host,
+                paths: paths_vec,
+            });
+        }
+
+        Ok(tree)
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TreeNode {
+    pub host: String,
+    pub paths: Vec<TreePath>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TreePath {
+    pub path: String,
+    pub count: u32,
+    pub methods: Vec<String>,
 }
 
 fn row_to_proxy_record(row: &rusqlite::Row) -> SqlResult<ProxyRecord> {

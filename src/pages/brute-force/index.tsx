@@ -19,7 +19,6 @@ import {
 } from '@/components/ui/dialog';
 import { parseRawRequest } from './types';
 import { useBruteForceStore } from '@/stores/bruto-force';
-import { useHttpHistoryStore } from '@/stores/http-history';
 import Editor from '@monaco-editor/react';
 
 export function BruteForcePage() {
@@ -57,7 +56,7 @@ export function BruteForcePage() {
   const [filterPayload, setFilterPayload] = React.useState('');
   const [filterGrep, setFilterGrep] = React.useState(false);
 
-  const pendingRequest = useHttpHistoryStore((s) => s.pendingBruteForceRequest);
+  const pendingRequest = useBruteForceStore((s) => s.pendingRequest);
 
   React.useEffect(() => {
     if (pendingRequest) {
@@ -66,7 +65,7 @@ export function BruteForcePage() {
         follow_redirects: true,
         max_hops: 10,
       } as any);
-      useHttpHistoryStore.getState().setPendingBruteForceRequest(null);
+      useBruteForceStore.getState().setPendingRequest(null);
     }
   }, [pendingRequest, setBaseRequest]);
 

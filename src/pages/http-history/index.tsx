@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { Card } from "@/components/ui/card";
 import { TrafficTable } from "./components/log-table/calls-columns";
@@ -7,18 +7,23 @@ import { LogEntryBurpView } from "./components/log-table/log-entry-view";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import { TabBar } from "@/pages/http-history/components/tab-bar";
 import { TargetSelectorDialog } from "./components/target-selector";
-import { useHttpHistoryStore } from "@/stores/http-history";
-import { TreeView } from "./components/tree-view";
-import { buildSiteMapTree } from "./utils";
+import { useHttpHistoryStore } from '@/stores/log';
+import { TreeView, TreeNodeData } from "./components/tree-view";
 import { useState } from "react";
 import { useTabBar } from "./components/tab-bar/hooks";
 
 export function HttpHistoryPage() {
   const [sitemapVisible, setSitemapVisible] = useState(true);
   const setSelectedCallId = useHttpHistoryStore((state) => state.setSelectedCallId);
-  const calls = useHttpHistoryStore((state) => state.calls);
-  const treeData = buildSiteMapTree(calls);
+  const setPathFilter = useHttpHistoryStore((state) => state.setPathFilter);
   const { activeTab } = useTabBar();
+
+  const handleTreeSelect = (node: TreeNodeData) => {
+    if (node.fullPath) {
+      setPathFilter(node.fullPath);
+    }
+    setSelectedCallId(null);
+  };
 
   return (
     <div className="h-full flex flex-col">
@@ -33,10 +38,7 @@ export function HttpHistoryPage() {
             <>
               <ResizablePanel defaultSize={20} minSize={20}>
                 <TreeView
-                  data={treeData}
-                  onSelectEndpoint={(node) => {
-                    setSelectedCallId(node.id);
-                  }}
+                  onSelectEndpoint={handleTreeSelect}
                   selectedId={null}
                 />
               </ResizablePanel>

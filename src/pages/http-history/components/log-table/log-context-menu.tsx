@@ -10,16 +10,20 @@ import {
 } from '@/components/ui/context-menu';
 import { Copy, ExternalLink, Plus, Eye, Trash2, Send } from 'lucide-react';
 import type { ApiCall } from '@/types';
-import { useHttpHistoryStore } from '@/stores/http-history';
+import { useHttpHistoryStore } from '@/stores/log';
+import { useBruteForceStore } from '@/stores/bruto-force';
+import { invoke } from '@tauri-apps/api/core';
 
 interface LogEntryContextMenuProps {
   call: ApiCall;
   children: React.ReactNode;
+  onDelete?: (id: string) => void;
 }
 
 export function LogEntryContextMenu({
   call,
   children,
+  onDelete,
 }: LogEntryContextMenuProps) {
   const navigate = useNavigate();
   const setSelectedCallId = useHttpHistoryStore((state) => state.setSelectedCallId);
@@ -74,7 +78,7 @@ export function LogEntryContextMenu({
       max_hops: 10,
     };
 
-    useHttpHistoryStore.getState().setPendingBruteForceRequest(request);
+    useBruteForceStore.getState().setPendingRequest(request);
     navigate('/brute-force');
   };
 
@@ -89,9 +93,13 @@ export function LogEntryContextMenu({
     navigate('/repeater');
   };
 
-  const handleDelete = () => {
-    const calls = useHttpHistoryStore.getState().calls;
-    useHttpHistoryStore.setState({ calls: calls.filter((c) => c.id !== call.id) });
+  const handleDelete = async () => {
+    try {
+      await invoke('delete_proxy_by_id', { logId: call.id });
+      onDelete?.(call.id);
+    } catch (error) {
+      console.error('Failed to delete:', error);
+    }
   };
 
   const handleInspect = () => {

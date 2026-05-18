@@ -8,7 +8,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '..
 import { Alert, AlertDescription, AlertTitle } from '../../components/ui/alert';
 import { Separator } from '../../components/ui/separator';
 import { DownloadIcon, ShieldCheckIcon, InfoIcon, AlertTriangleIcon, SettingsIcon } from 'lucide-react';
-import { getCaCert, saveCaCert } from '@/lib/api';
+import { getCaCert, saveCaCert } from '@/pages/http-history/api';
 import { save } from '@tauri-apps/plugin-dialog';
 import { toast } from 'sonner';
 

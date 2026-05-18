@@ -30,7 +30,7 @@ export function getStatusColor(status: number | null | undefined) {
 }
 
 export function formatTimestamp(timestamp: string | number) {
-  const ms = typeof timestamp === 'string' ? timestamp : String(timestamp);
+  const ms = typeof timestamp === 'string' ? parseInt(timestamp, 10) : timestamp;
   const date = new Date(ms);
   if (isNaN(date.getTime())) return ms;
   const time = date.toLocaleTimeString('en-US', {

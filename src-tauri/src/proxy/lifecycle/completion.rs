@@ -1,5 +1,3 @@
-use std::sync::Mutex;
-
 use bytes::Bytes;
 use tauri::{Emitter, Manager};
 
@@ -38,8 +36,8 @@ pub fn save_and_emit(ctx: &Ctx, app_handle: &tauri::AppHandle) {
     
     let txn = build_record(ctx);
 
-    if let Some(db) = app_handle.try_state::<Mutex<crate::Database>>() {
-        if let Err(e) = db.lock().unwrap().insert_log(&txn) {
+    if let Some(db) = app_handle.try_state::<crate::Database>() {
+        if let Err(e) = db.insert_log(&txn) {
             println!("[completion] failed to insert to DB: {}", e);
         } else {
             println!("[completion] saved to DB txn_id={}", ctx.transaction_id);

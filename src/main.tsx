@@ -4,12 +4,13 @@ import { BrowserRouter } from "react-router-dom";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AppLayout } from "@/components/layout";
 import { Toaster } from "@/components/ui/sonner";
-import { useHttpHistoryStore } from "@/stores/http-history";
+import { useAppStore } from "@/stores/app";
 import AppRoutes from "./app";
 import "@/styles/globals.css";
 
-// Uncomment below to auto-start proxy on app load
-// useHttpHistoryStore.getState().startProxy();
+useAppStore.getState().startProxy().then(() => {
+  useAppStore.getState().checkProxyStatus();
+});
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>

@@ -1,23 +1,88 @@
+'use client';
+
 import { cn } from "@/lib/utils";
 import { ChevronDown, ChevronRight, Globe, Folder, FileText } from "lucide-react";
-import { useState } from "react";
-import type { TreeNodeData } from "../mock";
+import { useState, useEffect, useCallback } from "react";
+import { getProxyTree, type TreeNode as ApiTreeNode, type TreePath } from '@/pages/http-history/api';
+import { filterStateToProxyFilter } from '@/stores/log';
+import { useHttpHistoryStore } from '@/stores/log';
+
+export interface TreeNodeData {
+  id: string;
+  type: 'host' | 'path' | 'endpoint';
+  label: string;
+  fullPath?: string;
+  method?: string;
+  status?: number;
+  children: TreeNodeData[];
+  count?: number;
+  methods?: string[];
+}
 
 interface TreeViewProps {
-  data: TreeNodeData[];
   onSelectEndpoint: (node: TreeNodeData) => void;
   selectedId: string | null;
 }
 
-function getMethodVariant(method: string) {
-  const variants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
-    GET: "default",
-    POST: "default",
-    PUT: "default",
-    DELETE: "destructive",
-    PATCH: "secondary",
+function buildTreeNodeData(host: string, paths: TreePath[]): TreeNodeData {
+  const hostNode: TreeNodeData = {
+    id: `host-${host}`,
+    type: 'host',
+    label: host,
+    children: [],
+    count: paths.reduce((sum, p) => sum + p.count, 0),
+    methods: [...new Set(paths.flatMap(p => p.methods))],
   };
-  return variants[method] || "secondary";
+
+  const pathMap = new Map<string, TreeNodeData>();
+
+  for (const pathEntry of paths) {
+    const segments = pathEntry.path.split('/').filter(Boolean);
+    let current = hostNode;
+
+    for (let i = 0; i < segments.length; i++) {
+      const segment = segments[i];
+      const isLast = i === segments.length - 1;
+      const childId = isLast
+        ? `${current.id}/${segment}-${pathEntry.methods.join(',')}`
+        : `${current.id}/${segment}`;
+
+      let child = pathMap.get(childId);
+      if (!child) {
+        child = {
+          id: childId,
+          type: isLast ? 'endpoint' : 'path',
+          label: segment,
+          children: [],
+          count: isLast ? pathEntry.count : 0,
+          methods: isLast ? pathEntry.methods : [],
+        };
+        if (isLast) {
+          child.fullPath = pathEntry.path;
+        }
+        current.children.push(child);
+        pathMap.set(childId, child);
+      } else if (isLast) {
+        child.count = (child.count || 0) + pathEntry.count;
+        child.methods = [...new Set([...(child.methods || []), ...pathEntry.methods])];
+      }
+    }
+  }
+
+  sortChildren(hostNode);
+  return hostNode;
+}
+
+function sortChildren(node: TreeNodeData): void {
+  node.children.sort((a, b) => {
+    if (a.type === 'endpoint' && b.type !== 'endpoint') return 1;
+    if (a.type !== 'endpoint' && b.type === 'endpoint') return -1;
+    return a.label.localeCompare(b.label);
+  });
+
+  for (const child of node.children) {
+    sortChildren(child);
+  }
 }
 
 function TreeNodeComponent({
@@ -74,6 +139,11 @@ function TreeNodeComponent({
         <span className={cn("text-xs truncate flex-1", isEndpoint && "font-mono")}>
           {node.label}
         </span>
+        {node.count !== undefined && node.count > 0 && (
+          <span className="text-xs text-muted-foreground bg-muted px-1 rounded">
+            {node.count}
+          </span>
+        )}
       </div>
       {hasChildren && isExpanded && (
         <div>
@@ -94,13 +164,42 @@ function TreeNodeComponent({
 }
 
 export function TreeView({
-  data,
   onSelectEndpoint,
   selectedId,
 }: TreeViewProps) {
+  const [treeData, setTreeData] = useState<TreeNodeData[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const filter = useHttpHistoryStore((s) => s.filter);
+
+  const fetchTree = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const proxyFilter = filterStateToProxyFilter(filter);
+      const result = await getProxyTree(proxyFilter);
+      const tree = result.map(node => buildTreeNodeData(node.host, node.paths));
+      setTreeData(tree);
+    } catch (error) {
+      console.error('Failed to fetch tree:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [filter]);
+
+  useEffect(() => {
+    fetchTree();
+  }, [fetchTree]);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <span className="text-xs text-muted-foreground">Loading...</span>
+      </div>
+    );
+  }
+
   return (
-    <div className="h-full overflow-auto">
-      {data.map((node) => (
+    <div className="h-full overflow-auto pl-1">
+      {treeData.map((node) => (
         <TreeNodeComponent
           key={node.id}
           node={node}

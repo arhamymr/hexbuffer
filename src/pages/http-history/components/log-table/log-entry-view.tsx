@@ -8,7 +8,10 @@ import { Copy } from 'lucide-react';
 import { Empty, EmptyTitle, EmptyDescription } from "@/components/ui/empty";
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
-import { useHttpHistoryStore } from '@/stores/http-history';
+import { useHttpHistoryStore } from '@/stores/log';
+import { getHttpLogs } from '@/pages/http-history/api';
+import { filterStateToProxyFilter } from '@/stores/log';
+import { useEffect, useState } from 'react';
 
 function PrettyCurl({ call }: { call: ApiCall }) {
   const copyToClipboard = async (text: string) => {
@@ -71,16 +74,89 @@ function PrettyJson({ content }: { content: string }) {
   }
 }
 
+function adaptProxyRecordToApiCall(record: any): ApiCall {
+  const uri = record.request.uri;
+  const urlObj = uri.includes('://') ? new URL(uri) : null;
+  return {
+    id: record.id,
+    session_id: '',
+    target_id: '',
+    timestamp: new Date(record.timestamp).getTime(),
+    request_type: 'Other',
+    method: record.request.method,
+    url: uri,
+    host: urlObj?.host || uri.split('://').pop()?.split('/')[0] || '',
+    path: urlObj?.pathname || '/',
+    query_params: {},
+    headers: record.request.headers,
+    cookies: {},
+    request_body: new TextDecoder().decode(new Uint8Array(record.request.body)),
+    request_body_size: record.request.body.length,
+    response_status: record.response?.status_code ?? null,
+    response_status_text: record.response?.status_text || null,
+    response_headers: record.response?.headers || {},
+    response_cookies: {},
+    response_body: record.response ? new TextDecoder().decode(new Uint8Array(record.response.body)) : null,
+    response_body_size: record.response?.body.length ?? 0,
+    response_content_type: record.response?.headers['content-type'] || null,
+    security_state: '',
+    server_ip: record.server_addr || null,
+    duration_ms: null,
+  };
+}
+
 export function LogEntryBurpView() {
   const selectedCallId = useHttpHistoryStore((state) => state.selectedCallId);
-  const calls = useHttpHistoryStore((state) => state.calls);
-  const call = calls.find((c) => c.id === selectedCallId) || null;
+  const filter = useHttpHistoryStore((state) => state.filter);
+  const [call, setCall] = useState<ApiCall | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
-  if (!call) {
+  useEffect(() => {
+    if (!selectedCallId) {
+      setCall(null);
+      return;
+    }
+
+    const fetchCall = async () => {
+      setIsLoading(true);
+      try {
+        const proxyFilter = filterStateToProxyFilter(filter);
+        const result = await getHttpLogs(1, 100, proxyFilter, 'desc');
+        const found = result.data.find((r: any) => r.id === selectedCallId);
+        setCall(found ? adaptProxyRecordToApiCall(found) : null);
+      } catch (error) {
+        console.error('Failed to fetch call:', error);
+        setCall(null);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchCall();
+  }, [selectedCallId, filter]);
+
+  if (!selectedCallId) {
     return (
       <Empty>
         <EmptyTitle>No request selected</EmptyTitle>
         <EmptyDescription>Select a request from the table to view its details.</EmptyDescription>
+      </Empty>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <Empty>
+        <EmptyTitle>Loading...</EmptyTitle>
+      </Empty>
+    );
+  }
+
+  if (!call) {
+    return (
+      <Empty>
+        <EmptyTitle>Request not found</EmptyTitle>
+        <EmptyDescription>The selected request could not be found.</EmptyDescription>
       </Empty>
     );
   }

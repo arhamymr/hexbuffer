@@ -50,3 +50,18 @@ export async function getCaCert(): Promise<string> {
 export async function saveCaCert(path: string, content: string): Promise<void> {
   return invoke('save_ca_cert', { path, content });
 }
+
+export interface TreeNode {
+  host: string;
+  paths: TreePath[];
+}
+
+export interface TreePath {
+  path: string;
+  count: number;
+  methods: string[];
+}
+
+export async function getProxyTree(filter?: ProxyFilter): Promise<TreeNode[]> {
+  return invoke('get_proxy_tree', { filter });
+}

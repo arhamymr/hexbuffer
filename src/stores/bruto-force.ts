@@ -18,6 +18,7 @@ interface BruteForceState {
   attackId: string | null;
   progress: { current: number; total: number } | null;
   selectedResult: AttackResult | null;
+  pendingRequest: AttackConfig['base_request'] | null;
 
   updateConfig: (updates: Partial<AttackConfig>) => void;
   updateAttackMode: (mode: AttackMode) => void;
@@ -40,6 +41,7 @@ interface BruteForceState {
   ) => void;
   setBaseRequest: (base_request: AttackConfig['base_request']) => void;
   setSelectedResult: (result: AttackResult | null) => void;
+  setPendingRequest: (request: AttackConfig['base_request'] | null) => void;
 
   startAttack: () => Promise<void>;
   stopAttack: () => Promise<void>;
@@ -56,6 +58,7 @@ export const useBruteForceStore = create<BruteForceState>((set, get) => ({
   attackId: null,
   progress: null,
   selectedResult: null,
+  pendingRequest: null,
 
   updateConfig: (updates) =>
     set((state) => ({ config: { ...state.config, ...updates } })),
@@ -149,6 +152,7 @@ export const useBruteForceStore = create<BruteForceState>((set, get) => ({
     set((state) => ({ config: { ...state.config, base_request } })),
 
   setSelectedResult: (result) => set({ selectedResult: result }),
+  setPendingRequest: (request) => set({ pendingRequest: request }),
 
   startAttack: async () => {
     const { config } = get();

@@ -15,8 +15,8 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { METHOD_FILTERS, STATUS_FILTERS } from './utils';
-import { useHttpHistoryStore } from '@/stores/http-history';
-import type { FilterState } from '@/stores/http-history';
+import { useHttpHistoryStore } from '@/stores/log';
+import type { FilterState } from '@/stores/log';
 
 interface LogFiltersProps {
   filter?: FilterState;

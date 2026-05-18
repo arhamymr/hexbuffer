@@ -5,7 +5,6 @@ import type { ProxyLogSummary, ProxyRecord, ApiCall } from '@/types';
 
 import { fetchHistorySummaries } from '../services/history-service';
 import { useHistoryQuery } from './use-history-query';
-import { useHistoryQueryStore } from '../state/history-query-store';
 
 function buildUrlParts(uri: string) {
   let urlObj: URL | null = null;
@@ -94,13 +93,17 @@ export function adaptProxyRecordToApiCall(record: ProxyRecord): ApiCall {
 }
 
 export function useHistoryTable() {
-  const { query, hasActiveFilters, refreshKey } = useHistoryQuery();
-  const sortOrder = useHistoryQueryStore((state) => state.sortOrder);
-  const page = useHistoryQueryStore((state) => state.page);
-  const selectedCallId = useHistoryQueryStore((state) => state.selectedCallId);
-  const setPage = useHistoryQueryStore((state) => state.setPage);
-  const setSortOrder = useHistoryQueryStore((state) => state.setSortOrder);
-  const setSelectedCallId = useHistoryQueryStore((state) => state.setSelectedCallId);
+  const {
+    query,
+    hasActiveFilters,
+    refreshKey,
+    sortOrder,
+    page,
+    selectedCallId,
+    setPage,
+    setSortOrder,
+    setSelectedCallId,
+  } = useHistoryQuery();
 
   const [calls, setCalls] = useState<ApiCall[]>([]);
   const [pagination, setPagination] = useState({ page: 1, perPage: 100, total: 0, hasMore: false });

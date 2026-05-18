@@ -1,15 +1,55 @@
 import { useMemo } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 
 import { buildHistoryQuery, hasActiveHistoryFilters } from '../state/build-history-query';
 import { useHistoryQueryStore } from '../state/history-query-store';
 
 export function useHistoryQuery() {
-  const filter = useHistoryQueryStore((state) => state.filter);
-  const activeScope = useHistoryQueryStore((state) => state.activeScope);
-  const sortOrder = useHistoryQueryStore((state) => state.sortOrder);
-  const page = useHistoryQueryStore((state) => state.page);
-  const perPage = useHistoryQueryStore((state) => state.perPage);
-  const refreshKey = useHistoryQueryStore((state) => state.refreshKey);
+  const historyQueryState = useHistoryQueryStore(
+    useShallow((state) => ({
+      filter: state.filter,
+      activeScope: state.activeScope,
+      sortOrder: state.sortOrder,
+      page: state.page,
+      perPage: state.perPage,
+      selectedCallId: state.selectedCallId,
+      refreshKey: state.refreshKey,
+      setSearch: state.setSearch,
+      setFilter: state.setFilter,
+      setPathFilter: state.setPathFilter,
+      setActiveScope: state.setActiveScope,
+      toggleMethod: state.toggleMethod,
+      toggleStatus: state.toggleStatus,
+      clearFilters: state.clearFilters,
+      setSortOrder: state.setSortOrder,
+      setPage: state.setPage,
+      resetPage: state.resetPage,
+      setSelectedCallId: state.setSelectedCallId,
+      triggerRefresh: state.triggerRefresh,
+    }))
+  );
+
+  const {
+    filter,
+    activeScope,
+    sortOrder,
+    page,
+    perPage,
+    selectedCallId,
+    refreshKey,
+    setSearch,
+    setFilter,
+    setPathFilter,
+    setActiveScope,
+    toggleMethod,
+    toggleStatus,
+    clearFilters,
+    setSortOrder,
+    setPage,
+    resetPage,
+    setSelectedCallId,
+    triggerRefresh,
+  } = historyQueryState;
 
   const query = useMemo(
     () =>
@@ -25,9 +65,52 @@ export function useHistoryQuery() {
 
   const hasActiveFilters = hasActiveHistoryFilters({ filter, activeScope });
 
-  return {
-    query,
-    hasActiveFilters,
-    refreshKey,
-  };
+  return useMemo(
+    () => ({
+      filter,
+      activeScope,
+      sortOrder,
+      page,
+      perPage,
+      selectedCallId,
+      refreshKey,
+      query,
+      hasActiveFilters,
+      setSearch,
+      setFilter,
+      setPathFilter,
+      setActiveScope,
+      toggleMethod,
+      toggleStatus,
+      clearFilters,
+      setSortOrder,
+      setPage,
+      resetPage,
+      setSelectedCallId,
+      triggerRefresh,
+    }),
+    [
+      filter,
+      activeScope,
+      sortOrder,
+      page,
+      perPage,
+      selectedCallId,
+      refreshKey,
+      query,
+      hasActiveFilters,
+      setSearch,
+      setFilter,
+      setPathFilter,
+      setActiveScope,
+      toggleMethod,
+      toggleStatus,
+      clearFilters,
+      setSortOrder,
+      setPage,
+      resetPage,
+      setSelectedCallId,
+      triggerRefresh,
+    ]
+  );
 }

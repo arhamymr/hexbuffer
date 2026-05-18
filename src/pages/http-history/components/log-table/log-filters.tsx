@@ -16,13 +16,16 @@ import {
 } from '@/components/ui/alert-dialog';
 import { METHOD_FILTERS, STATUS_FILTERS } from './utils';
 import { clearHistoryLogs } from '@/pages/http-history/services/history-service';
-import { useHistoryQueryStore, type HistoryFilterState } from '@/pages/http-history/state/history-query-store';
+import type { HistoryFilterState } from '@/pages/http-history/state/history-query-store';
+import { useHistoryQuery } from '@/pages/http-history/hooks/use-history-query';
+import type { HistoryMode } from '@/pages/http-history/hooks/use-http-history-page';
 
 interface LogFiltersProps {
   filter?: HistoryFilterState;
   onFilterChange?: (filter: HistoryFilterState) => void;
   onClearFilters?: () => void;
   clearCalls?: () => void;
+  historyMode?: HistoryMode;
   sitemapVisible?: boolean;
   setSitemapVisible?: (visible: boolean) => void;
 }
@@ -32,17 +35,20 @@ export function LogFilters({
   onFilterChange,
   onClearFilters,
   clearCalls: clearCallsProp,
+  historyMode = 'http',
   sitemapVisible = true,
   setSitemapVisible,
 }: LogFiltersProps) {
   const [clearDialogOpen, setClearDialogOpen] = useState(false);
-  const storeFilter = useHistoryQueryStore((state) => state.filter);
-  const storeSetFilter = useHistoryQueryStore((state) => state.setFilter);
-  const toggleMethod = useHistoryQueryStore((state) => state.toggleMethod);
-  const toggleStatus = useHistoryQueryStore((state) => state.toggleStatus);
-  const storeClearFilters = useHistoryQueryStore((state) => state.clearFilters);
-  const storeSetSelectedCallId = useHistoryQueryStore((state) => state.setSelectedCallId);
-  const triggerRefresh = useHistoryQueryStore((state) => state.triggerRefresh);
+  const {
+    filter: storeFilter,
+    setFilter: storeSetFilter,
+    toggleMethod,
+    toggleStatus,
+    clearFilters: storeClearFilters,
+    setSelectedCallId: storeSetSelectedCallId,
+    triggerRefresh,
+  } = useHistoryQuery();
 
   const filter = filterProp ?? storeFilter;
   const setFilter = onFilterChange ?? storeSetFilter;
@@ -75,7 +81,7 @@ export function LogFilters({
 
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          {setSitemapVisible && (
+          {historyMode === 'http' && setSitemapVisible && (
             <Button
               variant="outline"
               size="xs"

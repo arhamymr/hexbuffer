@@ -1,0 +1,404 @@
+'use client';
+
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { X } from 'lucide-react';
+import { ATTACK_MODES, PAYLOAD_TYPES, PROCESSING_STEPS } from '../constants';
+import type { AttackConfig, AttackMode, PayloadProcessingStep, PayloadType } from '../types';
+
+interface BruteForceConfigDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  config: AttackConfig;
+  updateConfig: (updates: Partial<AttackConfig>) => void;
+  updateAttackMode: (mode: AttackMode) => void;
+  updatePayloadType: (payloadType: PayloadType) => void;
+  updatePayloadValues: (values: string[]) => void;
+  updateNumberRange: (updates: {
+    number_start?: number;
+    number_end?: number;
+    number_step?: number;
+    number_format?: string;
+  }) => void;
+  addProcessingStep: (step: PayloadProcessingStep) => void;
+  removeProcessingStep: (index: number) => void;
+  updateGrepMatch: (enabled: boolean, keyword?: string, caseSensitive?: boolean) => void;
+  updateGrepExtract: (enabled: boolean, regex?: string, replacement?: string) => void;
+  updateSessionHandling: (
+    enabled: boolean,
+    extractTokenName?: string,
+    updateHeaderName?: string
+  ) => void;
+  onOpenPayloadFile: () => void;
+}
+
+export function BruteForceConfigDialog({
+  open,
+  onOpenChange,
+  config,
+  updateConfig,
+  updateAttackMode,
+  updatePayloadType,
+  updatePayloadValues,
+  updateNumberRange,
+  addProcessingStep,
+  removeProcessingStep,
+  updateGrepMatch,
+  updateGrepExtract,
+  updateSessionHandling,
+  onOpenPayloadFile,
+}: BruteForceConfigDialogProps) {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Attack Configuration</DialogTitle>
+          <DialogDescription>Configure the Brute Force attack settings</DialogDescription>
+        </DialogHeader>
+        <Tabs defaultValue="attack" className="w-full">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="attack">Attack</TabsTrigger>
+            <TabsTrigger value="payloads">Payloads</TabsTrigger>
+            <TabsTrigger value="processing">Processing</TabsTrigger>
+            <TabsTrigger value="options">Options</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="attack" className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label>Attack Name</Label>
+                <Input value={config.name} onChange={(event) => updateConfig({ name: event.target.value })} />
+              </div>
+              <div className="grid gap-2">
+                <Label>Attack Mode</Label>
+                <Select value={config.mode} onValueChange={(value) => updateAttackMode(value as AttackMode)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ATTACK_MODES.map((mode) => (
+                      <SelectItem key={mode} value={mode}>
+                        {mode}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-4 gap-4">
+              <div className="grid gap-2">
+                <Label>Concurrency</Label>
+                <Input
+                  type="number"
+                  value={config.concurrency}
+                  onChange={(event) => updateConfig({ concurrency: parseInt(event.target.value, 10) || 1 })}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label>Delay (ms)</Label>
+                <Input
+                  type="number"
+                  value={config.delay_ms}
+                  onChange={(event) => updateConfig({ delay_ms: parseInt(event.target.value, 10) || 0 })}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label>Max Delay</Label>
+                <Input
+                  type="number"
+                  value={config.delay_max_ms || ''}
+                  onChange={(event) =>
+                    updateConfig({
+                      delay_max_ms: event.target.value ? parseInt(event.target.value, 10) : undefined,
+                    })
+                  }
+                  placeholder="Optional"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label>Retries</Label>
+                <Input
+                  type="number"
+                  value={config.retries}
+                  onChange={(event) => updateConfig({ retries: parseInt(event.target.value, 10) || 0 })}
+                />
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="payloads" className="space-y-4">
+            <div className="grid gap-2">
+              <Label>Payload Type</Label>
+              <Select
+                value={config.payload_config.payload_type}
+                onValueChange={(value) => updatePayloadType(value as PayloadType)}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {PAYLOAD_TYPES.map((payloadType) => (
+                    <SelectItem key={payloadType} value={payloadType}>
+                      {payloadType}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {config.payload_config.payload_type === 'SimpleList' && (
+              <div className="grid gap-2">
+                <Label>Payloads (one per line)</Label>
+                <textarea
+                  className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono h-32"
+                  placeholder="payload1&#10;payload2&#10;payload3"
+                  value={config.payload_config.values.join('\n')}
+                  onChange={(event) =>
+                    updatePayloadValues(event.target.value.split('\n').filter((value) => value.trim()))
+                  }
+                />
+                <div className="flex gap-2">
+                  <Button variant="outline" size="xs" onClick={onOpenPayloadFile}>
+                    Load from File
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {config.payload_config.payload_type === 'NumberRange' && (
+              <div className="grid grid-cols-4 gap-4">
+                <div className="grid gap-2">
+                  <Label>Start</Label>
+                  <Input
+                    type="number"
+                    value={config.payload_config.number_start || 0}
+                    onChange={(event) =>
+                      updateNumberRange({ number_start: parseInt(event.target.value, 10) || 0 })
+                    }
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label>End</Label>
+                  <Input
+                    type="number"
+                    value={config.payload_config.number_end || 100}
+                    onChange={(event) =>
+                      updateNumberRange({ number_end: parseInt(event.target.value, 10) || 100 })
+                    }
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label>Step</Label>
+                  <Input
+                    type="number"
+                    value={config.payload_config.number_step || 1}
+                    onChange={(event) =>
+                      updateNumberRange({ number_step: parseInt(event.target.value, 10) || 1 })
+                    }
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label>Format</Label>
+                  <Input
+                    value={config.payload_config.number_format || '{}'}
+                    onChange={(event) => updateNumberRange({ number_format: event.target.value })}
+                    placeholder="{}"
+                  />
+                </div>
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="processing" className="space-y-4">
+            <div className="grid gap-2">
+              <Label>Payload Processing Pipeline</Label>
+              <div className="flex flex-wrap gap-2 mb-2">
+                {config.payload_config.processing.map((step, index) => (
+                  <Badge key={`${step}-${index}`} variant="secondary" className="flex items-center gap-1">
+                    {step}
+                    <button
+                      type="button"
+                      onClick={() => removeProcessingStep(index)}
+                      className="ml-1 hover:text-destructive"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </Badge>
+                ))}
+                {config.payload_config.processing.length === 0 && (
+                  <span className="text-sm text-muted-foreground">No processing steps added</span>
+                )}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {PROCESSING_STEPS.map((step) => (
+                  <Button
+                    key={step.value}
+                    variant="outline"
+                    size="xs"
+                    onClick={() => addProcessingStep(step.value)}
+                  >
+                    {step.label}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="options" className="space-y-4">
+            <div className="grid gap-4">
+              <div className="flex items-start gap-2">
+                <Checkbox
+                  id="grepMatchEnabled"
+                  checked={config.grep_match.enabled}
+                  onCheckedChange={(checked) =>
+                    updateGrepMatch(
+                      checked as boolean,
+                      config.grep_match.keyword,
+                      config.grep_match.case_sensitive
+                    )
+                  }
+                />
+                <div className="grid gap-2 flex-1">
+                  <Label htmlFor="grepMatchEnabled">Grep - Match</Label>
+                  <Input
+                    placeholder="Keyword to search in response..."
+                    value={config.grep_match.keyword}
+                    onChange={(event) =>
+                      updateGrepMatch(
+                        config.grep_match.enabled,
+                        event.target.value,
+                        config.grep_match.case_sensitive
+                      )
+                    }
+                    disabled={!config.grep_match.enabled}
+                  />
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id="grepMatchCaseSensitive"
+                      checked={config.grep_match.case_sensitive}
+                      onCheckedChange={(checked) =>
+                        updateGrepMatch(
+                          config.grep_match.enabled,
+                          config.grep_match.keyword,
+                          checked as boolean
+                        )
+                      }
+                      disabled={!config.grep_match.enabled}
+                    />
+                    <Label htmlFor="grepMatchCaseSensitive" className="text-xs">
+                      Case Sensitive
+                    </Label>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-2">
+                <Checkbox
+                  id="grepExtractEnabled"
+                  checked={config.grep_extract.enabled}
+                  onCheckedChange={(checked) =>
+                    updateGrepExtract(
+                      checked as boolean,
+                      config.grep_extract.regex,
+                      config.grep_extract.replacement
+                    )
+                  }
+                />
+                <div className="grid gap-2 flex-1">
+                  <Label htmlFor="grepExtractEnabled">Grep - Extract</Label>
+                  <Input
+                    placeholder='Regex pattern (e.g., csrf_token" value="([^"]+)")...'
+                    value={config.grep_extract.regex}
+                    onChange={(event) =>
+                      updateGrepExtract(
+                        config.grep_extract.enabled,
+                        event.target.value,
+                        config.grep_extract.replacement
+                      )
+                    }
+                    disabled={!config.grep_extract.enabled}
+                  />
+                  <Input
+                    placeholder="Replacement (optional, leave empty to capture full match)..."
+                    value={config.grep_extract.replacement || ''}
+                    onChange={(event) =>
+                      updateGrepExtract(
+                        config.grep_extract.enabled,
+                        config.grep_extract.regex,
+                        event.target.value || undefined
+                      )
+                    }
+                    disabled={!config.grep_extract.enabled}
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-start gap-2">
+                <Checkbox
+                  id="sessionEnabled"
+                  checked={config.session_handling.enabled}
+                  onCheckedChange={(checked) =>
+                    updateSessionHandling(
+                      checked as boolean,
+                      config.session_handling.extract_token_name,
+                      config.session_handling.update_header_name
+                    )
+                  }
+                />
+                <div className="grid gap-2 flex-1">
+                  <Label htmlFor="sessionEnabled">Session Handling</Label>
+                  <Input
+                    placeholder="Token/Cookie name to extract..."
+                    value={config.session_handling.extract_token_name || ''}
+                    onChange={(event) =>
+                      updateSessionHandling(
+                        config.session_handling.enabled,
+                        event.target.value || undefined,
+                        config.session_handling.update_header_name
+                      )
+                    }
+                    disabled={!config.session_handling.enabled}
+                  />
+                  <Input
+                    placeholder="Header name to update (e.g., Authorization)..."
+                    value={config.session_handling.update_header_name || ''}
+                    onChange={(event) =>
+                      updateSessionHandling(
+                        config.session_handling.enabled,
+                        config.session_handling.extract_token_name,
+                        event.target.value || undefined
+                      )
+                    }
+                    disabled={!config.session_handling.enabled}
+                  />
+                </div>
+              </div>
+            </div>
+          </TabsContent>
+        </Tabs>
+        <DialogFooter>
+          <Button variant="outline" size="xs" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button size="xs" onClick={() => onOpenChange(false)}>
+            Save Configuration
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}

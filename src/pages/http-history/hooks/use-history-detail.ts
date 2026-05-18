@@ -3,11 +3,11 @@ import { useEffect, useState } from 'react';
 import type { ApiCall } from '@/types';
 
 import { fetchHistoryDetail } from '../services/history-service';
-import { useHistoryQueryStore } from '../state/history-query-store';
 import { adaptProxyRecordToApiCall } from './use-history-table';
+import { useHistoryQuery } from './use-history-query';
 
 export function useHistoryDetail() {
-  const selectedCallId = useHistoryQueryStore((state) => state.selectedCallId);
+  const { selectedCallId } = useHistoryQuery();
   const [call, setCall] = useState<ApiCall | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);

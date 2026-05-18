@@ -11,8 +11,8 @@ import {
 import { Copy, ExternalLink, Plus, Eye, Trash2, Send } from 'lucide-react';
 import type { ApiCall } from '@/types';
 import { deleteHistoryLog } from '@/pages/http-history/services/history-service';
-import { useHistoryQueryStore } from '@/pages/http-history/state/history-query-store';
 import { useBruteForceStore } from '@/stores/bruto-force';
+import { useHistoryQuery } from '@/pages/http-history/hooks/use-history-query';
 
 interface LogEntryContextMenuProps {
   call: ApiCall;
@@ -26,8 +26,7 @@ export function LogEntryContextMenu({
   onDelete,
 }: LogEntryContextMenuProps) {
   const navigate = useNavigate();
-  const setSelectedCallId = useHistoryQueryStore((state) => state.setSelectedCallId);
-  const triggerRefresh = useHistoryQueryStore((state) => state.triggerRefresh);
+  const { setSelectedCallId, triggerRefresh } = useHistoryQuery();
 
   const copyToClipboard = async (text: string | null | undefined) => {
     if (text) {

@@ -3,7 +3,7 @@
 
 use apprecon::{
     HistoryBridge, PaginatedResponse, ProxyLogSummary, ProxyRecord, ProxyState, ProxyFilter, run, ProxyConfig,
-    export_ca_cert_pem, TreeNode,
+    WebSocketConnectionDetail, WebSocketConnectionSummary, WebSocketFilter, export_ca_cert_pem, TreeNode,
 };
 use std::sync::Mutex;
 use tauri::{State, AppHandle, Manager};
@@ -89,6 +89,31 @@ async fn get_proxy_tree(
     history.get_tree(filter)
 }
 
+#[tauri::command]
+async fn get_websocket_paginated(
+    history: State<'_, HistoryBridge>,
+    page: u32,
+    per_page: u32,
+    filter: Option<WebSocketFilter>,
+) -> Result<PaginatedResponse<WebSocketConnectionSummary>, String> {
+    history.get_websocket_paginated(page, per_page, filter)
+}
+
+#[tauri::command]
+async fn get_websocket_detail(
+    history: State<'_, HistoryBridge>,
+    connection_id: String,
+) -> Result<WebSocketConnectionDetail, String> {
+    history
+        .get_websocket_detail(&connection_id)?
+        .ok_or_else(|| format!("WebSocket connection not found: {}", connection_id))
+}
+
+#[tauri::command]
+async fn clear_websocket_all(history: State<'_, HistoryBridge>) -> Result<(), String> {
+    history.clear_websocket_all()
+}
+
 fn main() {
     eprintln!("[main] Application starting...");
 
@@ -130,7 +155,10 @@ tauri::Builder::default()
             delete_proxy_by_id,
             get_ca_cert,
             save_ca_cert,
-            get_proxy_tree
+            get_proxy_tree,
+            get_websocket_paginated,
+            get_websocket_detail,
+            clear_websocket_all
         ])
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())

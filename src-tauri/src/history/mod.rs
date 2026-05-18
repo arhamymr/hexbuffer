@@ -2,7 +2,7 @@ use std::path::PathBuf;
 
 use crate::{
     db::repository::{Database, PaginatedResponse, TreeNode},
-    proxy::state::{ProxyFilter, ProxyRecord},
+    proxy::state::{ProxyFilter, ProxyRecord, WebSocketConnectionRecord, WebSocketFilter, WebSocketMessageRecord},
 };
 use serde::{Deserialize, Serialize};
 
@@ -18,6 +18,24 @@ pub struct ProxyLogSummary {
     pub request_body_size: usize,
     pub response_body_size: usize,
     pub server_addr: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct WebSocketConnectionSummary {
+    pub id: String,
+    pub timestamp: String,
+    pub url: String,
+    pub host: String,
+    pub path: String,
+    pub state: String,
+    pub message_count: u32,
+    pub last_activity_at: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct WebSocketConnectionDetail {
+    pub connection: WebSocketConnectionRecord,
+    pub messages: Vec<WebSocketMessageRecord>,
 }
 
 pub struct HistoryBridge {
@@ -93,6 +111,55 @@ impl HistoryBridge {
         self.db.get_tree(&filter)
     }
 
+    pub fn insert_websocket_connection(&self, record: &WebSocketConnectionRecord) -> Result<(), String> {
+        self.db.insert_websocket_connection(record).map_err(|e| e.to_string())
+    }
+
+    pub fn insert_websocket_message(&self, record: &WebSocketMessageRecord) -> Result<(), String> {
+        self.db.insert_websocket_message(record).map_err(|e| e.to_string())
+    }
+
+    pub fn clear_websocket_all(&self) -> Result<(), String> {
+        self.db.clear_websocket_logs().map_err(|e| e.to_string())
+    }
+
+    pub fn get_websocket_paginated(
+        &self,
+        page: u32,
+        per_page: u32,
+        filter: Option<WebSocketFilter>,
+    ) -> Result<PaginatedResponse<WebSocketConnectionSummary>, String> {
+        let filter = filter.map(|value| self.normalize_websocket_filter(value));
+
+        let result = self.db.get_websocket_paginated(filter.as_ref(), page, per_page)?;
+
+        Ok(PaginatedResponse {
+            data: result
+                .data
+                .into_iter()
+                .map(WebSocketConnectionSummary::from)
+                .collect(),
+            total: result.total,
+            page: result.page,
+            per_page: result.per_page,
+            has_more: result.has_more,
+        })
+    }
+
+    pub fn get_websocket_detail(&self, connection_id: &str) -> Result<Option<WebSocketConnectionDetail>, String> {
+        let connection = match self.db.get_websocket_by_id(connection_id)? {
+            Some(connection) => connection,
+            None => return Ok(None),
+        };
+
+        let messages = self.db.get_websocket_messages_by_connection_id(connection_id)?;
+
+        Ok(Some(WebSocketConnectionDetail {
+            connection,
+            messages,
+        }))
+    }
+
     fn normalize_sort_order(&self, sort_order: Option<&str>) -> &str {
         match sort_order.unwrap_or("DESC").to_uppercase().as_str() {
             "ASC" => "ASC",
@@ -116,6 +183,14 @@ impl HistoryBridge {
             || filter.methods.is_some()
             || filter.status_codes.is_some()
             || filter.scope.is_some()
+    }
+
+    fn normalize_websocket_filter(&self, filter: WebSocketFilter) -> WebSocketFilter {
+        WebSocketFilter {
+            search: normalize_optional_string(filter.search),
+            scope: normalize_string_vec(filter.scope),
+            states: normalize_string_vec(filter.states),
+        }
     }
 }
 
@@ -180,6 +255,21 @@ impl From<ProxyRecord> for ProxyLogSummary {
             request_body_size: record.request.body.len(),
             response_body_size,
             server_addr: record.server_addr,
+        }
+    }
+}
+
+impl From<WebSocketConnectionRecord> for WebSocketConnectionSummary {
+    fn from(record: WebSocketConnectionRecord) -> Self {
+        Self {
+            id: record.id.to_string(),
+            timestamp: record.timestamp.to_rfc3339(),
+            url: record.url,
+            host: record.host,
+            path: record.path,
+            state: format!("{:?}", record.state).to_lowercase(),
+            message_count: record.message_count,
+            last_activity_at: record.last_activity_at.to_rfc3339(),
         }
     }
 }

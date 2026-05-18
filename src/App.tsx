@@ -5,10 +5,12 @@ import { Settings } from "@/pages/settings";
 import { RepeaterPage } from "@/pages/repeater";
 import { ToolsPage } from "@/pages/tools";
 import { AIToolsPage } from "@/pages/ai-tools";
+import { DashboardPage } from "@/pages/dashboard";
 
 function AppRoutes() {
   return (
     <Routes>
+      <Route path="/dashboard" element={<DashboardPage />} />
       <Route path="/" element={<HttpHistoryPage />} />
       <Route path="/repeater" element={<RepeaterPage />} />
       <Route path="/brute-force" element={<BruteForcePage />} />

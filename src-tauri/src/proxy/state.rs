@@ -32,6 +32,90 @@ pub struct ProxyRecord {
     pub server_addr: String,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub enum WebSocketConnectionState {
+    Open,
+    Closed,
+    Error,
+}
+
+impl Default for WebSocketConnectionState {
+    fn default() -> Self {
+        Self::Closed
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub enum WebSocketMessageDirection {
+    Inbound,
+    Outbound,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub enum WebSocketMessageType {
+    Text,
+    Binary,
+    Ping,
+    Pong,
+    Close,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct WebSocketConnectionRecord {
+    pub id: Uuid,
+    pub timestamp: DateTime<Utc>,
+    pub url: String,
+    pub host: String,
+    pub path: String,
+    pub handshake_request_headers: HashMap<String, String>,
+    pub handshake_response_status: Option<u16>,
+    pub handshake_response_headers: HashMap<String, String>,
+    pub client_addr: String,
+    pub server_addr: String,
+    pub state: WebSocketConnectionState,
+    pub message_count: u32,
+    pub last_activity_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct WebSocketMessageRecord {
+    pub id: Uuid,
+    pub connection_id: Uuid,
+    pub timestamp: DateTime<Utc>,
+    pub direction: WebSocketMessageDirection,
+    pub message_type: WebSocketMessageType,
+    pub payload: Vec<u8>,
+    pub payload_size: usize,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct WebSocketFilter {
+    pub search: Option<String>,
+    pub scope: Option<Vec<String>>,
+    pub states: Option<Vec<String>>,
+}
+
+impl WebSocketFilter {
+    pub fn host_matches_scope(&self, host: &str) -> bool {
+        let Some(ref scope) = self.scope else {
+            return true;
+        };
+        if scope.is_empty() {
+            return true;
+        }
+        for pattern in scope {
+            if let Some(domain) = pattern.strip_prefix("*.") {
+                if host.ends_with(domain) {
+                    return true;
+                }
+            } else if host.contains(pattern.as_str()) {
+                return true;
+            }
+        }
+        false
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
 pub enum InterceptMode {
     #[default]

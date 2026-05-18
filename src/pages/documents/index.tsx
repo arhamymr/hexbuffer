@@ -4,6 +4,7 @@ import { TabbedPageLayout } from '@/pages/shared/tabbed-page-layout';
 import { DOCUMENT_SECTION_DEFINITIONS } from './constants';
 import { DocumentHeader } from './components/document-header';
 import { DocumentSectionCard } from './components/document-section-card';
+import { DocumentApiCollection } from './components/document-api-collection';
 import { useDocumentsPage } from './hooks/use-documents-page';
 
 export function DocumentsPage() {
@@ -16,6 +17,12 @@ export function DocumentsPage() {
     activeDocument,
     updateTitle,
     updateSection,
+    selectedApiEntryId,
+    apiResponse,
+    isFetchingApi,
+    apiFetchError,
+    selectApiEntry,
+    fetchSelectedApi,
   } = useDocumentsPage();
 
   if (!activeDocument) {
@@ -38,6 +45,15 @@ export function DocumentsPage() {
         />
         <div className="flex-1 overflow-auto p-4">
           <div className="grid gap-4 lg:grid-cols-2">
+            <DocumentApiCollection
+              entries={activeDocument.apiEntries}
+              selectedEntryId={selectedApiEntryId}
+              response={apiResponse}
+              isLoading={isFetchingApi}
+              error={apiFetchError}
+              onSelectEntry={selectApiEntry}
+              onFetchEntry={fetchSelectedApi}
+            />
             {DOCUMENT_SECTION_DEFINITIONS.map((section) => (
               <DocumentSectionCard
                 key={section.key}

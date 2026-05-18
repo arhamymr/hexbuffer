@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { createDocument, type ReconDocument } from '@/pages/documents/types';
+import { createDocument, type ReconDocument, type SavedApiEntry } from '@/pages/documents/types';
 
 interface DocumentsState {
   documents: ReconDocument[];
@@ -8,6 +8,7 @@ interface DocumentsState {
   setActiveDocumentId: (id: string) => void;
   addDocument: () => string;
   updateDocument: (id: string, updater: (document: ReconDocument) => ReconDocument) => void;
+  addApiEntryToActiveDocument: (entry: Omit<SavedApiEntry, 'id' | 'savedAt'>) => void;
   closeDocument: (id: string) => void;
 }
 
@@ -22,6 +23,13 @@ function getNextDocumentIndex(documents: ReconDocument[]) {
   }, 0);
 
   return highestIndex + 1;
+}
+
+function normalizeDocument(document: ReconDocument): ReconDocument {
+  return {
+    ...document,
+    apiEntries: document.apiEntries ?? [],
+  };
 }
 
 export const useDocumentsStore = create<DocumentsState>()(
@@ -50,6 +58,39 @@ export const useDocumentsStore = create<DocumentsState>()(
           documents: state.documents.map((document) =>
             document.id === id ? updater(document) : document
           ),
+        })),
+      addApiEntryToActiveDocument: (entry) =>
+        set((state) => ({
+          documents: state.documents.map((document) => {
+            if (document.id !== state.activeDocumentId) {
+              return document;
+            }
+
+            const savedAt = new Date().toISOString();
+            const nextEntry: SavedApiEntry = {
+              ...entry,
+              id: crypto.randomUUID(),
+              savedAt,
+            };
+
+            const existingIndex = document.apiEntries.findIndex(
+              (apiEntry) =>
+                apiEntry.sourceHistoryId === entry.sourceHistoryId ||
+                (apiEntry.method === entry.method && apiEntry.url === entry.url)
+            );
+            const apiEntries =
+              existingIndex === -1
+                ? [nextEntry, ...document.apiEntries]
+                : document.apiEntries.map((apiEntry, index) =>
+                    index === existingIndex ? { ...nextEntry, id: apiEntry.id } : apiEntry
+                  );
+
+            return {
+              ...document,
+              apiEntries,
+              updatedAt: savedAt,
+            };
+          }),
         })),
       closeDocument: (id) =>
         set((state) => {
@@ -86,7 +127,7 @@ export const useDocumentsStore = create<DocumentsState>()(
       merge: (persistedState, currentState) => {
         const typedState = persistedState as Partial<DocumentsState> | undefined;
         const persistedDocuments = typedState?.documents?.length
-          ? typedState.documents
+          ? typedState.documents.map(normalizeDocument)
           : currentState.documents;
         const persistedActiveDocumentId = typedState?.activeDocumentId;
         const activeDocumentId = persistedDocuments.some(

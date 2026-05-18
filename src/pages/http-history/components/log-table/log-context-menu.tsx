@@ -8,7 +8,8 @@ import {
   ContextMenuItem,
   ContextMenuSeparator,
 } from '@/components/ui/context-menu';
-import { Copy, ExternalLink, Plus, Eye, Trash2, Send } from 'lucide-react';
+import { Copy, ExternalLink, Plus, Eye, Trash2, Send, FilePlus2 } from 'lucide-react';
+import { toast } from 'sonner';
 import type { ApiCall } from '@/types';
 import { deleteHistoryLog, fetchHistoryDetail } from '@/pages/http-history/services/history-service';
 import { useBruteForceStore } from '@/stores/bruto-force';
@@ -16,6 +17,7 @@ import { useHistoryQuery } from '@/pages/http-history/hooks/use-history-query';
 import { adaptProxyRecordToApiCall } from '@/pages/http-history/hooks/use-history-table';
 import { useRepeaterStore } from '@/stores/repeater';
 import { buildRawRequest } from '@/pages/repeater/types';
+import { useDocumentsStore } from '@/stores/documents';
 
 interface LogEntryContextMenuProps {
   call: ApiCall;
@@ -104,6 +106,30 @@ export function LogEntryContextMenu({
     }
   };
 
+  const handleSaveToDocuments = async () => {
+    try {
+      const detail = await fetchHistoryDetail(call.id);
+      const request = adaptProxyRecordToApiCall(detail);
+
+      useDocumentsStore.getState().addApiEntryToActiveDocument({
+        sourceHistoryId: request.id,
+        method: request.method,
+        url: request.url,
+        host: request.host,
+        path: request.path,
+        headers: request.headers,
+        requestBody: request.request_body,
+        responseStatus: request.response_status,
+        responseContentType: request.response_content_type,
+        capturedAt: request.timestamp,
+      });
+      toast.success('Saved API to active document');
+    } catch (error) {
+      console.error('Failed to save API to documents:', error);
+      toast.error('Failed to save API to documents');
+    }
+  };
+
   const handleDelete = async () => {
     try {
       await deleteHistoryLog(call.id);
@@ -145,6 +171,9 @@ export function LogEntryContextMenu({
         </ContextMenuItem>
         <ContextMenuItem onClick={handleOpenInRepeater}>
           <Send className="mr-2 h-4 w-4" /> Send to Repeater
+        </ContextMenuItem>
+        <ContextMenuItem onClick={handleSaveToDocuments}>
+          <FilePlus2 className="mr-2 h-4 w-4" /> Save to Documents
         </ContextMenuItem>
         <ContextMenuSeparator />
         <ContextMenuItem onClick={handleInspect}>

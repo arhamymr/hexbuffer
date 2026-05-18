@@ -1,7 +1,9 @@
 import * as React from 'react';
 import { useDocumentsStore } from '@/stores/documents';
+import { sendRepeaterRequest } from '@/pages/repeater/api';
 import { type DocumentSectionKey } from '../constants';
 import { type ReconDocument } from '../types';
+import { type RepeaterResponse } from '@/pages/repeater/types';
 
 export function useDocumentsPage() {
   const {
@@ -17,6 +19,23 @@ export function useDocumentsPage() {
     () => documents.find((document) => document.id === activeDocumentId) ?? documents[0] ?? null,
     [activeDocumentId, documents]
   );
+  const [selectedApiEntryId, setSelectedApiEntryId] = React.useState<string | null>(null);
+  const [apiResponse, setApiResponse] = React.useState<RepeaterResponse | null>(null);
+  const [isFetchingApi, setIsFetchingApi] = React.useState(false);
+  const [apiFetchError, setApiFetchError] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    const firstEntryId = activeDocument?.apiEntries[0]?.id ?? null;
+    const selectedEntryStillExists = activeDocument?.apiEntries.some(
+      (entry) => entry.id === selectedApiEntryId
+    );
+
+    if (!selectedEntryStillExists) {
+      setSelectedApiEntryId(firstEntryId);
+      setApiResponse(null);
+      setApiFetchError(null);
+    }
+  }, [activeDocument, selectedApiEntryId]);
 
   const updateActiveDocument = React.useCallback(
     (updater: (document: ReconDocument) => ReconDocument) => {
@@ -54,6 +73,46 @@ export function useDocumentsPage() {
     [updateActiveDocument]
   );
 
+  const fetchSelectedApi = React.useCallback(async () => {
+    const selectedEntry =
+      activeDocument?.apiEntries.find((entry) => entry.id === selectedApiEntryId) ??
+      activeDocument?.apiEntries[0];
+
+    if (!selectedEntry) {
+      return;
+    }
+
+    setIsFetchingApi(true);
+    setApiFetchError(null);
+
+    try {
+      const response = await sendRepeaterRequest({
+        method: selectedEntry.method,
+        url: selectedEntry.url,
+        headers: selectedEntry.headers,
+        body: selectedEntry.requestBody ?? '',
+      });
+      setApiResponse(response);
+    } catch (error) {
+      setApiResponse(null);
+      setApiFetchError(
+        error instanceof Error
+          ? error.message
+          : typeof error === 'string'
+          ? error
+          : 'Failed to send request.'
+      );
+    } finally {
+      setIsFetchingApi(false);
+    }
+  }, [activeDocument, selectedApiEntryId]);
+
+  const selectApiEntry = React.useCallback((entryId: string) => {
+    setSelectedApiEntryId(entryId);
+    setApiResponse(null);
+    setApiFetchError(null);
+  }, []);
+
   return {
     tabs: documents.map((document) => ({
       id: document.id,
@@ -66,5 +125,11 @@ export function useDocumentsPage() {
     activeDocument,
     updateTitle,
     updateSection,
+    selectedApiEntryId,
+    apiResponse,
+    isFetchingApi,
+    apiFetchError,
+    selectApiEntry,
+    fetchSelectedApi,
   };
 }

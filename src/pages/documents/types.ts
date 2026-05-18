@@ -7,8 +7,24 @@ export interface ReconDocument {
   name: string;
   title: string;
   sections: DocumentSections;
+  apiEntries: SavedApiEntry[];
   createdAt: string;
   updatedAt: string;
+}
+
+export interface SavedApiEntry {
+  id: string;
+  sourceHistoryId: string;
+  method: string;
+  url: string;
+  host: string;
+  path: string;
+  headers: Record<string, string>;
+  requestBody: string | null;
+  responseStatus: number | null;
+  responseContentType: string | null;
+  capturedAt: number;
+  savedAt: string;
 }
 
 export function createEmptySections(): DocumentSections {
@@ -26,6 +42,7 @@ export function createDocument(index: number): ReconDocument {
     name: `Document ${index}`,
     title: '',
     sections: createEmptySections(),
+    apiEntries: [],
     createdAt: now,
     updatedAt: now,
   };

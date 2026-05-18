@@ -4,6 +4,7 @@ use std::sync::Mutex;
 use crate::proxy::state::{ProxyRecord, ProxyRequest, ProxyResponse, ProxyFilter};
 use serde::{Deserialize, Serialize};
 use serde_json;
+use uuid::Uuid;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PaginatedResponse<T> {
@@ -68,12 +69,8 @@ impl Database {
         let conn = self.conn.lock().unwrap();
         let mut stmt = conn.prepare("SELECT * FROM http_logs ORDER BY timestamp DESC")?;
         let rows = stmt.query_map([], row_to_proxy_record)?;
-        
-        let mut records = Vec::new();
-        for row in rows {
-            records.push(row?);
-        }
-        Ok(records)
+
+        Ok(collect_records(rows))
     }
 
     pub fn get_filtered(&self, filter: &ProxyFilter) -> SqlResult<Vec<ProxyRecord>> {
@@ -84,6 +81,12 @@ impl Database {
         if let Some(ref search) = filter.search {
             if !search.is_empty() {
                 conditions.push(format!("(url LIKE '%{}%' OR method LIKE '%{}%')", search, search));
+            }
+        }
+
+        if let Some(ref path) = filter.path {
+            if !path.is_empty() {
+                conditions.push(format!("url LIKE '%{}%'", path));
             }
         }
 
@@ -114,18 +117,25 @@ impl Database {
 
         let mut stmt = conn.prepare(&sql)?;
         let rows = stmt.query_map([], row_to_proxy_record)?;
-        
-        let mut records = Vec::new();
-        for row in rows {
-            records.push(row?);
-        }
-        Ok(records)
+
+        Ok(collect_records(rows))
     }
 
     pub fn delete_log(&self, id: &str) -> SqlResult<()> {
         let conn = self.conn.lock().unwrap();
         conn.execute("DELETE FROM http_logs WHERE id = ?1", params![id])?;
         Ok(())
+    }
+
+    pub fn get_by_id(&self, id: &str) -> SqlResult<Option<ProxyRecord>> {
+        let conn = self.conn.lock().unwrap();
+        let mut stmt = conn.prepare("SELECT * FROM http_logs WHERE id = ?1 LIMIT 1")?;
+        let mut rows = stmt.query(params![id])?;
+
+        match rows.next()? {
+            Some(row) => row_to_proxy_record(row).map(Some),
+            None => Ok(None),
+        }
     }
 
     pub fn clear_logs(&self) -> SqlResult<()> {
@@ -154,10 +164,7 @@ impl Database {
             .query_map(params![per_page as i64, offset as i64], row_to_proxy_record)
             .map_err(|e| e.to_string())?;
 
-        let mut records = Vec::new();
-        for row in rows {
-            records.push(row.map_err(|e| e.to_string())?);
-        }
+        let records = collect_records(rows);
 
         let total: i64 = conn
             .query_row("SELECT COUNT(*) FROM http_logs", [], |row| row.get(0))
@@ -196,6 +203,13 @@ impl Database {
             }
         }
 
+        if let Some(ref path) = filter.path {
+            if !path.is_empty() {
+                sql.push_str(" AND url LIKE ?");
+                params_vec.push(Box::new(format!("%{}%", path)));
+            }
+        }
+
         if let Some(ref methods) = filter.methods {
             if !methods.is_empty() {
                 sql.push_str(" AND method IN (");
@@ -224,6 +238,33 @@ impl Database {
             }
         }
 
+        if let Some(ref scope) = filter.scope {
+            let scope_clauses: Vec<String> = scope
+                .iter()
+                .filter_map(|pattern| {
+                    let value = pattern.trim();
+                    if value.is_empty() {
+                        return None;
+                    }
+
+                    if let Some(domain) = value.strip_prefix("*.") {
+                        Some(format!(
+                            "(url LIKE '%://{}%' OR url LIKE '%://%.{}%')",
+                            domain, domain
+                        ))
+                    } else {
+                        Some(format!("url LIKE '%://{}%'", value))
+                    }
+                })
+                .collect();
+
+            if !scope_clauses.is_empty() {
+                sql.push_str(" AND (");
+                sql.push_str(&scope_clauses.join(" OR "));
+                sql.push(')');
+            }
+        }
+
         sql.push_str(&format!(" ORDER BY timestamp {} LIMIT ? OFFSET ?", sort_order));
 
         let mut stmt = conn.prepare(&sql).map_err(|e| e.to_string())?;
@@ -239,16 +280,19 @@ impl Database {
             .query_map(all_params.as_slice(), row_to_proxy_record)
             .map_err(|e| e.to_string())?;
 
-        let mut records = Vec::new();
-        for row in rows {
-            records.push(row.map_err(|e| e.to_string())?);
-        }
+        let records = collect_records(rows);
 
         let mut count_sql = String::from("SELECT COUNT(*) FROM http_logs WHERE 1=1");
 
         if let Some(ref search) = filter.search {
             if !search.is_empty() {
                 count_sql.push_str(&format!(" AND (url LIKE '%{}%' OR method LIKE '%{}%')", search, search));
+            }
+        }
+
+        if let Some(ref path) = filter.path {
+            if !path.is_empty() {
+                count_sql.push_str(&format!(" AND url LIKE '%{}%'", path));
             }
         }
 
@@ -270,6 +314,33 @@ impl Database {
                     " AND response_status IN ({})",
                     status_list.join(",")
                 ));
+            }
+        }
+
+        if let Some(ref scope) = filter.scope {
+            let scope_clauses: Vec<String> = scope
+                .iter()
+                .filter_map(|pattern| {
+                    let value = pattern.trim();
+                    if value.is_empty() {
+                        return None;
+                    }
+
+                    if let Some(domain) = value.strip_prefix("*.") {
+                        Some(format!(
+                            "(url LIKE '%://{}%' OR url LIKE '%://%.{}%')",
+                            domain, domain
+                        ))
+                    } else {
+                        Some(format!("url LIKE '%://{}%'", value))
+                    }
+                })
+                .collect();
+
+            if !scope_clauses.is_empty() {
+                count_sql.push_str(" AND (");
+                count_sql.push_str(&scope_clauses.join(" OR "));
+                count_sql.push(')');
             }
         }
 
@@ -308,6 +379,13 @@ impl Database {
                 sql.push_str(" AND (url LIKE ? OR method LIKE ?)");
                 params_vec.push(Box::new(search_pattern.clone()));
                 params_vec.push(Box::new(search_pattern));
+            }
+        }
+
+        if let Some(ref path) = filter.path {
+            if !path.is_empty() {
+                sql.push_str(" AND url LIKE ?");
+                params_vec.push(Box::new(format!("%{}%", path)));
             }
         }
 
@@ -426,39 +504,65 @@ fn row_to_proxy_record(row: &rusqlite::Row) -> SqlResult<ProxyRecord> {
     let timestamp: String = row.get(1)?;
     let method: String = row.get(2)?;
     let url: String = row.get(3)?;
-    let request_headers: String = row.get(4)?;
-    let request_body: Vec<u8> = row.get(5)?;
+    let request_headers: Option<String> = row.get(4)?;
+    let request_body: Option<Vec<u8>> = row.get(5)?;
     let response_status: Option<i64> = row.get(6)?;
     let response_status_text: Option<String> = row.get(7)?;
-    let response_headers: String = row.get(8)?;
+    let response_headers: Option<String> = row.get(8)?;
     let response_body: Option<Vec<u8>> = row.get(9)?;
-    let client_addr: String = row.get(10)?;
-    let server_addr: String = row.get(11)?;
+    let client_addr: Option<String> = row.get(10)?;
+    let server_addr: Option<String> = row.get(11)?;
 
     let request = ProxyRequest {
         method,
         uri: url,
         http_version: String::from("HTTP/1.1"),
-        headers: serde_json::from_str(&request_headers).unwrap_or_default(),
-        body: request_body,
+        headers: request_headers
+            .as_deref()
+            .map(serde_json::from_str)
+            .transpose()
+            .unwrap_or_default()
+            .unwrap_or_default(),
+        body: request_body.unwrap_or_default(),
     };
 
     let response = response_status.map(|status| ProxyResponse {
         status_code: status as u16,
         status_text: response_status_text.unwrap_or_default(),
         http_version: String::from("HTTP/1.1"),
-        headers: serde_json::from_str(&response_headers).unwrap_or_default(),
+        headers: response_headers
+            .as_deref()
+            .map(serde_json::from_str)
+            .transpose()
+            .unwrap_or_default()
+            .unwrap_or_default(),
         body: response_body.unwrap_or_default(),
     });
 
     Ok(ProxyRecord {
-        id: uuid::Uuid::parse_str(&id).map_err(|_| rusqlite::Error::InvalidQuery)?,
+        id: Uuid::parse_str(&id).map_err(|_| rusqlite::Error::InvalidQuery)?,
         timestamp: chrono::DateTime::parse_from_rfc3339(&timestamp)
             .map_err(|_| rusqlite::Error::InvalidQuery)?
             .with_timezone(&chrono::Utc),
         request,
         response,
-        client_addr,
-        server_addr,
+        client_addr: client_addr.unwrap_or_default(),
+        server_addr: server_addr.unwrap_or_default(),
     })
+}
+
+fn collect_records<I>(rows: I) -> Vec<ProxyRecord>
+where
+    I: IntoIterator<Item = SqlResult<ProxyRecord>>,
+{
+    let mut records = Vec::new();
+
+    for row in rows {
+        match row {
+            Ok(record) => records.push(record),
+            Err(err) => eprintln!("[db] skipping malformed http_logs row: {}", err),
+        }
+    }
+
+    records
 }

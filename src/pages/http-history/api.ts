@@ -1,5 +1,19 @@
 import { invoke } from '@tauri-apps/api/core';
-import type { ProxyRecord, PaginatedResponse } from '@/types';
+import type { ProxyRecord, ProxyLogSummary, PaginatedResponse } from '@/types';
+
+declare global {
+  interface Window {
+    __TAURI_INTERNALS__?: unknown;
+  }
+}
+
+async function invokeTauri<T>(command: string, args?: Record<string, unknown>): Promise<T> {
+  if (typeof window !== 'undefined' && !window.__TAURI_INTERNALS__) {
+    throw new Error('Tauri backend is unavailable. Start the desktop app with `pnpm tauri`, not `pnpm dev`.');
+  }
+
+  return invoke<T>(command, args);
+}
 
 export interface Target {
   id: string;
@@ -24,6 +38,7 @@ export async function deleteTarget(id: string): Promise<boolean> {
 
 export interface ProxyFilter {
   search: string | null;
+  path: string | null;
   methods: string[] | null;
   status_codes: number[] | null;
   scope: string[] | null;
@@ -34,8 +49,8 @@ export async function getHttpLogs(
   perPage: number = 100,
   filter?: ProxyFilter,
   sortOrder: 'asc' | 'desc' = 'desc'
-): Promise<PaginatedResponse<ProxyRecord>> {
-  return invoke('get_proxy_paginated', {
+): Promise<PaginatedResponse<ProxyLogSummary>> {
+  return invokeTauri('get_proxy_paginated', {
     page,
     per_page: perPage,
     filter,
@@ -43,12 +58,18 @@ export async function getHttpLogs(
   });
 }
 
+export async function getHttpLogDetail(logId: string): Promise<ProxyRecord> {
+  return invokeTauri('get_proxy_detail', {
+    log_id: logId,
+  });
+}
+
 export async function getCaCert(): Promise<string> {
-  return invoke<string>('get_ca_cert');
+  return invokeTauri<string>('get_ca_cert');
 }
 
 export async function saveCaCert(path: string, content: string): Promise<void> {
-  return invoke('save_ca_cert', { path, content });
+  return invokeTauri('save_ca_cert', { path, content });
 }
 
 export interface TreeNode {
@@ -63,5 +84,5 @@ export interface TreePath {
 }
 
 export async function getProxyTree(filter?: ProxyFilter): Promise<TreeNode[]> {
-  return invoke('get_proxy_tree', { filter });
+  return invokeTauri('get_proxy_tree', { filter });
 }

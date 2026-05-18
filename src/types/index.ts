@@ -85,6 +85,19 @@ export interface ProxyRecord {
   server_addr: string;
 }
 
+export interface ProxyLogSummary {
+  id: string;
+  timestamp: string;
+  method: string;
+  url: string;
+  response_status: number | null;
+  response_status_text: string | null;
+  response_content_type: string | null;
+  request_body_size: number;
+  response_body_size: number;
+  server_addr: string;
+}
+
 export interface PaginatedResponse<T> {
   data: T[];
   total: number;

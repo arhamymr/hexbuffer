@@ -2,10 +2,10 @@
 
 import { cn } from "@/lib/utils";
 import { ChevronDown, ChevronRight, Globe, Folder, FileText } from "lucide-react";
-import { useState, useEffect, useCallback } from "react";
-import { getProxyTree, type TreeNode as ApiTreeNode, type TreePath } from '@/pages/http-history/api';
-import { filterStateToProxyFilter } from '@/stores/filter';
-import { useFilterStore } from '@/stores/filter';
+import { useState } from "react";
+import type { TreePath } from '@/pages/http-history/api';
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { useHistoryTree } from '@/pages/http-history/hooks/use-history-tree';
 
 export interface TreeNodeData {
   id: string;
@@ -31,7 +31,7 @@ function buildTreeNodeData(host: string, paths: TreePath[]): TreeNodeData {
     label: host,
     children: [],
     count: paths.reduce((sum, p) => sum + p.count, 0),
-    methods: [...new Set(paths.flatMap(p => p.methods))],
+    methods: [...new Set(paths.flatMap((p) => p.methods))],
   };
 
   const pathMap = new Map<string, TreeNodeData>();
@@ -66,6 +66,8 @@ function buildTreeNodeData(host: string, paths: TreePath[]): TreeNodeData {
         child.count = (child.count || 0) + pathEntry.count;
         child.methods = [...new Set([...(child.methods || []), ...pathEntry.methods])];
       }
+
+      current = child;
     }
   }
 
@@ -167,27 +169,8 @@ export function TreeView({
   onSelectEndpoint,
   selectedId,
 }: TreeViewProps) {
-  const [treeData, setTreeData] = useState<TreeNodeData[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const filter = useFilterStore((s) => s.filter);
-
-  const fetchTree = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const proxyFilter = filterStateToProxyFilter(filter);
-      const result = await getProxyTree(proxyFilter);
-      const tree = result.map(node => buildTreeNodeData(node.host, node.paths));
-      setTreeData(tree);
-    } catch (error) {
-      console.error('Failed to fetch tree:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [filter]);
-
-  useEffect(() => {
-    fetchTree();
-  }, [fetchTree]);
+  const { treeData, isLoading, loadError } = useHistoryTree();
+  const mappedTreeData = treeData.map((node) => buildTreeNodeData(node.host, node.paths));
 
   if (isLoading) {
     return (
@@ -197,9 +180,20 @@ export function TreeView({
     );
   }
 
+  if (loadError) {
+    return (
+      <div className="p-2">
+        <Alert variant="destructive">
+          <AlertTitle>Failed to load sitemap</AlertTitle>
+          <AlertDescription>{loadError}</AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
+
   return (
     <div className="h-full overflow-auto pl-1">
-      {treeData.map((node) => (
+      {mappedTreeData.map((node) => (
         <TreeNodeComponent
           key={node.id}
           node={node}

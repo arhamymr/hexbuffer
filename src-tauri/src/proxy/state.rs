@@ -58,6 +58,7 @@ pub struct PausedRequest {
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct ProxyFilter {
     pub search: Option<String>,
+    pub path: Option<String>,
     pub methods: Option<Vec<String>>,
     pub status_codes: Option<Vec<u16>>,
     pub scope: Option<Vec<String>>,
@@ -184,6 +185,23 @@ impl ProxyState {
                             && !host_lower.contains(&search_lower)
                             && !path_lower.contains(&search_lower)
                         {
+                            return false;
+                        }
+                    }
+                }
+                if let Some(ref path) = filter.path {
+                    if !path.is_empty() {
+                        let record_path = record
+                            .request
+                            .uri
+                            .split("://")
+                            .nth(1)
+                            .unwrap_or(record.request.uri.as_str())
+                            .split_once('/')
+                            .map(|(_, p)| format!("/{}", p))
+                            .unwrap_or_else(|| "/".to_string());
+
+                        if !record_path.contains(path) {
                             return false;
                         }
                     }

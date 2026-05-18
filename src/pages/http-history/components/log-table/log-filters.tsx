@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { X, Trash2, Map, SeparatorVertical } from 'lucide-react';
+import { X, Trash2, Map } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -15,13 +15,12 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { METHOD_FILTERS, STATUS_FILTERS } from './utils';
-import { useFilterStore } from '@/stores/filter';
-import { useLogStore } from '@/stores/log';
-import type { FilterState } from '@/stores/filter';
+import { clearHistoryLogs } from '@/pages/http-history/services/history-service';
+import { useHistoryQueryStore, type HistoryFilterState } from '@/pages/http-history/state/history-query-store';
 
 interface LogFiltersProps {
-  filter?: FilterState;
-  onFilterChange?: (filter: FilterState) => void;
+  filter?: HistoryFilterState;
+  onFilterChange?: (filter: HistoryFilterState) => void;
   onClearFilters?: () => void;
   clearCalls?: () => void;
   sitemapVisible?: boolean;
@@ -37,19 +36,25 @@ export function LogFilters({
   setSitemapVisible,
 }: LogFiltersProps) {
   const [clearDialogOpen, setClearDialogOpen] = useState(false);
-  const storeFilter = useFilterStore((state) => state.filter);
-  const storeSetFilter = useFilterStore((state) => state.setFilter);
-  const toggleMethod = useFilterStore((state) => state.toggleMethod);
-  const toggleStatus = useFilterStore((state) => state.toggleStatus);
-  const storeClearFilters = useFilterStore((state) => state.clearFilters);
-  const storeClearCalls = useLogStore((state) => state.clearCalls);
+  const storeFilter = useHistoryQueryStore((state) => state.filter);
+  const storeSetFilter = useHistoryQueryStore((state) => state.setFilter);
+  const toggleMethod = useHistoryQueryStore((state) => state.toggleMethod);
+  const toggleStatus = useHistoryQueryStore((state) => state.toggleStatus);
+  const storeClearFilters = useHistoryQueryStore((state) => state.clearFilters);
+  const storeSetSelectedCallId = useHistoryQueryStore((state) => state.setSelectedCallId);
+  const triggerRefresh = useHistoryQueryStore((state) => state.triggerRefresh);
 
   const filter = filterProp ?? storeFilter;
   const setFilter = onFilterChange ?? storeSetFilter;
   const clearFilters = onClearFilters ?? storeClearFilters;
-  const clearCalls = clearCallsProp ?? storeClearCalls;
+  const clearCalls = clearCallsProp ?? (async () => {
+    await clearHistoryLogs();
+    storeSetSelectedCallId(null);
+    triggerRefresh();
+  });
 
-  const hasActiveFilters = filter.search || filter.methods.size > 0 || filter.statusCodes.size > 0;
+  const hasActiveFilters =
+    filter.search || filter.pathFilter || filter.methods.size > 0 || filter.statusCodes.size > 0;
 
   return (
     <div className="space-y-3">
@@ -79,58 +84,51 @@ export function LogFilters({
               className='text-xs text-muted-foreground'
             >
               <Map className="h3 w-3"/>
-              {sitemapVisible ? (
-                "Sitemap hide"
-              ) : (
-                "Sitemap show"
-              )}
-              
+              {sitemapVisible ? "Sitemap hide" : "Sitemap show"}
             </Button>
           )}
-
-          
         </div>
 
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground">Filter by:</span>
-            <div className="flex gap-1">
-              {METHOD_FILTERS.map(method => (
-                <button
-                  key={method}
-                  onClick={() => toggleMethod(method)}
-                  className={`text-xs px-2 py-1 cursor-pointer rounded-md border transition-colors ${
-                    filter.methods.has(method)
-                      ? 'bg-primary text-primary-foreground border-primary'
-                      : 'border-muted-foreground/30 hover:bg-muted'
-                  }`}
-                >
-                  {method}
-                </button>
-              ))}
+              <span className="text-xs text-muted-foreground">Filter by:</span>
+              <div className="flex gap-1">
+                {METHOD_FILTERS.map((method) => (
+                  <button
+                    key={method}
+                    onClick={() => toggleMethod(method)}
+                    className={`text-xs px-2 py-1 cursor-pointer rounded-md border transition-colors ${
+                      filter.methods.has(method)
+                        ? 'bg-primary text-primary-foreground border-primary'
+                        : 'border-muted-foreground/30 hover:bg-muted'
+                    }`}
+                  >
+                    {method}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
 
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground">Status:</span>
-            <div className="flex gap-1">
-              {STATUS_FILTERS.map(status => (
-                <button
-                  key={status.label}
-                  onClick={() => toggleStatus(status.label)}
-                  className={`text-xs px-2 py-1 rounded-md border cursor-pointer transition-colors ${
-                    filter.statusCodes.has(status.label)
-                      ? 'bg-primary text-primary-foreground border-primary'
-                      : 'border-muted-foreground/30 hover:bg-muted'
-                  }`}
-                >
-                  {status.label}
-                </button>
-              ))}
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground">Status:</span>
+              <div className="flex gap-1">
+                {STATUS_FILTERS.map((status) => (
+                  <button
+                    key={status.label}
+                    onClick={() => toggleStatus(status.label)}
+                    className={`text-xs px-2 py-1 rounded-md border cursor-pointer transition-colors ${
+                      filter.statusCodes.has(status.label)
+                        ? 'bg-primary text-primary-foreground border-primary'
+                        : 'border-muted-foreground/30 hover:bg-muted'
+                    }`}
+                  >
+                    {status.label}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
-          <p className='text-muted-foreground'>|</p>
+            <p className='text-muted-foreground'>|</p>
             <Button variant="outline" size="xs" onClick={() => setClearDialogOpen(true)} className='text-xs text-muted-foreground'>
               <Trash2 className="h-3 w-3" />
               Clear All

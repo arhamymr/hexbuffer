@@ -1,18 +1,15 @@
 'use client';
 
+import { Copy } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Empty, EmptyTitle, EmptyDescription } from "@/components/ui/empty";
+import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import { useHistoryDetail } from '@/pages/http-history/hooks/use-history-detail';
 import type { ApiCall } from '@/types';
 import { InspectorSection, buildHeadersList, buildParamsList } from './inspector';
 import { parseCookieHeader } from './cookie-display';
 import { getMethodBadge, getStatusColor, formatBytes } from './utils';
-import { Copy } from 'lucide-react';
-import { Empty, EmptyTitle, EmptyDescription } from "@/components/ui/empty";
-import { toast } from 'sonner';
-import { Button } from '@/components/ui/button';
-import { getHttpLogs } from '@/pages/http-history/api';
-import { useFilterStore } from '@/stores/filter';
-import { filterStateToProxyFilter } from '@/stores/filter';
-import { useEffect, useState } from 'react';
-import { useLogStore } from '@/stores/log';
 
 function PrettyCurl({ call }: { call: ApiCall }) {
   const copyToClipboard = async (text: string) => {
@@ -75,66 +72,8 @@ function PrettyJson({ content }: { content: string }) {
   }
 }
 
-function adaptProxyRecordToApiCall(record: any): ApiCall {
-  const uri = record.request.uri;
-  const urlObj = uri.includes('://') ? new URL(uri) : null;
-  return {
-    id: record.id,
-    session_id: '',
-    target_id: '',
-    timestamp: new Date(record.timestamp).getTime(),
-    request_type: 'Other',
-    method: record.request.method,
-    url: uri,
-    host: urlObj?.host || uri.split('://').pop()?.split('/')[0] || '',
-    path: urlObj?.pathname || '/',
-    query_params: {},
-    headers: record.request.headers,
-    cookies: {},
-    request_body: new TextDecoder().decode(new Uint8Array(record.request.body)),
-    request_body_size: record.request.body.length,
-    response_status: record.response?.status_code ?? null,
-    response_status_text: record.response?.status_text || null,
-    response_headers: record.response?.headers || {},
-    response_cookies: {},
-    response_body: record.response ? new TextDecoder().decode(new Uint8Array(record.response.body)) : null,
-    response_body_size: record.response?.body.length ?? 0,
-    response_content_type: record.response?.headers['content-type'] || null,
-    security_state: '',
-    server_ip: record.server_addr || null,
-    duration_ms: null,
-  };
-}
-
 export function LogEntryBurpView() {
-  const selectedCallId = useLogStore((state) => state.selectedCallId);
-  const filter = useFilterStore((state) => state.filter);
-  const [call, setCall] = useState<ApiCall | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-
-  useEffect(() => {
-    if (!selectedCallId) {
-      setCall(null);
-      return;
-    }
-
-    const fetchCall = async () => {
-      setIsLoading(true);
-      try {
-        const proxyFilter = filterStateToProxyFilter(filter);
-        const result = await getHttpLogs(1, 100, proxyFilter, 'desc');
-        const found = result.data.find((r: any) => r.id === selectedCallId);
-        setCall(found ? adaptProxyRecordToApiCall(found) : null);
-      } catch (error) {
-        console.error('Failed to fetch call:', error);
-        setCall(null);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchCall();
-  }, [selectedCallId, filter]);
+  const { selectedCallId, call, isLoading, loadError } = useHistoryDetail();
 
   if (!selectedCallId) {
     return (
@@ -150,6 +89,17 @@ export function LogEntryBurpView() {
       <Empty>
         <EmptyTitle>Loading...</EmptyTitle>
       </Empty>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="p-4">
+        <Alert variant="destructive">
+          <AlertTitle>Failed to load request details</AlertTitle>
+          <AlertDescription>{loadError}</AlertDescription>
+        </Alert>
+      </div>
     );
   }
 
@@ -184,7 +134,7 @@ export function LogEntryBurpView() {
         <div className="p-3 flex-1 overflow-auto">
           <div className="mb-3">
             <InspectorSection title="Headers" items={requestHeaders} />
-            <InspectorSection title="Cookies" items={requestCookies.map(c => ({ name: c.name, value: c.value }))} />
+            <InspectorSection title="Cookies" items={requestCookies.map((cookie) => ({ name: cookie.name, value: cookie.value }))} />
             {requestParams.length > 0 && (
               <InspectorSection title="Params" items={requestParams} />
             )}
@@ -219,7 +169,7 @@ export function LogEntryBurpView() {
             {responseCookies.length > 0 && (
               <InspectorSection
                 title="Cookies"
-                items={responseCookies.map(c => ({ name: c.name, value: c.value }))}
+                items={responseCookies.map((cookie) => ({ name: cookie.name, value: cookie.value }))}
                 defaultOpen={false}
               />
             )}

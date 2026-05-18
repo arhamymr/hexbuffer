@@ -2,7 +2,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use apprecon::{
-    Database, PaginatedResponse, ProxyRecord, ProxyState, ProxyFilter, run, ProxyConfig,
+    HistoryBridge, PaginatedResponse, ProxyLogSummary, ProxyRecord, ProxyState, ProxyFilter, run, ProxyConfig,
     export_ca_cert_pem, TreeNode,
 };
 use std::sync::Mutex;
@@ -33,40 +33,41 @@ async fn start_proxy(app: AppHandle, port: u16, tls_port: u16) -> Result<String,
 }
 
 #[tauri::command]
-async fn clear_proxy_all(db: State<'_, Database>) -> Result<(), String> {
-    db.clear_logs().map_err(|e| e.to_string())
+async fn clear_proxy_all(history: State<'_, HistoryBridge>) -> Result<(), String> {
+    history.clear_all()
 }
 
 #[tauri::command]
-async fn delete_proxy_by_id(db: State<'_, Database>, log_id: String) -> Result<(), String> {
-    db.delete_log(&log_id).map_err(|e| e.to_string())
+async fn delete_proxy_by_id(history: State<'_, HistoryBridge>, log_id: String) -> Result<(), String> {
+    history.delete_by_id(&log_id)
 }
 
 #[tauri::command]
-async fn get_proxy_all(db: State<'_, Database>) -> Result<Vec<ProxyRecord>, String> {
-    db.get_all().map_err(|e| e.to_string())
+async fn get_proxy_all(history: State<'_, HistoryBridge>) -> Result<Vec<ProxyRecord>, String> {
+    history.get_all()
 }
 
 #[tauri::command]
-async fn get_proxy_filtered(db: State<'_, Database>, filter: ProxyFilter) -> Result<Vec<ProxyRecord>, String> {
-    db.get_filtered(&filter).map_err(|e| e.to_string())
+async fn get_proxy_filtered(history: State<'_, HistoryBridge>, filter: ProxyFilter) -> Result<Vec<ProxyRecord>, String> {
+    history.get_filtered(filter)
 }
 
 #[tauri::command]
 async fn get_proxy_paginated(
-    db: State<'_, Database>,
+    history: State<'_, HistoryBridge>,
     page: u32,
     per_page: u32,
     filter: Option<ProxyFilter>,
     sort_order: Option<String>,
-) -> Result<PaginatedResponse<ProxyRecord>, String> {
-    let order = sort_order.unwrap_or_else(|| "DESC".to_string());
-    let order = if order.to_uppercase() == "ASC" { "ASC" } else { "DESC" };
+) -> Result<PaginatedResponse<ProxyLogSummary>, String> {
+    history.get_paginated(page, per_page, filter, sort_order)
+}
 
-    match filter {
-        Some(f) => db.get_filtered_paginated(&f, page, per_page, order),
-        None => db.get_paginated(page, per_page, order),
-    }
+#[tauri::command]
+async fn get_proxy_detail(history: State<'_, HistoryBridge>, log_id: String) -> Result<ProxyRecord, String> {
+    history
+        .get_by_id(&log_id)?
+        .ok_or_else(|| format!("Log not found: {}", log_id))
 }
 
 #[tauri::command]
@@ -82,11 +83,10 @@ async fn get_ca_cert() -> Result<String, String> {
 
 #[tauri::command]
 async fn get_proxy_tree(
-    db: State<'_, Database>,
+    history: State<'_, HistoryBridge>,
     filter: Option<ProxyFilter>,
 ) -> Result<Vec<TreeNode>, String> {
-    let filter = filter.unwrap_or_default();
-    db.get_tree(&filter)
+    history.get_tree(filter)
 }
 
 fn main() {
@@ -105,12 +105,11 @@ tauri::Builder::default()
             std::fs::create_dir_all(&app_dir).expect("Failed to create app data dir");
             let db_path = app_dir.join("apprecon.db");
             eprintln!("[main] Opening database at {:?}", db_path);
-            let db = Database::new(db_path).expect("Failed to open database");
-            db.init().expect("Failed to initialize database");
-            eprintln!("[main] Database initialized");
+            let history = HistoryBridge::new(db_path).expect("Failed to initialize history bridge");
+            eprintln!("[main] History bridge initialized");
 
             app.manage(Mutex::new(ProxyState::new()));
-            app.manage(db);
+            app.manage(history);
             eprintln!("[main] Building Tauri app...");
 
             eprintln!("[main] Tauri setup complete, spawning proxy thread...");
@@ -126,6 +125,7 @@ tauri::Builder::default()
             get_proxy_all,
             get_proxy_filtered,
             get_proxy_paginated,
+            get_proxy_detail,
             clear_proxy_all,
             delete_proxy_by_id,
             get_ca_cert,

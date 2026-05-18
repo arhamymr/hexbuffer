@@ -36,8 +36,8 @@ pub fn save_and_emit(ctx: &Ctx, app_handle: &tauri::AppHandle) {
     
     let txn = build_record(ctx);
 
-    if let Some(db) = app_handle.try_state::<crate::Database>() {
-        if let Err(e) = db.insert_log(&txn) {
+    if let Some(history) = app_handle.try_state::<crate::HistoryBridge>() {
+        if let Err(e) = history.insert_record(&txn) {
             println!("[completion] failed to insert to DB: {}", e);
         } else {
             println!("[completion] saved to DB txn_id={}", ctx.transaction_id);

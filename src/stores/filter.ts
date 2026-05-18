@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { getHttpLogs, type ProxyFilter } from '@/pages/http-history/api';
+import type { ProxyFilter } from '@/pages/http-history/api';
 
 export interface FilterState {
   search: string;
@@ -29,13 +29,9 @@ export function filterStateToProxyFilter(filter: FilterState, scope?: string[]):
     if (status_codes.length === 0) status_codes = null;
   }
 
-  let search = filter.search || null;
-  if (filter.pathFilter) {
-    search = search ? `${search} ${filter.pathFilter}` : filter.pathFilter;
-  }
-
   return {
-    search,
+    search: filter.search || null,
+    path: filter.pathFilter,
     methods,
     status_codes,
     scope: scope && scope.length > 0 ? scope : null,

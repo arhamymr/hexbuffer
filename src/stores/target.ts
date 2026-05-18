@@ -46,8 +46,21 @@ export const useTargetStore = create<TargetState>()(
     {
       name: 'apprecon-targets',
       partialize: (state) => ({
-        targets: state.targets,
+        targets: state.targets.map(({ tabActive, ...target }) => target),
       }),
+      merge: (persistedState, currentState) => {
+        const typedState = persistedState as Partial<TargetState> | undefined;
+        const persistedTargets = typedState?.targets ?? [];
+
+        return {
+          ...currentState,
+          ...typedState,
+          targets: persistedTargets.map((target) => ({
+            ...target,
+            tabActive: false,
+          })),
+        };
+      },
     }
   )
 );

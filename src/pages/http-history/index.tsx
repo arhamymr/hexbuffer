@@ -7,17 +7,21 @@ import { LogEntryBurpView } from "./components/log-table/log-entry-view";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import { TabBar } from "@/pages/http-history/components/tab-bar";
 import { TargetSelectorDialog } from "./components/target-selector";
-import { useFilterStore } from '@/stores/filter';
-import { useLogStore } from '@/stores/log';
 import { TreeView, TreeNodeData } from "./components/tree-view";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTabBar } from "./components/tab-bar/hooks";
+import { useHistoryQueryStore } from './state/history-query-store';
 
 export function HttpHistoryPage() {
   const [sitemapVisible, setSitemapVisible] = useState(true);
-  const setSelectedCallId = useLogStore((state) => state.setSelectedCallId);
-  const setPathFilter = useFilterStore((state) => state.setPathFilter);
   const { activeTab } = useTabBar();
+  const setActiveScope = useHistoryQueryStore((state) => state.setActiveScope);
+  const setSelectedCallId = useHistoryQueryStore((state) => state.setSelectedCallId);
+  const setPathFilter = useHistoryQueryStore((state) => state.setPathFilter);
+
+  useEffect(() => {
+    setActiveScope(activeTab?.scope ?? null);
+  }, [activeTab?.scope, setActiveScope]);
 
   const handleTreeSelect = (node: TreeNodeData) => {
     if (node.fullPath) {
@@ -38,24 +42,21 @@ export function HttpHistoryPage() {
           {sitemapVisible && (
             <>
               <ResizablePanel defaultSize={20} minSize={20}>
-                <TreeView
-                  onSelectEndpoint={handleTreeSelect}
-                  selectedId={null}
-                />
+                <TreeView onSelectEndpoint={handleTreeSelect} selectedId={null} />
               </ResizablePanel>
               <ResizableHandle withHandle />
             </>
           )}
           <ResizablePanel defaultSize={sitemapVisible ? 80 : 100}>
-              <ResizablePanelGroup orientation="vertical" className="flex-1">
-                <ResizablePanel defaultSize={60}>
-                  <TrafficTable targetScope={activeTab?.scope} />
-                </ResizablePanel>
-                <ResizableHandle withHandle />
-                <ResizablePanel defaultSize={40}>
-                  <LogEntryBurpView />
-                </ResizablePanel>
-              </ResizablePanelGroup>
+            <ResizablePanelGroup orientation="vertical" className="flex-1">
+              <ResizablePanel defaultSize={60}>
+                <TrafficTable />
+              </ResizablePanel>
+              <ResizableHandle withHandle />
+              <ResizablePanel defaultSize={40}>
+                <LogEntryBurpView />
+              </ResizablePanel>
+            </ResizablePanelGroup>
           </ResizablePanel>
         </ResizablePanelGroup>
       </Card>

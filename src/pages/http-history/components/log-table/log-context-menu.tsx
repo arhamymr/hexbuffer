@@ -10,9 +10,9 @@ import {
 } from '@/components/ui/context-menu';
 import { Copy, ExternalLink, Plus, Eye, Trash2, Send } from 'lucide-react';
 import type { ApiCall } from '@/types';
-import { useLogStore } from '@/stores/log';
+import { deleteHistoryLog } from '@/pages/http-history/services/history-service';
+import { useHistoryQueryStore } from '@/pages/http-history/state/history-query-store';
 import { useBruteForceStore } from '@/stores/bruto-force';
-import { invoke } from '@tauri-apps/api/core';
 
 interface LogEntryContextMenuProps {
   call: ApiCall;
@@ -26,7 +26,8 @@ export function LogEntryContextMenu({
   onDelete,
 }: LogEntryContextMenuProps) {
   const navigate = useNavigate();
-  const setSelectedCallId = useLogStore((state) => state.setSelectedCallId);
+  const setSelectedCallId = useHistoryQueryStore((state) => state.setSelectedCallId);
+  const triggerRefresh = useHistoryQueryStore((state) => state.triggerRefresh);
 
   const copyToClipboard = async (text: string | null | undefined) => {
     if (text) {
@@ -95,8 +96,9 @@ export function LogEntryContextMenu({
 
   const handleDelete = async () => {
     try {
-      await invoke('delete_proxy_by_id', { logId: call.id });
+      await deleteHistoryLog(call.id);
       onDelete?.(call.id);
+      triggerRefresh();
     } catch (error) {
       console.error('Failed to delete:', error);
     }

@@ -1,21 +1,13 @@
 'use client';
 
-import { ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { ArrowDown, ArrowUp } from "lucide-react";
 import { Empty, EmptyTitle, EmptyDescription } from "@/components/ui/empty";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { formatTimestamp, formatBytes, getMethodBadge, StatusBadge, getExtension } from "./utils";
 import { LogEntryContextMenu } from "./log-context-menu";
-import { listen } from '@tauri-apps/api/event';
-import { useEffect, useRef, useState, useCallback } from "react";
-import type { ProxyRecord, ApiCall } from '@/types';
-import { getHttpLogs, type ProxyFilter } from '@/pages/http-history/api';
-import { filterStateToProxyFilter } from '@/stores/filter';
-import { useFilterStore } from '@/stores/filter';
-import { useLogStore } from '@/stores/log';
+import type { ApiCall } from '@/types';
+import { useHistoryTable } from '@/pages/http-history/hooks/use-history-table';
 import { Button } from "@/components/ui/button";
-
-interface TrafficTableProps {
-  targetScope?: string[];
-}
 
 export const callsColumns: import("@tanstack/react-table").ColumnDef<ApiCall>[] = [
   {
@@ -87,158 +79,44 @@ export const callsColumns: import("@tanstack/react-table").ColumnDef<ApiCall>[] 
   },
 ];
 
-function adaptProxyRecordToApiCall(record: ProxyRecord): ApiCall {
-  const uri = record.request.uri;
-  const urlObj = uri.includes('://') ? new URL(uri) : null;
-  return {
-    id: record.id,
-    session_id: '',
-    target_id: '',
-    timestamp: new Date(record.timestamp).getTime(),
-    request_type: 'Other',
-    method: record.request.method,
-    url: uri,
-    host: urlObj?.host || uri.split('://').pop()?.split('/')[0] || '',
-    path: urlObj?.pathname || '/',
-    query_params: {},
-    headers: record.request.headers,
-    cookies: {},
-    request_body: new TextDecoder().decode(new Uint8Array(record.request.body)),
-    request_body_size: record.request.body.length,
-    response_status: record.response?.status_code ?? null,
-    response_status_text: record.response?.status_text || null,
-    response_headers: record.response?.headers || {},
-    response_cookies: {},
-    response_body: record.response ? new TextDecoder().decode(new Uint8Array(record.response.body)) : null,
-    response_body_size: record.response?.body.length ?? 0,
-    response_content_type: record.response?.headers['content-type'] || null,
-    security_state: '',
-    server_ip: record.server_addr || null,
-    duration_ms: null,
-  };
-}
+export function TrafficTable() {
+  const {
+    calls,
+    pagination,
+    isLoading,
+    isLoadingMore,
+    newEventsCount,
+    loadError,
+    sortOrder,
+    hasActiveFilters,
+    hasScopedTab,
+    loadMore,
+    handleRefresh,
+    toggleSortOrder,
+    setSelectedCallId,
+    removeCallLocally,
+  } = useHistoryTable();
 
-function recordMatchesFilter(record: ProxyRecord, filter: ProxyFilter): boolean {
-  if (filter.methods && filter.methods.length > 0) {
-    if (!filter.methods.includes(record.request.method)) return false;
+  if (loadError) {
+    return (
+      <div className="p-4">
+        <Alert variant="destructive">
+          <AlertTitle>Failed to load HTTP history</AlertTitle>
+          <AlertDescription>{loadError}</AlertDescription>
+        </Alert>
+      </div>
+    );
   }
-  if (filter.status_codes && filter.status_codes.length > 0) {
-    const status = record.response?.status_code;
-    if (!status || !filter.status_codes.includes(status)) return false;
-  }
-  return true;
-}
-
-export function TrafficTable({ targetScope }: TrafficTableProps) {
-  const [calls, setCalls] = useState<ApiCall[]>([]);
-  const [pagination, setPagination] = useState({ page: 1, perPage: 100, total: 0, hasMore: false });
-  const [isLoading, setIsLoading] = useState(false);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [newEventsCount, setNewEventsCount] = useState(0);
-
-  const filter = useFilterStore((s) => s.filter);
-  const sortOrder = useLogStore((s) => s.sortOrder);
-  const setSelectedCallId = useLogStore((s) => s.setSelectedCallId);
-
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const pendingEventRef = useRef(false);
-
-  const fetchLogs = useCallback(async (page: number, append = false) => {
-    setIsLoading(page === 1);
-    setIsLoadingMore(page > 1);
-    try {
-      const proxyFilter = filterStateToProxyFilter(filter, targetScope);
-      const result = await getHttpLogs(page, 100, proxyFilter, sortOrder);
-      setPagination({
-        page,
-        perPage: 100,
-        total: result.total,
-        hasMore: result.has_more,
-      });
-      const adapted = result.data.map(adaptProxyRecordToApiCall);
-      setCalls(prev => append ? [...prev, ...adapted] : adapted);
-    } catch (error) {
-      console.error('Failed to fetch logs:', error);
-    } finally {
-      setIsLoading(false);
-      setIsLoadingMore(false);
-    }
-  }, [filter, sortOrder, targetScope]);
-
-  const loadMore = useCallback(async () => {
-    if (!pagination.hasMore || isLoadingMore) return;
-    const nextPage = pagination.page + 1;
-    setIsLoadingMore(true);
-    try {
-      const proxyFilter = filterStateToProxyFilter(filter, targetScope);
-      const result = await getHttpLogs(nextPage, 100, proxyFilter, sortOrder);
-      setPagination(prev => ({
-        ...prev,
-        page: nextPage,
-        total: result.total,
-        hasMore: result.has_more,
-      }));
-      const adapted = result.data.map(adaptProxyRecordToApiCall);
-      setCalls(prev => [...prev, ...adapted]);
-    } catch (error) {
-      console.error('Failed to load more:', error);
-    } finally {
-      setIsLoadingMore(false);
-    }
-  }, [pagination.hasMore, pagination.page, isLoadingMore, filter, sortOrder, targetScope]);
-
-  const toggleSortOrder = useCallback(() => {
-    const newOrder = sortOrder === 'asc' ? 'desc' : 'asc';
-    useLogStore.getState().setSortOrder(newOrder);
-  }, [sortOrder]);
-
-  useEffect(() => {
-    if (debounceRef.current) {
-      clearTimeout(debounceRef.current);
-    }
-    debounceRef.current = setTimeout(() => {
-      fetchLogs(1);
-    }, 300);
-    return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-    };
-  }, [filter, sortOrder, targetScope]);
-
-  useEffect(() => {
-    let debounceTimer: ReturnType<typeof setTimeout> | null = null;
-
-    const handleEvent = () => {
-      pendingEventRef.current = true;
-      if (debounceTimer) clearTimeout(debounceTimer);
-      debounceTimer = setTimeout(async () => {
-        if (!pendingEventRef.current) return;
-        pendingEventRef.current = false;
-
-        if (pagination.page === 1) {
-          await fetchLogs(1);
-        } else {
-          setNewEventsCount(c => c + 1);
-        }
-      }, 500);
-    };
-
-    const unlistenPromise = listen<ProxyRecord>('proxy-record', handleEvent);
-    return () => {
-      unlistenPromise.then((unlisten) => unlisten());
-      if (debounceTimer) clearTimeout(debounceTimer);
-    };
-  }, [pagination.page, fetchLogs]);
-
-  const handleRefresh = () => {
-    setNewEventsCount(0);
-    fetchLogs(1);
-  };
 
   if (calls.length === 0 && !isLoading) {
     return (
       <Empty>
-        <EmptyTitle>No traffic yet</EmptyTitle>
-        <EmptyDescription>HTTP requests will appear here once captured.</EmptyDescription>
+        <EmptyTitle>{hasActiveFilters || hasScopedTab ? 'No matching traffic' : 'No traffic yet'}</EmptyTitle>
+        <EmptyDescription>
+          {hasActiveFilters || hasScopedTab
+            ? 'The database has traffic, but the current tab or filters may be hiding it. Switch to All History or clear the active filters.'
+            : 'HTTP requests will appear here once captured.'}
+        </EmptyDescription>
       </Empty>
     );
   }
@@ -279,9 +157,7 @@ export function TrafficTable({ targetScope }: TrafficTableProps) {
         </thead>
         <tbody>
           {calls.map((call) => (
-            <LogEntryContextMenu key={call.id} call={call} onDelete={() => {
-              setCalls(prev => prev.filter(c => c.id !== call.id));
-            }}>
+            <LogEntryContextMenu key={call.id} call={call} onDelete={removeCallLocally}>
               <tr className="hover:bg-muted/50 transition-colors border-b cursor-pointer" onClick={() => setSelectedCallId(call.id)}>
                 <td className="text-xs font-mono text-muted-foreground px-3 py-2">
                   {formatTimestamp(call.timestamp)}
@@ -315,11 +191,7 @@ export function TrafficTable({ targetScope }: TrafficTableProps) {
       </table>
       {pagination.hasMore && (
         <div className="flex justify-center py-4 border-t">
-          <Button
-            variant="outline"
-            onClick={loadMore}
-            disabled={isLoadingMore}
-          >
+          <Button variant="outline" onClick={loadMore} disabled={isLoadingMore}>
             {isLoadingMore ? "Loading..." : "Load More"}
           </Button>
         </div>

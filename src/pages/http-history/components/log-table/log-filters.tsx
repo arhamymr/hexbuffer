@@ -15,8 +15,9 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { METHOD_FILTERS, STATUS_FILTERS } from './utils';
-import { useHttpHistoryStore } from '@/stores/log';
-import type { FilterState } from '@/stores/log';
+import { useFilterStore } from '@/stores/filter';
+import { useLogStore } from '@/stores/log';
+import type { FilterState } from '@/stores/filter';
 
 interface LogFiltersProps {
   filter?: FilterState;
@@ -36,12 +37,12 @@ export function LogFilters({
   setSitemapVisible,
 }: LogFiltersProps) {
   const [clearDialogOpen, setClearDialogOpen] = useState(false);
-  const storeFilter = useHttpHistoryStore((state) => state.filter);
-  const storeSetFilter = useHttpHistoryStore((state) => state.setFilter);
-  const toggleMethod = useHttpHistoryStore((state) => state.toggleMethod);
-  const toggleStatus = useHttpHistoryStore((state) => state.toggleStatus);
-  const storeClearFilters = useHttpHistoryStore((state) => state.clearFilters);
-  const storeClearCalls = useHttpHistoryStore((state) => state.clearCalls);
+  const storeFilter = useFilterStore((state) => state.filter);
+  const storeSetFilter = useFilterStore((state) => state.setFilter);
+  const toggleMethod = useFilterStore((state) => state.toggleMethod);
+  const toggleStatus = useFilterStore((state) => state.toggleStatus);
+  const storeClearFilters = useFilterStore((state) => state.clearFilters);
+  const storeClearCalls = useLogStore((state) => state.clearCalls);
 
   const filter = filterProp ?? storeFilter;
   const setFilter = onFilterChange ?? storeSetFilter;

@@ -7,15 +7,16 @@ import { LogEntryBurpView } from "./components/log-table/log-entry-view";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import { TabBar } from "@/pages/http-history/components/tab-bar";
 import { TargetSelectorDialog } from "./components/target-selector";
-import { useHttpHistoryStore } from '@/stores/log';
+import { useFilterStore } from '@/stores/filter';
+import { useLogStore } from '@/stores/log';
 import { TreeView, TreeNodeData } from "./components/tree-view";
 import { useState } from "react";
 import { useTabBar } from "./components/tab-bar/hooks";
 
 export function HttpHistoryPage() {
   const [sitemapVisible, setSitemapVisible] = useState(true);
-  const setSelectedCallId = useHttpHistoryStore((state) => state.setSelectedCallId);
-  const setPathFilter = useHttpHistoryStore((state) => state.setPathFilter);
+  const setSelectedCallId = useLogStore((state) => state.setSelectedCallId);
+  const setPathFilter = useFilterStore((state) => state.setPathFilter);
   const { activeTab } = useTabBar();
 
   const handleTreeSelect = (node: TreeNodeData) => {

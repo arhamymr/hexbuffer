@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/context-menu';
 import { Copy, ExternalLink, Plus, Eye, Trash2, Send } from 'lucide-react';
 import type { ApiCall } from '@/types';
-import { useHttpHistoryStore } from '@/stores/log';
+import { useLogStore } from '@/stores/log';
 import { useBruteForceStore } from '@/stores/bruto-force';
 import { invoke } from '@tauri-apps/api/core';
 
@@ -26,7 +26,7 @@ export function LogEntryContextMenu({
   onDelete,
 }: LogEntryContextMenuProps) {
   const navigate = useNavigate();
-  const setSelectedCallId = useHttpHistoryStore((state) => state.setSelectedCallId);
+  const setSelectedCallId = useLogStore((state) => state.setSelectedCallId);
 
   const copyToClipboard = async (text: string | null | undefined) => {
     if (text) {

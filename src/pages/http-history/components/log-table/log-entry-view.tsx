@@ -8,10 +8,11 @@ import { Copy } from 'lucide-react';
 import { Empty, EmptyTitle, EmptyDescription } from "@/components/ui/empty";
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
-import { useHttpHistoryStore } from '@/stores/log';
 import { getHttpLogs } from '@/pages/http-history/api';
-import { filterStateToProxyFilter } from '@/stores/log';
+import { useFilterStore } from '@/stores/filter';
+import { filterStateToProxyFilter } from '@/stores/filter';
 import { useEffect, useState } from 'react';
+import { useLogStore } from '@/stores/log';
 
 function PrettyCurl({ call }: { call: ApiCall }) {
   const copyToClipboard = async (text: string) => {
@@ -106,8 +107,8 @@ function adaptProxyRecordToApiCall(record: any): ApiCall {
 }
 
 export function LogEntryBurpView() {
-  const selectedCallId = useHttpHistoryStore((state) => state.selectedCallId);
-  const filter = useHttpHistoryStore((state) => state.filter);
+  const selectedCallId = useLogStore((state) => state.selectedCallId);
+  const filter = useFilterStore((state) => state.filter);
   const [call, setCall] = useState<ApiCall | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 

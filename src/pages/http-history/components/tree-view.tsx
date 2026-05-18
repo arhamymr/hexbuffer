@@ -4,8 +4,8 @@ import { cn } from "@/lib/utils";
 import { ChevronDown, ChevronRight, Globe, Folder, FileText } from "lucide-react";
 import { useState, useEffect, useCallback } from "react";
 import { getProxyTree, type TreeNode as ApiTreeNode, type TreePath } from '@/pages/http-history/api';
-import { filterStateToProxyFilter } from '@/stores/log';
-import { useHttpHistoryStore } from '@/stores/log';
+import { filterStateToProxyFilter } from '@/stores/filter';
+import { useFilterStore } from '@/stores/filter';
 
 export interface TreeNodeData {
   id: string;
@@ -169,7 +169,7 @@ export function TreeView({
 }: TreeViewProps) {
   const [treeData, setTreeData] = useState<TreeNodeData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const filter = useHttpHistoryStore((s) => s.filter);
+  const filter = useFilterStore((s) => s.filter);
 
   const fetchTree = useCallback(async () => {
     setIsLoading(true);

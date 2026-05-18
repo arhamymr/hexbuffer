@@ -8,8 +8,9 @@ import { listen } from '@tauri-apps/api/event';
 import { useEffect, useRef, useState, useCallback } from "react";
 import type { ProxyRecord, ApiCall } from '@/types';
 import { getHttpLogs, type ProxyFilter } from '@/pages/http-history/api';
-import { filterStateToProxyFilter } from '@/stores/log';
-import { useHttpHistoryStore } from '@/stores/log';
+import { filterStateToProxyFilter } from '@/stores/filter';
+import { useFilterStore } from '@/stores/filter';
+import { useLogStore } from '@/stores/log';
 import { Button } from "@/components/ui/button";
 
 interface TrafficTableProps {
@@ -135,9 +136,9 @@ export function TrafficTable({ targetScope }: TrafficTableProps) {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [newEventsCount, setNewEventsCount] = useState(0);
 
-  const filter = useHttpHistoryStore((s) => s.filter);
-  const sortOrder = useHttpHistoryStore((s) => s.sortOrder);
-  const setSelectedCallId = useHttpHistoryStore((s) => s.setSelectedCallId);
+  const filter = useFilterStore((s) => s.filter);
+  const sortOrder = useLogStore((s) => s.sortOrder);
+  const setSelectedCallId = useLogStore((s) => s.setSelectedCallId);
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingEventRef = useRef(false);
@@ -188,7 +189,7 @@ export function TrafficTable({ targetScope }: TrafficTableProps) {
 
   const toggleSortOrder = useCallback(() => {
     const newOrder = sortOrder === 'asc' ? 'desc' : 'asc';
-    useHttpHistoryStore.getState().setSortOrder(newOrder);
+    useLogStore.getState().setSortOrder(newOrder);
   }, [sortOrder]);
 
   useEffect(() => {

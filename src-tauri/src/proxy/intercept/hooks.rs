@@ -10,5 +10,7 @@ const CAPTIVE_PORTAL_PATTERNS: &[&str] = &[
 ];
 
 pub fn should_bypass(uri: &str) -> bool {
-    CAPTIVE_PORTAL_PATTERNS.iter().any(|pattern| uri.contains(pattern))
+    CAPTIVE_PORTAL_PATTERNS
+        .iter()
+        .any(|pattern| uri.contains(pattern))
 }

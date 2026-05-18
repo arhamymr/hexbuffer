@@ -1,6 +1,7 @@
 'use client';
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Empty, EmptyDescription, EmptyTitle } from "@/components/ui/empty";
 import { useTreeViewData } from '@/pages/http-history/hooks/use-tree-view-data';
 import { TreeNode } from './tree-node';
 import type { TreeViewProps } from './types';
@@ -11,7 +12,7 @@ export function TreeView({
   onSelectEndpoint,
   selectedId,
 }: TreeViewProps) {
-  const { nodes, isLoading, loadError } = useTreeViewData();
+  const { nodes, hasActiveScope, isLoading, loadError } = useTreeViewData();
 
   if (isLoading) {
     return (
@@ -29,6 +30,19 @@ export function TreeView({
           <AlertDescription>{loadError}</AlertDescription>
         </Alert>
       </div>
+    );
+  }
+
+  if (nodes.length === 0) {
+    return (
+      <Empty>
+        <EmptyTitle>{hasActiveScope ? 'No matching sitemap entries' : 'No sitemap entries yet'}</EmptyTitle>
+        <EmptyDescription>
+          {hasActiveScope
+            ? 'No captured hosts match the active scope tab.'
+            : 'Captured HTTP hosts will appear here once traffic is available.'}
+        </EmptyDescription>
+      </Empty>
     );
   }
 

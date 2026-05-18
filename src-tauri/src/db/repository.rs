@@ -1,13 +1,13 @@
-use rusqlite::{params, Connection, Result as SqlResult};
-use std::path::PathBuf;
-use std::sync::Mutex;
 use crate::proxy::state::{
-    ProxyRecord, ProxyRequest, ProxyResponse, ProxyFilter, WebSocketConnectionRecord,
+    ProxyFilter, ProxyRecord, ProxyRequest, ProxyResponse, WebSocketConnectionRecord,
     WebSocketConnectionState, WebSocketFilter, WebSocketMessageDirection, WebSocketMessageRecord,
     WebSocketMessageType,
 };
+use rusqlite::{params, Connection, Result as SqlResult};
 use serde::{Deserialize, Serialize};
 use serde_json;
+use std::path::PathBuf;
+use std::sync::Mutex;
 use uuid::Uuid;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -26,7 +26,9 @@ pub struct Database {
 impl Database {
     pub fn new(path: PathBuf) -> SqlResult<Self> {
         let conn = Connection::open(path)?;
-        Ok(Self { conn: Mutex::new(conn) })
+        Ok(Self {
+            conn: Mutex::new(conn),
+        })
     }
 
     pub fn init(&self) -> SqlResult<()> {
@@ -40,7 +42,9 @@ impl Database {
     pub fn insert_log(&self, record: &ProxyRecord) -> SqlResult<()> {
         let conn = self.conn.lock().unwrap();
         let request_headers = serde_json::to_string(&record.request.headers).unwrap_or_default();
-        let response_headers = record.response.as_ref()
+        let response_headers = record
+            .response
+            .as_ref()
             .map(|r| serde_json::to_string(&r.headers).unwrap_or_default())
             .unwrap_or_default();
 
@@ -86,7 +90,10 @@ impl Database {
 
         if let Some(ref search) = filter.search {
             if !search.is_empty() {
-                conditions.push(format!("(url LIKE '%{}%' OR method LIKE '%{}%')", search, search));
+                conditions.push(format!(
+                    "(url LIKE '%{}%' OR method LIKE '%{}%')",
+                    search, search
+                ));
             }
         }
 
@@ -98,18 +105,14 @@ impl Database {
 
         if let Some(ref methods) = filter.methods {
             if !methods.is_empty() {
-                let method_list: Vec<String> = methods.iter()
-                    .map(|m| format!("'{}'", m))
-                    .collect();
+                let method_list: Vec<String> = methods.iter().map(|m| format!("'{}'", m)).collect();
                 conditions.push(format!("method IN ({})", method_list.join(",")));
             }
         }
 
         if let Some(ref status_codes) = filter.status_codes {
             if !status_codes.is_empty() {
-                let status_list: Vec<String> = status_codes.iter()
-                    .map(|s| s.to_string())
-                    .collect();
+                let status_list: Vec<String> = status_codes.iter().map(|s| s.to_string()).collect();
                 conditions.push(format!("response_status IN ({})", status_list.join(",")));
             }
         }
@@ -152,8 +155,10 @@ impl Database {
 
     pub fn insert_websocket_connection(&self, record: &WebSocketConnectionRecord) -> SqlResult<()> {
         let conn = self.conn.lock().unwrap();
-        let request_headers = serde_json::to_string(&record.handshake_request_headers).unwrap_or_default();
-        let response_headers = serde_json::to_string(&record.handshake_response_headers).unwrap_or_default();
+        let request_headers =
+            serde_json::to_string(&record.handshake_request_headers).unwrap_or_default();
+        let response_headers =
+            serde_json::to_string(&record.handshake_response_headers).unwrap_or_default();
 
         conn.execute(
             r#"INSERT INTO websocket_connections (
@@ -201,7 +206,10 @@ impl Database {
             r#"UPDATE websocket_connections
                SET message_count = message_count + 1, last_activity_at = ?2
                WHERE id = ?1"#,
-            params![record.connection_id.to_string(), record.timestamp.to_rfc3339()],
+            params![
+                record.connection_id.to_string(),
+                record.timestamp.to_rfc3339()
+            ],
         )?;
         Ok(())
     }
@@ -232,7 +240,8 @@ impl Database {
         sql.push_str(" ORDER BY timestamp DESC LIMIT ? OFFSET ?");
 
         let mut stmt = conn.prepare(&sql).map_err(|e| e.to_string())?;
-        let mut all_params: Vec<&dyn rusqlite::ToSql> = params_vec.iter().map(|value| value.as_ref()).collect();
+        let mut all_params: Vec<&dyn rusqlite::ToSql> =
+            params_vec.iter().map(|value| value.as_ref()).collect();
         all_params.push(&per_page as &dyn rusqlite::ToSql);
         all_params.push(&offset as &dyn rusqlite::ToSql);
 
@@ -262,7 +271,10 @@ impl Database {
         })
     }
 
-    pub fn get_websocket_by_id(&self, id: &str) -> Result<Option<WebSocketConnectionRecord>, String> {
+    pub fn get_websocket_by_id(
+        &self,
+        id: &str,
+    ) -> Result<Option<WebSocketConnectionRecord>, String> {
         let conn = self.conn.lock().unwrap();
         let mut stmt = conn
             .prepare("SELECT * FROM websocket_connections WHERE id = ?1 LIMIT 1")
@@ -283,7 +295,9 @@ impl Database {
     ) -> Result<Vec<WebSocketMessageRecord>, String> {
         let conn = self.conn.lock().unwrap();
         let mut stmt = conn
-            .prepare("SELECT * FROM websocket_messages WHERE connection_id = ?1 ORDER BY timestamp ASC")
+            .prepare(
+                "SELECT * FROM websocket_messages WHERE connection_id = ?1 ORDER BY timestamp ASC",
+            )
             .map_err(|e| e.to_string())?;
         let rows = stmt
             .query_map(params![connection_id], row_to_websocket_message_record)
@@ -413,14 +427,15 @@ impl Database {
             }
         }
 
-        sql.push_str(&format!(" ORDER BY timestamp {} LIMIT ? OFFSET ?", sort_order));
+        sql.push_str(&format!(
+            " ORDER BY timestamp {} LIMIT ? OFFSET ?",
+            sort_order
+        ));
 
         let mut stmt = conn.prepare(&sql).map_err(|e| e.to_string())?;
 
-        let mut all_params: Vec<&dyn rusqlite::ToSql> = params_vec
-            .iter()
-            .map(|b| b.as_ref())
-            .collect();
+        let mut all_params: Vec<&dyn rusqlite::ToSql> =
+            params_vec.iter().map(|b| b.as_ref()).collect();
         all_params.push(&per_page as &dyn rusqlite::ToSql);
         all_params.push(&offset as &dyn rusqlite::ToSql);
 
@@ -434,7 +449,10 @@ impl Database {
 
         if let Some(ref search) = filter.search {
             if !search.is_empty() {
-                count_sql.push_str(&format!(" AND (url LIKE '%{}%' OR method LIKE '%{}%')", search, search));
+                count_sql.push_str(&format!(
+                    " AND (url LIKE '%{}%' OR method LIKE '%{}%')",
+                    search, search
+                ));
             }
         }
 
@@ -446,18 +464,14 @@ impl Database {
 
         if let Some(ref methods) = filter.methods {
             if !methods.is_empty() {
-                let method_list: Vec<String> =
-                    methods.iter().map(|m| format!("'{}'", m)).collect();
+                let method_list: Vec<String> = methods.iter().map(|m| format!("'{}'", m)).collect();
                 count_sql.push_str(&format!(" AND method IN ({})", method_list.join(",")));
             }
         }
 
         if let Some(ref status_codes) = filter.status_codes {
             if !status_codes.is_empty() {
-                let status_list: Vec<String> = status_codes
-                    .iter()
-                    .map(|s| s.to_string())
-                    .collect();
+                let status_list: Vec<String> = status_codes.iter().map(|s| s.to_string()).collect();
                 count_sql.push_str(&format!(
                     " AND response_status IN ({})",
                     status_list.join(",")
@@ -565,17 +579,43 @@ impl Database {
             }
         }
 
-        let all_params: Vec<&dyn rusqlite::ToSql> = params_vec
-            .iter()
-            .map(|b| b.as_ref())
-            .collect();
+        if let Some(ref scope) = filter.scope {
+            let scope_clauses: Vec<String> = scope
+                .iter()
+                .filter_map(|pattern| {
+                    let value = pattern.trim();
+                    if value.is_empty() {
+                        return None;
+                    }
+
+                    if let Some(domain) = value.strip_prefix("*.") {
+                        Some(format!(
+                            "(url LIKE '%://{}%' OR url LIKE '%://%.{}%')",
+                            domain, domain
+                        ))
+                    } else {
+                        Some(format!("url LIKE '%://{}%'", value))
+                    }
+                })
+                .collect();
+
+            if !scope_clauses.is_empty() {
+                sql.push_str(" AND (");
+                sql.push_str(&scope_clauses.join(" OR "));
+                sql.push(')');
+            }
+        }
+
+        let all_params: Vec<&dyn rusqlite::ToSql> = params_vec.iter().map(|b| b.as_ref()).collect();
 
         let mut stmt = conn.prepare(&sql).map_err(|e| e.to_string())?;
-        let rows = stmt.query_map(all_params.as_slice(), |row| {
-            let url: String = row.get(0)?;
-            let method: String = row.get(1)?;
-            Ok((url, method))
-        }).map_err(|e| e.to_string())?;
+        let rows = stmt
+            .query_map(all_params.as_slice(), |row| {
+                let url: String = row.get(0)?;
+                let method: String = row.get(1)?;
+                Ok((url, method))
+            })
+            .map_err(|e| e.to_string())?;
 
         #[derive(Default)]
         struct PathInfo {
@@ -583,7 +623,10 @@ impl Database {
             methods: std::collections::HashSet<String>,
         }
 
-        let mut host_paths: std::collections::HashMap<String, std::collections::HashMap<String, PathInfo>> = Default::default();
+        let mut host_paths: std::collections::HashMap<
+            String,
+            std::collections::HashMap<String, PathInfo>,
+        > = Default::default();
 
         for row in rows {
             let (url, method) = row.map_err(|e| e.to_string())?;
@@ -756,7 +799,8 @@ fn row_to_websocket_message_record(row: &rusqlite::Row) -> SqlResult<WebSocketMe
 
     Ok(WebSocketMessageRecord {
         id: Uuid::parse_str(&id).map_err(|_| rusqlite::Error::InvalidQuery)?,
-        connection_id: Uuid::parse_str(&connection_id).map_err(|_| rusqlite::Error::InvalidQuery)?,
+        connection_id: Uuid::parse_str(&connection_id)
+            .map_err(|_| rusqlite::Error::InvalidQuery)?,
         timestamp: chrono::DateTime::parse_from_rfc3339(&timestamp)
             .map_err(|_| rusqlite::Error::InvalidQuery)?
             .with_timezone(&chrono::Utc),
@@ -790,7 +834,7 @@ where
     let mut records = Vec::new();
 
     for row in rows {
-      match row {
+        match row {
             Ok(record) => records.push(record),
             Err(err) => eprintln!("[db] skipping malformed websocket_connections row: {}", err),
         }

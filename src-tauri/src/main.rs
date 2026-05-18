@@ -2,11 +2,84 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use apprecon::{
-    HistoryBridge, PaginatedResponse, ProxyLogSummary, ProxyRecord, ProxyState, ProxyFilter, run, ProxyConfig,
-    WebSocketConnectionDetail, WebSocketConnectionSummary, WebSocketFilter, export_ca_cert_pem, TreeNode,
+    export_ca_cert_pem, run, HistoryBridge, PaginatedResponse, ProxyConfig, ProxyFilter,
+    ProxyLogSummary, ProxyRecord, ProxyState, TreeNode, WebSocketConnectionDetail,
+    WebSocketConnectionSummary, WebSocketFilter,
 };
+use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::sync::Mutex;
-use tauri::{State, AppHandle, Manager};
+use std::time::Instant;
+use tauri::{AppHandle, Manager, State};
+
+#[derive(Debug, Deserialize)]
+struct RepeaterRequest {
+    method: String,
+    url: String,
+    headers: HashMap<String, String>,
+    body: String,
+}
+
+#[derive(Debug, Serialize)]
+struct RepeaterResponse {
+    status: u16,
+    status_text: String,
+    headers: HashMap<String, String>,
+    body: String,
+    time_ms: u128,
+    final_url: String,
+}
+
+#[tauri::command]
+async fn send_repeater_request(request: RepeaterRequest) -> Result<RepeaterResponse, String> {
+    let method = reqwest::Method::from_bytes(request.method.as_bytes())
+        .map_err(|error| format!("Invalid HTTP method: {}", error))?;
+
+    let client = reqwest::Client::builder()
+        .redirect(reqwest::redirect::Policy::limited(10))
+        .build()
+        .map_err(|error| format!("Failed to build HTTP client: {}", error))?;
+
+    let mut builder = client.request(method, &request.url);
+    for (name, value) in request.headers {
+        builder = builder.header(name, value);
+    }
+
+    if !request.body.is_empty() {
+        builder = builder.body(request.body);
+    }
+
+    let started_at = Instant::now();
+    let response = builder
+        .send()
+        .await
+        .map_err(|error| format!("Failed to send request: {}", error))?;
+    let status = response.status();
+    let final_url = response.url().to_string();
+    let headers = response
+        .headers()
+        .iter()
+        .map(|(name, value)| {
+            (
+                name.to_string(),
+                value.to_str().unwrap_or_default().to_string(),
+            )
+        })
+        .collect();
+    let body = response
+        .text()
+        .await
+        .map_err(|error| format!("Failed to read response body: {}", error))?;
+
+    Ok(RepeaterResponse {
+        status: status.as_u16(),
+        status_text: status.canonical_reason().unwrap_or_default().to_string(),
+        headers,
+        body,
+        time_ms: started_at.elapsed().as_millis(),
+        final_url,
+    })
+}
 
 #[tauri::command]
 async fn start_proxy(app: AppHandle, port: u16, tls_port: u16) -> Result<String, String> {
@@ -16,7 +89,12 @@ async fn start_proxy(app: AppHandle, port: u16, tls_port: u16) -> Result<String,
         .append(true)
         .open("/tmp/apprecon.log")
         .map_err(|e| e.to_string())?;
-    writeln!(file, "start_proxy called: port={}, tls_port={}", port, tls_port).map_err(|e| e.to_string())?;
+    writeln!(
+        file,
+        "start_proxy called: port={}, tls_port={}",
+        port, tls_port
+    )
+    .map_err(|e| e.to_string())?;
 
     let handle = app.clone();
     std::thread::spawn(move || {
@@ -26,10 +104,20 @@ async fn start_proxy(app: AppHandle, port: u16, tls_port: u16) -> Result<String,
             .open("/tmp/apprecon.log")
             .unwrap();
         writeln!(file, "thread spawned, calling run()").unwrap();
-        run(ProxyConfig { port, reuse: true, tls_port }, handle);
+        run(
+            ProxyConfig {
+                port,
+                reuse: true,
+                tls_port,
+            },
+            handle,
+        );
         writeln!(file, "run() returned").unwrap();
     });
-    Ok(format!("Proxy starting on port {} (HTTP) and {} (HTTPS MITM)", port, tls_port))
+    Ok(format!(
+        "Proxy starting on port {} (HTTP) and {} (HTTPS MITM)",
+        port, tls_port
+    ))
 }
 
 #[tauri::command]
@@ -38,7 +126,10 @@ async fn clear_proxy_all(history: State<'_, HistoryBridge>) -> Result<(), String
 }
 
 #[tauri::command]
-async fn delete_proxy_by_id(history: State<'_, HistoryBridge>, log_id: String) -> Result<(), String> {
+async fn delete_proxy_by_id(
+    history: State<'_, HistoryBridge>,
+    log_id: String,
+) -> Result<(), String> {
     history.delete_by_id(&log_id)
 }
 
@@ -48,7 +139,10 @@ async fn get_proxy_all(history: State<'_, HistoryBridge>) -> Result<Vec<ProxyRec
 }
 
 #[tauri::command]
-async fn get_proxy_filtered(history: State<'_, HistoryBridge>, filter: ProxyFilter) -> Result<Vec<ProxyRecord>, String> {
+async fn get_proxy_filtered(
+    history: State<'_, HistoryBridge>,
+    filter: ProxyFilter,
+) -> Result<Vec<ProxyRecord>, String> {
     history.get_filtered(filter)
 }
 
@@ -64,7 +158,10 @@ async fn get_proxy_paginated(
 }
 
 #[tauri::command]
-async fn get_proxy_detail(history: State<'_, HistoryBridge>, log_id: String) -> Result<ProxyRecord, String> {
+async fn get_proxy_detail(
+    history: State<'_, HistoryBridge>,
+    log_id: String,
+) -> Result<ProxyRecord, String> {
     history
         .get_by_id(&log_id)?
         .ok_or_else(|| format!("Log not found: {}", log_id))
@@ -123,10 +220,13 @@ fn main() {
         let _ = std::fs::write("/tmp/apprecon_panic.log", msg);
     }));
 
-tauri::Builder::default()
+    tauri::Builder::default()
         .setup(|app| {
             eprintln!("[main] Initializing database...");
-            let app_dir = app.path().app_data_dir().expect("Failed to get app data dir");
+            let app_dir = app
+                .path()
+                .app_data_dir()
+                .expect("Failed to get app data dir");
             std::fs::create_dir_all(&app_dir).expect("Failed to create app data dir");
             let db_path = app_dir.join("apprecon.db");
             eprintln!("[main] Opening database at {:?}", db_path);
@@ -141,7 +241,14 @@ tauri::Builder::default()
             let handle = app.handle().clone();
             std::thread::spawn(move || {
                 eprintln!("[main] Inside new thread, calling run()...");
-                run(ProxyConfig { port: 8888, reuse: false, tls_port: 8889 }, handle);
+                run(
+                    ProxyConfig {
+                        port: 8888,
+                        reuse: false,
+                        tls_port: 8889,
+                    },
+                    handle,
+                );
             });
             Ok(())
         })
@@ -158,7 +265,8 @@ tauri::Builder::default()
             get_proxy_tree,
             get_websocket_paginated,
             get_websocket_detail,
-            clear_websocket_all
+            clear_websocket_all,
+            send_repeater_request
         ])
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())

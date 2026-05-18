@@ -10,9 +10,11 @@ import {
 } from '@/components/ui/context-menu';
 import { Copy, ExternalLink, Plus, Eye, Trash2, Send } from 'lucide-react';
 import type { ApiCall } from '@/types';
-import { deleteHistoryLog } from '@/pages/http-history/services/history-service';
+import { deleteHistoryLog, fetchHistoryDetail } from '@/pages/http-history/services/history-service';
 import { useBruteForceStore } from '@/stores/bruto-force';
 import { useHistoryQuery } from '@/pages/http-history/hooks/use-history-query';
+import { adaptProxyRecordToApiCall } from '@/pages/http-history/hooks/use-history-table';
+import { useRepeaterStore } from '@/stores/repeater';
 
 interface LogEntryContextMenuProps {
   call: ApiCall;
@@ -82,15 +84,24 @@ export function LogEntryContextMenu({
     navigate('/brute-force');
   };
 
-  const handleOpenInRepeater = () => {
-    const protocol = call.url.includes(':443') ? 'https' : 'http';
-    const url = `${protocol}://${call.host}${call.path}`;
-    const headersString = Object.entries(call.headers)
-      .map(([k, v]) => `${k}: ${v}`)
-      .join('\n');
+  const handleOpenInRepeater = async () => {
+    try {
+      const detail = await fetchHistoryDetail(call.id);
+      const request = adaptProxyRecordToApiCall(detail);
+      const headersString = Object.entries(request.headers)
+        .map(([key, value]) => `${key}: ${value}`)
+        .join('\n');
 
-    console.log('Open in Repeater:', { method: call.method, url, headers: headersString });
-    navigate('/repeater');
+      useRepeaterStore.getState().addRequestTab({
+        method: request.method,
+        url: request.url,
+        headers: headersString,
+        body: request.request_body || '',
+      });
+      navigate('/repeater');
+    } catch (error) {
+      console.error('Failed to open request in Repeater:', error);
+    }
   };
 
   const handleDelete = async () => {
@@ -133,7 +144,7 @@ export function LogEntryContextMenu({
           <ExternalLink className="mr-2 h-4 w-4" /> Open in Brute Force
         </ContextMenuItem>
         <ContextMenuItem onClick={handleOpenInRepeater}>
-          <Send className="mr-2 h-4 w-4" /> Open in Repeater
+          <Send className="mr-2 h-4 w-4" /> Send to Repeater
         </ContextMenuItem>
         <ContextMenuSeparator />
         <ContextMenuItem onClick={handleInspect}>

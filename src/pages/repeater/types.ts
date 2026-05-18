@@ -35,9 +35,26 @@ export const HTTP_METHODS: HttpMethod[] = [
   'OPTIONS',
 ];
 
+function createRepeaterTabId(): string {
+  return `repeater-tab-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+}
+
+function buildTabName(request: RepeaterRequest, fallback: string): string {
+  if (!request.url) {
+    return fallback;
+  }
+
+  try {
+    const url = new URL(request.url);
+    return `${request.method} ${url.host}${url.pathname}`;
+  } catch {
+    return `${request.method} ${request.url}`;
+  }
+}
+
 export function createDefaultRepeaterTab(index: number): RepeaterTab {
   return {
-    id: `repeater-tab-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+    id: createRepeaterTabId(),
     name: `Tab ${index}`,
     request: {
       method: 'GET',
@@ -45,6 +62,17 @@ export function createDefaultRepeaterTab(index: number): RepeaterTab {
       headers: 'Content-Type: application/json',
       body: '',
     },
+    response: null,
+    isLoading: false,
+    error: null,
+  };
+}
+
+export function createRepeaterTabFromRequest(request: RepeaterRequest): RepeaterTab {
+  return {
+    id: createRepeaterTabId(),
+    name: buildTabName(request, 'Imported request'),
+    request,
     response: null,
     isLoading: false,
     error: null,

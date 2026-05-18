@@ -1,6 +1,8 @@
 import { useMemo } from 'react';
+import { matchesScope } from '@/lib/utils';
 import type { TreePath } from '@/pages/http-history/api';
 import { useHistoryTree } from '@/pages/http-history/hooks/use-history-tree';
+import { useHistoryQuery } from '@/pages/http-history/hooks/use-history-query';
 import type { TreeNodeData } from '@/pages/http-history/components/tree-view/types';
 
 function sortChildren(node: TreeNodeData): void {
@@ -70,14 +72,19 @@ function buildTreeNodeData(host: string, paths: TreePath[]): TreeNodeData {
 
 export function useTreeViewData() {
   const { treeData, isLoading, loadError } = useHistoryTree();
+  const { activeScope } = useHistoryQuery();
 
   const nodes = useMemo(
-    () => treeData.map((node) => buildTreeNodeData(node.host, node.paths)),
-    [treeData]
+    () =>
+      treeData
+        .filter((node) => !activeScope || matchesScope(node.host, activeScope))
+        .map((node) => buildTreeNodeData(node.host, node.paths)),
+    [activeScope, treeData]
   );
 
   return {
     nodes,
+    hasActiveScope: Boolean(activeScope && activeScope.length > 0),
     isLoading,
     loadError,
   };

@@ -1,52 +1,13 @@
 import * as React from 'react';
+import { useRepeaterStore } from '@/stores/repeater';
+import { sendRepeaterRequest } from '../api';
 import {
-  createDefaultRepeaterTab,
-  parseHeaders,
   type HttpMethod,
-  type RepeaterResponse,
   type RepeaterTab,
 } from '../types';
 
-function buildMockResponse(tab: RepeaterTab): RepeaterResponse {
-  return {
-    status: 200,
-    status_text: 'OK',
-    headers: {
-      'content-type': 'application/json',
-      'x-apprecon-mode': 'mock',
-    },
-    body: JSON.stringify(
-      {
-        message: 'Repeater transport is not wired yet.',
-        request: {
-          method: tab.request.method,
-          url: tab.request.url,
-          headers: parseHeaders(tab.request.headers),
-          body: tab.request.body,
-        },
-      },
-      null,
-      2
-    ),
-    time_ms: 0,
-    final_url: tab.request.url,
-  };
-}
-
 export function useRepeaterPage() {
-  const [state, setState] = React.useState(() => {
-    const initialTab = createDefaultRepeaterTab(1);
-
-    return {
-      tabs: [initialTab],
-      activeTabId: initialTab.id,
-    };
-  });
-
-  const { tabs, activeTabId } = state;
-  const setActiveTabId = React.useCallback((id: string) => {
-    setState((currentState) => ({ ...currentState, activeTabId: id }));
-  }, []);
+  const { tabs, activeTabId, setActiveTabId, updateTab, closeTab } = useRepeaterStore();
 
   const activeTab = React.useMemo(
     () => tabs.find((tab) => tab.id === activeTabId) ?? tabs[0] ?? null,
@@ -54,12 +15,12 @@ export function useRepeaterPage() {
   );
 
   const updateActiveTab = React.useCallback((updater: (tab: RepeaterTab) => RepeaterTab) => {
-    setState((currentState) => ({
-      ...currentState,
-      tabs: currentState.tabs.map((tab) => (tab.id === activeTabId ? updater(tab) : tab)),
-    }));
-  }, [activeTabId]);
+    if (!activeTabId) {
+      return;
+    }
 
+    updateTab(activeTabId, updater);
+  }, [activeTabId, updateTab]);
   const updateMethod = React.useCallback((method: string) => {
     updateActiveTab((tab) => ({
       ...tab,
@@ -100,7 +61,7 @@ export function useRepeaterPage() {
     }));
   }, [updateActiveTab]);
 
-  const sendRequest = React.useCallback(() => {
+  const sendRequest = React.useCallback(async () => {
     if (!activeTab) {
       return;
     }
@@ -111,26 +72,27 @@ export function useRepeaterPage() {
       error: null,
     }));
 
-    window.setTimeout(() => {
-      setState((currentState) => ({
-        ...currentState,
-        tabs: currentState.tabs.map((tab) =>
-          tab.id === activeTab.id
-            ? {
-                ...tab,
-                isLoading: false,
-                response: buildMockResponse(tab),
-              }
-            : tab
-        ),
+    try {
+      const response = await sendRepeaterRequest(activeTab.request);
+      updateTab(activeTab.id, (tab) => ({
+        ...tab,
+        isLoading: false,
+        response,
       }));
-    }, 250);
-  }, [activeTab, updateActiveTab]);
+    } catch (error) {
+      updateTab(activeTab.id, (tab) => ({
+        ...tab,
+        isLoading: false,
+        error: error instanceof Error ? error.message : 'Failed to send request.',
+      }));
+    }
+  }, [activeTab, updateActiveTab, updateTab]);
 
   return {
     tabs: tabs.map((tab) => ({ id: tab.id, name: tab.name })),
     activeTabId,
     setActiveTabId,
+    closeTab,
     activeTab,
     updateMethod,
     updateUrl,

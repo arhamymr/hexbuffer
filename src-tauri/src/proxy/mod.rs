@@ -1,17 +1,19 @@
+pub mod https;
 pub mod intercept;
 pub mod lifecycle;
 pub mod logger;
 pub mod state;
 pub mod utils;
-pub mod https;
 
-pub use state::{ProxyState, ProxyRecord, ProxyFilter, ProxyRequest, ProxyResponse, PausedRequest, InterceptMode};
-pub use utils::ensure_port_free;
 pub use https::cert::export_ca_cert_pem;
+pub use state::{
+    InterceptMode, PausedRequest, ProxyFilter, ProxyRecord, ProxyRequest, ProxyResponse, ProxyState,
+};
+pub use utils::ensure_port_free;
 
-use tauri::AppHandle;
-use hudsucker::{Proxy, rustls::crypto::aws_lc_rs};
+use hudsucker::{rustls::crypto::aws_lc_rs, Proxy};
 use std::net::SocketAddr;
+use tauri::AppHandle;
 
 use crate::proxy::https::cert::ensure_ca_exists;
 
@@ -23,7 +25,11 @@ pub struct ProxyConfig {
 
 impl Default for ProxyConfig {
     fn default() -> Self {
-        Self { port: 8888, reuse: false, tls_port: 8889 }
+        Self {
+            port: 8888,
+            reuse: false,
+            tls_port: 8889,
+        }
     }
 }
 
@@ -39,7 +45,7 @@ pub fn run(config: ProxyConfig, app_handle: AppHandle) {
 
     // Create AppHandler instance
     let handler = lifecycle::AppHandler::new(app_handle.clone());
-    
+
     // Create CA authority from existing rcgen CA
     let authority = match https::cert::create_hudsucker_authority() {
         Ok(auth) => auth,
@@ -48,7 +54,7 @@ pub fn run(config: ProxyConfig, app_handle: AppHandle) {
             return;
         }
     };
-    
+
     // Build proxy with Hudsucker
     let proxy = match Proxy::builder()
         .with_addr(SocketAddr::from(([0, 0, 0, 0], config.port)))
@@ -63,9 +69,12 @@ pub fn run(config: ProxyConfig, app_handle: AppHandle) {
             return;
         }
     };
-    
-    eprintln!("[proxy] Proxy listening on port {} (HTTP and HTTPS MITM)", config.port);
-    
+
+    eprintln!(
+        "[proxy] Proxy listening on port {} (HTTP and HTTPS MITM)",
+        config.port
+    );
+
     // Start proxy with tokio runtime (blocking)
     let runtime = match tokio::runtime::Runtime::new() {
         Ok(rt) => rt,
@@ -74,7 +83,7 @@ pub fn run(config: ProxyConfig, app_handle: AppHandle) {
             return;
         }
     };
-    
+
     runtime.block_on(async {
         if let Err(e) = proxy.start().await {
             eprintln!("[proxy] FATAL: Proxy error: {}", e);

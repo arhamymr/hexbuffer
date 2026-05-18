@@ -220,7 +220,9 @@ impl ProxyState {
     }
 
     pub fn get_paused_request(&self, id: &Uuid) -> Option<PausedRequest> {
-        self.0.lock().unwrap()
+        self.0
+            .lock()
+            .unwrap()
             .paused_requests
             .iter()
             .find(|r| r.id == *id)
@@ -229,7 +231,11 @@ impl ProxyState {
 
     pub fn remove_paused_request(&self, id: &Uuid) -> Option<PausedRequest> {
         let mut inner = self.0.lock().unwrap();
-        inner.paused_requests.iter().position(|r| r.id == *id).map(|pos| inner.paused_requests.remove(pos))
+        inner
+            .paused_requests
+            .iter()
+            .position(|r| r.id == *id)
+            .map(|pos| inner.paused_requests.remove(pos))
     }
 
     pub fn get_all_paused(&self) -> Vec<PausedRequest> {
@@ -238,9 +244,19 @@ impl ProxyState {
 
     pub fn get_records_filtered(&self, filter: &ProxyFilter) -> Vec<ProxyRecord> {
         let inner = self.0.lock().unwrap();
-        inner.records.iter()
+        inner
+            .records
+            .iter()
             .filter(|record| {
-                let host = record.request.uri.split("://").nth(1).unwrap_or("").split('/').next().unwrap_or("");
+                let host = record
+                    .request
+                    .uri
+                    .split("://")
+                    .nth(1)
+                    .unwrap_or("")
+                    .split('/')
+                    .next()
+                    .unwrap_or("");
                 if !filter.host_matches_scope(host) {
                     return false;
                 }
@@ -262,7 +278,13 @@ impl ProxyState {
                         let search_lower = search.to_lowercase();
                         let uri_lower = record.request.uri.to_lowercase();
                         let host_lower = host.to_lowercase();
-                        let path = record.request.uri.split('/').skip(3).collect::<Vec<_>>().join("/");
+                        let path = record
+                            .request
+                            .uri
+                            .split('/')
+                            .skip(3)
+                            .collect::<Vec<_>>()
+                            .join("/");
                         let path_lower = path.to_lowercase();
 
                         if !uri_lower.contains(&search_lower)
@@ -302,7 +324,11 @@ impl ProxyState {
 
     pub fn delete_record(&self, id: &Uuid) -> Option<ProxyRecord> {
         let mut inner = self.0.lock().unwrap();
-        inner.records.iter().position(|r| r.id == *id).map(|pos| inner.records.remove(pos))
+        inner
+            .records
+            .iter()
+            .position(|r| r.id == *id)
+            .map(|pos| inner.records.remove(pos))
     }
 }
 

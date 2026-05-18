@@ -1,8 +1,10 @@
-use rcgen::{CertificateParams, KeyPair, KeyUsagePurpose, IsCa, BasicConstraints, CertifiedIssuer, Issuer};
+use hudsucker::certificate_authority::RcgenAuthority;
+use rcgen::{
+    BasicConstraints, CertificateParams, CertifiedIssuer, IsCa, Issuer, KeyPair, KeyUsagePurpose,
+};
 use std::fs;
 use std::path::PathBuf;
 use std::sync::OnceLock;
-use hudsucker::certificate_authority::RcgenAuthority;
 
 #[derive(Debug)]
 pub struct CaCerts {
@@ -34,7 +36,11 @@ fn load_or_generate_ca() -> Result<CaCerts, Box<dyn std::error::Error>> {
     let key_path = get_ca_key_path();
 
     if cert_path.exists() && key_path.exists() {
-        println!("[https/cert] Loading existing CA from {} and {}", cert_path.display(), key_path.display());
+        println!(
+            "[https/cert] Loading existing CA from {} and {}",
+            cert_path.display(),
+            key_path.display()
+        );
         let cert_pem = fs::read_to_string(&cert_path)?;
         let key_pem = fs::read_to_string(&key_path)?;
 
@@ -42,17 +48,28 @@ fn load_or_generate_ca() -> Result<CaCerts, Box<dyn std::error::Error>> {
         return Ok(CaCerts { cert_pem, key_pem });
     }
 
-    println!("[https/cert] CA not found, generating new CA at {} and {}", cert_path.display(), key_path.display());
+    println!(
+        "[https/cert] CA not found, generating new CA at {} and {}",
+        cert_path.display(),
+        key_path.display()
+    );
     fs::create_dir_all(get_ca_dir())?;
     generate_ca(&cert_path, &key_path)
 }
 
-fn generate_ca(cert_path: &PathBuf, key_path: &PathBuf) -> Result<CaCerts, Box<dyn std::error::Error>> {
+fn generate_ca(
+    cert_path: &PathBuf,
+    key_path: &PathBuf,
+) -> Result<CaCerts, Box<dyn std::error::Error>> {
     let mut params = CertificateParams::default();
     params.is_ca = IsCa::Ca(BasicConstraints::Unconstrained);
     params.key_usages = vec![KeyUsagePurpose::KeyCertSign, KeyUsagePurpose::CrlSign];
-    params.distinguished_name.push(rcgen::DnType::OrganizationName, "Apprecon Security Tools");
-    params.distinguished_name.push(rcgen::DnType::CommonName, "Apprecon Security Tools Root CA");
+    params
+        .distinguished_name
+        .push(rcgen::DnType::OrganizationName, "Apprecon Security Tools");
+    params
+        .distinguished_name
+        .push(rcgen::DnType::CommonName, "Apprecon Security Tools Root CA");
 
     let key_pair = KeyPair::generate()?;
     let key_pem = key_pair.serialize_pem();
@@ -79,11 +96,15 @@ pub fn get_ca_cert_pem() -> Result<String, Box<dyn std::error::Error>> {
 pub fn create_hudsucker_authority() -> Result<RcgenAuthority, Box<dyn std::error::Error>> {
     let ca_cert_pem = fs::read_to_string(get_ca_cert_path())?;
     let ca_key_pem = fs::read_to_string(get_ca_key_path())?;
-    
+
     let ca_key_pair = KeyPair::from_pem(&ca_key_pem)?;
     let issuer = Issuer::from_ca_cert_pem(&ca_cert_pem, ca_key_pair)?;
-    
-    Ok(RcgenAuthority::new(issuer, 1000, hudsucker::rustls::crypto::aws_lc_rs::default_provider()))
+
+    Ok(RcgenAuthority::new(
+        issuer,
+        1000,
+        hudsucker::rustls::crypto::aws_lc_rs::default_provider(),
+    ))
 }
 
 pub fn regenerate_ca() -> Result<(), Box<dyn std::error::Error>> {

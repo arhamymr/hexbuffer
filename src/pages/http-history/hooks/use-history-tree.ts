@@ -11,6 +11,7 @@ export function useHistoryTree() {
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
 
+  console.log(query, "query")
   const fetchTree = useCallback(async () => {
     setIsLoading(true);
 

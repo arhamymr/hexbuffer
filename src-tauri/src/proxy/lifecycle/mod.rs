@@ -76,25 +76,26 @@ impl HttpHandler for AppHandler {
         http_ctx: &HttpContext,
         req: Request<Body>,
     ) -> RequestOrResponse {
-        use std::sync::Mutex;
-        use tauri::Manager;
         use crate::proxy::intercept;
         use crate::proxy::state::{InterceptMode, PausedRequest, ProxyState};
-        
+        use std::sync::Mutex;
+        use tauri::Manager;
+
         let mut ctx = Ctx::new(self.app_handle.clone());
-        
+
         ctx.client_addr = http_ctx.client_addr.to_string();
         ctx.server_addr = req.uri().to_string();
         ctx.req_method = req.method().to_string();
         ctx.req_uri = req.uri().to_string();
         ctx.req_http_version = format!("{:?}", req.version());
-        
+
         for (name, value) in req.headers().iter() {
             if let Ok(v) = value.to_str() {
-                ctx.req_headers.insert(name.as_str().to_string(), v.to_string());
+                ctx.req_headers
+                    .insert(name.as_str().to_string(), v.to_string());
             }
         }
-        
+
         let (parts, body) = req.into_parts();
         let body_bytes = match http_body_util::BodyExt::collect(body).await {
             Ok(collected) => collected.to_bytes(),
@@ -104,15 +105,15 @@ impl HttpHandler for AppHandler {
             }
         };
         ctx.req_body = body_bytes.to_vec();
-        
+
         if !intercept::should_bypass(&ctx.req_uri) {
             let state = self.app_handle.state::<Mutex<ProxyState>>();
             let mode = state.lock().unwrap().get_mode();
-            
+
             if mode == InterceptMode::Enabled {
                 let paused_id = ctx.transaction_id;
                 ctx.paused_id = Some(paused_id);
-                
+
                 let paused_req = PausedRequest {
                     id: paused_id,
                     timestamp: chrono::Utc::now(),
@@ -127,23 +128,28 @@ impl HttpHandler for AppHandler {
                     },
                     response: None,
                 };
-                
+
                 state.lock().unwrap().add_paused_request(paused_req);
-                
+
                 loop {
                     tokio::time::sleep(Duration::from_millis(100)).await;
-                    if state.lock().unwrap().get_paused_request(&paused_id).is_none() {
+                    if state
+                        .lock()
+                        .unwrap()
+                        .get_paused_request(&paused_id)
+                        .is_none()
+                    {
                         break;
                     }
                 }
             }
         }
-        
+
         self.ctx = Some(ctx);
-        
+
         let mut req = Request::from_parts(parts, Body::from(body_bytes));
         req.headers_mut().insert("x-rusxy", "1".parse().unwrap());
-        
+
         RequestOrResponse::Request(req)
     }
 
@@ -159,17 +165,22 @@ impl HttpHandler for AppHandler {
                 return res;
             }
         };
-        
+
         ctx.res_status_code = res.status().as_u16();
-        ctx.res_status_text = res.status().canonical_reason().unwrap_or("Unknown").to_string();
+        ctx.res_status_text = res
+            .status()
+            .canonical_reason()
+            .unwrap_or("Unknown")
+            .to_string();
         ctx.res_http_version = format!("{:?}", res.version());
-        
+
         for (name, value) in res.headers().iter() {
             if let Ok(v) = value.to_str() {
-                ctx.res_headers.insert(name.as_str().to_string(), v.to_string());
+                ctx.res_headers
+                    .insert(name.as_str().to_string(), v.to_string());
             }
         }
-        
+
         let (parts, body) = res.into_parts();
         let body_bytes = match http_body_util::BodyExt::collect(body).await {
             Ok(collected) => collected.to_bytes(),
@@ -179,10 +190,12 @@ impl HttpHandler for AppHandler {
             }
         };
         ctx.res_body = body_bytes.to_vec();
-        
-        let is_gzip = ctx.res_headers.iter()
+
+        let is_gzip = ctx
+            .res_headers
+            .iter()
             .any(|(k, v)| k.to_lowercase() == "content-encoding" && v.to_lowercase() == "gzip");
-        
+
         if is_gzip {
             use flate2::read::GzDecoder;
             use std::io::Read;
@@ -190,16 +203,22 @@ impl HttpHandler for AppHandler {
             let mut decoded = Vec::new();
             if decoder.read_to_end(&mut decoded).is_ok() {
                 ctx.res_body = decoded;
-                eprintln!("[lifecycle] gzip decoded body for txn_id={}", ctx.transaction_id);
+                eprintln!(
+                    "[lifecycle] gzip decoded body for txn_id={}",
+                    ctx.transaction_id
+                );
             } else {
-                eprintln!("[lifecycle] ERROR gzip decode failed for txn_id={}", ctx.transaction_id);
+                eprintln!(
+                    "[lifecycle] ERROR gzip decode failed for txn_id={}",
+                    ctx.transaction_id
+                );
             }
         }
-        
+
         if ctx.req_method != "CONNECT" {
             save_and_emit(&ctx, &self.app_handle);
         }
-        
+
         Response::from_parts(parts, Body::from(body_bytes))
     }
 }

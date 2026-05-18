@@ -96,6 +96,7 @@ export function TrafficTable() {
     setSelectedCallId,
     removeCallLocally,
   } = useHistoryTable();
+  const totalPages = Math.max(1, Math.ceil(pagination.total / pagination.perPage));
 
   if (loadError) {
     return (
@@ -189,13 +190,23 @@ export function TrafficTable() {
           ))}
         </tbody>
       </table>
-      {pagination.hasMore && (
-        <div className="flex justify-center py-4 border-t">
-          <Button variant="outline" onClick={loadMore} disabled={isLoadingMore}>
-            {isLoadingMore ? "Loading..." : "Load More"}
-          </Button>
+      <div className="flex items-center justify-between gap-3 px-3 py-4 border-t">
+        <div className="flex items-center gap-3 text-xs text-muted-foreground">
+          <span>
+            Showing {calls.length} of {pagination.total} request{pagination.total === 1 ? '' : 's'}
+          </span>
+          <span>
+            {pagination.page}/{totalPages} page
+          </span>
         </div>
-      )}
+        <Button
+          variant="outline"
+          onClick={loadMore}
+          disabled={!pagination.hasMore || isLoadingMore}
+        >
+          {isLoadingMore ? "Loading..." : "Load More"}
+        </Button>
+      </div>
     </div>
   );
 }

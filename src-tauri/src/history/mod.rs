@@ -2,7 +2,10 @@ use std::path::PathBuf;
 
 use crate::{
     db::repository::{Database, PaginatedResponse, TreeNode},
-    proxy::state::{ProxyFilter, ProxyRecord, WebSocketConnectionRecord, WebSocketFilter, WebSocketMessageRecord},
+    proxy::state::{
+        ProxyFilter, ProxyRecord, WebSocketConnectionRecord, WebSocketFilter,
+        WebSocketMessageRecord,
+    },
 };
 use serde::{Deserialize, Serialize};
 
@@ -90,10 +93,9 @@ impl HistoryBridge {
         let sort_order = self.normalize_sort_order(sort_order.as_deref());
 
         let result = match filter {
-            Some(filter) if self.has_active_filters(&filter) => {
-                self.db
-                    .get_filtered_paginated(&filter, page, per_page, sort_order)
-            }
+            Some(filter) if self.has_active_filters(&filter) => self
+                .db
+                .get_filtered_paginated(&filter, page, per_page, sort_order),
             _ => self.db.get_paginated(page, per_page, sort_order),
         }?;
 
@@ -111,12 +113,19 @@ impl HistoryBridge {
         self.db.get_tree(&filter)
     }
 
-    pub fn insert_websocket_connection(&self, record: &WebSocketConnectionRecord) -> Result<(), String> {
-        self.db.insert_websocket_connection(record).map_err(|e| e.to_string())
+    pub fn insert_websocket_connection(
+        &self,
+        record: &WebSocketConnectionRecord,
+    ) -> Result<(), String> {
+        self.db
+            .insert_websocket_connection(record)
+            .map_err(|e| e.to_string())
     }
 
     pub fn insert_websocket_message(&self, record: &WebSocketMessageRecord) -> Result<(), String> {
-        self.db.insert_websocket_message(record).map_err(|e| e.to_string())
+        self.db
+            .insert_websocket_message(record)
+            .map_err(|e| e.to_string())
     }
 
     pub fn clear_websocket_all(&self) -> Result<(), String> {
@@ -131,7 +140,9 @@ impl HistoryBridge {
     ) -> Result<PaginatedResponse<WebSocketConnectionSummary>, String> {
         let filter = filter.map(|value| self.normalize_websocket_filter(value));
 
-        let result = self.db.get_websocket_paginated(filter.as_ref(), page, per_page)?;
+        let result = self
+            .db
+            .get_websocket_paginated(filter.as_ref(), page, per_page)?;
 
         Ok(PaginatedResponse {
             data: result
@@ -146,13 +157,18 @@ impl HistoryBridge {
         })
     }
 
-    pub fn get_websocket_detail(&self, connection_id: &str) -> Result<Option<WebSocketConnectionDetail>, String> {
+    pub fn get_websocket_detail(
+        &self,
+        connection_id: &str,
+    ) -> Result<Option<WebSocketConnectionDetail>, String> {
         let connection = match self.db.get_websocket_by_id(connection_id)? {
             Some(connection) => connection,
             None => return Ok(None),
         };
 
-        let messages = self.db.get_websocket_messages_by_connection_id(connection_id)?;
+        let messages = self
+            .db
+            .get_websocket_messages_by_connection_id(connection_id)?;
 
         Ok(Some(WebSocketConnectionDetail {
             connection,
@@ -238,7 +254,10 @@ impl From<ProxyRecord> for ProxyLogSummary {
             .map(|response| response.body.len())
             .unwrap_or(0);
 
-        let response_status = record.response.as_ref().map(|response| response.status_code);
+        let response_status = record
+            .response
+            .as_ref()
+            .map(|response| response.status_code);
         let response_status_text = record
             .response
             .as_ref()

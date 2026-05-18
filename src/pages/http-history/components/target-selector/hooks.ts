@@ -5,6 +5,7 @@ import type { Target } from '@/types';
 export function useTargetSelectorDialog() {
   const [open, setOpen] = useState(false);
   const [showCreateNew, setShowCreateNew] = useState(false);
+  const [editingTarget, setEditingTarget] = useState<Target | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const { targets, updateTarget } = useTargetStore();
 
@@ -17,11 +18,27 @@ export function useTargetSelectorDialog() {
   };
 
   const handleCreateNew = () => {
+    setEditingTarget(null);
+    setShowCreateNew(true);
+  };
+
+  const handleEditTarget = (target: Target) => {
+    setEditingTarget(target);
     setShowCreateNew(true);
   };
 
   const handleCancelCreate = () => {
     setShowCreateNew(false);
+    setEditingTarget(null);
+  };
+
+  const handleOpenChange = (nextOpen: boolean) => {
+    setOpen(nextOpen);
+    if (!nextOpen) {
+      setShowCreateNew(false);
+      setEditingTarget(null);
+      setSearchQuery('');
+    }
   };
 
   const filteredTargets = targets.filter((t) =>
@@ -30,14 +47,16 @@ export function useTargetSelectorDialog() {
 
   return {
     open,
-    setOpen,
+    handleOpenChange,
     showCreateNew,
+    editingTarget,
     searchQuery,
     setSearchQuery,
     filteredTargets,
     filteredCount: filteredTargets.length,
     handleSelectTarget,
     handleCreateNew,
+    handleEditTarget,
     handleCancelCreate,
   };
 }

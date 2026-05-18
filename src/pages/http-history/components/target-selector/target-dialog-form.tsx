@@ -1,5 +1,6 @@
 'use client';
 
+import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -8,8 +9,10 @@ import {
 } from '@/components/ui/dialog';
 import { useForm } from 'react-hook-form';
 import { useTargetStore } from '@/stores/target';
+import type { Target } from '@/types';
 
 interface TargetDialogFormProps {
+  target?: Target | null;
   onCancel: () => void;
 }
 
@@ -19,22 +22,54 @@ interface FormValues {
   scope: string;
 }
 
-export function TargetDialogForm({ onCancel }: TargetDialogFormProps) {
+function parseScopePatterns(scope: string) {
+  return scope
+    .split(/[\n,]/)
+    .map((pattern) => pattern.trim())
+    .filter(Boolean);
+}
+
+export function TargetDialogForm({ target, onCancel }: TargetDialogFormProps) {
   const addTarget = useTargetStore((state) => state.addTarget);
   const updateTarget = useTargetStore((state) => state.updateTarget);
   const targets = useTargetStore((state) => state.targets);
-  const { register, handleSubmit, formState: { errors, isValid } } = useForm<FormValues>({
+  const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<FormValues>({
     mode: 'onChange',
+    defaultValues: {
+      name: target?.name ?? '',
+      description: target?.description ?? '',
+      scope: target?.scope.join('\n') ?? '',
+    },
   });
 
+  React.useEffect(() => {
+    reset({
+      name: target?.name ?? '',
+      description: target?.description ?? '',
+      scope: target?.scope.join(', ') ?? '',
+    });
+  }, [reset, target]);
+
   const onSubmit = async (data: FormValues) => {
+    const normalizedScope = parseScopePatterns(data.scope);
+
+    if (target) {
+      updateTarget(target.id, {
+        name: data.name,
+        description: data.description,
+        scope: normalizedScope,
+      });
+      onCancel();
+      return;
+    }
+
     const now = new Date().toISOString();
     targets.forEach(t => updateTarget(t.id, { tabActive: false }));
     const target = {
       id: crypto.randomUUID(),
       name: data.name,
       description: data.description,
-      scope: data.scope.split('\n').filter(Boolean),
+      scope: normalizedScope,
       createdAt: now,
       updatedAt: now,
       tabActive: true,
@@ -75,15 +110,18 @@ export function TargetDialogForm({ onCancel }: TargetDialogFormProps) {
           </label>
           <Textarea
             id="scope"
-            placeholder="*.example.com&#10;api.example.com"
+            placeholder="*.example.com, api.example.com"
             rows={3}
-            {...register('scope', { required: 'At least one scope pattern is required' })}
+            {...register('scope', {
+              validate: (value) =>
+                parseScopePatterns(value).length > 0 || 'At least one scope pattern is required',
+            })}
           />
           {errors.scope && (
             <p className="text-xs text-destructive">{errors.scope.message}</p>
           )}
           <p className="text-xs text-muted-foreground">
-            Enter one pattern per line. Use *.domain.com for wildcard matching.
+            Separate multiple patterns with commas or new lines. Example: *.example.com, api.example.com
           </p>
         </div>
       </div>
@@ -91,8 +129,8 @@ export function TargetDialogForm({ onCancel }: TargetDialogFormProps) {
         <Button type="button" variant="outline" onClick={onCancel}>
           Cancel
         </Button>
-        <Button type="submit" disabled={!isValid}>
-          Create Target
+        <Button type="submit" disabled={isSubmitting}>
+          {target ? 'Save Changes' : 'Create Target'}
         </Button>
       </DialogFooter>
     </form>

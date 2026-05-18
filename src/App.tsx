@@ -6,6 +6,7 @@ import { RepeaterPage } from "@/pages/repeater";
 import { ToolsPage } from "@/pages/tools";
 import { AIToolsPage } from "@/pages/ai-tools";
 import { DashboardPage } from "@/pages/dashboard";
+import { DocumentsPage } from "@/pages/documents";
 
 function AppRoutes() {
   return (
@@ -16,6 +17,7 @@ function AppRoutes() {
       <Route path="/brute-force" element={<BruteForcePage />} />
       <Route path="/tools" element={<ToolsPage />} />
       <Route path="/ai-tools" element={<AIToolsPage />} />
+      <Route path="/documents" element={<DocumentsPage />} />
       <Route path="/settings" element={<Settings />} />
     </Routes>
   );

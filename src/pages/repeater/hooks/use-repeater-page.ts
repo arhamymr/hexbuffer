@@ -1,10 +1,7 @@
 import * as React from 'react';
 import { useRepeaterStore } from '@/stores/repeater';
 import { sendRepeaterRequest } from '../api';
-import {
-  type HttpMethod,
-  type RepeaterTab,
-} from '../types';
+import { parseRawRequest, type RepeaterTab } from '../types';
 
 export function useRepeaterPage() {
   const { tabs, activeTabId, setActiveTabId, updateTab, closeTab } = useRepeaterStore();
@@ -21,16 +18,6 @@ export function useRepeaterPage() {
 
     updateTab(activeTabId, updater);
   }, [activeTabId, updateTab]);
-  const updateMethod = React.useCallback((method: string) => {
-    updateActiveTab((tab) => ({
-      ...tab,
-      request: {
-        ...tab.request,
-        method: method as HttpMethod,
-      },
-    }));
-  }, [updateActiveTab]);
-
   const updateUrl = React.useCallback((url: string) => {
     updateActiveTab((tab) => ({
       ...tab,
@@ -41,22 +28,12 @@ export function useRepeaterPage() {
     }));
   }, [updateActiveTab]);
 
-  const updateHeaders = React.useCallback((headers: string) => {
+  const updateRawRequest = React.useCallback((raw: string) => {
     updateActiveTab((tab) => ({
       ...tab,
       request: {
         ...tab.request,
-        headers,
-      },
-    }));
-  }, [updateActiveTab]);
-
-  const updateBody = React.useCallback((body: string) => {
-    updateActiveTab((tab) => ({
-      ...tab,
-      request: {
-        ...tab.request,
-        body,
+        raw,
       },
     }));
   }, [updateActiveTab]);
@@ -73,17 +50,25 @@ export function useRepeaterPage() {
     }));
 
     try {
-      const response = await sendRepeaterRequest(activeTab.request);
+      const parsedRequest = parseRawRequest(activeTab.request.raw, activeTab.request.url);
+      const response = await sendRepeaterRequest(parsedRequest);
       updateTab(activeTab.id, (tab) => ({
         ...tab,
         isLoading: false,
         response,
       }));
     } catch (error) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : typeof error === 'string'
+          ? error
+          : 'Failed to send request.';
+
       updateTab(activeTab.id, (tab) => ({
         ...tab,
         isLoading: false,
-        error: error instanceof Error ? error.message : 'Failed to send request.',
+        error: errorMessage,
       }));
     }
   }, [activeTab, updateActiveTab, updateTab]);
@@ -94,10 +79,8 @@ export function useRepeaterPage() {
     setActiveTabId,
     closeTab,
     activeTab,
-    updateMethod,
     updateUrl,
-    updateHeaders,
-    updateBody,
+    updateRawRequest,
     sendRequest,
   };
 }

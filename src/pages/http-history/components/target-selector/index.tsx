@@ -18,15 +18,21 @@ import { useTargetSelectorDialog } from './hooks';
 export function TargetSelectorDialog() {
   const {
     open,
-    setOpen,
+    handleOpenChange,
     showCreateNew,
+    editingTarget,
     handleCreateNew,
+    handleEditTarget,
     handleCancelCreate,
     filteredCount,
+    searchQuery,
+    setSearchQuery,
+    filteredTargets,
+    handleSelectTarget,
   } = useTargetSelectorDialog();
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button size="sm" variant="outline" className="gap-2 h-7 w-7 mb-1 gap-1 text-muted-foreground">
           <Plus className="h-4 w-4" />
@@ -36,12 +42,18 @@ export function TargetSelectorDialog() {
         {showCreateNew ? (
           <>
             <DialogHeader>
-              <DialogTitle>Create New Target</DialogTitle>
+              <DialogTitle>{editingTarget ? 'Edit Target' : 'Create New Target'}</DialogTitle>
               <DialogDescription>
-                Add a new target with scope patterns to monitor
+                {editingTarget
+                  ? 'Update this target and its scope patterns'
+                  : 'Add a new target with scope patterns to monitor'}
               </DialogDescription>
             </DialogHeader>
-            <TargetDialogForm onCancel={handleCancelCreate} />
+            <TargetDialogForm
+              key={editingTarget?.id ?? 'new-target'}
+              target={editingTarget}
+              onCancel={handleCancelCreate}
+            />
           </>
         ) : (
           <>
@@ -52,7 +64,13 @@ export function TargetSelectorDialog() {
               </DialogDescription>
             </DialogHeader>
             <div>
-              <TargetSearchList />
+              <TargetSearchList
+                searchQuery={searchQuery}
+                setSearchQuery={setSearchQuery}
+                filteredTargets={filteredTargets}
+                onSelectTarget={handleSelectTarget}
+                onEditTarget={handleEditTarget}
+              />
             </div>
             <DialogFooter>
               <span className="text-sm text-muted-foreground mr-auto">

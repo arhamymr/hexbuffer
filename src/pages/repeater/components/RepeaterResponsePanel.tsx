@@ -1,12 +1,11 @@
 'use client';
 
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import Editor from '@monaco-editor/react';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Loader2, AlertCircle } from 'lucide-react';
 import type { RepeaterResponse } from '../types';
-import { formatJsonResponse } from '../types';
+import { buildRawResponse } from '../types';
 
 interface RepeaterResponsePanelProps {
   response: RepeaterResponse | null;
@@ -85,54 +84,38 @@ export function RepeaterResponsePanel({
     );
   }
 
-  const formattedBody = formatJsonResponse(response.body);
-
   return (
     <div className="flex flex-col h-full">
       <div className="bg-muted/30 px-3 py-2 border-b flex items-center justify-between">
         <span className="text-sm font-medium">Response</span>
         <div className="flex items-center gap-3">
           {renderStatusBadge()}
-          <span className="text-xs text-muted-foreground">
-            {response.time_ms}ms
-          </span>
+          <span className="text-xs text-muted-foreground">{response.time_ms}ms</span>
         </div>
       </div>
 
-      <Tabs defaultValue="body" className="flex-1 flex flex-col">
-        <TabsList className="mx-2 mt-2">
-          <TabsTrigger value="body">Body</TabsTrigger>
-          <TabsTrigger value="headers">Headers</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="body" className="flex-1 m-0">
-          <div className="p-2 h-full">
-            <Label className="text-xs text-muted-foreground mb-1 block">
-              Response Body (auto-formatted JSON)
-            </Label>
-            <Textarea
-              value={formattedBody}
-              readOnly
-              className="font-mono text-xs h-[calc(100%-24px)] resize-none bg-muted/20"
-            />
-          </div>
-        </TabsContent>
-
-        <TabsContent value="headers" className="flex-1 m-0">
-          <div className="p-2 h-full">
-            <Label className="text-xs text-muted-foreground mb-1 block">
-              Response Headers
-            </Label>
-            <Textarea
-              value={Object.entries(response.headers)
-                .map(([k, v]) => `${k}: ${v}`)
-                .join('\n')}
-              readOnly
-              className="font-mono text-xs h-[calc(100%-24px)] resize-none bg-muted/20"
-            />
-          </div>
-        </TabsContent>
-      </Tabs>
+      <div className="p-2 h-full flex flex-col min-h-0">
+        <Label className="text-xs text-muted-foreground mb-1 block">
+          Raw Response
+        </Label>
+        <div className="flex-1 min-h-0 overflow-hidden rounded-md border">
+          <Editor
+            height="100%"
+            language="html"
+            value={buildRawResponse(response)}
+            theme="vs"
+            options={{
+              readOnly: true,
+              minimap: { enabled: false },
+              fontSize: 12,
+              lineNumbers: 'on',
+              wordWrap: 'on',
+              automaticLayout: true,
+              scrollBeyondLastLine: false,
+            }}
+          />
+        </div>
+      </div>
     </div>
   );
 }

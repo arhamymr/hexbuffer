@@ -15,6 +15,7 @@ import { useBruteForceStore } from '@/stores/bruto-force';
 import { useHistoryQuery } from '@/pages/http-history/hooks/use-history-query';
 import { adaptProxyRecordToApiCall } from '@/pages/http-history/hooks/use-history-table';
 import { useRepeaterStore } from '@/stores/repeater';
+import { buildRawRequest } from '@/pages/repeater/types';
 
 interface LogEntryContextMenuProps {
   call: ApiCall;
@@ -88,15 +89,14 @@ export function LogEntryContextMenu({
     try {
       const detail = await fetchHistoryDetail(call.id);
       const request = adaptProxyRecordToApiCall(detail);
-      const headersString = Object.entries(request.headers)
-        .map(([key, value]) => `${key}: ${value}`)
-        .join('\n');
-
       useRepeaterStore.getState().addRequestTab({
-        method: request.method,
+        raw: buildRawRequest({
+          method: request.method,
+          url: request.url,
+          headers: request.headers,
+          body: request.request_body || '',
+        }),
         url: request.url,
-        headers: headersString,
-        body: request.request_body || '',
       });
       navigate('/repeater');
     } catch (error) {

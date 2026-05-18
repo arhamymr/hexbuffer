@@ -1,11 +1,25 @@
 'use client';
 
 import { Input } from '@/components/ui/input';
-import { Search } from 'lucide-react';
-import { useTargetSelectorDialog } from './hooks';
+import { Button } from '@/components/ui/button';
+import { Pencil, Search } from 'lucide-react';
+import type { Target } from '@/types';
 
-export function TargetSearchList() {
-  const { searchQuery, setSearchQuery, filteredTargets, handleSelectTarget } = useTargetSelectorDialog();
+interface TargetSearchListProps {
+  searchQuery: string;
+  setSearchQuery: (query: string) => void;
+  filteredTargets: Target[];
+  onSelectTarget: (target: Target) => void;
+  onEditTarget: (target: Target) => void;
+}
+
+export function TargetSearchList({
+  searchQuery,
+  setSearchQuery,
+  filteredTargets,
+  onSelectTarget,
+  onEditTarget,
+}: TargetSearchListProps) {
 
   return (
     <div className="space-y-3">
@@ -27,21 +41,35 @@ export function TargetSearchList() {
         ) : (
           <div className="space-y-1">
             {filteredTargets.map((target) => (
-              <button
+              <div
                 key={target.id}
-                onClick={() => handleSelectTarget({
-                  ...target,
-                  tabActive: true,
-                })}
-                className="w-full text-left px-3 py-2 hover:bg-muted transition-colors"
+                className="flex items-center gap-1 px-1 hover:bg-muted transition-colors"
               >
-                <span className="font-medium">{target.name}</span>
-                {target.scope.length > 0 && (
-                  <span className="text-xs text-muted-foreground ml-2">
-                    ({target.scope.length} scope patterns)
-                  </span>
-                )}
-              </button>
+                <button
+                  onClick={() => onSelectTarget({
+                    ...target,
+                    tabActive: true,
+                  })}
+                  className="flex-1 text-left px-2 py-2"
+                >
+                  <span className="font-medium">{target.name}</span>
+                  {target.scope.length > 0 && (
+                    <span className="text-xs text-muted-foreground ml-2">
+                      ({target.scope.length} scope patterns)
+                    </span>
+                  )}
+                </button>
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="ghost"
+                  className="h-7 w-7 shrink-0"
+                  aria-label={`Edit ${target.name}`}
+                  onClick={() => onEditTarget(target)}
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                </Button>
+              </div>
             ))}
           </div>
         )}

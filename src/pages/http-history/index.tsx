@@ -1,7 +1,7 @@
 'use client';
 
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Switch } from "@/components/ui/switch";
 import { LogFilters } from "./components/log-table/log-filters";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import { TabBar } from "@/pages/http-history/components/tab-bar";
@@ -26,21 +26,18 @@ export function HttpHistoryPage() {
       <div className="flex items-center gap-2 mb-2 border-b border-green-500 sticky top-0 z-20 bg-background pt-2">
         <TabBar />
         <TargetSelectorDialog />
-        <div className="ml-auto flex items-center gap-1 pb-2">
-          <Button
-            variant={historyMode === 'http' ? 'default' : 'outline'}
-            size="xs"
-            onClick={() => setHistoryMode('http')}
-          >
+        <div className="ml-auto flex items-center gap-2 pb-2 text-sm">
+          <span className={historyMode === 'http' ? 'font-medium' : 'text-muted-foreground'}>
             HTTP
-          </Button>
-          <Button
-            variant={historyMode === 'websocket' ? 'default' : 'outline'}
-            size="xs"
-            onClick={() => setHistoryMode('websocket')}
-          >
+          </span>
+          <Switch
+            checked={historyMode === 'websocket'}
+            onCheckedChange={(checked) => setHistoryMode(checked ? 'websocket' : 'http')}
+            aria-label="Switch between HTTP and WebSocket history"
+          />
+          <span className={historyMode === 'websocket' ? 'font-medium' : 'text-muted-foreground'}>
             WebSocket
-          </Button>
+          </span>
         </div>
       </div>
       <LogFilters

@@ -13,10 +13,8 @@ export function RepeaterPage() {
     setActiveTabId,
     closeTab,
     activeTab,
-    updateMethod,
     updateUrl,
-    updateHeaders,
-    updateBody,
+    updateRawRequest,
     sendRequest,
   } = useRepeaterPage();
 
@@ -33,20 +31,16 @@ export function RepeaterPage() {
       contentClassName="flex-1 border rounded-lg overflow-hidden bg-background min-h-0"
     >
       <RepeaterUrlBar
-        method={activeTab.request.method}
         url={activeTab.request.url}
         isLoading={activeTab.isLoading}
-        onMethodChange={updateMethod}
         onUrlChange={updateUrl}
         onSend={sendRequest}
       />
       <div className="flex-1 grid grid-cols-2 gap-0 min-h-0">
         <div className="border-r min-h-0">
           <RepeaterRequestPanel
-            headers={activeTab.request.headers}
-            body={activeTab.request.body}
-            onHeadersChange={updateHeaders}
-            onBodyChange={updateBody}
+            rawRequest={activeTab.request.raw}
+            onRawRequestChange={updateRawRequest}
           />
         </div>
         <div className="min-h-0">

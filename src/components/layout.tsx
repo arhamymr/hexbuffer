@@ -21,10 +21,41 @@ export function TopNav() {
   const location = useLocation();
   const pathname = location.pathname;
   const { theme, toggleTheme } = useTheme();
+  const navRef = React.useRef<HTMLElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = React.useState(false);
+  const [canScrollRight, setCanScrollRight] = React.useState(false);
+
+  React.useEffect(() => {
+    const nav = navRef.current;
+
+    if (!nav) {
+      return;
+    }
+
+    const updateScrollIndicators = () => {
+      const { scrollLeft, scrollWidth, clientWidth } = nav;
+
+      setCanScrollLeft(scrollLeft > 0);
+      setCanScrollRight(scrollLeft + clientWidth < scrollWidth - 1);
+    };
+
+    updateScrollIndicators();
+
+    nav.addEventListener('scroll', updateScrollIndicators);
+
+    const resizeObserver = new ResizeObserver(updateScrollIndicators);
+    resizeObserver.observe(nav);
+
+    return () => {
+      nav.removeEventListener('scroll', updateScrollIndicators);
+      resizeObserver.disconnect();
+    };
+  }, []);
+
   return (
     <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
       <div className="flex items-center justify-between h-8.5 px-4">
-        <div className='flex items-center align-center gap-4'>
+        <div className='flex min-w-0 flex-1 items-center align-center gap-4'>
           <div className="flex items-center gap-1">
             {/* Light mode */}
             <img
@@ -41,33 +72,50 @@ export function TopNav() {
             />
           </div>
 
-          <nav className="flex items-center gap-0.5">
-            {mainNavItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = pathname === item.href;
-              return (
-                <Link
-                  key={item.href}
-                  to={item.href}
-                  className={`
-                  flex items-center gap-2 px-2 py-2 text-sm transition-colors
-                  border-b -mb-px
-                  ${isActive
-                      ? 'border-green-500 text-foreground bg-muted/30'
-                      : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-t-md'
-                    }
-                `}
-                >
-                  <Icon className="h-3 w-3" />
-                  <span>{item.label}</span>
-                </Link>
-              );
-            })}
-          </nav>
+          <div className="relative min-w-0 flex-1">
+            <nav
+              ref={navRef}
+              className="flex min-w-0 flex-1 items-center gap-0.5 overflow-x-auto overflow-y-hidden"
+            >
+              {mainNavItems.map((item) => {
+                const Icon = item.icon;
+                const isActive = pathname === item.href;
+                return (
+                  <Link
+                    key={item.href}
+                    to={item.href}
+                    className={`
+                    flex shrink-0 items-center gap-2 whitespace-nowrap px-2 py-2 text-sm transition-colors
+                    border-b -mb-px
+                    ${isActive
+                        ? 'border-green-500 text-foreground bg-muted/30'
+                        : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-t-md'
+                      }
+                  `}
+                  >
+                    <Icon className="h-3 w-3" />
+                    <span>{item.label}</span>
+                  </Link>
+                );
+              })}
+            </nav>
+            <div
+              className={`
+                pointer-events-none absolute inset-y-0 left-0 w-8 bg-gradient-to-r from-background to-transparent transition-opacity
+                ${canScrollLeft ? 'opacity-100' : 'opacity-0'}
+              `}
+            />
+            <div
+              className={`
+                pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-background to-transparent transition-opacity
+                ${canScrollRight ? 'opacity-100' : 'opacity-0'}
+              `}
+            />
+          </div>
 
         </div>
 
-        <div className="flex items-center gap-1">
+        <div className="flex shrink-0 items-center gap-1">
           <Button
             variant="ghost"
             size="sm"

@@ -139,3 +139,14 @@ export const TROUBLESHOOTING_GUIDES = [
 ];
 
 export const SECURITY_NOTICE_ICON = AlertTriangleIcon;
+
+export const AI_PROVIDER_OPTIONS = [
+  { id: 'openai', label: 'OpenAI' },
+];
+
+export const AI_MODEL_OPTIONS = [
+  'gpt-4.1-mini',
+  'gpt-4.1',
+  'gpt-5-mini',
+  'gpt-5.2',
+];

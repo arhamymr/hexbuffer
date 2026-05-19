@@ -65,3 +65,13 @@ export const DASHBOARD_FRAMEWORKS: Array<{
   { id: 'recon', label: 'Recon' },
   { id: 'misconfiguration', label: 'Misconfiguration' },
 ];
+
+export const DASHBOARD_AI_MODELS = [
+  'gpt-4.1-mini',
+  'gpt-4.1',
+  'gpt-5-mini',
+  'gpt-5.2',
+];
+
+export const DASHBOARD_DEFAULT_AI_MODEL = 'gpt-4.1-mini';
+export const DASHBOARD_API_KEY_STORAGE_KEY = 'apprecon_dashboard_openai_key';

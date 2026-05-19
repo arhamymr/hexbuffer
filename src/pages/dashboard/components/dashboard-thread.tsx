@@ -59,6 +59,23 @@ export function DashboardThread({
 
             <ChatMessage role="assistant">
               <div className="w-full space-y-3">
+                <div className="flex flex-wrap gap-2">
+                  <Badge variant="outline">
+                    {message.provider === 'openai' ? `OpenAI ${message.model || ''}`.trim() : 'Local analysis'}
+                  </Badge>
+                  {message.error ? (
+                    <Badge variant="outline" className="border-amber-300 text-amber-700 dark:border-amber-900 dark:text-amber-300">
+                      OpenAI fallback
+                    </Badge>
+                  ) : null}
+                </div>
+
+                {message.error ? (
+                  <div className="rounded-sm border border-amber-300 bg-amber-500/10 p-3 text-xs text-amber-800 dark:border-amber-900 dark:text-amber-200">
+                    {message.error}
+                  </div>
+                ) : null}
+
                 <p className="text-sm leading-6">{message.result.summary}</p>
 
                 <div className="grid gap-2 sm:grid-cols-3">

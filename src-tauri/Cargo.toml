@@ -39,6 +39,7 @@ http = "1"
 clap = { version = "4", features = ["derive"] }
 url = "2.5.8"
 flate2 = "1.0"
+keyring = "3"
 
 [dev-dependencies]
 proptest = "1.5"

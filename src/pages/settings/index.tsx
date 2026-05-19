@@ -2,11 +2,23 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
+import { Input } from '../../components/ui/input';
+import { Label } from '../../components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../../components/ui/select';
+import { Switch } from '../../components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../../components/ui/accordion';
 import { Alert, AlertDescription, AlertTitle } from '../../components/ui/alert';
-import { DownloadIcon, SettingsIcon, ShieldCheckIcon } from 'lucide-react';
+import { BotIcon, DownloadIcon, PlayIcon, SaveIcon, SettingsIcon, ShieldCheckIcon, SquareIcon } from 'lucide-react';
 import {
+  AI_MODEL_OPTIONS,
+  AI_PROVIDER_OPTIONS,
   HOW_IT_WORKS,
   INSTALLATION_GUIDES,
   SECURITY_NOTICE_ICON,
@@ -15,7 +27,20 @@ import {
 import { useSettingsPage } from './hooks/use-settings-page';
 
 export function Settings() {
-  const { downloading, handleDownloadCert } = useSettingsPage();
+  const {
+    aiSettings,
+    aiSettingsLoading,
+    aiSettingsSaving,
+    downloading,
+    handleClearAiApiKey,
+    handleDownloadCert,
+    handleSaveAiSettings,
+    handleStartMastra,
+    handleStopMastra,
+    mastraBusy,
+    mastraStatus,
+    updateAiSettings,
+  } = useSettingsPage();
   const SecurityNoticeIcon = SECURITY_NOTICE_ICON;
 
   return (
@@ -36,6 +61,10 @@ export function Settings() {
               <ShieldCheckIcon className="mr-2 size-4" />
               CA Certificate
             </TabsTrigger>
+            <TabsTrigger value="ai">
+              <BotIcon className="mr-2 size-4" />
+              AI
+            </TabsTrigger>
           </TabsList>
         </div>
 
@@ -51,6 +80,143 @@ export function Settings() {
               <p className="text-sm text-muted-foreground">
                 Application configuration options will appear here in future updates.
               </p>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="ai" className="flex-1 overflow-auto px-6 py-4 space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>AI Provider</CardTitle>
+              <CardDescription>
+                Configure BYOK and the model used by the AppRecon AI workflow.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="ai-provider">Provider</Label>
+                  <Select
+                    value={aiSettings.provider}
+                    onValueChange={(provider) => updateAiSettings({ provider })}
+                    disabled={aiSettingsLoading}
+                  >
+                    <SelectTrigger id="ai-provider" className="w-full">
+                      <SelectValue placeholder="Select provider" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {AI_PROVIDER_OPTIONS.map((provider) => (
+                        <SelectItem key={provider.id} value={provider.id}>
+                          {provider.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="ai-model">Model</Label>
+                  <Select
+                    value={aiSettings.model}
+                    onValueChange={(model) => updateAiSettings({ model })}
+                    disabled={aiSettingsLoading}
+                  >
+                    <SelectTrigger id="ai-model" className="w-full">
+                      <SelectValue placeholder="Select model" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {AI_MODEL_OPTIONS.map((model) => (
+                        <SelectItem key={model} value={model}>
+                          {model}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="ai-api-key">OpenAI API Key</Label>
+                <Input
+                  id="ai-api-key"
+                  type="password"
+                  value={aiSettings.apiKey}
+                  onChange={(event) => updateAiSettings({ apiKey: event.target.value })}
+                  placeholder="sk-..."
+                  disabled={aiSettingsLoading}
+                />
+                <p className="text-xs text-muted-foreground">
+                  {aiSettings.hasApiKey
+                    ? 'A key is stored in your OS keychain. Enter a new value only if you want to replace it.'
+                    : 'No key is stored yet.'}
+                </p>
+              </div>
+
+              <div className="flex flex-wrap gap-3">
+                <Button onClick={handleSaveAiSettings} disabled={aiSettingsLoading || aiSettingsSaving}>
+                  <SaveIcon className="mr-2 size-4" />
+                  {aiSettingsSaving ? 'Saving...' : 'Save AI Settings'}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={handleClearAiApiKey}
+                  disabled={aiSettingsLoading || aiSettingsSaving || !aiSettings.hasApiKey}
+                >
+                  Clear API Key
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Mastra Runtime</CardTitle>
+              <CardDescription>
+                Start the local Mastra workflow server automatically when AppRecon starts.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="mastra-url">Mastra URL</Label>
+                <Input
+                  id="mastra-url"
+                  value={aiSettings.mastraUrl}
+                  onChange={(event) => updateAiSettings({ mastraUrl: event.target.value })}
+                  placeholder="http://localhost:4111"
+                  disabled={aiSettingsLoading}
+                />
+              </div>
+
+              <div className="flex items-center justify-between gap-4 rounded-md border p-3">
+                <div>
+                  <Label htmlFor="mastra-auto-start">Auto-start Mastra</Label>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Launch <code className="rounded bg-muted px-1 py-0.5">npm run dev</code> in the root mastra folder when the app opens.
+                  </p>
+                </div>
+                <Switch
+                  id="mastra-auto-start"
+                  checked={aiSettings.mastraAutoStart}
+                  onCheckedChange={(mastraAutoStart) => updateAiSettings({ mastraAutoStart })}
+                  disabled={aiSettingsLoading}
+                />
+              </div>
+
+              <div className="flex flex-wrap items-center gap-3">
+                <Button onClick={handleStartMastra} disabled={mastraBusy || mastraStatus.running}>
+                  <PlayIcon className="mr-2 size-4" />
+                  Start Mastra
+                </Button>
+                <Button variant="outline" onClick={handleStopMastra} disabled={mastraBusy || !mastraStatus.running}>
+                  <SquareIcon className="mr-2 size-4" />
+                  Stop Mastra
+                </Button>
+                <span className="text-sm text-muted-foreground">
+                  {mastraStatus.running
+                    ? `Running${mastraStatus.pid ? `, PID ${mastraStatus.pid}` : ''}`
+                    : 'Stopped'}
+                </span>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>

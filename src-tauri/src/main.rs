@@ -2,7 +2,8 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use apprecon::{
-    export_ca_cert_pem, run, HistoryBridge, PaginatedResponse, ProxyConfig, ProxyFilter,
+    export_ca_cert_pem, run, start_mastra_if_enabled, AiSettings, HistoryBridge,
+    MastraProcessState, MastraStatus, PaginatedResponse, ProxyConfig, ProxyFilter,
     ProxyLogSummary, ProxyRecord, ProxyState, TreeNode, WebSocketConnectionDetail,
     WebSocketConnectionSummary, WebSocketFilter,
 };
@@ -179,6 +180,45 @@ async fn get_ca_cert() -> Result<String, String> {
 }
 
 #[tauri::command]
+fn get_ai_settings(app: AppHandle) -> Result<AiSettings, String> {
+    apprecon::ai::get_ai_settings(app)
+}
+
+#[tauri::command]
+fn save_ai_settings(app: AppHandle, settings: AiSettings) -> Result<AiSettings, String> {
+    apprecon::ai::save_ai_settings(app, settings)
+}
+
+#[tauri::command]
+fn clear_ai_api_key(app: AppHandle) -> Result<AiSettings, String> {
+    apprecon::ai::clear_ai_api_key(app)
+}
+
+#[tauri::command]
+fn get_mastra_status(
+    app: AppHandle,
+    state: State<'_, MastraProcessState>,
+) -> Result<MastraStatus, String> {
+    apprecon::ai::get_mastra_status(app, state)
+}
+
+#[tauri::command]
+fn start_mastra(
+    app: AppHandle,
+    state: State<'_, MastraProcessState>,
+) -> Result<MastraStatus, String> {
+    apprecon::ai::start_mastra(app, state)
+}
+
+#[tauri::command]
+fn stop_mastra(
+    app: AppHandle,
+    state: State<'_, MastraProcessState>,
+) -> Result<MastraStatus, String> {
+    apprecon::ai::stop_mastra(app, state)
+}
+
+#[tauri::command]
 async fn get_proxy_tree(
     history: State<'_, HistoryBridge>,
     filter: Option<ProxyFilter>,
@@ -234,8 +274,13 @@ fn main() {
             eprintln!("[main] History bridge initialized");
 
             app.manage(Mutex::new(ProxyState::new()));
+            app.manage(MastraProcessState::default());
             app.manage(history);
             eprintln!("[main] Building Tauri app...");
+
+            if let Err(error) = start_mastra_if_enabled(&app.handle().clone()) {
+                eprintln!("[main] Mastra auto-start skipped: {}", error);
+            }
 
             eprintln!("[main] Tauri setup complete, spawning proxy thread...");
             let handle = app.handle().clone();
@@ -266,7 +311,13 @@ fn main() {
             get_websocket_paginated,
             get_websocket_detail,
             clear_websocket_all,
-            send_repeater_request
+            send_repeater_request,
+            get_ai_settings,
+            save_ai_settings,
+            clear_ai_api_key,
+            get_mastra_status,
+            start_mastra,
+            stop_mastra
         ])
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())

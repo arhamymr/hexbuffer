@@ -5,4 +5,7 @@ export interface DashboardAnalysisMessage {
   id: string;
   target: Target;
   result: DashboardAnalysisResult;
+  provider: 'local' | 'openai';
+  model?: string;
+  error?: string;
 }

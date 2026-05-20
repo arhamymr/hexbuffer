@@ -74,4 +74,3 @@ export const DASHBOARD_AI_MODELS = [
 ];
 
 export const DASHBOARD_DEFAULT_AI_MODEL = 'gpt-4.1-mini';
-export const DASHBOARD_API_KEY_STORAGE_KEY = 'apprecon_dashboard_openai_key';

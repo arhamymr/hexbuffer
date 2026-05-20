@@ -1,6 +1,6 @@
 'use client';
 
-import Editor from '@monaco-editor/react';
+import { TextEditor } from '@/components/ui/text-editor';
 import { Label } from '@/components/ui/label';
 
 interface RepeaterRequestPanelProps {
@@ -23,18 +23,11 @@ export function RepeaterRequestPanel({
           Raw Request
         </Label>
         <div className="flex-1 min-h-0 overflow-hidden rounded-md border">
-          <Editor
-            height="100%"
+          <TextEditor
             language="plaintext"
             value={rawRequest}
             onChange={(value) => onRawRequestChange(value ?? '')}
-            theme="vs"
             options={{
-              minimap: { enabled: false },
-              fontSize: 12,
-              lineNumbers: 'on',
-              wordWrap: 'on',
-              automaticLayout: true,
               scrollBeyondLastLine: false,
             }}
           />

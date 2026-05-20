@@ -2,12 +2,10 @@ import { useEffect, useMemo, useState } from 'react';
 import { useTargets } from '@/hooks/useTargets';
 import type { Target } from '@/types';
 import {
-  DASHBOARD_API_KEY_STORAGE_KEY,
   DASHBOARD_DEFAULT_AI_MODEL,
   DASHBOARD_DUMMY_TARGETS,
 } from '../constants';
 import { analyzeAssetInput, type DashboardAnalysisFramework } from '../lib/analyze-asset-input';
-import { createOpenAIAnalysis } from '../lib/openai-analysis';
 import type { DashboardAnalysisMessage } from '../types';
 
 function buildAnalysisInput(target: Target) {
@@ -22,7 +20,6 @@ function buildAnalysisInput(target: Target) {
 
 export function useDashboardPage() {
   const { targets, fetchTargets } = useTargets(null);
-  const [apiKey, setApiKey] = useState('');
   const [selectedTargetId, setSelectedTargetId] = useState('');
   const [framework, setFramework] = useState<DashboardAnalysisFramework>('general');
   const [model, setModel] = useState(DASHBOARD_DEFAULT_AI_MODEL);
@@ -35,19 +32,6 @@ export function useDashboardPage() {
     [targets]
   );
   const usingDummyData = targets.length === 0;
-
-  useEffect(() => {
-    setApiKey(sessionStorage.getItem(DASHBOARD_API_KEY_STORAGE_KEY) || '');
-  }, []);
-
-  useEffect(() => {
-    if (apiKey.trim()) {
-      sessionStorage.setItem(DASHBOARD_API_KEY_STORAGE_KEY, apiKey.trim());
-      return;
-    }
-
-    sessionStorage.removeItem(DASHBOARD_API_KEY_STORAGE_KEY);
-  }, [apiKey]);
 
   useEffect(() => {
     if (!selectedTargetId && libraryTargets.length > 0) {
@@ -72,31 +56,13 @@ export function useDashboardPage() {
     const analysisInput = [assetInput, prompt.trim() ? `Analyst prompt:\n${prompt.trim()}` : '']
       .filter(Boolean)
       .join('\n\n');
-    const provider = apiKey.trim() ? 'openai' : 'local';
-    let error: string | undefined;
-    let result = analyzeAssetInput(analysisInput, 'surface', framework);
-
-    if (apiKey.trim()) {
-      try {
-        result = await createOpenAIAnalysis({
-          apiKey: apiKey.trim(),
-          assetInput,
-          framework,
-          model,
-          prompt,
-        });
-      } catch (unknownError) {
-        error = unknownError instanceof Error ? unknownError.message : 'OpenAI analysis failed.';
-      }
-    }
+    const result = analyzeAssetInput(analysisInput, 'surface', framework);
 
     const message: DashboardAnalysisMessage = {
       id: `${selectedTarget.id}-${Date.now()}`,
       target: selectedTarget,
       result,
-      provider: error ? 'local' : provider,
-      model: error ? undefined : provider === 'openai' ? model : undefined,
-      error,
+      provider: 'local',
     };
 
     setMessages((current) => [...current, message]);
@@ -104,7 +70,6 @@ export function useDashboardPage() {
   };
 
   return {
-    apiKey,
     fetchTargets,
     handleAnalyze,
     isAnalyzing,
@@ -115,7 +80,6 @@ export function useDashboardPage() {
     prompt,
     selectedTarget,
     selectedTargetId,
-    setApiKey,
     setFramework,
     setModel,
     setPrompt,

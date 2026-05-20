@@ -1,8 +1,8 @@
 'use client';
 
-import Editor from '@monaco-editor/react';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
+import { TextEditor } from '@/components/ui/text-editor';
 import { Loader2, AlertCircle } from 'lucide-react';
 import type { RepeaterResponse } from '../types';
 import { buildRawResponse } from '../types';
@@ -99,18 +99,11 @@ export function RepeaterResponsePanel({
           Raw Response
         </Label>
         <div className="flex-1 min-h-0 overflow-hidden rounded-md border">
-          <Editor
-            height="100%"
+          <TextEditor
             language="html"
             value={buildRawResponse(response)}
-            theme="vs"
             options={{
               readOnly: true,
-              minimap: { enabled: false },
-              fontSize: 12,
-              lineNumbers: 'on',
-              wordWrap: 'on',
-              automaticLayout: true,
               scrollBeyondLastLine: false,
             }}
           />

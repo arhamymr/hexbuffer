@@ -1,8 +1,8 @@
 'use client';
 
-import Editor from '@monaco-editor/react';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
+import { TextEditor } from '@/components/ui/text-editor';
 import type { AttackResult } from '../types';
 import { formatPayloadValues } from '../lib/utils';
 
@@ -73,18 +73,11 @@ export function BruteForcePreviewPane({ selectedResult }: BruteForcePreviewPaneP
               <div>
                 <Label className="text-xs text-muted-foreground mb-1 block">Response Body</Label>
                 <div className="border rounded-md h-64">
-                  <Editor
-                    height="100%"
+                  <TextEditor
                     defaultLanguage="json"
                     value={formatResponseBody(selectedResult.response.body)}
-                    theme="vs-dark"
                     options={{
                       readOnly: true,
-                      minimap: { enabled: false },
-                      fontSize: 12,
-                      lineNumbers: 'on',
-                      wordWrap: 'on',
-                      automaticLayout: true,
                     }}
                   />
                 </div>

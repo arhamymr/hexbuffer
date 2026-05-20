@@ -6,7 +6,6 @@ import { useDashboardPage } from './hooks/use-dashboard-page';
 
 export function DashboardPage() {
   const {
-    apiKey,
     fetchTargets,
     framework,
     handleAnalyze,
@@ -17,7 +16,6 @@ export function DashboardPage() {
     prompt,
     selectedTarget,
     selectedTargetId,
-    setApiKey,
     setFramework,
     setModel,
     setPrompt,
@@ -34,7 +32,6 @@ export function DashboardPage() {
         usingDummyData={usingDummyData}
       />
       <DashboardComposer
-        apiKey={apiKey}
         fetchTargets={fetchTargets}
         framework={framework}
         isAnalyzing={isAnalyzing}
@@ -44,7 +41,6 @@ export function DashboardPage() {
         prompt={prompt}
         selectedTarget={selectedTarget}
         selectedTargetId={selectedTargetId}
-        setApiKey={setApiKey}
         setFramework={setFramework}
         setModel={setModel}
         setPrompt={setPrompt}

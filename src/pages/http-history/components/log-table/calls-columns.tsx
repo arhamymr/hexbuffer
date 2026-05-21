@@ -126,7 +126,7 @@ export function TrafficTable() {
     <div className="overflow-auto h-full flex flex-col">
       {newEventsCount > 0 && (
         <div className="flex items-center justify-center py-2 border-b bg-muted/50">
-          <Button variant="outline" size="sm" onClick={handleRefresh}>
+          <Button variant="outline" size="xs" onClick={handleRefresh}>
             {newEventsCount} new request{newEventsCount > 1 ? 's' : ''} - Click to refresh
           </Button>
         </div>
@@ -153,7 +153,6 @@ export function TrafficTable() {
             <th className="text-right text-xs font-medium text-muted-foreground px-3 py-2 w-[70px]">Size</th>
             <th className="text-right text-xs font-medium text-muted-foreground px-3 py-2 w-[70px]">Length</th>
             <th className="text-left text-xs font-medium text-muted-foreground px-3 py-2 w-[150px]">MIME Type</th>
-            <th className="text-left text-xs font-medium text-muted-foreground px-3 py-2 w-[80px]">Ext</th>
           </tr>
         </thead>
         <tbody>
@@ -182,9 +181,6 @@ export function TrafficTable() {
                 <td className="text-xs text-muted-foreground px-3 py-2 truncate max-w-[150px]" title={call.response_content_type ?? undefined}>
                   {call.response_content_type || "-"}
                 </td>
-                <td className="text-xs font-mono text-muted-foreground px-3 py-2">
-                  {getExtension(call.url)}
-                </td>
               </tr>
             </LogEntryContextMenu>
           ))}
@@ -200,6 +196,7 @@ export function TrafficTable() {
           </span>
         </div>
         <Button
+          size="xs"
           variant="outline"
           onClick={loadMore}
           disabled={!pagination.hasMore || isLoadingMore}

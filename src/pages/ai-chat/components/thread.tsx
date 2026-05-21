@@ -4,9 +4,10 @@ import { Bot, Database, Globe, Layers3, ShieldAlert } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { ChatMessage } from '@/components/ui/chat-message';
 import { ChatMessageArea } from '@/components/ui/chat-message-area';
+import { cn } from '@/lib/utils';
 import { DASHBOARD_SEVERITY_CLASSNAME } from '../constants';
 import type { DashboardAnalysisMessage } from '../types';
-import { DashboardEmptyState } from './dashboard-empty-state';
+import { DashboardEmptyState } from './empty-state';
 import type { Target } from '@/types';
 
 interface DashboardThreadProps {
@@ -23,21 +24,23 @@ export function DashboardThread({
   usingDummyData,
 }: DashboardThreadProps) {
   return (
-    <div className="min-h-0 flex-1 overflow-y-auto rounded-sm border bg-card">
-      <ChatMessageArea className="gap-4">
+    <div className="min-h-0 min-w-0 flex-1 overflow-y-auto rounded-sm border bg-card">
+      <ChatMessageArea className="gap-3 p-2">
         <ChatMessage role="assistant">
-          <div className="space-y-2">
+          <div className="min-w-0 space-y-2">
             <div className="flex items-center gap-2">
-              <Bot className="h-4 w-4" />
-              <span className="font-medium">Recon assistant</span>
+              <Bot className="h-4 w-4 shrink-0" />
+              <span className="min-w-0 truncate font-medium">Recon assistant</span>
             </div>
             <p className="text-sm leading-6">
               Pick a target from the asset library below and I will generate findings, extracted assets, and next steps.
             </p>
             <div className="flex flex-wrap gap-2">
-              <Badge variant="outline" className="gap-1">
-                <Database className="h-3 w-3" />
-                {usingDummyData ? 'Using dummy asset library' : 'Using saved target library'}
+              <Badge variant="outline" className="max-w-full gap-1 whitespace-normal text-left">
+                <Database className="h-3 w-3 shrink-0" />
+                <span className="min-w-0 truncate">
+                  {usingDummyData ? 'Using dummy asset library' : 'Using saved target library'}
+                </span>
               </Badge>
               <Badge variant="outline">{libraryCount} items available</Badge>
             </div>
@@ -58,7 +61,7 @@ export function DashboardThread({
             </ChatMessage>
 
             <ChatMessage role="assistant">
-              <div className="w-full space-y-3">
+              <div className="w-full min-w-0 space-y-3">
                 <div className="flex flex-wrap gap-2">
                   <Badge variant="outline">
                     {message.provider === 'openai' ? `OpenAI ${message.model || ''}`.trim() : 'Local analysis'}
@@ -71,14 +74,14 @@ export function DashboardThread({
                 </div>
 
                 {message.error ? (
-                  <div className="rounded-sm border border-amber-300 bg-amber-500/10 p-3 text-xs text-amber-800 dark:border-amber-900 dark:text-amber-200">
-                    {message.error}
-                  </div>
-                ) : null}
+                    <div className="break-words rounded-sm border border-amber-300 bg-amber-500/10 p-3 text-xs text-amber-800 dark:border-amber-900 dark:text-amber-200">
+                      {message.error}
+                    </div>
+                  ) : null}
 
-                <p className="text-sm leading-6">{message.result.summary}</p>
+                <p className="break-words text-sm leading-6">{message.result.summary}</p>
 
-                <div className="grid gap-2 sm:grid-cols-3">
+                <div className="grid gap-2 sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">
                   <div className="rounded-sm border bg-background/70 p-3">
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
                       <ShieldAlert className="h-3.5 w-3.5" />
@@ -105,26 +108,26 @@ export function DashboardThread({
                 <div className="space-y-2">
                   {message.result.findings.map((finding) => (
                     <div key={finding.title} className="rounded-sm border bg-background/70 p-3">
-                      <div className="flex items-center justify-between gap-2">
-                        <p className="text-sm font-medium">{finding.title}</p>
-                        <Badge variant="outline" className={DASHBOARD_SEVERITY_CLASSNAME[finding.severity]}>
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                        <p className="min-w-0 break-words text-sm font-medium">{finding.title}</p>
+                        <Badge variant="outline" className={cn('w-fit shrink-0', DASHBOARD_SEVERITY_CLASSNAME[finding.severity])}>
                           {finding.severity}
                         </Badge>
                       </div>
-                      <p className="mt-1 text-sm text-muted-foreground">{finding.detail}</p>
+                      <p className="mt-1 break-words text-sm text-muted-foreground">{finding.detail}</p>
                     </div>
                   ))}
                 </div>
 
-                <div className="grid gap-3 lg:grid-cols-2">
+                <div className="grid gap-3">
                   <div>
                     <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
                       Assets found
                     </p>
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex min-w-0 flex-wrap gap-2">
                       {message.result.assets.length > 0 ? (
                         message.result.assets.map((asset) => (
-                          <Badge key={`${asset.type}-${asset.value}`} variant="outline">
+                          <Badge key={`${asset.type}-${asset.value}`} variant="outline" className="max-w-full whitespace-normal break-all text-left">
                             {asset.type}: {asset.value}
                           </Badge>
                         ))
@@ -140,7 +143,7 @@ export function DashboardThread({
                     </p>
                     <div className="space-y-2">
                       {message.result.nextSteps.map((step) => (
-                        <div key={step} className="rounded-sm border bg-background/70 p-3 text-sm text-muted-foreground">
+                        <div key={step} className="break-words rounded-sm border bg-background/70 p-3 text-sm text-muted-foreground">
                           {step}
                         </div>
                       ))}

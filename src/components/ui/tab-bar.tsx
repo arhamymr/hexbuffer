@@ -34,7 +34,7 @@ export function TabBar({
         <>
           <Button
             variant="outline"
-            size="sm"
+            size="xs"
             onClick={onAddTab}
             className="h-7 px-2 shrink-0"
           >

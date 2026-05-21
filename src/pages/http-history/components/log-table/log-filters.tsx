@@ -72,7 +72,7 @@ export function LogFilters({
           className="flex-1"
         />
         {hasActiveFilters && (
-          <Button variant="ghost" size="sm" onClick={clearFilters}>
+          <Button variant="ghost" size="xs" onClick={clearFilters}>
             <X className="h-4 w-4 mr-1" />
             Clear
           </Button>

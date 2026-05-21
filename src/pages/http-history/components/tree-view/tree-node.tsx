@@ -1,6 +1,6 @@
 'use client';
 
-import { ChevronDown, ChevronRight, FileText, Folder, Globe } from 'lucide-react';
+import { ChevronDown, ChevronRight, FileText, Globe } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTreeNode } from '@/pages/http-history/hooks/use-tree-node';
 import type { TreeNodeData } from './types';
@@ -16,10 +16,6 @@ interface TreeNodeProps {
 function getNodeIcon(nodeType: TreeNodeData['type']) {
   if (nodeType === 'host') {
     return { Icon: Globe, colorClassName: 'text-blue-500' };
-  }
-
-  if (nodeType === 'path') {
-    return { Icon: Folder, colorClassName: 'text-yellow-500' };
   }
 
   return { Icon: FileText, colorClassName: 'text-gray-500' };

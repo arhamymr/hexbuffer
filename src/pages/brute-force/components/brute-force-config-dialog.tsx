@@ -1,5 +1,6 @@
 'use client';
 
+import * as React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -17,7 +18,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { X } from 'lucide-react';
 import { ATTACK_MODES, PAYLOAD_TYPES, PROCESSING_STEPS } from '../constants';
-import type { AttackConfig, AttackMode, PayloadProcessingStep, PayloadType } from '../types';
+import {
+  findRequestPayloadPositions,
+  type AttackConfig,
+  type AttackMode,
+  type PayloadProcessingStep,
+  type PayloadType,
+} from '../types';
 
 interface BruteForceConfigDialogProps {
   open: boolean;
@@ -40,7 +47,8 @@ interface BruteForceConfigDialogProps {
   updateSessionHandling: (
     enabled: boolean,
     extractTokenName?: string,
-    updateHeaderName?: string
+    updateHeaderName?: string,
+    extractFromResponse?: string
   ) => void;
   onOpenPayloadFile: () => void;
 }
@@ -61,6 +69,32 @@ export function BruteForceConfigDialog({
   updateSessionHandling,
   onOpenPayloadFile,
 }: BruteForceConfigDialogProps) {
+  const [headersDraft, setHeadersDraft] = React.useState(() =>
+    JSON.stringify(config.base_request.headers, null, 2)
+  );
+
+  React.useEffect(() => {
+    setHeadersDraft(JSON.stringify(config.base_request.headers, null, 2));
+  }, [config.base_request.headers]);
+
+  const updateBaseRequest = (updates: Partial<AttackConfig['base_request']>) => {
+    const baseRequest = { ...config.base_request, ...updates };
+    updateConfig({
+      base_request: baseRequest,
+      positions: findRequestPayloadPositions(baseRequest),
+    });
+  };
+
+  const updateHeaders = (value: string) => {
+    setHeadersDraft(value);
+    try {
+      const headers = JSON.parse(value) as Record<string, string>;
+      updateBaseRequest({ headers });
+    } catch {
+      // Keep the last valid headers while the user is editing incomplete JSON.
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
@@ -69,8 +103,9 @@ export function BruteForceConfigDialog({
           <DialogDescription>Configure the Brute Force attack settings</DialogDescription>
         </DialogHeader>
         <Tabs defaultValue="attack" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="attack">Attack</TabsTrigger>
+            <TabsTrigger value="request">Request</TabsTrigger>
             <TabsTrigger value="payloads">Payloads</TabsTrigger>
             <TabsTrigger value="processing">Processing</TabsTrigger>
             <TabsTrigger value="options">Options</TabsTrigger>
@@ -135,6 +170,75 @@ export function BruteForceConfigDialog({
                   type="number"
                   value={config.retries}
                   onChange={(event) => updateConfig({ retries: parseInt(event.target.value, 10) || 0 })}
+                />
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="request" className="space-y-4">
+            <div className="grid grid-cols-[120px_1fr] gap-4">
+              <div className="grid gap-2">
+                <Label>Method</Label>
+                <Input
+                  value={config.base_request.method}
+                  onChange={(event) => updateBaseRequest({ method: event.target.value.toUpperCase() })}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label>URL</Label>
+                <Input
+                  className="font-mono"
+                  value={config.base_request.url}
+                  onChange={(event) => updateBaseRequest({ url: event.target.value })}
+                />
+              </div>
+            </div>
+
+            <div className="grid gap-2">
+              <div className="flex items-center justify-between">
+                <Label>Payload Positions</Label>
+                <Badge variant={config.positions.length > 0 ? 'default' : 'secondary'}>
+                  {config.positions.length} marked
+                </Badge>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Wrap insertion points with § markers in the URL, headers, or body.
+              </p>
+            </div>
+
+            <div className="grid gap-2">
+              <Label>Headers JSON</Label>
+              <textarea
+                className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono h-28"
+                value={headersDraft}
+                onChange={(event) => updateHeaders(event.target.value)}
+              />
+            </div>
+
+            <div className="grid gap-2">
+              <Label>Body</Label>
+              <textarea
+                className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono h-36"
+                value={config.base_request.body}
+                onChange={(event) => updateBaseRequest({ body: event.target.value })}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="followRedirects"
+                  checked={config.base_request.follow_redirects}
+                  onCheckedChange={(checked) => updateBaseRequest({ follow_redirects: checked as boolean })}
+                />
+                <Label htmlFor="followRedirects">Follow Redirects</Label>
+              </div>
+              <div className="grid gap-2">
+                <Label>Max Redirect Hops</Label>
+                <Input
+                  type="number"
+                  value={config.base_request.max_hops}
+                  onChange={(event) => updateBaseRequest({ max_hops: parseInt(event.target.value, 10) || 1 })}
                 />
               </div>
             </div>
@@ -355,7 +459,8 @@ export function BruteForceConfigDialog({
                     updateSessionHandling(
                       checked as boolean,
                       config.session_handling.extract_token_name,
-                      config.session_handling.update_header_name
+                      config.session_handling.update_header_name,
+                      config.session_handling.extract_from_response
                     )
                   }
                 />
@@ -366,9 +471,23 @@ export function BruteForceConfigDialog({
                     value={config.session_handling.extract_token_name || ''}
                     onChange={(event) =>
                       updateSessionHandling(
+                      config.session_handling.enabled,
+                      event.target.value || undefined,
+                      config.session_handling.update_header_name,
+                      config.session_handling.extract_from_response
+                    )
+                  }
+                  disabled={!config.session_handling.enabled}
+                />
+                  <Input
+                    placeholder="Regex to extract token from response (optional)..."
+                    value={config.session_handling.extract_from_response || ''}
+                    onChange={(event) =>
+                      updateSessionHandling(
                         config.session_handling.enabled,
-                        event.target.value || undefined,
-                        config.session_handling.update_header_name
+                        config.session_handling.extract_token_name,
+                        config.session_handling.update_header_name,
+                        event.target.value || undefined
                       )
                     }
                     disabled={!config.session_handling.enabled}
@@ -380,7 +499,8 @@ export function BruteForceConfigDialog({
                       updateSessionHandling(
                         config.session_handling.enabled,
                         config.session_handling.extract_token_name,
-                        event.target.value || undefined
+                        event.target.value || undefined,
+                        config.session_handling.extract_from_response
                       )
                     }
                     disabled={!config.session_handling.enabled}

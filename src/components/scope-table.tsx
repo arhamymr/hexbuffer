@@ -132,7 +132,7 @@ export function ScopeTable({ targets, onTargetsUpdated }: ScopeTableProps) {
           />
           <span>Subdomain</span>
         </label>
-        <Button size="sm" onClick={handleAddDomain} disabled={!newDomain.trim() || !selectedTargetId || loading}>
+        <Button size="xs" onClick={handleAddDomain} disabled={!newDomain.trim() || !selectedTargetId || loading}>
           {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
         </Button>
         <Select value={selectedTargetId} onValueChange={setSelectedTargetId}>
@@ -177,7 +177,7 @@ export function ScopeTable({ targets, onTargetsUpdated }: ScopeTableProps) {
                   <TableCell>
                     <Button
                       variant="ghost"
-                      size="sm"
+                      size="xs"
                       onClick={() => handleRemoveDomain(entry.targetId, entry.domain, entry.isWildcard)}
                       disabled={loading}
                     >

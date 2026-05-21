@@ -61,7 +61,7 @@ export function TargetSearchList({
                 </button>
                 <Button
                   type="button"
-                  size="icon"
+                  size="icon-sm"
                   variant="ghost"
                   className="h-7 w-7 shrink-0"
                   aria-label={`Edit ${target.name}`}

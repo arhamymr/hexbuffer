@@ -94,7 +94,7 @@ export function HashTool() {
         <div className="flex flex-col gap-2">
           <div className="flex items-center justify-between">
             <Label>Input</Label>
-            <Button variant="ghost" size="sm" className="h-7 px-2" onClick={handleClear}>
+            <Button variant="ghost" size="xs" className="h-7 px-2" onClick={handleClear}>
               <Trash2 className="h-3.5 w-3.5" />
             </Button>
           </div>
@@ -109,7 +109,7 @@ export function HashTool() {
         <div className="flex flex-col gap-2">
           <div className="flex items-center justify-between">
             <Label>Output</Label>
-            <Button variant="ghost" size="sm" className="h-7 px-2" onClick={handleCopy} disabled={!output}>
+            <Button variant="ghost" size="xs" className="h-7 px-2" onClick={handleCopy} disabled={!output}>
               <Copy className="h-3.5 w-3.5" />
             </Button>
           </div>

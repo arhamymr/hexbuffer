@@ -4,9 +4,16 @@ import {
   getHttpLogDetail,
   getHttpLogs,
   getProxyTree,
+  getWebSocketDetail,
+  getWebSocketLogs,
   type TreeNode,
 } from '@/pages/http-history/api';
 import type { PaginatedResponse, ProxyLogSummary, ProxyRecord } from '@/types';
+import type {
+  WebSocketConnectionDetail,
+  WebSocketConnectionSummary,
+  WebSocketFilter,
+} from '@/pages/http-history/api';
 
 import type { HistoryQuery } from '../state/build-history-query';
 
@@ -22,6 +29,18 @@ export async function fetchHistoryTree(query: HistoryQuery): Promise<TreeNode[]>
 
 export async function fetchHistoryDetail(logId: string): Promise<ProxyRecord> {
   return getHttpLogDetail(logId);
+}
+
+export async function fetchWebSocketSummaries(query: {
+  page: number;
+  perPage: number;
+  filter: WebSocketFilter;
+}): Promise<PaginatedResponse<WebSocketConnectionSummary>> {
+  return getWebSocketLogs(query.page, query.perPage, query.filter);
+}
+
+export async function fetchWebSocketDetail(connectionId: string): Promise<WebSocketConnectionDetail> {
+  return getWebSocketDetail(connectionId);
 }
 
 export async function clearHistoryLogs(): Promise<void> {

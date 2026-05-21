@@ -37,7 +37,7 @@ function PrettyCurl({ call }: { call: ApiCall }) {
       <div className="absolute right-1 top-1 z-10">
         <Button
           variant="ghost"
-          size="icon"
+          size="icon-sm"
           className="h-6 w-6"
           onClick={(e) => {
             e.stopPropagation();

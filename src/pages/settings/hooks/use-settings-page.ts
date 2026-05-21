@@ -24,7 +24,7 @@ const DEFAULT_AI_SETTINGS: AiSettings = {
   model: 'gpt-4.1-mini',
   apiKey: '',
   hasApiKey: false,
-  mastraAutoStart: false,
+  mastraAutoStart: true,
   mastraUrl: 'http://localhost:4111',
 };
 
@@ -159,6 +159,32 @@ export function useSettingsPage() {
     }
   }, []);
 
+  const handleToggleMastra = React.useCallback(async (enabled: boolean) => {
+    const nextSettings = { ...aiSettings, mastraAutoStart: enabled };
+
+    try {
+      setMastraBusy(true);
+      setAiSettings(nextSettings);
+
+      const savedSettings = await invoke<AiSettings>('save_ai_settings', {
+        settings: nextSettings,
+      });
+      setAiSettings(savedSettings);
+
+      const status = enabled
+        ? await invoke<MastraStatus>('start_mastra')
+        : await invoke<MastraStatus>('stop_mastra');
+      setMastraStatus(status);
+      toast.success(enabled ? 'Mastra enabled' : 'Mastra disabled');
+    } catch (error) {
+      console.error('Failed to update Mastra runtime:', error);
+      toast.error(`Failed to update Mastra runtime: ${error}`);
+      await loadAiSettings();
+    } finally {
+      setMastraBusy(false);
+    }
+  }, [aiSettings, loadAiSettings]);
+
   return {
     aiSettings,
     aiSettingsLoading,
@@ -169,6 +195,7 @@ export function useSettingsPage() {
     handleSaveAiSettings,
     handleStartMastra,
     handleStopMastra,
+    handleToggleMastra,
     mastraBusy,
     mastraStatus,
     refreshMastraStatus,

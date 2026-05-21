@@ -263,19 +263,19 @@ export function FuzzScannerTool() {
               accept=".txt,.lst,.wordlist"
               className="hidden"
             />
-            <Button variant="outline" onClick={() => fileInputRef.current?.click()}>
+            <Button size="xs" variant="outline" onClick={() => fileInputRef.current?.click()}>
               <Upload className="h-4 w-4 mr-1" />
               Wordlist
             </Button>
           </>
         )}
         {isRunning ? (
-          <Button variant="destructive" onClick={stopFuzzing}>
+          <Button size="xs" variant="destructive" onClick={stopFuzzing}>
             <Square className="h-4 w-4 mr-1" />
             Stop
           </Button>
         ) : (
-          <Button onClick={startFuzzing} disabled={!url.trim()}>
+          <Button size="xs" onClick={startFuzzing} disabled={!url.trim()}>
             <Play className="h-4 w-4 mr-1" />
             Start
           </Button>
@@ -309,15 +309,15 @@ export function FuzzScannerTool() {
           </SelectContent>
         </Select>
         <div className="flex-1" />
-        <Button variant="outline" size="sm" onClick={() => exportResults('csv')} disabled={results.length === 0}>
+        <Button variant="outline" size="xs" onClick={() => exportResults('csv')} disabled={results.length === 0}>
           <Download className="h-3.5 w-3.5 mr-1" />
           CSV
         </Button>
-        <Button variant="outline" size="sm" onClick={() => exportResults('json')} disabled={results.length === 0}>
+        <Button variant="outline" size="xs" onClick={() => exportResults('json')} disabled={results.length === 0}>
           <Download className="h-3.5 w-3.5 mr-1" />
           JSON
         </Button>
-        <Button variant="outline" size="sm" onClick={clearResults} disabled={results.length === 0}>
+        <Button variant="outline" size="xs" onClick={clearResults} disabled={results.length === 0}>
           <Trash2 className="h-3.5 w-3.5 mr-1" />
           Clear
         </Button>
@@ -366,7 +366,7 @@ export function FuzzScannerTool() {
                       {result.status === 'found' && (
                         <Button
                           variant="ghost"
-                          size="sm"
+                          size="xs"
                           className="h-6 w-6 p-0"
                           onClick={(e) => {
                             e.stopPropagation();

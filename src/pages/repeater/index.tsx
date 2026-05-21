@@ -11,6 +11,7 @@ export function RepeaterPage() {
     tabs,
     activeTabId,
     setActiveTabId,
+    renameTab,
     closeTab,
     activeTab,
     updateUrl,
@@ -27,6 +28,7 @@ export function RepeaterPage() {
       tabs={tabs}
       activeTabId={activeTabId}
       onTabChange={setActiveTabId}
+      onTabRename={renameTab}
       onTabClose={closeTab}
       contentClassName="flex-1 border rounded-lg overflow-hidden bg-background min-h-0"
     >

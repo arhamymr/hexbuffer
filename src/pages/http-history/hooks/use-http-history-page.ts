@@ -6,7 +6,7 @@ import { useHistoryQuery } from './use-history-query';
 export type HistoryMode = 'http' | 'websocket';
 
 export function useHttpHistoryPage() {
-  const [sitemapVisible, setSitemapVisible] = React.useState(true);
+  const [sitemapVisible, setSitemapVisible] = React.useState(false);
   const [historyMode, setHistoryMode] = React.useState<HistoryMode>('http');
   const { activeTab } = useTabBar();
   const { setActiveScope, setSelectedCallId, setPathFilter } = useHistoryQuery();

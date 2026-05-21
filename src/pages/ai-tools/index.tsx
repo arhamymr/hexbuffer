@@ -1,7 +1,7 @@
 'use client';
 
 import { TabsContent } from '@/components/ui/tabs';
-import { PromptInjectionTool } from './components/prompt-injection';
+import { JailbreakTool, PromptInjectionTool, PromptLeakTool } from './components/prompt-injection';
 import { TabbedPageLayout } from '@/pages/shared/tabbed-page-layout';
 import { useAIToolsPage } from './hooks/use-ai-tools-page';
 
@@ -19,14 +19,10 @@ export function AIToolsPage() {
         <PromptInjectionTool />
       </TabsContent>
       <TabsContent value="jailbreak" className="h-full m-0">
-        <div className="flex items-center justify-center h-full text-muted-foreground">
-          <p>Jailbreak tool coming soon...</p>
-        </div>
+        <JailbreakTool />
       </TabsContent>
       <TabsContent value="prompt-leak" className="h-full m-0">
-        <div className="flex items-center justify-center h-full text-muted-foreground">
-          <p>Prompt Leak tool coming soon...</p>
-        </div>
+        <PromptLeakTool />
       </TabsContent>
     </TabbedPageLayout>
   );

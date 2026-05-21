@@ -35,6 +35,7 @@ export function RepeaterUrlBar({
       />
 
       <Button
+        size="xs"
         onClick={onSend}
         disabled={isLoading || !url.trim()}
         className="gap-2"

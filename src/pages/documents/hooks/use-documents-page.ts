@@ -59,6 +59,17 @@ export function useDocumentsPage() {
     [updateActiveDocument]
   );
 
+  const renameDocument = React.useCallback(
+    (documentId: string, title: string) => {
+      updateDocument(documentId, (document) => ({
+        ...document,
+        title,
+        updatedAt: new Date().toISOString(),
+      }));
+    },
+    [updateDocument]
+  );
+
   const updateSection = React.useCallback(
     (sectionKey: DocumentSectionKey, value: string) => {
       updateActiveDocument((document) => ({
@@ -123,6 +134,7 @@ export function useDocumentsPage() {
     addDocument,
     closeDocument,
     activeDocument,
+    renameDocument,
     updateTitle,
     updateSection,
     selectedApiEntryId,

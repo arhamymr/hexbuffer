@@ -1,6 +1,7 @@
 import { Loader2, Play } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { TextEditor } from '@/components/ui/text-editor';
 import { buildRawRequest, buildRawResponse, type RepeaterResponse } from '@/pages/repeater/types';
 import { type SavedApiEntry } from '../types';
 
@@ -95,7 +96,7 @@ export function DocumentApiCollection({
                     {selectedEntry.url}
                   </p>
                 </div>
-                <Button type="button" onClick={onFetchEntry} disabled={isLoading}>
+                <Button size="xs" type="button" onClick={onFetchEntry} disabled={isLoading}>
                   {isLoading ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
@@ -108,14 +109,22 @@ export function DocumentApiCollection({
               <div className="grid gap-4 p-4 xl:grid-cols-2">
                 <div className="min-w-0">
                   <div className="mb-2 text-xs font-medium text-muted-foreground">Request</div>
-                  <pre className="max-h-72 overflow-auto rounded-md border bg-background p-3 text-xs">
-                    {buildRawRequest({
-                      method: selectedEntry.method,
-                      url: selectedEntry.url,
-                      headers: selectedEntry.headers,
-                      body: selectedEntry.requestBody ?? '',
-                    })}
-                  </pre>
+                  <div className="h-72 overflow-hidden rounded-md border bg-background">
+                    <TextEditor
+                      height="100%"
+                      language="plaintext"
+                      value={buildRawRequest({
+                        method: selectedEntry.method,
+                        url: selectedEntry.url,
+                        headers: selectedEntry.headers,
+                        body: selectedEntry.requestBody ?? '',
+                      })}
+                      options={{
+                        readOnly: true,
+                        scrollBeyondLastLine: false,
+                      }}
+                    />
+                  </div>
                   <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
                     <span>Host: {selectedEntry.host}</span>
                     <span>Path: {selectedEntry.path}</span>
@@ -142,9 +151,17 @@ export function DocumentApiCollection({
                         </Badge>
                         <span className="text-muted-foreground">{response.time_ms}ms</span>
                       </div>
-                      <pre className="max-h-72 overflow-auto rounded-md border bg-background p-3 text-xs">
-                        {buildRawResponse(response)}
-                      </pre>
+                      <div className="h-72 overflow-hidden rounded-md border bg-background">
+                        <TextEditor
+                          height="100%"
+                          language="html"
+                          value={buildRawResponse(response)}
+                          options={{
+                            readOnly: true,
+                            scrollBeyondLastLine: false,
+                          }}
+                        />
+                      </div>
                     </>
                   ) : (
                     <div className="flex h-72 items-center justify-center rounded-md border border-dashed text-sm text-muted-foreground">

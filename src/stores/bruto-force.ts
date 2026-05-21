@@ -37,7 +37,8 @@ interface BruteForceState {
   updateSessionHandling: (
     enabled: boolean,
     extract_token_name?: string,
-    update_header_name?: string
+    update_header_name?: string,
+    extract_from_response?: string
   ) => void;
   setBaseRequest: (base_request: AttackConfig['base_request']) => void;
   setSelectedResult: (result: AttackResult | null) => void;
@@ -135,7 +136,7 @@ export const useBruteForceStore = create<BruteForceState>((set, get) => ({
       },
     })),
 
-  updateSessionHandling: (enabled, extract_token_name, update_header_name) =>
+  updateSessionHandling: (enabled, extract_token_name, update_header_name, extract_from_response) =>
     set((state) => ({
       config: {
         ...state.config,
@@ -144,6 +145,7 @@ export const useBruteForceStore = create<BruteForceState>((set, get) => ({
           enabled,
           ...(extract_token_name !== undefined && { extract_token_name }),
           ...(update_header_name !== undefined && { update_header_name }),
+          ...(extract_from_response !== undefined && { extract_from_response }),
         },
       },
     })),

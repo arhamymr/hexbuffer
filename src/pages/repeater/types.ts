@@ -139,16 +139,6 @@ export function parseRawRequest(raw: string, fallbackUrl = ''): ParsedRepeaterRe
   };
 }
 
-function buildTabName(request: RepeaterRequest, fallback: string): string {
-  try {
-    const parsed = parseRawRequest(request.raw, request.url);
-    const url = new URL(parsed.url);
-    return `${parsed.method} ${url.host}${url.pathname}`;
-  } catch {
-    return fallback;
-  }
-}
-
 export function createDefaultRepeaterTab(index: number): RepeaterTab {
   return {
     id: createRepeaterTabId(),
@@ -168,10 +158,10 @@ export function createDefaultRepeaterTab(index: number): RepeaterTab {
   };
 }
 
-export function createRepeaterTabFromRequest(request: RepeaterRequest): RepeaterTab {
+export function createRepeaterTabFromRequest(request: RepeaterRequest, name: string): RepeaterTab {
   return {
     id: createRepeaterTabId(),
-    name: buildTabName(request, 'Imported request'),
+    name,
     request,
     response: null,
     isLoading: false,

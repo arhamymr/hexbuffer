@@ -51,12 +51,18 @@ export function BruteForcePage() {
     handleExportResults,
   } = useBruteForcePage();
 
+  const hasPayloads =
+    config.payload_config.payload_type === 'NumberRange' ||
+    config.payload_config.values.length > 0 ||
+    Boolean(config.payload_config.file_path);
+  const canStart = Boolean(config.base_request.url && config.positions.length > 0 && hasPayloads);
+
   return (
     <div className="flex flex-col h-full">
       <BruteForceToolbar
         isRunning={isRunning}
         progress={progress}
-        canStart={Boolean(config.base_request.url)}
+        canStart={canStart}
         onOpenConfig={() => setConfigDialogOpen(true)}
         onOpenImport={() => setRawRequestDialogOpen(true)}
         onStart={startAttack}

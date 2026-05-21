@@ -102,7 +102,7 @@ function ArticleCard({
           </div>
           <Button
             variant="ghost"
-            size="sm"
+            size="xs"
             className="text-primary hover:text-primary/80 p-0 hover:bg-transparent"
             asChild
           >

@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { useBruteForceStore } from '@/stores/bruto-force';
-import { parseRawRequest, type AttackResult } from '../types';
+import { findRequestPayloadPositions, parseRawRequest, type AttackResult } from '../types';
 import { downloadResults, filterResults } from '../lib/utils';
 
 export function useBruteForcePage() {
@@ -42,13 +42,16 @@ export function useBruteForcePage() {
       return;
     }
 
-    setBaseRequest({
+    const baseRequest = {
       ...pendingRequest,
       follow_redirects: true,
       max_hops: 10,
-    } as typeof config.base_request);
+    } as typeof config.base_request;
+
+    setBaseRequest(baseRequest);
+    updateConfig({ positions: findRequestPayloadPositions(baseRequest) });
     setPendingRequest(null);
-  }, [config.base_request, pendingRequest, setBaseRequest, setPendingRequest]);
+  }, [config.base_request, pendingRequest, setBaseRequest, setPendingRequest, updateConfig]);
 
   const filteredResults = React.useMemo(
     () =>
@@ -79,10 +82,11 @@ export function useBruteForcePage() {
     const parsed = parseRawRequest(rawRequestContent);
     if (parsed) {
       setBaseRequest(parsed as typeof config.base_request);
+      updateConfig({ positions: findRequestPayloadPositions(parsed) });
     }
     setRawRequestDialogOpen(false);
     setRawRequestContent('');
-  }, [config.base_request, rawRequestContent, setBaseRequest]);
+  }, [config.base_request, rawRequestContent, setBaseRequest, updateConfig]);
 
   const handleExportResults = React.useCallback((format: 'csv' | 'json') => {
     if (format === 'json') {

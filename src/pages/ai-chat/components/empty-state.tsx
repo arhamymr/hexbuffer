@@ -12,7 +12,7 @@ export function DashboardEmptyState({ selectedTarget }: DashboardEmptyStateProps
     <ChatMessage role="assistant">
       <div className="space-y-2">
         <p className="text-sm leading-6">
-          No analysis yet. The dummy library is loaded automatically when the real target library is empty, so this page is never blank.
+          No analysis yet. The dummy library is loaded automatically when the real target library is empty, so this panel is never blank.
         </p>
         {selectedTarget ? (
           <div className="rounded-sm border bg-background p-3">

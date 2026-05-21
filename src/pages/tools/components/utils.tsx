@@ -131,7 +131,7 @@ function UUIDGenerator() {
             className="w-20"
           />
         </div>
-        <Button onClick={generate} size="sm">
+        <Button onClick={generate} size="xs">
           <RefreshCw className="h-4 w-4 mr-1" />
           Generate
         </Button>
@@ -139,7 +139,7 @@ function UUIDGenerator() {
       <div className="flex-1 flex flex-col gap-2">
         <div className="flex items-center justify-between">
           <Label>Generated UUIDs</Label>
-          <Button variant="ghost" size="sm" className="h-7 px-2" onClick={() => navigator.clipboard.writeText(uuid)}>
+          <Button variant="ghost" size="xs" className="h-7 px-2" onClick={() => navigator.clipboard.writeText(uuid)}>
             <Copy className="h-3.5 w-3.5" />
           </Button>
         </div>
@@ -199,7 +199,7 @@ function JWTDecoder() {
           <div className="border rounded-lg overflow-hidden">
             <div className="bg-muted/50 px-3 py-2 border-b flex items-center justify-between">
               <span className="font-medium text-sm">Header</span>
-              <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => copySection('header', JSON.stringify(decoded.header, null, 2))}>
+              <Button variant="ghost" size="xs" className="h-6 w-6 p-0" onClick={() => copySection('header', JSON.stringify(decoded.header, null, 2))}>
                 <Copy className="h-3 w-3" />
               </Button>
             </div>
@@ -211,7 +211,7 @@ function JWTDecoder() {
           <div className="border rounded-lg overflow-hidden">
             <div className="bg-muted/50 px-3 py-2 border-b flex items-center justify-between">
               <span className="font-medium text-sm">Payload</span>
-              <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => copySection('payload', JSON.stringify(decoded.payload, null, 2))}>
+              <Button variant="ghost" size="xs" className="h-6 w-6 p-0" onClick={() => copySection('payload', JSON.stringify(decoded.payload, null, 2))}>
                 <Copy className="h-3 w-3" />
               </Button>
             </div>
@@ -223,7 +223,7 @@ function JWTDecoder() {
           <div className="border rounded-lg overflow-hidden">
             <div className="bg-muted/50 px-3 py-2 border-b flex items-center justify-between">
               <span className="font-medium text-sm">Signature</span>
-              <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => copySection('signature', decoded.signature)}>
+              <Button variant="ghost" size="xs" className="h-6 w-6 p-0" onClick={() => copySection('signature', decoded.signature)}>
                 <Copy className="h-3 w-3" />
               </Button>
             </div>
@@ -272,7 +272,7 @@ function HexFormatter() {
       />
       <div className="flex items-center justify-between">
         <Label>Formatted Output</Label>
-        <Button variant="ghost" size="sm" className="h-7 px-2" onClick={() => navigator.clipboard.writeText(output)} disabled={!output}>
+        <Button variant="ghost" size="xs" className="h-7 px-2" onClick={() => navigator.clipboard.writeText(output)} disabled={!output}>
           <Copy className="h-3.5 w-3.5" />
         </Button>
       </div>
@@ -318,7 +318,7 @@ function JSONFormatter() {
       />
       <div className="flex items-center justify-between">
         <Label>Output</Label>
-        <Button variant="ghost" size="sm" className="h-7 px-2" onClick={() => navigator.clipboard.writeText(output)} disabled={!output}>
+        <Button variant="ghost" size="xs" className="h-7 px-2" onClick={() => navigator.clipboard.writeText(output)} disabled={!output}>
           <Copy className="h-3.5 w-3.5" />
         </Button>
       </div>
@@ -374,14 +374,14 @@ function RandomGenerator() {
             </TabsList>
           </Tabs>
         </div>
-        <Button onClick={generate} size="sm">
+        <Button onClick={generate} size="xs">
           <RefreshCw className="h-4 w-4 mr-1" />
           Regenerate
         </Button>
       </div>
       <div className="flex items-center justify-between">
         <Label>Random String</Label>
-        <Button variant="ghost" size="sm" className="h-7 px-2" onClick={() => navigator.clipboard.writeText(output)}>
+        <Button variant="ghost" size="xs" className="h-7 px-2" onClick={() => navigator.clipboard.writeText(output)}>
           <Copy className="h-3.5 w-3.5" />
         </Button>
       </div>
@@ -441,7 +441,7 @@ function DNSLookup() {
             <TabsTrigger value="TXT">TXT</TabsTrigger>
           </TabsList>
         </Tabs>
-        <Button onClick={lookup} disabled={!domain.trim() || isLoading}>
+        <Button size="xs" onClick={lookup} disabled={!domain.trim() || isLoading}>
           {isLoading ? 'Looking up...' : 'Lookup'}
         </Button>
       </div>

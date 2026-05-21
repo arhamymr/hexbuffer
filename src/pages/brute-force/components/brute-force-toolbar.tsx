@@ -2,7 +2,7 @@
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Play, Square, Upload } from 'lucide-react';
+import { Settings, Play, Square, Upload } from 'lucide-react';
 
 interface BruteForceToolbarProps {
   isRunning: boolean;
@@ -34,6 +34,7 @@ export function BruteForceToolbar({
       </div>
       <div className="flex items-center gap-2">
         <Button variant="outline" size="xs" onClick={onOpenConfig}>
+          <Settings className="h-4 w-4 mr-1" />
           Configure
         </Button>
         <Button variant="outline" size="xs" onClick={onOpenImport}>

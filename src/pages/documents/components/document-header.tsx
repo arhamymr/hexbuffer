@@ -19,7 +19,7 @@ export function DocumentHeader({ title, onTitleChange, onAddDocument }: Document
           className="text-base font-medium"
         />
       </div>
-      <Button type="button" variant="outline" onClick={onAddDocument}>
+      <Button size="xs" type="button" variant="outline" onClick={onAddDocument}>
         <FilePlus2 className="h-4 w-4" />
         New document
       </Button>

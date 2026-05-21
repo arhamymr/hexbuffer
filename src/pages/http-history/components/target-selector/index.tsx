@@ -24,6 +24,7 @@ export function TargetSelectorDialog() {
     handleCreateNew,
     handleEditTarget,
     handleCancelCreate,
+    handleSaveTarget,
     filteredCount,
     searchQuery,
     setSearchQuery,
@@ -34,7 +35,7 @@ export function TargetSelectorDialog() {
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button size="sm" variant="outline" className="gap-2 h-7 w-7 mb-1 gap-1 text-muted-foreground">
+        <Button size="xs" variant="outline" className="gap-2 h-7 w-7 mb-1 gap-1 text-muted-foreground">
           <Plus className="h-4 w-4" />
         </Button>
       </DialogTrigger>
@@ -53,6 +54,7 @@ export function TargetSelectorDialog() {
               key={editingTarget?.id ?? 'new-target'}
               target={editingTarget}
               onCancel={handleCancelCreate}
+              onSaved={handleSaveTarget}
             />
           </>
         ) : (
@@ -76,7 +78,7 @@ export function TargetSelectorDialog() {
               <span className="text-sm text-muted-foreground mr-auto">
                 {filteredCount} target{filteredCount !== 1 ? 's' : ''}
               </span>
-              <Button variant="outline" onClick={handleCreateNew} className="gap-2">
+              <Button size="xs" variant="outline" onClick={handleCreateNew} className="gap-2">
                 <Plus className="h-4 w-4" />
                 Create New Target
               </Button>

@@ -2,22 +2,30 @@
 
 import * as React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Crosshair, Settings, Moon, Sun, ArrowUpDown, RefreshCw, Wrench, Bot, LayoutDashboard, FileText } from 'lucide-react';
+import { Crosshair, Settings, Moon, Sun, ArrowUpDown, RefreshCw, Wrench, Bot, FileText, MessageSquare } from 'lucide-react';
 import { useTheme } from './theme-provider';
 import { Button } from './ui/button';
 import { AppFooter } from './footer';
+import { DashboardComposer } from '@/pages/ai-chat/components/composer';
+import { DashboardThread } from '@/pages/ai-chat/components/thread';
+import { useDashboardPage } from '@/pages/ai-chat/hooks/use-dashboard-page';
+import { cn } from '@/lib/utils';
 
 const mainNavItems = [
-  { label: 'Dashboard', icon: LayoutDashboard, href: '/dashboard' },
-  { label: 'HTTP History', icon: ArrowUpDown, href: '/' },
+  { label: 'HTTP History', icon: ArrowUpDown, href: '/history' },
   { label: 'Brute Force', icon: Crosshair, href: '/brute-force' },
   { label: 'Repeater', icon: RefreshCw, href: '/repeater' },
   { label: 'Documents', icon: FileText, href: '/documents' },
   { label: 'AI Tools', icon: Bot, href: '/ai-tools' },
-   { label: 'Tools', icon: Wrench, href: '/tools' },
-]
+  { label: 'Tools', icon: Wrench, href: '/tools' },
+];
 
-export function TopNav() {
+interface TopNavProps {
+  isAssistantOpen: boolean;
+  onToggleAssistant: () => void;
+}
+
+export function TopNav({ isAssistantOpen, onToggleAssistant }: TopNavProps) {
   const location = useLocation();
   const pathname = location.pathname;
   const { theme, toggleTheme } = useTheme();
@@ -118,17 +126,26 @@ export function TopNav() {
         <div className="flex shrink-0 items-center gap-1">
           <Button
             variant="ghost"
-            size="sm"
+            size="xs"
             className="h-8 w-8 p-0"
             onClick={toggleTheme}
             title={theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
           >
             {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </Button>
+          <Button
+            variant="ghost"
+            size="xs"
+            className={cn('h-8 w-8 p-0', isAssistantOpen && 'bg-muted text-foreground')}
+            onClick={onToggleAssistant}
+            title={isAssistantOpen ? 'Hide Chat' : 'Show Chat'}
+          >
+            <MessageSquare className="h-4 w-4" />
+          </Button>
           <Link to="/settings">
             <Button
               variant="ghost"
-              size="sm"
+              size="xs"
               className="h-8 w-8 p-0"
               title="Settings"
             >
@@ -141,11 +158,65 @@ export function TopNav() {
   );
 }
 
+function AIAssistantPane() {
+  const {
+    framework,
+    handleAnalyze,
+    isAnalyzing,
+    libraryTargets,
+    messages,
+    model,
+    prompt,
+    selectedTarget,
+    selectedTargetId,
+    setFramework,
+    setModel,
+    setPrompt,
+    setSelectedTargetId,
+    usingDummyData,
+  } = useDashboardPage();
+
+  return (
+    <aside className="absolute inset-2 z-40 flex min-h-0 flex-col overflow-hidden rounded-md border bg-background p-2 shadow-lg lg:static lg:z-auto lg:h-full lg:w-[clamp(320px,30vw,460px)] lg:shrink-0 lg:rounded-none lg:border-y-0 lg:border-r-0 lg:pl-2 lg:shadow-none">
+      <DashboardThread
+        libraryCount={libraryTargets.length}
+        messages={messages}
+        selectedTarget={selectedTarget}
+        usingDummyData={usingDummyData}
+      />
+      <DashboardComposer
+        framework={framework}
+        isAnalyzing={isAnalyzing}
+        libraryTargets={libraryTargets}
+        model={model}
+        onAnalyze={handleAnalyze}
+        prompt={prompt}
+        selectedTarget={selectedTarget}
+        selectedTargetId={selectedTargetId}
+        setFramework={setFramework}
+        setModel={setModel}
+        setPrompt={setPrompt}
+        setSelectedTargetId={setSelectedTargetId}
+      />
+    </aside>
+  );
+}
+
 export function AppLayout({ children }: { children?: React.ReactNode }) {
+  const [isAssistantOpen, setIsAssistantOpen] = React.useState(false);
+
   return (
     <div className="h-screen flex flex-col">
-      <TopNav />
-      <main className="flex-1 overflow-hidden p-2">{children}</main>
+      <TopNav
+        isAssistantOpen={isAssistantOpen}
+        onToggleAssistant={() => setIsAssistantOpen((current) => !current)}
+      />
+      <main className="relative flex min-h-0 flex-1 overflow-hidden p-2">
+        <section className={cn('min-w-0 flex-1 overflow-hidden', isAssistantOpen && 'lg:pr-2')}>
+          {children}
+        </section>
+        {isAssistantOpen && <AIAssistantPane />}
+      </main>
       <AppFooter />
     </div>
   );

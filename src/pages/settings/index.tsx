@@ -37,6 +37,7 @@ export function Settings() {
     handleSaveAiSettings,
     handleStartMastra,
     handleStopMastra,
+    handleToggleMastra,
     mastraBusy,
     mastraStatus,
     updateAiSettings,
@@ -153,11 +154,12 @@ export function Settings() {
               </div>
 
               <div className="flex flex-wrap gap-3">
-                <Button onClick={handleSaveAiSettings} disabled={aiSettingsLoading || aiSettingsSaving}>
+                <Button size="xs" onClick={handleSaveAiSettings} disabled={aiSettingsLoading || aiSettingsSaving}>
                   <SaveIcon className="mr-2 size-4" />
                   {aiSettingsSaving ? 'Saving...' : 'Save AI Settings'}
                 </Button>
                 <Button
+                  size="xs"
                   variant="outline"
                   onClick={handleClearAiApiKey}
                   disabled={aiSettingsLoading || aiSettingsSaving || !aiSettings.hasApiKey}
@@ -189,25 +191,25 @@ export function Settings() {
 
               <div className="flex items-center justify-between gap-4 rounded-md border p-3">
                 <div>
-                  <Label htmlFor="mastra-auto-start">Auto-start Mastra</Label>
+                  <Label htmlFor="mastra-enabled">Mastra runtime</Label>
                   <p className="mt-1 text-sm text-muted-foreground">
-                    Launch <code className="rounded bg-muted px-1 py-0.5">npm run dev</code> in the root mastra folder when the app opens.
+                    Enable the local Mastra workflow server for AppRecon.
                   </p>
                 </div>
                 <Switch
-                  id="mastra-auto-start"
-                  checked={aiSettings.mastraAutoStart}
-                  onCheckedChange={(mastraAutoStart) => updateAiSettings({ mastraAutoStart })}
-                  disabled={aiSettingsLoading}
+                  id="mastra-enabled"
+                  checked={aiSettings.mastraAutoStart && mastraStatus.running}
+                  onCheckedChange={handleToggleMastra}
+                  disabled={aiSettingsLoading || mastraBusy}
                 />
               </div>
 
               <div className="flex flex-wrap items-center gap-3">
-                <Button onClick={handleStartMastra} disabled={mastraBusy || mastraStatus.running}>
+                <Button size="xs" onClick={handleStartMastra} disabled={mastraBusy || mastraStatus.running}>
                   <PlayIcon className="mr-2 size-4" />
                   Start Mastra
                 </Button>
-                <Button variant="outline" onClick={handleStopMastra} disabled={mastraBusy || !mastraStatus.running}>
+                <Button size="xs" variant="outline" onClick={handleStopMastra} disabled={mastraBusy || !mastraStatus.running}>
                   <SquareIcon className="mr-2 size-4" />
                   Stop Mastra
                 </Button>
@@ -243,7 +245,7 @@ export function Settings() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex flex-col gap-2">
-                <Button onClick={handleDownloadCert} disabled={downloading} className="w-fit">
+                <Button size="xs" onClick={handleDownloadCert} disabled={downloading} className="w-fit">
                   <DownloadIcon className="mr-2 size-4" />
                   {downloading ? 'Saving...' : 'Save CA Certificate'}
                 </Button>

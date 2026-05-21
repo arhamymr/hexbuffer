@@ -73,6 +73,54 @@ export interface ProxyFilter {
   scope: string[] | null;
 }
 
+export interface WebSocketFilter {
+  search: string | null;
+  scope: string[] | null;
+  states?: string[] | null;
+}
+
+export interface WebSocketConnectionSummary {
+  id: string;
+  timestamp: string;
+  url: string;
+  host: string;
+  path: string;
+  state: string;
+  message_count: number;
+  last_activity_at: string;
+}
+
+export interface WebSocketConnectionRecord {
+  id: string;
+  timestamp: string;
+  url: string;
+  host: string;
+  path: string;
+  handshake_request_headers: Record<string, string>;
+  handshake_response_status: number | null;
+  handshake_response_headers: Record<string, string>;
+  client_addr: string;
+  server_addr: string;
+  state: string;
+  message_count: number;
+  last_activity_at: string;
+}
+
+export interface WebSocketMessageRecord {
+  id: string;
+  connection_id: string;
+  timestamp: string;
+  direction: string;
+  message_type: string;
+  payload: number[];
+  payload_size: number;
+}
+
+export interface WebSocketConnectionDetail {
+  connection: WebSocketConnectionRecord;
+  messages: WebSocketMessageRecord[];
+}
+
 export async function getHttpLogs(
   page: number,
   perPage: number = 100,
@@ -108,10 +156,29 @@ export interface TreeNode {
 
 export interface TreePath {
   path: string;
+  url?: string;
   count: number;
   methods: string[];
 }
 
 export async function getProxyTree(filter?: ProxyFilter): Promise<TreeNode[]> {
   return invokeTauri('get_proxy_tree', { filter });
+}
+
+export async function getWebSocketLogs(
+  page: number,
+  perPage: number = 100,
+  filter?: WebSocketFilter
+): Promise<PaginatedResponse<WebSocketConnectionSummary>> {
+  return invokeTauri('get_websocket_paginated', {
+    page,
+    perPage,
+    filter,
+  });
+}
+
+export async function getWebSocketDetail(connectionId: string): Promise<WebSocketConnectionDetail> {
+  return invokeTauri('get_websocket_detail', {
+    connectionId,
+  });
 }

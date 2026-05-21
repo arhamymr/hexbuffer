@@ -15,6 +15,7 @@ export function DocumentsPage() {
     addDocument,
     closeDocument,
     activeDocument,
+    renameDocument,
     updateTitle,
     updateSection,
     selectedApiEntryId,
@@ -34,6 +35,7 @@ export function DocumentsPage() {
       tabs={tabs}
       activeTabId={activeDocumentId}
       onTabChange={setActiveDocumentId}
+      onTabRename={renameDocument}
       onTabClose={closeDocument}
       contentClassName="flex-1 border rounded-lg overflow-hidden bg-background min-h-0"
     >

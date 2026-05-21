@@ -12,7 +12,7 @@ const ToggleGroupContext = React.createContext<
     spacing?: number
   }
 >({
-  size: "default",
+  size: "sm",
   variant: "default",
   spacing: 0,
 })

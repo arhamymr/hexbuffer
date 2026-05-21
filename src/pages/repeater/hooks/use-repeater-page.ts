@@ -4,7 +4,7 @@ import { sendRepeaterRequest } from '../api';
 import { parseRawRequest, type RepeaterTab } from '../types';
 
 export function useRepeaterPage() {
-  const { tabs, activeTabId, setActiveTabId, updateTab, closeTab } = useRepeaterStore();
+  const { tabs, activeTabId, setActiveTabId, updateTab, renameTab, closeTab } = useRepeaterStore();
 
   const activeTab = React.useMemo(
     () => tabs.find((tab) => tab.id === activeTabId) ?? tabs[0] ?? null,
@@ -77,6 +77,7 @@ export function useRepeaterPage() {
     tabs: tabs.map((tab) => ({ id: tab.id, name: tab.name })),
     activeTabId,
     setActiveTabId,
+    renameTab,
     closeTab,
     activeTab,
     updateUrl,

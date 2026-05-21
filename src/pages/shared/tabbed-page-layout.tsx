@@ -8,6 +8,7 @@ interface TabbedPageLayoutProps {
   tabs: PageTabItem[];
   activeTabId: string;
   onTabChange: (id: string) => void;
+  onTabRename?: (id: string, name: string) => void;
   onTabClose?: (id: string) => void;
   children: ReactNode;
   className?: string;
@@ -18,6 +19,7 @@ export function TabbedPageLayout({
   tabs,
   activeTabId,
   onTabChange,
+  onTabRename,
   onTabClose,
   children,
   className = 'flex flex-col h-full',
@@ -30,6 +32,7 @@ export function TabbedPageLayout({
           tabs={tabs}
           activeTabId={activeTabId}
           onTabChange={onTabChange}
+          onTabRename={onTabRename}
           onTabClose={onTabClose}
         />
       </div>

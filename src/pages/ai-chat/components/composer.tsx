@@ -16,7 +16,6 @@ import type { Target } from '@/types';
 import type { DashboardAnalysisFramework } from '../lib/analyze-asset-input';
 
 interface DashboardComposerProps {
-  fetchTargets: () => Promise<void>;
   framework: DashboardAnalysisFramework;
   isAnalyzing: boolean;
   libraryTargets: Target[];
@@ -32,7 +31,6 @@ interface DashboardComposerProps {
 }
 
 export function DashboardComposer({
-  fetchTargets,
   framework,
   isAnalyzing,
   libraryTargets,
@@ -47,14 +45,13 @@ export function DashboardComposer({
   setSelectedTargetId,
 }: DashboardComposerProps) {
   return (
-    <div className="mt-3 shrink-0">
-      <Card className="border-t-green-500/40">
-        <CardContent className="flex flex-col gap-3 p-3">
-          <div className="grid gap-3 lg:grid-cols-[minmax(180px,1fr)_220px_180px_auto] lg:items-end">
-            <div className="flex-1">
-              <label className="mb-2 block text-sm font-medium">Select data</label>
+    <div className="mt-2 min-w-0 shrink-0">
+      <Card className="border bg-background">
+        <CardContent className="flex min-w-0 flex-col gap-2 p-2">
+          <div className="flex min-w-0 flex-col gap-2">
+            <div className="flex gap-2">
               <Select value={selectedTargetId} onValueChange={setSelectedTargetId}>
-                <SelectTrigger className="w-full">
+                <SelectTrigger className="w-full min-w-0">
                   <SelectValue placeholder="Select target" />
                 </SelectTrigger>
                 <SelectContent>
@@ -65,12 +62,9 @@ export function DashboardComposer({
                   ))}
                 </SelectContent>
               </Select>
-            </div>
 
-            <div>
-              <label className="mb-2 block text-sm font-medium">Framework</label>
               <Select value={framework} onValueChange={(value) => setFramework(value as DashboardAnalysisFramework)}>
-                <SelectTrigger className="w-full">
+                <SelectTrigger className="w-full min-w-0">
                   <SelectValue placeholder="Select framework" />
                 </SelectTrigger>
                 <SelectContent>
@@ -81,12 +75,9 @@ export function DashboardComposer({
                   ))}
                 </SelectContent>
               </Select>
-            </div>
 
-            <div>
-              <label className="mb-2 block text-sm font-medium">Model</label>
               <Select value={model} onValueChange={setModel}>
-                <SelectTrigger className="w-full">
+                <SelectTrigger className="w-full min-w-0">
                   <SelectValue placeholder="Select model" />
                 </SelectTrigger>
                 <SelectContent>
@@ -99,26 +90,10 @@ export function DashboardComposer({
               </Select>
             </div>
 
-            <div className="flex flex-col gap-3 sm:flex-row lg:shrink-0">
-              <Button onClick={() => void onAnalyze()} disabled={!selectedTarget || isAnalyzing}>
-                <SendHorizonal className="mr-2 h-4 w-4" />
-                {isAnalyzing ? 'Analyzing...' : 'Analyze'}
-              </Button>
-
-              <Button variant="outline" onClick={() => void fetchTargets()}>
-                Refresh library
-              </Button>
-            </div>
-          </div>
-
-          <div className="flex-1">
-            <label className="mb-2 block text-sm font-medium">Prompt</label>
-            <Textarea
-              value={prompt}
-              onChange={(event) => setPrompt(event.target.value)}
-              placeholder="Optional instructions, for example: focus on staging exposure, rank risky hosts first, or summarize like a report."
-              className="min-h-24 resize-none"
-            />
+            <Button size="xs" className="w-full" onClick={() => void onAnalyze()} disabled={!selectedTarget || isAnalyzing}>
+              <SendHorizonal className="mr-2 h-4 w-4" />
+              {isAnalyzing ? 'Analyzing...' : 'Analyze'}
+            </Button>
           </div>
         </CardContent>
       </Card>

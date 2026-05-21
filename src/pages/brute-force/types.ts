@@ -172,6 +172,33 @@ export function findPayloadPositions(text: string): PayloadPosition[] {
   return positions;
 }
 
+export function findRequestPayloadPositions(request: Partial<HttpRequest>): PayloadPosition[] {
+  const positions: PayloadPosition[] = [];
+
+  const collect = (text: string | undefined) => {
+    if (!text) {
+      return;
+    }
+
+    findPayloadPositions(text).forEach(() => {
+      positions.push({
+        name: `position_${positions.length + 1}`,
+        start: 0,
+        end: 0,
+      });
+    });
+  };
+
+  collect(request.url);
+  Object.entries(request.headers ?? {}).forEach(([name, value]) => {
+    collect(name);
+    collect(value);
+  });
+  collect(request.body);
+
+  return positions;
+}
+
 export function applyPayloadToPosition(
   text: string,
   position: PayloadPosition,
@@ -183,14 +210,15 @@ export function applyPayloadToPosition(
 }
 
 export function parseRawRequest(raw: string): Partial<HttpRequest> | null {
-  const lines = raw.trim().split('\n');
+  const normalized = raw.replace(/\r\n/g, '\n').replace(/\r/g, '\n').trim();
+  const lines = normalized.split('\n');
   if (lines.length === 0) return null;
 
   const requestLine = lines[0].split(' ');
   if (requestLine.length < 2) return null;
 
   const method = requestLine[0];
-  let url = requestLine[1];
+  const target = requestLine[1];
   const headers: Record<string, string> = {};
   let body = '';
   let bodyStartIndex = -1;
@@ -213,8 +241,15 @@ export function parseRawRequest(raw: string): Partial<HttpRequest> | null {
     body = lines.slice(bodyStartIndex).join('\n');
   }
 
-  if (!url.startsWith('http')) {
-    url = `https://${url}`;
+  let url = target;
+  if (!/^https?:\/\//i.test(url)) {
+    const host = headers.Host ?? headers.host;
+    if (!host) {
+      return null;
+    }
+
+    const path = url.startsWith('/') ? url : `/${url}`;
+    url = `https://${host}${path}`;
   }
 
   return { method, url, headers, body, follow_redirects: true, max_hops: 10 };

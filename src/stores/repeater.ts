@@ -11,30 +11,47 @@ import {
 interface RepeaterState {
   tabs: RepeaterTab[];
   activeTabId: string;
+  nextRequestTabNumber: number;
   setActiveTabId: (id: string) => void;
   updateTab: (id: string, updater: (tab: RepeaterTab) => RepeaterTab) => void;
+  renameTab: (id: string, name: string) => void;
   addRequestTab: (request: RepeaterRequest) => string;
   closeTab: (id: string) => void;
 }
 
 const initialTab = createDefaultRepeaterTab(1);
 
+function getNextRequestTabNumber(tabs: RepeaterTab[]): number {
+  const numericNames = tabs
+    .map((tab) => Number(tab.name))
+    .filter((name) => Number.isInteger(name) && name > 0);
+
+  return numericNames.length > 0 ? Math.max(...numericNames) + 1 : 1;
+}
+
 export const useRepeaterStore = create<RepeaterState>()(
   persist(
     (set) => ({
       tabs: [initialTab],
       activeTabId: initialTab.id,
+      nextRequestTabNumber: 1,
       setActiveTabId: (id) => set({ activeTabId: id }),
       updateTab: (id, updater) =>
         set((state) => ({
           tabs: state.tabs.map((tab) => (tab.id === id ? updater(tab) : tab)),
         })),
+      renameTab: (id, name) =>
+        set((state) => ({
+          tabs: state.tabs.map((tab) => (tab.id === id ? { ...tab, name } : tab)),
+        })),
       addRequestTab: (request) => {
-        const newTab = createRepeaterTabFromRequest(request);
+        const { nextRequestTabNumber } = useRepeaterStore.getState();
+        const newTab = createRepeaterTabFromRequest(request, String(nextRequestTabNumber));
 
         set((state) => ({
           tabs: [...state.tabs, newTab],
           activeTabId: newTab.id,
+          nextRequestTabNumber: state.nextRequestTabNumber + 1,
         }));
 
         return newTab.id;
@@ -69,6 +86,7 @@ export const useRepeaterStore = create<RepeaterState>()(
       partialize: (state) => ({
         tabs: state.tabs,
         activeTabId: state.activeTabId,
+        nextRequestTabNumber: state.nextRequestTabNumber,
       }),
       merge: (persistedState, currentState) => {
         const typedState = persistedState as Partial<RepeaterState> | undefined;
@@ -83,6 +101,7 @@ export const useRepeaterStore = create<RepeaterState>()(
           ...typedState,
           tabs: persistedTabs,
           activeTabId,
+          nextRequestTabNumber: typedState?.nextRequestTabNumber ?? getNextRequestTabNumber(persistedTabs),
         };
       },
     }

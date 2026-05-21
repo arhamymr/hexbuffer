@@ -1,6 +1,6 @@
 export interface TreeNodeData {
   id: string;
-  type: 'host' | 'path' | 'endpoint';
+  type: 'host' | 'endpoint';
   label: string;
   fullPath?: string;
   method?: string;

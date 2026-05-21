@@ -619,6 +619,7 @@ impl Database {
 
         #[derive(Default)]
         struct PathInfo {
+            url: String,
             count: u32,
             methods: std::collections::HashSet<String>,
         }
@@ -639,11 +640,12 @@ impl Database {
                 &url
             };
             let host = uri.split('/').next().unwrap_or("");
-            let path = uri.strip_prefix(host).unwrap_or("/");
-            let path = if path.is_empty() { "/" } else { path };
 
             let host_entry = host_paths.entry(host.to_string()).or_default();
-            let path_entry = host_entry.entry(path.to_string()).or_default();
+            let path_entry = host_entry.entry(url.to_string()).or_insert_with(|| PathInfo {
+                url,
+                ..Default::default()
+            });
             path_entry.count += 1;
             path_entry.methods.insert(method);
         }
@@ -657,11 +659,22 @@ impl Database {
             let mut paths: Vec<_> = paths_map.into_iter().collect();
             paths.sort_by(|a, b| b.1.count.cmp(&a.1.count));
 
-            for (path, info) in paths {
+            for (_url, info) in paths {
                 let mut methods: Vec<String> = info.methods.into_iter().collect();
                 methods.sort();
+                let uri = if info.url.contains("://") {
+                    match info.url.split("://").nth(1) {
+                        Some(u) => u,
+                        _ => &info.url,
+                    }
+                } else {
+                    &info.url
+                };
+                let path = uri.strip_prefix(&host).unwrap_or("/");
+                let path = if path.is_empty() { "/" } else { path };
                 paths_vec.push(TreePath {
-                    path,
+                    path: path.to_string(),
+                    url: info.url,
                     count: info.count,
                     methods,
                 });
@@ -686,6 +699,7 @@ pub struct TreeNode {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TreePath {
     pub path: String,
+    pub url: String,
     pub count: u32,
     pub methods: Vec<String>,
 }

@@ -32,6 +32,13 @@ export function useTargetSelectorDialog() {
     setEditingTarget(null);
   };
 
+  const handleSaveTarget = () => {
+    setOpen(false);
+    setShowCreateNew(false);
+    setEditingTarget(null);
+    setSearchQuery('');
+  };
+
   const handleOpenChange = (nextOpen: boolean) => {
     setOpen(nextOpen);
     if (!nextOpen) {
@@ -58,5 +65,6 @@ export function useTargetSelectorDialog() {
     handleCreateNew,
     handleEditTarget,
     handleCancelCreate,
+    handleSaveTarget,
   };
 }

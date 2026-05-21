@@ -279,7 +279,7 @@ function SidebarTrigger({
       data-sidebar="trigger"
       data-slot="sidebar-trigger"
       variant="ghost"
-      size="icon"
+      size="icon-sm"
       className={cn("size-7", className)}
       onClick={(event) => {
         onClick?.(event)
@@ -504,7 +504,7 @@ const sidebarMenuButtonVariants = cva(
     },
     defaultVariants: {
       variant: "default",
-      size: "default",
+      size: "sm",
     },
   }
 )
@@ -513,7 +513,7 @@ function SidebarMenuButton({
   asChild = false,
   isActive = false,
   variant = "default",
-  size = "default",
+  size = "sm",
   tooltip,
   className,
   ...props

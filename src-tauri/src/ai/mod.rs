@@ -1,7 +1,9 @@
 use serde::{Deserialize, Serialize};
+use std::net::{TcpStream, ToSocketAddrs};
 use std::path::PathBuf;
 use std::process::{Child, Command, Stdio};
 use std::sync::Mutex;
+use std::time::Duration;
 use tauri::{AppHandle, Manager, State};
 
 const KEYRING_SERVICE: &str = "apprecon";
@@ -27,7 +29,7 @@ impl Default for AiSettings {
             model: "gpt-4.1-mini".to_string(),
             api_key: String::new(),
             has_api_key: false,
-            mastra_auto_start: false,
+            mastra_auto_start: true,
             mastra_url: "http://localhost:4111".to_string(),
         }
     }
@@ -159,14 +161,23 @@ fn ai_settings_path(app: &AppHandle) -> Result<PathBuf, String> {
 
 fn mastra_status(app: &AppHandle, state: &MastraProcessState) -> Result<MastraStatus, String> {
     let settings = read_ai_settings(app).unwrap_or_default();
-    let child = state
+    let mut child = state
         .child
         .lock()
         .map_err(|_| "Failed to lock Mastra process state".to_string())?;
 
+    if let Some(process) = child.as_mut() {
+        if process.try_wait().map_err(|error| error.to_string())?.is_some() {
+            *child = None;
+        }
+    }
+
+    let managed_pid = child.as_ref().map(|process| process.id());
+    let running = managed_pid.is_some() || is_mastra_url_listening(&settings.mastra_url);
+
     Ok(MastraStatus {
-        running: child.is_some(),
-        pid: child.as_ref().map(|process| process.id()),
+        running,
+        pid: managed_pid,
         url: settings.mastra_url,
     })
 }
@@ -175,15 +186,27 @@ fn start_mastra_process(
     app: &AppHandle,
     state: &MastraProcessState,
 ) -> Result<MastraStatus, String> {
+    let settings = read_ai_settings(app).unwrap_or_default();
+
     {
-        let child = state
+        let mut child = state
             .child
             .lock()
             .map_err(|_| "Failed to lock Mastra process state".to_string())?;
 
+        if let Some(process) = child.as_mut() {
+            if process.try_wait().map_err(|error| error.to_string())?.is_some() {
+                *child = None;
+            }
+        }
+
         if child.is_some() {
             return mastra_status(app, state);
         }
+    }
+
+    if is_mastra_url_listening(&settings.mastra_url) {
+        return mastra_status(app, state);
     }
 
     let mastra_dir = find_mastra_dir(app)?;
@@ -214,6 +237,23 @@ fn start_mastra_process(
     }
 
     mastra_status(app, state)
+}
+
+fn is_mastra_url_listening(mastra_url: &str) -> bool {
+    let Ok(parsed_url) = url::Url::parse(mastra_url) else {
+        return false;
+    };
+    let Some(host) = parsed_url.host_str() else {
+        return false;
+    };
+    let Some(port) = parsed_url.port_or_known_default() else {
+        return false;
+    };
+
+    let Ok(mut addresses) = (host, port).to_socket_addrs() else {
+        return false;
+    };
+    addresses.any(|address| TcpStream::connect_timeout(&address, Duration::from_millis(250)).is_ok())
 }
 
 fn find_mastra_dir(app: &AppHandle) -> Result<PathBuf, String> {

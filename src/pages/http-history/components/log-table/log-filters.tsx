@@ -63,13 +63,13 @@ export function LogFilters({
     filter.search || filter.pathFilter || filter.methods.size > 0 || filter.statusCodes.size > 0;
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-center gap-2">
+    <div className="space-y-1">
+      <div className="flex items-center gap-1">
         <Input
           placeholder="Search URL, host, method, body..."
           value={filter.search}
           onChange={(e) => setFilter({ ...filter, search: e.target.value })}
-          className="flex-1"
+          className="flex-1 h-8 shadow-none"
         />
         {hasActiveFilters && (
           <Button variant="ghost" size="xs" onClick={clearFilters}>

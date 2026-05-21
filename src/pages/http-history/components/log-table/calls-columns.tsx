@@ -125,16 +125,16 @@ export function TrafficTable() {
   return (
     <div className="overflow-auto h-full flex flex-col">
       {newEventsCount > 0 && (
-        <div className="flex items-center justify-center py-2 border-b bg-muted/50">
+        <div className="flex items-center justify-center py-1 border-b bg-muted/50">
           <Button variant="outline" size="xs" onClick={handleRefresh}>
             {newEventsCount} new request{newEventsCount > 1 ? 's' : ''} - Click to refresh
           </Button>
         </div>
       )}
       <table className="w-full">
-        <thead className="sticky top-0 backdrop-blur z-10 border-b">
+        <thead className="sticky top-0 z-10 border-b bg-gray-100">
           <tr>
-            <th className="text-left text-xs font-medium text-muted-foreground px-3 py-2 w-[90px]">
+            <th className="text-left text-xs font-medium text-muted-foreground px-3 py-1 w-[90px]">
               <button
                 className="flex items-center gap-1 hover:text-foreground transition-colors"
                 onClick={toggleSortOrder}
@@ -147,38 +147,38 @@ export function TrafficTable() {
                 )}
               </button>
             </th>
-            <th className="text-left text-xs font-medium text-muted-foreground px-3 py-2 w-[70px]">Method</th>
-            <th className="text-left text-xs font-medium text-muted-foreground px-3 py-2 w-[150px]">Host</th>
-            <th className="text-left text-xs font-medium text-muted-foreground px-3 py-2 flex-1">Path</th>
-            <th className="text-right text-xs font-medium text-muted-foreground px-3 py-2 w-[70px]">Size</th>
-            <th className="text-right text-xs font-medium text-muted-foreground px-3 py-2 w-[70px]">Length</th>
-            <th className="text-left text-xs font-medium text-muted-foreground px-3 py-2 w-[150px]">MIME Type</th>
+            <th className="text-left text-xs font-medium text-muted-foreground px-3 py-1 w-[70px]">Method</th>
+            <th className="text-left text-xs font-medium text-muted-foreground px-3 py-1 w-[150px]">Host</th>
+            <th className="text-left text-xs font-medium text-muted-foreground px-3 py-1 flex-1">Path</th>
+            <th className="text-right text-xs font-medium text-muted-foreground px-3 py-1 w-[70px]">Size</th>
+            <th className="text-right text-xs font-medium text-muted-foreground px-3 py-1 w-[70px]">Length</th>
+            <th className="text-left text-xs font-medium text-muted-foreground px-3 py-1 w-[150px]">MIME Type</th>
           </tr>
         </thead>
         <tbody>
           {calls.map((call) => (
             <LogEntryContextMenu key={call.id} call={call} onDelete={removeCallLocally}>
               <tr className="hover:bg-muted/50 transition-colors border-b cursor-pointer" onClick={() => setSelectedCallId(call.id)}>
-                <td className="text-xs font-mono text-muted-foreground px-3 py-2">
+                <td className="text-xs font-mono text-muted-foreground px-3 py-1">
                   {formatTimestamp(call.timestamp)}
                 </td>
-                <td className="px-3 py-2 gap-2 flex">
+                <td className="px-3 py-1 gap-2 flex">
                   {getMethodBadge(call.method)}
                   <StatusBadge status={call.response_status} />
                 </td>
-                <td className="text-xs truncate max-w-[150px] px-3 py-2" title={call.url}>
+                <td className="text-xs truncate max-w-[150px] px-3 py-1" title={call.url}>
                   {call.host}
                 </td>
-                <td className="text-xs text-muted-foreground truncate max-w-[200px] px-3 py-2" title={call.url}>
+                <td className="text-xs text-muted-foreground truncate max-w-[200px] px-3 py-1" title={call.url}>
                   {call.path}
                 </td>
-                <td className="text-xs text-muted-foreground text-right px-3 py-2">
+                <td className="text-xs text-muted-foreground text-right px-3 py-1">
                   {formatBytes(call.response_body_size)}
                 </td>
-                <td className="text-xs text-muted-foreground text-right px-3 py-2">
+                <td className="text-xs text-muted-foreground text-right px-3 py-1">
                   {formatBytes(call.request_body_size)}
                 </td>
-                <td className="text-xs text-muted-foreground px-3 py-2 truncate max-w-[150px]" title={call.response_content_type ?? undefined}>
+                <td className="text-xs text-muted-foreground px-3 py-1 truncate max-w-[150px]" title={call.response_content_type ?? undefined}>
                   {call.response_content_type || "-"}
                 </td>
               </tr>

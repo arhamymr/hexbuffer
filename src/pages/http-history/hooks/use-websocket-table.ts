@@ -42,11 +42,11 @@ export function useWebSocketTable() {
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingEventRef = useRef(false);
   const lastBaseQueryRef = useRef<string>('');
-  const currentPageRef = useRef(query.page);
+  const currentPageRef = useRef(1);
 
   useEffect(() => {
-    currentPageRef.current = query.page;
-  }, [query.page]);
+    currentPageRef.current = pagination.page;
+  }, [pagination.page]);
 
   const baseQueryKey = useMemo(
     () =>

@@ -11,7 +11,7 @@ export function HttpHistoryView() {
         <TrafficTable />
       </ResizablePanel>
       <ResizableHandle withHandle />
-      <ResizablePanel defaultSize={40}>
+      <ResizablePanel defaultSize={40} className='bg-muted'>
         <LogEntryBurpView />
       </ResizablePanel>
     </ResizablePanelGroup>

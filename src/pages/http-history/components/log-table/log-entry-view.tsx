@@ -121,7 +121,7 @@ export function LogEntryBurpView() {
 
   return (
     <div className="flex-1 grid grid-cols-2 gap-0 min-h-0 p-1">
-      <div className="border rounded-l-md border-r-0 overflow-hidden flex flex-col">
+      <div className="border bg-background rounded-l-md border-r-0 overflow-hidden flex flex-col">
         <div className="p-3 border-b bg-muted/30">
           <div className="flex items-center gap-2">
             {call.method && getMethodBadge(call.method)}
@@ -147,7 +147,7 @@ export function LogEntryBurpView() {
         </div>
       </div>
 
-      <div className="border rounded-r-md overflow-hidden flex flex-col">
+      <div className="border bg-background rounded-r-md overflow-hidden flex flex-col">
         <div className="p-3 border-b bg-muted/30">
           <div className="flex items-center gap-2">
             {call.response_status && (

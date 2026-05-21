@@ -16,7 +16,7 @@ export function DocumentHeader({ title, onTitleChange, onAddDocument }: Document
           value={title}
           onChange={(event) => onTitleChange(event.target.value)}
           placeholder="Untitled recon document"
-          className="text-base font-medium"
+          className="text-base font-medium. h-6.5"
         />
       </div>
       <Button size="xs" type="button" variant="outline" onClick={onAddDocument}>

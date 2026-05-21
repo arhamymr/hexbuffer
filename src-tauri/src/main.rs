@@ -10,8 +10,8 @@ use apprecon::{
 use base64::{engine::general_purpose, Engine};
 use regex::Regex;
 use serde::{Deserialize, Serialize};
-use sha1::{Digest as Sha1Digest, Sha1};
-use sha2::{Digest as Sha2Digest, Sha256};
+use sha1::Sha1;
+use sha2::{Digest, Sha256};
 use std::collections::HashMap;
 use std::sync::{
     atomic::{AtomicBool, Ordering},
@@ -166,7 +166,7 @@ struct IntruderAttackResult {
 
 #[derive(Default)]
 struct IntruderState {
-    cancellations: Mutex<HashMap<String, Arc<AtomicBool>>>,
+    cancellations: Arc<Mutex<HashMap<String, Arc<AtomicBool>>>>,
 }
 
 #[tauri::command]
@@ -237,8 +237,12 @@ async fn start_intruder_attack(
         .insert(attack_id.clone(), cancel_flag.clone());
 
     let event_id = attack_id.clone();
+    let cancellations = state.cancellations.clone();
     tokio::spawn(async move {
-        run_intruder_attack(app, event_id, config, cancel_flag).await;
+        run_intruder_attack(app, event_id.clone(), config, cancel_flag).await;
+        if let Ok(mut cancellations) = cancellations.lock() {
+            cancellations.remove(&event_id);
+        }
     });
 
     Ok(attack_id)
@@ -268,6 +272,14 @@ fn validate_intruder_config(config: &IntruderAttackConfig) -> Result<(), String>
 
     if count_markers(&config.base_request) == 0 {
         return Err("Add at least one payload position with § markers".to_string());
+    }
+
+    if config
+        .positions
+        .iter()
+        .any(|position| position.end < position.start)
+    {
+        return Err("Payload position ranges are invalid".to_string());
     }
 
     if build_payload_source(&config.payload_config)?.is_empty() {
@@ -450,7 +462,7 @@ async fn send_intruder_request(
         response_length: None,
         response_time_ms: None,
         error: last_error,
-        comment: None,
+        comment: Some(config.name.clone()),
         response: None,
         grep_match: false,
         grep_extracted: None,
@@ -598,11 +610,11 @@ fn build_payload_source(config: &IntruderPayloadConfig) -> Result<Vec<String>, S
         }
     };
 
-    values
+    Ok(values
         .into_iter()
         .map(|value| apply_payload_processing(value, &config.processing))
         .filter(|value| !value.is_empty())
-        .collect()
+        .collect())
 }
 
 fn format_number_payload(value: i64, format: Option<&str>) -> String {

@@ -14,7 +14,7 @@ export function RepeaterRequestPanel({
 }: RepeaterRequestPanelProps) {
   return (
     <div className="flex flex-col h-full">
-      <div className="bg-muted/30 px-3 py-2 border-b">
+      <div className="bg-muted h-10 px-3 py-2 border-b">
         <span className="text-sm font-medium">Request</span>
       </div>
 

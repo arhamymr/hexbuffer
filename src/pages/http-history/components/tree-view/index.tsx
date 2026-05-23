@@ -55,7 +55,7 @@ export function TreeView({
           level={0}
           onSelectEndpoint={onSelectEndpoint}
           selectedId={selectedId}
-          defaultExpanded={true}
+          defaultExpanded={false}
         />
       ))}
     </div>

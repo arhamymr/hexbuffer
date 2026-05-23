@@ -1,4 +1,5 @@
 import type { ApiCall } from '@/types';
+import { buildHttpCurlCommand } from '@/lib/http-message';
 
 export const METHOD_FILTERS = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD'] as const;
 
@@ -110,14 +111,10 @@ export function parseCookieHeader(cookieString: string | null | undefined): { na
 
 export function buildCurlCommand(call: ApiCall): string {
   if (!call) return '';
-  const lines: string[] = [`curl -X ${call.method || 'GET'}`];
-  for (const [k, v] of Object.entries(call.headers)) {
-    lines.push(`  -H '${k}: ${v}'`);
-  }
-  if (call.request_body) {
-    const escaped = call.request_body.replace(/'/g, "'\\''");
-    lines.push(`  -d '${escaped}'`);
-  }
-  lines.push(`  '${call.url}'`);
-  return lines.join(' \\\n');
+  return buildHttpCurlCommand({
+    method: call.method,
+    url: call.url,
+    headers: call.headers,
+    body: call.request_body ?? '',
+  });
 }

@@ -6,6 +6,10 @@ export function formatPayloadValues(payloadValues: Record<string, string>) {
     .join(', ');
 }
 
+export function getResultUrl(result: AttackResult) {
+  return result.response?.final_url ?? '';
+}
+
 export function filterResults(
   results: AttackResult[],
   filters: {

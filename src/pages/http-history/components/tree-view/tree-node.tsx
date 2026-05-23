@@ -80,7 +80,7 @@ export function TreeNode({
               node={child}
               level={level + 1}
               selectedId={selectedId}
-              defaultExpanded={level < 1}
+              defaultExpanded={false}
               onSelectEndpoint={onSelectEndpoint}
             />
           ))}

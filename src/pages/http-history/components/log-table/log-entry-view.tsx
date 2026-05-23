@@ -5,11 +5,12 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Empty, EmptyTitle, EmptyDescription } from "@/components/ui/empty";
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
+import { formatJsonBody } from '@/lib/http-message';
 import { useHistoryDetail } from '@/pages/http-history/hooks/use-history-detail';
 import type { ApiCall } from '@/types';
 import { InspectorSection, buildHeadersList, buildParamsList } from './inspector';
 import { parseCookieHeader } from './cookie-display';
-import { getMethodBadge, getStatusColor, formatBytes } from './utils';
+import { buildCurlCommand, getMethodBadge, getStatusColor, formatBytes } from './utils';
 
 function PrettyCurl({ call }: { call: ApiCall }) {
   const copyToClipboard = async (text: string) => {
@@ -21,17 +22,7 @@ function PrettyCurl({ call }: { call: ApiCall }) {
     }
   };
 
-  const buildCurlCommand = (): string => {
-    let cmd = `curl -X ${call.method} '${call.url}'`;
-    for (const [k, v] of Object.entries(call.headers)) {
-      cmd += ` \\\n  -H '${k}: ${v}'`;
-    }
-    if (call.request_body) {
-      cmd += ` \\\n  -d '${call.request_body}'`;
-    }
-    return cmd;
-  };
-
+  const curlCommand = buildCurlCommand(call);
   return (
     <div className="relative mt-2 border rounded-md overflow-hidden">
       <div className="absolute right-1 top-1 z-10">
@@ -41,7 +32,7 @@ function PrettyCurl({ call }: { call: ApiCall }) {
           className="h-6 w-6"
           onClick={(e) => {
             e.stopPropagation();
-            copyToClipboard(buildCurlCommand());
+            copyToClipboard(curlCommand);
           }}
           title="Copy cURL"
         >
@@ -49,27 +40,18 @@ function PrettyCurl({ call }: { call: ApiCall }) {
         </Button>
       </div>
       <pre className="bg-background p-3 rounded text-xs font-mono whitespace-pre-wrap overflow-auto max-h-40">
-        {buildCurlCommand()}
+        {curlCommand}
       </pre>
     </div>
   );
 }
 
 function PrettyJson({ content }: { content: string }) {
-  try {
-    const parsed = JSON.parse(content);
-    return (
-      <pre className="bg-background p-3 rounded text-xs font-mono whitespace-pre-wrap overflow-auto max-h-40">
-        {JSON.stringify(parsed, null, 2)}
-      </pre>
-    );
-  } catch {
-    return (
-      <pre className="bg-background p-3 rounded-md border text-xs font-mono whitespace-pre-wrap overflow-auto max-h-40">
-        {content}
-      </pre>
-    );
-  }
+  return (
+    <pre className="bg-background p-3 rounded-md border text-xs font-mono whitespace-pre-wrap overflow-auto max-h-40">
+      {formatJsonBody(content)}
+    </pre>
+  );
 }
 
 export function LogEntryBurpView() {

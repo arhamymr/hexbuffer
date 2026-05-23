@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { ChevronRight, ChevronDown } from 'lucide-react';
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from '@/components/ui/table';
+import { buildHttpHeaderList } from '@/lib/http-message';
 
 interface KeyValue {
   name: string;
@@ -78,7 +79,7 @@ export function InspectorSection({ title, items, defaultOpen = true }: Inspector
 }
 
 export function buildHeadersList(headers: Record<string, string>): KeyValue[] {
-  return Object.entries(headers).map(([name, value]) => ({ name, value }));
+  return buildHttpHeaderList(headers);
 }
 
 export function buildCookiesList(cookies: Record<string, string>): KeyValue[] {

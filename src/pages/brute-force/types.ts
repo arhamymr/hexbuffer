@@ -1,3 +1,5 @@
+import { buildRawHttpRequest, parseRawHttpRequest } from '@/lib/http-message';
+
 export interface HttpRequest {
   method: string;
   url: string;
@@ -209,48 +211,20 @@ export function applyPayloadToPosition(
   return `${before}${payload}${after}`;
 }
 
+export function buildRawRequest(request: Partial<HttpRequest>): string {
+  return buildRawHttpRequest(request, { decodePayloadMarkers: true });
+}
+
 export function parseRawRequest(raw: string): Partial<HttpRequest> | null {
-  const normalized = raw.replace(/\r\n/g, '\n').replace(/\r/g, '\n').trim();
-  const lines = normalized.split('\n');
-  if (lines.length === 0) return null;
+  const request = parseRawHttpRequest(raw, {
+    invalidMode: 'null',
+    trim: true,
+    defaultProtocol: 'https',
+  });
 
-  const requestLine = lines[0].split(' ');
-  if (requestLine.length < 2) return null;
-
-  const method = requestLine[0];
-  const target = requestLine[1];
-  const headers: Record<string, string> = {};
-  let body = '';
-  let bodyStartIndex = -1;
-
-  for (let i = 1; i < lines.length; i++) {
-    const line = lines[i];
-    if (line === '') {
-      bodyStartIndex = i + 1;
-      break;
-    }
-    const colonIndex = line.indexOf(':');
-    if (colonIndex > 0) {
-      const key = line.substring(0, colonIndex).trim();
-      const value = line.substring(colonIndex + 1).trim();
-      headers[key] = value;
-    }
+  if (!request) {
+    return null;
   }
 
-  if (bodyStartIndex > 0 && bodyStartIndex < lines.length) {
-    body = lines.slice(bodyStartIndex).join('\n');
-  }
-
-  let url = target;
-  if (!/^https?:\/\//i.test(url)) {
-    const host = headers.Host ?? headers.host;
-    if (!host) {
-      return null;
-    }
-
-    const path = url.startsWith('/') ? url : `/${url}`;
-    url = `https://${host}${path}`;
-  }
-
-  return { method, url, headers, body, follow_redirects: true, max_hops: 10 };
+  return { ...request, follow_redirects: true, max_hops: 10 };
 }

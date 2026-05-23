@@ -1,11 +1,9 @@
 'use client';
 
 import { Card } from "@/components/ui/card";
-import { Switch } from "@/components/ui/switch";
 import { LogFilters } from "./components/log-table/log-filters";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import { TabBar } from "@/pages/http-history/components/tab-bar";
-import { TargetSelectorDialog } from "./components/target-selector";
 import { TreeView } from "./components/tree-view";
 import { HttpHistoryView } from "./components/http-history-view";
 import { WebSocketHistoryView } from "./components/websocket-history-view";
@@ -25,23 +23,10 @@ export function HttpHistoryPage() {
     <div className="h-full flex flex-col">
       <div className="flex items-center gap-2 mb-2 border-b border-green-500 sticky top-0 z-20 bg-background pt-2">
         <TabBar />
-        <TargetSelectorDialog />
-        <div className="ml-auto flex items-center gap-2 pb-2 text-sm">
-          <span className={historyMode === 'http' ? 'font-medium' : 'text-muted-foreground'}>
-            HTTP
-          </span>
-          <Switch
-            checked={historyMode === 'websocket'}
-            onCheckedChange={(checked) => setHistoryMode(checked ? 'websocket' : 'http')}
-            aria-label="Switch between HTTP and WebSocket history"
-          />
-          <span className={historyMode === 'websocket' ? 'font-medium' : 'text-muted-foreground'}>
-            WebSocket
-          </span>
-        </div>
       </div>
       <LogFilters
         historyMode={historyMode}
+        setHistoryMode={setHistoryMode}
         sitemapVisible={sitemapVisible}
         setSitemapVisible={setSitemapVisible}
       />

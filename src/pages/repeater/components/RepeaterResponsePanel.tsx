@@ -3,9 +3,9 @@
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { TextEditor } from '@/components/ui/text-editor';
+import { buildRawHttpResponse } from '@/lib/http-message';
 import { Loader2, AlertCircle } from 'lucide-react';
 import type { RepeaterResponse } from '../types';
-import { buildRawResponse } from '../types';
 
 interface RepeaterResponsePanelProps {
   response: RepeaterResponse | null;
@@ -29,7 +29,7 @@ export function RepeaterResponsePanel({
         : 'secondary';
 
     return (
-      <Badge variant={statusVariant} className="text-sm px-3 py-1">
+      <Badge variant={statusVariant} className="text-xs">
         {response.status} {response.status_text}
       </Badge>
     );
@@ -86,7 +86,7 @@ export function RepeaterResponsePanel({
 
   return (
     <div className="flex flex-col h-full">
-      <div className="bg-muted/30 px-3 py-2 border-b flex items-center justify-between">
+      <div className="bg-muted h-10 px-3 py-2 border-b flex items-center justify-between">
         <span className="text-sm font-medium">Response</span>
         <div className="flex items-center gap-3">
           {renderStatusBadge()}
@@ -101,7 +101,7 @@ export function RepeaterResponsePanel({
         <div className="flex-1 min-h-0 overflow-hidden rounded-md border">
           <TextEditor
             language="html"
-            value={buildRawResponse(response)}
+            value={buildRawHttpResponse(response)}
             options={{
               readOnly: true,
               scrollBeyondLastLine: false,

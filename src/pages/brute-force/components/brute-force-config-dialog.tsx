@@ -4,22 +4,17 @@ import * as React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { X } from 'lucide-react';
+import { TextEditor } from '@/components/ui/text-editor';
+import { Target, X } from 'lucide-react';
 import { ATTACK_MODES, PAYLOAD_TYPES, PROCESSING_STEPS } from '../constants';
 import {
+  buildRawRequest,
   findRequestPayloadPositions,
+  parseRawRequest,
   type AttackConfig,
   type AttackMode,
   type PayloadProcessingStep,
@@ -27,8 +22,8 @@ import {
 } from '../types';
 
 interface BruteForceConfigDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
   config: AttackConfig;
   updateConfig: (updates: Partial<AttackConfig>) => void;
   updateAttackMode: (mode: AttackMode) => void;
@@ -54,8 +49,6 @@ interface BruteForceConfigDialogProps {
 }
 
 export function BruteForceConfigDialog({
-  open,
-  onOpenChange,
   config,
   updateConfig,
   updateAttackMode,
@@ -69,13 +62,18 @@ export function BruteForceConfigDialog({
   updateSessionHandling,
   onOpenPayloadFile,
 }: BruteForceConfigDialogProps) {
-  const [headersDraft, setHeadersDraft] = React.useState(() =>
-    JSON.stringify(config.base_request.headers, null, 2)
-  );
+  const [rawRequestDraft, setRawRequestDraft] = React.useState(() => buildRawRequest(config.base_request));
+  const rawRequestEditorRef = React.useRef<any>(null);
+  const rawRequestEditRef = React.useRef(false);
 
   React.useEffect(() => {
-    setHeadersDraft(JSON.stringify(config.base_request.headers, null, 2));
-  }, [config.base_request.headers]);
+    if (rawRequestEditRef.current) {
+      rawRequestEditRef.current = false;
+      return;
+    }
+
+    setRawRequestDraft(buildRawRequest(config.base_request));
+  }, [config.base_request]);
 
   const updateBaseRequest = (updates: Partial<AttackConfig['base_request']>) => {
     const baseRequest = { ...config.base_request, ...updates };
@@ -85,23 +83,49 @@ export function BruteForceConfigDialog({
     });
   };
 
-  const updateHeaders = (value: string) => {
-    setHeadersDraft(value);
-    try {
-      const headers = JSON.parse(value) as Record<string, string>;
-      updateBaseRequest({ headers });
-    } catch {
-      // Keep the last valid headers while the user is editing incomplete JSON.
+  const updateRawRequest = (value: string) => {
+    rawRequestEditRef.current = true;
+    setRawRequestDraft(value);
+    const parsed = parseRawRequest(value);
+    if (parsed) {
+      updateConfig({
+        base_request: {
+          ...config.base_request,
+          ...parsed,
+        },
+        positions: findRequestPayloadPositions(parsed),
+      });
     }
   };
 
+  const markRawRequestTarget = () => {
+    const editor = rawRequestEditorRef.current;
+    const model = editor?.getModel?.();
+    const selection = editor?.getSelection?.();
+    if (!editor || !model || !selection) {
+      return;
+    }
+
+    const selectedText = model.getValueInRange(selection);
+    editor.executeEdits('mark-brute-force-target', [
+      {
+        range: selection,
+        text: `§${selectedText}§`,
+        forceMoveMarkers: true,
+      },
+    ]);
+    editor.focus();
+    updateRawRequest(editor.getValue());
+  };
+
+  const payloadCount = config.payload_config.values.length;
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Attack Configuration</DialogTitle>
-          <DialogDescription>Configure the Brute Force attack settings</DialogDescription>
-        </DialogHeader>
+    <div className="flex min-h-0 flex-col rounded-lg border bg-background">
+      <div className="border-b px-3 py-2">
+        <h2 className="text-sm font-medium">Attack Configuration</h2>
+      </div>
+      <div className="min-h-0 overflow-auto p-3">
         <Tabs defaultValue="attack" className="w-full">
           <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="attack">Attack</TabsTrigger>
@@ -176,52 +200,41 @@ export function BruteForceConfigDialog({
           </TabsContent>
 
           <TabsContent value="request" className="space-y-4">
-            <div className="grid grid-cols-[120px_1fr] gap-4">
-              <div className="grid gap-2">
-                <Label>Method</Label>
-                <Input
-                  value={config.base_request.method}
-                  onChange={(event) => updateBaseRequest({ method: event.target.value.toUpperCase() })}
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label>URL</Label>
-                <Input
-                  className="font-mono"
-                  value={config.base_request.url}
-                  onChange={(event) => updateBaseRequest({ url: event.target.value })}
-                />
-              </div>
-            </div>
-
             <div className="grid gap-2">
               <div className="flex items-center justify-between">
-                <Label>Payload Positions</Label>
-                <Badge variant={config.positions.length > 0 ? 'default' : 'secondary'}>
-                  {config.positions.length} marked
-                </Badge>
+                <Label>Raw Request</Label>
+                <div className="flex items-center gap-2">
+                  <Badge variant={config.positions.length > 0 ? 'default' : 'secondary'}>
+                    {config.positions.length} marked
+                  </Badge>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="xs"
+                    onClick={markRawRequestTarget}
+                  >
+                    <Target className="h-4 w-4 mr-1" />
+                    Mark Target
+                  </Button>
+                </div>
+              </div>
+              <div className="h-[360px] overflow-hidden rounded-md border">
+                <TextEditor
+                  language="plaintext"
+                  value={rawRequestDraft}
+                  onChange={(value) => updateRawRequest(value ?? '')}
+                  onMount={(editor) => {
+                    rawRequestEditorRef.current = editor;
+                  }}
+                  options={{
+                    scrollBeyondLastLine: false,
+                    lineNumbers: 'on',
+                  }}
+                />
               </div>
               <p className="text-xs text-muted-foreground">
-                Wrap insertion points with § markers in the URL, headers, or body.
+                Select a URL, header, or body value and mark it as the payload insertion point.
               </p>
-            </div>
-
-            <div className="grid gap-2">
-              <Label>Headers JSON</Label>
-              <textarea
-                className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono h-28"
-                value={headersDraft}
-                onChange={(event) => updateHeaders(event.target.value)}
-              />
-            </div>
-
-            <div className="grid gap-2">
-              <Label>Body</Label>
-              <textarea
-                className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono h-36"
-                value={config.base_request.body}
-                onChange={(event) => updateBaseRequest({ body: event.target.value })}
-              />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -279,7 +292,28 @@ export function BruteForceConfigDialog({
                   <Button variant="outline" size="xs" onClick={onOpenPayloadFile}>
                     Load from File
                   </Button>
+                  {config.payload_config.file_path && (
+                    <Badge variant="secondary">{payloadCount} loaded</Badge>
+                  )}
                 </div>
+              </div>
+            )}
+
+            {config.payload_config.payload_type === 'RuntimeFile' && (
+              <div className="grid gap-3">
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="xs" onClick={onOpenPayloadFile}>
+                    Load Runtime File
+                  </Button>
+                  <Badge variant={payloadCount > 0 ? 'default' : 'secondary'}>
+                    {payloadCount} payloads
+                  </Badge>
+                </div>
+                {config.payload_config.file_path && (
+                  <p className="text-xs text-muted-foreground break-all">
+                    {config.payload_config.file_path}
+                  </p>
+                )}
               </div>
             )}
 
@@ -510,15 +544,7 @@ export function BruteForceConfigDialog({
             </div>
           </TabsContent>
         </Tabs>
-        <DialogFooter>
-          <Button variant="outline" size="xs" onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button size="xs" onClick={() => onOpenChange(false)}>
-            Save Configuration
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </div>
   );
 }

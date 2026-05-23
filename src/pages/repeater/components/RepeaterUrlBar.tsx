@@ -24,14 +24,14 @@ export function RepeaterUrlBar({
   };
 
   return (
-    <div className="flex items-center gap-2 p-2 border-b bg-muted/20">
+    <div className="flex items-center gap-2 p-2 border-b bg-muted">
       <Input
         type="text"
         placeholder="Base URL for relative raw requests (e.g., https://example.com)"
         value={url}
         onChange={(e) => onUrlChange(e.target.value)}
         onKeyDown={handleKeyDown}
-        className="flex-1 font-mono text-sm"
+        className="flex-1 font-mono text-sm bg-white"
       />
 
       <Button

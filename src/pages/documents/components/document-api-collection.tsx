@@ -2,7 +2,8 @@ import { Loader2, Play } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { TextEditor } from '@/components/ui/text-editor';
-import { buildRawRequest, buildRawResponse, type RepeaterResponse } from '@/pages/repeater/types';
+import { buildRawHttpRequest, buildRawHttpResponse } from '@/lib/http-message';
+import { type RepeaterResponse } from '@/pages/repeater/types';
 import { type SavedApiEntry } from '../types';
 
 interface DocumentApiCollectionProps {
@@ -113,7 +114,7 @@ export function DocumentApiCollection({
                     <TextEditor
                       height="100%"
                       language="plaintext"
-                      value={buildRawRequest({
+                      value={buildRawHttpRequest({
                         method: selectedEntry.method,
                         url: selectedEntry.url,
                         headers: selectedEntry.headers,
@@ -155,7 +156,7 @@ export function DocumentApiCollection({
                         <TextEditor
                           height="100%"
                           language="html"
-                          value={buildRawResponse(response)}
+                          value={buildRawHttpResponse(response)}
                           options={{
                             readOnly: true,
                             scrollBeyondLastLine: false,

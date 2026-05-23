@@ -2,13 +2,13 @@
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Settings, Play, Square, Upload } from 'lucide-react';
+import { Play, Square, Upload } from 'lucide-react';
 
 interface BruteForceToolbarProps {
   isRunning: boolean;
   progress: { current: number; total: number } | null;
   canStart: boolean;
-  onOpenConfig: () => void;
+  startBlockedReason?: string | null;
   onOpenImport: () => void;
   onStart: () => void;
   onStop: () => void;
@@ -18,7 +18,7 @@ export function BruteForceToolbar({
   isRunning,
   progress,
   canStart,
-  onOpenConfig,
+  startBlockedReason,
   onOpenImport,
   onStart,
   onStop,
@@ -31,12 +31,13 @@ export function BruteForceToolbar({
             {progress.current} / {progress.total}
           </Badge>
         )}
+        {!isRunning && startBlockedReason && (
+          <Badge variant={canStart ? 'secondary' : 'outline'}>
+            {startBlockedReason}
+          </Badge>
+        )}
       </div>
       <div className="flex items-center gap-2">
-        <Button variant="outline" size="xs" onClick={onOpenConfig}>
-          <Settings className="h-4 w-4 mr-1" />
-          Configure
-        </Button>
         <Button variant="outline" size="xs" onClick={onOpenImport}>
           <Upload className="h-4 w-4 mr-1" />
           Import Request

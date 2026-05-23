@@ -7,12 +7,14 @@ interface BruteForcePayloadDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onLoadPayloads: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  onSelectPayloadFile: () => void;
 }
 
 export function BruteForcePayloadDialog({
   open,
   onOpenChange,
   onLoadPayloads,
+  onSelectPayloadFile,
 }: BruteForcePayloadDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -21,6 +23,9 @@ export function BruteForcePayloadDialog({
           <DialogTitle>Load Payloads from File</DialogTitle>
         </DialogHeader>
         <div className="grid gap-4 py-4">
+          <Button type="button" size="xs" onClick={onSelectPayloadFile}>
+            Choose File
+          </Button>
           <input type="file" onChange={onLoadPayloads} accept=".txt,.lst,.wordlist" />
         </div>
         <DialogFooter>

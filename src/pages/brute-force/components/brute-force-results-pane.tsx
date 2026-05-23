@@ -2,7 +2,7 @@
 
 import { Badge } from '@/components/ui/badge';
 import type { AttackResult } from '../types';
-import { formatPayloadValues } from '../lib/utils';
+import { formatPayloadValues, getResultUrl } from '../lib/utils';
 
 interface BruteForceResultsPaneProps {
   results: AttackResult[];
@@ -28,6 +28,7 @@ export function BruteForceResultsPane({
             <tr>
               <th className="px-3 py-2 text-left font-medium w-12">#</th>
               <th className="px-3 py-2 text-left font-medium">Payload</th>
+              <th className="px-3 py-2 text-left font-medium">URL</th>
               <th className="px-3 py-2 text-left font-medium w-16">Status</th>
               <th className="px-3 py-2 text-left font-medium w-20">Length</th>
               <th className="px-3 py-2 text-left font-medium w-16">Grep</th>
@@ -44,8 +45,15 @@ export function BruteForceResultsPane({
                 onClick={() => onSelectResult(result)}
               >
                 <td className="px-3 py-2">{index + 1}</td>
-                <td className="px-3 py-2 font-mono text-xs truncate max-w-[200px]">
-                  {formatPayloadValues(result.payload_values)}
+                <td className="px-3 py-2 font-mono text-xs max-w-[180px]">
+                  <div className="truncate" title={formatPayloadValues(result.payload_values)}>
+                    {formatPayloadValues(result.payload_values)}
+                  </div>
+                </td>
+                <td className="px-3 py-2 font-mono text-xs max-w-[260px] text-muted-foreground">
+                  <div className="truncate" title={getResultUrl(result)}>
+                    {getResultUrl(result) || '-'}
+                  </div>
                 </td>
                 <td className="px-3 py-2">
                   {result.status && (
@@ -79,7 +87,7 @@ export function BruteForceResultsPane({
             ))}
             {results.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-3 py-8 text-center text-muted-foreground">
+                <td colSpan={7} className="px-3 py-8 text-center text-muted-foreground">
                   {isRunning ? 'Running attack...' : 'No results yet'}
                 </td>
               </tr>

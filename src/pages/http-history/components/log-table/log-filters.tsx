@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { X, Trash2, Map } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Switch } from '@/components/ui/switch';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,6 +20,7 @@ import { clearHistoryLogs } from '@/pages/http-history/services/history-service'
 import type { HistoryFilterState } from '@/pages/http-history/state/history-query-store';
 import { useHistoryQuery } from '@/pages/http-history/hooks/use-history-query';
 import type { HistoryMode } from '@/pages/http-history/hooks/use-http-history-page';
+import { TargetSelectorDialog } from '../target-selector';
 
 interface LogFiltersProps {
   filter?: HistoryFilterState;
@@ -26,6 +28,7 @@ interface LogFiltersProps {
   onClearFilters?: () => void;
   clearCalls?: () => void;
   historyMode?: HistoryMode;
+  setHistoryMode?: (mode: HistoryMode) => void;
   sitemapVisible?: boolean;
   setSitemapVisible?: (visible: boolean) => void;
 }
@@ -36,6 +39,7 @@ export function LogFilters({
   onClearFilters,
   clearCalls: clearCallsProp,
   historyMode = 'http',
+  setHistoryMode,
   sitemapVisible = true,
   setSitemapVisible,
 }: LogFiltersProps) {
@@ -65,6 +69,7 @@ export function LogFilters({
   return (
     <div className="space-y-1">
       <div className="flex items-center gap-1">
+        <TargetSelectorDialog />
         <Input
           placeholder="Search URL, host, method, body..."
           value={filter.search}
@@ -76,6 +81,21 @@ export function LogFilters({
             <X className="h-4 w-4 mr-1" />
             Clear
           </Button>
+        )}
+        {setHistoryMode && (
+          <div className="ml-auto flex items-center gap-2 text-sm">
+            <span className={historyMode === 'http' ? 'font-medium' : 'text-muted-foreground'}>
+              HTTP
+            </span>
+            <Switch
+              checked={historyMode === 'websocket'}
+              onCheckedChange={(checked) => setHistoryMode(checked ? 'websocket' : 'http')}
+              aria-label="Switch between HTTP and WebSocket history"
+            />
+            <span className={historyMode === 'websocket' ? 'font-medium' : 'text-muted-foreground'}>
+              WebSocket
+            </span>
+          </div>
         )}
       </div>
 

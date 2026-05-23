@@ -38,7 +38,7 @@ export function RepeaterPage() {
         onUrlChange={updateUrl}
         onSend={sendRequest}
       />
-      <div className="flex-1 grid grid-cols-2 gap-0 min-h-0">
+      <div className="bg-muted flex-1 grid grid-cols-2 gap-0 min-h-0">
         <div className="border-r min-h-0">
           <RepeaterRequestPanel
             rawRequest={activeTab.request.raw}

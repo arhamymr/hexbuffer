@@ -23,13 +23,21 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
+import { parseRawHttpRequest } from '@/lib/http-message';
 import {
   JAILBREAK_IMPORTED_PAYLOADS,
   JAILBREAK_PREDEFINED_PAYLOADS,
@@ -125,42 +133,16 @@ function parsePayloadLines(value: string) {
     .filter(Boolean);
 }
 
-function parseRawRequest(rawRequest: string, endpoint: string) {
-  const normalizedRequest = rawRequest.replace(/\r\n/g, '\n');
-  const [head, ...bodyParts] = normalizedRequest.split('\n\n');
-  const lines = head.split('\n').filter(Boolean);
-  const [method = 'GET', requestTarget = '/'] = (lines[0] || '').split(/\s+/);
-  const headers: Record<string, string> = {};
-
-  for (const line of lines.slice(1)) {
-    const delimiterIndex = line.indexOf(':');
-
-    if (delimiterIndex === -1) {
-      continue;
-    }
-
-    const key = line.slice(0, delimiterIndex).trim();
-    const value = line.slice(delimiterIndex + 1).trim();
-    const lowerKey = key.toLowerCase();
-
-    if (lowerKey === 'host' || lowerKey === 'content-length') {
-      continue;
-    }
-
-    headers[key] = value;
+function getPayloadModeLabel(mode: PayloadMode) {
+  if (mode === 'manual') {
+    return 'Manual';
   }
 
-  const baseUrl = endpoint.trim() || 'http://localhost:3000';
-  const url = /^https?:\/\//i.test(requestTarget)
-    ? requestTarget
-    : new URL(requestTarget || '/', baseUrl).toString();
+  if (mode === 'import') {
+    return 'Imported';
+  }
 
-  return {
-    method: method.toUpperCase(),
-    url,
-    headers,
-    body: bodyParts.join('\n\n'),
-  };
+  return 'Library';
 }
 
 function detectFindings(body: string, keywords: string[]) {
@@ -189,6 +171,11 @@ function AIPayloadTester({ tool }: AIPayloadTesterProps) {
   const [manualPayloads, setManualPayloads] = React.useState('');
   const [importedPayloads, setImportedPayloads] = React.useState<string[]>([]);
   const [selectedPayloads, setSelectedPayloads] = React.useState<Set<string>>(new Set(config.predefinedPayloads));
+  const [payloadDialogOpen, setPayloadDialogOpen] = React.useState(false);
+  const [draftPayloadMode, setDraftPayloadMode] = React.useState<PayloadMode>('predefined');
+  const [draftManualPayloads, setDraftManualPayloads] = React.useState('');
+  const [draftImportedPayloads, setDraftImportedPayloads] = React.useState<string[]>([]);
+  const [draftSelectedPayloads, setDraftSelectedPayloads] = React.useState<Set<string>>(new Set(config.predefinedPayloads));
   const [placeholder, setPlaceholder] = React.useState('{{input}}');
   const [requestBody, setRequestBody] = React.useState(config.defaultRequest);
   const [endpoint, setEndpoint] = React.useState('http://localhost:3000/api/chat');
@@ -211,7 +198,23 @@ function AIPayloadTester({ tool }: AIPayloadTesterProps) {
     setResults([]);
     setSelectedResultId(null);
     setPayloadMode('predefined');
+    setPayloadDialogOpen(false);
+    setDraftPayloadMode('predefined');
+    setDraftImportedPayloads([]);
+    setDraftManualPayloads('');
+    setDraftSelectedPayloads(new Set(config.predefinedPayloads));
   }, [config]);
+
+  React.useEffect(() => {
+    if (!payloadDialogOpen) {
+      return;
+    }
+
+    setDraftPayloadMode(payloadMode);
+    setDraftManualPayloads(manualPayloads);
+    setDraftImportedPayloads(importedPayloads);
+    setDraftSelectedPayloads(new Set(selectedPayloads));
+  }, [importedPayloads, manualPayloads, payloadDialogOpen, payloadMode, selectedPayloads]);
 
   const allPayloads = React.useMemo(() => {
     if (payloadMode === 'manual') {
@@ -224,6 +227,18 @@ function AIPayloadTester({ tool }: AIPayloadTesterProps) {
 
     return [...config.predefinedPayloads];
   }, [config.predefinedPayloads, importedPayloads, manualPayloads, payloadMode]);
+
+  const draftAllPayloads = React.useMemo(() => {
+    if (draftPayloadMode === 'manual') {
+      return parsePayloadLines(draftManualPayloads);
+    }
+
+    if (draftPayloadMode === 'import') {
+      return draftImportedPayloads;
+    }
+
+    return [...config.predefinedPayloads];
+  }, [config.predefinedPayloads, draftImportedPayloads, draftManualPayloads, draftPayloadMode]);
 
   const payloadsToRun = React.useMemo(() => {
     if (payloadMode === 'manual') {
@@ -244,33 +259,19 @@ function AIPayloadTester({ tool }: AIPayloadTesterProps) {
     return text.split(placeholder || '{{input}}').join(payload);
   }, [placeholder]);
 
-  const togglePayload = (payload: string) => {
-    setSelectedPayloads((current) => {
-      const next = new Set(current);
-
-      if (next.has(payload)) {
-        next.delete(payload);
-      } else {
-        next.add(payload);
-      }
-
-      return next;
-    });
-  };
-
   const selectAllPayloads = () => {
-    setSelectedPayloads((current) => {
-      if (current.size === allPayloads.length) {
+    setDraftSelectedPayloads((current) => {
+      if (current.size === draftAllPayloads.length) {
         return new Set();
       }
 
-      return new Set(allPayloads);
+      return new Set(draftAllPayloads);
     });
   };
 
   const loadBundledPayloads = () => {
-    setImportedPayloads([...config.importedPayloads]);
-    setSelectedPayloads(new Set(config.importedPayloads));
+    setDraftImportedPayloads([...config.importedPayloads]);
+    setDraftSelectedPayloads(new Set(config.importedPayloads));
     toast.success('Bundled payloads loaded');
   };
 
@@ -284,13 +285,36 @@ function AIPayloadTester({ tool }: AIPayloadTesterProps) {
     const reader = new FileReader();
     reader.onload = () => {
       const payloads = parsePayloadLines(String(reader.result || ''));
-      setImportedPayloads(payloads);
-      setSelectedPayloads(new Set(payloads));
+      setDraftImportedPayloads(payloads);
+      setDraftSelectedPayloads(new Set(payloads));
       toast.success(`${payloads.length} payloads imported`);
     };
     reader.onerror = () => toast.error('Failed to read payload file');
     reader.readAsText(file);
     event.target.value = '';
+  };
+
+  const toggleDraftPayload = (payload: string) => {
+    setDraftSelectedPayloads((current) => {
+      const next = new Set(current);
+
+      if (next.has(payload)) {
+        next.delete(payload);
+      } else {
+        next.add(payload);
+      }
+
+      return next;
+    });
+  };
+
+  const savePayloadConfig = () => {
+    setPayloadMode(draftPayloadMode);
+    setManualPayloads(draftManualPayloads);
+    setImportedPayloads(draftImportedPayloads);
+    setSelectedPayloads(new Set(draftSelectedPayloads));
+    setPayloadDialogOpen(false);
+    toast.success('Payload config saved');
   };
 
   const sendRequest = async (payload: string, index: number): Promise<TestResult> => {
@@ -301,7 +325,14 @@ function AIPayloadTester({ tool }: AIPayloadTesterProps) {
 
     try {
       const modifiedRequest = replacePlaceholder(requestBody, payload);
-      const parsedRequest = parseRawRequest(modifiedRequest, endpoint);
+      const parsedRequest = parseRawHttpRequest(modifiedRequest, {
+        fallbackUrl: endpoint.trim(),
+        defaultUrl: 'http://localhost:3000',
+        defaultMethod: 'GET',
+        defaultTarget: '/',
+        stripHeaders: ['host', 'content-length'],
+        uppercaseMethod: true,
+      })!;
       const canSendBody = !['GET', 'HEAD'].includes(parsedRequest.method);
       const response = await fetch(parsedRequest.url, {
         method: parsedRequest.method,
@@ -454,83 +485,27 @@ function AIPayloadTester({ tool }: AIPayloadTesterProps) {
         </div>
       </div>
 
-      <div className="grid flex-1 grid-cols-1 gap-4 min-h-0 xl:grid-cols-[360px_minmax(0,1fr)]">
-        <Card className="flex min-h-[420px] flex-col">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Target className="h-4 w-4" />
-              {config.payloadLabel}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="flex min-h-0 flex-1 flex-col gap-3">
-            <Tabs value={payloadMode} onValueChange={(value) => setPayloadMode(value as PayloadMode)}>
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="manual">Manual</TabsTrigger>
-                <TabsTrigger value="import">Import</TabsTrigger>
-                <TabsTrigger value="predefined">Library</TabsTrigger>
-              </TabsList>
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border bg-card px-3 py-2">
+        <div className="flex min-w-0 flex-wrap items-center gap-2 text-xs text-muted-foreground">
+          <span>Payload type</span>
+          <Badge variant="secondary">{getPayloadModeLabel(payloadMode)}</Badge>
+          <span>{payloadsToRun.length} selected</span>
+          {payloadMode !== 'manual' && allPayloads.length !== payloadsToRun.length && (
+            <span>{allPayloads.length} available</span>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          <Button size="xs" variant="outline" className="gap-1" onClick={() => setPayloadDialogOpen(true)} disabled={isRunning}>
+            <Target className="h-3.5 w-3.5" />
+            Payload Config
+          </Button>
+          <Button size="xs" variant="outline" onClick={() => runAttack(allPayloads)} disabled={allPayloads.length === 0 || isRunning}>
+            Run All
+          </Button>
+        </div>
+      </div>
 
-              <TabsContent value="manual" className="mt-3">
-                <Textarea
-                  className="min-h-[178px] font-mono text-xs"
-                  placeholder="One payload per line..."
-                  value={manualPayloads}
-                  onChange={(event) => setManualPayloads(event.target.value)}
-                />
-              </TabsContent>
-
-              <TabsContent value="import" className="mt-3">
-                <input ref={fileInputRef} type="file" className="hidden" accept=".txt,.list,.csv" onChange={loadPayloadFile} />
-                <div className="mb-2 flex gap-2">
-                  <Button variant="outline" size="xs" className="flex-1 gap-1" onClick={() => fileInputRef.current?.click()}>
-                    <FileUp className="h-3.5 w-3.5" />
-                    File
-                  </Button>
-                  <Button variant="outline" size="xs" className="flex-1" onClick={loadBundledPayloads}>
-                    Bundled
-                  </Button>
-                </div>
-                <PayloadChecklist
-                  payloads={importedPayloads}
-                  selectedPayloads={selectedPayloads}
-                  emptyText="No imported payloads yet."
-                  onTogglePayload={togglePayload}
-                />
-              </TabsContent>
-
-              <TabsContent value="predefined" className="mt-3">
-                <PayloadChecklist
-                  payloads={[...config.predefinedPayloads]}
-                  selectedPayloads={selectedPayloads}
-                  onTogglePayload={togglePayload}
-                />
-              </TabsContent>
-            </Tabs>
-
-            {payloadMode !== 'manual' && allPayloads.length > 0 && (
-              <div className="flex items-center justify-between text-xs text-muted-foreground">
-                <span>{selectedPayloads.size} selected</span>
-                <Button variant="ghost" size="xs" className="h-7 px-2" onClick={selectAllPayloads}>
-                  {selectedPayloads.size === allPayloads.length ? 'Deselect All' : 'Select All'}
-                </Button>
-              </div>
-            )}
-
-            <Separator />
-
-            <div className="grid grid-cols-2 gap-2">
-              <Button size="xs" className="gap-1" onClick={() => runAttack(payloadsToRun)} disabled={payloadsToRun.length === 0 || isRunning}>
-                {isRunning ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Zap className="h-3.5 w-3.5" />}
-                Run
-              </Button>
-              <Button size="xs" variant="outline" onClick={() => runAttack(allPayloads)} disabled={allPayloads.length === 0 || isRunning}>
-                Run All
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        <div className="grid min-h-[620px] grid-cols-1 gap-4 lg:grid-cols-2">
+      <div className="grid flex-1 min-h-0 grid-cols-1 gap-4 lg:grid-cols-2">
           <Card className="flex min-h-0 flex-col">
             <CardHeader className="pb-3">
               <CardTitle className="text-base">Request</CardTitle>
@@ -704,7 +679,82 @@ function AIPayloadTester({ tool }: AIPayloadTesterProps) {
             </CardContent>
           </Card>
         </div>
-      </div>
+
+      <Dialog open={payloadDialogOpen} onOpenChange={setPayloadDialogOpen}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[720px]">
+          <DialogHeader>
+            <DialogTitle>{config.payloadLabel}</DialogTitle>
+            <DialogDescription>Select or import the payloads used when this tool runs.</DialogDescription>
+          </DialogHeader>
+
+          <div className="flex items-center justify-between rounded-md border bg-muted/30 px-3 py-2 text-xs">
+            <span className="text-muted-foreground">Selected payload type</span>
+            <Badge variant="secondary">{getPayloadModeLabel(draftPayloadMode)}</Badge>
+          </div>
+
+          <Tabs value={draftPayloadMode} onValueChange={(value) => setDraftPayloadMode(value as PayloadMode)}>
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="manual">Manual</TabsTrigger>
+              <TabsTrigger value="import">Import</TabsTrigger>
+              <TabsTrigger value="predefined">Library</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="manual" className="mt-3">
+              <Textarea
+                className="min-h-[260px] font-mono text-xs"
+                placeholder="One payload per line..."
+                value={draftManualPayloads}
+                onChange={(event) => setDraftManualPayloads(event.target.value)}
+              />
+            </TabsContent>
+
+            <TabsContent value="import" className="mt-3">
+              <input ref={fileInputRef} type="file" className="hidden" accept=".txt,.list,.csv" onChange={loadPayloadFile} />
+              <div className="mb-2 flex gap-2">
+                <Button variant="outline" size="xs" className="flex-1 gap-1" onClick={() => fileInputRef.current?.click()}>
+                  <FileUp className="h-3.5 w-3.5" />
+                  File
+                </Button>
+                <Button variant="outline" size="xs" className="flex-1" onClick={loadBundledPayloads}>
+                  Bundled
+                </Button>
+              </div>
+              <PayloadChecklist
+                payloads={draftImportedPayloads}
+                selectedPayloads={draftSelectedPayloads}
+                emptyText="No imported payloads yet."
+                onTogglePayload={toggleDraftPayload}
+              />
+            </TabsContent>
+
+            <TabsContent value="predefined" className="mt-3">
+              <PayloadChecklist
+                payloads={[...config.predefinedPayloads]}
+                selectedPayloads={draftSelectedPayloads}
+                onTogglePayload={toggleDraftPayload}
+              />
+            </TabsContent>
+          </Tabs>
+
+          {draftPayloadMode !== 'manual' && draftAllPayloads.length > 0 && (
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <span>{draftSelectedPayloads.size} selected</span>
+              <Button variant="ghost" size="xs" className="h-7 px-2" onClick={selectAllPayloads}>
+                {draftSelectedPayloads.size === draftAllPayloads.length ? 'Deselect All' : 'Select All'}
+              </Button>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" size="xs" onClick={() => setPayloadDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button size="xs" onClick={savePayloadConfig}>
+              Save Config
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

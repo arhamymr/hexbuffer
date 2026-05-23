@@ -16,7 +16,7 @@ import { useBruteForceStore } from '@/stores/bruto-force';
 import { useHistoryQuery } from '@/pages/http-history/hooks/use-history-query';
 import { adaptProxyRecordToApiCall } from '@/pages/http-history/hooks/use-history-table';
 import { useRepeaterStore } from '@/stores/repeater';
-import { buildRawRequest } from '@/pages/repeater/types';
+import { buildHttpCurlCommand, buildRawHttpRequest } from '@/lib/http-message';
 import { useDocumentsStore } from '@/stores/documents';
 
 interface LogEntryContextMenuProps {
@@ -40,14 +40,12 @@ export function LogEntryContextMenu({
   };
 
   const buildCurlCommand = (call: ApiCall): string => {
-    let cmd = `curl -X ${call.method} '${call.url}'`;
-    for (const [k, v] of Object.entries(call.headers)) {
-      cmd += ` \\\n  -H '${k}: ${v}'`;
-    }
-    if (call.request_body) {
-      cmd += ` \\\n  -d '${call.request_body}'`;
-    }
-    return cmd;
+    return buildHttpCurlCommand({
+      method: call.method,
+      url: call.url,
+      headers: call.headers,
+      body: call.request_body ?? '',
+    });
   };
 
   const handleCopyCurl = () => {
@@ -72,19 +70,24 @@ export function LogEntryContextMenu({
     console.log('Add to scope not available in dev mode');
   };
 
-  const handleOpenInBruteForce = () => {
-    const protocol = call.url.includes(':443') ? 'https' : 'http';
-    const request = {
-      method: call.method,
-      url: `${protocol}://${call.host}${call.path}`,
-      headers: call.headers,
-      body: call.request_body || '',
-      follow_redirects: true,
-      max_hops: 10,
-    };
+  const handleOpenInBruteForce = async () => {
+    try {
+      const detail = await fetchHistoryDetail(call.id);
+      const request = adaptProxyRecordToApiCall(detail);
 
-    useBruteForceStore.getState().setPendingRequest(request);
-    navigate('/brute-force');
+      useBruteForceStore.getState().setPendingRequest({
+        method: request.method,
+        url: request.url,
+        headers: request.headers,
+        body: request.request_body || '',
+        follow_redirects: true,
+        max_hops: 10,
+      });
+      navigate('/brute-force');
+    } catch (error) {
+      console.error('Failed to open request in Brute Force:', error);
+      toast.error('Failed to open request in Brute Force');
+    }
   };
 
   const handleOpenInRepeater = async () => {
@@ -92,7 +95,7 @@ export function LogEntryContextMenu({
       const detail = await fetchHistoryDetail(call.id);
       const request = adaptProxyRecordToApiCall(detail);
       useRepeaterStore.getState().addRequestTab({
-        raw: buildRawRequest({
+        raw: buildRawHttpRequest({
           method: request.method,
           url: request.url,
           headers: request.headers,

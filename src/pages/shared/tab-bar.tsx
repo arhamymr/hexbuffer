@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type MouseEvent } from 'react';
+import { X } from 'lucide-react';
 import {
   ContextMenu,
   ContextMenuContent,
@@ -14,6 +15,7 @@ export interface PageTabItem {
   id: string;
   name: string;
   disabled?: boolean;
+  closable?: boolean;
 }
 
 interface PageTabBarProps {
@@ -106,51 +108,74 @@ export function PageTabBar({ tabs, activeTabId, onTabChange, onTabRename, onTabC
     setEditingName('');
   };
 
-  const renderTab = (tab: PageTabItem) => (
-    <div
-      className={cn(
-        'flex min-w-max shrink-0 items-center gap-1 rounded-t-md border text-sm transition-colors',
-        tab.disabled
-          ? 'text-muted-foreground/60'
-          : 'hover:bg-muted/50',
-        activeTabId === tab.id
-          ? 'bg-background font-medium border-x border-t border-green-500 shadow-xl text-foreground'
-          : 'text-muted-foreground'
-      )}
-    >
-      {editingTabId === tab.id ? (
-        <input
-          ref={editingInputRef}
-          className="my-1 mx-2 h-7 w-28 rounded border bg-background px-2 text-xs outline-none focus-visible:ring-1 focus-visible:ring-green-500"
-          value={editingName}
-          onChange={(event) => setEditingName(event.target.value)}
-          onBlur={finishEditingTab}
-          onKeyDown={(event) => {
-            if (event.key === 'Enter') {
-              finishEditingTab();
-            }
+  const closeTab = (event: MouseEvent, tab: PageTabItem) => {
+    event.stopPropagation();
+    if (tab.disabled || tab.closable === false) {
+      return;
+    }
 
-            if (event.key === 'Escape') {
-              cancelEditingTab();
-            }
-          }}
-          aria-label={`Rename ${tab.name}`}
-        />
-      ) : (
-        <button
-          type="button"
-          className={cn(
-            'min-w-max px-2 py-2',
-            tab.disabled ? 'cursor-not-allowed' : 'cursor-pointer'
-          )}
-          onClick={() => !tab.disabled && onTabChange(tab.id)}
-          disabled={tab.disabled}
-        >
-          <span className="block whitespace-nowrap text-xs">{tab.name}</span>
-        </button>
-      )}
-    </div>
-  );
+    onTabClose?.(tab.id);
+  };
+
+  const renderTab = (tab: PageTabItem) => {
+    const canClose = !tab.disabled && Boolean(onTabClose) && tab.closable !== false;
+
+    return (
+      <div
+        className={cn(
+          'flex min-w-max shrink-0 items-center gap-1 rounded-t-md border text-sm transition-colors',
+          tab.disabled
+            ? 'text-muted-foreground/60'
+            : 'hover:bg-muted/50',
+          activeTabId === tab.id
+            ? 'bg-background font-medium border-x border-t border-green-500 shadow-xl text-foreground'
+            : 'text-muted-foreground'
+        )}
+      >
+        {editingTabId === tab.id ? (
+          <input
+            ref={editingInputRef}
+            className="my-1 mx-2 h-7 w-28 rounded border bg-background px-2 text-xs outline-none focus-visible:ring-1 focus-visible:ring-green-500"
+            value={editingName}
+            onChange={(event) => setEditingName(event.target.value)}
+            onBlur={finishEditingTab}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') {
+                finishEditingTab();
+              }
+
+              if (event.key === 'Escape') {
+                cancelEditingTab();
+              }
+            }}
+            aria-label={`Rename ${tab.name}`}
+          />
+        ) : (
+          <button
+            type="button"
+            className={cn(
+              'min-w-max px-2 py-2',
+              tab.disabled ? 'cursor-not-allowed' : 'cursor-pointer'
+            )}
+            onClick={() => !tab.disabled && onTabChange(tab.id)}
+            disabled={tab.disabled}
+          >
+            <span className="block whitespace-nowrap text-xs">{tab.name}</span>
+          </button>
+        )}
+        {canClose && editingTabId !== tab.id && (
+          <button
+            type="button"
+            className="mr-1 rounded-sm p-0.5 hover:bg-red-500/20"
+            onClick={(event) => closeTab(event, tab)}
+            aria-label={`Delete ${tab.name}`}
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        )}
+      </div>
+    );
+  };
 
   return (
     <div className="relative">
@@ -160,7 +185,9 @@ export function PageTabBar({ tabs, activeTabId, onTabChange, onTabRename, onTabC
       >
         <div className="flex min-w-full w-max items-center gap-1">
           {tabs.map((tab) => {
-            const hasContextMenu = !tab.disabled && (onTabRename || onTabClose);
+            const canRename = !tab.disabled && Boolean(onTabRename);
+            const canClose = !tab.disabled && Boolean(onTabClose) && tab.closable !== false;
+            const hasContextMenu = canRename || canClose;
 
             if (!hasContextMenu) {
               return <div key={tab.id}>{renderTab(tab)}</div>;
@@ -170,13 +197,13 @@ export function PageTabBar({ tabs, activeTabId, onTabChange, onTabRename, onTabC
               <ContextMenu key={tab.id}>
                 <ContextMenuTrigger asChild>{renderTab(tab)}</ContextMenuTrigger>
                 <ContextMenuContent>
-                  {onTabRename && (
+                  {canRename && (
                     <ContextMenuItem onClick={() => startEditingTab(tab)}>
                       Rename
                     </ContextMenuItem>
                   )}
-                  {onTabRename && onTabClose && <ContextMenuSeparator />}
-                  {onTabClose && (
+                  {canRename && canClose && <ContextMenuSeparator />}
+                  {canClose && (
                     <ContextMenuItem onClick={() => onTabClose(tab.id)} variant="destructive">
                       Delete
                     </ContextMenuItem>

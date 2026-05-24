@@ -1,5 +1,5 @@
 import { AI_TOOLS_TABS } from '../constants';
-import { useTabState } from '@/pages/shared/use-tab-state';
+import { useTabState } from '@/components/tabs-layout/use-tab-state';
 
 export function useAIToolsPage() {
   const { activeTabId, setActiveTabId } = useTabState(AI_TOOLS_TABS);

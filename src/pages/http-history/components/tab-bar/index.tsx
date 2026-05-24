@@ -1,6 +1,6 @@
 'use client';
 
-import { PageTabBar } from '@/pages/shared/tab-bar';
+import { PageTabBar } from '@/components/tabs-layout/tab-bar';
 import { useTabBar } from './hooks';
 
 export function TabBar() {

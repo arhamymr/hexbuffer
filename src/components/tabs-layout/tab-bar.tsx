@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, type MouseEvent } from 'react';
+import { useCallback, type MouseEvent } from 'react';
 import { X } from 'lucide-react';
 import {
   ContextMenu,
@@ -10,13 +10,9 @@ import {
   ContextMenuTrigger,
 } from '@/components/ui/context-menu';
 import { cn } from '@/lib/utils';
-
-export interface PageTabItem {
-  id: string;
-  name: string;
-  disabled?: boolean;
-  closable?: boolean;
-}
+import { useTabBar } from './use-tab-bar';
+import type { PageTabItem } from './types';
+export type { PageTabItem } from './types';
 
 interface PageTabBarProps {
   tabs: PageTabItem[];
@@ -27,97 +23,29 @@ interface PageTabBarProps {
 }
 
 export function PageTabBar({ tabs, activeTabId, onTabChange, onTabRename, onTabClose }: PageTabBarProps) {
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const editingInputRef = useRef<HTMLInputElement>(null);
-  const [canScrollLeft, setCanScrollLeft] = useState(false);
-  const [canScrollRight, setCanScrollRight] = useState(false);
-  const [editingTabId, setEditingTabId] = useState<string | null>(null);
-  const [editingName, setEditingName] = useState('');
+  const {
+    scrollContainerRef,
+    editingInputRef,
+    canScrollLeft,
+    canScrollRight,
+    editingTabId,
+    editingName,
+    setEditingName,
+    startEditingTab,
+    finishEditingTab,
+    cancelEditingTab,
+  } = useTabBar({ tabs, onTabRename, onTabChange });
 
-  useEffect(() => {
-    const scrollContainer = scrollContainerRef.current;
-
-    if (!scrollContainer) {
-      return;
-    }
-
-    const updateScrollIndicators = () => {
-      const { scrollLeft, scrollWidth, clientWidth } = scrollContainer;
-
-      setCanScrollLeft(scrollLeft > 0);
-      setCanScrollRight(scrollLeft + clientWidth < scrollWidth - 1);
-    };
-
-    updateScrollIndicators();
-
-    scrollContainer.addEventListener('scroll', updateScrollIndicators);
-
-    const resizeObserver = new ResizeObserver(updateScrollIndicators);
-    resizeObserver.observe(scrollContainer);
-
-    return () => {
-      scrollContainer.removeEventListener('scroll', updateScrollIndicators);
-      resizeObserver.disconnect();
-    };
-  }, [tabs]);
-
-  useEffect(() => {
-    if (editingTabId) {
-      requestAnimationFrame(() => {
-        editingInputRef.current?.focus();
-        editingInputRef.current?.select();
-      });
-    }
-  }, [editingTabId]);
-
-  useEffect(() => {
-    if (editingTabId && !tabs.some((tab) => tab.id === editingTabId)) {
-      setEditingTabId(null);
-      setEditingName('');
-    }
-  }, [editingTabId, tabs]);
-
-  const startEditingTab = (tab: PageTabItem) => {
-    if (!onTabRename || tab.disabled) {
-      return;
-    }
-
-    setEditingTabId(tab.id);
-    setEditingName(tab.name);
-    onTabChange(tab.id);
-  };
-
-  const finishEditingTab = () => {
-    if (!editingTabId) {
-      return;
-    }
-
-    const nextName = editingName.trim();
-    const tab = tabs.find((item) => item.id === editingTabId);
-
-    if (nextName && tab && nextName !== tab.name) {
-      onTabRename?.(editingTabId, nextName);
-    }
-
-    setEditingTabId(null);
-    setEditingName('');
-  };
-
-  const cancelEditingTab = () => {
-    setEditingTabId(null);
-    setEditingName('');
-  };
-
-  const closeTab = (event: MouseEvent, tab: PageTabItem) => {
+  const closeTab = useCallback((event: MouseEvent, tab: PageTabItem) => {
     event.stopPropagation();
     if (tab.disabled || tab.closable === false) {
       return;
     }
 
     onTabClose?.(tab.id);
-  };
+  }, [onTabClose]);
 
-  const renderTab = (tab: PageTabItem) => {
+  const renderTab = useCallback((tab: PageTabItem) => {
     const canClose = !tab.disabled && Boolean(onTabClose) && tab.closable !== false;
 
     return (
@@ -128,7 +56,7 @@ export function PageTabBar({ tabs, activeTabId, onTabChange, onTabRename, onTabC
             ? 'text-muted-foreground/60'
             : 'hover:bg-muted/50',
           activeTabId === tab.id
-            ? 'bg-background font-medium border-x border-t border-green-500 shadow-xl text-foreground'
+            ? 'bg-background font-medium border-x border-t border-primary shadow-xl text-foreground'
             : 'text-muted-foreground'
         )}
       >
@@ -175,7 +103,7 @@ export function PageTabBar({ tabs, activeTabId, onTabChange, onTabRename, onTabC
         )}
       </div>
     );
-  };
+  }, [activeTabId, editingTabId, editingName, onTabChange, closeTab, setEditingName, finishEditingTab, cancelEditingTab, onTabClose]);
 
   return (
     <div className="relative">
@@ -204,7 +132,7 @@ export function PageTabBar({ tabs, activeTabId, onTabChange, onTabRename, onTabC
                   )}
                   {canRename && canClose && <ContextMenuSeparator />}
                   {canClose && (
-                    <ContextMenuItem onClick={() => onTabClose(tab.id)} variant="destructive">
+                    <ContextMenuItem onClick={() => onTabClose?.(tab.id)} variant="destructive">
                       Delete
                     </ContextMenuItem>
                   )}

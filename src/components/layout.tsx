@@ -94,9 +94,9 @@ export function TopNav({ isAssistantOpen, onToggleAssistant }: TopNavProps) {
                     to={item.href}
                     className={`
                     flex shrink-0 items-center gap-2 whitespace-nowrap px-2 py-2 text-sm transition-colors
-                    border-b -mb-px
+                    border-b border-b-2
                     ${isActive
-                        ? 'border-green-500 text-foreground bg-muted/30'
+                        ? 'text-green-500 border-green-500 text-foreground bg-muted/30'
                         : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-t-md'
                       }
                   `}

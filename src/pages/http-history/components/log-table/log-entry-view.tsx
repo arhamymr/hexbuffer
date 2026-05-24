@@ -5,6 +5,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Empty, EmptyTitle, EmptyDescription } from "@/components/ui/empty";
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
+import { TextEditor } from '@/components/ui/text-editor';
 import { formatJsonBody } from '@/lib/http-message';
 import { useHistoryDetail } from '@/pages/http-history/hooks/use-history-detail';
 import type { ApiCall } from '@/types';
@@ -39,9 +40,21 @@ function PrettyCurl({ call }: { call: ApiCall }) {
           <Copy className="h-3 w-3" />
         </Button>
       </div>
-      <pre className="bg-background p-3 rounded text-xs font-mono whitespace-pre-wrap overflow-auto max-h-40">
-        {curlCommand}
-      </pre>
+      <TextEditor
+        height="10rem"
+        language="shell"
+        value={curlCommand}
+        options={{
+          readOnly: true,
+          scrollBeyondLastLine: false,
+          lineNumbers: 'off',
+          folding: false,
+          glyphMargin: false,
+          lineDecorationsWidth: 0,
+          lineNumbersMinChars: 0,
+          padding: { top: 12, bottom: 12 },
+        }}
+      />
     </div>
   );
 }
@@ -123,7 +136,6 @@ export function LogEntryBurpView() {
           </div>
 
           <div>
-            <div className="text-xs font-semibold text-muted-foreground mb-1">PRETTY</div>
             <PrettyCurl call={call} />
           </div>
         </div>

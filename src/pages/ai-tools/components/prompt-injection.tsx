@@ -39,12 +39,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { parseRawHttpRequest } from '@/lib/http-message';
 import {
-  JAILBREAK_IMPORTED_PAYLOADS,
-  JAILBREAK_PREDEFINED_PAYLOADS,
   PROMPT_INJECTION_IMPORTED_PAYLOADS,
   PROMPT_INJECTION_PREDEFINED_PAYLOADS,
-  PROMPT_LEAK_IMPORTED_PAYLOADS,
-  PROMPT_LEAK_PREDEFINED_PAYLOADS,
 } from '../lib/payloads';
 
 type PayloadMode = 'manual' | 'import' | 'predefined';
@@ -104,24 +100,6 @@ const TOOL_CONFIGS = {
     predefinedPayloads: PROMPT_INJECTION_PREDEFINED_PAYLOADS,
     importedPayloads: PROMPT_INJECTION_IMPORTED_PAYLOADS,
     responseKeywords: ['admin mode', 'debug mode', 'system override', 'hidden system prompt', 'internal data'],
-    defaultRequest: DEFAULT_REQUEST,
-  },
-  jailbreak: {
-    title: 'Jailbreak',
-    description: 'Exercise refusal bypass patterns and review responses for policy-breaking compliance.',
-    payloadLabel: 'Jailbreak Payloads',
-    predefinedPayloads: JAILBREAK_PREDEFINED_PAYLOADS,
-    importedPayloads: JAILBREAK_IMPORTED_PAYLOADS,
-    responseKeywords: ['compliance granted', 'dan', 'unrestricted', 'policy checks are disabled', 'real answer'],
-    defaultRequest: DEFAULT_REQUEST,
-  },
-  'prompt-leak': {
-    title: 'Prompt Leak',
-    description: 'Probe whether an assistant exposes hidden instructions, templates, or privileged context.',
-    payloadLabel: 'Leak Payloads',
-    predefinedPayloads: PROMPT_LEAK_PREDEFINED_PAYLOADS,
-    importedPayloads: PROMPT_LEAK_IMPORTED_PAYLOADS,
-    responseKeywords: ['system prompt', 'developer message', 'hidden instruction', 'confidential', 'begin_prompt'],
     defaultRequest: DEFAULT_REQUEST,
   },
 } satisfies Record<string, ToolConfig>;
@@ -814,10 +792,4 @@ export function PromptInjectionTool() {
   return <AIPayloadTester tool="prompt-injection" />;
 }
 
-export function JailbreakTool() {
-  return <AIPayloadTester tool="jailbreak" />;
-}
 
-export function PromptLeakTool() {
-  return <AIPayloadTester tool="prompt-leak" />;
-}

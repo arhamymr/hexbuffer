@@ -3,9 +3,9 @@
 
 use apprecon::{
     export_ca_cert_pem, run, start_mastra_if_enabled, AiSettings, HistoryBridge,
-    MastraProcessState, MastraStatus, PaginatedResponse, ProxyConfig, ProxyFilter, ProxyLogSummary,
-    ProxyRecord, ProxyState, TreeNode, WebSocketConnectionDetail, WebSocketConnectionSummary,
-    WebSocketFilter,
+    MastraProcessState, MastraStatus, PaginatedResponse, PortScanState, ProxyConfig, ProxyFilter,
+    ProxyLogSummary, ProxyRecord, ProxyState, TreeNode, WebSocketConnectionDetail,
+    WebSocketConnectionSummary, WebSocketFilter,
 };
 use base64::{engine::general_purpose, Engine};
 use regex::Regex;
@@ -1181,6 +1181,7 @@ fn main() {
             app.manage(Mutex::new(ProxyState::new()));
             app.manage(MastraProcessState::default());
             app.manage(IntruderState::default());
+            app.manage(PortScanState::default());
             app.manage(history);
             eprintln!("[main] Building Tauri app...");
 
@@ -1220,6 +1221,8 @@ fn main() {
             send_repeater_request,
             start_intruder_attack,
             stop_intruder_attack,
+            apprecon::port_scanner::scan_ports,
+            apprecon::port_scanner::stop_port_scan,
             get_ai_settings,
             save_ai_settings,
             clear_ai_api_key,

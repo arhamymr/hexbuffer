@@ -1,6 +1,6 @@
 'use client';
 
-import { TabbedPageLayout } from '@/pages/shared/tabbed-page-layout';
+import { TabbedPageLayout } from '@/components/tabs-layout/tabbed-page-layout';
 import { DOCUMENT_SECTION_DEFINITIONS } from './constants';
 import { DocumentHeader } from './components/document-header';
 import { DocumentSectionCard } from './components/document-section-card';

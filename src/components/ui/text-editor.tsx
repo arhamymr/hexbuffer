@@ -32,7 +32,7 @@ export function TextEditor({
         ...defaultOptions,
         ...options,
         minimap: {
-          ...defaultOptions.minimap,
+          ...defaultOptions?.minimap,
           ...options?.minimap,
         },
       }}

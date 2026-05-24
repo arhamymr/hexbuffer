@@ -2,7 +2,8 @@
 
 import type { ReactNode } from 'react';
 import { Tabs } from '@/components/ui/tabs';
-import { PageTabBar, type PageTabItem } from './tab-bar';
+import { PageTabBar } from './tab-bar';
+import type { PageTabItem } from './types';
 
 interface TabbedPageLayoutProps {
   tabs: PageTabItem[];
@@ -27,7 +28,7 @@ export function TabbedPageLayout({
 }: TabbedPageLayoutProps) {
   return (
     <div className={className}>
-      <div className="mb-2 border-b border-green-500">
+      <div className="mb-2 border-b">
         <PageTabBar
           tabs={tabs}
           activeTabId={activeTabId}

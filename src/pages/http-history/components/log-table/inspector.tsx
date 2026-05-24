@@ -21,11 +21,13 @@ interface InspectorSectionProps {
   defaultOpen?: boolean;
 }
 
+const wrappedCellClass = 'py-1 px-2 font-mono whitespace-normal break-words [overflow-wrap:anywhere]';
+
 export function InspectorSection({ title, items, defaultOpen = true }: InspectorSectionProps) {
   const [isOpen, setIsOpen] = useState(defaultOpen);
 
   return (
-    <div className="border rounded-md mb-2">
+    <div className="border rounded-md mb-2 min-w-0 overflow-hidden">
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-1 w-full px-2 py-1.5 text-xs font-semibold hover:bg-muted/50 transition-colors"
@@ -37,7 +39,7 @@ export function InspectorSection({ title, items, defaultOpen = true }: Inspector
       {isOpen && (
         <div className="border-t">
           {items.length > 0 ? (
-            <Table className="text-xs">
+            <Table className="text-xs table-fixed max-w-full">
               <TableHeader>
                 <TableRow className="h-7 hover:bg-transparent">
                   <TableHead className="py-1 px-2 font-semibold">Name</TableHead>
@@ -53,17 +55,17 @@ export function InspectorSection({ title, items, defaultOpen = true }: Inspector
               <TableBody>
                 {items.map((item, i) => (
                   <TableRow key={i} className="hover:bg-muted/30">
-                    <TableCell className="py-1 px-2 font-mono text-blue-600 break-all">
+                    <TableCell className={`${wrappedCellClass} text-blue-600`}>
                       {item.name}
                     </TableCell>
-                    <TableCell className="py-1 px-2 font-mono">
+                    <TableCell className={wrappedCellClass}>
                       {item.value}
                     </TableCell>
                     {item.domain !== undefined && (
-                      <TableCell className="py-1 px-2 font-mono">{item.domain}</TableCell>
+                      <TableCell className={wrappedCellClass}>{item.domain}</TableCell>
                     )}
                     {item.path !== undefined && (
-                      <TableCell className="py-1 px-2 font-mono">{item.path}</TableCell>
+                      <TableCell className={wrappedCellClass}>{item.path}</TableCell>
                     )}
                   </TableRow>
                 ))}

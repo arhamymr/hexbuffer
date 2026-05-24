@@ -1,5 +1,5 @@
 import { useTargetStore } from '@/stores/target';
-import type { PageTabItem } from '@/pages/shared/tab-bar';
+import type { PageTabItem } from '@/components/tabs-layout/tab-bar';
 
 const ALL_HISTORY_TAB_ID = 'all-scope';
 

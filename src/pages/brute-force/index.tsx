@@ -2,7 +2,7 @@
 
 import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { TabbedPageLayout } from '@/pages/shared/tabbed-page-layout';
+import { TabbedPageLayout } from '@/components/tabs-layout/tabbed-page-layout';
 import { BruteForceConfigDialog } from './components/brute-force-config-dialog';
 import { BruteForceFilters } from './components/brute-force-filters';
 import { BruteForcePayloadDialog } from './components/brute-force-payload-dialog';

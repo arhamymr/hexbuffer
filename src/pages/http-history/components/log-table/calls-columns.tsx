@@ -132,7 +132,7 @@ export function TrafficTable() {
         </div>
       )}
       <table className="w-full">
-        <thead className="sticky top-0 z-10 border-b bg-gray-100">
+        <thead className="sticky top-0 z-10 border-b bg-muted">
           <tr>
             <th className="text-left text-xs font-medium text-muted-foreground px-3 py-1 w-[90px]">
               <button
@@ -158,15 +158,15 @@ export function TrafficTable() {
         <tbody>
           {calls.map((call) => (
             <LogEntryContextMenu key={call.id} call={call} onDelete={removeCallLocally}>
-              <tr className="hover:bg-muted/50 transition-colors border-b cursor-pointer" onClick={() => setSelectedCallId(call.id)}>
-                <td className="text-xs font-mono text-muted-foreground px-3 py-1">
+              <tr className="hover:bg-muted/50 font-mono transition-colors border-b cursor-pointer" onClick={() => setSelectedCallId(call.id)}>
+                <td className="text-xs text-muted-foreground px-3 py-1">
                   {formatTimestamp(call.timestamp)}
                 </td>
                 <td className="px-3 py-1 gap-2 flex">
                   {getMethodBadge(call.method)}
                   <StatusBadge status={call.response_status} />
                 </td>
-                <td className="text-xs truncate max-w-[150px] px-3 py-1" title={call.url}>
+                <td className="text-xs truncate max-w-[250px] px-3 py-1" title={call.url}>
                   {call.host}
                 </td>
                 <td className="text-xs text-muted-foreground truncate max-w-[200px] px-3 py-1" title={call.url}>

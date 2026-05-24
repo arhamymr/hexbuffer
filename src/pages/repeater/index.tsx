@@ -1,6 +1,6 @@
 'use client';
 
-import { TabbedPageLayout } from '@/pages/shared/tabbed-page-layout';
+import { TabbedPageLayout } from '@/components/tabs-layout/tabbed-page-layout';
 import { RepeaterUrlBar } from './components/RepeaterUrlBar';
 import { RepeaterRequestPanel } from './components/RepeaterRequestPanel';
 import { RepeaterResponsePanel } from './components/RepeaterResponsePanel';

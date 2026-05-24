@@ -1,6 +1,7 @@
 import * as ResizablePrimitive from "react-resizable-panels"
 
 import { cn } from "@/lib/utils"
+import { GripHorizontal, GripVertical } from "lucide-react"
 
 function ResizablePanelGroup({
   className,
@@ -39,7 +40,14 @@ function ResizableHandle({
       {...props}
     >
       {withHandle && (
-        <div className="z-10 flex h-6 w-1 shrink-0 rounded-lg bg-border" />
+        <div className="z-10 flex h-6 w-4 shrink-0 items-center justify-center rounded-sm bg-border">
+          <div className="[aria-orientation=horizontal>*]:hidden block h-3 w-3 text-muted-foreground ([aria-orientation=horizontal]>*)::before:content-[' ']">
+            <GripVertical className="h-3 w-3" />
+          </div>
+          <div className="[aria-orientation=horizontal>*]:block hidden h-3 w-3 text-muted-foreground">
+            <GripHorizontal className="h-3 w-3" />
+          </div>
+        </div>
       )}
     </ResizablePrimitive.Separator>
   )

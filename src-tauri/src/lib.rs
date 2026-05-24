@@ -1,6 +1,8 @@
 pub mod ai;
 pub mod db;
 pub mod history;
+#[path = "port-scanner/mod.rs"]
+pub mod port_scanner;
 pub mod proxy;
 
 pub use ai::{
@@ -11,6 +13,7 @@ pub use db::repository::{Database, PaginatedResponse, TreeNode, TreePath};
 pub use history::{
     HistoryBridge, ProxyLogSummary, WebSocketConnectionDetail, WebSocketConnectionSummary,
 };
+pub use port_scanner::{scan_ports, stop_port_scan, PortScanState};
 pub use proxy::https::cert::export_ca_cert_pem;
 pub use proxy::state::{
     InterceptMode, PausedRequest, ProxyFilter, ProxyRecord, ProxyRequest, ProxyResponse,

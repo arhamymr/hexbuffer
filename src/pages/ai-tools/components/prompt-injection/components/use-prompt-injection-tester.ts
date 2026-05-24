@@ -41,7 +41,7 @@ export function usePromptInjectionTester(tool: keyof typeof TOOL_CONFIGS) {
   const [selectedResultId, setSelectedResultId] = React.useState<string | null>(null);
   const abortControllerRef = React.useRef<AbortController | null>(null);
   const isCancelledRef = React.useRef(false);
-  const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const fileInputRef = React.useRef<HTMLInputElement>(null!);
   const requestEditorRef = React.useRef<any>(null);
 
   React.useEffect(() => {

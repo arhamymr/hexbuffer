@@ -22,6 +22,12 @@ export interface BruteForceTab {
   progress: { current: number; total: number } | null;
   selectedResult: AttackResult | null;
   startError: string | null;
+  filterStatus: string;
+  filterPayload: string;
+  filterGrep: boolean;
+  payloadDialogOpen: boolean;
+  rawRequestDialogOpen: boolean;
+  rawRequestContent: string;
 }
 
 interface BruteForceState {
@@ -57,6 +63,12 @@ interface BruteForceState {
   setBaseRequest: (base_request: AttackConfig['base_request']) => void;
   setSelectedResult: (result: AttackResult | null) => void;
   setPendingRequest: (request: AttackConfig['base_request'] | null) => void;
+  setFilterStatus: (status: string) => void;
+  setFilterPayload: (payload: string) => void;
+  setFilterGrep: (grep: boolean) => void;
+  setPayloadDialogOpen: (open: boolean) => void;
+  setRawRequestDialogOpen: (open: boolean) => void;
+  setRawRequestContent: (content: string) => void;
 
   startAttack: () => Promise<void>;
   stopAttack: () => Promise<void>;
@@ -81,6 +93,12 @@ function createAttackTab(index: number, config = createDefaultAttackConfig()): B
     progress: null,
     selectedResult: null,
     startError: null,
+    filterStatus: '',
+    filterPayload: '',
+    filterGrep: false,
+    payloadDialogOpen: false,
+    rawRequestDialogOpen: false,
+    rawRequestContent: '',
   };
 }
 
@@ -260,6 +278,13 @@ export const useBruteForceStore = create<BruteForceState>((set, get) => ({
 
   setSelectedResult: (result) => updateActiveTab(set, (tab) => ({ ...tab, selectedResult: result })),
   setPendingRequest: (request) => set({ pendingRequest: request }),
+
+  setFilterStatus: (status) => updateActiveTab(set, (tab) => ({ ...tab, filterStatus: status })),
+  setFilterPayload: (payload) => updateActiveTab(set, (tab) => ({ ...tab, filterPayload: payload })),
+  setFilterGrep: (grep) => updateActiveTab(set, (tab) => ({ ...tab, filterGrep: grep })),
+  setPayloadDialogOpen: (open) => updateActiveTab(set, (tab) => ({ ...tab, payloadDialogOpen: open })),
+  setRawRequestDialogOpen: (open) => updateActiveTab(set, (tab) => ({ ...tab, rawRequestDialogOpen: open })),
+  setRawRequestContent: (content) => updateActiveTab(set, (tab) => ({ ...tab, rawRequestContent: content })),
 
   startAttack: async () => {
     const tab = getActiveTab(get());

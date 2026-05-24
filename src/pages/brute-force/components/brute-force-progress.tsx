@@ -1,10 +1,13 @@
 'use client';
 
-interface BruteForceProgressProps {
-  progress: { current: number; total: number } | null;
-}
+import { useBruteForceStore } from '@/stores/bruto-force';
 
-export function BruteForceProgress({ progress }: BruteForceProgressProps) {
+export function BruteForceProgress() {
+  const progress = useBruteForceStore((s) => {
+    const tab = s.tabs.find((t) => t.id === s.activeTabId);
+    return tab?.progress ?? null;
+  });
+
   if (!progress) {
     return null;
   }

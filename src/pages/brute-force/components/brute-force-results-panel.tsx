@@ -1,26 +1,27 @@
 'use client';
 
 import { Badge } from '@/components/ui/badge';
+import { useBruteForceStore } from '@/stores/bruto-force';
 import type { AttackResult } from '../types';
 import { formatPayloadValues, getResultUrl } from '../lib/utils';
+import { useBruteForceFilters } from '../hooks/use-brute-force-filters';
 
-interface BruteForceResultsPaneProps {
-  results: AttackResult[];
-  isRunning: boolean;
-  selectedResult: AttackResult | null;
-  onSelectResult: (result: AttackResult) => void;
-}
+export function BruteForceResultsPane() {
+  const { filteredResults } = useBruteForceFilters();
+  const isRunning = useBruteForceStore((s) => {
+    const tab = s.tabs.find((t) => t.id === s.activeTabId);
+    return tab?.isRunning ?? false;
+  });
+  const selectedResult = useBruteForceStore((s) => {
+    const tab = s.tabs.find((t) => t.id === s.activeTabId);
+    return tab?.selectedResult ?? null;
+  });
+  const setSelectedResult = useBruteForceStore((s) => s.setSelectedResult);
 
-export function BruteForceResultsPane({
-  results,
-  isRunning,
-  selectedResult,
-  onSelectResult,
-}: BruteForceResultsPaneProps) {
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-lg border bg-background">
       <div className="bg-muted/50 px-3 py-2 border-b">
-        <span className="text-sm font-medium">Results ({results.length})</span>
+        <span className="text-sm font-medium">Results ({filteredResults.length})</span>
       </div>
       <div className="min-h-0 flex-1 overflow-auto">
         <table className="w-full text-sm">
@@ -36,13 +37,13 @@ export function BruteForceResultsPane({
             </tr>
           </thead>
           <tbody>
-            {results.map((result, index) => (
+            {filteredResults.map((result, index) => (
               <tr
                 key={result.id}
                 className={`border-b cursor-pointer hover:bg-muted/50 ${
                   selectedResult?.id === result.id ? 'bg-muted' : ''
                 } ${result.error ? 'text-destructive' : ''}`}
-                onClick={() => onSelectResult(result)}
+                onClick={() => setSelectedResult(result)}
               >
                 <td className="px-3 py-2">{index + 1}</td>
                 <td className="px-3 py-2 font-mono text-xs max-w-[180px]">
@@ -85,7 +86,7 @@ export function BruteForceResultsPane({
                 </td>
               </tr>
             ))}
-            {results.length === 0 && (
+            {filteredResults.length === 0 && (
               <tr>
                 <td colSpan={7} className="px-3 py-8 text-center text-muted-foreground">
                   {isRunning ? 'Running attack...' : 'No results yet'}

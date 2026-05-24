@@ -2,34 +2,31 @@
 
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { useBruteForceStore } from '@/stores/bruto-force';
+import { useBruteForcePayloads } from '../hooks/use-brute-force-payloads';
 
-interface BruteForcePayloadDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onLoadPayloads: (event: React.ChangeEvent<HTMLInputElement>) => void;
-  onSelectPayloadFile: () => void;
-}
+export function BruteForcePayloadDialog() {
+  const payloadDialogOpen = useBruteForceStore((s) => {
+    const tab = s.tabs.find((t) => t.id === s.activeTabId);
+    return tab?.payloadDialogOpen ?? false;
+  });
+  const setPayloadDialogOpen = useBruteForceStore((s) => s.setPayloadDialogOpen);
+  const { handleLoadPayloads, handleSelectPayloadFile } = useBruteForcePayloads();
 
-export function BruteForcePayloadDialog({
-  open,
-  onOpenChange,
-  onLoadPayloads,
-  onSelectPayloadFile,
-}: BruteForcePayloadDialogProps) {
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={payloadDialogOpen} onOpenChange={setPayloadDialogOpen}>
       <DialogContent className="sm:max-w-[400px]">
         <DialogHeader>
           <DialogTitle>Load Payloads from File</DialogTitle>
         </DialogHeader>
         <div className="grid gap-4 py-4">
-          <Button type="button" size="xs" onClick={onSelectPayloadFile}>
+          <Button type="button" size="xs" onClick={handleSelectPayloadFile}>
             Choose File
           </Button>
-          <input type="file" onChange={onLoadPayloads} accept=".txt,.lst,.wordlist" />
+          <input type="file" onChange={handleLoadPayloads} accept=".txt,.lst,.wordlist" />
         </div>
         <DialogFooter>
-          <Button variant="outline" size="xs" onClick={() => onOpenChange(false)}>
+          <Button variant="outline" size="xs" onClick={() => setPayloadDialogOpen(false)}>
             Cancel
           </Button>
         </DialogFooter>

@@ -5,12 +5,9 @@ import { Label } from '@/components/ui/label';
 import { TextEditor } from '@/components/ui/text-editor';
 import { buildRawHttpResponse } from '@/lib/http-message';
 import { AlertCircle } from 'lucide-react';
+import { useBruteForceStore } from '@/stores/bruto-force';
 import type { AttackResult } from '../types';
 import { formatPayloadValues, getResultUrl } from '../lib/utils';
-
-interface BruteForcePreviewPaneProps {
-  selectedResult: AttackResult | null;
-}
 
 function buildRawAttackResponse(result: AttackResult) {
   if (result.error) {
@@ -24,7 +21,12 @@ function buildRawAttackResponse(result: AttackResult) {
   return buildRawHttpResponse(result.response, { prettyJsonBody: true });
 }
 
-export function BruteForcePreviewPane({ selectedResult }: BruteForcePreviewPaneProps) {
+export function BruteForcePreviewPane() {
+  const selectedResult = useBruteForceStore((s) => {
+    const tab = s.tabs.find((t) => t.id === s.activeTabId);
+    return tab?.selectedResult ?? null;
+  });
+
   const renderStatusBadge = () => {
     if (!selectedResult) return null;
 
@@ -53,7 +55,7 @@ export function BruteForcePreviewPane({ selectedResult }: BruteForcePreviewPaneP
   };
 
   return (
-    <div className="border rounded-lg overflow-hidden flex flex-col">
+    <div className="border rounded-lg overflow-hidden flex flex-col flex-1 min-h-0">
       <div className="bg-muted/50 px-3 py-2 border-b flex items-center justify-between gap-3">
         <span className="text-sm font-medium">Response Detail</span>
         {selectedResult && (

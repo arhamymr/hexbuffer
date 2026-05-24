@@ -61,9 +61,20 @@ function PrettyCurl({ call }: { call: ApiCall }) {
 
 function PrettyJson({ content }: { content: string }) {
   return (
-    <pre className="bg-background p-3 rounded-md border text-xs font-mono whitespace-pre-wrap overflow-auto max-h-40">
-      {formatJsonBody(content)}
-    </pre>
+    <div className="border rounded-md overflow-hidden">
+      <TextEditor
+        height="20rem"
+        language="json"
+        value={formatJsonBody(content)}
+        options={{
+          readOnly: true,
+          scrollBeyondLastLine: false,
+          minimap: { enabled: false },
+          folding: false,
+          padding: { top: 12, bottom: 12 },
+        }}
+      />
+    </div>
   );
 }
 

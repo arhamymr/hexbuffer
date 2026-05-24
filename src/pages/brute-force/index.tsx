@@ -4,12 +4,12 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Plus, Square, Play } from 'lucide-react';
 import { TabbedPageLayout } from '@/components/tabs-layout/tabbed-page-layout';
-import { BruteForceConfigDialog } from './components/brute-force-config-dialog';
+import { BruteForceConfigDialog } from './components/brute-force-config';
 import { BruteForceFilters } from './components/brute-force-filters';
 import { BruteForcePayloadDialog } from './components/brute-force-payload-dialog';
 import { BruteForceProgress } from './components/brute-force-progress';
 import { BruteForceResultDrawer } from './components/brute-force-result-drawer';
-import { BruteForceResultsPane } from './components/brute-force-results-pane';
+import { BruteForceResultsPane } from './components/brute-force-results-panel';
 import { useBruteForcePage } from './hooks/use-brute-force-page';
 import { findRequestPayloadPositions } from './types';
 
@@ -22,44 +22,20 @@ export function BruteForcePage() {
     addAttackTab,
     closeTab,
     activeTab,
-    config,
-    updateConfig,
-    updateAttackMode,
-    updatePayloadType,
-    updatePayloadValues,
-    updateNumberRange,
-    addProcessingStep,
-    removeProcessingStep,
-    updateGrepMatch,
-    updateGrepExtract,
-    updateSessionHandling,
-    results,
-    filteredResults,
-    isRunning,
-    progress,
-    startError,
-    selectedResult,
-    setSelectedResult,
     stopAttack,
     clearResults,
     clearStartError,
-    payloadDialogOpen,
-    setPayloadDialogOpen,
-    filterStatus,
-    setFilterStatus,
-    filterPayload,
-    setFilterPayload,
-    filterGrep,
-    setFilterGrep,
-    handleLoadPayloads,
-    handleSelectPayloadFile,
     handleStartAttack,
-    handleExportResults,
   } = useBruteForcePage();
 
   if (!activeTab) {
     return null;
   }
+
+  const config = activeTab.config;
+  const isRunning = activeTab.isRunning;
+  const progress = activeTab.progress;
+  const startError = activeTab.startError;
 
   const markedPositions = findRequestPayloadPositions(config.base_request);
   const hasPayloads =
@@ -118,23 +94,10 @@ export function BruteForcePage() {
               </div>
             </div>
 
-            <BruteForceProgress progress={progress} />
+            <BruteForceProgress />
 
             <div className="min-h-0 flex-1 p-2">
-              <BruteForceConfigDialog
-                config={config}
-                updateConfig={updateConfig}
-                updateAttackMode={updateAttackMode}
-                updatePayloadType={updatePayloadType}
-                updatePayloadValues={updatePayloadValues}
-                updateNumberRange={updateNumberRange}
-                addProcessingStep={addProcessingStep}
-                removeProcessingStep={removeProcessingStep}
-                updateGrepMatch={updateGrepMatch}
-                updateGrepExtract={updateGrepExtract}
-                updateSessionHandling={updateSessionHandling}
-                onOpenPayloadFile={() => setPayloadDialogOpen(true)}
-              />
+              <BruteForceConfigDialog />
             </div>
           </div>
 
@@ -144,46 +107,18 @@ export function BruteForcePage() {
             </div>
 
             <div className="flex min-h-0 flex-1 flex-col p-2">
-              <BruteForceFilters
-                filterStatus={filterStatus}
-                filterPayload={filterPayload}
-                filterGrep={filterGrep}
-                resultsCount={results.length}
-                onFilterStatusChange={setFilterStatus}
-                onFilterPayloadChange={setFilterPayload}
-                onFilterGrepChange={setFilterGrep}
-                onExport={handleExportResults}
-                onClear={clearResults}
-              />
+              <BruteForceFilters />
 
               <div className="min-h-0 flex-1">
-                <BruteForceResultsPane
-                  results={filteredResults}
-                  isRunning={isRunning}
-                  selectedResult={selectedResult}
-                  onSelectResult={setSelectedResult}
-                />
+                <BruteForceResultsPane />
               </div>
             </div>
           </div>
         </div>
 
-        <BruteForceResultDrawer
-          open={Boolean(selectedResult)}
-          result={selectedResult}
-          onOpenChange={(open) => {
-            if (!open) {
-              setSelectedResult(null);
-            }
-          }}
-        />
+        <BruteForceResultDrawer />
 
-        <BruteForcePayloadDialog
-          open={payloadDialogOpen}
-          onOpenChange={setPayloadDialogOpen}
-          onLoadPayloads={handleLoadPayloads}
-          onSelectPayloadFile={handleSelectPayloadFile}
-        />
+        <BruteForcePayloadDialog />
       </div>
     </TabbedPageLayout>
   );

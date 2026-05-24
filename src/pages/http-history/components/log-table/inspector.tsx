@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from '@/components/ui/table';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { buildHttpHeaderList } from '@/lib/http-message';
@@ -21,6 +22,32 @@ interface InspectorSectionProps {
 }
 
 const wrappedCellClass = 'py-1 px-2 font-mono whitespace-normal break-words [overflow-wrap:anywhere]';
+const MAX_COLLAPSED_VALUE_LENGTH = 120;
+
+function ExpandableValue({ value }: { value: string }) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const shouldCollapse = value.length > MAX_COLLAPSED_VALUE_LENGTH;
+  const visibleValue = shouldCollapse && !isExpanded
+    ? `${value.slice(0, MAX_COLLAPSED_VALUE_LENGTH)}...`
+    : value;
+
+  return (
+    <div>
+      <span title={shouldCollapse && !isExpanded ? value : undefined}>
+        {visibleValue}
+      </span>
+      {shouldCollapse && (
+        <button
+          type="button"
+          className="ml-1 text-[11px] font-sans font-medium text-primary hover:underline"
+          onClick={() => setIsExpanded((current) => !current)}
+        >
+          {isExpanded ? 'Show less' : 'Show more'}
+        </button>
+      )}
+    </div>
+  );
+}
 
 export function InspectorSection({ title, items, defaultOpen = true }: InspectorSectionProps) {
   return (
@@ -52,7 +79,7 @@ export function InspectorSection({ title, items, defaultOpen = true }: Inspector
                       {item.name}
                     </TableCell>
                     <TableCell className={wrappedCellClass}>
-                      {item.value}
+                      <ExpandableValue value={item.value} />
                     </TableCell>
                     {item.domain !== undefined && (
                       <TableCell className={wrappedCellClass}>{item.domain}</TableCell>

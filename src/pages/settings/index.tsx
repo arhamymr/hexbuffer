@@ -250,7 +250,7 @@ export function Settings() {
                   {downloading ? 'Saving...' : 'Save CA Certificate'}
                 </Button>
                 <p className="text-xs text-muted-foreground">
-                  Choose a location to save <code className="bg-muted px-1 py-0.5 rounded">apprecon-ca.pem</code>
+                  Choose a location to save <code className="bg-muted px-1 py-0.5 rounded">seven-ca.pem</code>
                 </p>
               </div>
             </CardContent>

@@ -119,7 +119,7 @@ export const useDocumentsStore = create<DocumentsState>()(
         }),
     }),
     {
-      name: 'apprecon-documents',
+      name: 'seven-project-documents',
       partialize: (state) => ({
         documents: state.documents,
         activeDocumentId: state.activeDocumentId,

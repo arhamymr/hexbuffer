@@ -82,7 +82,7 @@ export const useRepeaterStore = create<RepeaterState>()(
         }),
     }),
     {
-      name: 'apprecon-repeater',
+      name: 'seven-project-repeater',
       partialize: (state) => ({
         tabs: state.tabs,
         activeTabId: state.activeTabId,

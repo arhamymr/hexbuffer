@@ -15,7 +15,7 @@ pub struct CaCerts {
 fn get_ca_dir() -> PathBuf {
     std::env::current_dir()
         .unwrap_or_else(|_| PathBuf::from("."))
-        .join(".apprecon")
+        .join(".seven_project")
 }
 
 fn get_ca_cert_path() -> PathBuf {
@@ -66,10 +66,10 @@ fn generate_ca(
     params.key_usages = vec![KeyUsagePurpose::KeyCertSign, KeyUsagePurpose::CrlSign];
     params
         .distinguished_name
-        .push(rcgen::DnType::OrganizationName, "Apprecon Security Tools");
+        .push(rcgen::DnType::OrganizationName, "Seven");
     params
         .distinguished_name
-        .push(rcgen::DnType::CommonName, "Apprecon Security Tools Root CA");
+        .push(rcgen::DnType::CommonName, "Seven Root CA");
 
     let key_pair = KeyPair::generate()?;
     let key_pem = key_pair.serialize_pem();

@@ -44,7 +44,7 @@ export const useTargetStore = create<TargetState>()(
       }
     }),
     {
-      name: 'apprecon-targets',
+      name: 'seven-project-targets',
       partialize: (state) => ({
         targets: state.targets.map(({ tabActive, ...target }) => target),
       }),

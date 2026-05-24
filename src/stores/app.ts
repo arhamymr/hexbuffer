@@ -44,7 +44,7 @@ export const useAppStore = create<AppState>()(
       },
     }),
     {
-      name: 'apprecon-app',
+      name: 'seven-project-app',
       partialize: (state) => ({
         proxyStatus: state.proxyStatus,
       }),

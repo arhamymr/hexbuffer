@@ -67,7 +67,7 @@ export function FuzzScannerTool() {
   const [filterStatus, setFilterStatus] = React.useState<string>('');
 
   const abortControllerRef = React.useRef<AbortController | null>(null);
-  const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const fileInputRef = React.useRef<HTMLInputElement>(null!);
 
   const getWordlist = (): string[] => {
     if (fuzzMode === 'custom' && customWordlist.length > 0) {

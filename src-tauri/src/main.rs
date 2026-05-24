@@ -1,7 +1,7 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use apprecon::{
+use seven_project::{
     export_ca_cert_pem, run, start_mastra_if_enabled, AiSettings, HistoryBridge,
     MastraProcessState, MastraStatus, PaginatedResponse, PortScanState, ProxyConfig, ProxyFilter,
     ProxyLogSummary, ProxyRecord, ProxyState, TreeNode, WebSocketConnectionDetail,
@@ -993,7 +993,7 @@ async fn start_proxy(app: AppHandle, port: u16, tls_port: u16) -> Result<String,
     let mut file = std::fs::OpenOptions::new()
         .create(true)
         .append(true)
-        .open("/tmp/apprecon.log")
+        .open("/tmp/seven_project.log")
         .map_err(|e| e.to_string())?;
     writeln!(
         file,
@@ -1007,7 +1007,7 @@ async fn start_proxy(app: AppHandle, port: u16, tls_port: u16) -> Result<String,
         let mut file = std::fs::OpenOptions::new()
             .create(true)
             .append(true)
-            .open("/tmp/apprecon.log")
+            .open("/tmp/seven_project.log")
             .unwrap();
         writeln!(file, "thread spawned, calling run()").unwrap();
         run(
@@ -1086,17 +1086,17 @@ async fn get_ca_cert() -> Result<String, String> {
 
 #[tauri::command]
 fn get_ai_settings(app: AppHandle) -> Result<AiSettings, String> {
-    apprecon::ai::get_ai_settings(app)
+    seven_project::ai::get_ai_settings(app)
 }
 
 #[tauri::command]
 fn save_ai_settings(app: AppHandle, settings: AiSettings) -> Result<AiSettings, String> {
-    apprecon::ai::save_ai_settings(app, settings)
+    seven_project::ai::save_ai_settings(app, settings)
 }
 
 #[tauri::command]
 fn clear_ai_api_key(app: AppHandle) -> Result<AiSettings, String> {
-    apprecon::ai::clear_ai_api_key(app)
+    seven_project::ai::clear_ai_api_key(app)
 }
 
 #[tauri::command]
@@ -1104,7 +1104,7 @@ fn get_mastra_status(
     app: AppHandle,
     state: State<'_, MastraProcessState>,
 ) -> Result<MastraStatus, String> {
-    apprecon::ai::get_mastra_status(app, state)
+    seven_project::ai::get_mastra_status(app, state)
 }
 
 #[tauri::command]
@@ -1112,7 +1112,7 @@ fn start_mastra(
     app: AppHandle,
     state: State<'_, MastraProcessState>,
 ) -> Result<MastraStatus, String> {
-    apprecon::ai::start_mastra(app, state)
+    seven_project::ai::start_mastra(app, state)
 }
 
 #[tauri::command]
@@ -1120,7 +1120,7 @@ fn stop_mastra(
     app: AppHandle,
     state: State<'_, MastraProcessState>,
 ) -> Result<MastraStatus, String> {
-    apprecon::ai::stop_mastra(app, state)
+    seven_project::ai::stop_mastra(app, state)
 }
 
 #[tauri::command]
@@ -1162,7 +1162,7 @@ fn main() {
     std::panic::set_hook(Box::new(|panic_info| {
         let msg = format!("PANIC: {:?}", panic_info);
         eprintln!("{}", msg);
-        let _ = std::fs::write("/tmp/apprecon_panic.log", msg);
+        let _ = std::fs::write("/tmp/seven_project_panic.log", msg);
     }));
 
     tauri::Builder::default()
@@ -1173,7 +1173,7 @@ fn main() {
                 .app_data_dir()
                 .expect("Failed to get app data dir");
             std::fs::create_dir_all(&app_dir).expect("Failed to create app data dir");
-            let db_path = app_dir.join("apprecon.db");
+            let db_path = app_dir.join("seven_project.db");
             eprintln!("[main] Opening database at {:?}", db_path);
             let history = HistoryBridge::new(db_path).expect("Failed to initialize history bridge");
             eprintln!("[main] History bridge initialized");
@@ -1221,8 +1221,8 @@ fn main() {
             send_repeater_request,
             start_intruder_attack,
             stop_intruder_attack,
-            apprecon::port_scanner::scan_ports,
-            apprecon::port_scanner::stop_port_scan,
+            seven_project::port_scanner::scan_ports,
+            seven_project::port_scanner::stop_port_scan,
             get_ai_settings,
             save_ai_settings,
             clear_ai_api_key,

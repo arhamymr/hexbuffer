@@ -11,7 +11,7 @@ import {
   generateDummyAttackConfig,
 } from "@/lib/dummy-data";
 
-const DUMMY_DATA_KEY = "apprecon_dummy_loaded";
+const DUMMY_DATA_KEY = "seven_project_dummy_loaded";
 
 interface DummyDataState {
   findings: ReturnType<typeof generateDummyFindings>;

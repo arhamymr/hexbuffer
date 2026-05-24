@@ -68,4 +68,4 @@ Pull requests should include a concise description, the affected area (`frontend
 
 ## Security & Configuration Notes
 
-Treat certificate material, database files, HAR captures, and proxy logs as sensitive. Avoid committing new secrets or local runtime artifacts from `src-tauri/.apprecon/`, `src-tauri/data/`, or generated output directories unless intentionally required.
+Treat certificate material, database files, HAR captures, and proxy logs as sensitive. Avoid committing new secrets or local runtime artifacts from `src-tauri/.seven_project/`, `src-tauri/data/`, or generated output directories unless intentionally required.

@@ -6,7 +6,7 @@ use std::sync::Mutex;
 use std::time::Duration;
 use tauri::{AppHandle, Manager, State};
 
-const KEYRING_SERVICE: &str = "apprecon";
+const KEYRING_SERVICE: &str = "seven_project";
 const KEYRING_OPENAI_ACCOUNT: &str = "openai-api-key";
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

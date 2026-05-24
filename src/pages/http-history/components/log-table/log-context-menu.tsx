@@ -187,37 +187,37 @@ export function LogEntryContextMenu({
         <ContextMenuItem onClick={handleCopyCurl} className='text-xs'>
           <Copy className="mr-2 size-3" /> Copy as cURL
         </ContextMenuItem>
-        <ContextMenuItem onClick={handleCopyUrl}>
+        <ContextMenuItem onClick={handleCopyUrl} className='text-xs'>
           <Copy className="mr-2 size-3" /> Copy URL
         </ContextMenuItem>
-        <ContextMenuItem onClick={handleCopyRequestHeaders}>
+        <ContextMenuItem onClick={handleCopyRequestHeaders} className='text-xs'>
           <Copy className="mr-2 size-3" /> Copy Request Headers
         </ContextMenuItem>
-        <ContextMenuItem onClick={handleCopyResponseBody} disabled={!call.response_body}>
+        <ContextMenuItem onClick={handleCopyResponseBody} disabled={!call.response_body} className='text-xs'>
           <Copy className="mr-2 size-3" /> Copy Response Body
         </ContextMenuItem>
         <ContextMenuSeparator />
-        <ContextMenuItem onClick={handleAddToScope}>
+        <ContextMenuItem onClick={handleAddToScope} className='text-xs'>
           <Plus className="mr-2 h-4 w-4" /> Add to Scope
         </ContextMenuItem>
-        <ContextMenuItem onClick={handleOpenInBruteForce}>
+        <ContextMenuItem onClick={handleOpenInBruteForce} className='text-xs'>
           <ExternalLink className="mr-2 h-4 w-4" /> Open in Brute Force
         </ContextMenuItem>
-        <ContextMenuItem onClick={handleOpenInRepeater}>
+        <ContextMenuItem onClick={handleOpenInRepeater} className='text-xs'>
           <Send className="mr-2 h-4 w-4" /> Send to Repeater
         </ContextMenuItem>
-        <ContextMenuItem onClick={handleOpenInPromptInjection}>
+        <ContextMenuItem onClick={handleOpenInPromptInjection} className='text-xs'>
           <Bot className="mr-2 h-4 w-4" /> Open in Prompt Injection
         </ContextMenuItem>
-        <ContextMenuItem onClick={handleSaveToDocuments}>
+        <ContextMenuItem onClick={handleSaveToDocuments} className='text-xs'>
           <FilePlus2 className="mr-2 h-4 w-4" /> Save to Documents
         </ContextMenuItem>
         <ContextMenuSeparator />
-        <ContextMenuItem onClick={handleInspect}>
+        <ContextMenuItem onClick={handleInspect} className='text-xs'>
           <Eye className="mr-2 h-4 w-4" /> Inspect
         </ContextMenuItem>
         <ContextMenuSeparator />
-        <ContextMenuItem onClick={handleDelete} variant="destructive">
+        <ContextMenuItem onClick={handleDelete} variant="destructive" className='text-xs'>
           <Trash2 className="mr-2 h-4 w-4" /> Delete
         </ContextMenuItem>
       </ContextMenuContent>

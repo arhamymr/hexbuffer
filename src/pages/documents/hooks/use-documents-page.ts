@@ -2,7 +2,7 @@ import * as React from 'react';
 import { useDocumentsStore } from '@/stores/documents';
 import { sendRepeaterRequest } from '@/pages/repeater/api';
 import { type DocumentSectionKey } from '../constants';
-import { type ReconDocument } from '../types';
+import { type ReconDocument, type CustomSection } from '../types';
 import { type RepeaterResponse } from '@/pages/repeater/types';
 
 export function useDocumentsPage() {
@@ -11,9 +11,16 @@ export function useDocumentsPage() {
     activeDocumentId,
     setActiveDocumentId,
     addDocument,
+    loadFromDb,
     updateDocument,
     closeDocument,
   } = useDocumentsStore();
+
+  React.useEffect(() => {
+    void loadFromDb().catch((error) => {
+      console.error('Failed to load documents from database:', error);
+    });
+  }, [loadFromDb]);
 
   const activeDocument = React.useMemo(
     () => documents.find((document) => document.id === activeDocumentId) ?? documents[0] ?? null,
@@ -84,6 +91,64 @@ export function useDocumentsPage() {
     [updateActiveDocument]
   );
 
+  const addCustomSection = React.useCallback(
+    (title: string, description: string, placeholder: string) => {
+      if (!activeDocumentId) return;
+      useDocumentsStore.getState().addCustomSection(activeDocumentId, {
+        title,
+        description,
+        placeholder,
+        content: '',
+      });
+    },
+    [activeDocumentId]
+  );
+
+  const removeCustomSection = React.useCallback(
+    (sectionKey: string) => {
+      if (!activeDocumentId) return;
+      useDocumentsStore.getState().removeCustomSection(activeDocumentId, sectionKey);
+    },
+    [activeDocumentId]
+  );
+
+  const removeBuiltInSection = React.useCallback(
+    (sectionKey: DocumentSectionKey) => {
+      if (!activeDocumentId) return;
+      useDocumentsStore.getState().removeBuiltInSection(activeDocumentId, sectionKey);
+    },
+    [activeDocumentId]
+  );
+
+  const restoreBuiltInSection = React.useCallback(
+    (sectionKey: DocumentSectionKey) => {
+      if (!activeDocumentId) return;
+      useDocumentsStore.getState().restoreBuiltInSection(activeDocumentId, sectionKey);
+    },
+    [activeDocumentId]
+  );
+
+  const updateCustomSection = React.useCallback(
+    (sectionKey: string, content: string) => {
+      updateActiveDocument((document) => ({
+        ...document,
+        customSections: document.customSections.map((s) =>
+          s.key === sectionKey ? { ...s, content } : s
+        ),
+        updatedAt: new Date().toISOString(),
+      }));
+    },
+    [updateActiveDocument]
+  );
+
+  const deleteApiEntry = React.useCallback(
+    (entryId: string) => {
+      if (!activeDocumentId) return;
+      useDocumentsStore.getState().removeApiEntryFromDocument(activeDocumentId, entryId);
+    },
+    [activeDocumentId]
+  );
+
   const fetchSelectedApi = React.useCallback(async () => {
     const selectedEntry =
       activeDocument?.apiEntries.find((entry) => entry.id === selectedApiEntryId) ??
@@ -137,6 +202,12 @@ export function useDocumentsPage() {
     renameDocument,
     updateTitle,
     updateSection,
+    addCustomSection,
+    removeCustomSection,
+    updateCustomSection,
+    removeBuiltInSection,
+    restoreBuiltInSection,
+    deleteApiEntry,
     selectedApiEntryId,
     apiResponse,
     isFetchingApi,

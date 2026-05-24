@@ -147,7 +147,8 @@ fn write_ai_settings(app: &AppHandle, settings: &AiSettings) -> Result<(), Strin
 
     let mut settings_to_write = settings.clone();
     settings_to_write.api_key.clear();
-    let content = serde_json::to_string_pretty(&settings_to_write).map_err(|error| error.to_string())?;
+    let content =
+        serde_json::to_string_pretty(&settings_to_write).map_err(|error| error.to_string())?;
     std::fs::write(path, content).map_err(|error| error.to_string())
 }
 
@@ -167,7 +168,11 @@ fn mastra_status(app: &AppHandle, state: &MastraProcessState) -> Result<MastraSt
         .map_err(|_| "Failed to lock Mastra process state".to_string())?;
 
     if let Some(process) = child.as_mut() {
-        if process.try_wait().map_err(|error| error.to_string())?.is_some() {
+        if process
+            .try_wait()
+            .map_err(|error| error.to_string())?
+            .is_some()
+        {
             *child = None;
         }
     }
@@ -195,7 +200,11 @@ fn start_mastra_process(
             .map_err(|_| "Failed to lock Mastra process state".to_string())?;
 
         if let Some(process) = child.as_mut() {
-            if process.try_wait().map_err(|error| error.to_string())?.is_some() {
+            if process
+                .try_wait()
+                .map_err(|error| error.to_string())?
+                .is_some()
+            {
                 *child = None;
             }
         }
@@ -253,7 +262,8 @@ fn is_mastra_url_listening(mastra_url: &str) -> bool {
     let Ok(mut addresses) = (host, port).to_socket_addrs() else {
         return false;
     };
-    addresses.any(|address| TcpStream::connect_timeout(&address, Duration::from_millis(250)).is_ok())
+    addresses
+        .any(|address| TcpStream::connect_timeout(&address, Duration::from_millis(250)).is_ok())
 }
 
 fn find_mastra_dir(app: &AppHandle) -> Result<PathBuf, String> {
@@ -271,16 +281,19 @@ fn find_mastra_dir(app: &AppHandle) -> Result<PathBuf, String> {
     candidates
         .into_iter()
         .find(|candidate| candidate.join("package.json").exists())
-        .ok_or_else(|| "Mastra folder not found. Expected a mastra/package.json near the app.".to_string())
+        .ok_or_else(|| {
+            "Mastra folder not found. Expected a mastra/package.json near the app.".to_string()
+        })
 }
 
 fn keyring_entry() -> Result<keyring::Entry, String> {
-    keyring::Entry::new(KEYRING_SERVICE, KEYRING_OPENAI_ACCOUNT)
-        .map_err(|error| error.to_string())
+    keyring::Entry::new(KEYRING_SERVICE, KEYRING_OPENAI_ACCOUNT).map_err(|error| error.to_string())
 }
 
 fn read_api_key() -> Result<String, String> {
-    keyring_entry()?.get_password().map_err(|error| error.to_string())
+    keyring_entry()?
+        .get_password()
+        .map_err(|error| error.to_string())
 }
 
 fn write_api_key(api_key: &str) -> Result<(), String> {

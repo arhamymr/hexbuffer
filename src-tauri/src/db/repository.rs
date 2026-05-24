@@ -11,6 +11,18 @@ use std::sync::Mutex;
 use uuid::Uuid;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DocumentRecord {
+    pub id: String,
+    pub name: String,
+    pub title: String,
+    pub sections: serde_json::Value,
+    pub api_entries: serde_json::Value,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PaginatedResponse<T> {
     pub data: Vec<T>,
     pub total: usize,
@@ -36,6 +48,55 @@ impl Database {
         conn.execute_batch("PRAGMA foreign_keys = ON;")?;
         conn.execute_batch(crate::db::schema::CREATE_HTTP_LOGS_TABLE)?;
         conn.execute_batch(crate::db::schema::CREATE_WEBSOCKET_TABLES)?;
+        conn.execute_batch(crate::db::schema::CREATE_DOCUMENTS_TABLE)?;
+        Ok(())
+    }
+
+    pub fn get_documents(&self) -> SqlResult<Vec<DocumentRecord>> {
+        let conn = self.conn.lock().unwrap();
+        let mut stmt = conn.prepare(
+            r#"SELECT id, name, title, sections, api_entries, created_at, updated_at
+               FROM documents
+               ORDER BY created_at ASC"#,
+        )?;
+        let rows = stmt.query_map([], row_to_document_record)?;
+
+        rows.collect()
+    }
+
+    pub fn upsert_document(&self, document: &DocumentRecord) -> SqlResult<()> {
+        let conn = self.conn.lock().unwrap();
+        let sections = serde_json::to_string(&document.sections).unwrap_or_else(|_| "{}".into());
+        let api_entries =
+            serde_json::to_string(&document.api_entries).unwrap_or_else(|_| "[]".into());
+
+        conn.execute(
+            r#"INSERT INTO documents (
+                id, name, title, sections, api_entries, created_at, updated_at
+            ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)
+            ON CONFLICT(id) DO UPDATE SET
+                name = excluded.name,
+                title = excluded.title,
+                sections = excluded.sections,
+                api_entries = excluded.api_entries,
+                created_at = excluded.created_at,
+                updated_at = excluded.updated_at"#,
+            params![
+                document.id,
+                document.name,
+                document.title,
+                sections,
+                api_entries,
+                document.created_at,
+                document.updated_at,
+            ],
+        )?;
+        Ok(())
+    }
+
+    pub fn delete_document(&self, id: &str) -> SqlResult<()> {
+        let conn = self.conn.lock().unwrap();
+        conn.execute("DELETE FROM documents WHERE id = ?1", params![id])?;
         Ok(())
     }
 
@@ -642,10 +703,12 @@ impl Database {
             let host = uri.split('/').next().unwrap_or("");
 
             let host_entry = host_paths.entry(host.to_string()).or_default();
-            let path_entry = host_entry.entry(url.to_string()).or_insert_with(|| PathInfo {
-                url,
-                ..Default::default()
-            });
+            let path_entry = host_entry
+                .entry(url.to_string())
+                .or_insert_with(|| PathInfo {
+                    url,
+                    ..Default::default()
+                });
             path_entry.count += 1;
             path_entry.methods.insert(method);
         }
@@ -753,6 +816,21 @@ fn row_to_proxy_record(row: &rusqlite::Row) -> SqlResult<ProxyRecord> {
         response,
         client_addr: client_addr.unwrap_or_default(),
         server_addr: server_addr.unwrap_or_default(),
+    })
+}
+
+fn row_to_document_record(row: &rusqlite::Row) -> SqlResult<DocumentRecord> {
+    let sections: String = row.get("sections")?;
+    let api_entries: String = row.get("api_entries")?;
+
+    Ok(DocumentRecord {
+        id: row.get("id")?,
+        name: row.get("name")?,
+        title: row.get("title")?,
+        sections: serde_json::from_str(&sections).unwrap_or_else(|_| serde_json::json!({})),
+        api_entries: serde_json::from_str(&api_entries).unwrap_or_else(|_| serde_json::json!([])),
+        created_at: row.get("created_at")?,
+        updated_at: row.get("updated_at")?,
     })
 }
 

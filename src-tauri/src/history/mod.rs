@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use crate::{
-    db::repository::{Database, PaginatedResponse, TreeNode},
+    db::repository::{Database, DocumentRecord, PaginatedResponse, TreeNode},
     proxy::state::{
         ProxyFilter, ProxyRecord, WebSocketConnectionRecord, WebSocketFilter,
         WebSocketMessageRecord,
@@ -54,6 +54,20 @@ impl HistoryBridge {
 
     pub fn insert_record(&self, record: &ProxyRecord) -> Result<(), String> {
         self.db.insert_log(record).map_err(|e| e.to_string())
+    }
+
+    pub fn get_documents(&self) -> Result<Vec<DocumentRecord>, String> {
+        self.db.get_documents().map_err(|e| e.to_string())
+    }
+
+    pub fn save_document(&self, document: &DocumentRecord) -> Result<(), String> {
+        self.db.upsert_document(document).map_err(|e| e.to_string())
+    }
+
+    pub fn delete_document(&self, document_id: &str) -> Result<(), String> {
+        self.db
+            .delete_document(document_id)
+            .map_err(|e| e.to_string())
     }
 
     pub fn clear_all(&self) -> Result<(), String> {

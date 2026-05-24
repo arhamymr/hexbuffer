@@ -1,12 +1,22 @@
 import { DOCUMENT_SECTION_DEFINITIONS, type DocumentSectionKey } from './constants';
 
-export type DocumentSections = Record<DocumentSectionKey, string>;
+export type DocumentSections = Record<string, string>;
+
+export interface CustomSection {
+  key: string;
+  title: string;
+  description: string;
+  placeholder: string;
+  content: string;
+}
 
 export interface ReconDocument {
   id: string;
   name: string;
   title: string;
   sections: DocumentSections;
+  removedBuiltInSections: DocumentSectionKey[];
+  customSections: CustomSection[];
   apiEntries: SavedApiEntry[];
   createdAt: string;
   updatedAt: string;
@@ -42,6 +52,8 @@ export function createDocument(index: number): ReconDocument {
     name: `Document ${index}`,
     title: '',
     sections: createEmptySections(),
+    removedBuiltInSections: [],
+    customSections: [],
     apiEntries: [],
     createdAt: now,
     updatedAt: now,

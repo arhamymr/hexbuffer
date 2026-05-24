@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, type MouseEvent } from 'react';
+import { useCallback, type MouseEvent, type ReactNode } from 'react';
 import { X } from 'lucide-react';
 import {
   ContextMenu,
@@ -20,9 +20,17 @@ interface PageTabBarProps {
   onTabChange: (id: string) => void;
   onTabRename?: (id: string, name: string) => void;
   onTabClose?: (id: string) => void;
+  renderTabContextMenuItems?: (tab: PageTabItem) => ReactNode;
 }
 
-export function PageTabBar({ tabs, activeTabId, onTabChange, onTabRename, onTabClose }: PageTabBarProps) {
+export function PageTabBar({
+  tabs,
+  activeTabId,
+  onTabChange,
+  onTabRename,
+  onTabClose,
+  renderTabContextMenuItems,
+}: PageTabBarProps) {
   const {
     scrollContainerRef,
     editingInputRef,
@@ -115,7 +123,9 @@ export function PageTabBar({ tabs, activeTabId, onTabChange, onTabRename, onTabC
           {tabs.map((tab) => {
             const canRename = !tab.disabled && Boolean(onTabRename);
             const canClose = !tab.disabled && Boolean(onTabClose) && tab.closable !== false;
-            const hasContextMenu = canRename || canClose;
+            const customContextMenuItems = renderTabContextMenuItems?.(tab);
+            const hasCustomContextMenuItems = Boolean(customContextMenuItems);
+            const hasContextMenu = canRename || canClose || hasCustomContextMenuItems;
 
             if (!hasContextMenu) {
               return <div key={tab.id}>{renderTab(tab)}</div>;
@@ -125,6 +135,8 @@ export function PageTabBar({ tabs, activeTabId, onTabChange, onTabRename, onTabC
               <ContextMenu key={tab.id}>
                 <ContextMenuTrigger asChild>{renderTab(tab)}</ContextMenuTrigger>
                 <ContextMenuContent>
+                  {customContextMenuItems}
+                  {hasCustomContextMenuItems && (canRename || canClose) && <ContextMenuSeparator />}
                   {canRename && (
                     <ContextMenuItem onClick={() => startEditingTab(tab)}>
                       Rename

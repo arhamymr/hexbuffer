@@ -9,7 +9,7 @@ pub use ai::{
     clear_ai_api_key, get_ai_settings, get_mastra_status, save_ai_settings, start_mastra,
     start_mastra_if_enabled, stop_mastra, AiSettings, MastraProcessState, MastraStatus,
 };
-pub use db::repository::{Database, PaginatedResponse, TreeNode, TreePath};
+pub use db::repository::{Database, DocumentRecord, PaginatedResponse, TreeNode, TreePath};
 pub use history::{
     HistoryBridge, ProxyLogSummary, WebSocketConnectionDetail, WebSocketConnectionSummary,
 };

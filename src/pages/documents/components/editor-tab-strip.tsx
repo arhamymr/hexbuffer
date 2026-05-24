@@ -26,7 +26,7 @@ export function EditorTabStrip({
           : null;
         const isActive = activeFileId === fileId;
         const Icon = fileId.startsWith('api:') ? Server : FileText;
-        const fileName = getFileName(fileId, apiEntry);
+        const fileName = getFileName(fileId, apiEntry, activeDocument.customSections);
 
         return (
           <button

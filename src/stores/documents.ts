@@ -1,14 +1,32 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { createDocument, type ReconDocument, type SavedApiEntry } from '@/pages/documents/types';
+import {
+  deleteDocumentFromDb,
+  loadDocumentsFromDb,
+  saveDocumentToDb,
+} from '@/pages/documents/api';
+import {
+  createDocument,
+  createEmptySections,
+  type ReconDocument,
+  type SavedApiEntry,
+  type CustomSection,
+} from '@/pages/documents/types';
+import { type DocumentSectionKey } from '@/pages/documents/constants';
 
 interface DocumentsState {
   documents: ReconDocument[];
   activeDocumentId: string;
   setActiveDocumentId: (id: string) => void;
   addDocument: () => string;
+  loadFromDb: () => Promise<void>;
   updateDocument: (id: string, updater: (document: ReconDocument) => ReconDocument) => void;
   addApiEntryToActiveDocument: (entry: Omit<SavedApiEntry, 'id' | 'savedAt'>) => void;
+  removeApiEntryFromDocument: (documentId: string, entryId: string) => void;
+  addCustomSection: (documentId: string, section: Omit<CustomSection, 'key'>) => void;
+  removeCustomSection: (documentId: string, sectionKey: string) => void;
+  removeBuiltInSection: (documentId: string, sectionKey: DocumentSectionKey) => void;
+  restoreBuiltInSection: (documentId: string, sectionKey: DocumentSectionKey) => void;
   closeDocument: (id: string) => void;
 }
 
@@ -28,8 +46,26 @@ function getNextDocumentIndex(documents: ReconDocument[]) {
 function normalizeDocument(document: ReconDocument): ReconDocument {
   return {
     ...document,
+    sections: {
+      ...createEmptySections(),
+      ...(document.sections ?? {}),
+    },
+    removedBuiltInSections: document.removedBuiltInSections ?? [],
+    customSections: document.customSections ?? [],
     apiEntries: document.apiEntries ?? [],
   };
+}
+
+function saveDocument(document: ReconDocument) {
+  void saveDocumentToDb(document).catch((error) => {
+    console.error('Failed to save document to database:', error);
+  });
+}
+
+function deleteDocument(id: string) {
+  void deleteDocumentFromDb(id).catch((error) => {
+    console.error('Failed to delete document from database:', error);
+  });
 }
 
 export const useDocumentsStore = create<DocumentsState>()(
@@ -44,6 +80,7 @@ export const useDocumentsStore = create<DocumentsState>()(
         set((state) => {
           const newDocument = createDocument(getNextDocumentIndex(state.documents));
           createdDocumentId = newDocument.id;
+          saveDocument(newDocument);
 
           return {
             documents: [...state.documents, newDocument],
@@ -53,15 +90,46 @@ export const useDocumentsStore = create<DocumentsState>()(
 
         return createdDocumentId;
       },
+      loadFromDb: async () => {
+        const documents = await loadDocumentsFromDb();
+
+        if (!documents?.length) {
+          useDocumentsStore.getState().documents.forEach(saveDocument);
+          return;
+        }
+
+        const normalizedDocuments = documents.map(normalizeDocument);
+        set((state) => ({
+          documents: normalizedDocuments,
+          activeDocumentId: normalizedDocuments.some(
+            (document) => document.id === state.activeDocumentId
+          )
+            ? state.activeDocumentId
+            : normalizedDocuments[0].id,
+        }));
+      },
       updateDocument: (id, updater) =>
-        set((state) => ({
-          documents: state.documents.map((document) =>
-            document.id === id ? updater(document) : document
-          ),
-        })),
+        set((state) => {
+          let updatedDocument: ReconDocument | undefined;
+          const documents = state.documents.map((document) => {
+            if (document.id !== id) {
+              return document;
+            }
+
+            updatedDocument = updater(document);
+            return updatedDocument;
+          });
+
+          if (updatedDocument) {
+            saveDocument(updatedDocument);
+          }
+
+          return { documents };
+        }),
       addApiEntryToActiveDocument: (entry) =>
-        set((state) => ({
-          documents: state.documents.map((document) => {
+        set((state) => {
+          let updatedDocument: ReconDocument | undefined;
+          const documents = state.documents.map((document) => {
             if (document.id !== state.activeDocumentId) {
               return document;
             }
@@ -85,19 +153,149 @@ export const useDocumentsStore = create<DocumentsState>()(
                     index === existingIndex ? { ...nextEntry, id: apiEntry.id } : apiEntry
                   );
 
-            return {
+            updatedDocument = {
               ...document,
               apiEntries,
               updatedAt: savedAt,
             };
-          }),
-        })),
+
+            return updatedDocument;
+          });
+
+          if (updatedDocument) {
+            saveDocument(updatedDocument);
+          }
+
+          return { documents };
+        }),
+      removeApiEntryFromDocument: (documentId, entryId) =>
+        set((state) => {
+          let updatedDocument: ReconDocument | undefined;
+          const documents = state.documents.map((document) => {
+            if (document.id !== documentId) {
+              return document;
+            }
+
+            updatedDocument = {
+              ...document,
+              apiEntries: document.apiEntries.filter((entry) => entry.id !== entryId),
+              updatedAt: new Date().toISOString(),
+            };
+
+            return updatedDocument;
+          });
+
+          if (updatedDocument) {
+            saveDocument(updatedDocument);
+          }
+
+          return { documents };
+        }),
+      addCustomSection: (documentId, section) =>
+        set((state) => {
+          let updatedDocument: ReconDocument | undefined;
+          const documents = state.documents.map((document) => {
+            if (document.id !== documentId) {
+              return document;
+            }
+
+            const key = `custom-${Date.now()}`;
+            updatedDocument = {
+              ...document,
+              customSections: [...document.customSections, { ...section, key }],
+              updatedAt: new Date().toISOString(),
+            };
+
+            return updatedDocument;
+          });
+
+          if (updatedDocument) {
+            saveDocument(updatedDocument);
+          }
+
+          return { documents };
+        }),
+      removeCustomSection: (documentId, sectionKey) =>
+        set((state) => {
+          let updatedDocument: ReconDocument | undefined;
+          const documents = state.documents.map((document) => {
+            if (document.id !== documentId) {
+              return document;
+            }
+
+            updatedDocument = {
+              ...document,
+              customSections: document.customSections.filter((s) => s.key !== sectionKey),
+              updatedAt: new Date().toISOString(),
+            };
+
+            return updatedDocument;
+          });
+
+          if (updatedDocument) {
+            saveDocument(updatedDocument);
+          }
+
+          return { documents };
+        }),
+      removeBuiltInSection: (documentId, sectionKey) =>
+        set((state) => {
+          let updatedDocument: ReconDocument | undefined;
+          const documents = state.documents.map((document) => {
+            if (document.id !== documentId) {
+              return document;
+            }
+
+            if (document.removedBuiltInSections.includes(sectionKey)) {
+              return document;
+            }
+
+            updatedDocument = {
+              ...document,
+              removedBuiltInSections: [...document.removedBuiltInSections, sectionKey],
+              updatedAt: new Date().toISOString(),
+            };
+
+            return updatedDocument;
+          });
+
+          if (updatedDocument) {
+            saveDocument(updatedDocument);
+          }
+
+          return { documents };
+        }),
+      restoreBuiltInSection: (documentId, sectionKey) =>
+        set((state) => {
+          let updatedDocument: ReconDocument | undefined;
+          const documents = state.documents.map((document) => {
+            if (document.id !== documentId) {
+              return document;
+            }
+
+            updatedDocument = {
+              ...document,
+              removedBuiltInSections: document.removedBuiltInSections.filter((k) => k !== sectionKey),
+              updatedAt: new Date().toISOString(),
+            };
+
+            return updatedDocument;
+          });
+
+          if (updatedDocument) {
+            saveDocument(updatedDocument);
+          }
+
+          return { documents };
+        }),
       closeDocument: (id) =>
         set((state) => {
           const remainingDocuments = state.documents.filter((document) => document.id !== id);
+          deleteDocument(id);
 
           if (remainingDocuments.length === 0) {
             const replacementDocument = createDocument(1);
+            saveDocument(replacementDocument);
             return {
               documents: [replacementDocument],
               activeDocumentId: replacementDocument.id,

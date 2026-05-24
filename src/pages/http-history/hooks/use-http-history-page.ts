@@ -1,7 +1,9 @@
 import * as React from 'react';
 import { useTabState } from '@/components/tabs-layout/use-tab-state';
 import type { PageTabItem } from '@/components/tabs-layout/types';
+import { useDocumentsStore } from '@/stores/documents';
 import { useTargetStore } from '@/stores/target';
+import { toast } from 'sonner';
 import type { TreeNodeData } from '../components/tree-view';
 import { useHistoryQuery } from './use-history-query';
 
@@ -54,6 +56,35 @@ export function useHttpHistoryPage() {
     setSelectedCallId(null);
   }, [setPathFilter, setSelectedCallId]);
 
+  const sendScopeToDocuments = React.useCallback((targetId: string) => {
+    const target = activeTargets.find((activeTarget) => activeTarget.id === targetId);
+
+    if (!target) {
+      toast.error('Target scope is unavailable');
+      return;
+    }
+
+    if (target.scope.length === 0) {
+      toast.error('Target has no scope patterns');
+      return;
+    }
+
+    const documentsStore = useDocumentsStore.getState();
+    const scopeBlock = [`## ${target.name}`, ...target.scope].join('\n');
+
+    documentsStore.updateDocument(documentsStore.activeDocumentId, (document) => ({
+      ...document,
+      sections: {
+        ...document.sections,
+        scope: document.sections.scope.trim()
+          ? `${document.sections.scope.trimEnd()}\n\n${scopeBlock}`
+          : scopeBlock,
+      },
+      updatedAt: new Date().toISOString(),
+    }));
+    toast.success('Sent scope to active document');
+  }, [activeTargets]);
+
   return {
     tabs,
     activeTabId,
@@ -65,5 +96,6 @@ export function useHttpHistoryPage() {
     setSitemapVisible,
     shouldShowSitemap,
     handleTreeSelect,
+    sendScopeToDocuments,
   };
 }

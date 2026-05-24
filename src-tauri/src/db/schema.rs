@@ -54,3 +54,17 @@ CREATE INDEX IF NOT EXISTS idx_websocket_connections_url ON websocket_connection
 CREATE INDEX IF NOT EXISTS idx_websocket_messages_connection_id ON websocket_messages(connection_id);
 CREATE INDEX IF NOT EXISTS idx_websocket_messages_timestamp ON websocket_messages(timestamp);
 "#;
+
+pub const CREATE_DOCUMENTS_TABLE: &str = r#"
+CREATE TABLE IF NOT EXISTS documents (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    title TEXT NOT NULL,
+    sections TEXT NOT NULL,
+    api_entries TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_documents_updated_at ON documents(updated_at);
+"#;

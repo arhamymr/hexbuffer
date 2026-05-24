@@ -1,7 +1,8 @@
 'use client';
 
-import { Plus } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Plus, Square, Play } from 'lucide-react';
 import { TabbedPageLayout } from '@/components/tabs-layout/tabbed-page-layout';
 import { BruteForceConfigDialog } from './components/brute-force-config-dialog';
 import { BruteForceFilters } from './components/brute-force-filters';
@@ -9,7 +10,6 @@ import { BruteForcePayloadDialog } from './components/brute-force-payload-dialog
 import { BruteForceProgress } from './components/brute-force-progress';
 import { BruteForceResultDrawer } from './components/brute-force-result-drawer';
 import { BruteForceResultsPane } from './components/brute-force-results-pane';
-import { BruteForceToolbar } from './components/brute-force-toolbar';
 import { useBruteForcePage } from './hooks/use-brute-force-page';
 import { findRequestPayloadPositions } from './types';
 
@@ -87,29 +87,38 @@ export function BruteForcePage() {
       <div className="flex h-full min-h-0 flex-col">
         <div className="bg-muted grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-2">
           <div className="flex min-h-0 flex-col border-b lg:border-b-0 lg:border-r">
-            <div className="bg-muted h-10 px-3 py-2 border-b flex items-center justify-between">
-              <span className="text-sm font-medium">Request</span>
-              <Button variant="outline" size="xs" onClick={() => addAttackTab()}>
-                <Plus className="h-4 w-4 mr-1" />
-                New Attack
-              </Button>
+            <div className="bg-muted h-10 px-3 py-2 border-b flex items-center justify-between gap-3">
+              <span className="text-sm font-medium">Config Payload</span>
+              <div className="flex items-center gap-3">
+                {isRunning && progress && (
+                  <Badge variant="secondary" className="animate-pulse">
+                    {progress.current} / {progress.total}
+                  </Badge>
+                )}
+                {!isRunning && startBlockedReason && (
+                  <Badge variant={canStart ? 'secondary' : 'yellow'}>
+                    {startBlockedReason}
+                  </Badge>
+                )}
+                <Button variant="outline" size="xs" onClick={() => addAttackTab()}>
+                  <Plus className="h-4 w-4 mr-1" />
+                  NEW ATTACK
+                </Button>
+                {isRunning ? (
+                  <Button variant="destructive" size="xs" onClick={stopAttack}>
+                    <Square className="h-4 w-4 mr-1" />
+                    Stop
+                  </Button>
+                ) : (
+                  <Button size="xs" onClick={() => { clearStartError(); handleStartAttack(); }} disabled={!canStart}>
+                    <Play className="h-4 w-4 mr-1" />
+                    Start Attack
+                  </Button>
+                )}
+              </div>
             </div>
 
-            <div className="border-b bg-background px-3 py-2">
-              <BruteForceToolbar
-                isRunning={isRunning}
-                progress={progress}
-                canStart={canStart}
-                startBlockedReason={startBlockedReason}
-                onStart={() => {
-                  clearStartError();
-                  handleStartAttack();
-                }}
-                onStop={stopAttack}
-              />
-
-              <BruteForceProgress progress={progress} />
-            </div>
+            <BruteForceProgress progress={progress} />
 
             <div className="min-h-0 flex-1 p-2">
               <BruteForceConfigDialog

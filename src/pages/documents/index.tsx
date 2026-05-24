@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { FilePlus2, Loader2, Play } from 'lucide-react';
+import { FilePlus2, Loader2, Play, Download } from 'lucide-react';
 import { TabbedPageLayout } from '@/components/tabs-layout/tabbed-page-layout';
 import {
   AlertDialog,
@@ -24,15 +24,20 @@ import {
 } from '@/components/ui/resizable';
 import { ApiEntryEditor } from './components/api-entry-editor';
 import { ApiFolderEditor } from './components/api-folder-editor';
+import { CustomSectionDialog } from './components/custom-section-dialog';
+import { CustomSectionEditor } from './components/custom-section-editor';
 import { DocumentMarkdownEditor } from './components/document-markdown-editor';
 import { DocumentsExplorer } from './components/documents-explorer';
 import { EditorTabStrip } from './components/editor-tab-strip';
 import { useDocumentsPage } from './hooks/use-documents-page';
+import { exportDocumentToPdf } from './lib/export-document';
 import {
   getFileLabel,
   getFileName,
   getSectionDefinition,
   isDocumentSectionFile,
+  isCustomSectionFile,
+  getCustomSectionDefinition,
   type EditorFileId,
 } from './lib/editor-files';
 
@@ -47,6 +52,12 @@ export function DocumentsPage() {
     renameDocument,
     updateTitle,
     updateSection,
+    addCustomSection,
+    removeCustomSection,
+    updateCustomSection,
+    removeBuiltInSection,
+    restoreBuiltInSection,
+    deleteApiEntry,
     selectedApiEntryId,
     apiResponse,
     isFetchingApi,
@@ -60,6 +71,7 @@ export function DocumentsPage() {
   const [documentIdPendingDelete, setDocumentIdPendingDelete] = React.useState<string | null>(
     null
   );
+  const [isCustomSectionDialogOpen, setIsCustomSectionDialogOpen] = React.useState(false);
 
   if (!activeDocument) {
     return null;
@@ -76,16 +88,43 @@ export function DocumentsPage() {
       ? activeDocument.apiEntries.find((entry) => activeFileId === `api:${entry.id}`) ?? null
       : selectedApiEntry;
   const isSectionFile = isDocumentSectionFile(activeFileId);
+  const isCustomSectionFileFlag = isCustomSectionFile(activeFileId);
   const activeSection = isSectionFile ? getSectionDefinition(activeFileId) : null;
-  const activeLabel = getFileLabel(activeFileId, activeApiEntry);
-  const activeFileName = getFileName(activeFileId, activeApiEntry);
+  const activeCustomSection = isCustomSectionFileFlag
+    ? getCustomSectionDefinition(activeDocument.customSections, activeFileId.replace('custom:', ''))
+    : null;
+  const activeLabel = getFileLabel(activeFileId, activeApiEntry, activeDocument.customSections);
+  const activeFileName = getFileName(activeFileId, activeApiEntry, activeDocument.customSections);
 
   const openFile = (fileId: EditorFileId) => {
+    if (fileId.startsWith('custom:')) {
+      const key = fileId.replace('custom:', '');
+      const exists = activeDocument.customSections.some((s) => s.key === key);
+      if (!exists) return;
+    }
     setActiveFileId(fileId);
     setOpenFileIds((fileIds) =>
       fileIds.includes(fileId) ? fileIds : [...fileIds, fileId]
     );
   };
+
+  const handleAddCustomSection = (title: string, description: string, placeholder: string) => {
+    addCustomSection(title, description, placeholder);
+  };
+
+  const [exporting, setExporting] = React.useState(false);
+
+  const handleExportPdf = React.useCallback(async () => {
+    if (!activeDocument || exporting) return;
+    try {
+      setExporting(true);
+      await exportDocumentToPdf(activeDocument);
+    } catch (error) {
+      console.error('Failed to export PDF:', error);
+    } finally {
+      setExporting(false);
+    }
+  }, [activeDocument, exporting]);
 
   const closeFile = (fileId: EditorFileId) => {
     const nextFileIds = openFileIds.filter((openFileId) => openFileId !== fileId);
@@ -130,20 +169,19 @@ export function DocumentsPage() {
         contentClassName="flex-1 flex flex-col overflow-hidden bg-background min-h-0"
       >
         <div className="flex h-full min-h-0 flex-col overflow-hidden">
-          <div className="flex h-9 shrink-0 items-center gap-2 border-b bg-background px-2">
+          <div className="flex h-9 shrink-0 items-center gap-4 border-b bg-background px-2">
             <Input
               value={activeDocument.title}
               onChange={(event) => updateTitle(event.target.value)}
               placeholder="Untitled recon document"
-              className="h-7 max-w-72 border-transparent bg-transparent px-2 text-xs font-medium shadow-none hover:border-input focus-visible:border-ring"
+              className="h-7 max-w-72 border-transparentpx-2 text-xs font-medium"
             />
-            <div className="min-w-0 flex-1 truncate font-mono text-[11px] text-muted-foreground">
+            <div className="min-w-0 flex-1 truncate font-mono text-[12px] text-muted-foreground">
               documents / {activeFileName}
             </div>
             <Button
-              size="icon-sm"
               type="button"
-              variant="ghost"
+              variant="outline"
               aria-label="New document"
               title="New document"
               onClick={() => {
@@ -151,7 +189,19 @@ export function DocumentsPage() {
                 openFile('scope');
               }}
             >
-              <FilePlus2 className="h-4 w-4" />
+              <FilePlus2 className="size-4" />
+              NEW DOCUMENT
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              aria-label="Export as PDF"
+              title="Export as PDF"
+              onClick={handleExportPdf}
+              disabled={exporting}
+            >
+              <Download className="size-4" />
+              {exporting ? 'Exporting...' : 'EXPORT PDF'}
             </Button>
           </div>
 
@@ -165,6 +215,11 @@ export function DocumentsPage() {
                 onApiFolderOpenChange={setIsApiFolderOpen}
                 onOpenFile={openFile}
                 onOpenApiEntry={openApiEntry}
+                onDeleteApiEntry={deleteApiEntry}
+                onRemoveBuiltInSection={removeBuiltInSection}
+                onRestoreBuiltInSection={restoreBuiltInSection}
+                onAddCustomSection={() => setIsCustomSectionDialogOpen(true)}
+                onRemoveCustomSection={removeCustomSection}
               />
             </ResizablePanel>
 
@@ -207,6 +262,13 @@ export function DocumentsPage() {
                       onChange={updateSection}
                     />
                   </div>
+                ) : activeCustomSection ? (
+                  <div className="min-h-0 flex-1">
+                    <CustomSectionEditor
+                      section={activeCustomSection}
+                      onChange={(content) => updateCustomSection(activeCustomSection.key, content)}
+                    />
+                  </div>
                 ) : activeFileId === 'api' ? (
                   <div className="min-h-0 flex-1">
                     <ApiFolderEditor document={activeDocument} />
@@ -223,7 +285,7 @@ export function DocumentsPage() {
 
                 <div className="flex h-6 shrink-0 items-center justify-between border-t bg-muted/30 px-3 font-mono text-[11px] text-muted-foreground">
                   <span>{activeLabel}</span>
-                  <span>{isSectionFile ? 'markdown' : 'readonly'}</span>
+                  <span>{isSectionFile || isCustomSectionFileFlag ? 'markdown' : 'readonly'}</span>
                 </div>
               </main>
             </ResizablePanel>
@@ -259,6 +321,12 @@ export function DocumentsPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <CustomSectionDialog
+        open={isCustomSectionDialogOpen}
+        onOpenChange={setIsCustomSectionDialogOpen}
+        onAdd={handleAddCustomSection}
+      />
     </>
   );
 }

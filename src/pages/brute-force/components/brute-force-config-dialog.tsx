@@ -122,12 +122,9 @@ export function BruteForceConfigDialog({
 
   return (
     <div className="flex h-full min-h-0 flex-col rounded-lg border bg-background">
-      <div className="border-b px-3 py-2">
-        <h2 className="text-sm font-medium">Attack Configuration</h2>
-      </div>
       <div className="min-h-0 overflow-auto p-3">
         <Tabs defaultValue="attack" className="w-full">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid grid-cols-5 mb-2">
             <TabsTrigger value="attack">Attack</TabsTrigger>
             <TabsTrigger value="request">Request</TabsTrigger>
             <TabsTrigger value="payloads">Payloads</TabsTrigger>
@@ -137,10 +134,6 @@ export function BruteForceConfigDialog({
 
           <TabsContent value="attack" className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
-              <div className="grid gap-2">
-                <Label>Attack Name</Label>
-                <Input value={config.name} onChange={(event) => updateConfig({ name: event.target.value })} />
-              </div>
               <div className="grid gap-2">
                 <Label>Attack Mode</Label>
                 <Select value={config.mode} onValueChange={(value) => updateAttackMode(value as AttackMode)}>

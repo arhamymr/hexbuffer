@@ -1,15 +1,16 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+use base64::{engine::general_purpose, Engine};
+use regex::Regex;
+use serde::{Deserialize, Serialize};
+use seven_project::DocumentRecord;
 use seven_project::{
     export_ca_cert_pem, run, start_mastra_if_enabled, AiSettings, HistoryBridge,
     MastraProcessState, MastraStatus, PaginatedResponse, PortScanState, ProxyConfig, ProxyFilter,
     ProxyLogSummary, ProxyRecord, ProxyState, TreeNode, WebSocketConnectionDetail,
     WebSocketConnectionSummary, WebSocketFilter,
 };
-use base64::{engine::general_purpose, Engine};
-use regex::Regex;
-use serde::{Deserialize, Serialize};
 use sha1::Sha1;
 use sha2::{Digest, Sha256};
 use std::collections::HashMap;
@@ -1032,6 +1033,27 @@ async fn clear_proxy_all(history: State<'_, HistoryBridge>) -> Result<(), String
 }
 
 #[tauri::command]
+async fn get_documents(history: State<'_, HistoryBridge>) -> Result<Vec<DocumentRecord>, String> {
+    history.get_documents()
+}
+
+#[tauri::command]
+async fn save_document(
+    history: State<'_, HistoryBridge>,
+    document: DocumentRecord,
+) -> Result<(), String> {
+    history.save_document(&document)
+}
+
+#[tauri::command]
+async fn delete_document(
+    history: State<'_, HistoryBridge>,
+    document_id: String,
+) -> Result<(), String> {
+    history.delete_document(&document_id)
+}
+
+#[tauri::command]
 async fn delete_proxy_by_id(
     history: State<'_, HistoryBridge>,
     log_id: String,
@@ -1212,6 +1234,9 @@ fn main() {
             get_proxy_detail,
             clear_proxy_all,
             delete_proxy_by_id,
+            get_documents,
+            save_document,
+            delete_document,
             get_ca_cert,
             save_ca_cert,
             get_proxy_tree,

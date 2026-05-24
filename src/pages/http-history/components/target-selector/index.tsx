@@ -29,15 +29,16 @@ export function TargetSelectorDialog() {
     searchQuery,
     setSearchQuery,
     filteredTargets,
+    targetCount,
     handleSelectTarget,
   } = useTargetSelectorDialog();
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button size="xs" variant="outline" className="gap-2 h-7  mb-1 gap-1 text-muted-foreground">
+        <Button size="xs" className="gap-2 h-7  mb-1 gap-1 text-xs">
           <Plus className="h-4 w-4" />
-          New Target
+          MANAGE TARGET
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
@@ -61,7 +62,7 @@ export function TargetSelectorDialog() {
         ) : (
           <>
             <DialogHeader>
-              <DialogTitle>Add New Tab</DialogTitle>
+              <DialogTitle>Add New Target</DialogTitle>
               <DialogDescription>
                 Select an existing target or create a new one
               </DialogDescription>
@@ -70,6 +71,7 @@ export function TargetSelectorDialog() {
               <TargetSearchList
                 searchQuery={searchQuery}
                 setSearchQuery={setSearchQuery}
+                targetCount={targetCount}
                 filteredTargets={filteredTargets}
                 onSelectTarget={handleSelectTarget}
                 onEditTarget={handleEditTarget}

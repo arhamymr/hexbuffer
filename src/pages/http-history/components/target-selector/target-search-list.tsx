@@ -8,6 +8,7 @@ import type { Target } from '@/types';
 interface TargetSearchListProps {
   searchQuery: string;
   setSearchQuery: (query: string) => void;
+  targetCount: number;
   filteredTargets: Target[];
   onSelectTarget: (target: Target) => void;
   onEditTarget: (target: Target) => void;
@@ -16,22 +17,26 @@ interface TargetSearchListProps {
 export function TargetSearchList({
   searchQuery,
   setSearchQuery,
+  targetCount,
   filteredTargets,
   onSelectTarget,
   onEditTarget,
 }: TargetSearchListProps) {
+  const showSearch = targetCount >= 10;
 
   return (
     <div className="space-y-3">
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Search targets..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-9"
-        />
-      </div>
+      {showSearch && (
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search targets..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+      )}
 
       <div className="max-h-[200px] overflow-y-auto border rounded-md">
         {filteredTargets.length === 0 ? (
@@ -46,10 +51,7 @@ export function TargetSearchList({
                 className="flex items-center gap-1 px-1 hover:bg-muted transition-colors"
               >
                 <button
-                  onClick={() => onSelectTarget({
-                    ...target,
-                    tabActive: true,
-                  })}
+                  onClick={() => onSelectTarget(target)}
                   className="flex-1 text-left px-2 py-2"
                 >
                   <span className="font-medium">{target.name}</span>

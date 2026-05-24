@@ -7,7 +7,19 @@ import { Textarea } from '@/components/ui/textarea';
 import {
   DialogFooter,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { useTargetStore } from '@/stores/target';
+import { Trash2 } from 'lucide-react';
 import type { Target } from '@/types';
 
 interface TargetDialogFormProps {
@@ -44,8 +56,8 @@ function createTargetId() {
 
 export function TargetDialogForm({ target, onCancel, onSaved }: TargetDialogFormProps) {
   const addTarget = useTargetStore((state) => state.addTarget);
+  const removeTarget = useTargetStore((state) => state.removeTarget);
   const updateTarget = useTargetStore((state) => state.updateTarget);
-  const targets = useTargetStore((state) => state.targets);
   const [values, setValues] = React.useState<FormValues>({
     name: target?.name ?? '',
     description: target?.description ?? '',
@@ -111,32 +123,24 @@ export function TargetDialogForm({ target, onCancel, onSaved }: TargetDialogForm
 
     try {
       if (target) {
-        targets.forEach((storedTarget) => {
-          updateTarget(storedTarget.id, storedTarget.id === target.id
-            ? {
-                name: data.name,
-                description: data.description,
-                scope: normalizedScope,
-                tabActive: true,
-              }
-            : { tabActive: false }
-          );
+        updateTarget(target.id, {
+          name: data.name,
+          description: data.description,
+          scope: normalizedScope,
         });
-        onSaved();
-        return;
+      } else {
+        const now = new Date().toISOString();
+        addTarget({
+          id: createTargetId(),
+          name: data.name,
+          description: data.description,
+          scope: normalizedScope,
+          createdAt: now,
+          updatedAt: now,
+          tabActive: true,
+        });
       }
 
-      const now = new Date().toISOString();
-      targets.forEach(t => updateTarget(t.id, { tabActive: false }));
-      addTarget({
-        id: createTargetId(),
-        name: data.name,
-        description: data.description,
-        scope: normalizedScope,
-        createdAt: now,
-        updatedAt: now,
-        tabActive: true,
-      });
       onSaved();
     } finally {
       setIsSubmitting(false);
@@ -146,6 +150,15 @@ export function TargetDialogForm({ target, onCancel, onSaved }: TargetDialogForm
   const onSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     void saveTarget();
+  };
+
+  const deleteTarget = () => {
+    if (!target) {
+      return;
+    }
+
+    removeTarget(target.id);
+    onSaved();
   };
 
   return (
@@ -195,13 +208,43 @@ export function TargetDialogForm({ target, onCancel, onSaved }: TargetDialogForm
           </p>
         </div>
       </div>
-      <DialogFooter>
-        <Button size="xs" type="button" variant="outline" onClick={onCancel}>
-          Cancel
-        </Button>
-        <Button size="xs" type="button" disabled={isSubmitting} onClick={() => void saveTarget()}>
-          {target ? 'Save Changes' : 'Create Target'}
-        </Button>
+      <DialogFooter className={target ? 'sm:justify-between' : undefined}>
+        {target && (
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button size="xs" type="button" variant="destructive" className="gap-2">
+                <Trash2 className="h-4 w-4" />
+                Delete
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete Target?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will permanently remove {target.name} from your targets.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel type="button">Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  type="button"
+                  className="bg-destructive text-white hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60"
+                  onClick={deleteTarget}
+                >
+                  Delete Target
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        )}
+        <div className="flex gap-2 sm:ml-auto">
+          <Button size="xs" type="button" variant="outline" onClick={onCancel}>
+            Cancel
+          </Button>
+          <Button size="xs" type="button" disabled={isSubmitting} onClick={() => void saveTarget()}>
+            {target ? 'Save Changes' : 'Create Target'}
+          </Button>
+        </div>
       </DialogFooter>
     </form>
   );

@@ -121,7 +121,7 @@ export function BruteForceConfigDialog({
   const payloadCount = config.payload_config.values.length;
 
   return (
-    <div className="flex min-h-0 flex-col rounded-lg border bg-background">
+    <div className="flex h-full min-h-0 flex-col rounded-lg border bg-background">
       <div className="border-b px-3 py-2">
         <h2 className="text-sm font-medium">Attack Configuration</h2>
       </div>
@@ -280,14 +280,20 @@ export function BruteForceConfigDialog({
             {config.payload_config.payload_type === 'SimpleList' && (
               <div className="grid gap-2">
                 <Label>Payloads (one per line)</Label>
-                <textarea
-                  className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono h-32"
-                  placeholder="payload1&#10;payload2&#10;payload3"
-                  value={config.payload_config.values.join('\n')}
-                  onChange={(event) =>
-                    updatePayloadValues(event.target.value.split('\n').filter((value) => value.trim()))
-                  }
-                />
+                <div className="h-32 overflow-hidden rounded-md border">
+                  <TextEditor
+                    language="plaintext"
+                    value={config.payload_config.values.join('\n')}
+                    onChange={(value) =>
+                      updatePayloadValues((value ?? '').split('\n').filter((payload) => payload.trim()))
+                    }
+                    options={{
+                      lineNumbers: 'off',
+                      scrollBeyondLastLine: false,
+                      wordWrap: 'off',
+                    }}
+                  />
+                </div>
                 <div className="flex gap-2">
                   <Button variant="outline" size="xs" onClick={onOpenPayloadFile}>
                     Load from File

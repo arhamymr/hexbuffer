@@ -18,11 +18,11 @@ export function BruteForceResultsPane({
   onSelectResult,
 }: BruteForceResultsPaneProps) {
   return (
-    <div className="border rounded-lg overflow-hidden">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-lg border bg-background">
       <div className="bg-muted/50 px-3 py-2 border-b">
         <span className="text-sm font-medium">Results ({results.length})</span>
       </div>
-      <div className="overflow-auto h-[calc(100%-40px)]">
+      <div className="min-h-0 flex-1 overflow-auto">
         <table className="w-full text-sm">
           <thead className="bg-muted/30 sticky top-0">
             <tr>

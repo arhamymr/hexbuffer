@@ -267,5 +267,6 @@ export function useHistoryTable() {
     toggleSortOrder,
     setSelectedCallId,
     removeCallLocally,
+    selectedCallId,
   };
 }

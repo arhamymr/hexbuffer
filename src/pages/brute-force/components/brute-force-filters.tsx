@@ -30,7 +30,7 @@ export function BruteForceFilters({
   onClear,
 }: BruteForceFiltersProps) {
   return (
-    <div className="flex items-center gap-4 mb-4">
+    <div className="mb-2 flex flex-wrap items-center gap-3">
       <div className="flex items-center gap-2">
         <Label className="text-xs">Status:</Label>
         <Input

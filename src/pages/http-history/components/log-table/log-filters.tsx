@@ -68,7 +68,7 @@ export function LogFilters({
 
   return (
     <div className="space-y-1">
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-2">
         <TargetSelectorDialog />
         <Input
           placeholder="Search URL, host, method, body..."

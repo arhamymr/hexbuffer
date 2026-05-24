@@ -28,6 +28,7 @@ export function RepeaterRequestPanel({
           ) : (
             <Play className="h-4 w-4" />
           )}
+          SEND
         </Button>
       </div>
 

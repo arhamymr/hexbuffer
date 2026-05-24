@@ -8,7 +8,7 @@ import {
   ContextMenuItem,
   ContextMenuSeparator,
 } from '@/components/ui/context-menu';
-import { Copy, ExternalLink, Plus, Eye, Trash2, Send, FilePlus2 } from 'lucide-react';
+import { Bot, Copy, ExternalLink, Plus, Eye, Trash2, Send, FilePlus2 } from 'lucide-react';
 import { toast } from 'sonner';
 import type { ApiCall } from '@/types';
 import { deleteHistoryLog, fetchHistoryDetail } from '@/pages/http-history/services/history-service';
@@ -117,6 +117,29 @@ export function LogEntryContextMenu({
     }
   };
 
+  const handleOpenInPromptInjection = async () => {
+    try {
+      const detail = await fetchHistoryDetail(call.id);
+      const request = adaptProxyRecordToApiCall(detail);
+      navigate('/ai-tools', {
+        state: {
+          promptInjectionRequest: {
+            raw: buildRawHttpRequest({
+              method: request.method,
+              url: request.url,
+              headers: request.headers,
+              body: request.request_body || '',
+            }),
+            endpoint: request.url,
+          },
+        },
+      });
+    } catch (error) {
+      console.error('Failed to open request in Prompt Injection:', error);
+      toast.error('Failed to open request in Prompt Injection');
+    }
+  };
+
   const handleSaveToDocuments = async () => {
     try {
       const detail = await fetchHistoryDetail(call.id);
@@ -161,17 +184,17 @@ export function LogEntryContextMenu({
         {children}
       </ContextMenuTrigger>
       <ContextMenuContent>
-        <ContextMenuItem onClick={handleCopyCurl}>
-          <Copy className="mr-2 h-4 w-4" /> Copy as cURL
+        <ContextMenuItem onClick={handleCopyCurl} className='text-xs'>
+          <Copy className="mr-2 size-3" /> Copy as cURL
         </ContextMenuItem>
         <ContextMenuItem onClick={handleCopyUrl}>
-          <Copy className="mr-2 h-4 w-4" /> Copy URL
+          <Copy className="mr-2 size-3" /> Copy URL
         </ContextMenuItem>
         <ContextMenuItem onClick={handleCopyRequestHeaders}>
-          <Copy className="mr-2 h-4 w-4" /> Copy Request Headers
+          <Copy className="mr-2 size-3" /> Copy Request Headers
         </ContextMenuItem>
         <ContextMenuItem onClick={handleCopyResponseBody} disabled={!call.response_body}>
-          <Copy className="mr-2 h-4 w-4" /> Copy Response Body
+          <Copy className="mr-2 size-3" /> Copy Response Body
         </ContextMenuItem>
         <ContextMenuSeparator />
         <ContextMenuItem onClick={handleAddToScope}>
@@ -182,6 +205,9 @@ export function LogEntryContextMenu({
         </ContextMenuItem>
         <ContextMenuItem onClick={handleOpenInRepeater}>
           <Send className="mr-2 h-4 w-4" /> Send to Repeater
+        </ContextMenuItem>
+        <ContextMenuItem onClick={handleOpenInPromptInjection}>
+          <Bot className="mr-2 h-4 w-4" /> Open in Prompt Injection
         </ContextMenuItem>
         <ContextMenuItem onClick={handleSaveToDocuments}>
           <FilePlus2 className="mr-2 h-4 w-4" /> Save to Documents

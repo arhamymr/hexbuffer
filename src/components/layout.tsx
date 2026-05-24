@@ -5,11 +5,13 @@ import { Link, useLocation } from 'react-router-dom';
 import { Crosshair, Settings, Moon, Sun, ArrowUpDown, RefreshCw, Wrench, Bot, FileText, MessageSquare } from 'lucide-react';
 import { useTheme } from './theme-provider';
 import { Button } from './ui/button';
+
 import { AppFooter } from './footer';
 import { DashboardComposer } from '@/pages/ai-chat/components/composer';
 import { DashboardThread } from '@/pages/ai-chat/components/thread';
 import { useDashboardPage } from '@/pages/ai-chat/hooks/use-dashboard-page';
 import { cn } from '@/lib/utils';
+import { Badge } from './ui/badge';
 
 const mainNavItems = [
   { label: 'HTTP History', icon: ArrowUpDown, href: '/history' },
@@ -66,18 +68,8 @@ export function TopNav({ isAssistantOpen, onToggleAssistant }: TopNavProps) {
         <div className='flex min-w-0 flex-1 items-center align-center gap-4'>
           <div className="flex items-center gap-1">
             {/* Light mode */}
-            <img
-              src="https://assets.apsaradigital.com/logo.png"
-              className="h-3 w-18 shrink-0 dark:hidden"
-              alt="Logo"
-            />
-
-            {/* Dark mode */}
-            <img
-              src="https://assets.apsaradigital.com/logo-white.png"
-              className="hidden h-3 w-18 shrink-0 dark:block"
-              alt="Logo"
-            />
+            <p className='text-xl'>✦</p>
+            <p className='text-sm font-bold mt-1'>SEVEN</p>
           </div>
 
           <div className="relative min-w-0 flex-1">

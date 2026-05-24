@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTargetStore } from '@/stores/target';
 import type { Target } from '@/types';
 
@@ -10,9 +10,9 @@ export function useTargetSelectorDialog() {
   const { targets, updateTarget } = useTargetStore();
 
   const handleSelectTarget = (target: Target) => {
-    targets.forEach(t => {
-      updateTarget(t.id, { tabActive: t.id === target.id });
-    });
+    if (!target.tabActive) {
+      updateTarget(target.id, { tabActive: true });
+    }
     setOpen(false);
     setShowCreateNew(false);
   };
@@ -48,9 +48,19 @@ export function useTargetSelectorDialog() {
     }
   };
 
-  const filteredTargets = targets.filter((t) =>
-    t.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const showSearch = targets.length >= 10;
+
+  useEffect(() => {
+    if (!showSearch && searchQuery) {
+      setSearchQuery('');
+    }
+  }, [searchQuery, setSearchQuery, showSearch]);
+
+  const filteredTargets = showSearch && searchQuery
+    ? targets.filter((t) =>
+        t.name.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+    : targets;
 
   return {
     open,
@@ -60,6 +70,7 @@ export function useTargetSelectorDialog() {
     searchQuery,
     setSearchQuery,
     filteredTargets,
+    targetCount: targets.length,
     filteredCount: filteredTargets.length,
     handleSelectTarget,
     handleCreateNew,

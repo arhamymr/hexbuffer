@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
 import {
   AlertCircle,
@@ -36,8 +37,8 @@ import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Textarea } from '@/components/ui/textarea';
-import { parseRawHttpRequest } from '@/lib/http-message';
+import { TextEditor } from '@/components/ui/text-editor';
+import { buildRawHttpRequest, parseRawHttpRequest } from '@/lib/http-message';
 import {
   PROMPT_INJECTION_IMPORTED_PAYLOADS,
   PROMPT_INJECTION_PREDEFINED_PAYLOADS,
@@ -80,17 +81,28 @@ interface ToolConfig {
   defaultRequest: string;
 }
 
+interface PromptInjectionRouteState {
+  promptInjectionRequest?: {
+    raw: string;
+    endpoint: string;
+  };
+}
+
 const DEFAULT_SETTINGS: AttackSettings = {
   throttle: 0,
   timeout: 30000,
   followRedirects: true,
 };
 
-const DEFAULT_REQUEST = `POST /api/chat HTTP/1.1
-Host: localhost:3000
-Content-Type: application/json
-
-{"messages":[{"role":"user","content":"{{input}}"}]}`;
+const DEFAULT_REQUEST = buildRawHttpRequest({
+  method: 'POST',
+  url: 'http://localhost:3000/api/chat',
+  headers: {
+    Host: 'localhost:3000',
+    'Content-Type': 'application/json',
+  },
+  body: '{"messages":[{"role":"user","content":"§test§"}]}',
+});
 
 const TOOL_CONFIGS = {
   'prompt-injection': {
@@ -129,6 +141,14 @@ function detectFindings(body: string, keywords: string[]) {
   return keywords.filter((keyword) => lowerBody.includes(keyword.toLowerCase()));
 }
 
+function countMarkedTargets(value: string) {
+  return value.match(/§[^§]*§/g)?.length ?? 0;
+}
+
+function replaceMarkedTargets(value: string, payload: string) {
+  return value.replace(/§[^§]*§/g, payload);
+}
+
 function downloadFile(content: string, filename: string, mimeType: string) {
   const blob = new Blob([content], { type: mimeType });
   const url = URL.createObjectURL(blob);
@@ -144,6 +164,7 @@ interface AIPayloadTesterProps {
 }
 
 function AIPayloadTester({ tool }: AIPayloadTesterProps) {
+  const location = useLocation();
   const config = TOOL_CONFIGS[tool];
   const [payloadMode, setPayloadMode] = React.useState<PayloadMode>('predefined');
   const [manualPayloads, setManualPayloads] = React.useState('');
@@ -154,7 +175,6 @@ function AIPayloadTester({ tool }: AIPayloadTesterProps) {
   const [draftManualPayloads, setDraftManualPayloads] = React.useState('');
   const [draftImportedPayloads, setDraftImportedPayloads] = React.useState<string[]>([]);
   const [draftSelectedPayloads, setDraftSelectedPayloads] = React.useState<Set<string>>(new Set(config.predefinedPayloads));
-  const [placeholder, setPlaceholder] = React.useState('{{input}}');
   const [requestBody, setRequestBody] = React.useState(config.defaultRequest);
   const [endpoint, setEndpoint] = React.useState('http://localhost:3000/api/chat');
   const [attackType, setAttackType] = React.useState<AttackType>('sniper');
@@ -167,6 +187,7 @@ function AIPayloadTester({ tool }: AIPayloadTesterProps) {
   const abortControllerRef = React.useRef<AbortController | null>(null);
   const isCancelledRef = React.useRef(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const requestEditorRef = React.useRef<any>(null);
 
   React.useEffect(() => {
     setSelectedPayloads(new Set(config.predefinedPayloads));
@@ -182,6 +203,20 @@ function AIPayloadTester({ tool }: AIPayloadTesterProps) {
     setDraftManualPayloads('');
     setDraftSelectedPayloads(new Set(config.predefinedPayloads));
   }, [config]);
+
+  React.useEffect(() => {
+    const routeState = location.state as PromptInjectionRouteState | null;
+    const promptInjectionRequest = routeState?.promptInjectionRequest;
+
+    if (!promptInjectionRequest) {
+      return;
+    }
+
+    setRequestBody(promptInjectionRequest.raw);
+    setEndpoint(promptInjectionRequest.endpoint);
+    setResults([]);
+    setSelectedResultId(null);
+  }, [location.key, location.state]);
 
   React.useEffect(() => {
     if (!payloadDialogOpen) {
@@ -232,10 +267,7 @@ function AIPayloadTester({ tool }: AIPayloadTesterProps) {
 
   const anomalyCount = results.filter((result) => result.isAnomaly).length;
   const successCount = results.filter((result) => result.success).length;
-
-  const replacePlaceholder = React.useCallback((text: string, payload: string) => {
-    return text.split(placeholder || '{{input}}').join(payload);
-  }, [placeholder]);
+  const markedTargetCount = countMarkedTargets(requestBody);
 
   const selectAllPayloads = () => {
     setDraftSelectedPayloads((current) => {
@@ -295,6 +327,27 @@ function AIPayloadTester({ tool }: AIPayloadTesterProps) {
     toast.success('Payload config saved');
   };
 
+  const markRequestTarget = () => {
+    const editor = requestEditorRef.current;
+    const model = editor?.getModel?.();
+    const selection = editor?.getSelection?.();
+
+    if (!editor || !model || !selection) {
+      return;
+    }
+
+    const selectedText = model.getValueInRange(selection);
+    editor.executeEdits('mark-prompt-injection-target', [
+      {
+        range: selection,
+        text: `§${selectedText}§`,
+        forceMoveMarkers: true,
+      },
+    ]);
+    editor.focus();
+    setRequestBody(editor.getValue());
+  };
+
   const sendRequest = async (payload: string, index: number): Promise<TestResult> => {
     const startTime = Date.now();
     const controller = new AbortController();
@@ -302,7 +355,7 @@ function AIPayloadTester({ tool }: AIPayloadTesterProps) {
     abortControllerRef.current = controller;
 
     try {
-      const modifiedRequest = replacePlaceholder(requestBody, payload);
+      const modifiedRequest = replaceMarkedTargets(requestBody, payload);
       const parsedRequest = parseRawHttpRequest(modifiedRequest, {
         fallbackUrl: endpoint.trim(),
         defaultUrl: 'http://localhost:3000',
@@ -366,6 +419,11 @@ function AIPayloadTester({ tool }: AIPayloadTesterProps) {
 
   const runAttack = async (payloads: string[]) => {
     if (payloads.length === 0 || isRunning) {
+      return;
+    }
+
+    if (markedTargetCount === 0) {
+      toast.error('Mark a request target before running');
       return;
     }
 
@@ -477,7 +535,7 @@ function AIPayloadTester({ tool }: AIPayloadTesterProps) {
             <Target className="h-3.5 w-3.5" />
             Payload Config
           </Button>
-          <Button size="xs" variant="outline" onClick={() => runAttack(allPayloads)} disabled={allPayloads.length === 0 || isRunning}>
+          <Button size="xs" variant="outline" onClick={() => runAttack(allPayloads)} disabled={allPayloads.length === 0 || markedTargetCount === 0 || isRunning}>
             Run All
           </Button>
         </div>
@@ -489,30 +547,47 @@ function AIPayloadTester({ tool }: AIPayloadTesterProps) {
               <CardTitle className="text-base">Request</CardTitle>
             </CardHeader>
             <CardContent className="flex min-h-0 flex-1 flex-col gap-3">
-              <div className="grid gap-2 md:grid-cols-[minmax(0,1fr)_140px]">
+              <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
-                  <Label className="whitespace-nowrap text-xs">Placeholder</Label>
-                  <Input
-                    className="h-8 font-mono text-xs"
-                    value={placeholder}
-                    onChange={(event) => setPlaceholder(event.target.value)}
-                  />
+                  <Label className="whitespace-nowrap text-xs">Raw Request</Label>
+                  <Badge variant={markedTargetCount > 0 ? 'default' : 'secondary'}>
+                    {markedTargetCount} marked
+                  </Badge>
                 </div>
-                <Select value={attackType} onValueChange={(value) => setAttackType(value as AttackType)}>
-                  <SelectTrigger className="h-8">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="sniper">Sniper</SelectItem>
-                  </SelectContent>
-                </Select>
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="xs"
+                    onClick={markRequestTarget}
+                  >
+                    <Target className="mr-1 h-4 w-4" />
+                    Mark Target
+                  </Button>
+                  <Select value={attackType} onValueChange={(value) => setAttackType(value as AttackType)}>
+                    <SelectTrigger className="h-8 w-[140px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="sniper">Sniper</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
 
-              <Textarea
-                className="min-h-[220px] flex-1 font-mono text-xs"
-                value={requestBody}
-                onChange={(event) => setRequestBody(event.target.value)}
-              />
+              <div className="min-h-[220px] flex-1 overflow-hidden rounded-md border">
+                <TextEditor
+                  language="http"
+                  value={requestBody}
+                  onChange={(value) => setRequestBody(value ?? '')}
+                  onMount={(editor) => {
+                    requestEditorRef.current = editor;
+                  }}
+                  options={{
+                    scrollBeyondLastLine: false,
+                  }}
+                />
+              </div>
 
               <div className="flex items-center gap-2">
                 <Label className="whitespace-nowrap text-xs">Base URL</Label>
@@ -555,7 +630,7 @@ function AIPayloadTester({ tool }: AIPayloadTesterProps) {
               </label>
 
               <div className="flex gap-2">
-                <Button size="xs" className="flex-1 gap-2" onClick={() => runAttack(payloadsToRun)} disabled={payloadsToRun.length === 0 || isRunning}>
+                <Button size="xs" className="flex-1 gap-2" onClick={() => runAttack(payloadsToRun)} disabled={payloadsToRun.length === 0 || markedTargetCount === 0 || isRunning}>
                   {isRunning ? <Loader2 className="h-4 w-4 animate-spin" /> : <Zap className="h-4 w-4" />}
                   {isRunning ? 'Running' : 'Start'}
                 </Button>
@@ -678,12 +753,18 @@ function AIPayloadTester({ tool }: AIPayloadTesterProps) {
             </TabsList>
 
             <TabsContent value="manual" className="mt-3">
-              <Textarea
-                className="min-h-[260px] font-mono text-xs"
-                placeholder="One payload per line..."
-                value={draftManualPayloads}
-                onChange={(event) => setDraftManualPayloads(event.target.value)}
-              />
+              <div className="h-[260px] overflow-hidden rounded-md border">
+                <TextEditor
+                  language="plaintext"
+                  value={draftManualPayloads}
+                  onChange={(value) => setDraftManualPayloads(value ?? '')}
+                  options={{
+                    lineNumbers: 'off',
+                    scrollBeyondLastLine: false,
+                    wordWrap: 'off',
+                  }}
+                />
+              </div>
             </TabsContent>
 
             <TabsContent value="import" className="mt-3">
@@ -791,5 +872,3 @@ function StatusBadge({ result }: { result: TestResult }) {
 export function PromptInjectionTool() {
   return <AIPayloadTester tool="prompt-injection" />;
 }
-
-

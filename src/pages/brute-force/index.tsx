@@ -7,7 +7,6 @@ import { BruteForceConfigDialog } from './components/brute-force-config-dialog';
 import { BruteForceFilters } from './components/brute-force-filters';
 import { BruteForcePayloadDialog } from './components/brute-force-payload-dialog';
 import { BruteForceProgress } from './components/brute-force-progress';
-import { BruteForceRequestDialog } from './components/brute-force-request-dialog';
 import { BruteForceResultDrawer } from './components/brute-force-result-drawer';
 import { BruteForceResultsPane } from './components/brute-force-results-pane';
 import { BruteForceToolbar } from './components/brute-force-toolbar';
@@ -44,10 +43,6 @@ export function BruteForcePage() {
     stopAttack,
     clearResults,
     clearStartError,
-    rawRequestDialogOpen,
-    setRawRequestDialogOpen,
-    rawRequestContent,
-    setRawRequestContent,
     payloadDialogOpen,
     setPayloadDialogOpen,
     filterStatus,
@@ -59,7 +54,6 @@ export function BruteForcePage() {
     handleLoadPayloads,
     handleSelectPayloadFile,
     handleStartAttack,
-    handleParseRawRequest,
     handleExportResults,
   } = useBruteForcePage();
 
@@ -88,92 +82,99 @@ export function BruteForcePage() {
       onTabChange={setActiveTabId}
       onTabRename={renameTab}
       onTabClose={closeTab}
-      contentClassName="flex-1 min-h-0 overflow-hidden bg-background"
+      contentClassName="flex-1 border rounded-lg overflow-hidden bg-background min-h-0"
     >
-      <div className="mb-2 flex justify-end">
-        <Button variant="outline" size="xs" onClick={() => addAttackTab()}>
-          <Plus className="h-4 w-4 mr-1" />
-          New Attack
-        </Button>
-      </div>
       <div className="flex h-full min-h-0 flex-col">
-      <BruteForceToolbar
-        isRunning={isRunning}
-        progress={progress}
-        canStart={canStart}
-        startBlockedReason={startBlockedReason}
-        onOpenImport={() => setRawRequestDialogOpen(true)}
-        onStart={() => {
-          clearStartError();
-          handleStartAttack();
-        }}
-        onStop={stopAttack}
-      />
+        <div className="bg-muted grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-2">
+          <div className="flex min-h-0 flex-col border-b lg:border-b-0 lg:border-r">
+            <div className="bg-muted h-10 px-3 py-2 border-b flex items-center justify-between">
+              <span className="text-sm font-medium">Request</span>
+              <Button variant="outline" size="xs" onClick={() => addAttackTab()}>
+                <Plus className="h-4 w-4 mr-1" />
+                New Attack
+              </Button>
+            </div>
 
-      <BruteForceProgress progress={progress} />
+            <div className="border-b bg-background px-3 py-2">
+              <BruteForceToolbar
+                isRunning={isRunning}
+                progress={progress}
+                canStart={canStart}
+                startBlockedReason={startBlockedReason}
+                onStart={() => {
+                  clearStartError();
+                  handleStartAttack();
+                }}
+                onStop={stopAttack}
+              />
 
-      <BruteForceConfigDialog
-        config={config}
-        updateConfig={updateConfig}
-        updateAttackMode={updateAttackMode}
-        updatePayloadType={updatePayloadType}
-        updatePayloadValues={updatePayloadValues}
-        updateNumberRange={updateNumberRange}
-        addProcessingStep={addProcessingStep}
-        removeProcessingStep={removeProcessingStep}
-        updateGrepMatch={updateGrepMatch}
-        updateGrepExtract={updateGrepExtract}
-        updateSessionHandling={updateSessionHandling}
-        onOpenPayloadFile={() => setPayloadDialogOpen(true)}
-      />
+              <BruteForceProgress progress={progress} />
+            </div>
 
-      <div className="mt-4 flex min-h-0 flex-1 flex-col">
-        <BruteForceFilters
-          filterStatus={filterStatus}
-          filterPayload={filterPayload}
-          filterGrep={filterGrep}
-          resultsCount={results.length}
-          onFilterStatusChange={setFilterStatus}
-          onFilterPayloadChange={setFilterPayload}
-          onFilterGrepChange={setFilterGrep}
-          onExport={handleExportResults}
-          onClear={clearResults}
+            <div className="min-h-0 flex-1 p-2">
+              <BruteForceConfigDialog
+                config={config}
+                updateConfig={updateConfig}
+                updateAttackMode={updateAttackMode}
+                updatePayloadType={updatePayloadType}
+                updatePayloadValues={updatePayloadValues}
+                updateNumberRange={updateNumberRange}
+                addProcessingStep={addProcessingStep}
+                removeProcessingStep={removeProcessingStep}
+                updateGrepMatch={updateGrepMatch}
+                updateGrepExtract={updateGrepExtract}
+                updateSessionHandling={updateSessionHandling}
+                onOpenPayloadFile={() => setPayloadDialogOpen(true)}
+              />
+            </div>
+          </div>
+
+          <div className="flex min-h-0 flex-col">
+            <div className="bg-muted h-10 px-3 py-2 border-b flex items-center">
+              <span className="text-sm font-medium">Result</span>
+            </div>
+
+            <div className="flex min-h-0 flex-1 flex-col p-2">
+              <BruteForceFilters
+                filterStatus={filterStatus}
+                filterPayload={filterPayload}
+                filterGrep={filterGrep}
+                resultsCount={results.length}
+                onFilterStatusChange={setFilterStatus}
+                onFilterPayloadChange={setFilterPayload}
+                onFilterGrepChange={setFilterGrep}
+                onExport={handleExportResults}
+                onClear={clearResults}
+              />
+
+              <div className="min-h-0 flex-1">
+                <BruteForceResultsPane
+                  results={filteredResults}
+                  isRunning={isRunning}
+                  selectedResult={selectedResult}
+                  onSelectResult={setSelectedResult}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <BruteForceResultDrawer
+          open={Boolean(selectedResult)}
+          result={selectedResult}
+          onOpenChange={(open) => {
+            if (!open) {
+              setSelectedResult(null);
+            }
+          }}
         />
 
-        <div className="min-h-0 flex-1">
-          <BruteForceResultsPane
-            results={filteredResults}
-            isRunning={isRunning}
-            selectedResult={selectedResult}
-            onSelectResult={setSelectedResult}
-          />
-        </div>
-      </div>
-
-      <BruteForceResultDrawer
-        open={Boolean(selectedResult)}
-        result={selectedResult}
-        onOpenChange={(open) => {
-          if (!open) {
-            setSelectedResult(null);
-          }
-        }}
-      />
-
-      <BruteForceRequestDialog
-        open={rawRequestDialogOpen}
-        onOpenChange={setRawRequestDialogOpen}
-        rawRequestContent={rawRequestContent}
-        onRawRequestChange={setRawRequestContent}
-        onImport={handleParseRawRequest}
-      />
-
-      <BruteForcePayloadDialog
-        open={payloadDialogOpen}
-        onOpenChange={setPayloadDialogOpen}
-        onLoadPayloads={handleLoadPayloads}
-        onSelectPayloadFile={handleSelectPayloadFile}
-      />
+        <BruteForcePayloadDialog
+          open={payloadDialogOpen}
+          onOpenChange={setPayloadDialogOpen}
+          onLoadPayloads={handleLoadPayloads}
+          onSelectPayloadFile={handleSelectPayloadFile}
+        />
       </div>
     </TabbedPageLayout>
   );

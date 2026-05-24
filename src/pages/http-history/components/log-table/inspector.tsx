@@ -1,8 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { ChevronRight, ChevronDown } from 'lucide-react';
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from '@/components/ui/table';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { buildHttpHeaderList } from '@/lib/http-message';
 
 interface KeyValue {
@@ -24,20 +23,14 @@ interface InspectorSectionProps {
 const wrappedCellClass = 'py-1 px-2 font-mono whitespace-normal break-words [overflow-wrap:anywhere]';
 
 export function InspectorSection({ title, items, defaultOpen = true }: InspectorSectionProps) {
-  const [isOpen, setIsOpen] = useState(defaultOpen);
-
   return (
-    <div className="border rounded-md mb-2 min-w-0 overflow-hidden">
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-1 w-full px-2 py-1.5 text-xs font-semibold hover:bg-muted/50 transition-colors"
-      >
-        {isOpen ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
-        <span>{title}</span>
-        <span className="text-muted-foreground ml-1">({items.length})</span>
-      </button>
-      {isOpen && (
-        <div className="border-t">
+    <Accordion type="single" defaultValue={defaultOpen ? title : undefined} collapsible className="border rounded-md mb-2 min-w-0 overflow-hidden">
+      <AccordionItem value={title} className="last:border-b-0">
+        <AccordionTrigger className="px-2 py-1.5 text-xs font-semibold hover:bg-muted/50 transition-colors px-2">
+          <span>{title}</span>
+          <span className="text-muted-foreground ml-1">({items.length})</span>
+        </AccordionTrigger>
+        <AccordionContent className="border-t">
           {items.length > 0 ? (
             <Table className="text-xs table-fixed max-w-full">
               <TableHeader>
@@ -74,9 +67,9 @@ export function InspectorSection({ title, items, defaultOpen = true }: Inspector
           ) : (
             <div className="p-2 text-xs text-muted-foreground">No items</div>
           )}
-        </div>
-      )}
-    </div>
+        </AccordionContent>
+      </AccordionItem>
+    </Accordion>
   );
 }
 

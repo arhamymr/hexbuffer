@@ -1,7 +1,6 @@
 'use client';
 
 import { TabbedPageLayout } from '@/components/tabs-layout/tabbed-page-layout';
-import { RepeaterUrlBar } from './components/RepeaterUrlBar';
 import { RepeaterRequestPanel } from './components/RepeaterRequestPanel';
 import { RepeaterResponsePanel } from './components/RepeaterResponsePanel';
 import { useRepeaterPage } from './hooks/use-repeater-page';
@@ -14,7 +13,6 @@ export function RepeaterPage() {
     renameTab,
     closeTab,
     activeTab,
-    updateUrl,
     updateRawRequest,
     sendRequest,
   } = useRepeaterPage();
@@ -32,17 +30,13 @@ export function RepeaterPage() {
       onTabClose={closeTab}
       contentClassName="flex-1 border rounded-lg overflow-hidden bg-background min-h-0"
     >
-      <RepeaterUrlBar
-        url={activeTab.request.url}
-        isLoading={activeTab.isLoading}
-        onUrlChange={updateUrl}
-        onSend={sendRequest}
-      />
       <div className="bg-muted flex-1 grid grid-cols-2 gap-0 min-h-0">
         <div className="border-r min-h-0">
           <RepeaterRequestPanel
             rawRequest={activeTab.request.raw}
+            isLoading={activeTab.isLoading}
             onRawRequestChange={updateRawRequest}
+            onSend={sendRequest}
           />
         </div>
         <div className="min-h-0">

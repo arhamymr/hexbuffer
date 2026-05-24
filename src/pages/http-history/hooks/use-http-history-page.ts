@@ -8,7 +8,7 @@ export type HistoryMode = 'http' | 'websocket';
 export function useHttpHistoryPage() {
   const [sitemapVisible, setSitemapVisible] = React.useState(false);
   const [historyMode, setHistoryMode] = React.useState<HistoryMode>('http');
-  const { activeTab } = useTabBar();
+  const { tabs, activeTabId, setActiveTabId, activeTab, removeTab } = useTabBar();
   const { setActiveScope, setSelectedCallId, setPathFilter } = useHistoryQuery();
 
   React.useEffect(() => {
@@ -25,6 +25,10 @@ export function useHttpHistoryPage() {
   }, [setPathFilter, setSelectedCallId]);
 
   return {
+    tabs,
+    activeTabId,
+    setActiveTabId,
+    removeTab,
     historyMode,
     setHistoryMode,
     sitemapVisible,

@@ -12,6 +12,7 @@ import { Copy, ExternalLink, Plus, Eye, Trash2, Send, FilePlus2 } from 'lucide-r
 import { toast } from 'sonner';
 import type { ApiCall } from '@/types';
 import { deleteHistoryLog, fetchHistoryDetail } from '@/pages/http-history/services/history-service';
+import { createDefaultAttackConfig, findRequestPayloadPositions } from '@/pages/brute-force/types';
 import { useBruteForceStore } from '@/stores/bruto-force';
 import { useHistoryQuery } from '@/pages/http-history/hooks/use-history-query';
 import { adaptProxyRecordToApiCall } from '@/pages/http-history/hooks/use-history-table';
@@ -74,15 +75,22 @@ export function LogEntryContextMenu({
     try {
       const detail = await fetchHistoryDetail(call.id);
       const request = adaptProxyRecordToApiCall(detail);
-
-      useBruteForceStore.getState().setPendingRequest({
+      const baseRequest = {
         method: request.method,
         url: request.url,
         headers: request.headers,
         body: request.request_body || '',
         follow_redirects: true,
         max_hops: 10,
-      });
+      };
+      const config = {
+        ...createDefaultAttackConfig(),
+        name: `${request.method} ${request.path || request.url}`,
+        base_request: baseRequest,
+        positions: findRequestPayloadPositions(baseRequest),
+      };
+
+      useBruteForceStore.getState().addAttackTab(config);
       navigate('/brute-force');
     } catch (error) {
       console.error('Failed to open request in Brute Force:', error);

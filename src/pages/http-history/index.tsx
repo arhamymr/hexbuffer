@@ -1,9 +1,9 @@
 'use client';
 
+import { TabbedPageLayout } from "@/components/tabs-layout/tabbed-page-layout";
 import { Card } from "@/components/ui/card";
 import { LogFilters } from "./components/log-table/log-filters";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
-import { TabBar } from "@/pages/http-history/components/tab-bar";
 import { TreeView } from "./components/tree-view";
 import { HttpHistoryView } from "./components/http-history-view";
 import { WebSocketHistoryView } from "./components/websocket-history-view";
@@ -11,6 +11,10 @@ import { useHttpHistoryPage } from "./hooks/use-http-history-page";
 
 export function HttpHistoryPage() {
   const {
+    tabs,
+    activeTabId,
+    setActiveTabId,
+    removeTab,
     historyMode,
     setHistoryMode,
     sitemapVisible,
@@ -20,10 +24,13 @@ export function HttpHistoryPage() {
   } = useHttpHistoryPage();
 
   return (
-    <div className="h-full flex flex-col">
-      <div className="flex items-center gap-2 mb-2 border-b border-green-500 sticky top-0 z-20 bg-background pt-2">
-        <TabBar />
-      </div>
+    <TabbedPageLayout
+      tabs={tabs}
+      activeTabId={activeTabId}
+      onTabChange={setActiveTabId}
+      onTabClose={removeTab}
+      contentClassName="flex-1 flex flex-col overflow-hidden bg-background min-h-0"
+    >
       <LogFilters
         historyMode={historyMode}
         setHistoryMode={setHistoryMode}
@@ -45,6 +52,6 @@ export function HttpHistoryPage() {
           </ResizablePanel>
         </ResizablePanelGroup>
       </Card>
-    </div>
+    </TabbedPageLayout>
   );
 }

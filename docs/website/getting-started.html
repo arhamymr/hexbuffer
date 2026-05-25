@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Get started with AppRecon - Installation and quick start guide">
+  <title>Get Started - AppRecon</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <nav class="nav">
+    <div class="container nav-content">
+      <a href="index.html" class="logo">AppRecon</a>
+      <div class="nav-links">
+        <a href="features.html">Features</a>
+        <a href="getting-started.html">Get Started</a>
+        <a href="https://github.com/your-repo" target="_blank">GitHub</a>
+      </div>
+    </div>
+  </nav>
+
+  <section class="hero" style="min-height: 50vh;">
+    <div class="hero-content">
+      <h1>Get Started</h1>
+      <p class="subtitle">Install AppRecon and start inspecting traffic in minutes.</p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <div class="split-layout" style="margin-bottom: 64px;">
+        <div>
+          <h2>Prerequisites</h2>
+          <p class="text-muted" style="margin-bottom: 16px;">
+            Before installing AppRecon, make sure you have the following:
+          </p>
+          <ul style="color: var(--text-secondary); list-style: none;">
+            <li style="margin-bottom: 8px;">• <strong>Node.js 18+</strong> - For running the development server</li>
+            <li style="margin-bottom: 8px;">• <strong>Rust 1.70+</strong> - For building the Tauri backend</li>
+            <li style="margin-bottom: 8px;">• <strong>pnpm</strong> - Package manager (install via `npm i -g pnpm`)</li>
+            <li>• <strong>macOS / Windows / Linux</strong> - Desktop platform</li>
+          </ul>
+        </div>
+        <div>
+          <h2>Quick Install</h2>
+          <div class="code-block">
+            <pre><span style="color: #6366f1;"># Clone the repository</span>
+git clone https://github.com/your-repo/apprecon.git
+cd apprecon
+
+<span style="color: #6366f1;"># Install dependencies</span>
+pnpm install
+
+<span style="color: #6366f1;"># Run the app</span>
+pnpm tauri</pre>
+          </div>
+        </div>
+      </div>
+
+      <div class="step-grid">
+        <div class="step-card">
+          <div class="step-number">1</div>
+          <h3>Install Dependencies</h3>
+          <p>Run <code>pnpm install</code> to install all frontend and backend dependencies.</p>
+        </div>
+
+        <div class="step-card">
+          <div class="step-number">2</div>
+          <h3>Configure Certificate</h3>
+          <p>On first launch, AppRecon generates a CA certificate. Add it to your system's trust store.</p>
+        </div>
+
+        <div class="step-card">
+          <div class="step-number">3</div>
+          <h3>Set Proxy Address</h3>
+          <p>Configure your browser or system to use <code>localhost:8080</code> as the HTTP/HTTPS proxy.</p>
+        </div>
+
+        <div class="step-card">
+          <div class="step-number">4</div>
+          <h3>Start Capturing</h3>
+          <p>Browse the web and watch traffic appear in AppRecon's history view.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section section-dark">
+    <div class="container">
+      <h2 class="text-center" style="margin-bottom: 48px;">Available Commands</h2>
+      <div class="commands-table">
+        <table style="width: 100%; border-collapse: collapse;">
+          <thead>
+            <tr style="border-bottom: 1px solid var(--border);">
+              <th style="text-align: left; padding: 12px 16px; color: var(--text-secondary);">Command</th>
+              <th style="text-align: left; padding: 12px 16px; color: var(--text-secondary);">Purpose</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="border-bottom: 1px solid var(--border);">
+              <td style="padding: 12px 16px;"><code style="color: var(--accent);">pnpm dev</code></td>
+              <td style="padding: 12px 16px; color: var(--text-secondary);">Start Vite dev server on port 1420</td>
+            </tr>
+            <tr style="border-bottom: 1px solid var(--border);">
+              <td style="padding: 12px 16px;"><code style="color: var(--accent);">pnpm dev:clean</code></td>
+              <td style="padding: 12px 16px; color: var(--text-secondary);">Free port 1420 and restart dev server</td>
+            </tr>
+            <tr style="border-bottom: 1px solid var(--border);">
+              <td style="padding: 12px 16px;"><code style="color: var(--accent);">pnpm build</code></td>
+              <td style="padding: 12px 16px; color: var(--text-secondary);">Build Vite frontend for production</td>
+            </tr>
+            <tr style="border-bottom: 1px solid var(--border);">
+              <td style="padding: 12px 16px;"><code style="color: var(--accent);">pnpm preview</code></td>
+              <td style="padding: 12px 16px; color: var(--text-secondary);">Preview built frontend locally</td>
+            </tr>
+            <tr style="border-bottom: 1px solid var(--border);">
+              <td style="padding: 12px 16px;"><code style="color: var(--accent);">pnpm tauri</code></td>
+              <td style="padding: 12px 16px; color: var(--text-secondary);">Run Tauri desktop application</td>
+            </tr>
+            <tr>
+              <td style="padding: 12px 16px;"><code style="color: var(--accent);">cargo test</code></td>
+              <td style="padding: 12px 16px; color: var(--text-secondary);">Run proxy tests sequentially</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container text-center">
+      <h2>Ready to Start?</h2>
+      <p class="text-muted" style="margin: 16px 0 32px;">Install AppRecon today and take control of your network traffic.</p>
+      <div class="cta-group">
+        <a href="index.html" class="btn btn-primary">Back to Home</a>
+        <a href="features.html" class="btn btn-secondary">View Features</a>
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="container">
+      <p>AppRecon - Built with Tauri, React, and Rust</p>
+    </div>
+  </footer>
+
+  <style>
+    .code-block {
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      overflow-x: auto;
+    }
+
+    .code-block pre {
+      font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .step-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 24px;
+      margin-top: 48px;
+    }
+
+    .step-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      position: relative;
+    }
+
+    .step-number {
+      width: 40px;
+      height: 40px;
+      background: var(--accent);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 16px;
+    }
+
+    .step-card h3 {
+      margin-bottom: 8px;
+    }
+
+    .step-card p {
+      color: var(--text-secondary);
+      font-size: 14px;
+    }
+
+    .step-card code {
+      background: var(--bg-tertiary);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 13px;
+    }
+
+    code {
+      background: var(--bg-tertiary);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 14px;
+      color: var(--accent);
+    }
+  </style>
+</body>
+</html>

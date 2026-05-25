@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="AppRecon Features - Complete guide to traffic interception, inspection, and modification">
+  <title>Features - AppRecon</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <nav class="nav">
+    <div class="container nav-content">
+      <a href="index.html" class="logo">AppRecon</a>
+      <div class="nav-links">
+        <a href="features.html">Features</a>
+        <a href="getting-started.html">Get Started</a>
+        <a href="https://github.com/your-repo" target="_blank">GitHub</a>
+      </div>
+    </div>
+  </nav>
+
+  <section class="hero" style="min-height: 50vh;">
+    <div class="hero-content">
+      <h1>Powerful Features</h1>
+      <p class="subtitle">Everything you need to intercept, inspect, modify, and debug HTTP/HTTPS traffic.</p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <div class="feature-detail">
+        <div class="feature-header">
+          <h2>🔒 MITM Proxy</h2>
+        </div>
+        <div class="feature-content">
+          <p>AppRecon includes a full man-in-the-middle proxy with automatic CA certificate generation and OS-level trust store integration.</p>
+          <ul>
+            <li>Automatic CA certificate generation with SHA-256 fingerprinting</li>
+            <li>macOS Keychain and Windows certificate store integration</li>
+            <li>rustls-based TLS termination for maximum performance</li>
+            <li>Support for HTTP/1.1 and HTTP/2 protocols</li>
+            <li>WebSocket interception and inspection</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="feature-detail">
+        <div class="feature-header">
+          <h2>🔍 Traffic Inspection</h2>
+        </div>
+        <div class="feature-content">
+          <p>View every request and response in multiple formats with syntax highlighting and full search capabilities.</p>
+          <ul>
+            <li>JSON viewer with collapsible nodes and search</li>
+            <li>XML viewer with syntax highlighting</li>
+            <li>Hex dump viewer for binary content</li>
+            <li>Image viewer with zoom support</li>
+            <li>Video player for streaming content</li>
+            <li>GraphQL query analyzer</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="feature-detail">
+        <div class="feature-header">
+          <h2>✏️ Request Editing & Repeater</h2>
+        </div>
+        <div class="feature-content">
+          <p>Modify requests and send them again with the powerful Repeater tool. Build complex test scenarios.</p>
+          <ul>
+            <li>Edit headers, query params, and body</li>
+            <li>Support for multipart form uploads</li>
+            <li>Request history with unlimited replay</li>
+            <li>Variable substitution support</li>
+            <li>Import from cURL commands</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="feature-detail">
+        <div class="feature-header">
+          <h2>🏷️ Traffic Filtering & Tagging</h2>
+        </div>
+        <div class="feature-content">
+          <p>Find what you're looking for with powerful filters and automatic traffic tagging.</p>
+          <ul>
+            <li>Filter by URL, method, status code, and content type</li>
+            <li>Client-based filtering for multi-user environments</li>
+            <li>Custom tagging rules with regex support</li>
+            <li>Sync and async rule evaluation</li>
+            <li>Save and share filter configurations</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="feature-detail">
+        <div class="feature-header">
+          <h2>⏸️ Breakpoints</h2>
+        </div>
+        <div class="feature-content">
+          <p>Pause requests mid-flow to inspect or modify them before they continue to their destination.</p>
+          <ul>
+            <li>Request and response breakpoints</li>
+            <li>Modify headers, body, and status codes</li>
+            <li>Conditional breakpoints based on rules</li>
+            <li>Breakpoint history and management</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="feature-detail">
+        <div class="feature-header">
+          <h2>📊 Session Management</h2>
+        </div>
+        <div class="feature-content">
+          <p>Save, load, and export traffic sessions for collaboration and archived analysis.</p>
+          <ul>
+            <li>Export to HAR format for browser dev tools</li>
+            <li>Export to CSV for spreadsheet analysis</li>
+            <li>SQLite database export for programmatic access</li>
+            <li>Session compression with ZSTD</li>
+            <li>Session search and filtering</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="feature-detail">
+        <div class="feature-header">
+          <h2>🔧 JavaScript Scripting</h2>
+        </div>
+        <div class="feature-content">
+          <p>Write custom scripts to automate tasks and extend AppRecon's functionality.</p>
+          <ul>
+            <li>Boa JavaScript engine for fast execution</li>
+            <li>Request/response interception hooks</li>
+            <li>Custom authentication flows</li>
+            <li>Automated security testing</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="feature-detail">
+        <div class="feature-header">
+          <h2>🤖 AI Integration (MCP)</h2>
+        </div>
+        <div class="feature-content">
+          <p>Connect to Large Language Models via the Model Context Protocol for intelligent traffic analysis.</p>
+          <ul>
+            <li>Real-time traffic analysis</li>
+            <li>Security vulnerability suggestions</li>
+            <li>API documentation generation</li>
+            <li>Custom AI tool development</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="feature-detail">
+        <div class="feature-header">
+          <h2>🌐 Port Scanner</h2>
+        </div>
+        <div class="feature-content">
+          <p>Scan targets for open ports and grab banners to identify services.</p>
+          <ul>
+            <li>Concurrent port scanning</li>
+            <li>Service banner grabbing</li>
+            <li>Target management and grouping</li>
+            <li>Results exportable to traffic history</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="feature-detail">
+        <div class="feature-header">
+          <h2>📝 Brute Force Testing</h2>
+        </div>
+        <div class="feature-content">
+          <p>Test authentication endpoints with multiple attack modes and payload processing.</p>
+          <ul>
+            <li>Sniper, Battering Ram, Pitchfork, Cluster Bomb modes</li>
+            <li>Payload lists and runtime file support</li>
+            <li>Number range and character enumeration</li>
+            <li>URL encoding, Base64, and hash transformations</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="container">
+      <p>AppRecon - Built with Tauri, React, and Rust</p>
+    </div>
+  </footer>
+
+  <style>
+    .feature-detail {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 32px;
+      margin-bottom: 32px;
+    }
+
+    .feature-header h2 {
+      margin-bottom: 16px;
+    }
+
+    .feature-content p {
+      color: var(--text-secondary);
+      margin-bottom: 16px;
+    }
+
+    .feature-content ul {
+      list-style: none;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 12px;
+    }
+
+    .feature-content li {
+      color: var(--text-secondary);
+      padding-left: 24px;
+      position: relative;
+    }
+
+    .feature-content li::before {
+      content: "✓";
+      position: absolute;
+      left: 0;
+      color: var(--accent);
+    }
+  </style>
+</body>
+</html>

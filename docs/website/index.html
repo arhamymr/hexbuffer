@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="AppRecon - A powerful network proxy and traffic inspection tool for security professionals and developers">
+  <meta name="keywords" content="proxy, traffic inspection, HTTP, HTTPS, MITM, security testing, web debugging">
+  <title>AppRecon - Network Proxy & Traffic Inspector</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            bg: {
+              primary: '#0a0a0f',
+              secondary: '#12121a',
+              tertiary: '#1a1a25',
+            },
+            accent: {
+              DEFAULT: '#6366f1',
+              hover: '#818cf8',
+            },
+            'accent-secondary': '#22d3ee',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      background-color: #0a0a0f;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    .hero-gradient {
+      background: radial-gradient(ellipse at top, #1a1a2e 0%, #0a0a0f 70%);
+    }
+    .grid-pattern {
+      background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%236366f1' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    }
+  </style>
+</head>
+<body class="text-white min-h-screen">
+  <!-- Navigation -->
+  <nav class="fixed top-0 left-0 right-0 z-50 bg-bg-primary/80 backdrop-blur-xl border-b border-white/5">
+    <div class="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
+      <a href="index.html" class="text-xl font-bold">AppRecon</a>
+      <div class="flex gap-8">
+        <a href="features.html" class="text-gray-400 hover:text-white transition-colors text-sm">Features</a>
+        <a href="getting-started.html" class="text-gray-400 hover:text-white transition-colors text-sm">Get Started</a>
+        <a href="https://github.com/your-repo" target="_blank" class="text-gray-400 hover:text-white transition-colors text-sm">GitHub</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="hero-gradient grid-pattern min-h-screen flex items-center justify-center relative overflow-hidden">
+    <div class="relative z-10 text-center px-6 py-48">
+      <span class="inline-block px-4 py-2 bg-accent/15 border border-accent/30 rounded-full text-sm text-accent-hover mb-6">
+        v0.1.0 - Now Available
+      </span>
+      <h1 class="text-5xl md:text-7xl lg:text-8xl font-bold tracking-tight mb-4 bg-gradient-to-b from-white to-gray-400 bg-clip-text text-transparent">
+        Inspect Every Request.<br>Debug With Confidence.
+      </h1>
+      <p class="text-lg md:text-xl text-gray-400 max-w-2xl mx-auto mb-10">
+        A modern network proxy built for security professionals and developers.
+        Capture, inspect, modify, and replay HTTP/HTTPS traffic with a powerful desktop interface.
+      </p>
+      <div class="flex gap-4 justify-center flex-wrap">
+        <a href="getting-started.html" class="inline-flex items-center gap-2 px-7 py-3.5 bg-accent hover:bg-accent-hover text-white rounded-lg font-medium transition-all hover:-translate-y-0.5">
+          Get Started
+        </a>
+        <a href="features.html" class="inline-flex items-center gap-2 px-7 py-3.5 bg-bg-tertiary hover:bg-white/10 text-white border border-white/10 rounded-lg font-medium transition-all">
+          Explore Features
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features Preview -->
+  <section class="bg-bg-secondary py-24">
+    <div class="max-w-6xl mx-auto px-6">
+      <div class="text-center mb-12">
+        <h2 class="text-3xl md:text-4xl font-semibold mb-4">Everything You Need to Debug Traffic</h2>
+        <p class="text-gray-400">From basic requests to complex security testing, AppRecon has you covered.</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- Feature Cards -->
+        <div class="bg-bg-primary border border-white/5 rounded-2xl p-8 transition-all duration-300 hover:border-accent/50 hover:-translate-y-1 hover:shadow-2xl hover:shadow-accent/5">
+          <div class="w-12 h-12 bg-accent/15 rounded-xl flex items-center justify-center mb-5 text-2xl">🔒</div>
+          <h3 class="text-xl font-medium mb-3">MITM Proxy</h3>
+          <p class="text-gray-400 text-sm">Decrypt HTTPS traffic with auto-generated CA certificates. Full control over TLS termination with rustls.</p>
+        </div>
+
+        <div class="bg-bg-primary border border-white/5 rounded-2xl p-8 transition-all duration-300 hover:border-accent/50 hover:-translate-y-1 hover:shadow-2xl hover:shadow-accent/5">
+          <div class="w-12 h-12 bg-accent/15 rounded-xl flex items-center justify-center mb-5 text-2xl">🔍</div>
+          <h3 class="text-xl font-medium mb-3">Traffic Inspection</h3>
+          <p class="text-gray-400 text-sm">View requests in multiple formats: JSON, XML, Hex, Images, Video, and GraphQL. Syntax highlighted and searchable.</p>
+        </div>
+
+        <div class="bg-bg-primary border border-white/5 rounded-2xl p-8 transition-all duration-300 hover:border-accent/50 hover:-translate-y-1 hover:shadow-2xl hover:shadow-accent/5">
+          <div class="w-12 h-12 bg-accent/15 rounded-xl flex items-center justify-center mb-5 text-2xl">✏️</div>
+          <h3 class="text-xl font-medium mb-3">Request Editing</h3>
+          <p class="text-gray-400 text-sm">Modify headers, body, and parameters on the fly. Send requests again with your changes using the Repeater.</p>
+        </div>
+
+        <div class="bg-bg-primary border border-white/5 rounded-2xl p-8 transition-all duration-300 hover:border-accent/50 hover:-translate-y-1 hover:shadow-2xl hover:shadow-accent/5">
+          <div class="w-12 h-12 bg-accent/15 rounded-xl flex items-center justify-center mb-5 text-2xl">🏷️</div>
+          <h3 class="text-xl font-medium mb-3">Auto Tagging</h3>
+          <p class="text-gray-400 text-sm">Create rules to automatically tag traffic. Sync or async evaluation for fast filtering of important requests.</p>
+        </div>
+
+        <div class="bg-bg-primary border border-white/5 rounded-2xl p-8 transition-all duration-300 hover:border-accent/50 hover:-translate-y-1 hover:shadow-2xl hover:shadow-accent/5">
+          <div class="w-12 h-12 bg-accent/15 rounded-xl flex items-center justify-center mb-5 text-2xl">📊</div>
+          <h3 class="text-xl font-medium mb-3">Session Management</h3>
+          <p class="text-gray-400 text-sm">Save and load traffic sessions. Export to HAR, CSV, or SQLite for collaboration and archived analysis.</p>
+        </div>
+
+        <div class="bg-bg-primary border border-white/5 rounded-2xl p-8 transition-all duration-300 hover:border-accent/50 hover:-translate-y-1 hover:shadow-2xl hover:shadow-accent/5">
+          <div class="w-12 h-12 bg-accent/15 rounded-xl flex items-center justify-center mb-5 text-2xl">🤖</div>
+          <h3 class="text-xl font-medium mb-3">AI Integration</h3>
+          <p class="text-gray-400 text-sm">MCP server support for LLM integration. Analyze traffic patterns and get intelligent insights.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Breakpoints Section -->
+  <section class="py-24">
+    <div class="max-w-6xl mx-auto px-6 grid md:grid-cols-2 gap-12 items-center">
+      <div>
+        <h2 class="text-3xl md:text-4xl font-semibold mb-4">Breakpoints & Scripting</h2>
+        <p class="text-gray-400 mb-6">
+          Pause requests mid-flow to inspect or modify them before they reach the destination.
+          Write JavaScript scripts to automate repetitive tasks using the Boa engine.
+        </p>
+        <a href="features.html" class="inline-flex items-center gap-2 px-6 py-3 bg-bg-tertiary hover:bg-white/10 text-white border border-white/10 rounded-lg font-medium transition-all">
+          Learn More
+        </a>
+      </div>
+      <div>
+        <pre class="bg-bg-tertiary p-6 rounded-xl overflow-x-auto text-sm"><code><span class="text-accent">// Intercept and modify response</span>
+<span class="text-cyan-400">function</span> <span class="text-emerald-400">onResponse</span>(details) {
+  <span class="text-cyan-400">if</span> (details.url.includes(<span class="text-amber-400">"api/"</span>)) {
+    details.body = details.body.replace(<span class="text-amber-400">"test"</span>, <span class="text-amber-400">"production"</span>);
+  }
+  <span class="text-cyan-400">return</span> details;
+}</code></pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="border-t border-white/5 py-12 text-center">
+    <p class="text-gray-500 text-sm">AppRecon - Built with Tauri, React, and Rust</p>
+  </footer>
+</body>
+</html>

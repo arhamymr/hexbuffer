@@ -9,7 +9,7 @@ import { BruteForceFilters } from './components/brute-force-filters';
 import { BruteForcePayloadDialog } from './components/brute-force-payload-dialog';
 import { BruteForceProgress } from './components/brute-force-progress';
 import { BruteForceResultDrawer } from './components/brute-force-result-drawer';
-import { BruteForceResultsPane } from './components/brute-force-results-panel';
+import { BruteForceResultsPanel } from './components/brute-force-results-panel';
 import { useBruteForcePage } from './hooks/use-brute-force-page';
 import { findRequestPayloadPositions } from './types';
 
@@ -110,7 +110,7 @@ export function BruteForcePage() {
               <BruteForceFilters />
 
               <div className="min-h-0 flex-1">
-                <BruteForceResultsPane />
+                <BruteForceResultsPanel />
               </div>
             </div>
           </div>

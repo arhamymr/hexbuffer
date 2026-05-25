@@ -67,21 +67,10 @@ export function BruteForceConfigDialog() {
     <div className="flex h-full min-h-0 flex-col rounded-lg border bg-background">
       <div className="min-h-0 overflow-auto p-3">
         <Tabs defaultValue="attack" className="w-full">
-          <TabsList className="grid grid-cols-5 mb-2">
-            <TabsTrigger value="attack">Attack</TabsTrigger>
+          <TabsList className="grid grid-cols-2 mb-2">
+            <TabsTrigger value="attack">Config</TabsTrigger>
             <TabsTrigger value="request">Request</TabsTrigger>
-            <TabsTrigger value="payloads">Payloads</TabsTrigger>
-            <TabsTrigger value="processing">Processing</TabsTrigger>
-            <TabsTrigger value="options">Options</TabsTrigger>
           </TabsList>
-
-          <TabsContent value="attack">
-            <AttackTab
-              config={config}
-              updateConfig={updateConfig}
-              updateAttackMode={updateAttackMode}
-            />
-          </TabsContent>
 
           <TabsContent value="request">
             <RequestTab
@@ -94,31 +83,32 @@ export function BruteForceConfigDialog() {
             />
           </TabsContent>
 
-          <TabsContent value="payloads">
-            <PayloadsTab
-              config={config}
-              updatePayloadType={updatePayloadType}
-              updatePayloadValues={updatePayloadValues}
-              updateNumberRange={updateNumberRange}
-              setPayloadDialogOpen={setPayloadDialogOpen}
-            />
-          </TabsContent>
-
-          <TabsContent value="processing">
-            <ProcessingTab
-              config={config}
-              addProcessingStep={addProcessingStep}
-              removeProcessingStep={removeProcessingStep}
-            />
-          </TabsContent>
-
-          <TabsContent value="options">
-            <OptionsTab
-              config={config}
-              updateGrepMatch={updateGrepMatch}
-              updateGrepExtract={updateGrepExtract}
-              updateSessionHandling={updateSessionHandling}
-            />
+          <TabsContent value="attack">
+            <div className="space-y-6">
+              <AttackTab
+                config={config}
+                updateConfig={updateConfig}
+                updateAttackMode={updateAttackMode}
+              />
+              <PayloadsTab
+                config={config}
+                updatePayloadType={updatePayloadType}
+                updatePayloadValues={updatePayloadValues}
+                updateNumberRange={updateNumberRange}
+                setPayloadDialogOpen={setPayloadDialogOpen}
+              />
+              <ProcessingTab
+                config={config}
+                addProcessingStep={addProcessingStep}
+                removeProcessingStep={removeProcessingStep}
+              />
+              <OptionsTab
+                config={config}
+                updateGrepMatch={updateGrepMatch}
+                updateGrepExtract={updateGrepExtract}
+                updateSessionHandling={updateSessionHandling}
+              />
+            </div>
           </TabsContent>
         </Tabs>
       </div>

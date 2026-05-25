@@ -16,7 +16,7 @@ A network proxy and traffic inspection tool built with Tauri, React, and TypeScr
 
 ## Tech Stack
 
-- **Frontend**: React 19, TypeScript, Next.js 16, Tailwind CSS, Radix UI
+- **Frontend**: React 19, TypeScript, Vite, Tailwind CSS, Radix UI
 - **Backend**: Rust, Tauri 2
 - **Database**: SQLite with ZSTD compression
 - **Proxy**: Custom TrafficListener with rustls TLS termination
@@ -41,36 +41,39 @@ pnpm tauri
 
 ```
 ├── src/                    # React frontend
-│   ├── routes/            # Page routes
-│   ├── packages/          # Shared components (header, sidebar, bottom-pane, main-content, filter-bar, ui)
-│   ├── context/           # React context providers
-│   ├── models/            # TypeScript interfaces
-│   └── utils/            # Utilities and atoms
+│   ├── pages/             # Feature pages (http-history, repeater, documents, settings, brute-force)
+│   │   └── shared/        # Reusable page primitives (tab-bar, tabbed-page-layout)
+│   ├── components/        # Shared UI components
+│   │   └── ui/           # Radix UI primitives (button, dialog, table, etc.)
+│   ├── stores/           # Zustand state stores
+│   ├── hooks/            # Shared React hooks
+│   └── lib/              # Utilities and helpers
 ├── src-tauri/             # Rust backend
 │   └── src/
 │       ├── main.rs       # App entry, proxy init, tray menu
-│       ├── commands.rs   # Tauri IPC commands
-│       ├── proxy_handler.rs  # TrafficListener implementation
-│       ├── traffic/      # Database, filtering, sessions, HAR
-│       ├── ca_manager.rs # CA certificate generation
-│       ├── breakpoints.rs # Breakpoint management
-│       ├── scripting.rs  # Script manager
-│       └── eval.rs       # JavaScript execution engine
-├── docs/
-│   ├── feature-spec-detail.md  # Full technical specification
-│   └── mitm-spec.md           # MITM proxy technical reference
+│       ├── proxy/        # TrafficListener, intercept, lifecycle, MITM
+│       ├── db/           # Database schema and repository
+│       ├── port-scanner/ # Port scanning and banner grabbing
+│       └── ai/           # AI integration
+└── docs/
+    ├── feature-spec-detail.md  # Full technical specification
+    └── mitm-spec.md           # MITM proxy technical reference
 ```
 
 ## Commands
 
 | Command | Purpose |
 |---------|---------|
-| `pnpm dev` | Start Next.js dev server |
-| `pnpm build` | Build Next.js for production |
-| `pnpm tauri` | Run Tauri application |
-| `pnpm lint` | Run Next.js lint |
+| `pnpm dev` | Start Vite dev server on port 1420 |
+| `pnpm dev:clean` | Free port 1420 and restart dev server |
+| `pnpm build` | Build Vite frontend for production |
+| `pnpm preview` | Preview built frontend locally |
+| `pnpm tauri` | Run Tauri desktop application |
+| `cd src-tauri && cargo run` | Run Rust backend directly |
+| `cd src-tauri && cargo test --lib -- --test-threads=1` | Run proxy tests sequentially |
 
 ## Documentation
 
+- [Marketing Website](./docs/website/) - Landing page for advertising the app
 - [Feature Specification](./docs/feature-spec-detail.md) - Complete technical documentation
 - [MITM Proxy Reference](./docs/mitm-spec.md) - Man-in-the-middle proxy implementation details

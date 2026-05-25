@@ -6,7 +6,7 @@ import type { AttackResult } from '../types';
 import { formatPayloadValues, getResultUrl } from '../lib/utils';
 import { useBruteForceFilters } from '../hooks/use-brute-force-filters';
 
-export function BruteForceResultsPane() {
+export function BruteForceResultsPanel() {
   const { filteredResults } = useBruteForceFilters();
   const isRunning = useBruteForceStore((s) => {
     const tab = s.tabs.find((t) => t.id === s.activeTabId);

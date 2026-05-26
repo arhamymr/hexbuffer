@@ -11,11 +11,11 @@ import {
 import { Bot, Copy, ExternalLink, Plus, Eye, Trash2, Send, FilePlus2 } from 'lucide-react';
 import { toast } from 'sonner';
 import type { ApiCall } from '@/types';
-import { deleteHistoryLog, fetchHistoryDetail } from '@/pages/http-history/services/history-service';
+import { deleteHistoryLog, fetchHistoryDetail } from '@/pages/live-traffic/services/history-service';
 import { createDefaultAttackConfig, findRequestPayloadPositions } from '@/pages/brute-force/types';
 import { useBruteForceStore } from '@/stores/bruto-force';
-import { useHistoryQuery } from '@/pages/http-history/hooks/use-history-query';
-import { adaptProxyRecordToApiCall } from '@/pages/http-history/hooks/use-history-table';
+import { useHistoryQuery } from '@/pages/live-traffic/hooks/use-history-query';
+import { adaptProxyRecordToApiCall } from '@/pages/live-traffic/hooks/use-history-table';
 import { useRepeaterStore } from '@/stores/repeater';
 import { buildHttpCurlCommand, buildRawHttpRequest } from '@/lib/http-message';
 import { useDocumentsStore } from '@/stores/documents';

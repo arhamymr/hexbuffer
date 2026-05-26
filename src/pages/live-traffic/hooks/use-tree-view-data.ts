@@ -1,9 +1,9 @@
 import { useMemo } from 'react';
 import { matchesScope } from '@/lib/utils';
-import type { TreePath } from '@/pages/http-history/api';
-import { useHistoryTree } from '@/pages/http-history/hooks/use-history-tree';
-import { useHistoryQuery } from '@/pages/http-history/hooks/use-history-query';
-import type { TreeNodeData } from '@/pages/http-history/components/tree-view/types';
+import type { TreePath } from '@/pages/live-traffic/api';
+import { useHistoryTree } from '@/pages/live-traffic/hooks/use-history-tree';
+import { useHistoryQuery } from '@/pages/live-traffic/hooks/use-history-query';
+import type { TreeNodeData } from '@/pages/live-traffic/components/tree-view/types';
 
 function buildDisplayUrl(host: string, path: string): string {
   if (path.includes('://')) {

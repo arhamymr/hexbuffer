@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import type {
   WebSocketConnectionRecord,
   WebSocketMessageRecord,
-} from '@/pages/http-history/api';
+} from '@/pages/live-traffic/api';
 
 import { fetchWebSocketDetail } from '../services/history-service';
 

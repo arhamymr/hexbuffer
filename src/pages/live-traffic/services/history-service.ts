@@ -7,13 +7,13 @@ import {
   getWebSocketDetail,
   getWebSocketLogs,
   type TreeNode,
-} from '@/pages/http-history/api';
+} from '@/pages/live-traffic/api';
 import type { PaginatedResponse, ProxyLogSummary, ProxyRecord } from '@/types';
 import type {
   WebSocketConnectionDetail,
   WebSocketConnectionSummary,
   WebSocketFilter,
-} from '@/pages/http-history/api';
+} from '@/pages/live-traffic/api';
 
 import type { HistoryQuery } from '../state/build-history-query';
 

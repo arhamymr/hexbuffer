@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { ProxyFilter } from '@/pages/http-history/api';
+import type { ProxyFilter } from '@/pages/live-traffic/api';
 
 export interface FilterState {
   search: string;

@@ -2,7 +2,7 @@ import * as React from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { save } from '@tauri-apps/plugin-dialog';
 import { toast } from 'sonner';
-import { getCaCert, saveCaCert } from '@/pages/http-history/api';
+import { getCaCert, saveCaCert } from '@/pages/live-traffic/api';
 
 export interface AiSettings {
   provider: string;

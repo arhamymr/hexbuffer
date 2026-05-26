@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 
-import type { TreeNode as ApiTreeNode } from '@/pages/http-history/api';
+import type { TreeNode as ApiTreeNode } from '@/pages/live-traffic/api';
 
 import { fetchHistoryTree } from '../services/history-service';
 import { useHistoryQuery } from './use-history-query';

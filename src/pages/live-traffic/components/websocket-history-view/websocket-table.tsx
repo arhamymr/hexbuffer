@@ -3,7 +3,7 @@
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Empty, EmptyDescription, EmptyTitle } from '@/components/ui/empty';
-import { useWebSocketTable } from '@/pages/http-history/hooks/use-websocket-table';
+import { useWebSocketTable } from '@/pages/live-traffic/hooks/use-websocket-table';
 
 interface WebSocketTableProps {
   selectedConnectionId: string | null;

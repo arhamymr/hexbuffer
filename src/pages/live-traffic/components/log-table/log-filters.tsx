@@ -16,10 +16,10 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { METHOD_FILTERS, STATUS_FILTERS } from './utils';
-import { clearHistoryLogs } from '@/pages/http-history/services/history-service';
-import type { HistoryFilterState } from '@/pages/http-history/state/history-query-store';
-import { useHistoryQuery } from '@/pages/http-history/hooks/use-history-query';
-import type { HistoryMode } from '@/pages/http-history/hooks/use-http-history-page';
+import { clearHistoryLogs } from '@/pages/live-traffic/services/history-service';
+import type { HistoryFilterState } from '@/pages/live-traffic/state/history-query-store';
+import { useHistoryQuery } from '@/pages/live-traffic/hooks/use-history-query';
+import type { HistoryMode } from '@/pages/live-traffic/hooks/use-http-history-page';
 import { TargetSelectorDialog } from '../target-selector';
 
 interface LogFiltersProps {

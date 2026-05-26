@@ -2,7 +2,7 @@
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Empty, EmptyDescription, EmptyTitle } from "@/components/ui/empty";
-import { useTreeViewData } from '@/pages/http-history/hooks/use-tree-view-data';
+import { useTreeViewData } from '@/pages/live-traffic/hooks/use-tree-view-data';
 import { TreeNode } from './tree-node';
 import type { TreeViewProps } from './types';
 

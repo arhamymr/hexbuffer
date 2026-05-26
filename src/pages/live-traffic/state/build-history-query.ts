@@ -1,4 +1,4 @@
-import type { ProxyFilter } from '@/pages/http-history/api';
+import type { ProxyFilter } from '@/pages/live-traffic/api';
 
 import type { HistoryFilterState } from './history-query-store';
 

@@ -1,7 +1,7 @@
 import { listen } from '@tauri-apps/api/event';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import type { WebSocketConnectionSummary as WebSocketConnectionSummaryDto } from '@/pages/http-history/api';
+import type { WebSocketConnectionSummary as WebSocketConnectionSummaryDto } from '@/pages/live-traffic/api';
 
 import { fetchWebSocketSummaries } from '../services/history-service';
 import { useWebSocketQuery } from './use-websocket-query';

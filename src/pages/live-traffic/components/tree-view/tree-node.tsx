@@ -2,7 +2,7 @@
 
 import { ChevronDown, ChevronRight, FileText, Globe } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useTreeNode } from '@/pages/http-history/hooks/use-tree-node';
+import { useTreeNode } from '@/pages/live-traffic/hooks/use-tree-node';
 import type { TreeNodeData } from './types';
 
 interface TreeNodeProps {

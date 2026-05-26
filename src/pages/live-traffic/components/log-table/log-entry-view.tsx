@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { TextEditor } from '@/components/ui/text-editor';
 import { buildRawHttpRequest, buildRawHttpResponse, formatJsonBody } from '@/lib/http-message';
-import { useHistoryDetail } from '@/pages/http-history/hooks/use-history-detail';
+import { useHistoryDetail } from '@/pages/live-traffic/hooks/use-history-detail';
 import { InspectorSection, buildHeadersList, buildParamsList } from './inspector';
 import { parseCookieHeader } from './cookie-display';
 import { formatBytes, getMethodBadge } from './utils';

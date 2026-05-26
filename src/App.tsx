@@ -1,5 +1,5 @@
 import { Navigate, Routes, Route } from "react-router-dom";
-import { HttpHistoryPage } from "@/pages/http-history";
+import { HttpHistoryPage } from "@/pages/live-traffic";
 import { BruteForcePage } from "@/pages/brute-force";
 import { Settings } from "@/pages/settings";
 import { RepeaterPage } from "@/pages/repeater";

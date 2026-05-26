@@ -6,7 +6,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { formatTimestamp, formatBytes, getMethodBadge, StatusBadge, getExtension } from "./utils";
 import { LogEntryContextMenu } from "./log-context-menu";
 import type { ApiCall } from '@/types';
-import { useHistoryTable } from '@/pages/http-history/hooks/use-history-table';
+import { useHistoryTable } from '@/pages/live-traffic/hooks/use-history-table';
 import { Button } from "@/components/ui/button";
 
 export const callsColumns: import("@tanstack/react-table").ColumnDef<ApiCall>[] = [

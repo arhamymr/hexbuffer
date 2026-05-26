@@ -317,7 +317,7 @@ export const useDocumentsStore = create<DocumentsState>()(
         }),
     }),
     {
-      name: 'seven-project-documents',
+      name: '0xbuffer-documents',
       partialize: (state) => ({
         documents: state.documents,
         activeDocumentId: state.activeDocumentId,

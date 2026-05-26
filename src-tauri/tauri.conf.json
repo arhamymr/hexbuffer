@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "seven-project",
+  "productName": "0xbuffer",
   "version": "0.1.0",
-  "identifier": "com.seven.project",
+  "identifier": "com.0xbuffer",
   "build": {
     "beforeDevCommand": "pnpm dev:clean",
     "devUrl": "http://localhost:1420",
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "seven-project",
+        "title": "0xbuffer",
         "width": 900,
         "height": 700
       }

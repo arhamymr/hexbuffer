@@ -82,7 +82,7 @@ export const useRepeaterStore = create<RepeaterState>()(
         }),
     }),
     {
-      name: 'seven-project-repeater',
+      name: '0xbuffer-repeater',
       partialize: (state) => ({
         tabs: state.tabs,
         activeTabId: state.activeTabId,

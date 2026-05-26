@@ -1,5 +1,5 @@
 [package]
-name = "seven-project"
+name = "zeroxlily"
 version = "0.1.0"
 description = "Proxy App"
 authors = ["Arham"]
@@ -39,6 +39,7 @@ http = "1"
 clap = { version = "4", features = ["derive"] }
 url = "2.5.8"
 flate2 = "1.0"
+brotli = "3.5"
 keyring = "3"
 base64 = "0.22"
 regex = "1"

@@ -2,233 +2,270 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="description" content="AppRecon Features - Complete guide to traffic interception, inspection, and modification">
   <title>Features - AppRecon</title>
-  <link rel="stylesheet" href="styles.css">
-</head>
-<body>
-  <nav class="nav">
-    <div class="container nav-content">
-      <a href="index.html" class="logo">AppRecon</a>
-      <div class="nav-links">
-        <a href="features.html">Features</a>
-        <a href="getting-started.html">Get Started</a>
-        <a href="https://github.com/your-repo" target="_blank">GitHub</a>
-      </div>
-    </div>
-  </nav>
-
-  <section class="hero" style="min-height: 50vh;">
-    <div class="hero-content">
-      <h1>Powerful Features</h1>
-      <p class="subtitle">Everything you need to intercept, inspect, modify, and debug HTTP/HTTPS traffic.</p>
-    </div>
-  </section>
-
-  <section class="section">
-    <div class="container">
-      <div class="feature-detail">
-        <div class="feature-header">
-          <h2>🔒 MITM Proxy</h2>
-        </div>
-        <div class="feature-content">
-          <p>AppRecon includes a full man-in-the-middle proxy with automatic CA certificate generation and OS-level trust store integration.</p>
-          <ul>
-            <li>Automatic CA certificate generation with SHA-256 fingerprinting</li>
-            <li>macOS Keychain and Windows certificate store integration</li>
-            <li>rustls-based TLS termination for maximum performance</li>
-            <li>Support for HTTP/1.1 and HTTP/2 protocols</li>
-            <li>WebSocket interception and inspection</li>
-          </ul>
-        </div>
-      </div>
-
-      <div class="feature-detail">
-        <div class="feature-header">
-          <h2>🔍 Traffic Inspection</h2>
-        </div>
-        <div class="feature-content">
-          <p>View every request and response in multiple formats with syntax highlighting and full search capabilities.</p>
-          <ul>
-            <li>JSON viewer with collapsible nodes and search</li>
-            <li>XML viewer with syntax highlighting</li>
-            <li>Hex dump viewer for binary content</li>
-            <li>Image viewer with zoom support</li>
-            <li>Video player for streaming content</li>
-            <li>GraphQL query analyzer</li>
-          </ul>
-        </div>
-      </div>
-
-      <div class="feature-detail">
-        <div class="feature-header">
-          <h2>✏️ Request Editing & Repeater</h2>
-        </div>
-        <div class="feature-content">
-          <p>Modify requests and send them again with the powerful Repeater tool. Build complex test scenarios.</p>
-          <ul>
-            <li>Edit headers, query params, and body</li>
-            <li>Support for multipart form uploads</li>
-            <li>Request history with unlimited replay</li>
-            <li>Variable substitution support</li>
-            <li>Import from cURL commands</li>
-          </ul>
-        </div>
-      </div>
-
-      <div class="feature-detail">
-        <div class="feature-header">
-          <h2>🏷️ Traffic Filtering & Tagging</h2>
-        </div>
-        <div class="feature-content">
-          <p>Find what you're looking for with powerful filters and automatic traffic tagging.</p>
-          <ul>
-            <li>Filter by URL, method, status code, and content type</li>
-            <li>Client-based filtering for multi-user environments</li>
-            <li>Custom tagging rules with regex support</li>
-            <li>Sync and async rule evaluation</li>
-            <li>Save and share filter configurations</li>
-          </ul>
-        </div>
-      </div>
-
-      <div class="feature-detail">
-        <div class="feature-header">
-          <h2>⏸️ Breakpoints</h2>
-        </div>
-        <div class="feature-content">
-          <p>Pause requests mid-flow to inspect or modify them before they continue to their destination.</p>
-          <ul>
-            <li>Request and response breakpoints</li>
-            <li>Modify headers, body, and status codes</li>
-            <li>Conditional breakpoints based on rules</li>
-            <li>Breakpoint history and management</li>
-          </ul>
-        </div>
-      </div>
-
-      <div class="feature-detail">
-        <div class="feature-header">
-          <h2>📊 Session Management</h2>
-        </div>
-        <div class="feature-content">
-          <p>Save, load, and export traffic sessions for collaboration and archived analysis.</p>
-          <ul>
-            <li>Export to HAR format for browser dev tools</li>
-            <li>Export to CSV for spreadsheet analysis</li>
-            <li>SQLite database export for programmatic access</li>
-            <li>Session compression with ZSTD</li>
-            <li>Session search and filtering</li>
-          </ul>
-        </div>
-      </div>
-
-      <div class="feature-detail">
-        <div class="feature-header">
-          <h2>🔧 JavaScript Scripting</h2>
-        </div>
-        <div class="feature-content">
-          <p>Write custom scripts to automate tasks and extend AppRecon's functionality.</p>
-          <ul>
-            <li>Boa JavaScript engine for fast execution</li>
-            <li>Request/response interception hooks</li>
-            <li>Custom authentication flows</li>
-            <li>Automated security testing</li>
-          </ul>
-        </div>
-      </div>
-
-      <div class="feature-detail">
-        <div class="feature-header">
-          <h2>🤖 AI Integration (MCP)</h2>
-        </div>
-        <div class="feature-content">
-          <p>Connect to Large Language Models via the Model Context Protocol for intelligent traffic analysis.</p>
-          <ul>
-            <li>Real-time traffic analysis</li>
-            <li>Security vulnerability suggestions</li>
-            <li>API documentation generation</li>
-            <li>Custom AI tool development</li>
-          </ul>
-        </div>
-      </div>
-
-      <div class="feature-detail">
-        <div class="feature-header">
-          <h2>🌐 Port Scanner</h2>
-        </div>
-        <div class="feature-content">
-          <p>Scan targets for open ports and grab banners to identify services.</p>
-          <ul>
-            <li>Concurrent port scanning</li>
-            <li>Service banner grabbing</li>
-            <li>Target management and grouping</li>
-            <li>Results exportable to traffic history</li>
-          </ul>
-        </div>
-      </div>
-
-      <div class="feature-detail">
-        <div class="feature-header">
-          <h2>📝 Brute Force Testing</h2>
-        </div>
-        <div class="feature-content">
-          <p>Test authentication endpoints with multiple attack modes and payload processing.</p>
-          <ul>
-            <li>Sniper, Battering Ram, Pitchfork, Cluster Bomb modes</li>
-            <li>Payload lists and runtime file support</li>
-            <li>Number range and character enumeration</li>
-            <li>URL encoding, Base64, and hash transformations</li>
-          </ul>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <footer class="footer">
-    <div class="container">
-      <p>AppRecon - Built with Tauri, React, and Rust</p>
-    </div>
-  </footer>
-
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            foreground: '#ffffff',
+            background: '#0a0a0f',
+            card: '#12121a',
+            primary: '#6366f1',
+            'primary-hover': '#818cf8',
+            muted: '#1a1a25',
+            'muted-foreground': '#606070',
+            accent: '#25eb35',
+            border: '#2a2a3a',
+          }
+        }
+      }
+    }
+  </script>
   <style>
-    .feature-detail {
-      background: var(--bg-secondary);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 32px;
-      margin-bottom: 32px;
-    }
-
-    .feature-header h2 {
-      margin-bottom: 16px;
-    }
-
-    .feature-content p {
-      color: var(--text-secondary);
-      margin-bottom: 16px;
-    }
-
-    .feature-content ul {
-      list-style: none;
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 12px;
-    }
-
-    .feature-content li {
-      color: var(--text-secondary);
-      padding-left: 24px;
-      position: relative;
-    }
-
-    .feature-content li::before {
-      content: "✓";
-      position: absolute;
-      left: 0;
-      color: var(--accent);
+    body {
+      color-scheme: dark;
     }
   </style>
+</head>
+<body class="bg-background text-foreground antialiased min-h-screen">
+  <!-- Navigation -->
+  <header class="fixed top-0 right-0 left-0 z-50 w-full border-b backdrop-blur-xl px-4 md:px-6">
+    <div class="mx-auto flex h-16 w-full items-center justify-between">
+      <a href="index.html" class="relative block h-8 w-28">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+            <span class="text-white font-bold text-lg">A</span>
+          </div>
+          <span class="text-xl font-bold">AppRecon</span>
+        </div>
+      </a>
+      <nav class="hidden items-center gap-6 md:flex">
+        <a href="features.html" class="text-muted-foreground hover:text-foreground text-sm transition-colors">Features</a>
+        <a href="getting-started.html" class="text-muted-foreground hover:text-foreground text-sm transition-colors">Get Started</a>
+        <a href="https://github.com/your-repo" target="_blank" class="text-muted-foreground hover:text-foreground text-sm transition-colors">GitHub</a>
+      </nav>
+      <div class="flex items-center gap-3">
+        <a href="getting-started.html" class="hidden md:inline-flex items-center justify-center gap-2 bg-primary text-primary-foreground hover:bg-primary/90 h-9 rounded-md px-4 text-sm font-medium transition-colors">
+          Get Started
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <main class="w-full pt-24">
+    <!-- Hero -->
+    <section class="relative mx-auto w-full px-4 py-20 md:px-6 text-center">
+      <div class="mx-auto max-w-3xl">
+        <h1 class="text-4xl md:text-5xl lg:text-6xl font-normal tracking-tight mb-4">Powerful Features</h1>
+        <p class="text-muted-foreground text-lg md:text-xl">Everything you need to intercept, inspect, modify, and debug HTTP/HTTPS traffic.</p>
+      </div>
+    </section>
+
+    <!-- Features Grid -->
+    <section class="relative mx-auto w-full px-4 py-10 md:px-6 pb-24">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+        <!-- MITM Proxy -->
+        <div class="bg-card text-card-foreground p-6 rounded-xl border transition-all duration-500 hover:border-primary">
+          <div class="flex items-start gap-4">
+            <div class="bg-primary/20 text-primary flex h-12 w-12 items-center justify-center rounded-xl shrink-0">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-6 w-6"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"></path></svg>
+            </div>
+            <div class="flex-1">
+              <h3 class="text-xl font-medium mb-2">🔒 MITM Proxy</h3>
+              <p class="text-muted-foreground text-sm mb-4">Full man-in-the-middle proxy with automatic CA certificate generation and OS-level trust store integration.</p>
+              <ul class="space-y-2 text-sm text-muted-foreground">
+                <li class="flex items-center gap-2"><span class="text-primary">✓</span> Automatic CA certificate generation with SHA-256 fingerprinting</li>
+                <li class="flex items-center gap-2"><span class="text-primary">✓</span> macOS Keychain and Windows certificate store integration</li>
+                <li class="flex items-center gap-2"><span class="text-primary">✓</span> rustls-based TLS termination for maximum performance</li>
+                <li class="flex items-center gap-2"><span class="text-primary">✓</span> Support for HTTP/1.1 and HTTP/2 protocols</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- Traffic Inspection -->
+        <div class="bg-card text-card-foreground p-6 rounded-xl border transition-all duration-500 hover:border-primary">
+          <div class="flex items-start gap-4">
+            <div class="bg-primary/20 text-primary flex h-12 w-12 items-center justify-center rounded-xl shrink-0">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-6 w-6"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
+            </div>
+            <div class="flex-1">
+              <h3 class="text-xl font-medium mb-2">🔍 Traffic Inspection</h3>
+              <p class="text-muted-foreground text-sm mb-4">View every request and response in multiple formats with syntax highlighting and full search capabilities.</p>
+              <ul class="space-y-2 text-sm text-muted-foreground">
+                <li class="flex items-center gap-2"><span class="text-primary">✓</span> JSON viewer with collapsible nodes and search</li>
+                <li class="flex items-center gap-2"><span class="text-primary">✓</span> XML viewer with syntax highlighting</li>
+                <li class="flex items-center gap-2"><span class="text-primary">✓</span> Hex dump viewer for binary content</li>
+                <li class="flex items-center gap-2"><span class="text-primary">✓</span> Image viewer with zoom support</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- Request Editing -->
+        <div class="bg-card text-card-foreground p-6 rounded-xl border transition-all duration-500 hover:border-primary">
+          <div class="flex items-start gap-4">
+            <div class="bg-primary/20 text-primary flex h-12 w-12 items-center justify-center rounded-xl shrink-0">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-6 w-6"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path></svg>
+            </div>
+            <div class="flex-1">
+              <h3 class="text-xl font-medium mb-2">✏️ Request Editing & Repeater</h3>
+              <p class="text-muted-foreground text-sm mb-4">Modify requests and send them again with the powerful Repeater tool. Build complex test scenarios.</p>
+              <ul class="space-y-2 text-sm text-muted-foreground">
+                <li class="flex items-center gap-2"><span class="text-primary">✓</span> Edit headers, query params, and body</li>
+                <li class="flex items-center gap-2"><span class="text-primary">✓</span> Support for multipart form uploads</li>
+                <li class="flex items-center gap-2"><span class="text-primary">✓</span> Request history with unlimited replay</li>
+                <li class="flex items-center gap-2"><span class="text-primary">✓</span> Import from cURL commands</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- Traffic Filtering -->
+        <div class="bg-card text-card-foreground p-6 rounded-xl border transition-all duration-500 hover:border-primary">
+          <div class="flex items-start gap-4">
+            <div class="bg-primary/20 text-primary flex h-12 w-12 items-center justify-center rounded-xl shrink-0">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-6 w-6"><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><circle cx="12" cy="12" r="10"></circle></svg>
+            </div>
+            <div class="flex-1">
+              <h3 class="text-xl font-medium mb-2">🏷️ Traffic Filtering & Tagging</h3>
+              <p class="text-muted-foreground text-sm mb-4">Find what you're looking for with powerful filters and automatic traffic tagging.</p>
+              <ul class="space-y-2 text-sm text-muted-foreground">
+                <li class="flex items-center gap-2"><span class="text-primary">✓</span> Filter by URL, method, status code, and content type</li>
+                <li class="flex items-center gap-2"><span class="text-primary">✓</span> Client-based filtering for multi-user environments</li>
+                <li class="flex items-center gap-2"><span class="text-primary">✓</span> Custom tagging rules with regex support</li>
+                <li class="flex items-center gap-2"><span class="text-primary">✓</span> Sync and async rule evaluation</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- Breakpoints -->
+        <div class="bg-card text-card-foreground p-6 rounded-xl border transition-all duration-500 hover:border-primary">
+          <div class="flex items-start gap-4">
+            <div class="bg-primary/20 text-primary flex h-12 w-12 items-center justify-center rounded-xl shrink-0">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-6 w-6"><rect width="4" height="16" rx="1" x="10" y="4"></rect><path d="M6 4v16"></path><path d="M18 4v16"></path></svg>
+            </div>
+            <div class="flex-1">
+              <h3 class="text-xl font-medium mb-2">⏸️ Breakpoints</h3>
+              <p class="text-muted-foreground text-sm mb-4">Pause requests mid-flow to inspect or modify them before they continue to their destination.</p>
+              <ul class="space-y-2 text-sm text-muted-foreground">
+                <li class="flex items-center gap-2"><span class="text-primary">✓</span> Request and response breakpoints</li>
+                <li class="flex items-center gap-2"><span class="text-primary">✓</span> Modify headers, body, and status codes</li>
+                <li class="flex items-center gap-2"><span class="text-primary">✓</span> Conditional breakpoints based on rules</li>
+                <li class="flex items-center gap-2"><span class="text-primary">✓</span> Breakpoint history and management</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- Session Management -->
+        <div class="bg-card text-card-foreground p-6 rounded-xl border transition-all duration-500 hover:border-primary">
+          <div class="flex items-start gap-4">
+            <div class="bg-primary/20 text-primary flex h-12 w-12 items-center justify-center rounded-xl shrink-0">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-6 w-6"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M3 5V19A9 3 0 0 0 21 19V5"></path><path d="M3 12A9 3 0 0 0 21 12"></path></svg>
+            </div>
+            <div class="flex-1">
+              <h3 class="text-xl font-medium mb-2">📊 Session Management</h3>
+              <p class="text-muted-foreground text-sm mb-4">Save, load, and export traffic sessions for collaboration and archived analysis.</p>
+              <ul class="space-y-2 text-sm text-muted-foreground">
+                <li class="flex items-center gap-2"><span class="text-primary">✓</span> Export to HAR format for browser dev tools</li>
+                <li class="flex items-center gap-2"><span class="text-primary">✓</span> Export to CSV for spreadsheet analysis</li>
+                <li class="flex items-center gap-2"><span class="text-primary">✓</span> SQLite database export for programmatic access</li>
+                <li class="flex items-center gap-2"><span class="text-primary">✓</span> Session compression with ZSTD</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- JavaScript Scripting -->
+        <div class="bg-card text-card-foreground p-6 rounded-xl border transition-all duration-500 hover:border-primary">
+          <div class="flex items-start gap-4">
+            <div class="bg-primary/20 text-primary flex h-12 w-12 items-center justify-center rounded-xl shrink-0">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-6 w-6"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+            </div>
+            <div class="flex-1">
+              <h3 class="text-xl font-medium mb-2">🔧 JavaScript Scripting</h3>
+              <p class="text-muted-foreground text-sm mb-4">Write custom scripts to automate tasks and extend AppRecon's functionality.</p>
+              <ul class="space-y-2 text-sm text-muted-foreground">
+                <li class="flex items-center gap-2"><span class="text-primary">✓</span> Boa JavaScript engine for fast execution</li>
+                <li class="flex items-center gap-2"><span class="text-primary">✓</span> Request/response interception hooks</li>
+                <li class="flex items-center gap-2"><span class="text-primary">✓</span> Custom authentication flows</li>
+                <li class="flex items-center gap-2"><span class="text-primary">✓</span> Automated security testing</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- AI Integration -->
+        <div class="bg-card text-card-foreground p-6 rounded-xl border transition-all duration-500 hover:border-primary">
+          <div class="flex items-start gap-4">
+            <div class="bg-primary/20 text-primary flex h-12 w-12 items-center justify-center rounded-xl shrink-0">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-6 w-6"><path d="M12 8V4H8"></path><rect width="16" height="12" x="4" y="8" rx="2"></rect><path d="M2 14h2"></path><path d="M20 14h2"></path><path d="M15 13v2"></path><path d="M9 13v2"></path></svg>
+            </div>
+            <div class="flex-1">
+              <h3 class="text-xl font-medium mb-2">🤖 AI Integration (MCP)</h3>
+              <p class="text-muted-foreground text-sm mb-4">Connect to Large Language Models via the Model Context Protocol for intelligent traffic analysis.</p>
+              <ul class="space-y-2 text-sm text-muted-foreground">
+                <li class="flex items-center gap-2"><span class="text-primary">✓</span> Real-time traffic analysis</li>
+                <li class="flex items-center gap-2"><span class="text-primary">✓</span> Security vulnerability suggestions</li>
+                <li class="flex items-center gap-2"><span class="text-primary">✓</span> API documentation generation</li>
+                <li class="flex items-center gap-2"><span class="text-primary">✓</span> Custom AI tool development</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- Port Scanner -->
+        <div class="bg-card text-card-foreground p-6 rounded-xl border transition-all duration-500 hover:border-primary">
+          <div class="flex items-start gap-4">
+            <div class="bg-primary/20 text-primary flex h-12 w-12 items-center justify-center rounded-xl shrink-0">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-6 w-6"><circle cx="12" cy="12" r="10"></circle><line x1="2" x2="22" y1="12" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+            </div>
+            <div class="flex-1">
+              <h3 class="text-xl font-medium mb-2">🌐 Port Scanner</h3>
+              <p class="text-muted-foreground text-sm mb-4">Scan targets for open ports and grab banners to identify services.</p>
+              <ul class="space-y-2 text-sm text-muted-foreground">
+                <li class="flex items-center gap-2"><span class="text-primary">✓</span> Concurrent port scanning</li>
+                <li class="flex items-center gap-2"><span class="text-primary">✓</span> Service banner grabbing</li>
+                <li class="flex items-center gap-2"><span class="text-primary">✓</span> Target management and grouping</li>
+                <li class="flex items-center gap-2"><span class="text-primary">✓</span> Results exportable to traffic history</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- Brute Force Testing -->
+        <div class="bg-card text-card-foreground p-6 rounded-xl border transition-all duration-500 hover:border-primary">
+          <div class="flex items-start gap-4">
+            <div class="bg-primary/20 text-primary flex h-12 w-12 items-center justify-center rounded-xl shrink-0">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-6 w-6"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"></path></svg>
+            </div>
+            <div class="flex-1">
+              <h3 class="text-xl font-medium mb-2">📝 Brute Force Testing</h3>
+              <p class="text-muted-foreground text-sm mb-4">Test authentication endpoints with multiple attack modes and payload processing.</p>
+              <ul class="space-y-2 text-sm text-muted-foreground">
+                <li class="flex items-center gap-2"><span class="text-primary">✓</span> Sniper, Battering Ram, Pitchfork, Cluster Bomb modes</li>
+                <li class="flex items-center gap-2"><span class="text-primary">✓</span> Payload lists and runtime file support</li>
+                <li class="flex items-center gap-2"><span class="text-primary">✓</span> Number range and character enumeration</li>
+                <li class="flex items-center gap-2"><span class="text-primary">✓</span> URL encoding, Base64, and hash transformations</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="border-t border-border py-12 text-center">
+    <p class="text-muted-foreground text-sm">AppRecon - Built with Tauri, React, and Rust</p>
+  </footer>
 </body>
 </html>

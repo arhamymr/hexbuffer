@@ -44,7 +44,7 @@ export const useAppStore = create<AppState>()(
       },
     }),
     {
-      name: 'seven-project-app',
+      name: '0xbuffer-app',
       partialize: (state) => ({
         proxyStatus: state.proxyStatus,
       }),

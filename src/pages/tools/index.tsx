@@ -7,6 +7,7 @@ import { SubdomainTool } from './components/subdomain';
 import { PortScannerTool } from './components/port-scanner';
 import { FuzzScannerTool } from './components/fuzz-scanner';
 import { UtilsTool } from './components/utils';
+import { SqlInjectionTool } from './components/sql-injection';
 import { TabbedPageLayout } from '@/components/tabs-layout/tabbed-page-layout';
 import { useToolsPage } from './hooks/use-tools-page';
 
@@ -30,6 +31,9 @@ export function ToolsPage() {
         </TabsContent>
         <TabsContent value="fuzz" className="h-full m-0">
           <FuzzScannerTool />
+        </TabsContent>
+        <TabsContent value="sqli" className="h-full m-0">
+          <SqlInjectionTool />
         </TabsContent>
         <TabsContent value="utils" className="h-full m-0">
           <UtilsTool />

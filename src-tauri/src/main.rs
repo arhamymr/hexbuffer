@@ -4,16 +4,19 @@
 use base64::{engine::general_purpose, Engine};
 use regex::Regex;
 use serde::{Deserialize, Serialize};
-use seven_project::DocumentRecord;
-use seven_project::{
-    export_ca_cert_pem, run, start_mastra_if_enabled, AiSettings, HistoryBridge,
-    MastraProcessState, MastraStatus, PaginatedResponse, PortScanState, ProxyConfig, ProxyFilter,
-    ProxyLogSummary, ProxyRecord, ProxyState, TreeNode, WebSocketConnectionDetail,
+use zeroxlily::DocumentRecord;
+use zeroxlily::{
+    export_ca_cert_pem, run, start_mastra_if_enabled, AiSettings, BrowserProcessState, HistoryBridge, InterceptMode,
+    InterceptStatus, MastraProcessState, MastraStatus, PaginatedResponse, PausedRequest,
+    PortScanState, ProxyConfig, ProxyFilter, ProxyLogSummary, ProxyRecord, ProxyRequest,
+    ProxyState, SqliScanState, TreeNode, WebSocketConnectionDetail,
     WebSocketConnectionSummary, WebSocketFilter,
 };
 use sha1::Sha1;
 use sha2::{Digest, Sha256};
 use std::collections::HashMap;
+use std::path::PathBuf;
+use std::process::Command;
 use std::sync::{
     atomic::{AtomicBool, Ordering},
     Arc, Mutex,
@@ -39,6 +42,14 @@ struct RepeaterResponse {
     body: String,
     time_ms: u128,
     final_url: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct InterceptForwardRequest {
+    method: String,
+    url: String,
+    headers: HashMap<String, String>,
+    body: String,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -1028,6 +1039,294 @@ async fn start_proxy(app: AppHandle, port: u16, tls_port: u16) -> Result<String,
 }
 
 #[tauri::command]
+async fn get_intercept_status(
+    state: State<'_, Mutex<ProxyState>>,
+) -> Result<InterceptStatus, String> {
+    let proxy_state = state.lock().map_err(|error| format!("{error}"))?;
+    Ok(proxy_state.get_status())
+}
+
+#[tauri::command]
+async fn set_intercept_enabled(
+    state: State<'_, Mutex<ProxyState>>,
+    enabled: bool,
+) -> Result<InterceptStatus, String> {
+    let proxy_state = state.lock().map_err(|error| format!("{error}"))?;
+
+    if enabled {
+        proxy_state.set_mode(InterceptMode::Enabled);
+    } else {
+        proxy_state.set_mode(InterceptMode::Disabled);
+    }
+
+    Ok(proxy_state.get_status())
+}
+
+#[tauri::command]
+async fn get_paused_requests(
+    state: State<'_, Mutex<ProxyState>>,
+) -> Result<Vec<PausedRequest>, String> {
+    let proxy_state = state.lock().map_err(|error| format!("{error}"))?;
+    Ok(proxy_state.get_all_paused())
+}
+
+#[tauri::command]
+async fn forward_intercepted_request(
+    state: State<'_, Mutex<ProxyState>>,
+    request_id: String,
+    request: Option<InterceptForwardRequest>,
+) -> Result<(), String> {
+    let id = Uuid::parse_str(&request_id).map_err(|e| e.to_string())?;
+    let request = request.map(|request| ProxyRequest {
+        method: request.method,
+        uri: request.url,
+        http_version: "HTTP/1.1".to_string(),
+        headers: request.headers,
+        body: request.body.into_bytes(),
+    });
+    let proxy_state = state.lock().map_err(|error| format!("{error}"))?;
+    let forwarded = proxy_state.forward_paused_request(&id, request);
+
+    if forwarded {
+        Ok(())
+    } else {
+        Err("Paused request not found.".to_string())
+    }
+}
+
+#[tauri::command]
+async fn drop_intercepted_request(
+    state: State<'_, Mutex<ProxyState>>,
+    request_id: String,
+) -> Result<(), String> {
+    let id = Uuid::parse_str(&request_id).map_err(|e| e.to_string())?;
+    let proxy_state = state.lock().map_err(|error| format!("{error}"))?;
+    let dropped = proxy_state.drop_paused_request(&id);
+
+    if dropped {
+        Ok(())
+    } else {
+        Err("Paused request not found.".to_string())
+    }
+}
+
+fn browser_candidates() -> Vec<PathBuf> {
+    fn workspace_chrome_candidates() -> Vec<PathBuf> {
+        let mut roots = Vec::new();
+
+        if let Ok(current_dir) = std::env::current_dir() {
+            roots.push(current_dir.clone());
+            if let Some(parent) = current_dir.parent() {
+                roots.push(parent.to_path_buf());
+            }
+        }
+
+        let mut candidates = Vec::new();
+
+        for root in roots {
+            let chrome_root = root.join("chrome");
+
+            if let Ok(entries) = std::fs::read_dir(&chrome_root) {
+                for entry in entries.flatten() {
+                    let version_dir = entry.path();
+                    candidates.push(
+                        version_dir
+                            .join("chrome-mac-arm64")
+                            .join("Google Chrome for Testing.app")
+                            .join("Contents")
+                            .join("MacOS")
+                            .join("Google Chrome for Testing"),
+                    );
+                }
+            }
+        }
+
+        candidates
+    }
+
+    #[cfg(target_os = "macos")]
+    {
+        let mut candidates = workspace_chrome_candidates();
+        candidates.extend([
+            PathBuf::from("/Applications/Chromium.app/Contents/MacOS/Chromium"),
+            PathBuf::from(
+                "/Applications/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing",
+            ),
+            PathBuf::from("/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"),
+            PathBuf::from("/Applications/Google Chrome Canary.app/Contents/MacOS/Google Chrome Canary"),
+        ]);
+        return candidates;
+    }
+
+    #[cfg(target_os = "windows")]
+    {
+        let mut candidates = Vec::new();
+
+        if let Some(local_app_data) = std::env::var_os("LOCALAPPDATA") {
+            candidates.push(PathBuf::from(local_app_data).join("Chromium/Application/chrome.exe"));
+        }
+
+        if let Some(program_files) = std::env::var_os("PROGRAMFILES") {
+            candidates.push(PathBuf::from(program_files).join("Google/Chrome/Application/chrome.exe"));
+            candidates.push(PathBuf::from(program_files).join("Chromium/Application/chrome.exe"));
+        }
+
+        if let Some(program_files_x86) = std::env::var_os("PROGRAMFILES(X86)") {
+            candidates.push(PathBuf::from(program_files_x86).join("Google/Chrome/Application/chrome.exe"));
+        }
+
+        return candidates;
+    }
+
+    #[cfg(target_os = "linux")]
+    {
+        return vec![
+            PathBuf::from("chromium"),
+            PathBuf::from("chromium-browser"),
+            PathBuf::from("google-chrome"),
+            PathBuf::from("google-chrome-stable"),
+        ];
+    }
+}
+
+fn intercept_browser_profile_dir(app: &AppHandle) -> Result<PathBuf, String> {
+    Ok(app
+        .path()
+        .app_data_dir()
+        .map_err(|e| e.to_string())?
+        .join("intercept-browser-profile"))
+}
+
+fn write_intercept_ca(app: &AppHandle) -> Result<PathBuf, String> {
+    let app_data_dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
+    std::fs::create_dir_all(&app_data_dir).map_err(|e| e.to_string())?;
+
+    let ca_path = app_data_dir.join("apprecon-ca.pem");
+    let ca_pem = export_ca_cert_pem().map_err(|error| format!("{error}"))?;
+    std::fs::write(&ca_path, ca_pem).map_err(|e| e.to_string())?;
+
+    Ok(ca_path)
+}
+
+fn certutil_candidates() -> Vec<PathBuf> {
+    vec![
+        PathBuf::from("certutil"),
+        PathBuf::from("/opt/homebrew/opt/nss/bin/certutil"),
+        PathBuf::from("/opt/homebrew/bin/certutil"),
+        PathBuf::from("/usr/local/opt/nss/bin/certutil"),
+        PathBuf::from("/usr/local/bin/certutil"),
+    ]
+}
+
+fn run_certutil(args: &[String]) -> Result<(), String> {
+    let mut last_error = None;
+
+    for candidate in certutil_candidates() {
+        let output = Command::new(&candidate).args(args).output();
+
+        match output {
+            Ok(output) if output.status.success() => return Ok(()),
+            Ok(output) => {
+                let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
+                last_error = Some(if stderr.is_empty() {
+                    format!("certutil exited with {}", output.status)
+                } else {
+                    stderr
+                });
+            }
+            Err(error) => last_error = Some(error.to_string()),
+        }
+    }
+
+    Err(last_error.unwrap_or_else(|| {
+        "certutil was not found. Install NSS tools first, for example: brew install nss".to_string()
+    }))
+}
+
+#[tauri::command]
+async fn open_intercept_browser(app: AppHandle) -> Result<(), String> {
+    let profile_dir = intercept_browser_profile_dir(&app)?;
+    std::fs::create_dir_all(&profile_dir).map_err(|e| e.to_string())?;
+    let ca_import_result = import_intercept_ca_to_chrome_profile(&app);
+
+    let mut last_error = None;
+    let args = vec![
+        format!("--user-data-dir={}", profile_dir.display()),
+        "--new-window".to_string(),
+        "--no-first-run".to_string(),
+        "--no-default-browser-check".to_string(),
+        "--proxy-server=127.0.0.1:8888".to_string(),
+        "about:blank".to_string(),
+    ];
+
+    for candidate in browser_candidates() {
+        if candidate.components().count() > 1 && !candidate.exists() {
+            continue;
+        }
+
+        match Command::new(&candidate).args(&args).spawn() {
+            Ok(_) => {
+                return ca_import_result
+                    .map(|_| ())
+                    .or_else(|error| Err(format!("Browser opened, but CA import failed: {error}")));
+            }
+            Err(error) => last_error = Some(error.to_string()),
+        }
+    }
+
+    Err(last_error.unwrap_or_else(|| "Chromium or Google Chrome was not found.".to_string()))
+}
+
+fn import_intercept_ca_to_chrome_profile(app: &AppHandle) -> Result<String, String> {
+    let profile_dir = intercept_browser_profile_dir(&app)?;
+    std::fs::create_dir_all(&profile_dir).map_err(|e| e.to_string())?;
+    let ca_path = write_intercept_ca(app)?;
+    let db_dir = format!("sql:{}", profile_dir.display());
+    let nickname = "AppRecon Root CA".to_string();
+
+    let init_args = vec![
+        "-N".to_string(),
+        "-d".to_string(),
+        db_dir.clone(),
+        "--empty-password".to_string(),
+    ];
+    let _ = run_certutil(&init_args);
+
+    let delete_args = vec![
+        "-D".to_string(),
+        "-d".to_string(),
+        db_dir.clone(),
+        "-n".to_string(),
+        nickname.clone(),
+    ];
+    let _ = run_certutil(&delete_args);
+
+    let add_args = vec![
+        "-A".to_string(),
+        "-d".to_string(),
+        db_dir,
+        "-n".to_string(),
+        nickname,
+        "-t".to_string(),
+        "C,,".to_string(),
+        "-i".to_string(),
+        ca_path.display().to_string(),
+    ];
+
+    match run_certutil(&add_args) {
+        Ok(()) => Ok("AppRecon CA imported into the managed Chrome profile. Close old Intercept browser windows and open it again.".to_string()),
+        Err(error) => Err(format!(
+            "Chrome-profile CA import failed: {error}. Install NSS tools with `brew install nss`, then try again."
+        )),
+    }
+}
+
+#[tauri::command]
+async fn trust_intercept_ca(app: AppHandle) -> Result<String, String> {
+    import_intercept_ca_to_chrome_profile(&app)
+}
+
+#[tauri::command]
 async fn clear_proxy_all(history: State<'_, HistoryBridge>) -> Result<(), String> {
     history.clear_all()
 }
@@ -1102,23 +1401,23 @@ async fn save_ca_cert(path: String, content: String) -> Result<(), String> {
 
 #[tauri::command]
 async fn get_ca_cert() -> Result<String, String> {
-    let pem = export_ca_cert_pem().map_err(|e| e.to_string())?;
+    let pem = export_ca_cert_pem().map_err(|error| format!("{error}"))?;
     String::from_utf8(pem).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
 fn get_ai_settings(app: AppHandle) -> Result<AiSettings, String> {
-    seven_project::ai::get_ai_settings(app)
+    zeroxlily::ai::get_ai_settings(app)
 }
 
 #[tauri::command]
 fn save_ai_settings(app: AppHandle, settings: AiSettings) -> Result<AiSettings, String> {
-    seven_project::ai::save_ai_settings(app, settings)
+    zeroxlily::ai::save_ai_settings(app, settings)
 }
 
 #[tauri::command]
 fn clear_ai_api_key(app: AppHandle) -> Result<AiSettings, String> {
-    seven_project::ai::clear_ai_api_key(app)
+    zeroxlily::ai::clear_ai_api_key(app)
 }
 
 #[tauri::command]
@@ -1126,7 +1425,7 @@ fn get_mastra_status(
     app: AppHandle,
     state: State<'_, MastraProcessState>,
 ) -> Result<MastraStatus, String> {
-    seven_project::ai::get_mastra_status(app, state)
+    zeroxlily::ai::get_mastra_status(app, state)
 }
 
 #[tauri::command]
@@ -1134,7 +1433,7 @@ fn start_mastra(
     app: AppHandle,
     state: State<'_, MastraProcessState>,
 ) -> Result<MastraStatus, String> {
-    seven_project::ai::start_mastra(app, state)
+    zeroxlily::ai::start_mastra(app, state)
 }
 
 #[tauri::command]
@@ -1142,7 +1441,7 @@ fn stop_mastra(
     app: AppHandle,
     state: State<'_, MastraProcessState>,
 ) -> Result<MastraStatus, String> {
-    seven_project::ai::stop_mastra(app, state)
+    zeroxlily::ai::stop_mastra(app, state)
 }
 
 #[tauri::command]
@@ -1204,6 +1503,8 @@ fn main() {
             app.manage(MastraProcessState::default());
             app.manage(IntruderState::default());
             app.manage(PortScanState::default());
+            app.manage(BrowserProcessState::default());
+            app.manage(SqliScanState::new());
             app.manage(history);
             eprintln!("[main] Building Tauri app...");
 
@@ -1228,6 +1529,13 @@ fn main() {
         })
         .invoke_handler(tauri::generate_handler![
             start_proxy,
+            get_intercept_status,
+            set_intercept_enabled,
+            get_paused_requests,
+            forward_intercepted_request,
+            drop_intercepted_request,
+            open_intercept_browser,
+            trust_intercept_ca,
             get_proxy_all,
             get_proxy_filtered,
             get_proxy_paginated,
@@ -1246,14 +1554,28 @@ fn main() {
             send_repeater_request,
             start_intruder_attack,
             stop_intruder_attack,
-            seven_project::port_scanner::scan_ports,
-            seven_project::port_scanner::stop_port_scan,
+            zeroxlily::port_scanner::scan_ports,
+            zeroxlily::port_scanner::stop_port_scan,
             get_ai_settings,
             save_ai_settings,
             clear_ai_api_key,
             get_mastra_status,
             start_mastra,
-            stop_mastra
+            stop_mastra,
+            zeroxlily::browser::get_browser_status,
+            zeroxlily::browser::browser_open,
+            zeroxlily::browser::browser_close,
+            zeroxlily::browser::browser_snapshot,
+            zeroxlily::browser::browser_click,
+            zeroxlily::browser::browser_fill,
+            zeroxlily::browser::browser_navigate,
+            zeroxlily::browser::browser_type,
+            zeroxlily::browser::browser_press,
+            zeroxlily::browser::browser_screenshot,
+            zeroxlily::browser::browser_batch,
+            zeroxlily::browser::browser_execute,
+            zeroxlily::sqli::start_sqli_scan,
+            zeroxlily::sqli::stop_sqli_scan
         ])
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())

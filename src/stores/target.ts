@@ -44,9 +44,9 @@ export const useTargetStore = create<TargetState>()(
       }
     }),
     {
-      name: 'seven-project-targets',
+      name: '0xbuffer-targets',
       partialize: (state) => ({
-        targets: state.targets.map(({ tabActive, ...target }) => target),
+        targets: state.targets,
       }),
       merge: (persistedState, currentState) => {
         const typedState = persistedState as Partial<TargetState> | undefined;
@@ -57,7 +57,7 @@ export const useTargetStore = create<TargetState>()(
           ...typedState,
           targets: persistedTargets.map((target) => ({
             ...target,
-            tabActive: false,
+            tabActive: target.tabActive ?? false,
           })),
         };
       },

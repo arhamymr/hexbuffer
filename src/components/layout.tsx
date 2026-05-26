@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Crosshair, Settings, Moon, Sun, ArrowUpDown, RefreshCw, Wrench, Bot, FileText, MessageSquare } from 'lucide-react';
+import { Crosshair, Settings, Moon, Sun, ArrowUpDown, RefreshCw, Wrench, Bot, FileText, MessageSquare, PauseCircle, Globe } from 'lucide-react';
 import { useTheme } from './theme-provider';
 import { Button } from './ui/button';
 
@@ -15,8 +15,10 @@ import { Badge } from './ui/badge';
 
 const mainNavItems = [
   { label: 'HTTP History', icon: ArrowUpDown, href: '/history' },
+  { label: 'Intercept', icon: PauseCircle, href: '/intercept' },
   { label: 'Brute Force', icon: Crosshair, href: '/brute-force' },
   { label: 'Repeater', icon: RefreshCw, href: '/repeater' },
+  { label: 'Browser', icon: Globe, href: '/browser-automation' },
   { label: 'Documents', icon: FileText, href: '/documents' },
   { label: 'AI Tools', icon: Bot, href: '/ai-tools' },
   { label: 'Tools', icon: Wrench, href: '/tools' },
@@ -69,7 +71,7 @@ export function TopNav({ isAssistantOpen, onToggleAssistant }: TopNavProps) {
           <div className="flex items-center gap-1">
             {/* Light mode */}
             <p className='text-xl'>✦</p>
-            <p className='text-sm font-bold mt-1'>SEVEN</p>
+            <p className='text-sm font-bold mt-1'>0xbuffer</p>
           </div>
 
           <div className="relative min-w-0 flex-1">

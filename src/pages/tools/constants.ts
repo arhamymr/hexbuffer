@@ -6,5 +6,6 @@ export const TOOLS_TABS: PageTabItem[] = [
   { id: 'subdomain', name: 'Subdomain' },
   { id: 'ports', name: 'Port Scanner' },
   { id: 'fuzz', name: 'Fuzz Scanner' },
+  { id: 'sqli', name: 'SQL Injection' },
   { id: 'utils', name: 'Others' },
 ];

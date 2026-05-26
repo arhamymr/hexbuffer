@@ -190,27 +190,73 @@ pub fn handle_response_body(
     }
 
     if end_of_stream {
-        let is_gzip = ctx
+        if let Some((_, encoding)) = ctx
             .res_headers
             .iter()
-            .any(|(k, v)| k.to_lowercase() == "content-encoding" && v.to_lowercase() == "gzip");
-
-        if is_gzip {
-            use flate2::read::GzDecoder;
-            use std::io::Read;
-            let mut decoder = GzDecoder::new(&ctx.res_body[..]);
-            let mut decoded = Vec::new();
-            if decoder.read_to_end(&mut decoded).is_ok() {
-                ctx.res_body = decoded;
-                println!(
-                    "[completion] gzip decoded body for txn_id={}",
-                    ctx.transaction_id
-                );
-            } else {
-                eprintln!(
-                    "[completion] ERROR gzip decode failed for txn_id={}",
-                    ctx.transaction_id
-                );
+            .find(|(k, _)| k.to_lowercase() == "content-encoding")
+        {
+            let encoding_lower = encoding.to_lowercase();
+            match encoding_lower.as_str() {
+                "gzip" => {
+                    use flate2::read::GzDecoder;
+                    use std::io::Read;
+                    let mut decoder = GzDecoder::new(&ctx.res_body[..]);
+                    let mut decoded = Vec::new();
+                    if decoder.read_to_end(&mut decoded).is_ok() {
+                        ctx.res_body = decoded;
+                        println!(
+                            "[completion] gzip decoded body for txn_id={}",
+                            ctx.transaction_id
+                        );
+                    } else {
+                        eprintln!(
+                            "[completion] ERROR gzip decode failed for txn_id={}",
+                            ctx.transaction_id
+                        );
+                    }
+                }
+                "br" => {
+                    use brotli::Decompressor;
+                    use std::io::Read;
+                    let mut decompressor = Decompressor::new(&ctx.res_body[..], 4096);
+                    let mut decoded = Vec::new();
+                    if decompressor.read_to_end(&mut decoded).is_ok() {
+                        ctx.res_body = decoded;
+                        println!(
+                            "[completion] brotli decoded body for txn_id={}",
+                            ctx.transaction_id
+                        );
+                    } else {
+                        eprintln!(
+                            "[completion] ERROR brotli decode failed for txn_id={}",
+                            ctx.transaction_id
+                        );
+                    }
+                }
+                "deflate" => {
+                    use flate2::read::DeflateDecoder;
+                    use std::io::Read;
+                    let mut decoder = DeflateDecoder::new(&ctx.res_body[..]);
+                    let mut decoded = Vec::new();
+                    if decoder.read_to_end(&mut decoded).is_ok() {
+                        ctx.res_body = decoded;
+                        println!(
+                            "[completion] deflate decoded body for txn_id={}",
+                            ctx.transaction_id
+                        );
+                    } else {
+                        eprintln!(
+                            "[completion] ERROR deflate decode failed for txn_id={}",
+                            ctx.transaction_id
+                        );
+                    }
+                }
+                _ => {
+                    println!(
+                        "[completion] Unknown content-encoding '{}' for txn_id={}",
+                        encoding_lower, ctx.transaction_id
+                    );
+                }
             }
         }
 
@@ -223,6 +269,8 @@ pub fn handle_response_body(
             ctx.transaction_id
         );
 
-        *body = Some(Bytes::copy_from_slice(&ctx.res_body));
+        // Keep decoded bytes in the captured context for history, but do not
+        // replace the live response chunk. The browser still receives the
+        // original encoded bytes that match the upstream Content-Encoding.
     }
 }

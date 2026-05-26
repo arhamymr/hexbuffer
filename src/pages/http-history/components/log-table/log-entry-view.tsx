@@ -1,85 +1,36 @@
 'use client';
 
-import { Copy } from 'lucide-react';
+import { useState } from 'react';
+import { FileText, Table2 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Badge } from '@/components/ui/badge';
 import { Empty, EmptyTitle, EmptyDescription } from "@/components/ui/empty";
-import { toast } from 'sonner';
-import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { TextEditor } from '@/components/ui/text-editor';
-import { formatJsonBody } from '@/lib/http-message';
+import { buildRawHttpRequest, buildRawHttpResponse, formatJsonBody } from '@/lib/http-message';
 import { useHistoryDetail } from '@/pages/http-history/hooks/use-history-detail';
-import type { ApiCall } from '@/types';
 import { InspectorSection, buildHeadersList, buildParamsList } from './inspector';
 import { parseCookieHeader } from './cookie-display';
-import { buildCurlCommand, getMethodBadge, getStatusColor, formatBytes } from './utils';
+import { formatBytes, getMethodBadge } from './utils';
 
-function PrettyCurl({ call }: { call: ApiCall }) {
-  const copyToClipboard = async (text: string) => {
-    try {
-      await navigator.clipboard.writeText(text);
-      toast.success('Copied to clipboard');
-    } catch {
-      toast.error('Failed to copy');
-    }
-  };
+type DetailViewMode = 'text' | 'table';
 
-  const curlCommand = buildCurlCommand(call);
-  return (
-    <div className="relative mt-2 border rounded-md overflow-hidden">
-      <div className="absolute right-1 top-1 z-10">
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          className="h-6 w-6"
-          onClick={(e) => {
-            e.stopPropagation();
-            copyToClipboard(curlCommand);
-          }}
-          title="Copy cURL"
-        >
-          <Copy className="h-3 w-3" />
-        </Button>
-      </div>
-      <TextEditor
-        height="10rem"
-        language="shell"
-        value={curlCommand}
-        options={{
-          readOnly: true,
-          scrollBeyondLastLine: false,
-          lineNumbers: 'off',
-          folding: false,
-          glyphMargin: false,
-          lineDecorationsWidth: 0,
-          lineNumbersMinChars: 0,
-          padding: { top: 12, bottom: 12 },
-        }}
-      />
-    </div>
-  );
-}
+function isJsonContent(headers: Record<string, string>, body: string | null): boolean {
+  if (!body) {
+    return false;
+  }
 
-function PrettyJson({ content }: { content: string }) {
-  return (
-    <div className="border rounded-md overflow-hidden">
-      <TextEditor
-        height="20rem"
-        language="json"
-        value={formatJsonBody(content)}
-        options={{
-          readOnly: true,
-          scrollBeyondLastLine: false,
-          minimap: { enabled: false },
-          folding: false,
-          padding: { top: 12, bottom: 12 },
-        }}
-      />
-    </div>
-  );
+  const contentType = Object.entries(headers)
+    .find(([name]) => name.toLowerCase() === 'content-type')?.[1]
+    .toLowerCase() ?? '';
+
+  return contentType.includes('json') || body.trim().startsWith('{') || body.trim().startsWith('[');
 }
 
 export function LogEntryBurpView() {
   const { selectedCallId, call, isLoading, loadError } = useHistoryDetail();
+  const [viewMode, setViewMode] = useState<DetailViewMode>('text');
 
   if (!selectedCallId) {
     return (
@@ -118,78 +69,157 @@ export function LogEntryBurpView() {
     );
   }
 
+  const rawRequest = buildRawHttpRequest({
+    method: call.method,
+    url: call.url,
+    headers: call.headers,
+    body: isJsonContent(call.headers, call.request_body)
+      ? formatJsonBody(call.request_body ?? '')
+      : call.request_body ?? '',
+  });
+  const rawResponse = call.response_status
+    ? buildRawHttpResponse({
+      status: call.response_status,
+      status_text: call.response_status_text ?? '',
+      headers: call.response_headers,
+      body: call.response_body ?? '',
+    }, { prettyJsonBody: true })
+    : '';
+
+  const statusVariant =
+    call.response_status && call.response_status >= 200 && call.response_status < 300
+      ? 'default'
+      : call.response_status && call.response_status >= 400
+        ? 'destructive'
+        : 'secondary';
   const requestHeaders = buildHeadersList(call.headers);
   const requestCookies = parseCookieHeader(call.headers['cookie']);
   const requestParams = buildParamsList(call.query_params);
-
   const responseHeaders = buildHeadersList(call.response_headers);
   const responseCookies = parseCookieHeader(call.response_headers['set-cookie']);
 
   return (
-    <div className="flex-1 grid grid-cols-2 gap-0 min-h-0 p-1">
-      <div className="border bg-background rounded-l-md border-r-0 overflow-hidden flex flex-col">
-        <div className="p-3 border-b bg-muted/30">
-          <div className="flex items-center gap-2">
-            {call.method && getMethodBadge(call.method)}
-            <span className="text-xs font-mono truncate flex-1" title={call.url}>
-              {call.url}
-            </span>
-          </div>
-        </div>
+    <div className="grid h-full min-h-0 grid-cols-2 gap-0 bg-muted">
+      <div className="min-h-0 border-r">
+        <div className="flex flex-col h-full bg-background">
+          <div className="bg-muted h-10 px-3 py-2 border-b flex items-center justify-between gap-2 min-w-0">
+            <div className="flex min-w-0 items-center gap-2">
+              <span className="text-sm font-medium">
+                {viewMode === 'text' ? 'Request' : 'Request Inspector'}
+              </span>
+              {call.method && getMethodBadge(call.method)}
+              <span className="text-xs font-mono truncate text-muted-foreground" title={call.url}>
+                {call.url}
+              </span>
+            </div>
 
-        <div className="p-3 flex-1 overflow-auto">
-          <div className="mb-3">
-            <InspectorSection title="Headers" items={requestHeaders} />
-            <InspectorSection title="Cookies" items={requestCookies.map((cookie) => ({ name: cookie.name, value: cookie.value }))} />
-            {requestParams.length > 0 && (
-              <InspectorSection title="Params" items={requestParams} />
-            )}
+            <div className="flex shrink-0 items-center gap-2 text-muted-foreground">
+              <FileText className="h-3.5 w-3.5" />
+              <Switch
+                checked={viewMode === 'table'}
+                onCheckedChange={(checked) => setViewMode(checked ? 'table' : 'text')}
+                aria-label="Switch between full text and inspector table view"
+                title="Switch between full text and inspector table view"
+              />
+              <Table2 className="h-3.5 w-3.5" />
+            </div>
           </div>
 
-          <div>
-            <PrettyCurl call={call} />
-          </div>
+          {viewMode === 'text' ? (
+            <div className="flex h-full min-h-0 flex-col p-2">
+              <Label className="mb-1 block text-xs text-muted-foreground">
+                Raw Request
+              </Label>
+              <div className="min-h-0 flex-1 overflow-hidden rounded-md border">
+                <TextEditor
+                  language="http"
+                  value={rawRequest}
+                  options={{
+                    readOnly: true,
+                    scrollBeyondLastLine: false,
+                    minimap: { enabled: false },
+                    fontSize: 12,
+                    lineHeight: 18,
+                    renderWhitespace: 'selection',
+                    padding: { top: 12, bottom: 12 },
+                  }}
+                />
+              </div>
+            </div>
+          ) : (
+            <div className="min-h-0 flex-1 overflow-auto p-3">
+              <InspectorSection title="Headers" items={requestHeaders} defaultView="table" />
+              <InspectorSection
+                title="Cookies"
+                items={requestCookies.map((cookie) => ({ name: cookie.name, value: cookie.value }))}
+                defaultView="table"
+              />
+              {requestParams.length > 0 && (
+                <InspectorSection title="Params" items={requestParams} defaultView="table" />
+              )}
+            </div>
+          )}
         </div>
       </div>
 
-      <div className="border bg-background rounded-r-md overflow-hidden flex flex-col">
-        <div className="p-3 border-b bg-muted/30">
-          <div className="flex items-center gap-2">
+      <div className="min-h-0">
+        <div className="flex flex-col h-full bg-background">
+          <div className="bg-muted h-10 px-3 py-2 border-b flex items-center justify-between gap-2">
+            <span className="text-sm font-medium">Response</span>
             {call.response_status && (
-              <span
-                className={`text-xs px-2 py-0.5 rounded font-mono font-bold text-white ${getStatusColor(call.response_status)}`}
-              >
+              <Badge variant={statusVariant} className="text-xs">
                 {call.response_status} {call.response_status_text}
-              </span>
-            )}
-            <span className="text-xs text-muted-foreground">
-              {formatBytes(call.response_body_size)} received
-            </span>
-          </div>
-        </div>
-
-        <div className="p-3 flex-1 overflow-auto">
-          <div className="mb-3">
-            <InspectorSection title="Headers" items={responseHeaders} defaultOpen={false} />
-            {responseCookies.length > 0 && (
-              <InspectorSection
-                title="Cookies"
-                items={responseCookies.map((cookie) => ({ name: cookie.name, value: cookie.value }))}
-                defaultOpen={false}
-              />
+              </Badge>
             )}
           </div>
 
-          <div>
-            <div className="text-xs font-semibold text-muted-foreground mb-1">PRETTY</div>
-            {call.response_body ? (
-              <PrettyJson content={call.response_body} />
-            ) : (
-              <div className="bg-background p-3 rounded text-xs text-muted-foreground">
-                No response body
+          {viewMode === 'text' ? (
+            <div className="flex h-full min-h-0 flex-col p-2">
+              <Label className="mb-1 block text-xs text-muted-foreground">
+                Raw Response
+              </Label>
+              <div className="min-h-0 flex-1 overflow-hidden rounded-md border">
+                <TextEditor
+                  language="http"
+                  value={rawResponse}
+                  options={{
+                    readOnly: true,
+                    scrollBeyondLastLine: false,
+                    minimap: { enabled: false },
+                    fontSize: 12,
+                    lineHeight: 18,
+                    renderWhitespace: 'selection',
+                    padding: { top: 12, bottom: 12 },
+                  }}
+                />
               </div>
-            )}
-          </div>
+            </div>
+          ) : (
+            <div className="min-h-0 flex-1 overflow-auto p-3">
+              <div className="mb-2 text-xs text-muted-foreground">
+                {formatBytes(call.response_body_size)} received
+              </div>
+              <InspectorSection title="Headers" items={responseHeaders} defaultOpen={false} defaultView="table" />
+              {responseCookies.length > 0 && (
+                <InspectorSection
+                  title="Cookies"
+                  items={responseCookies.map((cookie) => ({ name: cookie.name, value: cookie.value }))}
+                  defaultOpen={false}
+                  defaultView="table"
+                />
+              )}
+              <InspectorSection
+                title="Body"
+                items={[{
+                  name: 'Response Body',
+                  value: isJsonContent(call.response_headers, call.response_body)
+                    ? formatJsonBody(call.response_body ?? '')
+                    : call.response_body ?? '',
+                }]}
+                defaultView="text"
+              />
+            </div>
+          )}
         </div>
       </div>
     </div>

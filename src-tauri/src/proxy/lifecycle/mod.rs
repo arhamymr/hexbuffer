@@ -3,7 +3,7 @@ pub mod completion;
 use std::time::Duration;
 
 use hudsucker::{Body, HttpContext, HttpHandler, RequestOrResponse};
-use hyper::{Request, Response};
+use hyper::{header::HeaderName, header::HeaderValue, Method, Request, Response, Uri};
 use tauri::AppHandle;
 
 pub use completion::save_and_emit;
@@ -96,7 +96,7 @@ impl HttpHandler for AppHandler {
             }
         }
 
-        let (parts, body) = req.into_parts();
+        let (mut parts, body) = req.into_parts();
         let body_bytes = match http_body_util::BodyExt::collect(body).await {
             Ok(collected) => collected.to_bytes(),
             Err(e) => {
@@ -106,7 +106,7 @@ impl HttpHandler for AppHandler {
         };
         ctx.req_body = body_bytes.to_vec();
 
-        if !intercept::should_bypass(&ctx.req_uri) {
+        if ctx.req_method != "CONNECT" && !intercept::should_bypass(&ctx.req_uri) {
             let state = self.app_handle.state::<Mutex<ProxyState>>();
             let mode = state.lock().unwrap().get_mode();
 
@@ -142,12 +142,57 @@ impl HttpHandler for AppHandler {
                         break;
                     }
                 }
+
+                let action = state.lock().unwrap().take_paused_action(&paused_id);
+
+                match action {
+                    Some(crate::proxy::state::InterceptAction::Drop) => {
+                        return RequestOrResponse::Response(
+                            Response::builder()
+                                .status(502)
+                                .body(Body::from("Dropped by intercept"))
+                                .unwrap_or_else(|_| Response::new(Body::empty())),
+                        );
+                    }
+                    Some(crate::proxy::state::InterceptAction::Forward(Some(modified))) => {
+                        if let Ok(method) = modified.method.parse::<Method>() {
+                            ctx.req_method = method.to_string();
+                            parts.method = method;
+                        }
+
+                        if let Ok(uri) = modified.uri.parse::<Uri>() {
+                            ctx.req_uri = uri.to_string();
+                            ctx.server_addr = uri.to_string();
+                            parts.uri = uri;
+                        }
+
+                        parts.headers.clear();
+                        ctx.req_headers = modified.headers.clone();
+                        for (name, value) in modified.headers.iter() {
+                            let Ok(header_name) = HeaderName::from_bytes(name.as_bytes()) else {
+                                continue;
+                            };
+                            let Ok(header_value) = HeaderValue::from_str(value) else {
+                                continue;
+                            };
+                            parts.headers.insert(header_name, header_value);
+                        }
+
+                        ctx.req_body = modified.body;
+                    }
+                    _ => {}
+                }
             }
         }
 
         self.ctx = Some(ctx);
 
-        let mut req = Request::from_parts(parts, Body::from(body_bytes));
+        let request_body = self
+            .ctx
+            .as_ref()
+            .map(|ctx| ctx.req_body.clone())
+            .unwrap_or_else(|| body_bytes.to_vec());
+        let mut req = Request::from_parts(parts, Body::from(request_body));
         req.headers_mut().insert("x-rusxy", "1".parse().unwrap());
 
         RequestOrResponse::Request(req)
@@ -191,28 +236,79 @@ impl HttpHandler for AppHandler {
         };
         ctx.res_body = body_bytes.to_vec();
 
-        let is_gzip = ctx
+        let content_encoding = ctx
             .res_headers
             .iter()
-            .any(|(k, v)| k.to_lowercase() == "content-encoding" && v.to_lowercase() == "gzip");
+            .find(|(k, _)| k.to_lowercase() == "content-encoding")
+            .map(|(_, v)| v.to_lowercase());
 
-        if is_gzip {
-            use flate2::read::GzDecoder;
-            use std::io::Read;
-            let mut decoder = GzDecoder::new(&ctx.res_body[..]);
-            let mut decoded = Vec::new();
-            if decoder.read_to_end(&mut decoded).is_ok() {
-                ctx.res_body = decoded;
-                eprintln!(
-                    "[lifecycle] gzip decoded body for txn_id={}",
-                    ctx.transaction_id
-                );
-            } else {
-                eprintln!(
-                    "[lifecycle] ERROR gzip decode failed for txn_id={}",
-                    ctx.transaction_id
-                );
+        let decoded_body = if let Some(ref encoding) = content_encoding {
+            match encoding.as_str() {
+                "gzip" => {
+                    use flate2::read::GzDecoder;
+                    use std::io::Read;
+                    let mut decoder = GzDecoder::new(&ctx.res_body[..]);
+                    let mut decoded = Vec::new();
+                    if decoder.read_to_end(&mut decoded).is_ok() {
+                        eprintln!(
+                            "[lifecycle] gzip decoded body for txn_id={}",
+                            ctx.transaction_id
+                        );
+                        Some(decoded)
+                    } else {
+                        eprintln!(
+                            "[lifecycle] ERROR gzip decode failed for txn_id={}",
+                            ctx.transaction_id
+                        );
+                        None
+                    }
+                }
+                "br" => {
+                    use brotli::Decompressor;
+                    use std::io::Read;
+                    let mut decompressor = Decompressor::new(&ctx.res_body[..], 4096);
+                    let mut decoded = Vec::new();
+                    if decompressor.read_to_end(&mut decoded).is_ok() {
+                        eprintln!(
+                            "[lifecycle] brotli decoded body for txn_id={}",
+                            ctx.transaction_id
+                        );
+                        Some(decoded)
+                    } else {
+                        eprintln!(
+                            "[lifecycle] ERROR brotli decode failed for txn_id={}",
+                            ctx.transaction_id
+                        );
+                        None
+                    }
+                }
+                "deflate" => {
+                    use flate2::read::DeflateDecoder;
+                    use std::io::Read;
+                    let mut decoder = DeflateDecoder::new(&ctx.res_body[..]);
+                    let mut decoded = Vec::new();
+                    if decoder.read_to_end(&mut decoded).is_ok() {
+                        eprintln!(
+                            "[lifecycle] deflate decoded body for txn_id={}",
+                            ctx.transaction_id
+                        );
+                        Some(decoded)
+                    } else {
+                        eprintln!(
+                            "[lifecycle] ERROR deflate decode failed for txn_id={}",
+                            ctx.transaction_id
+                        );
+                        None
+                    }
+                }
+                _ => None,
             }
+        } else {
+            None
+        };
+
+        if let Some(ref decoded) = decoded_body {
+            ctx.res_body = decoded.clone();
         }
 
         if ctx.req_method != "CONNECT" {

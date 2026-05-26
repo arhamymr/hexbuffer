@@ -174,6 +174,13 @@ pub struct ProxyStateInner {
     pub records: Vec<ProxyRecord>,
     pub intercept_mode: InterceptMode,
     pub paused_requests: Vec<PausedRequest>,
+    pub paused_actions: HashMap<Uuid, InterceptAction>,
+}
+
+#[derive(Debug, Clone)]
+pub enum InterceptAction {
+    Forward(Option<ProxyRequest>),
+    Drop,
 }
 
 pub struct ProxyState(Mutex<ProxyStateInner>);
@@ -240,6 +247,36 @@ impl ProxyState {
 
     pub fn get_all_paused(&self) -> Vec<PausedRequest> {
         self.0.lock().unwrap().paused_requests.clone()
+    }
+
+    pub fn forward_paused_request(&self, id: &Uuid, request: Option<ProxyRequest>) -> bool {
+        let mut inner = self.0.lock().unwrap();
+        let existed = inner.paused_requests.iter().any(|r| r.id == *id);
+
+        if existed {
+            inner
+                .paused_actions
+                .insert(*id, InterceptAction::Forward(request));
+            inner.paused_requests.retain(|request| request.id != *id);
+        }
+
+        existed
+    }
+
+    pub fn drop_paused_request(&self, id: &Uuid) -> bool {
+        let mut inner = self.0.lock().unwrap();
+        let existed = inner.paused_requests.iter().any(|r| r.id == *id);
+
+        if existed {
+            inner.paused_actions.insert(*id, InterceptAction::Drop);
+            inner.paused_requests.retain(|request| request.id != *id);
+        }
+
+        existed
+    }
+
+    pub fn take_paused_action(&self, id: &Uuid) -> Option<InterceptAction> {
+        self.0.lock().unwrap().paused_actions.remove(id)
     }
 
     pub fn get_records_filtered(&self, filter: &ProxyFilter) -> Vec<ProxyRecord> {

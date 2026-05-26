@@ -15,7 +15,7 @@ import { Switch } from '../../components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../../components/ui/accordion';
 import { Alert, AlertDescription, AlertTitle } from '../../components/ui/alert';
-import { BotIcon, DownloadIcon, PlayIcon, SaveIcon, SettingsIcon, ShieldCheckIcon, SquareIcon } from 'lucide-react';
+import { BotIcon, DownloadIcon, KeyRoundIcon, PlayIcon, SaveIcon, SettingsIcon, ShieldCheckIcon, SquareIcon } from 'lucide-react';
 import {
   AI_MODEL_OPTIONS,
   AI_PROVIDER_OPTIONS,
@@ -34,10 +34,12 @@ export function Settings() {
     downloading,
     handleClearAiApiKey,
     handleDownloadCert,
+    handleInstallMacCert,
     handleSaveAiSettings,
     handleStartMastra,
     handleStopMastra,
     handleToggleMastra,
+    installingCa,
     mastraBusy,
     mastraStatus,
     updateAiSettings,
@@ -245,12 +247,18 @@ export function Settings() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex flex-col gap-2">
-                <Button size="xs" onClick={handleDownloadCert} disabled={downloading} className="w-fit">
-                  <DownloadIcon className="mr-2 size-4" />
-                  {downloading ? 'Saving...' : 'Save CA Certificate'}
-                </Button>
+                <div className="flex flex-wrap gap-2">
+                  <Button size="xs" onClick={handleInstallMacCert} disabled={installingCa} className="w-fit">
+                    <KeyRoundIcon className="mr-2 size-4" />
+                    {installingCa ? 'Installing...' : 'Install to macOS Keychain'}
+                  </Button>
+                  <Button size="xs" variant="outline" onClick={handleDownloadCert} disabled={downloading} className="w-fit">
+                    <DownloadIcon className="mr-2 size-4" />
+                    {downloading ? 'Saving...' : 'Save CA Certificate'}
+                  </Button>
+                </div>
                 <p className="text-xs text-muted-foreground">
-                  Choose a location to save <code className="bg-muted px-1 py-0.5 rounded">seven-ca.pem</code>
+                  Install directly on macOS, or choose a location to save <code className="bg-muted px-1 py-0.5 rounded">seven-ca.pem</code>
                 </p>
               </div>
             </CardContent>

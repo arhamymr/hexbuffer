@@ -4,6 +4,12 @@ import { invoke } from '@tauri-apps/api/core';
 
 export type ProxyStatus = 'connected' | 'disconnected' | 'starting';
 
+interface ProxyRuntimeStatus {
+  running: boolean;
+  port: number | null;
+  connections: number;
+}
+
 interface AppState {
   proxyStatus: ProxyStatus;
   setProxyStatus: (status: ProxyStatus) => void;
@@ -25,7 +31,9 @@ export const useAppStore = create<AppState>()(
           console.log('[store] calling invoke with port=8888, tlsPort=8889');
           await invoke('start_proxy', { port: 8888, tlsPort: 8889 });
           console.log('[store] invoke completed, checking status...');
-          set({ proxyStatus: 'connected' });
+          await new Promise((resolve) => window.setTimeout(resolve, 300));
+          const status = await invoke<ProxyRuntimeStatus>('get_proxy_status');
+          set({ proxyStatus: status.running ? 'connected' : 'disconnected' });
         } catch (error) {
           console.error('[store] Failed to start proxy:', error);
           set({ proxyStatus: 'disconnected' });
@@ -34,7 +42,7 @@ export const useAppStore = create<AppState>()(
 
       checkProxyStatus: async () => {
         try {
-          const status = await invoke<{ running: boolean; port: number | null; connections: number }>('get_proxy_status');
+          const status = await invoke<ProxyRuntimeStatus>('get_proxy_status');
           console.log('[store] proxy status check result:', status);
           set({ proxyStatus: status.running ? 'connected' : 'disconnected' });
         } catch (error) {

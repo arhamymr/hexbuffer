@@ -10,9 +10,12 @@
     "frontendDist": "../dist"
   },
   "app": {
+    "macOSPrivateApi": true,
     "windows": [
       {
         "title": "0xbuffer",
+        "decorations": false,
+        "transparent": true,
         "width": 900,
         "height": 700
       }

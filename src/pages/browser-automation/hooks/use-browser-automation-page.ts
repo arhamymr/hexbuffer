@@ -1,7 +1,14 @@
 'use client';
 
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useState } from 'react';
+import { invoke } from '@tauri-apps/api/core';
 import { useBrowserAutomationStore } from '@/stores/browser-automation';
+
+export interface MastraStatus {
+  running: boolean;
+  pid?: number;
+  url: string;
+}
 
 export function useBrowserAutomationPage() {
   const {
@@ -22,14 +29,32 @@ export function useBrowserAutomationPage() {
     stopAutomation,
     clearActionLog,
   } = useBrowserAutomationStore();
+  const [mastraStatus, setMastraStatus] = useState<MastraStatus | null>(null);
 
   const activeTab = tabs.find((tab) => tab.id === activeTabId) ?? null;
 
+  const refreshMastraStatus = useCallback(async () => {
+    try {
+      const status = await invoke<MastraStatus>('get_mastra_status');
+      setMastraStatus(status);
+    } catch (error) {
+      console.error('Failed to get Mastra status:', error);
+      setMastraStatus({
+        running: false,
+        url: 'http://localhost:4111',
+      });
+    }
+  }, []);
+
   useEffect(() => {
     refreshBrowserStatus();
-    const interval = setInterval(refreshBrowserStatus, 5000);
+    refreshMastraStatus();
+    const interval = setInterval(() => {
+      refreshBrowserStatus();
+      refreshMastraStatus();
+    }, 5000);
     return () => clearInterval(interval);
-  }, [refreshBrowserStatus]);
+  }, [refreshBrowserStatus, refreshMastraStatus]);
 
   const handleUrlChange = useCallback((url: string) => {
     if (activeTabId) {
@@ -92,6 +117,7 @@ export function useBrowserAutomationPage() {
     closeTab,
     renameTab,
     browserStatus,
+    mastraStatus,
     activeTab,
     handleUrlChange,
     handleInstructionChange,

@@ -1,6 +1,6 @@
 'use client';
 
-import { Globe, Loader2, ShieldCheck } from 'lucide-react';
+import { Globe, KeyRound, Loader2, ShieldCheck } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -13,6 +13,7 @@ interface InterceptRequestPanelProps {
   rawRequest: string;
   hasSelection: boolean;
   isOpeningBrowser: boolean;
+  onOpenCaDialog: () => void;
   onRawRequestChange: (rawRequest: string) => void;
   onToggleIntercept: (enabled: boolean) => void;
   onOpenBrowser: () => void;
@@ -23,6 +24,7 @@ export function InterceptRequestPanel({
   rawRequest,
   hasSelection,
   isOpeningBrowser,
+  onOpenCaDialog,
   onRawRequestChange,
   onToggleIntercept,
   onOpenBrowser,
@@ -34,6 +36,10 @@ export function InterceptRequestPanel({
       <div className="bg-muted flex h-10 items-center justify-between border-b px-3 py-2">
         <span className="text-sm font-medium">Request</span>
         <div className="flex items-center gap-2">
+          <Button size="xs" variant="outline" onClick={onOpenCaDialog}>
+            <KeyRound className="h-4 w-4" />
+            INSTALL CA
+          </Button>
           <Button size="xs" variant="outline" onClick={onOpenBrowser} disabled={isOpeningBrowser}>
             {isOpeningBrowser ? (
               <Loader2 className="h-4 w-4 animate-spin" />

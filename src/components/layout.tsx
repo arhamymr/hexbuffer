@@ -2,7 +2,8 @@
 
 import * as React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Crosshair, Settings, Moon, Sun, ArrowUpDown, RefreshCw, Wrench, Bot, FileText, MessageSquare, PauseCircle, Globe } from 'lucide-react';
+import { getCurrentWindow } from '@tauri-apps/api/window';
+import { Crosshair, Settings, Moon, Sun, ArrowUpDown, RefreshCw, Wrench, Bot, FileText, MessageSquare, PauseCircle, Globe, GripHorizontal, Minus, Square, X } from 'lucide-react';
 import { useTheme } from './theme-provider';
 import { Button } from './ui/button';
 
@@ -14,7 +15,7 @@ import { cn } from '@/lib/utils';
 import { Badge } from './ui/badge';
 
 const mainNavItems = [
-  { label: 'HTTP History', icon: ArrowUpDown, href: '/history' },
+  { label: 'Live Traffic', icon: ArrowUpDown, href: '/' },
   { label: 'Intercept', icon: PauseCircle, href: '/intercept' },
   { label: 'Brute Force', icon: Crosshair, href: '/brute-force' },
   { label: 'Repeater', icon: RefreshCw, href: '/repeater' },
@@ -33,9 +34,30 @@ export function TopNav({ isAssistantOpen, onToggleAssistant }: TopNavProps) {
   const location = useLocation();
   const pathname = location.pathname;
   const { theme, toggleTheme } = useTheme();
+  const appWindow = React.useMemo(() => getCurrentWindow(), []);
   const navRef = React.useRef<HTMLElement>(null);
   const [canScrollLeft, setCanScrollLeft] = React.useState(false);
   const [canScrollRight, setCanScrollRight] = React.useState(false);
+  const [isDraggingWindow, setIsDraggingWindow] = React.useState(false);
+
+  React.useEffect(() => {
+    const minimizeButton = document.getElementById('titlebar-minimize');
+    const maximizeButton = document.getElementById('titlebar-maximize');
+    const closeButton = document.getElementById('titlebar-close');
+    const minimize = () => appWindow.minimize();
+    const maximize = () => appWindow.toggleMaximize();
+    const close = () => appWindow.close();
+
+    minimizeButton?.addEventListener('click', minimize);
+    maximizeButton?.addEventListener('click', maximize);
+    closeButton?.addEventListener('click', close);
+
+    return () => {
+      minimizeButton?.removeEventListener('click', minimize);
+      maximizeButton?.removeEventListener('click', maximize);
+      closeButton?.removeEventListener('click', close);
+    };
+  }, [appWindow]);
 
   React.useEffect(() => {
     const nav = navRef.current;
@@ -65,9 +87,27 @@ export function TopNav({ isAssistantOpen, onToggleAssistant }: TopNavProps) {
   }, []);
 
   return (
-    <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
+    <header data-tauri-drag-region className="title-bar border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
       <div className="flex items-center justify-between h-8.5 px-4">
         <div className='flex min-w-0 flex-1 items-center align-center gap-4'>
+          <div
+            data-tauri-drag-region
+            className={cn(
+              'flex h-8 w-8 shrink-0 items-center justify-center text-muted-foreground',
+              isDraggingWindow ? 'cursor-grabbing' : 'cursor-grab',
+            )}
+            onMouseDown={(event) => {
+              if (event.buttons === 1) {
+                setIsDraggingWindow(true);
+                appWindow.startDragging();
+              }
+            }}
+            onMouseUp={() => setIsDraggingWindow(false)}
+            onMouseLeave={() => setIsDraggingWindow(false)}
+            title="Drag window"
+          >
+            <GripHorizontal className="size-5" data-tauri-drag-region />
+          </div>
           <div className="flex items-center gap-1">
             {/* Light mode */}
             <p className='text-xl'>✦</p>
@@ -146,6 +186,35 @@ export function TopNav({ isAssistantOpen, onToggleAssistant }: TopNavProps) {
               <Settings className="h-4 w-4" />
             </Button>
           </Link>
+          <div className="ml-1 flex items-center border-l pl-1">
+            <Button
+              id="titlebar-minimize"
+              variant="ghost"
+              size="xs"
+              className="h-8 w-8 p-0"
+              title="Minimize"
+            >
+              <Minus className="h-4 w-4" />
+            </Button>
+            <Button
+              id="titlebar-maximize"
+              variant="ghost"
+              size="xs"
+              className="h-8 w-8 p-0"
+              title="Maximize"
+            >
+              <Square className="size-3.5" />
+            </Button>
+            <Button
+              id="titlebar-close"
+              variant="ghost"
+              size="xs"
+              className="p-2 hover:bg-destructive hover:text-destructive-foreground/80 dark:hover:bg-destructive/80"
+              title="Close"
+            >
+              <X className="size-4" />
+            </Button>
+          </div>
         </div>
       </div>
     </header>
@@ -198,9 +267,40 @@ function AIAssistantPane() {
 
 export function AppLayout({ children }: { children?: React.ReactNode }) {
   const [isAssistantOpen, setIsAssistantOpen] = React.useState(false);
+  const appWindow = React.useMemo(() => getCurrentWindow(), []);
+  const [isWindowMaximized, setIsWindowMaximized] = React.useState(false);
+
+  React.useEffect(() => {
+    let isMounted = true;
+    let unlistenResize: (() => void) | undefined;
+
+    const updateMaximizedState = async () => {
+      const maximized = await appWindow.isMaximized();
+
+      if (isMounted) {
+        setIsWindowMaximized(maximized);
+      }
+    };
+
+    updateMaximizedState();
+
+    appWindow.onResized(updateMaximizedState).then((unlisten) => {
+      unlistenResize = unlisten;
+    });
+
+    return () => {
+      isMounted = false;
+      unlistenResize?.();
+    };
+  }, [appWindow]);
 
   return (
-    <div className="h-screen flex flex-col">
+    <div
+      className={cn(
+        'h-screen overflow-hidden bg-background flex flex-col',
+        isWindowMaximized ? 'rounded-none border-0 shadow-none' : 'rounded-md border shadow-2xl',
+      )}
+    >
       <TopNav
         isAssistantOpen={isAssistantOpen}
         onToggleAssistant={() => setIsAssistantOpen((current) => !current)}

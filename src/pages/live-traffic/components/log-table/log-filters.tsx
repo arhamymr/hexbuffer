@@ -68,8 +68,8 @@ export function LogFilters({
 
   return (
     <div className="space-y-1">
-      <div className="flex items-center gap-2">
-        <TargetSelectorDialog />
+      <div className="flex items-center gap-4">
+       
         <Input
           placeholder="Search URL, host, method, body..."
           value={filter.search}
@@ -82,6 +82,7 @@ export function LogFilters({
             Clear
           </Button>
         )}
+         
         {setHistoryMode && (
           <div className="ml-auto flex items-center gap-2 text-sm">
             <span className={historyMode === 'http' ? 'font-medium' : 'text-muted-foreground'}>
@@ -97,6 +98,7 @@ export function LogFilters({
             </span>
           </div>
         )}
+        <TargetSelectorDialog />
       </div>
 
       <div className="flex items-center justify-between gap-4">

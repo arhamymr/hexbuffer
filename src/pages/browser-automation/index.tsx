@@ -3,6 +3,7 @@
 import {
   Activity,
   AlertTriangle,
+  Bot,
   Bug,
   FileSearch,
   Globe,
@@ -41,6 +42,7 @@ export function BrowserAutomationPage() {
   const {
     activeTab,
     browserStatus,
+    mastraStatus,
     handleUrlChange,
     handleRunAi,
     handleStop,
@@ -56,6 +58,7 @@ export function BrowserAutomationPage() {
   }
 
   const isBrowserRunning = browserStatus?.running ?? false;
+  const isMastraRunning = mastraStatus?.running ?? false;
   const snapshot = activeTab.snapshot;
   const interactiveCount = snapshot?.elements.filter((element) => element.interactive).length ?? 0;
   const errorCount = activeTab.actions.filter((action) => action.type === 'error').length;
@@ -108,6 +111,19 @@ export function BrowserAutomationPage() {
         <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
           <Badge variant="outline" className={cn(isBrowserRunning && 'border-emerald-500/30 text-emerald-600')}>
             Browser {isBrowserRunning ? 'running' : 'closed'}
+          </Badge>
+          <Badge
+            variant="outline"
+            title={mastraStatus?.url ? `Mastra runtime at ${mastraStatus.url}` : 'Mastra runtime status'}
+            className={cn(
+              'gap-1',
+              isMastraRunning
+                ? 'border-violet-500/30 text-violet-600 dark:text-violet-300'
+                : 'border-amber-500/30 text-amber-600 dark:text-amber-300'
+            )}
+          >
+            <Bot className={cn('h-3 w-3', isMastraRunning && 'animate-pulse')} />
+            Mastra {isMastraRunning ? `running${mastraStatus?.pid ? `:${mastraStatus.pid}` : ''}` : 'stopped'}
           </Badge>
           <Badge variant="outline">Status {findingStatus}</Badge>
           <Badge variant="outline">{snapshot?.elements.length ?? 0} elements</Badge>

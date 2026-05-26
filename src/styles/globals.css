@@ -222,6 +222,15 @@
     background-color: rgba(59, 130, 246, 0.7);
     border-radius: 2px;
   }
+
+  .title-bar {
+    -webkit-app-region: drag;
+  }
+
+  .title-bar button,
+  .title-bar a {
+    -webkit-app-region: no-drag;
+  }
 }
 
 /* ---break---  */
@@ -232,7 +241,16 @@
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply text-foreground;
+    background: transparent !important;
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+    overflow: hidden;
+    background: transparent !important;
   }
 
   /* Custom Scrollbar Styles */

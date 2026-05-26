@@ -2,7 +2,7 @@ import * as React from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { save } from '@tauri-apps/plugin-dialog';
 import { toast } from 'sonner';
-import { getCaCert, saveCaCert } from '@/pages/live-traffic/api';
+import { getCaCert, saveCaCert, trustInterceptCa } from '@/pages/live-traffic/api';
 
 export interface AiSettings {
   provider: string;
@@ -30,6 +30,7 @@ const DEFAULT_AI_SETTINGS: AiSettings = {
 
 export function useSettingsPage() {
   const [downloading, setDownloading] = React.useState(false);
+  const [installingCa, setInstallingCa] = React.useState(false);
   const [aiSettings, setAiSettings] = React.useState<AiSettings>(DEFAULT_AI_SETTINGS);
   const [aiSettingsLoading, setAiSettingsLoading] = React.useState(true);
   const [aiSettingsSaving, setAiSettingsSaving] = React.useState(false);
@@ -93,6 +94,19 @@ export function useSettingsPage() {
       toast.error(`Failed to save certificate: ${error}`);
     } finally {
       setDownloading(false);
+    }
+  }, []);
+
+  const handleInstallMacCert = React.useCallback(async () => {
+    try {
+      setInstallingCa(true);
+      const message = await trustInterceptCa();
+      toast.success(message);
+    } catch (error) {
+      console.error('Failed to install CA certificate:', error);
+      toast.error(`Failed to install certificate: ${error}`);
+    } finally {
+      setInstallingCa(false);
     }
   }, []);
 
@@ -190,7 +204,9 @@ export function useSettingsPage() {
     aiSettingsLoading,
     aiSettingsSaving,
     downloading,
+    installingCa,
     handleDownloadCert,
+    handleInstallMacCert,
     handleClearAiApiKey,
     handleSaveAiSettings,
     handleStartMastra,

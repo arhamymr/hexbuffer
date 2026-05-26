@@ -28,3 +28,7 @@ export async function dropInterceptedRequest(requestId: string): Promise<void> {
 export async function openInterceptBrowser(): Promise<void> {
   await invoke('open_intercept_browser');
 }
+
+export async function trustInterceptCa(): Promise<string> {
+  return invoke<string>('trust_intercept_ca');
+}

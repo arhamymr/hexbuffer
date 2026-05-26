@@ -105,7 +105,7 @@ export function LogEntryBurpView() {
           <div className="bg-muted h-10 px-3 py-2 border-b flex items-center justify-between gap-2 min-w-0">
             <div className="flex min-w-0 items-center gap-2">
               <span className="text-sm font-medium">
-                {viewMode === 'text' ? 'Request' : 'Request Inspector'}
+                Request
               </span>
               {call.method && getMethodBadge(call.method)}
               <span className="text-xs font-mono truncate text-muted-foreground" title={call.url}>

@@ -149,6 +149,10 @@ export async function saveCaCert(path: string, content: string): Promise<void> {
   return invokeTauri('save_ca_cert', { path, content });
 }
 
+export async function trustInterceptCa(): Promise<string> {
+  return invokeTauri<string>('trust_intercept_ca');
+}
+
 export interface TreeNode {
   host: string;
   paths: TreePath[];

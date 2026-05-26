@@ -4,8 +4,8 @@
 use base64::{engine::general_purpose, Engine};
 use regex::Regex;
 use serde::{Deserialize, Serialize};
-use zeroxlily::DocumentRecord;
-use zeroxlily::{
+use zeroxbuffer::DocumentRecord;
+use zeroxbuffer::{
     export_ca_cert_pem, run, start_mastra_if_enabled, AiSettings, BrowserProcessState, HistoryBridge, InterceptMode,
     InterceptStatus, MastraProcessState, MastraStatus, PaginatedResponse, PausedRequest,
     PortScanState, ProxyConfig, ProxyFilter, ProxyLogSummary, ProxyRecord, ProxyRequest,
@@ -15,6 +15,7 @@ use zeroxlily::{
 use sha1::Sha1;
 use sha2::{Digest, Sha256};
 use std::collections::HashMap;
+use std::net::{SocketAddr, TcpStream};
 use std::path::PathBuf;
 use std::process::Command;
 use std::sync::{
@@ -174,6 +175,13 @@ struct IntruderAttackResult {
     response: Option<IntruderResponse>,
     grep_match: bool,
     grep_extracted: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+struct ProxyRuntimeStatus {
+    running: bool,
+    port: Option<u16>,
+    connections: usize,
 }
 
 #[derive(Default)]
@@ -1039,6 +1047,19 @@ async fn start_proxy(app: AppHandle, port: u16, tls_port: u16) -> Result<String,
 }
 
 #[tauri::command]
+async fn get_proxy_status() -> Result<ProxyRuntimeStatus, String> {
+    let port = 8888;
+    let addr = SocketAddr::from(([127, 0, 0, 1], port));
+    let running = TcpStream::connect_timeout(&addr, Duration::from_millis(200)).is_ok();
+
+    Ok(ProxyRuntimeStatus {
+        running,
+        port: running.then_some(port),
+        connections: 0,
+    })
+}
+
+#[tauri::command]
 async fn get_intercept_status(
     state: State<'_, Mutex<ProxyState>>,
 ) -> Result<InterceptStatus, String> {
@@ -1266,9 +1287,11 @@ async fn open_intercept_browser(app: AppHandle) -> Result<(), String> {
 
         match Command::new(&candidate).args(&args).spawn() {
             Ok(_) => {
-                return ca_import_result
-                    .map(|_| ())
-                    .or_else(|error| Err(format!("Browser opened, but CA import failed: {error}")));
+                if let Err(error) = ca_import_result {
+                    eprintln!("[intercept/browser] Browser opened, but CA import failed: {error}");
+                }
+
+                return Ok(());
             }
             Err(error) => last_error = Some(error.to_string()),
         }
@@ -1321,9 +1344,73 @@ fn import_intercept_ca_to_chrome_profile(app: &AppHandle) -> Result<String, Stri
     }
 }
 
+#[cfg(target_os = "macos")]
+fn user_login_keychain_path() -> Result<PathBuf, String> {
+    let home = std::env::var_os("HOME")
+        .ok_or_else(|| "Could not resolve the current home directory.".to_string())?;
+    Ok(PathBuf::from(home).join("Library/Keychains/login.keychain-db"))
+}
+
+#[cfg(target_os = "macos")]
+fn run_security(args: &[String]) -> Result<(), String> {
+    let output = Command::new("security")
+        .args(args)
+        .output()
+        .map_err(|error| error.to_string())?;
+
+    if output.status.success() {
+        return Ok(());
+    }
+
+    let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
+    Err(if stderr.is_empty() {
+        format!("security exited with {}", output.status)
+    } else {
+        stderr
+    })
+}
+
+#[cfg(target_os = "macos")]
+fn install_intercept_ca_to_macos_keychain(app: &AppHandle) -> Result<String, String> {
+    let ca_path = write_intercept_ca(app)?;
+    let keychain_path = user_login_keychain_path()?;
+    let cert_name = "Seven Root CA".to_string();
+
+    let delete_args = vec![
+        "delete-certificate".to_string(),
+        "-c".to_string(),
+        cert_name,
+        keychain_path.display().to_string(),
+    ];
+    let _ = run_security(&delete_args);
+
+    let add_args = vec![
+        "add-trusted-cert".to_string(),
+        "-r".to_string(),
+        "trustRoot".to_string(),
+        "-p".to_string(),
+        "ssl".to_string(),
+        "-k".to_string(),
+        keychain_path.display().to_string(),
+        ca_path.display().to_string(),
+    ];
+
+    run_security(&add_args).map(|_| {
+        "AppRecon CA installed in your macOS login keychain and trusted for SSL. Restart browsers that were already open.".to_string()
+    })
+}
+
 #[tauri::command]
 async fn trust_intercept_ca(app: AppHandle) -> Result<String, String> {
-    import_intercept_ca_to_chrome_profile(&app)
+    #[cfg(target_os = "macos")]
+    {
+        install_intercept_ca_to_macos_keychain(&app)
+    }
+
+    #[cfg(not(target_os = "macos"))]
+    {
+        import_intercept_ca_to_chrome_profile(&app)
+    }
 }
 
 #[tauri::command]
@@ -1407,17 +1494,17 @@ async fn get_ca_cert() -> Result<String, String> {
 
 #[tauri::command]
 fn get_ai_settings(app: AppHandle) -> Result<AiSettings, String> {
-    zeroxlily::ai::get_ai_settings(app)
+    zeroxbuffer::ai::get_ai_settings(app)
 }
 
 #[tauri::command]
 fn save_ai_settings(app: AppHandle, settings: AiSettings) -> Result<AiSettings, String> {
-    zeroxlily::ai::save_ai_settings(app, settings)
+    zeroxbuffer::ai::save_ai_settings(app, settings)
 }
 
 #[tauri::command]
 fn clear_ai_api_key(app: AppHandle) -> Result<AiSettings, String> {
-    zeroxlily::ai::clear_ai_api_key(app)
+    zeroxbuffer::ai::clear_ai_api_key(app)
 }
 
 #[tauri::command]
@@ -1425,7 +1512,7 @@ fn get_mastra_status(
     app: AppHandle,
     state: State<'_, MastraProcessState>,
 ) -> Result<MastraStatus, String> {
-    zeroxlily::ai::get_mastra_status(app, state)
+    zeroxbuffer::ai::get_mastra_status(app, state)
 }
 
 #[tauri::command]
@@ -1433,7 +1520,7 @@ fn start_mastra(
     app: AppHandle,
     state: State<'_, MastraProcessState>,
 ) -> Result<MastraStatus, String> {
-    zeroxlily::ai::start_mastra(app, state)
+    zeroxbuffer::ai::start_mastra(app, state)
 }
 
 #[tauri::command]
@@ -1441,7 +1528,7 @@ fn stop_mastra(
     app: AppHandle,
     state: State<'_, MastraProcessState>,
 ) -> Result<MastraStatus, String> {
-    zeroxlily::ai::stop_mastra(app, state)
+    zeroxbuffer::ai::stop_mastra(app, state)
 }
 
 #[tauri::command]
@@ -1529,6 +1616,7 @@ fn main() {
         })
         .invoke_handler(tauri::generate_handler![
             start_proxy,
+            get_proxy_status,
             get_intercept_status,
             set_intercept_enabled,
             get_paused_requests,
@@ -1554,28 +1642,28 @@ fn main() {
             send_repeater_request,
             start_intruder_attack,
             stop_intruder_attack,
-            zeroxlily::port_scanner::scan_ports,
-            zeroxlily::port_scanner::stop_port_scan,
+            zeroxbuffer::port_scanner::scan_ports,
+            zeroxbuffer::port_scanner::stop_port_scan,
             get_ai_settings,
             save_ai_settings,
             clear_ai_api_key,
             get_mastra_status,
             start_mastra,
             stop_mastra,
-            zeroxlily::browser::get_browser_status,
-            zeroxlily::browser::browser_open,
-            zeroxlily::browser::browser_close,
-            zeroxlily::browser::browser_snapshot,
-            zeroxlily::browser::browser_click,
-            zeroxlily::browser::browser_fill,
-            zeroxlily::browser::browser_navigate,
-            zeroxlily::browser::browser_type,
-            zeroxlily::browser::browser_press,
-            zeroxlily::browser::browser_screenshot,
-            zeroxlily::browser::browser_batch,
-            zeroxlily::browser::browser_execute,
-            zeroxlily::sqli::start_sqli_scan,
-            zeroxlily::sqli::stop_sqli_scan
+            zeroxbuffer::browser::get_browser_status,
+            zeroxbuffer::browser::browser_open,
+            zeroxbuffer::browser::browser_close,
+            zeroxbuffer::browser::browser_snapshot,
+            zeroxbuffer::browser::browser_click,
+            zeroxbuffer::browser::browser_fill,
+            zeroxbuffer::browser::browser_navigate,
+            zeroxbuffer::browser::browser_type,
+            zeroxbuffer::browser::browser_press,
+            zeroxbuffer::browser::browser_screenshot,
+            zeroxbuffer::browser::browser_batch,
+            zeroxbuffer::browser::browser_execute,
+            zeroxbuffer::sqli::start_sqli_scan,
+            zeroxbuffer::sqli::stop_sqli_scan
         ])
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())

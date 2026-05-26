@@ -10,7 +10,7 @@ import { HttpHistoryView } from "./components/http-history-view";
 import { WebSocketHistoryView } from "./components/websocket-history-view";
 import { useHttpHistoryPage } from "./hooks/use-http-history-page";
 
-export function HttpHistoryPage() {
+export function LiveTrafficPage() {
   const {
     tabs,
     activeTabId,

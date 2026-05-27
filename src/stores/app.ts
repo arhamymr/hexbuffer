@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { invoke } from '@tauri-apps/api/core';
 
-export type ProxyStatus = 'connected' | 'disconnected' | 'starting';
+export type ProxyStatus = 'connected' | 'disconnected' | 'starting' | 'stopping';
 
 interface ProxyRuntimeStatus {
   running: boolean;
@@ -17,6 +17,7 @@ interface AppState {
   proxyDefaultPort: number;
   setProxyStatus: (status: ProxyStatus) => void;
   startProxy: () => Promise<void>;
+  stopProxy: () => Promise<void>;
   checkProxyStatus: () => Promise<void>;
 }
 
@@ -46,6 +47,31 @@ export const useAppStore = create<AppState>()(
         } catch (error) {
           console.error('[store] Failed to start proxy:', error);
           set({ proxyStatus: 'disconnected', proxyPort: null });
+          throw error;
+        }
+      },
+
+      stopProxy: async () => {
+        console.log('[store] stopProxy called');
+        set({ proxyStatus: 'stopping' });
+        try {
+          await invoke('stop_proxy');
+          await new Promise((resolve) => window.setTimeout(resolve, 300));
+          const status = await invoke<ProxyRuntimeStatus>('get_proxy_status');
+          set({
+            proxyStatus: status.running ? 'connected' : 'disconnected',
+            proxyPort: status.port,
+            proxyDefaultPort: status.default_port,
+          });
+        } catch (error) {
+          console.error('[store] Failed to stop proxy:', error);
+          const status = await invoke<ProxyRuntimeStatus>('get_proxy_status');
+          set({
+            proxyStatus: status.running ? 'connected' : 'disconnected',
+            proxyPort: status.port,
+            proxyDefaultPort: status.default_port,
+          });
+          throw error;
         }
       },
 

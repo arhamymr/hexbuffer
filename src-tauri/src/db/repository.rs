@@ -1,3 +1,4 @@
+use crate::packet_capture::types::{PacketCaptureRecord, PacketConnectionRecord, StoredPacketRecord};
 use crate::proxy::state::{
     ProxyFilter, ProxyRecord, ProxyRequest, ProxyResponse, WebSocketConnectionRecord,
     WebSocketConnectionState, WebSocketFilter, WebSocketMessageDirection, WebSocketMessageRecord,
@@ -46,9 +47,116 @@ impl Database {
     pub fn init(&self) -> SqlResult<()> {
         let conn = self.conn.lock().unwrap();
         conn.execute_batch("PRAGMA foreign_keys = ON;")?;
+        conn.execute_batch("PRAGMA journal_mode = WAL;")?;
         conn.execute_batch(crate::db::schema::CREATE_HTTP_LOGS_TABLE)?;
         conn.execute_batch(crate::db::schema::CREATE_WEBSOCKET_TABLES)?;
         conn.execute_batch(crate::db::schema::CREATE_DOCUMENTS_TABLE)?;
+        conn.execute_batch(crate::db::schema::CREATE_PACKET_CAPTURE_TABLES)?;
+        Ok(())
+    }
+
+    pub fn insert_packet_capture(&self, capture: &PacketCaptureRecord) -> SqlResult<()> {
+        let conn = self.conn.lock().unwrap();
+
+        conn.execute(
+            r#"INSERT INTO captures (
+                id, name, interface_id, interface_label, started_at, ended_at, status, packet_count, created_at
+            ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)"#,
+            params![
+                capture.id,
+                capture.name,
+                capture.interface_id,
+                capture.interface_label,
+                capture.started_at,
+                capture.ended_at,
+                capture.status,
+                capture.packet_count as i64,
+                capture.created_at,
+            ],
+        )?;
+
+        Ok(())
+    }
+
+    pub fn finish_packet_capture(&self, capture_id: &str, ended_at: &str) -> SqlResult<()> {
+        let conn = self.conn.lock().unwrap();
+
+        conn.execute(
+            r#"UPDATE captures
+               SET ended_at = ?2, status = 'stopped'
+               WHERE id = ?1"#,
+            params![capture_id, ended_at],
+        )?;
+
+        Ok(())
+    }
+
+    pub fn insert_captured_packet(
+        &self,
+        packet: &StoredPacketRecord,
+        connection: &PacketConnectionRecord,
+    ) -> SqlResult<()> {
+        let mut conn = self.conn.lock().unwrap();
+        let tx = conn.transaction()?;
+
+        tx.execute(
+            r#"INSERT OR IGNORE INTO packets (
+                id, capture_id, packet_number, timestamp, relative_time,
+                source_ip, destination_ip, protocol, source_port, destination_port,
+                packet_length, info, raw_line, raw_data, created_at
+            ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15)"#,
+            params![
+                packet.id,
+                packet.capture_id,
+                packet.packet_number as i64,
+                packet.timestamp,
+                packet.relative_time,
+                packet.source_ip,
+                packet.destination_ip,
+                packet.protocol,
+                packet.source_port.map(|value| value as i64),
+                packet.destination_port.map(|value| value as i64),
+                packet.packet_length as i64,
+                packet.info,
+                packet.raw_line,
+                packet.raw_data,
+                packet.created_at,
+            ],
+        )?;
+
+        tx.execute(
+            r#"INSERT INTO connections (
+                id, capture_id, source_ip, source_port, destination_ip, destination_port,
+                protocol, first_seen, last_seen, packet_count, total_bytes, incomplete
+            ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, 1, ?10, ?11)
+            ON CONFLICT(id) DO UPDATE SET
+                last_seen = excluded.last_seen,
+                packet_count = packet_count + 1,
+                total_bytes = total_bytes + excluded.total_bytes,
+                incomplete = excluded.incomplete"#,
+            params![
+                connection.id,
+                connection.capture_id,
+                connection.source_ip,
+                connection.source_port.map(|value| value as i64),
+                connection.destination_ip,
+                connection.destination_port.map(|value| value as i64),
+                connection.protocol,
+                connection.first_seen,
+                connection.last_seen,
+                connection.total_bytes as i64,
+                if connection.incomplete { 1i64 } else { 0i64 },
+            ],
+        )?;
+
+        tx.execute(
+            r#"UPDATE captures
+               SET packet_count = packet_count + 1
+               WHERE id = ?1"#,
+            params![packet.capture_id],
+        )?;
+
+        tx.commit()?;
         Ok(())
     }
 

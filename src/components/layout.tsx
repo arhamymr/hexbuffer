@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { getCurrentWindow } from '@tauri-apps/api/window';
-import { Crosshair, ArrowUpDown, RefreshCw, Wrench, Bot, FileText, PauseCircle, Globe, GripHorizontal, Loader2, Minus, Square, X } from 'lucide-react';
+import { Crosshair, ArrowUpDown, RefreshCw, Wrench, Bot, FileText, PauseCircle, Globe, GripHorizontal, Loader2, Minus, Square, X, Network, Maximize2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from './ui/button';
 
@@ -17,6 +17,7 @@ import { useAppStore } from '@/stores/app';
 
 const mainNavItems = [
   { label: 'Live Traffic', icon: ArrowUpDown, href: '/' },
+  { label: 'Packets', icon: Network, href: '/packet-capture' },
   { label: 'Intercept', icon: PauseCircle, href: '/intercept' },
   { label: 'Brute Force', icon: Crosshair, href: '/brute-force' },
   { label: 'Repeater', icon: RefreshCw, href: '/repeater' },
@@ -26,7 +27,7 @@ const mainNavItems = [
   { label: 'Tools', icon: Wrench, href: '/tools' },
 ];
 
-export function TopNav() {
+export function TopNav({ isWindowMaximized }: { isWindowMaximized: boolean }) {
   const location = useLocation();
   const pathname = location.pathname;
   const appWindow = React.useMemo(() => getCurrentWindow(), []);
@@ -35,6 +36,7 @@ export function TopNav() {
   const [canScrollRight, setCanScrollRight] = React.useState(false);
   const [isDraggingWindow, setIsDraggingWindow] = React.useState(false);
   const [isOpeningBrowser, setIsOpeningBrowser] = React.useState(false);
+  const proxyStatus = useAppStore((state) => state.proxyStatus);
   const proxyPort = useAppStore((state) => state.proxyPort);
   const proxyDefaultPort = useAppStore((state) => state.proxyDefaultPort);
   const checkProxyStatus = useAppStore((state) => state.checkProxyStatus);
@@ -133,9 +135,7 @@ export function TopNav() {
             <GripHorizontal className="size-5" data-tauri-drag-region />
           </div>
           <div className="flex items-center gap-1">
-            {/* Light mode */}
-            <p className='text-xl'>✦</p>
-            <p className='text-sm font-bold mt-1'>0xbuffer</p>
+            <p className='text-sm font-extrabold font-mono'>0xbuffer</p>
           </div>
 
           <div className="relative min-w-0 flex-1">
@@ -146,6 +146,7 @@ export function TopNav() {
               {mainNavItems.map((item) => {
                 const Icon = item.icon;
                 const isActive = pathname === item.href;
+                const showProxyIndicator = item.href === '/' && proxyStatus === 'connected';
                 return (
                   <Link
                     key={item.href}
@@ -161,6 +162,16 @@ export function TopNav() {
                   >
                     <Icon className="h-3 w-3" />
                     <span>{item.label}</span>
+                    {showProxyIndicator && (
+                      <span
+                        className="relative flex h-2 w-2"
+                        aria-label="Proxy running"
+                        title="Proxy running"
+                      >
+                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75" />
+                        <span className="relative inline-flex h-2 w-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.9)]" />
+                      </span>
+                    )}
                   </Link>
                 );
               })}
@@ -212,9 +223,9 @@ export function TopNav() {
               variant="ghost"
               size="xs"
               className="h-8 w-8 p-0"
-              title="Maximize"
+              title={isWindowMaximized ? 'Restore' : 'Maximize'}
             >
-              <Square className="size-3.5" />
+              {isWindowMaximized ? <Square className="size-3.5" /> : <Maximize2 className="size-3.5" />}
             </Button>
             <Button
               id="titlebar-close"
@@ -293,11 +304,13 @@ export function AppLayout({ children }: { children?: React.ReactNode }) {
       }
     };
 
-    updateMaximizedState();
-
-    appWindow.onResized(updateMaximizedState).then((unlisten) => {
+    const setupListener = async () => {
+      updateMaximizedState();
+      const unlisten = await appWindow.onResized(updateMaximizedState);
       unlistenResize = unlisten;
-    });
+    };
+
+    setupListener();
 
     return () => {
       isMounted = false;
@@ -312,7 +325,7 @@ export function AppLayout({ children }: { children?: React.ReactNode }) {
         isWindowMaximized ? 'rounded-none border-0 shadow-none' : 'rounded-md border shadow-2xl',
       )}
     >
-      <TopNav />
+      <TopNav isWindowMaximized={isWindowMaximized} />
       <main className="relative flex min-h-0 flex-1 overflow-hidden p-2">
         <section className={cn('min-w-0 flex-1 overflow-hidden', isAssistantOpen && 'lg:pr-2')}>
           {children}

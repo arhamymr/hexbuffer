@@ -4,6 +4,7 @@ pub mod lifecycle;
 pub mod logger;
 pub mod state;
 pub mod utils;
+pub mod websocket;
 
 pub use https::cert::export_ca_cert_pem;
 pub use state::{
@@ -13,8 +14,12 @@ pub use utils::ensure_port_free;
 
 use hudsucker::{rustls::crypto::aws_lc_rs, Proxy};
 use std::net::SocketAddr;
-use std::sync::atomic::{AtomicU16, Ordering};
+use std::sync::{
+    atomic::{AtomicU16, Ordering},
+    Mutex, OnceLock,
+};
 use tauri::AppHandle;
+use tokio::sync::oneshot;
 
 use crate::proxy::https::cert::ensure_ca_exists;
 
@@ -26,6 +31,11 @@ pub struct ProxyConfig {
 
 static ACTIVE_PROXY_PORT: AtomicU16 = AtomicU16::new(0);
 static DEFAULT_PROXY_PORT: AtomicU16 = AtomicU16::new(8888);
+static PROXY_SHUTDOWN: OnceLock<Mutex<Option<oneshot::Sender<()>>>> = OnceLock::new();
+
+fn proxy_shutdown_sender() -> &'static Mutex<Option<oneshot::Sender<()>>> {
+    PROXY_SHUTDOWN.get_or_init(|| Mutex::new(None))
+}
 
 pub fn active_proxy_port() -> Option<u16> {
     match ACTIVE_PROXY_PORT.load(Ordering::SeqCst) {
@@ -41,24 +51,33 @@ pub fn default_proxy_port() -> u16 {
 fn resolve_proxy_port(config: &ProxyConfig) -> Result<u16, String> {
     DEFAULT_PROXY_PORT.store(config.port, Ordering::SeqCst);
 
-    if config.reuse {
-        ensure_port_free(config.port, true)?;
-        return Ok(config.port);
-    }
+    ensure_port_free(config.port, config.reuse)?;
+    Ok(config.port)
+}
 
-    for port in config.port..=u16::MAX {
-        match ensure_port_free(port, false) {
-            Ok(()) => return Ok(port),
-            Err(error) => {
-                eprintln!("[proxy] Port {} unavailable: {}", port, error);
-            }
-        }
-    }
+fn clear_proxy_runtime() {
+    ACTIVE_PROXY_PORT.store(0, Ordering::SeqCst);
 
-    Err(format!(
-        "No free proxy ports found at or above {}",
-        config.port
-    ))
+    if let Ok(mut shutdown) = proxy_shutdown_sender().lock() {
+        *shutdown = None;
+    }
+}
+
+pub fn stop() -> Result<(), String> {
+    let Some(shutdown) = proxy_shutdown_sender()
+        .lock()
+        .map_err(|error| format!("{error}"))?
+        .take()
+    else {
+        ACTIVE_PROXY_PORT.store(0, Ordering::SeqCst);
+        return Ok(());
+    };
+
+    shutdown
+        .send(())
+        .map_err(|_| "Proxy shutdown signal could not be delivered".to_string())?;
+    ACTIVE_PROXY_PORT.store(0, Ordering::SeqCst);
+    Ok(())
 }
 
 impl Default for ProxyConfig {
@@ -85,13 +104,28 @@ pub fn run(config: ProxyConfig, app_handle: AppHandle) {
         }
     };
 
-    if port != config.port {
-        eprintln!(
-            "[proxy] Default port {} is in use; using {} instead",
-            config.port, port
-        );
-    }
+    let (shutdown_tx, shutdown_rx) = oneshot::channel();
 
+    {
+        let mut shutdown = match proxy_shutdown_sender().lock() {
+            Ok(shutdown) => shutdown,
+            Err(error) => {
+                eprintln!(
+                    "[proxy] FATAL: Failed to acquire shutdown handle: {}",
+                    error
+                );
+                ACTIVE_PROXY_PORT.store(0, Ordering::SeqCst);
+                return;
+            }
+        };
+
+        if shutdown.is_some() {
+            eprintln!("[proxy] Proxy is already running");
+            return;
+        }
+
+        *shutdown = Some(shutdown_tx);
+    }
     ACTIVE_PROXY_PORT.store(port, Ordering::SeqCst);
 
     // Create AppHandler instance
@@ -102,8 +136,13 @@ pub fn run(config: ProxyConfig, app_handle: AppHandle) {
         Ok(auth) => auth,
         Err(e) => {
             eprintln!("[proxy] FATAL: Failed to create CA authority: {}", e);
+            clear_proxy_runtime();
             return;
         }
+    };
+
+    let graceful_shutdown = async move {
+        let _ = shutdown_rx.await;
     };
 
     // Build proxy with Hudsucker
@@ -111,13 +150,15 @@ pub fn run(config: ProxyConfig, app_handle: AppHandle) {
         .with_addr(SocketAddr::from(([0, 0, 0, 0], port)))
         .with_ca(authority)
         .with_rustls_connector(aws_lc_rs::default_provider())
-        .with_http_handler(handler)
+        .with_http_handler(handler.clone())
+        .with_websocket_handler(handler)
+        .with_graceful_shutdown(graceful_shutdown)
         .build()
     {
         Ok(p) => p,
         Err(e) => {
             eprintln!("[proxy] FATAL: Failed to build proxy: {}", e);
-            ACTIVE_PROXY_PORT.store(0, Ordering::SeqCst);
+            clear_proxy_runtime();
             return;
         }
     };
@@ -132,6 +173,7 @@ pub fn run(config: ProxyConfig, app_handle: AppHandle) {
         Ok(rt) => rt,
         Err(e) => {
             eprintln!("[proxy] FATAL: Failed to create tokio runtime: {}", e);
+            clear_proxy_runtime();
             return;
         }
     };
@@ -139,7 +181,7 @@ pub fn run(config: ProxyConfig, app_handle: AppHandle) {
     runtime.block_on(async {
         if let Err(e) = proxy.start().await {
             eprintln!("[proxy] FATAL: Proxy error: {}", e);
-            ACTIVE_PROXY_PORT.store(0, Ordering::SeqCst);
         }
     });
+    clear_proxy_runtime();
 }

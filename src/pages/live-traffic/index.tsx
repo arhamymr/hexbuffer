@@ -21,7 +21,11 @@ export function LiveTrafficPage() {
     sitemapVisible,
     setSitemapVisible,
     shouldShowSitemap,
+    proxyStatus,
+    activeProxyPort,
     handleTreeSelect,
+    handleStartProxy,
+    handleStopProxy,
     sendScopeToDocuments,
   } = useHttpHistoryPage();
 
@@ -45,6 +49,10 @@ export function LiveTrafficPage() {
         setHistoryMode={setHistoryMode}
         sitemapVisible={sitemapVisible}
         setSitemapVisible={setSitemapVisible}
+        proxyStatus={proxyStatus}
+        activeProxyPort={activeProxyPort}
+        onStartProxy={handleStartProxy}
+        onStopProxy={handleStopProxy}
       />
       <Card className="flex-1 flex flex-col overflow-hidden mt-3 !py-0">
         <ResizablePanelGroup orientation="horizontal" className="flex-1">

@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils';
 const proxyStatusLabel = {
   connected: 'Connected',
   starting: 'Starting',
+  stopping: 'Stopping',
   disconnected: 'Disconnected',
 } as const;
 
@@ -48,7 +49,7 @@ export function AppFooter({ isAssistantOpen, onToggleAssistant }: AppFooterProps
             className={`h-2 w-2 rounded-full ${
               proxyStatus === 'connected'
                 ? 'bg-green-500 animate-pulse'
-                : proxyStatus === 'starting'
+                : proxyStatus === 'starting' || proxyStatus === 'stopping'
                 ? 'bg-yellow-500 animate-pulse'
                 : 'bg-muted-foreground/50'
             }`}

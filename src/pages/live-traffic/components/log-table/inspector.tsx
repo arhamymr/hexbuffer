@@ -6,7 +6,7 @@ import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from '@
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { buildHttpHeaderList } from '@/lib/http-message';
 
-interface KeyValue {
+export interface KeyValue {
   name: string;
   value: string;
   domain?: string;
@@ -21,6 +21,8 @@ interface InspectorSectionProps {
   items: KeyValue[];
   defaultOpen?: boolean;
   defaultView?: InspectorViewMode;
+  onItemSelect?: (item: KeyValue) => void;
+  isItemSelected?: (item: KeyValue) => boolean;
 }
 
 const wrappedCellClass = 'py-1 px-2 font-mono whitespace-normal break-words [overflow-wrap:anywhere]';
@@ -78,7 +80,14 @@ function formatItemsAsText(items: KeyValue[]): string {
     .join('\n\n');
 }
 
-export function InspectorSection({ title, items, defaultOpen = true, defaultView = 'text' }: InspectorSectionProps) {
+export function InspectorSection({
+  title,
+  items,
+  defaultOpen = true,
+  defaultView = 'text',
+  onItemSelect,
+  isItemSelected,
+}: InspectorSectionProps) {
   return (
     <Accordion type="single" defaultValue={defaultOpen ? title : undefined} collapsible className="border rounded-md mb-2 min-w-0 overflow-hidden">
       <AccordionItem value={title} className="last:border-b-0">
@@ -128,7 +137,12 @@ export function InspectorSection({ title, items, defaultOpen = true, defaultView
                   </TableHeader>
                   <TableBody>
                     {items.map((item, i) => (
-                      <TableRow key={i} className="hover:bg-muted/30">
+                      <TableRow
+                        key={i}
+                        data-state={isItemSelected?.(item) ? 'selected' : undefined}
+                        className={onItemSelect ? 'cursor-pointer hover:bg-muted/30 data-[state=selected]:bg-primary/10' : 'hover:bg-muted/30'}
+                        onClick={() => onItemSelect?.(item)}
+                      >
                         <TableCell className={`${wrappedCellClass} text-blue-600`}>
                           {item.name}
                         </TableCell>

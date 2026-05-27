@@ -6703,6 +6703,7 @@ dependencies = [
  "clap",
  "colored",
  "dirs 5.0.1",
+ "encoding_rs",
  "flate2",
  "futures-util",
  "http",
@@ -6731,6 +6732,7 @@ dependencies = [
  "tower",
  "url",
  "uuid",
+ "zstd",
 ]
 
 [[package]]

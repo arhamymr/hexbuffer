@@ -36,7 +36,7 @@ export function TargetSelectorDialog() {
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button size="xs" className="gap-2 h-7  mb-1 gap-1 text-xs">
+        <Button size="xs" className="gap-2 h-7 gap-1 text-xs">
           <Plus className="h-4 w-4" />
           MANAGE TARGET
         </Button>

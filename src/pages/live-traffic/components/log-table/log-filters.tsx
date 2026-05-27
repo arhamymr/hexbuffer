@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { X, Trash2, Map } from 'lucide-react';
+import { X, Trash2, Map, Loader2, Power, PowerOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
@@ -21,6 +21,7 @@ import type { HistoryFilterState } from '@/pages/live-traffic/state/history-quer
 import { useHistoryQuery } from '@/pages/live-traffic/hooks/use-history-query';
 import type { HistoryMode } from '@/pages/live-traffic/hooks/use-http-history-page';
 import { TargetSelectorDialog } from '../target-selector';
+import type { ProxyStatus } from '@/stores/app';
 
 interface LogFiltersProps {
   filter?: HistoryFilterState;
@@ -31,7 +32,18 @@ interface LogFiltersProps {
   setHistoryMode?: (mode: HistoryMode) => void;
   sitemapVisible?: boolean;
   setSitemapVisible?: (visible: boolean) => void;
+  proxyStatus?: ProxyStatus;
+  activeProxyPort?: number;
+  onStartProxy?: () => void;
+  onStopProxy?: () => void;
 }
+
+const proxyButtonLabel = {
+  connected: 'Proxy Running',
+  starting: 'Starting',
+  stopping: 'Stopping',
+  disconnected: 'Start Proxy',
+} as const;
 
 export function LogFilters({
   filter: filterProp,
@@ -42,6 +54,10 @@ export function LogFilters({
   setHistoryMode,
   sitemapVisible = true,
   setSitemapVisible,
+  proxyStatus = 'disconnected',
+  activeProxyPort,
+  onStartProxy,
+  onStopProxy,
 }: LogFiltersProps) {
   const [clearDialogOpen, setClearDialogOpen] = useState(false);
   const {
@@ -65,6 +81,9 @@ export function LogFilters({
 
   const hasActiveFilters =
     filter.search || filter.pathFilter || filter.methods.size > 0 || filter.statusCodes.size > 0;
+  const canToggleProxy =
+    (proxyStatus === 'disconnected' && onStartProxy) || (proxyStatus === 'connected' && onStopProxy);
+  const handleProxyToggle = proxyStatus === 'connected' ? onStopProxy : onStartProxy;
 
   return (
     <div className="space-y-1">
@@ -82,7 +101,7 @@ export function LogFilters({
             Clear
           </Button>
         )}
-         
+      
         {setHistoryMode && (
           <div className="ml-auto flex items-center gap-2 text-sm">
             <span className={historyMode === 'http' ? 'font-medium' : 'text-muted-foreground'}>
@@ -99,6 +118,32 @@ export function LogFilters({
           </div>
         )}
         <TargetSelectorDialog />
+          {onStartProxy && (
+          <Button
+            variant={proxyStatus === 'connected' ? 'secondary' : 'default'}
+            size="xs"
+            onClick={handleProxyToggle}
+            disabled={!canToggleProxy}
+            title={
+              activeProxyPort
+                ? `Proxy listener 127.0.0.1:${activeProxyPort}`
+                : 'Start proxy listener'
+            }
+            className="h-7"
+          >
+            {proxyStatus === 'starting' ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : proxyStatus === 'stopping' ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : proxyStatus === 'connected' ? (
+              <PowerOff className="h-4 w-4" />
+            ) : (
+              <Power className="h-4 w-4" />
+            )}
+            {proxyStatus === 'connected' && onStopProxy ? 'Stop Proxy' : proxyButtonLabel[proxyStatus]}
+          </Button>
+        )}
+         
       </div>
 
       <div className="flex items-center justify-between gap-4">

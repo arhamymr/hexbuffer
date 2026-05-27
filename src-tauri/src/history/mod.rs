@@ -2,6 +2,7 @@ use std::path::PathBuf;
 
 use crate::{
     db::repository::{Database, DocumentRecord, PaginatedResponse, TreeNode},
+    packet_capture::types::{PacketCaptureRecord, PacketConnectionRecord, StoredPacketRecord},
     proxy::state::{
         ProxyFilter, ProxyRecord, WebSocketConnectionRecord, WebSocketFilter,
         WebSocketMessageRecord,
@@ -54,6 +55,28 @@ impl HistoryBridge {
 
     pub fn insert_record(&self, record: &ProxyRecord) -> Result<(), String> {
         self.db.insert_log(record).map_err(|e| e.to_string())
+    }
+
+    pub fn insert_packet_capture(&self, capture: &PacketCaptureRecord) -> Result<(), String> {
+        self.db
+            .insert_packet_capture(capture)
+            .map_err(|e| e.to_string())
+    }
+
+    pub fn finish_packet_capture(&self, capture_id: &str, ended_at: &str) -> Result<(), String> {
+        self.db
+            .finish_packet_capture(capture_id, ended_at)
+            .map_err(|e| e.to_string())
+    }
+
+    pub fn insert_captured_packet(
+        &self,
+        packet: &StoredPacketRecord,
+        connection: &PacketConnectionRecord,
+    ) -> Result<(), String> {
+        self.db
+            .insert_captured_packet(packet, connection)
+            .map_err(|e| e.to_string())
     }
 
     pub fn get_documents(&self) -> Result<Vec<DocumentRecord>, String> {

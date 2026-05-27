@@ -68,3 +68,108 @@ CREATE TABLE IF NOT EXISTS documents (
 
 CREATE INDEX IF NOT EXISTS idx_documents_updated_at ON documents(updated_at);
 "#;
+
+pub const CREATE_PACKET_CAPTURE_TABLES: &str = r#"
+CREATE TABLE IF NOT EXISTS captures (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    interface_id TEXT NOT NULL,
+    interface_label TEXT,
+    started_at TEXT NOT NULL,
+    ended_at TEXT,
+    status TEXT NOT NULL,
+    packet_count INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS packets (
+    id TEXT PRIMARY KEY,
+    capture_id TEXT NOT NULL,
+    packet_number INTEGER NOT NULL,
+    timestamp REAL NOT NULL,
+    relative_time REAL NOT NULL,
+    source_ip TEXT NOT NULL,
+    destination_ip TEXT NOT NULL,
+    protocol TEXT NOT NULL,
+    source_port INTEGER,
+    destination_port INTEGER,
+    packet_length INTEGER NOT NULL,
+    info TEXT NOT NULL,
+    raw_line TEXT NOT NULL,
+    raw_data BLOB NOT NULL,
+    created_at TEXT NOT NULL,
+    FOREIGN KEY(capture_id) REFERENCES captures(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS connections (
+    id TEXT PRIMARY KEY,
+    capture_id TEXT NOT NULL,
+    source_ip TEXT NOT NULL,
+    source_port INTEGER,
+    destination_ip TEXT NOT NULL,
+    destination_port INTEGER,
+    protocol TEXT NOT NULL,
+    first_seen REAL NOT NULL,
+    last_seen REAL NOT NULL,
+    packet_count INTEGER NOT NULL DEFAULT 0,
+    total_bytes INTEGER NOT NULL DEFAULT 0,
+    incomplete INTEGER NOT NULL DEFAULT 1,
+    FOREIGN KEY(capture_id) REFERENCES captures(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS packet_http_requests (
+    id TEXT PRIMARY KEY,
+    capture_id TEXT NOT NULL,
+    connection_id TEXT,
+    packet_id TEXT,
+    method TEXT NOT NULL,
+    host TEXT,
+    url TEXT NOT NULL,
+    headers TEXT,
+    body_id TEXT,
+    created_at TEXT NOT NULL,
+    FOREIGN KEY(capture_id) REFERENCES captures(id) ON DELETE CASCADE,
+    FOREIGN KEY(connection_id) REFERENCES connections(id) ON DELETE SET NULL,
+    FOREIGN KEY(packet_id) REFERENCES packets(id) ON DELETE SET NULL
+);
+
+CREATE TABLE IF NOT EXISTS packet_http_responses (
+    id TEXT PRIMARY KEY,
+    request_id TEXT,
+    capture_id TEXT NOT NULL,
+    connection_id TEXT,
+    packet_id TEXT,
+    status_code INTEGER NOT NULL,
+    status_text TEXT,
+    headers TEXT,
+    body_id TEXT,
+    created_at TEXT NOT NULL,
+    FOREIGN KEY(request_id) REFERENCES packet_http_requests(id) ON DELETE SET NULL,
+    FOREIGN KEY(capture_id) REFERENCES captures(id) ON DELETE CASCADE,
+    FOREIGN KEY(connection_id) REFERENCES connections(id) ON DELETE SET NULL,
+    FOREIGN KEY(packet_id) REFERENCES packets(id) ON DELETE SET NULL
+);
+
+CREATE TABLE IF NOT EXISTS packet_bodies (
+    id TEXT PRIMARY KEY,
+    capture_id TEXT NOT NULL,
+    packet_id TEXT,
+    content_type TEXT,
+    encoding TEXT,
+    raw_body BLOB NOT NULL,
+    decoded_body TEXT,
+    created_at TEXT NOT NULL,
+    FOREIGN KEY(capture_id) REFERENCES captures(id) ON DELETE CASCADE,
+    FOREIGN KEY(packet_id) REFERENCES packets(id) ON DELETE SET NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_captures_started_at ON captures(started_at);
+CREATE INDEX IF NOT EXISTS idx_packets_capture_number ON packets(capture_id, packet_number);
+CREATE INDEX IF NOT EXISTS idx_packets_protocol ON packets(protocol);
+CREATE INDEX IF NOT EXISTS idx_packets_source ON packets(source_ip, source_port);
+CREATE INDEX IF NOT EXISTS idx_packets_destination ON packets(destination_ip, destination_port);
+CREATE INDEX IF NOT EXISTS idx_connections_capture ON connections(capture_id);
+CREATE INDEX IF NOT EXISTS idx_packet_http_requests_capture ON packet_http_requests(capture_id);
+CREATE INDEX IF NOT EXISTS idx_packet_http_responses_capture ON packet_http_responses(capture_id);
+CREATE INDEX IF NOT EXISTS idx_packet_bodies_capture ON packet_bodies(capture_id);
+"#;

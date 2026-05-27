@@ -1,9 +1,11 @@
+pub mod body_decoder;
 pub mod completion;
 
 use std::time::Duration;
 
-use hudsucker::{Body, HttpContext, HttpHandler, RequestOrResponse};
+use hudsucker::{Body, HttpContext, HttpHandler, WebSocketContext, WebSocketHandler};
 use hyper::{header::HeaderName, header::HeaderValue, Method, Request, Response, Uri};
+use hudsucker::tokio_tungstenite::tungstenite::Message;
 use tauri::AppHandle;
 
 pub use completion::save_and_emit;
@@ -75,7 +77,7 @@ impl HttpHandler for AppHandler {
         &mut self,
         http_ctx: &HttpContext,
         req: Request<Body>,
-    ) -> RequestOrResponse {
+    ) -> hudsucker::RequestOrResponse {
         use crate::proxy::intercept;
         use crate::proxy::state::{InterceptMode, PausedRequest, ProxyState};
         use std::sync::Mutex;
@@ -101,7 +103,7 @@ impl HttpHandler for AppHandler {
             Ok(collected) => collected.to_bytes(),
             Err(e) => {
                 eprintln!("[lifecycle] Failed to read request body: {}", e);
-                return RequestOrResponse::Request(Request::from_parts(parts, Body::empty()));
+                return hudsucker::RequestOrResponse::Request(Request::from_parts(parts, Body::empty()));
             }
         };
         ctx.req_body = body_bytes.to_vec();
@@ -147,7 +149,7 @@ impl HttpHandler for AppHandler {
 
                 match action {
                     Some(crate::proxy::state::InterceptAction::Drop) => {
-                        return RequestOrResponse::Response(
+                        return hudsucker::RequestOrResponse::Response(
                             Response::builder()
                                 .status(502)
                                 .body(Body::from("Dropped by intercept"))
@@ -195,7 +197,7 @@ impl HttpHandler for AppHandler {
         let mut req = Request::from_parts(parts, Body::from(request_body));
         req.headers_mut().insert("x-rusxy", "1".parse().unwrap());
 
-        RequestOrResponse::Request(req)
+        hudsucker::RequestOrResponse::Request(req)
     }
 
     async fn handle_response(
@@ -227,6 +229,12 @@ impl HttpHandler for AppHandler {
         }
 
         let (parts, body) = res.into_parts();
+
+        if crate::proxy::websocket::is_successful_websocket_handshake(&ctx) {
+            save_and_emit(&ctx, &self.app_handle);
+            return Response::from_parts(parts, body);
+        }
+
         let body_bytes = match http_body_util::BodyExt::collect(body).await {
             Ok(collected) => collected.to_bytes(),
             Err(e) => {
@@ -236,85 +244,36 @@ impl HttpHandler for AppHandler {
         };
         ctx.res_body = body_bytes.to_vec();
 
-        let content_encoding = ctx
-            .res_headers
-            .iter()
-            .find(|(k, _)| k.to_lowercase() == "content-encoding")
-            .map(|(_, v)| v.to_lowercase());
-
-        let decoded_body = if let Some(ref encoding) = content_encoding {
-            match encoding.as_str() {
-                "gzip" => {
-                    use flate2::read::GzDecoder;
-                    use std::io::Read;
-                    let mut decoder = GzDecoder::new(&ctx.res_body[..]);
-                    let mut decoded = Vec::new();
-                    if decoder.read_to_end(&mut decoded).is_ok() {
-                        eprintln!(
-                            "[lifecycle] gzip decoded body for txn_id={}",
-                            ctx.transaction_id
-                        );
-                        Some(decoded)
-                    } else {
-                        eprintln!(
-                            "[lifecycle] ERROR gzip decode failed for txn_id={}",
-                            ctx.transaction_id
-                        );
-                        None
-                    }
-                }
-                "br" => {
-                    use brotli::Decompressor;
-                    use std::io::Read;
-                    let mut decompressor = Decompressor::new(&ctx.res_body[..], 4096);
-                    let mut decoded = Vec::new();
-                    if decompressor.read_to_end(&mut decoded).is_ok() {
-                        eprintln!(
-                            "[lifecycle] brotli decoded body for txn_id={}",
-                            ctx.transaction_id
-                        );
-                        Some(decoded)
-                    } else {
-                        eprintln!(
-                            "[lifecycle] ERROR brotli decode failed for txn_id={}",
-                            ctx.transaction_id
-                        );
-                        None
-                    }
-                }
-                "deflate" => {
-                    use flate2::read::DeflateDecoder;
-                    use std::io::Read;
-                    let mut decoder = DeflateDecoder::new(&ctx.res_body[..]);
-                    let mut decoded = Vec::new();
-                    if decoder.read_to_end(&mut decoded).is_ok() {
-                        eprintln!(
-                            "[lifecycle] deflate decoded body for txn_id={}",
-                            ctx.transaction_id
-                        );
-                        Some(decoded)
-                    } else {
-                        eprintln!(
-                            "[lifecycle] ERROR deflate decode failed for txn_id={}",
-                            ctx.transaction_id
-                        );
-                        None
-                    }
-                }
-                _ => None,
-            }
-        } else {
-            None
-        };
-
-        if let Some(ref decoded) = decoded_body {
-            ctx.res_body = decoded.clone();
+        let decoded = body_decoder::decode_http_body(&ctx.res_headers, &ctx.res_body);
+        if decoded.metadata.content_decoded {
+            eprintln!(
+                "[lifecycle] decoded body for txn_id={} encoding={:?}",
+                ctx.transaction_id, decoded.metadata.content_encoding
+            );
         }
+        for error in decoded.metadata.errors.iter() {
+            eprintln!(
+                "[lifecycle] ERROR body decode issue for txn_id={}: {}",
+                ctx.transaction_id, error
+            );
+        }
+        ctx.res_body = decoded.decoded_body;
 
         if ctx.req_method != "CONNECT" {
             save_and_emit(&ctx, &self.app_handle);
         }
 
         Response::from_parts(parts, Body::from(body_bytes))
+    }
+}
+
+impl WebSocketHandler for AppHandler {
+    async fn handle_message(
+        &mut self,
+        _ctx: &WebSocketContext,
+        msg: Message,
+    ) -> Option<Message> {
+        println!("[websocket] message: {:?}", msg);
+        Some(msg)
     }
 }

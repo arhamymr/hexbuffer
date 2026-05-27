@@ -2,8 +2,12 @@ use std::time::{Duration, Instant};
 
 use reqwest::Client;
 
-use super::types::{SqliParam, SqliParamLocation, SqliScanConfig, SqliScanResult, SqliTechnique, SqliVulnerability, SqliSeverity, SqliExtractedDatabase, SqliExtractedTable, SqliExtractedColumn, SqliProgressEvent};
-use super::payloads::{SqliPayloads, SqliChecker};
+use super::payloads::{SqliChecker, SqliPayloads};
+use super::types::{
+    SqliExtractedColumn, SqliExtractedDatabase, SqliExtractedTable, SqliParam, SqliParamLocation,
+    SqliProgressEvent, SqliScanConfig, SqliScanResult, SqliSeverity, SqliTechnique,
+    SqliVulnerability,
+};
 
 const DEFAULT_TIMEOUT_MS: u64 = 10000;
 const TIME_BASED_THRESHOLD_MS: u64 = 3000;
@@ -27,12 +31,24 @@ impl SqliDetector {
         }
     }
 
-    pub async fn scan(&self, config: &SqliScanConfig, progress_callback: impl Fn(SqliProgressEvent)) -> SqliScanResult {
-        let start_time = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_millis() as u64;
+    pub async fn scan(
+        &self,
+        config: &SqliScanConfig,
+        progress_callback: impl Fn(SqliProgressEvent),
+    ) -> SqliScanResult {
+        let start_time = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_millis() as u64;
         let mut vulnerabilities = Vec::new();
         let mut databases = Vec::new();
 
-        progress_callback(SqliProgressEvent::update(0, config.params.len(), "Scanning parameters", "Starting scan"));
+        progress_callback(SqliProgressEvent::update(
+            0,
+            config.params.len(),
+            "Scanning parameters",
+            "Starting scan",
+        ));
 
         let (baseline_response, baseline_time) = self.send_baseline_request(config).await;
 
@@ -46,9 +62,23 @@ impl SqliDetector {
                 SqliParamLocation::Body => "body",
                 SqliParamLocation::Header => "header",
             };
-            progress_callback(SqliProgressEvent::update(param_idx + 1, config.params.len(), "Testing parameter", &format!("Testing {} ({})", param.name, location_str)));
+            progress_callback(SqliProgressEvent::update(
+                param_idx + 1,
+                config.params.len(),
+                "Testing parameter",
+                &format!("Testing {} ({})", param.name, location_str),
+            ));
 
-            if let Some(vuln) = self.test_parameter(config, param, &baseline_response, baseline_time, &progress_callback).await {
+            if let Some(vuln) = self
+                .test_parameter(
+                    config,
+                    param,
+                    &baseline_response,
+                    baseline_time,
+                    &progress_callback,
+                )
+                .await
+            {
                 vulnerabilities.push(vuln);
             }
         }
@@ -59,12 +89,18 @@ impl SqliDetector {
 
         if !vulnerabilities.is_empty() {
             let first_vuln = vulnerabilities.first().unwrap();
-            if let Some(db_list) = self.extract_databases(config, &first_vuln, &progress_callback).await {
+            if let Some(db_list) = self
+                .extract_databases(config, &first_vuln, &progress_callback)
+                .await
+            {
                 databases = db_list;
             }
         }
 
-        let end_time = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_millis() as u64;
+        let end_time = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_millis() as u64;
 
         SqliScanResult {
             scan_id: config.scan_id.clone(),
@@ -83,7 +119,11 @@ impl SqliDetector {
         (response, elapsed)
     }
 
-    async fn send_request(&self, config: &SqliScanConfig, param_value_modifier: Option<(&str, &str)>) -> String {
+    async fn send_request(
+        &self,
+        config: &SqliScanConfig,
+        param_value_modifier: Option<(&str, &str)>,
+    ) -> String {
         let mut url = config.url.clone();
         let mut body = String::new();
         let mut headers = reqwest::header::HeaderMap::new();
@@ -133,8 +173,11 @@ impl SqliDetector {
             }
         }
 
-        let method = reqwest::Method::from_bytes(config.method.as_bytes()).unwrap_or(reqwest::Method::GET);
-        let is_post_like = method == reqwest::Method::POST || method == reqwest::Method::PUT || method == reqwest::Method::PATCH;
+        let method =
+            reqwest::Method::from_bytes(config.method.as_bytes()).unwrap_or(reqwest::Method::GET);
+        let is_post_like = method == reqwest::Method::POST
+            || method == reqwest::Method::PUT
+            || method == reqwest::Method::PATCH;
 
         let mut request = self.client.request(method.clone(), &url);
         for (name, value) in headers.iter() {
@@ -160,7 +203,17 @@ impl SqliDetector {
         progress_callback: &impl Fn(SqliProgressEvent),
     ) -> Option<SqliVulnerability> {
         for technique in &config.techniques {
-            if let Some(vuln) = self.test_technique(config, param, technique, baseline_response, baseline_time, progress_callback).await {
+            if let Some(vuln) = self
+                .test_technique(
+                    config,
+                    param,
+                    technique,
+                    baseline_response,
+                    baseline_time,
+                    progress_callback,
+                )
+                .await
+            {
                 return Some(vuln);
             }
         }
@@ -177,27 +230,46 @@ impl SqliDetector {
         _progress_callback: &impl Fn(SqliProgressEvent),
     ) -> Option<SqliVulnerability> {
         match technique {
-            SqliTechnique::BooleanBlind => self.test_boolean_blind(config, param, baseline_response).await,
+            SqliTechnique::BooleanBlind => {
+                self.test_boolean_blind(config, param, baseline_response)
+                    .await
+            }
             SqliTechnique::TimeBased => self.test_time_based(config, param, baseline_time).await,
             SqliTechnique::Union => self.test_union(config, param).await,
             SqliTechnique::ErrorBased => self.test_error_based(config, param).await,
         }
     }
 
-    async fn test_boolean_blind(&self, config: &SqliScanConfig, param: &SqliParam, baseline_response: &str) -> Option<SqliVulnerability> {
-        let true_payloads = self.payloads.get_payloads(SqliTechnique::BooleanBlind, "mysql");
-        let false_payloads = self.payloads.get_payloads(SqliTechnique::BooleanBlind, "mysql");
+    async fn test_boolean_blind(
+        &self,
+        config: &SqliScanConfig,
+        param: &SqliParam,
+        baseline_response: &str,
+    ) -> Option<SqliVulnerability> {
+        let true_payloads = self
+            .payloads
+            .get_payloads(SqliTechnique::BooleanBlind, "mysql");
+        let false_payloads = self
+            .payloads
+            .get_payloads(SqliTechnique::BooleanBlind, "mysql");
 
         for (true_payload, false_payload) in true_payloads.iter().zip(false_payloads.iter()) {
             let true_value = format!("{}'", true_payload);
             let false_value = format!("{}'", false_payload);
 
-            let true_response = self.send_request(config, Some((&param.name, &true_value))).await;
-            let false_response = self.send_request(config, Some((&param.name, &false_value))).await;
+            let true_response = self
+                .send_request(config, Some((&param.name, &true_value)))
+                .await;
+            let false_response = self
+                .send_request(config, Some((&param.name, &false_value)))
+                .await;
 
-            if SqliChecker::is_boolean_true(&true_response, baseline_response) &&
-               !SqliChecker::is_boolean_true(&false_response, baseline_response) {
-                let dbms = self.fingerprint_dbms(&true_response).unwrap_or_else(|| "MySQL".to_string());
+            if SqliChecker::is_boolean_true(&true_response, baseline_response)
+                && !SqliChecker::is_boolean_true(&false_response, baseline_response)
+            {
+                let dbms = self
+                    .fingerprint_dbms(&true_response)
+                    .unwrap_or_else(|| "MySQL".to_string());
                 return Some(SqliVulnerability {
                     id: uuid::Uuid::new_v4().to_string(),
                     param_name: param.name.clone(),
@@ -214,17 +286,32 @@ impl SqliDetector {
         None
     }
 
-    async fn test_time_based(&self, config: &SqliScanConfig, param: &SqliParam, baseline_time: u64) -> Option<SqliVulnerability> {
-        let payloads = self.payloads.get_payloads(SqliTechnique::TimeBased, "mysql");
+    async fn test_time_based(
+        &self,
+        config: &SqliScanConfig,
+        param: &SqliParam,
+        baseline_time: u64,
+    ) -> Option<SqliVulnerability> {
+        let payloads = self
+            .payloads
+            .get_payloads(SqliTechnique::TimeBased, "mysql");
 
         for payload in payloads.iter().take(5) {
             let time_payload = format!("{}'", payload);
             let start = Instant::now();
-            let _response = self.send_request(config, Some((&param.name, &time_payload))).await;
+            let _response = self
+                .send_request(config, Some((&param.name, &time_payload)))
+                .await;
             let elapsed = start.elapsed().as_millis() as u64;
 
-            if SqliChecker::is_time_based_suspicious(elapsed, baseline_time, TIME_BASED_THRESHOLD_MS) {
-                let dbms = self.fingerprint_dbms(&format!("time:{}", elapsed)).unwrap_or_else(|| "MySQL".to_string());
+            if SqliChecker::is_time_based_suspicious(
+                elapsed,
+                baseline_time,
+                TIME_BASED_THRESHOLD_MS,
+            ) {
+                let dbms = self
+                    .fingerprint_dbms(&format!("time:{}", elapsed))
+                    .unwrap_or_else(|| "MySQL".to_string());
                 return Some(SqliVulnerability {
                     id: uuid::Uuid::new_v4().to_string(),
                     param_name: param.name.clone(),
@@ -233,7 +320,10 @@ impl SqliDetector {
                     dbms: dbms.clone(),
                     severity: SqliSeverity::High,
                     poc_request: format!("{}={}", param.name, urlencoding::encode(&time_payload)),
-                    fingerprint: format!("Time-based blind injection confirmed (delay: {}ms) with {}", elapsed, dbms),
+                    fingerprint: format!(
+                        "Time-based blind injection confirmed (delay: {}ms) with {}",
+                        elapsed, dbms
+                    ),
                 });
             }
         }
@@ -241,15 +331,23 @@ impl SqliDetector {
         None
     }
 
-    async fn test_union(&self, config: &SqliScanConfig, param: &SqliParam) -> Option<SqliVulnerability> {
+    async fn test_union(
+        &self,
+        config: &SqliScanConfig,
+        param: &SqliParam,
+    ) -> Option<SqliVulnerability> {
         let payloads = self.payloads.get_payloads(SqliTechnique::Union, "mysql");
 
         for payload in payloads.iter().take(8) {
             let union_value = format!("'{}", payload);
-            let response = self.send_request(config, Some((&param.name, &union_value))).await;
+            let response = self
+                .send_request(config, Some((&param.name, &union_value)))
+                .await;
 
             if SqliChecker::has_union_signature(&response) {
-                let dbms = self.fingerprint_dbms(&response).unwrap_or_else(|| "MySQL".to_string());
+                let dbms = self
+                    .fingerprint_dbms(&response)
+                    .unwrap_or_else(|| "MySQL".to_string());
                 return Some(SqliVulnerability {
                     id: uuid::Uuid::new_v4().to_string(),
                     param_name: param.name.clone(),
@@ -266,15 +364,26 @@ impl SqliDetector {
         None
     }
 
-    async fn test_error_based(&self, config: &SqliScanConfig, param: &SqliParam) -> Option<SqliVulnerability> {
-        let payloads = self.payloads.get_payloads(SqliTechnique::ErrorBased, "mysql");
+    async fn test_error_based(
+        &self,
+        config: &SqliScanConfig,
+        param: &SqliParam,
+    ) -> Option<SqliVulnerability> {
+        let payloads = self
+            .payloads
+            .get_payloads(SqliTechnique::ErrorBased, "mysql");
 
         for payload in payloads.iter().take(5) {
             let error_value = format!("'{}", payload);
-            let response = self.send_request(config, Some((&param.name, &error_value))).await;
+            let response = self
+                .send_request(config, Some((&param.name, &error_value)))
+                .await;
 
             if SqliChecker::has_error_signature(&response) {
-                let dbms = self.payloads.detect_dbms(&response).unwrap_or_else(|| "MySQL".to_string());
+                let dbms = self
+                    .payloads
+                    .detect_dbms(&response)
+                    .unwrap_or_else(|| "MySQL".to_string());
                 return Some(SqliVulnerability {
                     id: uuid::Uuid::new_v4().to_string(),
                     param_name: param.name.clone(),
@@ -295,10 +404,19 @@ impl SqliDetector {
         self.payloads.detect_dbms(response)
     }
 
-    async fn extract_databases(&self, config: &SqliScanConfig, vuln: &SqliVulnerability, _progress_callback: &impl Fn(SqliProgressEvent)) -> Option<Vec<SqliExtractedDatabase>> {
+    async fn extract_databases(
+        &self,
+        config: &SqliScanConfig,
+        vuln: &SqliVulnerability,
+        _progress_callback: &impl Fn(SqliProgressEvent),
+    ) -> Option<Vec<SqliExtractedDatabase>> {
         let _payloads = match vuln.technique {
-            SqliTechnique::Union => self.payloads.get_payloads(SqliTechnique::Union, &vuln.dbms.to_lowercase()),
-            _ => self.payloads.get_payloads(SqliTechnique::BooleanBlind, &vuln.dbms.to_lowercase()),
+            SqliTechnique::Union => self
+                .payloads
+                .get_payloads(SqliTechnique::Union, &vuln.dbms.to_lowercase()),
+            _ => self
+                .payloads
+                .get_payloads(SqliTechnique::BooleanBlind, &vuln.dbms.to_lowercase()),
         };
 
         let enum_payload = match vuln.dbms.as_str() {
@@ -309,7 +427,9 @@ impl SqliDetector {
             _ => "1' UNION SELECT database(),2,3--",
         };
 
-        let response = self.send_request(config, Some((&vuln.param_name, enum_payload))).await;
+        let response = self
+            .send_request(config, Some((&vuln.param_name, enum_payload)))
+            .await;
 
         if SqliChecker::has_union_signature(&response) {
             let mut databases = Vec::new();
@@ -317,15 +437,14 @@ impl SqliDetector {
             if vuln.dbms == "MySQL" {
                 databases.push(SqliExtractedDatabase {
                     name: "information_schema".to_string(),
-                    tables: vec![
-                        SqliExtractedTable {
-                            name: "schemata".to_string(),
-                            columns: vec![
-                                SqliExtractedColumn { name: "schema_name".to_string(), data_type: "varchar".to_string() },
-                            ],
-                            rows: vec![],
-                        },
-                    ],
+                    tables: vec![SqliExtractedTable {
+                        name: "schemata".to_string(),
+                        columns: vec![SqliExtractedColumn {
+                            name: "schema_name".to_string(),
+                            data_type: "varchar".to_string(),
+                        }],
+                        rows: vec![],
+                    }],
                 });
             }
 

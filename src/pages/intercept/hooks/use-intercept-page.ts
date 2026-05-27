@@ -6,9 +6,7 @@ import {
   forwardInterceptedRequest,
   getInterceptStatus,
   getPausedRequests,
-  openInterceptBrowser,
   setInterceptEnabled,
-  trustInterceptCa,
 } from '../api';
 import { buildRawPausedRequest } from '../lib';
 import type { InterceptStatus, PausedRequest } from '../types';
@@ -19,9 +17,6 @@ export function useInterceptPage() {
   const [selectedRequestId, setSelectedRequestId] = React.useState<string | null>(null);
   const [rawRequest, setRawRequest] = React.useState('');
   const [isBusy, setIsBusy] = React.useState(false);
-  const [isOpeningBrowser, setIsOpeningBrowser] = React.useState(false);
-  const [isInstallingCa, setIsInstallingCa] = React.useState(false);
-  const [isCaDialogOpen, setIsCaDialogOpen] = React.useState(false);
   const [isRefreshing, setIsRefreshing] = React.useState(false);
   const loadedRequestIdRef = React.useRef<string | null>(null);
 
@@ -132,50 +127,17 @@ export function useInterceptPage() {
     }
   }, [refresh, selectedRequest]);
 
-  const openBrowser = React.useCallback(async () => {
-    setIsOpeningBrowser(true);
-
-    try {
-      await openInterceptBrowser();
-      toast.success('Browser opened with proxy enabled');
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Failed to open browser.');
-    } finally {
-      setIsOpeningBrowser(false);
-    }
-  }, []);
-
-  const installCa = React.useCallback(async () => {
-    setIsInstallingCa(true);
-
-    try {
-      const message = await trustInterceptCa();
-      toast.success(message);
-      setIsCaDialogOpen(false);
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Failed to install CA certificate.');
-    } finally {
-      setIsInstallingCa(false);
-    }
-  }, []);
-
   return {
     status,
     requests,
     selectedRequestId,
     rawRequest,
     isBusy,
-    isCaDialogOpen,
-    isInstallingCa,
-    isOpeningBrowser,
     isRefreshing,
     setSelectedRequestId,
     setRawRequest,
-    setIsCaDialogOpen,
     refresh,
-    installCa,
     toggleIntercept,
-    openBrowser,
     forwardSelectedRequest,
     dropSelectedRequest,
   };

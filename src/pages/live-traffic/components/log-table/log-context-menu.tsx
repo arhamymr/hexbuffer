@@ -8,7 +8,7 @@ import {
   ContextMenuItem,
   ContextMenuSeparator,
 } from '@/components/ui/context-menu';
-import { Bot, Copy, ExternalLink, Plus, Eye, Trash2, Send, FilePlus2 } from 'lucide-react';
+import { Bot, Copy, ExternalLink, Plus, Trash2, Send, FilePlus2 } from 'lucide-react';
 import { toast } from 'sonner';
 import type { ApiCall } from '@/types';
 import { deleteHistoryLog, fetchHistoryDetail } from '@/pages/live-traffic/services/history-service';
@@ -19,6 +19,7 @@ import { adaptProxyRecordToApiCall } from '@/pages/live-traffic/hooks/use-histor
 import { useRepeaterStore } from '@/stores/repeater';
 import { buildHttpCurlCommand, buildRawHttpRequest } from '@/lib/http-message';
 import { useDocumentsStore } from '@/stores/documents';
+import { useTargetStore } from '@/stores/target';
 
 interface LogEntryContextMenuProps {
   call: ApiCall;
@@ -32,7 +33,7 @@ export function LogEntryContextMenu({
   onDelete,
 }: LogEntryContextMenuProps) {
   const navigate = useNavigate();
-  const { setSelectedCallId, triggerRefresh } = useHistoryQuery();
+  const { triggerRefresh } = useHistoryQuery();
 
   const copyToClipboard = async (text: string | null | undefined) => {
     if (text) {
@@ -68,7 +69,14 @@ export function LogEntryContextMenu({
   };
 
   const handleAddToScope = async () => {
-    console.log('Add to scope not available in dev mode');
+    const target = useTargetStore.getState().addHostTarget(call.host);
+
+    if (!target) {
+      toast.error('Host is unavailable');
+      return;
+    }
+
+    toast.success(`Added ${target.name} to targets`);
   };
 
   const handleOpenInBruteForce = async () => {
@@ -174,10 +182,6 @@ export function LogEntryContextMenu({
     }
   };
 
-  const handleInspect = () => {
-    setSelectedCallId(call.id);
-  };
-
   return (
     <ContextMenu>
       <ContextMenuTrigger asChild>
@@ -198,7 +202,7 @@ export function LogEntryContextMenu({
         </ContextMenuItem>
         <ContextMenuSeparator />
         <ContextMenuItem onClick={handleAddToScope} className='text-xs'>
-          <Plus className="mr-2 h-4 w-4" /> Add to Scope
+          <Plus className="mr-2 h-4 w-4" /> Add to Target
         </ContextMenuItem>
         <ContextMenuItem onClick={handleOpenInBruteForce} className='text-xs'>
           <ExternalLink className="mr-2 h-4 w-4" /> Open in Brute Force
@@ -211,10 +215,6 @@ export function LogEntryContextMenu({
         </ContextMenuItem>
         <ContextMenuItem onClick={handleSaveToDocuments} className='text-xs'>
           <FilePlus2 className="mr-2 h-4 w-4" /> Save to Documents
-        </ContextMenuItem>
-        <ContextMenuSeparator />
-        <ContextMenuItem onClick={handleInspect} className='text-xs'>
-          <Eye className="mr-2 h-4 w-4" /> Inspect
         </ContextMenuItem>
         <ContextMenuSeparator />
         <ContextMenuItem onClick={handleDelete} variant="destructive" className='text-xs'>

@@ -8,8 +8,9 @@ pub mod proxy;
 pub mod sqli;
 
 pub use ai::{
-    clear_ai_api_key, get_ai_settings, get_mastra_status, save_ai_settings, start_mastra,
-    start_mastra_if_enabled, stop_mastra, AiSettings, MastraProcessState, MastraStatus,
+    clear_ai_api_key, get_ai_settings, get_mastra_status, has_ai_api_key, save_ai_settings,
+    start_mastra, start_mastra_if_enabled, stop_mastra, AiSettings, MastraProcessState,
+    MastraStatus,
 };
 pub use browser::{
     browser_batch, browser_click, browser_close, browser_execute, browser_fill, browser_navigate,
@@ -23,11 +24,14 @@ pub use history::{
 pub use port_scanner::{scan_ports, stop_port_scan, PortScanState};
 pub use proxy::https::cert::export_ca_cert_pem;
 pub use proxy::state::{
-    InterceptMode, InterceptStatus, PausedRequest, ProxyFilter, ProxyRecord, ProxyRequest, ProxyResponse,
-    WebSocketConnectionRecord, WebSocketConnectionState, WebSocketFilter,
+    InterceptMode, InterceptStatus, PausedRequest, ProxyFilter, ProxyRecord, ProxyRequest,
+    ProxyResponse, WebSocketConnectionRecord, WebSocketConnectionState, WebSocketFilter,
     WebSocketMessageDirection, WebSocketMessageRecord, WebSocketMessageType,
 };
 pub use proxy::utils::ensure_port_free;
-pub use proxy::{run, ProxyConfig, ProxyState};
-pub use sqli::{start_sqli_scan, stop_sqli_scan, SqliParam, SqliParamLocation, SqliRiskLevel, SqliScanResult, SqliSeverity, SqliTechnique, SqliVulnerability};
+pub use proxy::{active_proxy_port, default_proxy_port, run, ProxyConfig, ProxyState};
 pub use sqli::types::SqliScanState;
+pub use sqli::{
+    start_sqli_scan, stop_sqli_scan, SqliParam, SqliParamLocation, SqliRiskLevel, SqliScanResult,
+    SqliSeverity, SqliTechnique, SqliVulnerability,
+};

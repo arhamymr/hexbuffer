@@ -17,7 +17,8 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '..
 import { Alert, AlertDescription, AlertTitle } from '../../components/ui/alert';
 import { BotIcon, DownloadIcon, KeyRoundIcon, PlayIcon, SaveIcon, SettingsIcon, ShieldCheckIcon, SquareIcon } from 'lucide-react';
 import {
-  AI_MODEL_OPTIONS,
+  AI_API_KEY_PLACEHOLDERS,
+  AI_MODEL_OPTIONS_BY_PROVIDER,
   AI_PROVIDER_OPTIONS,
   HOW_IT_WORKS,
   INSTALLATION_GUIDES,
@@ -42,9 +43,13 @@ export function Settings() {
     installingCa,
     mastraBusy,
     mastraStatus,
+    updateAiProvider,
     updateAiSettings,
   } = useSettingsPage();
   const SecurityNoticeIcon = SECURITY_NOTICE_ICON;
+  const selectedProvider = AI_PROVIDER_OPTIONS.find((provider) => provider.id === aiSettings.provider);
+  const selectedProviderLabel = selectedProvider?.label ?? 'AI';
+  const modelOptions = AI_MODEL_OPTIONS_BY_PROVIDER[aiSettings.provider] ?? [];
 
   return (
     <div className="h-full flex flex-col overflow-hidden">
@@ -101,7 +106,7 @@ export function Settings() {
                   <Label htmlFor="ai-provider">Provider</Label>
                   <Select
                     value={aiSettings.provider}
-                    onValueChange={(provider) => updateAiSettings({ provider })}
+                    onValueChange={updateAiProvider}
                     disabled={aiSettingsLoading}
                   >
                     <SelectTrigger id="ai-provider" className="w-full">
@@ -128,7 +133,7 @@ export function Settings() {
                       <SelectValue placeholder="Select model" />
                     </SelectTrigger>
                     <SelectContent>
-                      {AI_MODEL_OPTIONS.map((model) => (
+                      {modelOptions.map((model) => (
                         <SelectItem key={model} value={model}>
                           {model}
                         </SelectItem>
@@ -139,19 +144,19 @@ export function Settings() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="ai-api-key">OpenAI API Key</Label>
+                <Label htmlFor="ai-api-key">{selectedProviderLabel} API Key</Label>
                 <Input
                   id="ai-api-key"
                   type="password"
                   value={aiSettings.apiKey}
                   onChange={(event) => updateAiSettings({ apiKey: event.target.value })}
-                  placeholder="sk-..."
+                  placeholder={AI_API_KEY_PLACEHOLDERS[aiSettings.provider] ?? 'API key'}
                   disabled={aiSettingsLoading}
                 />
                 <p className="text-xs text-muted-foreground">
                   {aiSettings.hasApiKey
                     ? 'A key is stored in your OS keychain. Enter a new value only if you want to replace it.'
-                    : 'No key is stored yet.'}
+                    : 'No key is stored yet. Provider and model are saved locally; API keys are kept in your OS keychain.'}
                 </p>
               </div>
 

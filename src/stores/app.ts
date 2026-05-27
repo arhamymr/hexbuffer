@@ -7,11 +7,14 @@ export type ProxyStatus = 'connected' | 'disconnected' | 'starting';
 interface ProxyRuntimeStatus {
   running: boolean;
   port: number | null;
+  default_port: number;
   connections: number;
 }
 
 interface AppState {
   proxyStatus: ProxyStatus;
+  proxyPort: number | null;
+  proxyDefaultPort: number;
   setProxyStatus: (status: ProxyStatus) => void;
   startProxy: () => Promise<void>;
   checkProxyStatus: () => Promise<void>;
@@ -21,6 +24,8 @@ export const useAppStore = create<AppState>()(
   persist(
     (set) => ({
       proxyStatus: 'disconnected',
+      proxyPort: null,
+      proxyDefaultPort: 8888,
 
       setProxyStatus: (proxyStatus) => set({ proxyStatus }),
 
@@ -33,10 +38,14 @@ export const useAppStore = create<AppState>()(
           console.log('[store] invoke completed, checking status...');
           await new Promise((resolve) => window.setTimeout(resolve, 300));
           const status = await invoke<ProxyRuntimeStatus>('get_proxy_status');
-          set({ proxyStatus: status.running ? 'connected' : 'disconnected' });
+          set({
+            proxyStatus: status.running ? 'connected' : 'disconnected',
+            proxyPort: status.port,
+            proxyDefaultPort: status.default_port,
+          });
         } catch (error) {
           console.error('[store] Failed to start proxy:', error);
-          set({ proxyStatus: 'disconnected' });
+          set({ proxyStatus: 'disconnected', proxyPort: null });
         }
       },
 
@@ -44,10 +53,14 @@ export const useAppStore = create<AppState>()(
         try {
           const status = await invoke<ProxyRuntimeStatus>('get_proxy_status');
           console.log('[store] proxy status check result:', status);
-          set({ proxyStatus: status.running ? 'connected' : 'disconnected' });
+          set({
+            proxyStatus: status.running ? 'connected' : 'disconnected',
+            proxyPort: status.port,
+            proxyDefaultPort: status.default_port,
+          });
         } catch (error) {
           console.log('[store] proxy status check failed:', error);
-          set({ proxyStatus: 'disconnected' });
+          set({ proxyStatus: 'disconnected', proxyPort: null });
         }
       },
     }),
@@ -55,6 +68,8 @@ export const useAppStore = create<AppState>()(
       name: '0xbuffer-app',
       partialize: (state) => ({
         proxyStatus: state.proxyStatus,
+        proxyPort: state.proxyPort,
+        proxyDefaultPort: state.proxyDefaultPort,
       }),
     }
   )

@@ -91,11 +91,7 @@ pub fn get_browser_status(
         None
     };
 
-    Ok(BrowserStatus {
-        running,
-        url,
-        pid,
-    })
+    Ok(BrowserStatus { running, url, pid })
 }
 
 fn get_current_url_from_session(_session: &str) -> String {
@@ -171,7 +167,10 @@ pub fn browser_close(
 }
 
 #[tauri::command]
-pub fn browser_snapshot(app: AppHandle, state: State<'_, BrowserProcessState>) -> Result<BrowserSnapshot, String> {
+pub fn browser_snapshot(
+    app: AppHandle,
+    state: State<'_, BrowserProcessState>,
+) -> Result<BrowserSnapshot, String> {
     let browser_path = find_agent_browser(&app)?;
 
     let session = {
@@ -243,7 +242,13 @@ pub fn browser_fill(
     };
 
     let output = Command::new(&browser_path)
-        .args(["--session", &session, "fill", &format!("@{}", ref_id), &text])
+        .args([
+            "--session",
+            &session,
+            "fill",
+            &format!("@{}", ref_id),
+            &text,
+        ])
         .output()
         .map_err(|e| format!("Failed to fill: {}", e))?;
 
@@ -302,7 +307,13 @@ pub fn browser_type(
     };
 
     let output = Command::new(&browser_path)
-        .args(["--session", &session, "type", &format!("@{}", ref_id), &text])
+        .args([
+            "--session",
+            &session,
+            "type",
+            &format!("@{}", ref_id),
+            &text,
+        ])
         .output()
         .map_err(|e| format!("Failed to type: {}", e))?;
 

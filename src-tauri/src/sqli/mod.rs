@@ -5,12 +5,12 @@ pub mod types;
 use tauri::{AppHandle, Emitter, State};
 
 use crate::sqli::detector::SqliDetector;
-use crate::sqli::types::{SqliScanConfig, SqliProgressEvent};
+use crate::sqli::types::{SqliProgressEvent, SqliScanConfig};
 
 pub use types::{
     SqliExtractedColumn, SqliExtractedDatabase, SqliExtractedTable, SqliParam, SqliParamLocation,
-    SqliRiskLevel, SqliScanResult, SqliSeverity, SqliTechnique, SqliVulnerability,
-    SqliProgressEvent as SqliProgressEventType,
+    SqliProgressEvent as SqliProgressEventType, SqliRiskLevel, SqliScanResult, SqliSeverity,
+    SqliTechnique, SqliVulnerability,
 };
 
 #[tauri::command]
@@ -39,7 +39,10 @@ pub async fn start_sqli_scan(
 }
 
 #[tauri::command]
-pub fn stop_sqli_scan(state: State<'_, types::SqliScanState>, scan_id: String) -> Result<(), String> {
+pub fn stop_sqli_scan(
+    state: State<'_, types::SqliScanState>,
+    scan_id: String,
+) -> Result<(), String> {
     state.cancel_scan(&scan_id);
     Ok(())
 }

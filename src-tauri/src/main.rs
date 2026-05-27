@@ -4,14 +4,6 @@
 use base64::{engine::general_purpose, Engine};
 use regex::Regex;
 use serde::{Deserialize, Serialize};
-use zeroxbuffer::DocumentRecord;
-use zeroxbuffer::{
-    export_ca_cert_pem, run, start_mastra_if_enabled, AiSettings, BrowserProcessState, HistoryBridge, InterceptMode,
-    InterceptStatus, MastraProcessState, MastraStatus, PaginatedResponse, PausedRequest,
-    PortScanState, ProxyConfig, ProxyFilter, ProxyLogSummary, ProxyRecord, ProxyRequest,
-    ProxyState, SqliScanState, TreeNode, WebSocketConnectionDetail,
-    WebSocketConnectionSummary, WebSocketFilter,
-};
 use sha1::Sha1;
 use sha2::{Digest, Sha256};
 use std::collections::HashMap;
@@ -26,6 +18,14 @@ use std::time::{Duration, Instant};
 use tauri::{AppHandle, Emitter, Manager, State};
 use tokio::sync::Semaphore;
 use uuid::Uuid;
+use zeroxbuffer::DocumentRecord;
+use zeroxbuffer::{
+    active_proxy_port, default_proxy_port, export_ca_cert_pem, run, start_mastra_if_enabled,
+    AiSettings, BrowserProcessState, HistoryBridge, InterceptMode, InterceptStatus,
+    MastraProcessState, MastraStatus, PaginatedResponse, PausedRequest, PortScanState, ProxyConfig,
+    ProxyFilter, ProxyLogSummary, ProxyRecord, ProxyRequest, ProxyState, SqliScanState, TreeNode,
+    WebSocketConnectionDetail, WebSocketConnectionSummary, WebSocketFilter,
+};
 
 #[derive(Debug, Deserialize)]
 struct RepeaterRequest {
@@ -181,6 +181,7 @@ struct IntruderAttackResult {
 struct ProxyRuntimeStatus {
     running: bool,
     port: Option<u16>,
+    default_port: u16,
     connections: usize,
 }
 
@@ -1048,13 +1049,15 @@ async fn start_proxy(app: AppHandle, port: u16, tls_port: u16) -> Result<String,
 
 #[tauri::command]
 async fn get_proxy_status() -> Result<ProxyRuntimeStatus, String> {
-    let port = 8888;
+    let default_port = default_proxy_port();
+    let port = active_proxy_port().unwrap_or(default_port);
     let addr = SocketAddr::from(([127, 0, 0, 1], port));
     let running = TcpStream::connect_timeout(&addr, Duration::from_millis(200)).is_ok();
 
     Ok(ProxyRuntimeStatus {
         running,
         port: running.then_some(port),
+        default_port,
         connections: 0,
     })
 }
@@ -1188,12 +1191,15 @@ fn browser_candidates() -> Vec<PathBuf> {
         }
 
         if let Some(program_files) = std::env::var_os("PROGRAMFILES") {
-            candidates.push(PathBuf::from(program_files).join("Google/Chrome/Application/chrome.exe"));
+            candidates
+                .push(PathBuf::from(program_files).join("Google/Chrome/Application/chrome.exe"));
             candidates.push(PathBuf::from(program_files).join("Chromium/Application/chrome.exe"));
         }
 
         if let Some(program_files_x86) = std::env::var_os("PROGRAMFILES(X86)") {
-            candidates.push(PathBuf::from(program_files_x86).join("Google/Chrome/Application/chrome.exe"));
+            candidates.push(
+                PathBuf::from(program_files_x86).join("Google/Chrome/Application/chrome.exe"),
+            );
         }
 
         return candidates;
@@ -1271,12 +1277,13 @@ async fn open_intercept_browser(app: AppHandle) -> Result<(), String> {
     let ca_import_result = import_intercept_ca_to_chrome_profile(&app);
 
     let mut last_error = None;
+    let proxy_port = active_proxy_port().unwrap_or(default_proxy_port());
     let args = vec![
         format!("--user-data-dir={}", profile_dir.display()),
         "--new-window".to_string(),
         "--no-first-run".to_string(),
         "--no-default-browser-check".to_string(),
-        "--proxy-server=127.0.0.1:8888".to_string(),
+        format!("--proxy-server=127.0.0.1:{proxy_port}"),
         "about:blank".to_string(),
     ];
 
@@ -1396,7 +1403,7 @@ fn install_intercept_ca_to_macos_keychain(app: &AppHandle) -> Result<String, Str
     ];
 
     run_security(&add_args).map(|_| {
-        "AppRecon CA installed in your macOS login keychain and trusted for SSL. Restart browsers that were already open.".to_string()
+        "0xBuffer CA installed in your macOS login keychain and trusted for SSL. Restart browsers that were already open.".to_string()
     })
 }
 
@@ -1500,6 +1507,11 @@ fn get_ai_settings(app: AppHandle) -> Result<AiSettings, String> {
 #[tauri::command]
 fn save_ai_settings(app: AppHandle, settings: AiSettings) -> Result<AiSettings, String> {
     zeroxbuffer::ai::save_ai_settings(app, settings)
+}
+
+#[tauri::command]
+fn has_ai_api_key(provider: String) -> Result<bool, String> {
+    zeroxbuffer::ai::has_ai_api_key(provider)
 }
 
 #[tauri::command]
@@ -1646,6 +1658,7 @@ fn main() {
             zeroxbuffer::port_scanner::stop_port_scan,
             get_ai_settings,
             save_ai_settings,
+            has_ai_api_key,
             clear_ai_api_key,
             get_mastra_status,
             start_mastra,

@@ -231,7 +231,12 @@ impl SqliPayloads {
         }
     }
 
-    pub fn get_payloads_for_risk(&self, technique: SqliTechnique, dbms: &str, risk: SqliRiskLevel) -> Vec<&'static str> {
+    pub fn get_payloads_for_risk(
+        &self,
+        technique: SqliTechnique,
+        dbms: &str,
+        risk: SqliRiskLevel,
+    ) -> Vec<&'static str> {
         let all = self.get_payloads(technique, dbms);
         match risk {
             SqliRiskLevel::Low => all.into_iter().take(3).collect(),
@@ -243,19 +248,31 @@ impl SqliPayloads {
     pub fn detect_dbms(&self, error_response: &str) -> Option<String> {
         let lower = error_response.to_lowercase();
 
-        if lower.contains("mysql") || lower.contains("mariadb") || lower.contains("you have an error in your sql") {
+        if lower.contains("mysql")
+            || lower.contains("mariadb")
+            || lower.contains("you have an error in your sql")
+        {
             return Some("MySQL".to_string());
         }
-        if lower.contains("postgresql") || lower.contains("psqlexception") || lower.contains("pgerror") {
+        if lower.contains("postgresql")
+            || lower.contains("psqlexception")
+            || lower.contains("pgerror")
+        {
             return Some("PostgreSQL".to_string());
         }
-        if lower.contains("microsoft sql server") || lower.contains("mssql") || lower.contains("sqlserver") {
+        if lower.contains("microsoft sql server")
+            || lower.contains("mssql")
+            || lower.contains("sqlserver")
+        {
             return Some("MSSQL".to_string());
         }
         if lower.contains("oracle") || lower.contains("ora-") || lower.contains("oracle error") {
             return Some("Oracle".to_string());
         }
-        if lower.contains("sqlite") || lower.contains("sqlitelogicerror") || lower.contains("sqlite3") {
+        if lower.contains("sqlite")
+            || lower.contains("sqlitelogicerror")
+            || lower.contains("sqlite3")
+        {
             return Some("SQLite".to_string());
         }
 
@@ -276,20 +293,21 @@ impl SqliChecker {
 
     pub fn has_union_signature(response: &str) -> bool {
         let lower = response.to_lowercase();
-        lower.contains("union") ||
-        lower.contains("select") ||
-        lower.contains("null") ||
-        response.contains("1=1") ||
-        response.contains("2=2")
+        lower.contains("union")
+            || lower.contains("select")
+            || lower.contains("null")
+            || response.contains("1=1")
+            || response.contains("2=2")
     }
 
     pub fn has_error_signature(response: &str) -> bool {
         let lower = response.to_lowercase();
-        lower.contains("sql") && (lower.contains("error") || lower.contains("exception") || lower.contains("syntax")) ||
-        lower.contains("ora-") ||
-        lower.contains("mysql") ||
-        lower.contains("postgresql") ||
-        lower.contains("sqlite3") ||
-        lower.contains("warning") && lower.contains("mysql")
+        lower.contains("sql")
+            && (lower.contains("error") || lower.contains("exception") || lower.contains("syntax"))
+            || lower.contains("ora-")
+            || lower.contains("mysql")
+            || lower.contains("postgresql")
+            || lower.contains("sqlite3")
+            || lower.contains("warning") && lower.contains("mysql")
     }
 }

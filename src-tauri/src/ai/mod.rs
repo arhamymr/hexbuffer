@@ -8,6 +8,7 @@ use tauri::{AppHandle, Manager, State};
 
 const KEYRING_SERVICE: &str = "seven_project";
 const KEYRING_OPENAI_ACCOUNT: &str = "openai-api-key";
+const KEYRING_DEEPSEEK_ACCOUNT: &str = "deepseek-api-key";
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -57,10 +58,10 @@ pub fn get_ai_settings(app: AppHandle) -> Result<AiSettings, String> {
 pub fn save_ai_settings(app: AppHandle, settings: AiSettings) -> Result<AiSettings, String> {
     let mut settings = settings;
     if !settings.api_key.trim().is_empty() {
-        write_api_key(settings.api_key.trim())?;
+        write_api_key(&settings.provider, settings.api_key.trim())?;
         settings.has_api_key = true;
     } else {
-        settings.has_api_key = read_api_key().is_ok_and(|key| !key.is_empty());
+        settings.has_api_key = read_api_key(&settings.provider).is_ok_and(|key| !key.is_empty());
     }
 
     settings.api_key.clear();
@@ -69,9 +70,14 @@ pub fn save_ai_settings(app: AppHandle, settings: AiSettings) -> Result<AiSettin
 }
 
 #[tauri::command]
+pub fn has_ai_api_key(provider: String) -> Result<bool, String> {
+    Ok(read_api_key(&provider).is_ok_and(|key| !key.is_empty()))
+}
+
+#[tauri::command]
 pub fn clear_ai_api_key(app: AppHandle) -> Result<AiSettings, String> {
-    delete_api_key()?;
     let mut settings = read_ai_settings(&app)?;
+    delete_api_key(&settings.provider)?;
     settings.api_key.clear();
     settings.has_api_key = false;
     write_ai_settings(&app, &settings)?;
@@ -135,7 +141,7 @@ fn read_ai_settings(app: &AppHandle) -> Result<AiSettings, String> {
     };
 
     settings.api_key.clear();
-    settings.has_api_key = read_api_key().is_ok_and(|key| !key.is_empty());
+    settings.has_api_key = read_api_key(&settings.provider).is_ok_and(|key| !key.is_empty());
     Ok(settings)
 }
 
@@ -223,15 +229,22 @@ fn start_mastra_process(
     let mut command = Command::new(npm);
     command
         .args(["run", "dev"])
-        .current_dir(mastra_dir)
+        .current_dir(&mastra_dir)
         .stdout(Stdio::null())
         .stderr(Stdio::null());
 
-    if let Ok(api_key) = read_api_key() {
+    for (name, value) in read_mastra_env_file(app, &mastra_dir)? {
+        command.env(name, value);
+    }
+
+    if let Ok(api_key) = read_api_key(&settings.provider) {
         if !api_key.trim().is_empty() {
-            command.env("OPENAI_API_KEY", api_key.trim());
+            command.env(api_key_env_name(&settings.provider)?, api_key.trim());
         }
     }
+
+    command.env("APPRECON_AI_PROVIDER", settings.provider.trim());
+    command.env("APPRECON_AI_MODEL", settings.model.trim());
 
     let process = command
         .spawn()
@@ -286,24 +299,97 @@ fn find_mastra_dir(app: &AppHandle) -> Result<PathBuf, String> {
         })
 }
 
-fn keyring_entry() -> Result<keyring::Entry, String> {
-    keyring::Entry::new(KEYRING_SERVICE, KEYRING_OPENAI_ACCOUNT).map_err(|error| error.to_string())
+fn read_mastra_env_file(
+    app: &AppHandle,
+    mastra_dir: &std::path::Path,
+) -> Result<Vec<(String, String)>, String> {
+    let mut candidates = Vec::new();
+
+    if let Ok(current_dir) = std::env::current_dir() {
+        candidates.push(current_dir.join(".env.mastra.local"));
+    }
+
+    if let Some(workspace_dir) = mastra_dir.parent() {
+        candidates.push(workspace_dir.join(".env.mastra.local"));
+    }
+
+    if let Ok(resource_dir) = app.path().resource_dir() {
+        candidates.push(resource_dir.join(".env.mastra.local"));
+    }
+
+    let Some(path) = candidates.into_iter().find(|candidate| candidate.exists()) else {
+        return Ok(Vec::new());
+    };
+
+    let content = std::fs::read_to_string(&path)
+        .map_err(|error| format!("Failed to read {}: {}", path.display(), error))?;
+
+    Ok(content.lines().filter_map(parse_env_line).collect())
 }
 
-fn read_api_key() -> Result<String, String> {
-    keyring_entry()?
+fn parse_env_line(line: &str) -> Option<(String, String)> {
+    let line = line.trim();
+    if line.is_empty() || line.starts_with('#') {
+        return None;
+    }
+
+    let (name, value) = line.split_once('=')?;
+    let name = name.trim();
+    if name.is_empty() {
+        return None;
+    }
+
+    Some((name.to_string(), trim_env_value(value)))
+}
+
+fn trim_env_value(value: &str) -> String {
+    let value = value.trim();
+    if value.len() >= 2 {
+        let first = value.as_bytes()[0];
+        let last = value.as_bytes()[value.len() - 1];
+        if (first == b'"' && last == b'"') || (first == b'\'' && last == b'\'') {
+            return value[1..value.len() - 1].to_string();
+        }
+    }
+
+    value.to_string()
+}
+
+fn provider_keyring_account(provider: &str) -> Result<&'static str, String> {
+    match provider {
+        "openai" => Ok(KEYRING_OPENAI_ACCOUNT),
+        "deepseek" => Ok(KEYRING_DEEPSEEK_ACCOUNT),
+        _ => Err(format!("Unsupported AI provider: {}", provider)),
+    }
+}
+
+fn api_key_env_name(provider: &str) -> Result<&'static str, String> {
+    match provider {
+        "openai" => Ok("OPENAI_API_KEY"),
+        "deepseek" => Ok("DEEPSEEK_API_KEY"),
+        _ => Err(format!("Unsupported AI provider: {}", provider)),
+    }
+}
+
+fn keyring_entry(provider: &str) -> Result<keyring::Entry, String> {
+    keyring::Entry::new(KEYRING_SERVICE, provider_keyring_account(provider)?)
+        .map_err(|error| error.to_string())
+}
+
+fn read_api_key(provider: &str) -> Result<String, String> {
+    keyring_entry(provider)?
         .get_password()
         .map_err(|error| error.to_string())
 }
 
-fn write_api_key(api_key: &str) -> Result<(), String> {
-    keyring_entry()?
+fn write_api_key(provider: &str, api_key: &str) -> Result<(), String> {
+    keyring_entry(provider)?
         .set_password(api_key)
         .map_err(|error| error.to_string())
 }
 
-fn delete_api_key() -> Result<(), String> {
-    match keyring_entry()?.delete_credential() {
+fn delete_api_key(provider: &str) -> Result<(), String> {
+    match keyring_entry(provider)?.delete_credential() {
         Ok(()) => Ok(()),
         Err(keyring::Error::NoEntry) => Ok(()),
         Err(error) => Err(error.to_string()),

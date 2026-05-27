@@ -142,11 +142,23 @@ export const SECURITY_NOTICE_ICON = AlertTriangleIcon;
 
 export const AI_PROVIDER_OPTIONS = [
   { id: 'openai', label: 'OpenAI' },
+  { id: 'deepseek', label: 'DeepSeek' },
 ];
 
-export const AI_MODEL_OPTIONS = [
-  'gpt-4.1-mini',
-  'gpt-4.1',
-  'gpt-5-mini',
-  'gpt-5.2',
-];
+export const AI_MODEL_OPTIONS_BY_PROVIDER: Record<string, string[]> = {
+  openai: [
+    'gpt-4.1-mini',
+    'gpt-4.1',
+    'gpt-5-mini',
+    'gpt-5.2',
+  ],
+  deepseek: [
+    'deepseek-v4-flash',
+    'deepseek-v4-pro',
+  ],
+};
+
+export const AI_API_KEY_PLACEHOLDERS: Record<string, string> = {
+  openai: 'sk-...',
+  deepseek: 'sk-...',
+};

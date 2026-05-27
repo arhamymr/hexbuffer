@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
-use std::sync::{Arc, Mutex};
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Arc, Mutex};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SqliScanConfig {
@@ -182,7 +182,10 @@ impl SqliScanState {
 
     pub fn is_cancelled(&self, scan_id: &str) -> bool {
         let cancellations = self.cancellations.lock().unwrap();
-        cancellations.get(scan_id).map(|f| f.load(Ordering::SeqCst)).unwrap_or(false)
+        cancellations
+            .get(scan_id)
+            .map(|f| f.load(Ordering::SeqCst))
+            .unwrap_or(false)
     }
 
     pub fn unregister_scan(&self, scan_id: &str) {

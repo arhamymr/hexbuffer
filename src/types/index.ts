@@ -11,6 +11,7 @@ export interface Target {
 export interface ProxyStatus {
   running: boolean;
   port: number | null;
+  default_port: number;
   connections: number;
 }
 

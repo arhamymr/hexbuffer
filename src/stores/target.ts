@@ -7,6 +7,7 @@ interface TargetState {
   isLoading: boolean;
   error: string | null;
   addTarget: (target: Target) => void;
+  addHostTarget: (host: string) => Target | null;
   removeTarget: (targetId: string) => void;
   updateTarget: (targetId: string, updates: Partial<Target>) => void;
   getTarget: (targetId: string) => Target | undefined;
@@ -16,6 +17,32 @@ interface TargetState {
 
 }
 
+function createTargetId() {
+  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
+    return crypto.randomUUID();
+  }
+
+  return `target-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
+function normalizeHostScope(host: string) {
+  const trimmedHost = host.trim();
+
+  if (!trimmedHost) {
+    return '';
+  }
+
+  try {
+    return new URL(trimmedHost).host.toLowerCase();
+  } catch {
+    return trimmedHost
+      .replace(/^https?:\/\//i, '')
+      .split('/')[0]
+      .replace(/\.$/, '')
+      .toLowerCase();
+  }
+}
+
 export const useTargetStore = create<TargetState>()(
   persist(
     (set, get) => ({
@@ -23,6 +50,36 @@ export const useTargetStore = create<TargetState>()(
       isLoading: false,
       error: null,
       addTarget: (target) => set({ targets: [...get().targets, target] }),
+      addHostTarget: (host) => {
+        const normalizedHost = normalizeHostScope(host);
+
+        if (!normalizedHost) {
+          return null;
+        }
+
+        const existingTarget = get().targets.find((target) =>
+          target.scope.some((pattern) => normalizeHostScope(pattern) === normalizedHost)
+        );
+
+        if (existingTarget) {
+          get().updateTarget(existingTarget.id, { tabActive: true });
+          return { ...existingTarget, tabActive: true };
+        }
+
+        const now = new Date().toISOString();
+        const target: Target = {
+          id: createTargetId(),
+          name: normalizedHost,
+          description: '',
+          scope: [normalizedHost],
+          createdAt: now,
+          updatedAt: now,
+          tabActive: true,
+        };
+
+        set({ targets: [...get().targets, target] });
+        return target;
+      },
       removeTarget: (targetId) => set({ targets: get().targets.filter((t) => t.id !== targetId) }),
       updateTarget: (targetId, updates) => {
         const targets = get().targets.map((t) =>

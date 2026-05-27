@@ -3,6 +3,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { save } from '@tauri-apps/plugin-dialog';
 import { toast } from 'sonner';
 import { getCaCert, saveCaCert, trustInterceptCa } from '@/pages/live-traffic/api';
+import { AI_MODEL_OPTIONS_BY_PROVIDER } from '../constants';
 
 export interface AiSettings {
   provider: string;
@@ -110,6 +111,35 @@ export function useSettingsPage() {
     }
   }, []);
 
+  const loadAiApiKeyStatus = React.useCallback(async (provider: string) => {
+    try {
+      return await invoke<boolean>('has_ai_api_key', { provider });
+    } catch (error) {
+      console.error('Failed to load AI API key status:', error);
+      return false;
+    }
+  }, []);
+
+  const updateAiProvider = React.useCallback((provider: string) => {
+    const models = AI_MODEL_OPTIONS_BY_PROVIDER[provider] ?? [];
+
+    setAiSettings((current) => ({
+      ...current,
+      provider,
+      model: models[0] ?? '',
+      apiKey: '',
+      hasApiKey: false,
+    }));
+
+    void loadAiApiKeyStatus(provider).then((hasApiKey) => {
+      setAiSettings((current) => (
+        current.provider === provider
+          ? { ...current, hasApiKey }
+          : current
+      ));
+    });
+  }, [loadAiApiKeyStatus]);
+
   const updateAiSettings = React.useCallback((updates: Partial<AiSettings>) => {
     setAiSettings((current) => ({ ...current, ...updates }));
   }, []);
@@ -215,6 +245,7 @@ export function useSettingsPage() {
     mastraBusy,
     mastraStatus,
     refreshMastraStatus,
+    updateAiProvider,
     updateAiSettings,
   };
 }

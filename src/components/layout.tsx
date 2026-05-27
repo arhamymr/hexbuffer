@@ -3,8 +3,8 @@
 import * as React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { getCurrentWindow } from '@tauri-apps/api/window';
-import { Crosshair, Settings, Moon, Sun, ArrowUpDown, RefreshCw, Wrench, Bot, FileText, MessageSquare, PauseCircle, Globe, GripHorizontal, Minus, Square, X } from 'lucide-react';
-import { useTheme } from './theme-provider';
+import { Crosshair, ArrowUpDown, RefreshCw, Wrench, Bot, FileText, PauseCircle, Globe, GripHorizontal, Loader2, Minus, Square, X } from 'lucide-react';
+import { toast } from 'sonner';
 import { Button } from './ui/button';
 
 import { AppFooter } from './footer';
@@ -12,7 +12,8 @@ import { DashboardComposer } from '@/pages/ai-chat/components/composer';
 import { DashboardThread } from '@/pages/ai-chat/components/thread';
 import { useDashboardPage } from '@/pages/ai-chat/hooks/use-dashboard-page';
 import { cn } from '@/lib/utils';
-import { Badge } from './ui/badge';
+import { openInterceptBrowser } from '@/pages/intercept/api';
+import { useAppStore } from '@/stores/app';
 
 const mainNavItems = [
   { label: 'Live Traffic', icon: ArrowUpDown, href: '/' },
@@ -25,20 +26,23 @@ const mainNavItems = [
   { label: 'Tools', icon: Wrench, href: '/tools' },
 ];
 
-interface TopNavProps {
-  isAssistantOpen: boolean;
-  onToggleAssistant: () => void;
-}
-
-export function TopNav({ isAssistantOpen, onToggleAssistant }: TopNavProps) {
+export function TopNav() {
   const location = useLocation();
   const pathname = location.pathname;
-  const { theme, toggleTheme } = useTheme();
   const appWindow = React.useMemo(() => getCurrentWindow(), []);
   const navRef = React.useRef<HTMLElement>(null);
   const [canScrollLeft, setCanScrollLeft] = React.useState(false);
   const [canScrollRight, setCanScrollRight] = React.useState(false);
   const [isDraggingWindow, setIsDraggingWindow] = React.useState(false);
+  const [isOpeningBrowser, setIsOpeningBrowser] = React.useState(false);
+  const proxyPort = useAppStore((state) => state.proxyPort);
+  const proxyDefaultPort = useAppStore((state) => state.proxyDefaultPort);
+  const checkProxyStatus = useAppStore((state) => state.checkProxyStatus);
+  const activeProxyPort = proxyPort ?? proxyDefaultPort;
+  const isDefaultPortChanged = proxyPort !== null && proxyPort !== proxyDefaultPort;
+  const openBrowserTitle = isDefaultPortChanged
+    ? `Open browser through proxy on 127.0.0.1:${activeProxyPort}. Default port changed from ${proxyDefaultPort}.`
+    : `Open browser through proxy on 127.0.0.1:${activeProxyPort}`;
 
   React.useEffect(() => {
     const minimizeButton = document.getElementById('titlebar-minimize');
@@ -85,6 +89,26 @@ export function TopNav({ isAssistantOpen, onToggleAssistant }: TopNavProps) {
       resizeObserver.disconnect();
     };
   }, []);
+
+  const openBrowser = React.useCallback(async () => {
+    setIsOpeningBrowser(true);
+
+    try {
+      await checkProxyStatus();
+      await openInterceptBrowser();
+      const { proxyPort, proxyDefaultPort } = useAppStore.getState();
+      const activeProxyPort = proxyPort ?? proxyDefaultPort;
+      const portChangedMessage = proxyPort !== null && proxyPort !== proxyDefaultPort
+        ? ` Default port changed from ${proxyDefaultPort}.`
+        : '';
+
+      toast.success(`Browser opened with proxy 127.0.0.1:${activeProxyPort}.${portChangedMessage}`);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to open browser.');
+    } finally {
+      setIsOpeningBrowser(false);
+    }
+  }, [checkProxyStatus]);
 
   return (
     <header data-tauri-drag-region className="title-bar border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
@@ -159,33 +183,20 @@ export function TopNav({ isAssistantOpen, onToggleAssistant }: TopNavProps) {
 
         <div className="flex shrink-0 items-center gap-1">
           <Button
-            variant="ghost"
+            variant="outline"
             size="xs"
-            className="h-8 w-8 p-0"
-            onClick={toggleTheme}
-            title={theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
+            className="h-6 p-0"
+            onClick={openBrowser}
+            disabled={isOpeningBrowser}
+            title={openBrowserTitle}
           >
-            {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+            {isOpeningBrowser ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Globe className="h-4 w-4" />
+            )}
+            OPEN BROWSER
           </Button>
-          <Button
-            variant="ghost"
-            size="xs"
-            className={cn('h-8 w-8 p-0', isAssistantOpen && 'bg-muted text-foreground')}
-            onClick={onToggleAssistant}
-            title={isAssistantOpen ? 'Hide Chat' : 'Show Chat'}
-          >
-            <MessageSquare className="h-4 w-4" />
-          </Button>
-          <Link to="/settings">
-            <Button
-              variant="ghost"
-              size="xs"
-              className="h-8 w-8 p-0"
-              title="Settings"
-            >
-              <Settings className="h-4 w-4" />
-            </Button>
-          </Link>
           <div className="ml-1 flex items-center border-l pl-1">
             <Button
               id="titlebar-minimize"
@@ -301,17 +312,17 @@ export function AppLayout({ children }: { children?: React.ReactNode }) {
         isWindowMaximized ? 'rounded-none border-0 shadow-none' : 'rounded-md border shadow-2xl',
       )}
     >
-      <TopNav
-        isAssistantOpen={isAssistantOpen}
-        onToggleAssistant={() => setIsAssistantOpen((current) => !current)}
-      />
+      <TopNav />
       <main className="relative flex min-h-0 flex-1 overflow-hidden p-2">
         <section className={cn('min-w-0 flex-1 overflow-hidden', isAssistantOpen && 'lg:pr-2')}>
           {children}
         </section>
         {isAssistantOpen && <AIAssistantPane />}
       </main>
-      <AppFooter />
+      <AppFooter
+        isAssistantOpen={isAssistantOpen}
+        onToggleAssistant={() => setIsAssistantOpen((current) => !current)}
+      />
     </div>
   );
 }

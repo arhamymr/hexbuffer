@@ -15,7 +15,7 @@ pub struct CaCerts {
 fn get_ca_dir() -> PathBuf {
     std::env::current_dir()
         .unwrap_or_else(|_| PathBuf::from("."))
-        .join(".seven_project")
+        .join(".0xbuffer")
 }
 
 fn get_ca_cert_path() -> PathBuf {

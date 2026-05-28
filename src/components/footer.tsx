@@ -43,7 +43,7 @@ export function AppFooter({ isAssistantOpen, onToggleAssistant }: AppFooterProps
   return (
     <footer className="border-t px-4 py-1.5 flex items-center justify-between text-xs text-muted-foreground">
       <div className="flex items-center gap-4">
-        <span>© {new Date().getFullYear()} | Apprecon Version 0.1</span>
+        <span>© {new Date().getFullYear()} | 0xbuffer Version 0.1</span>
         <div className="flex items-center gap-2" title={proxyTitle}>
           <span
             className={`h-2 w-2 rounded-full ${

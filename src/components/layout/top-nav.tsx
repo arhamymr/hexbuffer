@@ -3,31 +3,15 @@
 import * as React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { getCurrentWindow } from '@tauri-apps/api/window';
-import { Crosshair, ArrowUpDown, RefreshCw, Wrench, Bot, FileText, PauseCircle, Globe, GripHorizontal, Loader2, Minus, Square, X, Network, Maximize2 } from 'lucide-react';
+import { Globe, GripHorizontal, Loader2, Maximize2, Minimize2, Minus, X } from 'lucide-react';
 import { toast } from 'sonner';
-import { Button } from './ui/button';
-
-import { AppFooter } from './footer';
-import { DashboardComposer } from '@/pages/ai-chat/components/composer';
-import { DashboardThread } from '@/pages/ai-chat/components/thread';
-import { useDashboardPage } from '@/pages/ai-chat/hooks/use-dashboard-page';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { openInterceptBrowser } from '@/pages/intercept/api';
 import { useAppStore } from '@/stores/app';
+import { mainNavItems } from './constants';
 
-const mainNavItems = [
-  { label: 'Live Traffic', icon: ArrowUpDown, href: '/' },
-  { label: 'Packets', icon: Network, href: '/packet-capture' },
-  { label: 'Intercept', icon: PauseCircle, href: '/intercept' },
-  { label: 'Brute Force', icon: Crosshair, href: '/brute-force' },
-  { label: 'Repeater', icon: RefreshCw, href: '/repeater' },
-  { label: 'Browser', icon: Globe, href: '/browser-automation' },
-  { label: 'Documents', icon: FileText, href: '/documents' },
-  { label: 'AI Tools', icon: Bot, href: '/ai-tools' },
-  { label: 'Tools', icon: Wrench, href: '/tools' },
-];
-
-export function TopNav({ isWindowMaximized }: { isWindowMaximized: boolean }) {
+export function TopNav({ isFullscreen, onToggleFullscreen }: { isFullscreen: boolean; onToggleFullscreen: () => void }) {
   const location = useLocation();
   const pathname = location.pathname;
   const appWindow = React.useMemo(() => getCurrentWindow(), []);
@@ -51,7 +35,7 @@ export function TopNav({ isWindowMaximized }: { isWindowMaximized: boolean }) {
     const maximizeButton = document.getElementById('titlebar-maximize');
     const closeButton = document.getElementById('titlebar-close');
     const minimize = () => appWindow.minimize();
-    const maximize = () => appWindow.toggleMaximize();
+    const maximize = () => onToggleFullscreen();
     const close = () => appWindow.close();
 
     minimizeButton?.addEventListener('click', minimize);
@@ -63,7 +47,7 @@ export function TopNav({ isWindowMaximized }: { isWindowMaximized: boolean }) {
       maximizeButton?.removeEventListener('click', maximize);
       closeButton?.removeEventListener('click', close);
     };
-  }, [appWindow]);
+  }, [appWindow, onToggleFullscreen]);
 
   React.useEffect(() => {
     const nav = navRef.current;
@@ -223,9 +207,9 @@ export function TopNav({ isWindowMaximized }: { isWindowMaximized: boolean }) {
               variant="ghost"
               size="xs"
               className="h-8 w-8 p-0"
-              title={isWindowMaximized ? 'Restore' : 'Maximize'}
+              title={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
             >
-              {isWindowMaximized ? <Square className="size-3.5" /> : <Maximize2 className="size-3.5" />}
+              {isFullscreen ? <Minimize2 className="size-3.5" /> : <Maximize2 className="size-3.5" />}
             </Button>
             <Button
               id="titlebar-close"
@@ -240,102 +224,5 @@ export function TopNav({ isWindowMaximized }: { isWindowMaximized: boolean }) {
         </div>
       </div>
     </header>
-  );
-}
-
-function AIAssistantPane() {
-  const {
-    framework,
-    handleAnalyze,
-    isAnalyzing,
-    libraryTargets,
-    messages,
-    model,
-    prompt,
-    selectedTarget,
-    selectedTargetId,
-    setFramework,
-    setModel,
-    setPrompt,
-    setSelectedTargetId,
-    usingDummyData,
-  } = useDashboardPage();
-
-  return (
-    <aside className="absolute inset-2 z-40 flex min-h-0 flex-col overflow-hidden rounded-md border bg-background p-2 shadow-lg lg:static lg:z-auto lg:h-full lg:w-[clamp(320px,30vw,460px)] lg:shrink-0 lg:rounded-none lg:border-y-0 lg:border-r-0 lg:pl-2 lg:shadow-none">
-      <DashboardThread
-        libraryCount={libraryTargets.length}
-        messages={messages}
-        selectedTarget={selectedTarget}
-        usingDummyData={usingDummyData}
-      />
-      <DashboardComposer
-        framework={framework}
-        isAnalyzing={isAnalyzing}
-        libraryTargets={libraryTargets}
-        model={model}
-        onAnalyze={handleAnalyze}
-        prompt={prompt}
-        selectedTarget={selectedTarget}
-        selectedTargetId={selectedTargetId}
-        setFramework={setFramework}
-        setModel={setModel}
-        setPrompt={setPrompt}
-        setSelectedTargetId={setSelectedTargetId}
-      />
-    </aside>
-  );
-}
-
-export function AppLayout({ children }: { children?: React.ReactNode }) {
-  const [isAssistantOpen, setIsAssistantOpen] = React.useState(false);
-  const appWindow = React.useMemo(() => getCurrentWindow(), []);
-  const [isWindowMaximized, setIsWindowMaximized] = React.useState(false);
-
-  React.useEffect(() => {
-    let isMounted = true;
-    let unlistenResize: (() => void) | undefined;
-
-    const updateMaximizedState = async () => {
-      const maximized = await appWindow.isMaximized();
-
-      if (isMounted) {
-        setIsWindowMaximized(maximized);
-      }
-    };
-
-    const setupListener = async () => {
-      updateMaximizedState();
-      const unlisten = await appWindow.onResized(updateMaximizedState);
-      unlistenResize = unlisten;
-    };
-
-    setupListener();
-
-    return () => {
-      isMounted = false;
-      unlistenResize?.();
-    };
-  }, [appWindow]);
-
-  return (
-    <div
-      className={cn(
-        'h-screen overflow-hidden bg-background flex flex-col',
-        isWindowMaximized ? 'rounded-none border-0 shadow-none' : 'rounded-md border shadow-2xl',
-      )}
-    >
-      <TopNav isWindowMaximized={isWindowMaximized} />
-      <main className="relative flex min-h-0 flex-1 overflow-hidden p-2">
-        <section className={cn('min-w-0 flex-1 overflow-hidden', isAssistantOpen && 'lg:pr-2')}>
-          {children}
-        </section>
-        {isAssistantOpen && <AIAssistantPane />}
-      </main>
-      <AppFooter
-        isAssistantOpen={isAssistantOpen}
-        onToggleAssistant={() => setIsAssistantOpen((current) => !current)}
-      />
-    </div>
   );
 }

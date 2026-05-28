@@ -22,6 +22,7 @@ import { useHistoryQuery } from '@/pages/live-traffic/hooks/use-history-query';
 import type { HistoryMode } from '@/pages/live-traffic/hooks/use-http-history-page';
 import { TargetSelectorDialog } from '../target-selector';
 import type { ProxyStatus } from '@/stores/app';
+import { cn } from '@/lib/utils';
 
 interface LogFiltersProps {
   filter?: HistoryFilterState;
@@ -96,7 +97,7 @@ export function LogFilters({
           className="flex-1 h-8 shadow-none"
         />
         {hasActiveFilters && (
-          <Button variant="ghost" size="xs" onClick={clearFilters}>
+          <Button variant="destructive" size="xs" onClick={clearFilters}>
             <X className="h-4 w-4 mr-1" />
             Clear
           </Button>
@@ -120,7 +121,7 @@ export function LogFilters({
         <TargetSelectorDialog />
           {onStartProxy && (
           <Button
-            variant={proxyStatus === 'connected' ? 'secondary' : 'default'}
+            variant={proxyStatus === 'connected' ? 'default' : 'destructive'}
             size="xs"
             onClick={handleProxyToggle}
             disabled={!canToggleProxy}
@@ -129,7 +130,9 @@ export function LogFilters({
                 ? `Proxy listener 127.0.0.1:${activeProxyPort}`
                 : 'Start proxy listener'
             }
-            className="h-7"
+            className={cn(
+              proxyStatus === 'connected' && 'text-background bg-yellow-500',
+              "h-7")}
           >
             {proxyStatus === 'starting' ? (
               <Loader2 className="h-4 w-4 animate-spin" />

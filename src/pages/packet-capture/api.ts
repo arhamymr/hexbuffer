@@ -41,6 +41,27 @@ export interface PacketCaptureErrorEvent {
   message: string;
 }
 
+export interface PaginatedResponse<T> {
+  data: T[];
+  total: number;
+  page: number;
+  perPage: number;
+  hasMore: boolean;
+}
+
+export interface PacketSummary {
+  id: string;
+  packetNumber: number;
+  timestamp: number;
+  sourceIp: string;
+  destinationIp: string;
+  protocol: string;
+  sourcePort?: number | null;
+  destinationPort?: number | null;
+  packetLength: number;
+  info: string;
+}
+
 function assertTauri() {
   if (typeof window !== 'undefined' && !window.__TAURI_INTERNALS__) {
     throw new Error('Packet capture requires the Tauri desktop app. Start with `pnpm tauri`.');
@@ -70,4 +91,17 @@ export async function stopPacketCapture() {
 export async function preparePacketCapturePermissions() {
   assertTauri();
   return invoke<string>('prepare_packet_capture_permissions');
+}
+
+export async function getPacketsPaginated(
+  captureId: string,
+  page: number,
+  perPage: number,
+): Promise<PaginatedResponse<PacketSummary>> {
+  assertTauri();
+  return invoke<PaginatedResponse<PacketSummary>>('get_packets_paginated', {
+    captureId,
+    page,
+    perPage,
+  });
 }

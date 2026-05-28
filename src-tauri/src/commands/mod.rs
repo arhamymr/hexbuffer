@@ -2,5 +2,6 @@ pub mod cert;
 pub mod history;
 pub mod intercept;
 pub mod intruder;
+pub mod packet_capture;
 pub mod proxy;
 pub mod repeater;

@@ -21,16 +21,18 @@ pub use browser::{
 };
 pub use db::repository::{Database, DocumentRecord, PaginatedResponse, TreeNode, TreePath};
 pub use history::{
-    HistoryBridge, ProxyLogSummary, WebSocketConnectionDetail, WebSocketConnectionSummary,
+    HistoryBridge, ProxyLogSummary, StoredPacketSummary, WebSocketConnectionDetail,
+    WebSocketConnectionSummary,
 };
-pub use packet_capture::commands::{
-    configure_capture_network, get_packet_capture_status, list_capture_interfaces,
-    prepare_packet_capture_permissions, start_packet_capture, stop_packet_capture,
-};
-pub use packet_capture::types::{
+pub use packet_capture::{
     CaptureInterface, CapturedPacketEvent, NetworkCaptureConfig, PacketCaptureRecord,
     PacketCaptureState, PacketCaptureStatus, PacketCaptureErrorEvent, PacketConnectionRecord,
     StoredPacketRecord,
+};
+pub use commands::packet_capture::{
+    configure_capture_network, get_packet_capture_status, get_packets_paginated,
+    list_capture_interfaces, prepare_packet_capture_permissions, start_packet_capture,
+    stop_packet_capture,
 };
 pub use port_scanner::{scan_ports, stop_port_scan, PortScanState};
 pub use proxy::https::cert::export_ca_cert_pem;

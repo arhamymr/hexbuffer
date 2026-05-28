@@ -2,8 +2,10 @@ import * as React from 'react';
 import { listen } from '@tauri-apps/api/event';
 import { toast } from 'sonner';
 import { EMPTY_FILTERS, EMPTY_NETWORK_CONFIG, NETWORK_INTERFACES, SAMPLE_PACKETS } from '../constants';
+import { usePacketCaptureStore } from '@/stores/packet-capture';
 import {
   configureCaptureNetwork,
+  getPacketsPaginated,
   listCaptureInterfaces,
   preparePacketCapturePermissions,
   startPacketCapture,
@@ -32,11 +34,14 @@ import type {
 } from '../types';
 
 export function usePacketCapturePage() {
+  const { savedNetworkConfig, setSavedNetworkConfig } = usePacketCaptureStore();
   const [captureInterfaces, setCaptureInterfaces] = React.useState<CaptureInterfaceOption[]>(NETWORK_INTERFACES);
   const [isLoadingInterfaces, setIsLoadingInterfaces] = React.useState(false);
   const [selectedInterface, setSelectedInterface] = React.useState(NETWORK_INTERFACES[0].id);
   const [networkConfigured, setNetworkConfigured] = React.useState(false);
-  const [networkConfig, setNetworkConfig] = React.useState<NetworkCaptureConfig>(EMPTY_NETWORK_CONFIG);
+  const [networkConfig, setNetworkConfig] = React.useState<NetworkCaptureConfig>(
+    savedNetworkConfig ?? EMPTY_NETWORK_CONFIG
+  );
   const [captureStatus, setCaptureStatus] = React.useState<CaptureStatus>('idle');
   const [packets, setPackets] = React.useState<Packet[]>(SAMPLE_PACKETS);
   const [selectedPacketId, setSelectedPacketId] = React.useState(SAMPLE_PACKETS[1]?.id ?? SAMPLE_PACKETS[0]?.id ?? '');
@@ -45,6 +50,8 @@ export function usePacketCapturePage() {
   const [selectedField, setSelectedField] = React.useState<PacketField | null>(null);
   const [permissionError, setPermissionError] = React.useState<string | null>(null);
   const captureStartedAtRef = React.useRef<number | null>(null);
+  const [activeCaptureId, setActiveCaptureId] = React.useState<string | null>(null);
+  const [isLoadingPackets, setIsLoadingPackets] = React.useState(false);
 
   React.useEffect(() => {
     let mounted = true;
@@ -87,7 +94,7 @@ export function usePacketCapturePage() {
           return current;
         }
 
-        return [...current, packet].slice(-5000);
+        return [...current, packet].slice(-200);
       });
       setSelectedPacketId((current) => current || packet.id);
     });
@@ -146,9 +153,12 @@ export function usePacketCapturePage() {
       setSelectedPacketId('');
       setSelectedField(null);
       setFilters(EMPTY_FILTERS);
-      await startPacketCapture(networkConfig);
+      const result = await startPacketCapture(networkConfig);
       setPermissionError(null);
       setCaptureStatus('capturing');
+      if (result.captureId) {
+        setActiveCaptureId(result.captureId);
+      }
       toast.success(`Capture started on ${captureInterfaces.find((item) => item.id === selectedInterface)?.label ?? selectedInterface}.`);
     } catch (error) {
       setCaptureStatus('stopped');
@@ -171,8 +181,12 @@ export function usePacketCapturePage() {
   }, []);
 
   const updateNetworkConfig = React.useCallback(<Key extends keyof NetworkCaptureConfig>(key: Key, value: NetworkCaptureConfig[Key]) => {
-    setNetworkConfig((current) => ({ ...current, [key]: value }));
-  }, []);
+    setNetworkConfig((current) => {
+      const updated = { ...current, [key]: value };
+      setSavedNetworkConfig(updated);
+      return updated;
+    });
+  }, [setSavedNetworkConfig]);
 
   const saveNetworkConfig = React.useCallback(async () => {
     const selected = captureInterfaces.find((item) => item.id === networkConfig.interfaceId);
@@ -239,6 +253,23 @@ export function usePacketCapturePage() {
     setSelectedPacketId('');
     setSelectedField(null);
     setCaptureStatus('idle');
+    setActiveCaptureId(null);
+  }, []);
+
+  const loadCapturePackets = React.useCallback(async (captureId: string) => {
+    setIsLoadingPackets(true);
+    try {
+      const response = await getPacketsPaginated(captureId, 1, 200);
+      const loadedPackets = response.data.map((summary) => summaryToPacket(summary));
+      setPackets(loadedPackets);
+      setSelectedPacketId(loadedPackets[0]?.id ?? '');
+      setSelectedField(null);
+      setActiveCaptureId(captureId);
+    } catch (error) {
+      toast.error(toErrorMessage(error, 'Failed to load packets.'));
+    } finally {
+      setIsLoadingPackets(false);
+    }
   }, []);
 
   const loadSampleSession = React.useCallback(() => {
@@ -335,6 +366,8 @@ export function usePacketCapturePage() {
     stopCapture,
     clearCapture,
     loadSampleSession,
+    loadCapturePackets,
+    isLoadingPackets,
     copyHex,
     copyAscii,
     exportRawBody,
@@ -444,6 +477,54 @@ function normalizeProtocol(protocol: string): PacketProtocol {
   }
 
   return 'OTHER';
+}
+
+function summaryToPacket(summary: import('../api').PacketSummary): Packet {
+  const bytes = Array.from(textEncoder.encode(''));
+  const sourcePort = summary.sourcePort ?? undefined;
+  const destinationPort = summary.destinationPort ?? undefined;
+
+  return {
+    id: summary.id,
+    number: summary.packetNumber,
+    timestamp: summary.timestamp,
+    sourceIp: summary.sourceIp,
+    destinationIp: summary.destinationIp,
+    protocol: normalizeProtocol(summary.protocol),
+    sourcePort,
+    destinationPort,
+    length: summary.packetLength,
+    info: summary.info,
+    bytes,
+    streamId: sourcePort && destinationPort
+      ? [summary.sourceIp, sourcePort, summary.destinationIp, destinationPort, summary.protocol].join(':')
+      : undefined,
+    layers: [
+      {
+        name: 'Frame',
+        fields: [
+          { label: 'Arrival Time', value: `${summary.timestamp.toFixed(6)} seconds`, byteStart: 0, byteEnd: 8 },
+          { label: 'Captured Length', value: `${summary.packetLength} bytes`, byteStart: 8, byteEnd: 16 },
+        ],
+      },
+      {
+        name: summary.sourceIp.includes(':') ? 'IPv6' : 'IPv4',
+        fields: [
+          { label: 'Source Address', value: summary.sourceIp },
+          { label: 'Destination Address', value: summary.destinationIp },
+        ],
+      },
+      {
+        name: summary.protocol === 'TLS' ? 'TCP' : summary.protocol,
+        fields: [
+          { label: 'Source Port', value: sourcePort ? String(sourcePort) : '-' },
+          { label: 'Destination Port', value: destinationPort ? String(destinationPort) : '-' },
+          { label: 'Summary', value: summary.info },
+        ],
+      },
+    ],
+    tls: summary.protocol === 'TLS' ? { version: 'TLS metadata', sni: 'Encrypted or unavailable' } : undefined,
+  };
 }
 
 function downloadTextFile(filename: string, content: string) {

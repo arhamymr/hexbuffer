@@ -160,7 +160,7 @@ export function TrafficTable() {
           {calls.map((call) => (
             <LogEntryContextMenu key={call.id} call={call} onDelete={removeCallLocally}>
               <tr
-                className={'hover:bg-muted/50 font-mono transition-colors border-b cursor-pointer' + (call.id === selectedCallId ? ' hover:!bg-green-400 dark:hover:!bg-green-900 !bg-green-400 dark:!bg-green-900' : '')}
+                className={'hover:bg-muted/50 font-mono transition-colors border-b cursor-pointer' + (call.id === selectedCallId ? ' hover:!bg-muted bg-muted' : '')}
                 onClick={() => setSelectedCallId(call.id)}
               >
                 <td className="text-xs text-muted-foreground px-3 py-1">

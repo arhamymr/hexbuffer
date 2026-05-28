@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { getCurrentWindow } from '@tauri-apps/api/window';
-import { Globe, GripHorizontal, Loader2, Maximize2, Minimize2, Minus, X } from 'lucide-react';
+import { Globe, GripHorizontal, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';

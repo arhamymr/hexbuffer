@@ -179,6 +179,7 @@ pub struct ProxyStateInner {
     pub intercept_mode: InterceptMode,
     pub paused_requests: Vec<PausedRequest>,
     pub paused_actions: HashMap<Uuid, InterceptAction>,
+    pub intercept_bypass_patterns: Vec<String>,
 }
 
 #[derive(Debug, Clone)]
@@ -207,7 +208,15 @@ impl ProxyState {
     }
 
     pub fn set_mode(&self, mode: InterceptMode) {
-        self.0.lock().unwrap().intercept_mode = mode;
+        let mut inner = self.0.lock().unwrap();
+        if mode == InterceptMode::Disabled && inner.intercept_mode == InterceptMode::Enabled {
+            let ids: Vec<Uuid> = inner.paused_requests.iter().map(|r| r.id).collect();
+            for id in &ids {
+                inner.paused_actions.insert(*id, InterceptAction::Forward(None));
+            }
+            inner.paused_requests.clear();
+        }
+        inner.intercept_mode = mode;
     }
 
     pub fn enable_intercept(&self) {
@@ -370,6 +379,57 @@ impl ProxyState {
             .iter()
             .position(|r| r.id == *id)
             .map(|pos| inner.records.remove(pos))
+    }
+
+    pub fn get_bypass_patterns(&self) -> Vec<String> {
+        self.0.lock().unwrap().intercept_bypass_patterns.clone()
+    }
+
+    pub fn set_bypass_patterns(&self, patterns: Vec<String>)  {
+        self.0.lock().unwrap().intercept_bypass_patterns = patterns;
+    }
+
+    pub fn add_bypass_pattern(&self, pattern: String) -> Vec<String> {
+        let mut inner = self.0.lock().unwrap();
+        let trimmed = pattern.trim().to_string();
+        if !trimmed.is_empty() && !inner.intercept_bypass_patterns.contains(&trimmed) {
+            inner.intercept_bypass_patterns.push(trimmed);
+        }
+        inner.intercept_bypass_patterns.clone()
+    }
+
+    pub fn remove_bypass_pattern(&self, pattern: &str) -> Vec<String> {
+        let mut inner = self.0.lock().unwrap();
+        inner
+            .intercept_bypass_patterns
+            .retain(|p| p != pattern);
+        inner.intercept_bypass_patterns.clone()
+    }
+
+    pub fn should_bypass_uri(&self, uri: &str) -> bool {
+        if crate::proxy::intercept::hooks::is_captive_portal(uri) {
+            return true;
+        }
+
+        let host = uri
+            .split("://")
+            .nth(1)
+            .unwrap_or(uri)
+            .split('/')
+            .next()
+            .unwrap_or(uri);
+
+        let inner = self.0.lock().unwrap();
+        for pattern in &inner.intercept_bypass_patterns {
+            if let Some(domain) = pattern.strip_prefix("*.") {
+                if host.ends_with(domain) {
+                    return true;
+                }
+            } else if host == pattern {
+                return true;
+            }
+        }
+        false
     }
 }
 

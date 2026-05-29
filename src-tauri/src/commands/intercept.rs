@@ -90,6 +90,42 @@ pub async fn drop_intercepted_request(
     }
 }
 
+#[tauri::command]
+pub async fn get_intercept_bypass_patterns(
+    state: State<'_, Mutex<crate::proxy::ProxyState>>,
+) -> Result<Vec<String>, String> {
+    let proxy_state = state.lock().map_err(|error| format!("{error}"))?;
+    Ok(proxy_state.get_bypass_patterns())
+}
+
+#[tauri::command]
+pub async fn set_intercept_bypass_patterns(
+    state: State<'_, Mutex<crate::proxy::ProxyState>>,
+    patterns: Vec<String>,
+) -> Result<Vec<String>, String> {
+    let proxy_state = state.lock().map_err(|error| format!("{error}"))?;
+    proxy_state.set_bypass_patterns(patterns);
+    Ok(proxy_state.get_bypass_patterns())
+}
+
+#[tauri::command]
+pub async fn add_intercept_bypass_pattern(
+    state: State<'_, Mutex<crate::proxy::ProxyState>>,
+    pattern: String,
+) -> Result<Vec<String>, String> {
+    let proxy_state = state.lock().map_err(|error| format!("{error}"))?;
+    Ok(proxy_state.add_bypass_pattern(pattern))
+}
+
+#[tauri::command]
+pub async fn remove_intercept_bypass_pattern(
+    state: State<'_, Mutex<crate::proxy::ProxyState>>,
+    pattern: String,
+) -> Result<Vec<String>, String> {
+    let proxy_state = state.lock().map_err(|error| format!("{error}"))?;
+    Ok(proxy_state.remove_bypass_pattern(&pattern))
+}
+
 fn browser_candidates() -> Vec<PathBuf> {
     fn workspace_chrome_candidates() -> Vec<PathBuf> {
         let mut roots = Vec::new();

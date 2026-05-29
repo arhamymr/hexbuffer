@@ -32,3 +32,19 @@ export async function openInterceptBrowser(): Promise<void> {
 export async function trustInterceptCa(): Promise<string> {
   return invoke<string>('trust_intercept_ca');
 }
+
+export async function getInterceptBypassPatterns(): Promise<string[]> {
+  return invoke<string[]>('get_intercept_bypass_patterns');
+}
+
+export async function setInterceptBypassPatterns(patterns: string[]): Promise<string[]> {
+  return invoke<string[]>('set_intercept_bypass_patterns', { patterns });
+}
+
+export async function addInterceptBypassPattern(pattern: string): Promise<string[]> {
+  return invoke<string[]>('add_intercept_bypass_pattern', { pattern });
+}
+
+export async function removeInterceptBypassPattern(pattern: string): Promise<string[]> {
+  return invoke<string[]>('remove_intercept_bypass_pattern', { pattern });
+}

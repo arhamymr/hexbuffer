@@ -82,7 +82,6 @@ impl HttpHandler for AppHandler {
         http_ctx: &HttpContext,
         req: Request<Body>,
     ) -> hudsucker::RequestOrResponse {
-        use crate::proxy::intercept;
         use crate::proxy::state::{InterceptMode, PausedRequest, ProxyState};
         use std::sync::Mutex;
         use tauri::Manager;
@@ -132,9 +131,11 @@ impl HttpHandler for AppHandler {
 
         let mut body_modified = false;
 
-        if ctx.req_method != "CONNECT" && !intercept::should_bypass(&ctx.req_uri) {
-            let state = self.app_handle.state::<Mutex<ProxyState>>();
-            let mode = state.lock().unwrap().get_mode();
+        let proxy_state_handle = self.app_handle.state::<Mutex<ProxyState>>();
+        let should_bypass_uri = proxy_state_handle.lock().unwrap().should_bypass_uri(&ctx.req_uri);
+
+        if ctx.req_method != "CONNECT" && !should_bypass_uri {
+            let mode = proxy_state_handle.lock().unwrap().get_mode();
 
             if mode == InterceptMode::Enabled {
                 let paused_id = ctx.transaction_id;
@@ -156,11 +157,11 @@ impl HttpHandler for AppHandler {
                     response: None,
                 };
 
-                state.lock().unwrap().add_paused_request(paused_req);
+                proxy_state_handle.lock().unwrap().add_paused_request(paused_req);
 
                 loop {
                     tokio::time::sleep(Duration::from_millis(100)).await;
-                    if state
+                    if proxy_state_handle
                         .lock()
                         .unwrap()
                         .get_paused_request(&paused_id)
@@ -170,7 +171,7 @@ impl HttpHandler for AppHandler {
                     }
                 }
 
-                let action = state.lock().unwrap().take_paused_action(&paused_id);
+                let action = proxy_state_handle.lock().unwrap().take_paused_action(&paused_id);
 
                 match action {
                     Some(crate::proxy::state::InterceptAction::Drop) => {

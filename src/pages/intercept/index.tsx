@@ -4,6 +4,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { useAppStore } from '@/stores/app';
 import { toast } from 'sonner';
+import { InterceptBypassPanel } from './components/intercept-bypass-panel';
 import { InterceptQueuePanel } from './components/intercept-queue-panel';
 import { InterceptRequestPanel } from './components/intercept-request-panel';
 import { useInterceptPage } from './hooks/use-intercept-page';
@@ -16,12 +17,16 @@ export function InterceptPage() {
     rawRequest,
     isBusy,
     isRefreshing,
+    bypassPatterns,
     setSelectedRequestId,
     setRawRequest,
     refresh,
     toggleIntercept,
     forwardSelectedRequest,
     dropSelectedRequest,
+    addBypassPattern,
+    removeBypassPattern,
+    bypassHostAndForward,
   } = useInterceptPage();
   const proxyStatus = useAppStore((state) => state.proxyStatus);
   const startProxy = useAppStore((state) => state.startProxy);
@@ -71,6 +76,14 @@ export function InterceptPage() {
             hasSelection={Boolean(selectedRequestId)}
             onRawRequestChange={setRawRequest}
             onToggleIntercept={toggleIntercept}
+            bypassPanel={
+              <InterceptBypassPanel
+                patterns={bypassPatterns}
+                disabled={status?.mode !== 'Enabled'}
+                onAdd={addBypassPattern}
+                onRemove={removeBypassPattern}
+              />
+            }
           />
         </div>
         <div className="min-h-0">
@@ -84,6 +97,7 @@ export function InterceptPage() {
             onForward={forwardSelectedRequest}
             onDrop={dropSelectedRequest}
             onRefresh={refresh}
+            onBypassHost={bypassHostAndForward}
           />
         </div>
       </div>

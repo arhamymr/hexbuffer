@@ -182,6 +182,17 @@
     animation: accordion-up 0.18s ease-out;
   }
 
+  @keyframes slide-out-right {
+    to {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+  }
+
+  .animate-slide-out-right {
+    animation: slide-out-right 1s ease-in forwards;
+  }
+
   /* Hero gradient backgrounds */
   .hero-gradient-bg {
     background: linear-gradient(to bottom right, rgba(0, 201, 80, 0.2), transparent, rgba(59, 130, 246, 0.2));

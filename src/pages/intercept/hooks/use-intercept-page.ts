@@ -7,8 +7,11 @@ import {
   getInterceptStatus,
   getPausedRequests,
   setInterceptEnabled,
+  getInterceptBypassPatterns,
+  addInterceptBypassPattern,
+  removeInterceptBypassPattern,
 } from '../api';
-import { buildRawPausedRequest } from '../lib';
+import { buildRawPausedRequest, getRequestHost } from '../lib';
 import type { InterceptStatus, PausedRequest } from '../types';
 
 export function useInterceptPage() {
@@ -18,6 +21,7 @@ export function useInterceptPage() {
   const [rawRequest, setRawRequest] = React.useState('');
   const [isBusy, setIsBusy] = React.useState(false);
   const [isRefreshing, setIsRefreshing] = React.useState(false);
+  const [bypassPatterns, setBypassPatterns] = React.useState<string[]>([]);
   const loadedRequestIdRef = React.useRef<string | null>(null);
 
   const selectedRequest = React.useMemo(
@@ -29,13 +33,15 @@ export function useInterceptPage() {
     setIsRefreshing(true);
 
     try {
-      const [nextStatus, nextRequests] = await Promise.all([
+      const [nextStatus, nextRequests, nextBypassPatterns] = await Promise.all([
         getInterceptStatus(),
         getPausedRequests(),
+        getInterceptBypassPatterns(),
       ]);
 
       setStatus(nextStatus);
       setRequests(nextRequests);
+      setBypassPatterns(nextBypassPatterns);
 
       setSelectedRequestId((currentId) => {
         if (currentId && nextRequests.some((request) => request.id === currentId)) {
@@ -109,15 +115,11 @@ export function useInterceptPage() {
     }
   }, [rawRequest, refresh, selectedRequest]);
 
-  const dropSelectedRequest = React.useCallback(async () => {
-    if (!selectedRequest) {
-      return;
-    }
-
+  const dropSelectedRequest = React.useCallback(async (request: PausedRequest) => {
     setIsBusy(true);
 
     try {
-      await dropInterceptedRequest(selectedRequest.id);
+      await dropInterceptedRequest(request.id);
       toast.success('Request dropped');
       await refresh();
     } catch (error) {
@@ -125,7 +127,68 @@ export function useInterceptPage() {
     } finally {
       setIsBusy(false);
     }
-  }, [refresh, selectedRequest]);
+  }, [refresh]);
+
+  const addBypassPattern = React.useCallback(
+    async (pattern: string) => {
+      try {
+        const next = await addInterceptBypassPattern(pattern);
+        setBypassPatterns(next);
+        toast.success(`Added passthrough: ${pattern}`);
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : 'Failed to add passthrough pattern.');
+      }
+    },
+    []
+  );
+
+  const removeBypassPattern = React.useCallback(
+    async (pattern: string) => {
+      try {
+        const next = await removeInterceptBypassPattern(pattern);
+        setBypassPatterns(next);
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : 'Failed to remove passthrough pattern.');
+      }
+    },
+    []
+  );
+
+  const bypassHostAndForward = React.useCallback(
+    async (request: PausedRequest) => {
+      const host = getRequestHost(request);
+      setIsBusy(true);
+
+      try {
+        await addInterceptBypassPattern(host);
+
+        const sameHostIds = requests
+          .filter((r) => getRequestHost(r) === host)
+          .map((r) => r.id);
+
+        for (const id of sameHostIds) {
+          const req = requests.find((r) => r.id === id);
+          if (req) {
+            const rawReq = buildRawPausedRequest(req);
+            const parsedRequest = parseRawHttpRequest(rawReq, {
+              fallbackUrl: req.request.uri,
+            });
+            if (parsedRequest) {
+              await forwardInterceptedRequest(id, parsedRequest);
+            }
+          }
+        }
+
+        toast.success(`Passthrough ${host} — forwarded ${sameHostIds.length} request(s)`);
+        await refresh();
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : 'Failed to bypass host.');
+      } finally {
+        setIsBusy(false);
+      }
+    },
+    [requests, refresh]
+  );
 
   return {
     status,
@@ -134,11 +197,15 @@ export function useInterceptPage() {
     rawRequest,
     isBusy,
     isRefreshing,
+    bypassPatterns,
     setSelectedRequestId,
     setRawRequest,
     refresh,
     toggleIntercept,
     forwardSelectedRequest,
     dropSelectedRequest,
+    addBypassPattern,
+    removeBypassPattern,
+    bypassHostAndForward,
   };
 }

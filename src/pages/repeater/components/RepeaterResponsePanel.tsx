@@ -103,7 +103,7 @@ export function RepeaterResponsePanel({
             language="http"
             value={buildRawHttpResponse(response, { prettyJsonBody: true })}
             options={{
-              readOnly: true,
+              readOnly: false,
               scrollBeyondLastLine: false,
             }}
           />

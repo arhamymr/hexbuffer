@@ -18,16 +18,12 @@ function isSettingsWindow(): boolean {
   }
 }
 
-function isResponseDetailWindow(): string | null {
-  try {
-    const label = getCurrentWindow().label;
-    if (label.startsWith("response-detail-")) {
-      return label.slice("response-detail-".length);
-    }
-    return null;
-  } catch {
-    return null;
+function getResponseDetailCallId(): string | null {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get("window") === "response-detail") {
+    return params.get("callId");
   }
+  return null;
 }
 
 function Root() {
@@ -44,7 +40,7 @@ function Root() {
     );
   }
 
-  const responseDetailCallId = isResponseDetailWindow();
+  const responseDetailCallId = getResponseDetailCallId();
   if (responseDetailCallId) {
     return (
       <BrowserRouter>

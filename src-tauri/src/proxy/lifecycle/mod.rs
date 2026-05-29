@@ -108,6 +108,25 @@ impl HttpHandler for AppHandler {
         };
         ctx.req_body = body_bytes.to_vec();
 
+        if !ctx.req_body.is_empty() {
+            let decoded = body_decoder::decode_http_body(&ctx.req_headers, &ctx.req_body);
+            if decoded.metadata.content_decoded {
+                eprintln!(
+                    "[lifecycle] decoded request body for txn_id={} encoding={:?}",
+                    ctx.transaction_id, decoded.metadata.content_encoding
+                );
+            }
+            for error in decoded.metadata.errors.iter() {
+                eprintln!(
+                    "[lifecycle] ERROR request body decode issue for txn_id={}: {}",
+                    ctx.transaction_id, error
+                );
+            }
+            ctx.req_body = decoded.decoded_body;
+        }
+
+        let mut body_modified = false;
+
         if ctx.req_method != "CONNECT" && !intercept::should_bypass(&ctx.req_uri) {
             let state = self.app_handle.state::<Mutex<ProxyState>>();
             let mode = state.lock().unwrap().get_mode();
@@ -181,6 +200,7 @@ impl HttpHandler for AppHandler {
                         }
 
                         ctx.req_body = modified.body;
+                        body_modified = true;
                     }
                     _ => {}
                 }
@@ -189,11 +209,11 @@ impl HttpHandler for AppHandler {
 
         self.ctx = Some(ctx);
 
-        let request_body = self
-            .ctx
-            .as_ref()
-            .map(|ctx| ctx.req_body.clone())
-            .unwrap_or_else(|| body_bytes.to_vec());
+        let request_body = if body_modified {
+            self.ctx.as_ref().unwrap().req_body.clone()
+        } else {
+            body_bytes.to_vec()
+        };
         let mut req = Request::from_parts(parts, Body::from(request_body));
         req.headers_mut().insert("x-rusxy", "1".parse().unwrap());
 

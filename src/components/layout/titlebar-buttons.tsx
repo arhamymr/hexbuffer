@@ -1,15 +1,17 @@
 'use client'
 
 import { useState } from 'react';
-import { Maximize2, Minimize2, Minus, X } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Maximize2, Minus, X } from 'lucide-react';
 import { getCurrentWindow } from '@tauri-apps/api/window';
+
+const baseClass = "flex h-3 w-3 items-center justify-center rounded-full transition-colors cursor-pointer"
+const iconClass = "size-2 text-white opacity-0 group-hover:opacity-100 transition-opacity"
 
 export function TitlebarButtons() {
   const [toggleFullscreen, setToggleFullscreen] = useState(false)
 
   const handleMinimize = async () => {
-    await getCurrentWindow().setMinimizable(true)
+    await getCurrentWindow().minimize()
   }
 
   const handleFullscreen = async() => {
@@ -22,37 +24,32 @@ export function TitlebarButtons() {
   }
 
   return (
-    <div className="ml-1 flex items-center border-l pl-1">
-      <Button
+    <div className="ml-3 flex items-center gap-2">
+      
+      <button
         id="titlebar-minimize"
-        variant="ghost"
-        size="xs"
-        className="h-8 w-8 p-0"
+        className={`${baseClass} bg-[#FFBD2E] group`}
         title="Minimize"
         onClick={handleMinimize}
       >
-        <Minus className="h-4 w-4" />
-      </Button>
-      <Button
+        <Minus className={iconClass} />
+      </button>
+      <button
         id="titlebar-maximize"
-        variant="ghost"
-        size="xs"
-        className="h-8 w-8 p-0"
+        className={`${baseClass} bg-[#28C840] group`}
+        title="Fullscreen"
         onClick={handleFullscreen}
-      
       >
-        {toggleFullscreen ? <Minimize2 className="size-3.5" /> : <Maximize2 className="size-3.5" />}
-      </Button>
-      <Button
+        <Maximize2 className={iconClass} />
+      </button>
+      <button
         id="titlebar-close"
-        variant="ghost"
-        size="xs"
-        className="p-2 hover:bg-destructive hover:text-destructive-foreground/80 dark:hover:bg-destructive/80"
+        className={`${baseClass} bg-[#FF5F57] group`}
         title="Close"
         onClick={handleClose}
       >
-        <X className="size-4" />
-      </Button>
+        <X className={iconClass} />
+      </button>
     </div>
   );
 }

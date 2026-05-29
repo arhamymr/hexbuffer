@@ -17,7 +17,6 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Empty, EmptyTitle, EmptyDescription } from "@/components/ui/empty";
 import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
 import { TextEditor } from '@/components/ui/text-editor';
 import { buildRawHttpRequest, buildRawHttpResponse, formatJsonBody } from '@/lib/http-message';
 import { useHistoryDetail } from '@/pages/live-traffic/hooks/use-history-detail';
@@ -57,7 +56,7 @@ export function LogEntryBurpView() {
         return;
       }
       new WebviewWindow(label, {
-        url: '/',
+        url: `/?window=response-detail&callId=${call.id}`,
         title: `Response - ${call.method} ${call.path || call.url}`,
         width: 700,
         height: 600,
@@ -185,17 +184,6 @@ export function LogEntryBurpView() {
                 {call.url}
               </span>
             </div>
-
-            <div className="flex shrink-0 items-center gap-2 text-muted-foreground">
-              <FileText className="h-3.5 w-3.5" />
-              <Switch
-                checked={viewMode === 'table'}
-                onCheckedChange={(checked) => setViewMode(checked ? 'table' : 'text')}
-                aria-label="Switch between full text and inspector table view"
-                title="Switch between full text and inspector table view"
-              />
-              <Table2 className="h-3.5 w-3.5" />
-            </div>
           </div>
 
           {viewMode === 'text' ? (
@@ -253,6 +241,14 @@ export function LogEntryBurpView() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => setViewMode(viewMode === 'table' ? 'text' : 'table')} className="text-xs">
+                  {viewMode === 'table' ? (
+                    <><FileText className="mr-2 h-4 w-4" /> Toggle Doc</>
+                  ) : (
+                    <><Table2 className="mr-2 h-4 w-4" /> Toggle Table</>
+                  )}
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleOpenInNewWindow} disabled={!call.response_status} className="text-xs">
                   <ExternalLink className="mr-2 h-4 w-4" /> Open in New Window
                 </DropdownMenuItem>

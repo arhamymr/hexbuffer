@@ -1,0 +1,57 @@
+import * as React from 'react';
+import { Globe, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import { openInterceptBrowser } from '@/pages/intercept/api';
+import { useAppStore } from '@/stores/app';
+
+export function OpenBrowserButton() {
+  const [isOpeningBrowser, setIsOpeningBrowser] = React.useState(false);
+  const proxyPort = useAppStore((state) => state.proxyPort);
+  const proxyDefaultPort = useAppStore((state) => state.proxyDefaultPort);
+  const checkProxyStatus = useAppStore((state) => state.checkProxyStatus);
+  const activeProxyPort = proxyPort ?? proxyDefaultPort;
+  const isDefaultPortChanged = proxyPort !== null && proxyPort !== proxyDefaultPort;
+
+  const openBrowserTitle = isDefaultPortChanged
+    ? `Open browser through proxy on 127.0.0.1:${activeProxyPort}. Default port changed from ${proxyDefaultPort}.`
+    : `Open browser through proxy on 127.0.0.1:${activeProxyPort}`;
+
+  const openBrowser = React.useCallback(async () => {
+    setIsOpeningBrowser(true);
+
+    try {
+      await checkProxyStatus();
+      await openInterceptBrowser();
+      const { proxyPort, proxyDefaultPort } = useAppStore.getState();
+      const activeProxyPort = proxyPort ?? proxyDefaultPort;
+      const portChangedMessage = proxyPort !== null && proxyPort !== proxyDefaultPort
+        ? ` Default port changed from ${proxyDefaultPort}.`
+        : '';
+
+      toast.success(`Browser opened with proxy 127.0.0.1:${activeProxyPort}.${portChangedMessage}`);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to open browser.');
+    } finally {
+      setIsOpeningBrowser(false);
+    }
+  }, [checkProxyStatus]);
+
+  return (
+    <Button
+      variant="outline"
+      size="xs"
+      className="h-6 p-0"
+      onClick={openBrowser}
+      disabled={isOpeningBrowser}
+      title={openBrowserTitle}
+    >
+      {isOpeningBrowser ? (
+        <Loader2 className="h-4 w-4 animate-spin" />
+      ) : (
+        <Globe className="h-4 w-4" />
+      )}
+      OPEN BROWSER
+    </Button>
+  );
+}

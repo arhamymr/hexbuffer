@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Link } from 'react-router-dom';
+import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
 import { MessageSquare, Moon, Settings, Sun } from 'lucide-react';
 import { useAppStore } from '@/stores/app';
 import { useTheme } from './theme-provider';
@@ -79,16 +79,33 @@ export function AppFooter({ isAssistantOpen, onToggleAssistant }: AppFooterProps
         >
           <MessageSquare className="h-4 w-4" />
         </Button>
-        <Link to="/settings">
-          <Button
-            variant="ghost"
-            size="xs"
-            className="h-8 w-8 p-0"
-            title="Settings"
-          >
-            <Settings className="h-4 w-4" />
-          </Button>
-        </Link>
+        <Button
+          variant="ghost"
+          size="xs"
+          className="h-8 w-8 p-0"
+          title="Settings"
+          onClick={async () => {
+            try {
+              const existing = await WebviewWindow.getByLabel('settings');
+              if (existing) {
+                await existing.setFocus();
+                return;
+              }
+              new WebviewWindow('settings', {
+                url: '/?window=settings',
+                title: '0xbuffer - Settings',
+                width: 700,
+                height: 600,
+                decorations: true,
+                resizable: true,
+              });
+            } catch {
+              window.open('/settings', '_blank');
+            }
+          }}
+        >
+          <Settings className="h-4 w-4" />
+        </Button>
       </div>
     </footer>
   );

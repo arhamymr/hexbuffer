@@ -1,9 +1,20 @@
 'use client';
 
 import { useState } from 'react';
-import { FileText, Table2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
+import { FileText, Table2, EllipsisVertical, ExternalLink, Send, Crosshair } from 'lucide-react';
+import { toast } from 'sonner';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Empty, EmptyTitle, EmptyDescription } from "@/components/ui/empty";
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
@@ -13,6 +24,9 @@ import { useHistoryDetail } from '@/pages/live-traffic/hooks/use-history-detail'
 import { InspectorSection, buildHeadersList, buildParamsList } from './inspector';
 import { parseCookieHeader } from './cookie-display';
 import { formatBytes, getMethodBadge } from './utils';
+import { useRepeaterStore } from '@/stores/repeater';
+import { useBruteForceStore } from '@/stores/bruto-force';
+import { createDefaultAttackConfig, findRequestPayloadPositions } from '@/pages/brute-force/types';
 
 type DetailViewMode = 'text' | 'table';
 
@@ -31,6 +45,65 @@ function isJsonContent(headers: Record<string, string>, body: string | null): bo
 export function LogEntryBurpView() {
   const { selectedCallId, call, isLoading, loadError } = useHistoryDetail();
   const [viewMode, setViewMode] = useState<DetailViewMode>('text');
+  const navigate = useNavigate();
+
+  const handleOpenInNewWindow = async () => {
+    if (!call) return;
+    const label = `response-detail-${call.id}`;
+    try {
+      const existing = await WebviewWindow.getByLabel(label);
+      if (existing) {
+        await existing.setFocus();
+        return;
+      }
+      new WebviewWindow(label, {
+        url: '/',
+        title: `Response - ${call.method} ${call.path || call.url}`,
+        width: 700,
+        height: 600,
+        decorations: true,
+        resizable: true,
+      });
+    } catch {
+      window.open(`/?window=response-detail&callId=${call.id}`, '_blank');
+    }
+  };
+
+  const handleSendToRepeater = () => {
+    if (!call) return;
+    useRepeaterStore.getState().addRequestTab({
+      raw: buildRawHttpRequest({
+        method: call.method,
+        url: call.url,
+        headers: call.headers,
+        body: call.request_body ?? '',
+      }),
+      url: call.url,
+    });
+    navigate('/repeater');
+    toast.success('Sent to Repeater');
+  };
+
+  const handleSendToBruteForce = () => {
+    if (!call) return;
+    const baseRequest = {
+      method: call.method,
+      url: call.url,
+      headers: call.headers,
+      body: call.request_body ?? '',
+      follow_redirects: true,
+      max_hops: 10,
+    };
+    const config = {
+      ...createDefaultAttackConfig(),
+      name: `${call.method} ${call.path || call.url}`,
+      base_request: baseRequest,
+      positions: findRequestPayloadPositions(baseRequest),
+    };
+    useBruteForceStore.getState().addAttackTab(config);
+    navigate('/brute-force');
+    toast.success('Sent to Brute Force');
+  };
 
   if (!selectedCallId) {
     return (
@@ -165,12 +238,33 @@ export function LogEntryBurpView() {
       <div className="min-h-0">
         <div className="flex flex-col h-full bg-background">
           <div className="bg-muted h-10 px-3 py-2 border-b flex items-center justify-between gap-2">
-            <span className="text-sm font-medium">Response</span>
-            {call.response_status && (
-              <Badge variant={statusVariant} className="text-xs">
-                {call.response_status} {call.response_status_text}
-              </Badge>
-            )}
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium">Response</span>
+              {call.response_status && (
+                <Badge variant={statusVariant} className="text-xs">
+                  {call.response_status} {call.response_status_text}
+                </Badge>
+              )}
+            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-7 w-7">
+                  <EllipsisVertical className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={handleOpenInNewWindow} disabled={!call.response_status} className="text-xs">
+                  <ExternalLink className="mr-2 h-4 w-4" /> Open in New Window
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleSendToRepeater} className="text-xs">
+                  <Send className="mr-2 h-4 w-4" /> Send to Repeater
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleSendToBruteForce} className="text-xs">
+                  <Crosshair className="mr-2 h-4 w-4" /> Send to Brute Force
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
 
           {viewMode === 'text' ? (

@@ -54,7 +54,7 @@ export function Settings() {
   return (
     <div className="h-full flex flex-col overflow-hidden">
       <div className="px-6 py-4 border-b">
-        <h1 className="text-3xl font-bold">Settings</h1>
+        <h1 className="text-3xl font-normal">Settings</h1>
         <p className="text-muted-foreground mt-1">Configure your application settings</p>
       </div>
 

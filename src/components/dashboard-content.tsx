@@ -152,7 +152,7 @@ export function DashboardContent({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div>
-            <h1 className="text-3xl font-bold">Live Monitor</h1>
+            <h1 className="text-3xl font-normal">Live Monitor</h1>
             <p className="text-sm text-muted-foreground">
               Target: {selectedTarget?.name || 'None'}
             </p>

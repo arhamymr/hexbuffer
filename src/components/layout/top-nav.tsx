@@ -3,15 +3,15 @@
 import * as React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { getCurrentWindow } from '@tauri-apps/api/window';
-import { Globe, GripHorizontal, Loader2 } from 'lucide-react';
-import { toast } from 'sonner';
-import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
-import { openInterceptBrowser } from '@/pages/intercept/api';
-import { useAppStore } from '@/stores/app';
-import { mainNavItems } from './constants';
+import { GripHorizontal } from 'lucide-react';
 
-export function TopNav({ isFullscreen, onToggleFullscreen }: { isFullscreen: boolean; onToggleFullscreen: () => void }) {
+import { cn } from '@/lib/utils';
+import { useAppStore } from '@/stores/app';
+import { OpenBrowserButton } from './open-browser';
+import { mainNavItems } from './constants';
+import { TitlebarButtons } from './titlebar-buttons';
+
+export function TopNav() {
   const location = useLocation();
   const pathname = location.pathname;
   const appWindow = React.useMemo(() => getCurrentWindow(), []);
@@ -19,35 +19,8 @@ export function TopNav({ isFullscreen, onToggleFullscreen }: { isFullscreen: boo
   const [canScrollLeft, setCanScrollLeft] = React.useState(false);
   const [canScrollRight, setCanScrollRight] = React.useState(false);
   const [isDraggingWindow, setIsDraggingWindow] = React.useState(false);
-  const [isOpeningBrowser, setIsOpeningBrowser] = React.useState(false);
   const proxyStatus = useAppStore((state) => state.proxyStatus);
-  const proxyPort = useAppStore((state) => state.proxyPort);
-  const proxyDefaultPort = useAppStore((state) => state.proxyDefaultPort);
-  const checkProxyStatus = useAppStore((state) => state.checkProxyStatus);
-  const activeProxyPort = proxyPort ?? proxyDefaultPort;
-  const isDefaultPortChanged = proxyPort !== null && proxyPort !== proxyDefaultPort;
-  const openBrowserTitle = isDefaultPortChanged
-    ? `Open browser through proxy on 127.0.0.1:${activeProxyPort}. Default port changed from ${proxyDefaultPort}.`
-    : `Open browser through proxy on 127.0.0.1:${activeProxyPort}`;
 
-  React.useEffect(() => {
-    const minimizeButton = document.getElementById('titlebar-minimize');
-    const maximizeButton = document.getElementById('titlebar-maximize');
-    const closeButton = document.getElementById('titlebar-close');
-    const minimize = () => appWindow.minimize();
-    const maximize = () => onToggleFullscreen();
-    const close = () => appWindow.close();
-
-    minimizeButton?.addEventListener('click', minimize);
-    maximizeButton?.addEventListener('click', maximize);
-    closeButton?.addEventListener('click', close);
-
-    return () => {
-      minimizeButton?.removeEventListener('click', minimize);
-      maximizeButton?.removeEventListener('click', maximize);
-      closeButton?.removeEventListener('click', close);
-    };
-  }, [appWindow, onToggleFullscreen]);
 
   React.useEffect(() => {
     const nav = navRef.current;
@@ -76,26 +49,6 @@ export function TopNav({ isFullscreen, onToggleFullscreen }: { isFullscreen: boo
     };
   }, []);
 
-  const openBrowser = React.useCallback(async () => {
-    setIsOpeningBrowser(true);
-
-    try {
-      await checkProxyStatus();
-      await openInterceptBrowser();
-      const { proxyPort, proxyDefaultPort } = useAppStore.getState();
-      const activeProxyPort = proxyPort ?? proxyDefaultPort;
-      const portChangedMessage = proxyPort !== null && proxyPort !== proxyDefaultPort
-        ? ` Default port changed from ${proxyDefaultPort}.`
-        : '';
-
-      toast.success(`Browser opened with proxy 127.0.0.1:${activeProxyPort}.${portChangedMessage}`);
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Failed to open browser.');
-    } finally {
-      setIsOpeningBrowser(false);
-    }
-  }, [checkProxyStatus]);
-
   return (
     <header data-tauri-drag-region className="title-bar border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
       <div className="flex items-center justify-between h-8.5 px-4">
@@ -119,7 +72,7 @@ export function TopNav({ isFullscreen, onToggleFullscreen }: { isFullscreen: boo
             <GripHorizontal className="size-5" data-tauri-drag-region />
           </div>
           <div className="flex items-center gap-1">
-            <p className='text-sm font-extrabold font-mono'>0xbuffer</p>
+            <p className='text-sm font-bold font-mono'>0xbuffer</p>
           </div>
 
           <div className="relative min-w-0 flex-1">
@@ -177,50 +130,8 @@ export function TopNav({ isFullscreen, onToggleFullscreen }: { isFullscreen: boo
         </div>
 
         <div className="flex shrink-0 items-center gap-1">
-          <Button
-            variant="outline"
-            size="xs"
-            className="h-6 p-0"
-            onClick={openBrowser}
-            disabled={isOpeningBrowser}
-            title={openBrowserTitle}
-          >
-            {isOpeningBrowser ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Globe className="h-4 w-4" />
-            )}
-            OPEN BROWSER
-          </Button>
-          <div className="ml-1 flex items-center border-l pl-1">
-            <Button
-              id="titlebar-minimize"
-              variant="ghost"
-              size="xs"
-              className="h-8 w-8 p-0"
-              title="Minimize"
-            >
-              <Minus className="h-4 w-4" />
-            </Button>
-            <Button
-              id="titlebar-maximize"
-              variant="ghost"
-              size="xs"
-              className="h-8 w-8 p-0"
-              title={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
-            >
-              {isFullscreen ? <Minimize2 className="size-3.5" /> : <Maximize2 className="size-3.5" />}
-            </Button>
-            <Button
-              id="titlebar-close"
-              variant="ghost"
-              size="xs"
-              className="p-2 hover:bg-destructive hover:text-destructive-foreground/80 dark:hover:bg-destructive/80"
-              title="Close"
-            >
-              <X className="size-4" />
-            </Button>
-          </div>
+          <OpenBrowserButton />
+          <TitlebarButtons />
         </div>
       </div>
     </header>

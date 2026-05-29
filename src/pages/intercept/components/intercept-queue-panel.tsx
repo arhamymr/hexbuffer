@@ -2,10 +2,10 @@
 
 import { Loader2, PauseCircle, Play, Plus, Trash2 } from 'lucide-react';
 import * as React from 'react';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { MethodBadge } from '@/components/status-badge';
 import { cn } from '@/lib/utils';
+import { InterceptBypassPanel } from './intercept-bypass-panel';
 import type { InterceptStatus, PausedRequest } from '../types';
 import { formatRequestTime, getRequestHost, getRequestPath } from '../lib';
 
@@ -42,8 +42,7 @@ export function InterceptQueuePanel({
     <div className="flex h-full flex-col">
       <div className="bg-muted flex h-10 items-center justify-between border-b px-3 py-2">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium">Paused Queue</span>
-          <Badge variant="secondary" className="text-xs">{requests.length}</Badge>
+          <span className="text-sm font-medium">Request Queue</span>
         </div>
         <div className="flex items-center gap-2">
           <Button size="xs" onClick={onForward} disabled={!hasSelection || isBusy}>
@@ -55,6 +54,8 @@ export function InterceptQueuePanel({
           </Button>
         </div>
       </div>
+
+      <InterceptBypassPanel />
 
       <div className="flex min-h-0 flex-1 flex-col p-2">
         <div className="mb-2 grid grid-cols-2 gap-2">
@@ -127,7 +128,7 @@ export function InterceptQueuePanel({
                       }}
                     >
                       <Plus className="h-3 w-3" />
-                      FORWARD
+                      PASS THROUGH
                     </span>
                   </button>
                 );

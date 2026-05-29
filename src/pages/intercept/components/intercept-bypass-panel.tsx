@@ -5,31 +5,23 @@ import { ChevronDown, ChevronRight, Plus, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { cn } from '@/lib/utils';
+import { useBruteForceStore } from '@/stores/bruto-force';
 
-interface InterceptBypassPanelProps {
-  patterns: string[];
-  disabled: boolean;
-  onAdd: (pattern: string) => void;
-  onRemove: (pattern: string) => void;
-}
+export function InterceptBypassPanel() {
+  const patterns = useBruteForceStore((s) => s.bypassPatterns);
+  const addPattern = useBruteForceStore((s) => s.addBypassPattern);
+  const removePattern = useBruteForceStore((s) => s.removeBypassPattern);
 
-export function InterceptBypassPanel({
-  patterns,
-  disabled,
-  onAdd,
-  onRemove,
-}: InterceptBypassPanelProps) {
   const [value, setValue] = React.useState('');
   const [open, setOpen] = React.useState(false);
 
   const handleAdd = React.useCallback(() => {
     const trimmed = value.trim();
     if (trimmed) {
-      onAdd(trimmed);
+      addPattern(trimmed);
       setValue('');
     }
-  }, [value, onAdd]);
+  }, [value, addPattern]);
 
   const handleKeyDown = React.useCallback(
     (e: React.KeyboardEvent) => {
@@ -66,7 +58,7 @@ export function InterceptBypassPanel({
       </button>
 
       {open && (
-        <div className={cn('px-3 pb-2', disabled && 'pointer-events-none opacity-50')}>
+        <div className="px-3 pb-2">
           {patterns.length > 0 && (
             <div className="mb-2 flex flex-wrap gap-1">
               {patterns.map((pattern) => (
@@ -78,7 +70,7 @@ export function InterceptBypassPanel({
                   <span className="max-w-[180px] truncate">{pattern}</span>
                   <button
                     type="button"
-                    onClick={() => onRemove(pattern)}
+                    onClick={() => removePattern(pattern)}
                     className="ml-0.5 inline-flex h-4 w-4 items-center justify-center rounded-full hover:bg-muted-foreground/20"
                     aria-label={`Remove ${pattern}`}
                   >

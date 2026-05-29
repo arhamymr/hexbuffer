@@ -12,6 +12,13 @@ import type {
 } from '@/pages/brute-force/types';
 import { createDefaultAttackConfig } from '@/pages/brute-force/types';
 
+interface InterceptBypassState {
+  bypassPatterns: string[];
+  fetchBypassPatterns: () => Promise<void>;
+  addBypassPattern: (pattern: string) => Promise<void>;
+  removeBypassPattern: (pattern: string) => Promise<void>;
+}
+
 export interface BruteForceTab {
   id: string;
   name: string;
@@ -30,7 +37,7 @@ export interface BruteForceTab {
   rawRequestContent: string;
 }
 
-interface BruteForceState {
+interface BruteForceState extends InterceptBypassState {
   tabs: BruteForceTab[];
   activeTabId: string;
   nextAttackTabNumber: number;
@@ -129,6 +136,7 @@ export const useBruteForceStore = create<BruteForceState>((set, get) => ({
   activeTabId: initialTab.id,
   nextAttackTabNumber: 2,
   pendingRequest: null,
+  bypassPatterns: [],
 
   setActiveTabId: (id) => set({ activeTabId: id }),
   renameTab: (id, name) =>
@@ -387,4 +395,32 @@ export const useBruteForceStore = create<BruteForceState>((set, get) => ({
   clearResults: () =>
     updateActiveTab(set, (tab) => ({ ...tab, results: [], selectedResult: null })),
   clearStartError: () => updateActiveTab(set, (tab) => ({ ...tab, startError: null })),
+
+  fetchBypassPatterns: async () => {
+    try {
+      const patterns = await invoke<string[]>('get_intercept_bypass_patterns');
+      set({ bypassPatterns: patterns });
+    } catch (error) {
+      console.error('Failed to fetch bypass patterns:', error);
+    }
+  },
+
+  addBypassPattern: async (pattern) => {
+    try {
+      const patterns = await invoke<string[]>('add_intercept_bypass_pattern', { pattern });
+      set({ bypassPatterns: patterns });
+      toast.success(`Added passthrough: ${pattern}`);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to add passthrough pattern.');
+    }
+  },
+
+  removeBypassPattern: async (pattern) => {
+    try {
+      const patterns = await invoke<string[]>('remove_intercept_bypass_pattern', { pattern });
+      set({ bypassPatterns: patterns });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to remove passthrough pattern.');
+    }
+  },
 }));

@@ -17,6 +17,11 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Empty, EmptyTitle, EmptyDescription } from "@/components/ui/empty";
 import { Label } from '@/components/ui/label';
+import {
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+} from '@/components/ui/resizable';
 import { TextEditor } from '@/components/ui/text-editor';
 import { buildRawHttpRequest, buildRawHttpResponse, formatJsonBody } from '@/lib/http-message';
 import { useHistoryDetail } from '@/pages/live-traffic/hooks/use-history-detail';
@@ -172,8 +177,8 @@ export function LogEntryBurpView() {
   const responseCookies = parseCookieHeader(call.response_headers['set-cookie']);
 
   return (
-    <div className="grid h-full min-h-0 grid-cols-2 gap-0 bg-muted">
-      <div className="min-h-0 border-r">
+    <ResizablePanelGroup orientation="horizontal" className="h-full min-h-0 bg-muted">
+      <ResizablePanel defaultSize={50} minSize={20}>
         <div className="flex flex-col h-full bg-background">
           <div className="bg-muted h-10 px-3 py-2 border-b flex items-center justify-between gap-2 min-w-0">
             <div className="flex min-w-0 items-center gap-2">
@@ -222,9 +227,9 @@ export function LogEntryBurpView() {
             </div>
           )}
         </div>
-      </div>
-
-      <div className="min-h-0">
+      </ResizablePanel>
+      <ResizableHandle withHandle />
+      <ResizablePanel defaultSize={50} minSize={20}>
         <div className="flex flex-col h-full bg-background">
           <div className="bg-muted h-10 px-3 py-2 border-b flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
@@ -312,7 +317,7 @@ export function LogEntryBurpView() {
             </div>
           )}
         </div>
-      </div>
-    </div>
+      </ResizablePanel>
+    </ResizablePanelGroup>
   );
 }

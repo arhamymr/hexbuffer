@@ -13,7 +13,6 @@ interface InterceptRequestPanelProps {
   hasSelection: boolean;
   onRawRequestChange: (rawRequest: string) => void;
   onToggleIntercept: (enabled: boolean) => void;
-  bypassPanel?: React.ReactNode;
 }
 
 export function InterceptRequestPanel({
@@ -22,7 +21,6 @@ export function InterceptRequestPanel({
   hasSelection,
   onRawRequestChange,
   onToggleIntercept,
-  bypassPanel,
 }: InterceptRequestPanelProps) {
   const isEnabled = status?.mode === 'Enabled';
 
@@ -38,8 +36,6 @@ export function InterceptRequestPanel({
           <Switch checked={isEnabled} onCheckedChange={onToggleIntercept} />
         </div>
       </div>
-
-      {bypassPanel}
 
       <div className="flex h-full min-h-0 flex-col p-2">
         <Label className="mb-1 block text-xs text-muted-foreground">Raw Request</Label>

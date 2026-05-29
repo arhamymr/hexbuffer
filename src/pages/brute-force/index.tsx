@@ -2,6 +2,11 @@
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import {
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+} from '@/components/ui/resizable';
 import { Plus, Square, Play } from 'lucide-react';
 import { TabbedPageLayout } from '@/components/tabs-layout/tabbed-page-layout';
 import { BruteForceConfigDialog } from './components/brute-force-config';
@@ -61,8 +66,12 @@ export function BruteForcePage() {
       contentClassName="flex-1 border rounded-lg overflow-hidden bg-background min-h-0"
     >
       <div className="flex h-full min-h-0 flex-col">
-        <div className="bg-muted grid min-h-0 flex-1 grid-cols-2">
-          <div className="flex min-h-0 flex-col border-b lg:border-b-0 lg:border-r">
+        <ResizablePanelGroup
+          orientation="horizontal"
+          className="bg-muted min-h-0 flex-1"
+        >
+          <ResizablePanel defaultSize={50} minSize={20}>
+            <div className="flex min-h-0 flex-col h-full border-r">
             <div className="bg-muted h-10 px-3 py-2 border-b flex items-center justify-between gap-3">
               <span className="text-sm font-medium">Config Payload</span>
               <div className="flex items-center gap-3">
@@ -100,8 +109,10 @@ export function BruteForcePage() {
               <BruteForceConfigDialog />
             </div>
           </div>
-
-          <div className="flex min-h-0 flex-col">
+          </ResizablePanel>
+          <ResizableHandle withHandle />
+          <ResizablePanel defaultSize={50} minSize={20}>
+            <div className="flex min-h-0 flex-col h-full">
             <div className="bg-muted h-10 px-3 py-2 border-b flex items-center">
               <span className="text-sm font-medium">Result</span>
             </div>
@@ -114,7 +125,8 @@ export function BruteForcePage() {
               </div>
             </div>
           </div>
-        </div>
+          </ResizablePanel>
+        </ResizablePanelGroup>
 
         <BruteForceResultDrawer />
 

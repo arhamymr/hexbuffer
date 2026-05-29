@@ -2,9 +2,13 @@ import * as React from 'react';
 import { AlertTriangle, Loader2, Power } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import {
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+} from '@/components/ui/resizable';
 import { useAppStore } from '@/stores/app';
 import { toast } from 'sonner';
-import { InterceptBypassPanel } from './components/intercept-bypass-panel';
 import { InterceptQueuePanel } from './components/intercept-queue-panel';
 import { InterceptRequestPanel } from './components/intercept-request-panel';
 import { useInterceptPage } from './hooks/use-intercept-page';
@@ -17,15 +21,12 @@ export function InterceptPage() {
     rawRequest,
     isBusy,
     isRefreshing,
-    bypassPatterns,
     setSelectedRequestId,
     setRawRequest,
     refresh,
     toggleIntercept,
     forwardSelectedRequest,
     dropSelectedRequest,
-    addBypassPattern,
-    removeBypassPattern,
     bypassHostAndForward,
   } = useInterceptPage();
   const proxyStatus = useAppStore((state) => state.proxyStatus);
@@ -68,39 +69,34 @@ export function InterceptPage() {
         </Alert>
       )}
       <div className="flex min-h-0 flex-1 overflow-hidden rounded-lg border bg-background">
-      <div className="bg-muted grid min-h-0 flex-1 grid-cols-2 gap-0">
-        <div className="min-h-0 border-r">
-          <InterceptRequestPanel
-            status={status}
-            rawRequest={rawRequest}
-            hasSelection={Boolean(selectedRequestId)}
-            onRawRequestChange={setRawRequest}
-            onToggleIntercept={toggleIntercept}
-            bypassPanel={
-              <InterceptBypassPanel
-                patterns={bypassPatterns}
-                disabled={status?.mode !== 'Enabled'}
-                onAdd={addBypassPattern}
-                onRemove={removeBypassPattern}
+        <div className="bg-muted flex-1 min-h-0">
+          <ResizablePanelGroup orientation="horizontal" className="min-h-0">
+            <ResizablePanel defaultSize={50} minSize={20}>
+              <InterceptRequestPanel
+                status={status}
+                rawRequest={rawRequest}
+                hasSelection={Boolean(selectedRequestId)}
+                onRawRequestChange={setRawRequest}
+                onToggleIntercept={toggleIntercept}
               />
-            }
-          />
+            </ResizablePanel>
+            <ResizableHandle withHandle />
+            <ResizablePanel defaultSize={50} minSize={20}>
+              <InterceptQueuePanel
+                status={status}
+                requests={requests}
+                selectedRequestId={selectedRequestId}
+                isBusy={isBusy}
+                isRefreshing={isRefreshing}
+                onSelectRequest={setSelectedRequestId}
+                onForward={forwardSelectedRequest}
+                onDrop={dropSelectedRequest}
+                onRefresh={refresh}
+                onBypassHost={bypassHostAndForward}
+              />
+            </ResizablePanel>
+          </ResizablePanelGroup>
         </div>
-        <div className="min-h-0">
-          <InterceptQueuePanel
-            status={status}
-            requests={requests}
-            selectedRequestId={selectedRequestId}
-            isBusy={isBusy}
-            isRefreshing={isRefreshing}
-            onSelectRequest={setSelectedRequestId}
-            onForward={forwardSelectedRequest}
-            onDrop={dropSelectedRequest}
-            onRefresh={refresh}
-            onBypassHost={bypassHostAndForward}
-          />
-        </div>
-      </div>
       </div>
     </div>
   );

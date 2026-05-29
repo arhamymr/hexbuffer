@@ -7,12 +7,10 @@ import {
   getInterceptStatus,
   getPausedRequests,
   setInterceptEnabled,
-  getInterceptBypassPatterns,
-  addInterceptBypassPattern,
-  removeInterceptBypassPattern,
 } from '../api';
 import { buildRawPausedRequest, getRequestHost } from '../lib';
 import type { InterceptStatus, PausedRequest } from '../types';
+import { useBruteForceStore } from '@/stores/bruto-force';
 
 export function useInterceptPage() {
   const [status, setStatus] = React.useState<InterceptStatus | null>(null);
@@ -21,8 +19,8 @@ export function useInterceptPage() {
   const [rawRequest, setRawRequest] = React.useState('');
   const [isBusy, setIsBusy] = React.useState(false);
   const [isRefreshing, setIsRefreshing] = React.useState(false);
-  const [bypassPatterns, setBypassPatterns] = React.useState<string[]>([]);
   const loadedRequestIdRef = React.useRef<string | null>(null);
+  const fetchBypassPatterns = useBruteForceStore((s) => s.fetchBypassPatterns);
 
   const selectedRequest = React.useMemo(
     () => requests.find((request) => request.id === selectedRequestId) ?? null,
@@ -33,15 +31,14 @@ export function useInterceptPage() {
     setIsRefreshing(true);
 
     try {
-      const [nextStatus, nextRequests, nextBypassPatterns] = await Promise.all([
+      const [nextStatus, nextRequests] = await Promise.all([
         getInterceptStatus(),
         getPausedRequests(),
-        getInterceptBypassPatterns(),
       ]);
 
       setStatus(nextStatus);
       setRequests(nextRequests);
-      setBypassPatterns(nextBypassPatterns);
+      fetchBypassPatterns();
 
       setSelectedRequestId((currentId) => {
         if (currentId && nextRequests.some((request) => request.id === currentId)) {
@@ -129,38 +126,13 @@ export function useInterceptPage() {
     }
   }, [refresh]);
 
-  const addBypassPattern = React.useCallback(
-    async (pattern: string) => {
-      try {
-        const next = await addInterceptBypassPattern(pattern);
-        setBypassPatterns(next);
-        toast.success(`Added passthrough: ${pattern}`);
-      } catch (error) {
-        toast.error(error instanceof Error ? error.message : 'Failed to add passthrough pattern.');
-      }
-    },
-    []
-  );
-
-  const removeBypassPattern = React.useCallback(
-    async (pattern: string) => {
-      try {
-        const next = await removeInterceptBypassPattern(pattern);
-        setBypassPatterns(next);
-      } catch (error) {
-        toast.error(error instanceof Error ? error.message : 'Failed to remove passthrough pattern.');
-      }
-    },
-    []
-  );
-
   const bypassHostAndForward = React.useCallback(
     async (request: PausedRequest) => {
       const host = getRequestHost(request);
       setIsBusy(true);
 
       try {
-        await addInterceptBypassPattern(host);
+        await useBruteForceStore.getState().addBypassPattern(host);
 
         const sameHostIds = requests
           .filter((r) => getRequestHost(r) === host)
@@ -197,15 +169,12 @@ export function useInterceptPage() {
     rawRequest,
     isBusy,
     isRefreshing,
-    bypassPatterns,
     setSelectedRequestId,
     setRawRequest,
     refresh,
     toggleIntercept,
     forwardSelectedRequest,
     dropSelectedRequest,
-    addBypassPattern,
-    removeBypassPattern,
     bypassHostAndForward,
   };
 }

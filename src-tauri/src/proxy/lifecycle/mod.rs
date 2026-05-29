@@ -25,6 +25,8 @@ pub struct Ctx {
     pub res_http_version: String,
     pub res_headers: std::collections::HashMap<String, String>,
     pub res_body: Vec<u8>,
+    pub req_content_decoded: bool,
+    pub res_content_decoded: bool,
     pub paused_id: Option<uuid::Uuid>,
     pub app_handle: AppHandle,
     pub response_recorded: bool,
@@ -48,6 +50,8 @@ impl Ctx {
             res_http_version: String::new(),
             res_headers: std::collections::HashMap::new(),
             res_body: Vec::new(),
+            req_content_decoded: false,
+            res_content_decoded: false,
             paused_id: None,
             app_handle,
             response_recorded: false,
@@ -122,6 +126,7 @@ impl HttpHandler for AppHandler {
                     ctx.transaction_id, error
                 );
             }
+            ctx.req_content_decoded = decoded.metadata.content_decoded;
             ctx.req_body = decoded.decoded_body;
         }
 
@@ -146,6 +151,7 @@ impl HttpHandler for AppHandler {
                         http_version: ctx.req_http_version.clone(),
                         headers: ctx.req_headers.clone(),
                         body: ctx.req_body.clone(),
+                        content_decoded: ctx.req_content_decoded,
                     },
                     response: None,
                 };
@@ -277,6 +283,7 @@ impl HttpHandler for AppHandler {
                 ctx.transaction_id, error
             );
         }
+        ctx.res_content_decoded = decoded.metadata.content_decoded;
         ctx.res_body = decoded.decoded_body;
 
         if ctx.req_method != "CONNECT" {

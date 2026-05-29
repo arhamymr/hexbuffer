@@ -43,6 +43,8 @@ export interface ApiCall {
   response_body_size: number;
   response_content_type: string | null;
 
+  content_decoded?: boolean;
+
   security_state: string;
   server_ip: string | null;
   duration_ms: number | null;
@@ -67,6 +69,7 @@ export interface ProxyRequest {
   http_version: string;
   headers: Record<string, string>;
   body: number[];
+  content_decoded?: boolean;
 }
 
 export interface ProxyResponse {
@@ -75,6 +78,7 @@ export interface ProxyResponse {
   http_version: string;
   headers: Record<string, string>;
   body: number[];
+  content_decoded?: boolean;
 }
 
 export interface ProxyRecord {

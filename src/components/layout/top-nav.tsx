@@ -8,6 +8,7 @@ import { GripHorizontal } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAppStore } from '@/stores/app';
 import { OpenBrowserButton } from './open-browser';
+import { ProxyButton } from './proxy-button';
 import { mainNavItems } from './constants';
 import { TitlebarButtons } from './titlebar-buttons';
 
@@ -130,6 +131,7 @@ export function TopNav() {
         </div>
 
         <div className="flex shrink-0 items-center gap-1">
+          <ProxyButton />
           <OpenBrowserButton />
           <TitlebarButtons />
         </div>

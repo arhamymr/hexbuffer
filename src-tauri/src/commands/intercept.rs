@@ -62,6 +62,7 @@ pub async fn forward_intercepted_request(
         http_version: "HTTP/1.1".to_string(),
         headers: request.headers,
         body: request.body.into_bytes(),
+        content_decoded: false,
     });
     let proxy_state = state.lock().map_err(|error| format!("{error}"))?;
     let forwarded = proxy_state.forward_paused_request(&id, request);

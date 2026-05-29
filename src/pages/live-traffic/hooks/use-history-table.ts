@@ -86,6 +86,7 @@ export function adaptProxyRecordToApiCall(record: ProxyRecord): ApiCall {
     response_body: record.response ? new TextDecoder().decode(new Uint8Array(record.response.body)) : null,
     response_body_size: record.response?.body.length ?? 0,
     response_content_type: record.response?.headers['content-type'] || null,
+    content_decoded: record.request.content_decoded || record.response?.content_decoded,
     security_state: '',
     server_ip: record.server_addr || null,
     duration_ms: null,

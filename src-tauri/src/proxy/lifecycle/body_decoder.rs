@@ -191,6 +191,44 @@ fn decode_content_coding(coding: &str, body: &[u8]) -> Result<Vec<u8>, String> {
     }
 }
 
+pub fn encode_body(encoding: &str, body: &[u8]) -> Result<Vec<u8>, String> {
+    let codings = parse_codings(encoding);
+    let mut encoded = body.to_vec();
+    for coding in codings.iter() {
+        encoded = encode_content_coding(coding, &encoded)?;
+    }
+    Ok(encoded)
+}
+
+fn encode_content_coding(coding: &str, body: &[u8]) -> Result<Vec<u8>, String> {
+    match coding {
+        "gzip" | "x-gzip" => {
+            use std::io::Write;
+            let mut encoder = flate2::write::GzEncoder::new(Vec::new(), flate2::Compression::default());
+            encoder.write_all(body).map_err(|e| e.to_string())?;
+            encoder.finish().map_err(|e| e.to_string())
+        }
+        "br" => {
+            use std::io::Write;
+            let mut output = Vec::new();
+            {
+                let mut compressor = brotli::CompressorWriter::new(&mut output, 4096, 11, 22);
+                compressor.write_all(body).map_err(|e| e.to_string())?;
+            }
+            Ok(output)
+        }
+        "deflate" => {
+            use std::io::Write;
+            let mut encoder = flate2::write::DeflateEncoder::new(Vec::new(), flate2::Compression::default());
+            encoder.write_all(body).map_err(|e| e.to_string())?;
+            encoder.finish().map_err(|e| e.to_string())
+        }
+        "zstd" => zstd::stream::encode_all(&body[..], 0).map_err(|e| e.to_string()),
+        "identity" => Ok(body.to_vec()),
+        unknown => Err(format!("unsupported content encoding for re-encoding: '{unknown}'")),
+    }
+}
+
 fn decode_deflate(body: &[u8]) -> Result<Vec<u8>, String> {
     let mut zlib_decoder = flate2::read::ZlibDecoder::new(body);
     match read_decoder(&mut zlib_decoder) {
@@ -340,5 +378,45 @@ mod tests {
         assert_eq!(decoded.decoded_body, b"hello");
         assert!(decoded.metadata.was_chunked);
         assert!(decoded.metadata.errors.is_empty());
+    }
+
+    #[test]
+    fn encode_decode_roundtrip_gzip() {
+        let original = b"hello world";
+        let encoded = encode_body("gzip", original).unwrap();
+        assert_ne!(&encoded[..], &original[..]);
+
+        let decoded = decode_http_body(
+            &headers(&[("Content-Encoding", "gzip")]),
+            &encoded,
+        );
+        assert_eq!(decoded.decoded_body, original);
+        assert!(decoded.metadata.content_decoded);
+    }
+
+    #[test]
+    fn encode_decode_roundtrip_deflate() {
+        let original = b"hello deflate";
+        let encoded = encode_body("deflate", original).unwrap();
+        assert_ne!(&encoded[..], &original[..]);
+
+        let decoded = decode_http_body(
+            &headers(&[("Content-Encoding", "deflate")]),
+            &encoded,
+        );
+        assert_eq!(decoded.decoded_body, original);
+    }
+
+    #[test]
+    fn encode_decode_roundtrip_br() {
+        let original = b"hello brotli";
+        let encoded = encode_body("br", original).unwrap();
+        assert_ne!(&encoded[..], &original[..]);
+
+        let decoded = decode_http_body(
+            &headers(&[("Content-Encoding", "br")]),
+            &encoded,
+        );
+        assert_eq!(decoded.decoded_body, original);
     }
 }

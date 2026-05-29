@@ -33,12 +33,27 @@ pub async fn send_repeater_request(request: RepeaterRequest) -> Result<RepeaterR
         .map_err(|error| format!("Failed to build HTTP client: {}", error))?;
 
     let mut builder = client.request(method, &request.url);
-    for (name, value) in request.headers {
+    for (name, value) in &request.headers {
         builder = builder.header(name, value);
     }
 
     if !request.body.is_empty() {
-        builder = builder.body(request.body);
+        let mut body_bytes: Vec<u8> = request.body.into_bytes();
+
+        let content_encoding = request.headers.iter()
+            .find(|(k, _)| k.eq_ignore_ascii_case("content-encoding"))
+            .map(|(_, v)| v.clone());
+
+        if let Some(encoding) = content_encoding {
+            if !encoding.is_empty() {
+                match crate::proxy::lifecycle::body_decoder::encode_body(&encoding, &body_bytes) {
+                    Ok(encoded) => body_bytes = encoded,
+                    Err(e) => eprintln!("[repeater] Failed to re-encode body ({encoding}): {e}"),
+                }
+            }
+        }
+
+        builder = builder.body(body_bytes);
     }
 
     let started_at = Instant::now();

@@ -3,7 +3,6 @@ import { useTabState } from '@/components/tabs-layout/use-tab-state';
 import type { PageTabItem } from '@/components/tabs-layout/types';
 import { useDocumentsStore } from '@/stores/documents';
 import { useTargetStore } from '@/stores/target';
-import { useAppStore } from '@/stores/app';
 import { toast } from 'sonner';
 import type { TreeNodeData } from '../components/tree-view';
 import { useHistoryQuery } from './use-history-query';
@@ -14,15 +13,9 @@ const ALL_HISTORY_TAB_ID = 'all-scope';
 export function useHttpHistoryPage() {
   const [sitemapVisible, setSitemapVisible] = React.useState(false);
   const [historyMode, setHistoryMode] = React.useState<HistoryMode>('http');
-  const proxyStatus = useAppStore((state) => state.proxyStatus);
-  const proxyPort = useAppStore((state) => state.proxyPort);
-  const proxyDefaultPort = useAppStore((state) => state.proxyDefaultPort);
-  const startProxy = useAppStore((state) => state.startProxy);
-  const stopProxy = useAppStore((state) => state.stopProxy);
   const targets = useTargetStore((state) => state.targets);
   const removeActiveTab = useTargetStore((state) => state.removeActiveTab);
   const { setActiveScope, setSelectedCallId, setPathFilter } = useHistoryQuery();
-  const activeProxyPort = proxyPort ?? proxyDefaultPort;
   const activeTargets = React.useMemo(
     () => targets.filter((target) => target.tabActive),
     [targets]
@@ -92,27 +85,6 @@ export function useHttpHistoryPage() {
     toast.success('Sent scope to active document');
   }, [activeTargets]);
 
-  const handleStartProxy = React.useCallback(async () => {
-    try {
-      await startProxy();
-      const { proxyPort, proxyDefaultPort } = useAppStore.getState();
-      const activePort = proxyPort ?? proxyDefaultPort;
-
-      toast.success(`Proxy started on 127.0.0.1:${activePort}`);
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Failed to start proxy');
-    }
-  }, [startProxy]);
-
-  const handleStopProxy = React.useCallback(async () => {
-    try {
-      await stopProxy();
-      toast.success('Proxy stopped');
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Failed to stop proxy');
-    }
-  }, [stopProxy]);
-
   return {
     tabs,
     activeTabId,
@@ -123,11 +95,7 @@ export function useHttpHistoryPage() {
     sitemapVisible,
     setSitemapVisible,
     shouldShowSitemap,
-    proxyStatus,
-    activeProxyPort,
     handleTreeSelect,
-    handleStartProxy,
-    handleStopProxy,
     sendScopeToDocuments,
   };
 }

@@ -1,9 +1,10 @@
 'use client';
 
-import { ArrowDown, ArrowUp } from "lucide-react";
+import { ArrowDown, ArrowUp, AlertTriangle } from "lucide-react";
 import { Empty, EmptyTitle, EmptyDescription } from "@/components/ui/empty";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { formatTimestamp, formatBytes, getMethodBadge, StatusBadge, getExtension } from "./utils";
+import { formatTimestamp, formatBytes, getExtension } from "./utils";
+import { StatusBadge, MethodBadge } from "@/components/status-badge";
 import { LogEntryContextMenu } from "./log-context-menu";
 import type { ApiCall } from '@/types';
 import { useHistoryTable } from '@/pages/live-traffic/hooks/use-history-table';
@@ -26,7 +27,7 @@ export const callsColumns: import("@tanstack/react-table").ColumnDef<ApiCall>[] 
     size: 70,
     cell: ({ row }) => (
       <div className="flex gap-2">
-        {getMethodBadge(row.original.method)}
+        <MethodBadge method={row.original.method} />
         <StatusBadge status={row.original.response_status} />
       </div>
     ),
@@ -167,8 +168,13 @@ export function TrafficTable() {
                   {formatTimestamp(call.timestamp)}
                 </td>
                 <td className="px-3 py-1 gap-2 flex">
-                  {getMethodBadge(call.method)}
+                  <MethodBadge method={call.method} />
                   <StatusBadge status={call.response_status} />
+                  {call.content_decoded && (
+                    <span title="Request body was decoded from gzip/br/deflate">
+                      <AlertTriangle className="h-3 w-3 text-yellow-500" />
+                    </span>
+                  )}
                 </td>
                 <td className="text-xs truncate max-w-[250px] px-3 py-1" title={call.url}>
                   {call.host}

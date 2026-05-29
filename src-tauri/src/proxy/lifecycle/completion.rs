@@ -19,6 +19,7 @@ pub fn build_record(ctx: &Ctx) -> ProxyRecord {
             http_version: ctx.req_http_version.clone(),
             headers: ctx.req_headers.clone(),
             body: ctx.req_body.clone(),
+            content_decoded: ctx.req_content_decoded,
         },
         response: Some(super::super::state::ProxyResponse {
             status_code: ctx.res_status_code,
@@ -26,6 +27,7 @@ pub fn build_record(ctx: &Ctx) -> ProxyRecord {
             http_version: ctx.res_http_version.clone(),
             headers: ctx.res_headers.clone(),
             body: ctx.res_body.clone(),
+            content_decoded: ctx.res_content_decoded,
         }),
     }
 }

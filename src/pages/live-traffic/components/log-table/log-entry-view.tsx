@@ -22,7 +22,8 @@ import { buildRawHttpRequest, buildRawHttpResponse, formatJsonBody } from '@/lib
 import { useHistoryDetail } from '@/pages/live-traffic/hooks/use-history-detail';
 import { InspectorSection, buildHeadersList, buildParamsList } from './inspector';
 import { parseCookieHeader } from './cookie-display';
-import { formatBytes, getMethodBadge } from './utils';
+import { formatBytes } from './utils';
+import { MethodBadge } from '@/components/status-badge';
 import { useRepeaterStore } from '@/stores/repeater';
 import { useBruteForceStore } from '@/stores/bruto-force';
 import { createDefaultAttackConfig, findRequestPayloadPositions } from '@/pages/brute-force/types';
@@ -179,7 +180,7 @@ export function LogEntryBurpView() {
               <span className="text-sm font-medium">
                 Request
               </span>
-              {call.method && getMethodBadge(call.method)}
+              {call.method && <MethodBadge method={call.method} />}
               <span className="text-xs font-mono truncate text-muted-foreground" title={call.url}>
                 {call.url}
               </span>

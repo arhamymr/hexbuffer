@@ -935,7 +935,7 @@ fn row_to_proxy_record(row: &rusqlite::Row) -> SqlResult<ProxyRecord> {
     let client_addr: Option<String> = row.get(10)?;
     let server_addr: Option<String> = row.get(11)?;
 
-    let request = ProxyRequest {
+    let mut request = ProxyRequest {
         method,
         uri: url,
         http_version: String::from("HTTP/1.1"),
@@ -946,9 +946,17 @@ fn row_to_proxy_record(row: &rusqlite::Row) -> SqlResult<ProxyRecord> {
             .unwrap_or_default()
             .unwrap_or_default(),
         body: request_body.unwrap_or_default(),
+        content_decoded: false,
     };
 
-    let response = response_status.map(|status| ProxyResponse {
+    if !request.content_decoded
+        && !request.body.is_empty()
+        && request.headers.keys().any(|k| k.eq_ignore_ascii_case("content-encoding"))
+    {
+        request.content_decoded = true;
+    }
+
+    let mut response = response_status.map(|status| ProxyResponse {
         status_code: status as u16,
         status_text: response_status_text.unwrap_or_default(),
         http_version: String::from("HTTP/1.1"),
@@ -959,7 +967,17 @@ fn row_to_proxy_record(row: &rusqlite::Row) -> SqlResult<ProxyRecord> {
             .unwrap_or_default()
             .unwrap_or_default(),
         body: response_body.unwrap_or_default(),
+        content_decoded: false,
     });
+
+    if let Some(ref mut resp) = response {
+        if !resp.content_decoded
+            && !resp.body.is_empty()
+            && resp.headers.keys().any(|k| k.eq_ignore_ascii_case("content-encoding"))
+        {
+            resp.content_decoded = true;
+        }
+    }
 
     Ok(ProxyRecord {
         id: Uuid::parse_str(&id).map_err(|_| rusqlite::Error::InvalidQuery)?,

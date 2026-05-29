@@ -5,7 +5,7 @@ import {
   buildHeadersList,
   buildParamsList,
 } from '@/pages/live-traffic/components/log-table/inspector';
-import { StatusBadge, getMethodBadge } from '@/pages/live-traffic/components/log-table/utils';
+import { StatusBadge, MethodBadge } from '@/components/status-badge';
 import { getBodyPreview } from '../lib/packet-utils';
 import type { HttpMessage } from '../types';
 
@@ -26,7 +26,7 @@ export function HttpParserPanel({ message }: HttpParserPanelProps) {
     <div className="flex h-full flex-col overflow-hidden">
       <div className="border-b px-3 py-2">
         <div className="flex items-center gap-2">
-          {message.direction === 'request' && message.method ? getMethodBadge(message.method) : <StatusBadge status={message.statusCode ?? null} />}
+          {message.direction === 'request' && message.method ? <MethodBadge method={message.method} /> : <StatusBadge status={message.statusCode ?? null} />}
           <span className="min-w-0 truncate font-mono text-xs">
             {message.direction === 'request' ? `${message.host ?? ''}${message.url ?? ''}` : message.statusText}
           </span>

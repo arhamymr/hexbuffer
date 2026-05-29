@@ -3,6 +3,7 @@
 import { Loader2, PauseCircle, Play, Trash2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { MethodBadge } from '@/components/status-badge';
 import { cn } from '@/lib/utils';
 import type { InterceptStatus, PausedRequest } from '../types';
 import { formatRequestTime, getRequestHost, getRequestPath } from '../lib';
@@ -93,9 +94,7 @@ export function InterceptQueuePanel({
                       isSelected && 'bg-muted'
                     )}
                   >
-                    <Badge variant="secondary" className="mt-0.5 justify-center text-[10px]">
-                      {request.request.method}
-                    </Badge>
+                    <MethodBadge method={request.request.method} />
                     <span className="min-w-0">
                       <span className="block truncate font-medium">{getRequestHost(request)}</span>
                       <span className="block truncate text-xs text-muted-foreground">

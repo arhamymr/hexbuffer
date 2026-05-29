@@ -11,6 +11,8 @@ pub struct ProxyRequest {
     pub http_version: String,
     pub headers: HashMap<String, String>,
     pub body: Vec<u8>,
+    #[serde(default)]
+    pub content_decoded: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -20,6 +22,8 @@ pub struct ProxyResponse {
     pub http_version: String,
     pub headers: HashMap<String, String>,
     pub body: Vec<u8>,
+    #[serde(default)]
+    pub content_decoded: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

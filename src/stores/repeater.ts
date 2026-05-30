@@ -4,7 +4,9 @@ import { persist } from 'zustand/middleware';
 import {
   createDefaultRepeaterTab,
   createRepeaterTabFromRequest,
+  createWsRepeaterTab,
   type RepeaterRequest,
+  type RepeaterWsRequest,
   type RepeaterTab,
 } from '@/pages/repeater/types';
 
@@ -12,10 +14,12 @@ interface RepeaterState {
   tabs: RepeaterTab[];
   activeTabId: string;
   nextRequestTabNumber: number;
+  nextWsTabNumber: number;
   setActiveTabId: (id: string) => void;
   updateTab: (id: string, updater: (tab: RepeaterTab) => RepeaterTab) => void;
   renameTab: (id: string, name: string) => void;
   addRequestTab: (request: RepeaterRequest) => string;
+  addWsTab: (wsRequest: RepeaterWsRequest) => string;
   closeTab: (id: string) => void;
 }
 
@@ -29,12 +33,18 @@ function getNextRequestTabNumber(tabs: RepeaterTab[]): number {
   return numericNames.length > 0 ? Math.max(...numericNames) + 1 : 1;
 }
 
+function getNextWsTabNumber(tabs: RepeaterTab[]): number {
+  const wsTabs = tabs.filter((tab) => tab.mode === 'websocket');
+  return wsTabs.length + 1;
+}
+
 export const useRepeaterStore = create<RepeaterState>()(
   persist(
     (set) => ({
       tabs: [initialTab],
       activeTabId: initialTab.id,
       nextRequestTabNumber: 1,
+      nextWsTabNumber: 1,
       setActiveTabId: (id) => set({ activeTabId: id }),
       updateTab: (id, updater) =>
         set((state) => ({
@@ -52,6 +62,18 @@ export const useRepeaterStore = create<RepeaterState>()(
           tabs: [...state.tabs, newTab],
           activeTabId: newTab.id,
           nextRequestTabNumber: state.nextRequestTabNumber + 1,
+        }));
+
+        return newTab.id;
+      },
+      addWsTab: (wsRequest) => {
+        const { nextWsTabNumber } = useRepeaterStore.getState();
+        const newTab = createWsRepeaterTab(wsRequest, nextWsTabNumber);
+
+        set((state) => ({
+          tabs: [...state.tabs, newTab],
+          activeTabId: newTab.id,
+          nextWsTabNumber: state.nextWsTabNumber + 1,
         }));
 
         return newTab.id;
@@ -87,6 +109,7 @@ export const useRepeaterStore = create<RepeaterState>()(
         tabs: state.tabs,
         activeTabId: state.activeTabId,
         nextRequestTabNumber: state.nextRequestTabNumber,
+        nextWsTabNumber: state.nextWsTabNumber,
       }),
       merge: (persistedState, currentState) => {
         const typedState = persistedState as Partial<RepeaterState> | undefined;
@@ -102,6 +125,7 @@ export const useRepeaterStore = create<RepeaterState>()(
           tabs: persistedTabs,
           activeTabId,
           nextRequestTabNumber: typedState?.nextRequestTabNumber ?? getNextRequestTabNumber(persistedTabs),
+          nextWsTabNumber: typedState?.nextWsTabNumber ?? getNextWsTabNumber(persistedTabs),
         };
       },
     }

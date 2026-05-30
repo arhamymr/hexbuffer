@@ -83,6 +83,7 @@ export function useRepeaterPage() {
     renameTab,
     closeTab,
     activeTab,
+    updateTab: updateActiveTab,
     updateUrl,
     updateRawRequest,
     sendRequest,

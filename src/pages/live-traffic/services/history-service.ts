@@ -50,3 +50,7 @@ export async function clearHistoryLogs(): Promise<void> {
 export async function deleteHistoryLog(logId: string): Promise<void> {
   await invoke('delete_proxy_by_id', { logId });
 }
+
+export async function deleteWebSocketConnection(connectionId: string): Promise<void> {
+  await invoke('delete_websocket_by_id', { connectionId });
+}

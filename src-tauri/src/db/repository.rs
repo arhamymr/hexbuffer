@@ -436,6 +436,15 @@ impl Database {
         Ok(())
     }
 
+    pub fn delete_websocket_connection(&self, id: &str) -> SqlResult<()> {
+        let conn = self.conn.lock().unwrap();
+        conn.execute(
+            "DELETE FROM websocket_connections WHERE id = ?1",
+            params![id],
+        )?;
+        Ok(())
+    }
+
     pub fn get_websocket_paginated(
         &self,
         filter: Option<&WebSocketFilter>,

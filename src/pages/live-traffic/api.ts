@@ -85,6 +85,7 @@ export interface WebSocketConnectionSummary {
   url: string;
   host: string;
   path: string;
+  direction: string;
   state: string;
   message_count: number;
   last_activity_at: string;
@@ -185,4 +186,8 @@ export async function getWebSocketDetail(connectionId: string): Promise<WebSocke
   return invokeTauri('get_websocket_detail', {
     connectionId,
   });
+}
+
+export async function deleteWebSocket(connectionId: string): Promise<void> {
+  await invokeTauri('delete_websocket_by_id', { connectionId });
 }

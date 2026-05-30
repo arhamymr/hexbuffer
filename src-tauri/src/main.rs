@@ -9,6 +9,7 @@ use zeroxbuffer::{
 };
 use zeroxbuffer::ai::MastraProcessState;
 use zeroxbuffer::commands::intruder::IntruderState;
+use zeroxbuffer::commands::repeater::WsRepeaterState;
 
 fn main() {
     eprintln!("[main] Application starting...");
@@ -39,6 +40,7 @@ fn main() {
             app.manage(PacketCaptureState::default());
             app.manage(BrowserProcessState::default());
             app.manage(SqliScanState::new());
+            app.manage(WsRepeaterState::default());
             app.manage(history);
             eprintln!("[main] Building Tauri app...");
 
@@ -77,7 +79,11 @@ fn main() {
             zeroxbuffer::commands::history::get_websocket_paginated,
             zeroxbuffer::commands::history::get_websocket_detail,
             zeroxbuffer::commands::history::clear_websocket_all,
+            zeroxbuffer::commands::history::delete_websocket_by_id,
             zeroxbuffer::commands::repeater::send_repeater_request,
+            zeroxbuffer::commands::repeater::ws_repeater_connect,
+            zeroxbuffer::commands::repeater::ws_repeater_send,
+            zeroxbuffer::commands::repeater::ws_repeater_disconnect,
             zeroxbuffer::commands::intruder::start_intruder_attack,
             zeroxbuffer::commands::intruder::stop_intruder_attack,
             zeroxbuffer::port_scanner::scan_ports,

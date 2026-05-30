@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { listen } from '@tauri-apps/api/event';
 
 import type {
   WebSocketConnectionRecord,
@@ -57,6 +58,9 @@ export function useWebSocketDetail(selectedConnectionId: string | null) {
   const [isLoading, setIsLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
 
+  const selectedConnectionIdRef = useRef(selectedConnectionId);
+  selectedConnectionIdRef.current = selectedConnectionId;
+
   useEffect(() => {
     if (!selectedConnectionId) {
       setConnection(null);
@@ -97,6 +101,26 @@ export function useWebSocketDetail(selectedConnectionId: string | null) {
       isCurrent = false;
     };
   }, [selectedConnectionId]);
+
+  useEffect(() => {
+    const unlisten = listen<WebSocketMessageRecord>(
+      'websocket-message',
+      (event) => {
+        const record = event.payload;
+        if (
+          !selectedConnectionIdRef.current ||
+          record.connection_id !== selectedConnectionIdRef.current
+        ) {
+          return;
+        }
+        setMessages((prev) => [...prev, adaptMessage(record)]);
+      }
+    );
+
+    return () => {
+      unlisten.then((fn) => fn());
+    };
+  }, []);
 
   return useMemo(
     () => ({

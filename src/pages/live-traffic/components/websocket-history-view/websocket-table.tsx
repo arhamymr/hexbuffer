@@ -4,6 +4,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Empty, EmptyDescription, EmptyTitle } from '@/components/ui/empty';
 import { useWebSocketTable } from '@/pages/live-traffic/hooks/use-websocket-table';
+import { WebSocketContextMenu } from './websocket-context-menu';
 
 interface WebSocketTableProps {
   selectedConnectionId: string | null;
@@ -46,6 +47,7 @@ export function WebSocketTable({ selectedConnectionId, onSelectConnection }: Web
     hasActiveFilters,
     loadMore,
     handleRefresh,
+    removeConnectionLocally,
   } = useWebSocketTable();
   const totalPages = Math.max(1, Math.ceil(pagination.total / pagination.perPage));
 
@@ -89,36 +91,48 @@ export function WebSocketTable({ selectedConnectionId, onSelectConnection }: Web
             <th className="text-left text-xs font-medium text-muted-foreground px-3 py-2">Host</th>
             <th className="text-left text-xs font-medium text-muted-foreground px-3 py-2">Path</th>
             <th className="text-left text-xs font-medium text-muted-foreground px-3 py-2">State</th>
+            <th className="text-left text-xs font-medium text-muted-foreground px-3 py-2">Direction</th>
             <th className="text-right text-xs font-medium text-muted-foreground px-3 py-2">Messages</th>
             <th className="text-left text-xs font-medium text-muted-foreground px-3 py-2">Last Activity</th>
           </tr>
         </thead>
         <tbody>
           {connections.map((connection) => (
-            <tr
+            <WebSocketContextMenu
               key={connection.id}
-              className={`border-b cursor-pointer transition-colors hover:bg-muted/50 ${
-                selectedConnectionId === connection.id ? 'bg-muted/60' : ''
-              }`}
-              onClick={() => onSelectConnection(connection.id)}
+              connectionId={connection.id}
+              connectionUrl={connection.url}
+              connectionHost={connection.host}
+              connectionPath={connection.path}
+              onDelete={removeConnectionLocally}
             >
-              <td className="text-xs font-mono text-muted-foreground px-3 py-2">
-                {formatDateTime(connection.timestamp)}
-              </td>
-              <td className="text-xs px-3 py-2 truncate max-w-[180px]" title={connection.url}>
-                {connection.host}
-              </td>
-              <td className="text-xs text-muted-foreground px-3 py-2 truncate max-w-[320px]" title={connection.url}>
-                {connection.path}
-              </td>
-              <td className="text-xs px-3 py-2">
-                <span className={`inline-flex items-center rounded border px-1.5 py-0.5 uppercase ${stateClassName(connection.state)}`}>
-                  {connection.state}
-                </span>
-              </td>
-              <td className="text-xs text-right px-3 py-2">{connection.messageCount}</td>
-              <td className="text-xs text-muted-foreground px-3 py-2">{formatDateTime(connection.lastActivityAt)}</td>
-            </tr>
+              <tr
+                className={`border-b cursor-pointer transition-colors hover:bg-muted/50 ${
+                  selectedConnectionId === connection.id ? 'bg-muted/60' : ''
+                }`}
+                onClick={() => onSelectConnection(connection.id)}
+              >
+                <td className="text-xs font-mono text-muted-foreground px-3 py-2">
+                  {formatDateTime(connection.timestamp)}
+                </td>
+                <td className="text-xs px-3 py-2 truncate max-w-[180px]" title={connection.url}>
+                  {connection.host}
+                </td>
+                <td className="text-xs text-muted-foreground px-3 py-2 truncate max-w-[320px]" title={connection.url}>
+                  {connection.path}
+                </td>
+                <td className="text-xs px-3 py-2">
+                  <span className={`inline-flex items-center rounded border px-1.5 py-0.5 uppercase ${stateClassName(connection.state)}`}>
+                    {connection.state}
+                  </span>
+                </td>
+                <td className="text-xs px-3 py-2">
+                  {connection.direction}
+                </td>
+                <td className="text-xs text-right px-3 py-2">{connection.messageCount}</td>
+                <td className="text-xs text-muted-foreground px-3 py-2">{formatDateTime(connection.lastActivityAt)}</td>
+              </tr>
+            </WebSocketContextMenu>
           ))}
         </tbody>
       </table>

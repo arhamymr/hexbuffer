@@ -31,6 +31,7 @@ pub struct WebSocketConnectionSummary {
     pub url: String,
     pub host: String,
     pub path: String,
+    pub direction: String,
     pub state: String,
     pub message_count: u32,
     pub last_activity_at: String,
@@ -208,6 +209,12 @@ impl HistoryBridge {
         self.db.clear_websocket_logs().map_err(|e| e.to_string())
     }
 
+    pub fn delete_websocket_connection(&self, id: &str) -> Result<(), String> {
+        self.db
+            .delete_websocket_connection(id)
+            .map_err(|e| e.to_string())
+    }
+
     pub fn get_websocket_paginated(
         &self,
         page: u32,
@@ -362,6 +369,7 @@ impl From<WebSocketConnectionRecord> for WebSocketConnectionSummary {
             url: record.url,
             host: record.host,
             path: record.path,
+            direction: format!("{} → {}", record.client_addr, record.server_addr),
             state: format!("{:?}", record.state).to_lowercase(),
             message_count: record.message_count,
             last_activity_at: record.last_activity_at.to_rfc3339(),

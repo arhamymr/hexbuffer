@@ -12,6 +12,7 @@ export interface WebSocketConnectionSummary {
   url: string;
   host: string;
   path: string;
+  direction: string;
   state: string;
   messageCount: number;
   lastActivityAt: string;
@@ -24,6 +25,7 @@ function adaptWebSocketSummary(record: WebSocketConnectionSummaryDto): WebSocket
     url: record.url,
     host: record.host,
     path: record.path,
+    direction: record.direction,
     state: record.state,
     messageCount: record.message_count,
     lastActivityAt: record.last_activity_at,
@@ -158,6 +160,10 @@ export function useWebSocketTable() {
     fetchPage(1);
   }, [fetchPage]);
 
+  const removeConnectionLocally = useCallback((connectionId: string) => {
+    setConnections((prev) => prev.filter((c) => c.id !== connectionId));
+  }, []);
+
   return {
     connections,
     pagination,
@@ -168,5 +174,6 @@ export function useWebSocketTable() {
     hasActiveFilters: Boolean(query.filter.search || (query.filter.scope && query.filter.scope.length > 0)),
     loadMore,
     handleRefresh,
+    removeConnectionLocally,
   };
 }

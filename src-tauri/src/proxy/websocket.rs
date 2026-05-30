@@ -66,10 +66,10 @@ pub fn build_connection_record(ctx: &Ctx) -> Option<WebSocketConnectionRecord> {
 
     let now = chrono::Utc::now();
     let (host, path, url) = parse_websocket_target(&ctx.req_uri, &ctx.req_headers);
-    let state = if ctx.res_status_code == 101 {
-        WebSocketConnectionState::Open
-    } else {
-        WebSocketConnectionState::Error
+    // 0 means response status hasn't been received yet (called from handle_request)
+    let state = match ctx.res_status_code {
+        101 | 0 => WebSocketConnectionState::Open,
+        _ => WebSocketConnectionState::Error,
     };
 
     Some(WebSocketConnectionRecord {
@@ -79,7 +79,11 @@ pub fn build_connection_record(ctx: &Ctx) -> Option<WebSocketConnectionRecord> {
         host,
         path,
         handshake_request_headers: ctx.req_headers.clone(),
-        handshake_response_status: Some(ctx.res_status_code),
+        handshake_response_status: if ctx.res_status_code == 0 {
+            None
+        } else {
+            Some(ctx.res_status_code)
+        },
         handshake_response_headers: ctx.res_headers.clone(),
         client_addr: ctx.client_addr.clone(),
         server_addr: ctx.server_addr.clone(),
@@ -100,7 +104,12 @@ pub fn parse_websocket_target(
             path.push('?');
             path.push_str(query);
         }
-        return (host, path, parsed.to_string());
+        let scheme = match parsed.scheme() {
+            "https" | "wss" => "wss",
+            _ => "ws",
+        };
+        let url = format!("{scheme}://{host}{path}");
+        return (host, path, url);
     }
 
     let host = header_value(headers, "host").cloned().unwrap_or_default();

@@ -106,3 +106,11 @@ pub async fn get_websocket_detail(
 pub async fn clear_websocket_all(history: State<'_, HistoryBridge>) -> Result<(), String> {
     history.clear_websocket_all()
 }
+
+#[tauri::command]
+pub async fn delete_websocket_by_id(
+    history: State<'_, HistoryBridge>,
+    connection_id: String,
+) -> Result<(), String> {
+    history.delete_websocket_connection(&connection_id)
+}

@@ -11,7 +11,7 @@ use hudsucker::tokio_tungstenite::tungstenite::Message;
 use tauri::{AppHandle, Emitter, Manager};
 
 use crate::proxy::state::{
-    WebSocketConnectionState, WebSocketMessageDirection, WebSocketMessageRecord,
+    WebSocketMessageDirection, WebSocketMessageRecord,
     WebSocketMessageType,
 };
 use crate::proxy::websocket;
@@ -359,13 +359,18 @@ impl WebSocketHandler for AppHandler {
         msg: Message,
     ) -> Option<Message> {
         let (client_addr, uri, direction) = match ctx {
-            WebSocketContext::ClientToServer { src, dst } => {
+            WebSocketContext::ClientToServer { src, dst, .. } => {
                 (src.to_string(), dst.clone(), WebSocketMessageDirection::Inbound)
             }
-            WebSocketContext::ServerToClient { src, dst } => {
+            WebSocketContext::ServerToClient { src, dst, .. } => {
                 (dst.to_string(), src.clone(), WebSocketMessageDirection::Outbound)
             }
         };
+
+        eprintln!(
+            "[websocket] handle_message dir={:?} client={} uri={}",
+            direction, client_addr, uri
+        );
 
         let message_type = match &msg {
             Message::Text(_) => WebSocketMessageType::Text,
@@ -378,10 +383,21 @@ impl WebSocketHandler for AppHandler {
 
         let payload = match &msg {
             Message::Text(text) => text.as_bytes().to_vec(),
-            Message::Binary(data) => data.clone(),
-            Message::Ping(data) | Message::Pong(data) => data.clone(),
-            Message::Close(data) => data.as_ref().map(|d| d.as_ref().to_vec()).unwrap_or_default(),
-            Message::Frame(data) => data.payload().clone(),
+            Message::Binary(data) => data.to_vec(),
+            Message::Ping(data) | Message::Pong(data) => data.to_vec(),
+            Message::Close(data) => {
+                if let Some(frame) = data {
+                    let reason = frame.reason.clone();
+                    let code: u16 = frame.code.into();
+                    let mut payload =
+                        vec![(code >> 8) as u8, (code & 0xFF) as u8];
+                    payload.extend_from_slice(reason.as_bytes());
+                    payload
+                } else {
+                    Vec::new()
+                }
+            }
+            Message::Frame(data) => data.payload().to_vec(),
         };
 
         let uri_str = uri.to_string();

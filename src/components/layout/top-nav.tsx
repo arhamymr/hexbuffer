@@ -84,7 +84,7 @@ export function TopNav() {
               {mainNavItems.map((item) => {
                 const Icon = item.icon;
                 const isActive = pathname === item.href;
-                const showProxyIndicator = item.href === '/live-traffic' && proxyStatus === 'connected';
+                const showProxyIndicator = item.href === '/' && proxyStatus === 'connected';
                 return (
                   <Link
                     key={item.href}

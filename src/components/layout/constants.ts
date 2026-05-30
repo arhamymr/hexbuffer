@@ -9,7 +9,7 @@ interface NavItem {
 }
 
 export const allNavItems: NavItem[] = [
-  { label: 'Live Traffic', icon: ArrowUpDown, href: '/live-traffic' },
+  { label: 'Live Traffic', icon: ArrowUpDown, href: '/' },
   // { label: 'Packets', icon: Network, href: '/packet-capture', devOnly: true },
   { label: 'Intercept', icon: PauseCircle, href: '/intercept' },
   { label: 'Brute Force', icon: Crosshair, href: '/brute-force' },

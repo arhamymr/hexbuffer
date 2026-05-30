@@ -117,7 +117,7 @@ pub async fn ws_repeater_connect(
     app: AppHandle,
     state: tauri::State<'_, WsRepeaterState>,
     url: String,
-    headers: HashMap<String, String>,
+    _headers: HashMap<String, String>,
 ) -> Result<String, String> {
     let url = if url.starts_with("https://") {
         url.replacen("https://", "wss://", 1)

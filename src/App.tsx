@@ -1,4 +1,5 @@
 import { Routes, Route } from "react-router-dom";
+import { DashboardPage } from "@/pages/dashboard";
 import { LiveTrafficPage } from "@/pages/live-traffic";
 import { BruteForcePage } from "@/pages/brute-force";
 import { Settings } from "@/pages/settings";
@@ -16,7 +17,8 @@ function AppRoutes() {
     <>
       <GlobalCaInstallDialog />
       <Routes>
-        <Route path="/" element={<LiveTrafficPage />} />
+        <Route path="/" element={<DashboardPage />} />
+        <Route path="/live-traffic" element={<LiveTrafficPage />} />
         <Route path="/intercept" element={<InterceptPage />} />
         <Route path="/repeater" element={<RepeaterPage />} />
         <Route path="/brute-force" element={<BruteForcePage />} />

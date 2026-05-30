@@ -73,7 +73,7 @@ export function TopNav() {
             <GripHorizontal className="size-5" data-tauri-drag-region />
           </div>
           <div className="flex items-center gap-1">
-            <p className='text-sm font-bold font-mono'>0xbuffer</p>
+            <Link to="/" className='text-sm font-bold font-mono hover:text-foreground text-muted-foreground transition-colors no-underline'>0xbuffer</Link>
           </div>
 
           <div className="relative min-w-0 flex-1">
@@ -84,7 +84,7 @@ export function TopNav() {
               {mainNavItems.map((item) => {
                 const Icon = item.icon;
                 const isActive = pathname === item.href;
-                const showProxyIndicator = item.href === '/' && proxyStatus === 'connected';
+                const showProxyIndicator = item.href === '/live-traffic' && proxyStatus === 'connected';
                 return (
                   <Link
                     key={item.href}

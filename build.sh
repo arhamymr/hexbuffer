@@ -17,15 +17,7 @@ echo "Installing dependencies..."
 pnpm install
 
 echo "Building Tauri desktop app..."
-
-case "$(uname -s)" in
-  Darwin)  BUNDLES="dmg" ;;
-  Linux)   BUNDLES="appimage,deb" ;;
-  MINGW*|MSYS*|CYGWIN*) BUNDLES="nsis,msi" ;;
-  *)       BUNDLES="all" ;;
-esac
-
-pnpm tauri build --bundles "$BUNDLES"
+pnpm tauri build -- --bundles app,dmg
 
 echo "Build complete."
 

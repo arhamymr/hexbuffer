@@ -18,4 +18,23 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  build: {
+    chunkSizeWarningLimit: 900,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes("node_modules")) {
+            if (id.includes("recharts")) return "vendor-recharts";
+            if (id.includes("monaco-editor") || id.includes("@monaco-editor")) return "vendor-monaco";
+            if (id.includes("jspdf")) return "vendor-jspdf";
+            if (id.includes("html2canvas")) return "vendor-html2canvas";
+            if (id.includes("@tauri-apps")) return "vendor-tauri";
+            if (id.includes("lucide-react")) return "vendor-lucide";
+            if (id.includes("@hugeicons")) return "vendor-hugeicons";
+            return "vendor";
+          }
+        },
+      },
+    },
+  },
 });

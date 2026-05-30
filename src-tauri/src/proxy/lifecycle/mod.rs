@@ -1,12 +1,20 @@
 pub mod body_decoder;
 pub mod completion;
 
+use std::collections::HashMap;
+use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use hudsucker::{Body, HttpContext, HttpHandler, WebSocketContext, WebSocketHandler};
 use hyper::{header::HeaderName, header::HeaderValue, Method, Request, Response, Uri};
 use hudsucker::tokio_tungstenite::tungstenite::Message;
-use tauri::AppHandle;
+use tauri::{AppHandle, Emitter, Manager};
+
+use crate::proxy::state::{
+    WebSocketConnectionState, WebSocketMessageDirection, WebSocketMessageRecord,
+    WebSocketMessageType,
+};
+use crate::proxy::websocket;
 
 pub use completion::save_and_emit;
 
@@ -65,6 +73,7 @@ impl Ctx {
 pub struct AppHandler {
     app_handle: AppHandle,
     ctx: Option<Ctx>,
+    ws_connections: Arc<Mutex<HashMap<String, uuid::Uuid>>>,
 }
 
 impl AppHandler {
@@ -72,6 +81,7 @@ impl AppHandler {
         Self {
             app_handle,
             ctx: None,
+            ws_connections: Arc::new(Mutex::new(HashMap::new())),
         }
     }
 }
@@ -83,8 +93,6 @@ impl HttpHandler for AppHandler {
         req: Request<Body>,
     ) -> hudsucker::RequestOrResponse {
         use crate::proxy::state::{InterceptMode, PausedRequest, ProxyState};
-        use std::sync::Mutex;
-        use tauri::Manager;
 
         let mut ctx = Ctx::new(self.app_handle.clone());
 
@@ -98,6 +106,41 @@ impl HttpHandler for AppHandler {
             if let Ok(v) = value.to_str() {
                 ctx.req_headers
                     .insert(name.as_str().to_string(), v.to_string());
+            }
+        }
+
+        if websocket::is_websocket_upgrade_request(&ctx.req_headers) {
+            eprintln!(
+                "[lifecycle] WS upgrade request detected txn_id={} uri={}",
+                ctx.transaction_id, ctx.req_uri
+            );
+            if let Some(record) = websocket::build_connection_record(&ctx) {
+                if let Some(history) = self.app_handle.try_state::<crate::HistoryBridge>() {
+                    if let Err(e) = history.insert_websocket_connection(&record) {
+                        eprintln!(
+                            "[lifecycle] failed to insert WS connection from request: {}",
+                            e
+                        );
+                    } else {
+                        eprintln!(
+                            "[lifecycle] saved WS connection from request txn_id={}",
+                            ctx.transaction_id
+                        );
+                    }
+                }
+                if let Err(e) = self.app_handle.emit("websocket-connection", &record) {
+                    eprintln!(
+                        "[lifecycle] failed to emit WS connection event: {}",
+                        e
+                    );
+                }
+                let (host, path, _) =
+                    websocket::parse_websocket_target(&ctx.req_uri, &ctx.req_headers);
+                let key = format!("{}|{}|{}", ctx.client_addr, host, path);
+                self.ws_connections
+                    .lock()
+                    .unwrap()
+                    .insert(key, ctx.transaction_id);
             }
         }
 
@@ -257,7 +300,21 @@ impl HttpHandler for AppHandler {
 
         let (parts, body) = res.into_parts();
 
-        if crate::proxy::websocket::is_successful_websocket_handshake(&ctx) {
+        let is_ws_handshake =
+            crate::proxy::websocket::is_successful_websocket_handshake(&ctx);
+        eprintln!(
+            "[lifecycle] handle_response txn_id={} status={} is_ws_handshake={} ws_upgrade_req_headers={}",
+            ctx.transaction_id,
+            ctx.res_status_code,
+            is_ws_handshake,
+            websocket::is_websocket_upgrade_request(&ctx.req_headers)
+        );
+
+        if is_ws_handshake {
+            eprintln!(
+                "[lifecycle] WS handshake confirmed in handle_response txn_id={}",
+                ctx.transaction_id
+            );
             save_and_emit(&ctx, &self.app_handle);
             return Response::from_parts(parts, body);
         }
@@ -298,9 +355,88 @@ impl HttpHandler for AppHandler {
 impl WebSocketHandler for AppHandler {
     async fn handle_message(
         &mut self,
-        _ctx: &WebSocketContext,
+        ctx: &WebSocketContext,
         msg: Message,
     ) -> Option<Message> {
+        let (client_addr, uri, direction) = match ctx {
+            WebSocketContext::ClientToServer { src, dst } => {
+                (src.to_string(), dst.clone(), WebSocketMessageDirection::Inbound)
+            }
+            WebSocketContext::ServerToClient { src, dst } => {
+                (dst.to_string(), src.clone(), WebSocketMessageDirection::Outbound)
+            }
+        };
+
+        let message_type = match &msg {
+            Message::Text(_) => WebSocketMessageType::Text,
+            Message::Binary(_) => WebSocketMessageType::Binary,
+            Message::Ping(_) => WebSocketMessageType::Ping,
+            Message::Pong(_) => WebSocketMessageType::Pong,
+            Message::Close(_) => WebSocketMessageType::Close,
+            Message::Frame(_) => WebSocketMessageType::Binary,
+        };
+
+        let payload = match &msg {
+            Message::Text(text) => text.as_bytes().to_vec(),
+            Message::Binary(data) => data.clone(),
+            Message::Ping(data) | Message::Pong(data) => data.clone(),
+            Message::Close(data) => data.as_ref().map(|d| d.as_ref().to_vec()).unwrap_or_default(),
+            Message::Frame(data) => data.payload().clone(),
+        };
+
+        let uri_str = uri.to_string();
+        let empty_headers = HashMap::new();
+        let (host, path, _) =
+            websocket::parse_websocket_target(&uri_str, &empty_headers);
+        let key = format!("{}|{}|{}", client_addr, host, path);
+
+        let connection_id =
+            self.ws_connections.lock().unwrap().get(&key).copied();
+
+        if let Some(connection_id) = connection_id {
+            let now = chrono::Utc::now();
+            let message_record = WebSocketMessageRecord {
+                id: uuid::Uuid::new_v4(),
+                connection_id,
+                timestamp: now,
+                direction,
+                message_type: message_type.clone(),
+                payload: payload.clone(),
+                payload_size: payload.len(),
+            };
+
+            if let Some(history) =
+                self.app_handle.try_state::<crate::HistoryBridge>()
+            {
+                if let Err(e) = history.insert_websocket_message(&message_record)
+                {
+                    eprintln!("[websocket] failed to save message: {}", e);
+                }
+            }
+
+            if let Err(e) =
+                self.app_handle.emit("websocket-message", &message_record)
+            {
+                eprintln!(
+                    "[websocket] failed to emit message event: {}",
+                    e
+                );
+            }
+
+            if matches!(&msg, Message::Close(_)) {
+                self.ws_connections.lock().unwrap().remove(&key);
+                eprintln!(
+                    "[websocket] connection closed conn_id={}",
+                    connection_id
+                );
+            }
+        } else {
+            eprintln!(
+                "[websocket] no connection mapping found for key={} client={} uri={}",
+                key, client_addr, uri_str
+            );
+        }
+
         println!("[websocket] message: {:?}", msg);
         Some(msg)
     }

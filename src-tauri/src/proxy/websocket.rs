@@ -25,7 +25,18 @@ pub fn is_successful_websocket_handshake(ctx: &Ctx) -> bool {
 }
 
 pub fn save_and_emit_connection(ctx: &Ctx, app_handle: &tauri::AppHandle) {
+    eprintln!(
+        "[websocket] save_and_emit_connection called txn_id={} status={} has_ws_headers={}",
+        ctx.transaction_id,
+        ctx.res_status_code,
+        is_websocket_upgrade_request(&ctx.req_headers)
+    );
+
     let Some(websocket_record) = build_connection_record(ctx) else {
+        eprintln!(
+            "[websocket] build_connection_record returned None txn_id={}",
+            ctx.transaction_id
+        );
         return;
     };
 
@@ -48,7 +59,7 @@ pub fn save_and_emit_connection(ctx: &Ctx, app_handle: &tauri::AppHandle) {
     }
 }
 
-fn build_connection_record(ctx: &Ctx) -> Option<WebSocketConnectionRecord> {
+pub fn build_connection_record(ctx: &Ctx) -> Option<WebSocketConnectionRecord> {
     if !is_websocket_upgrade_request(&ctx.req_headers) {
         return None;
     }
@@ -78,7 +89,7 @@ fn build_connection_record(ctx: &Ctx) -> Option<WebSocketConnectionRecord> {
     })
 }
 
-fn parse_websocket_target(
+pub fn parse_websocket_target(
     req_uri: &str,
     headers: &HashMap<String, String>,
 ) -> (String, String, String) {

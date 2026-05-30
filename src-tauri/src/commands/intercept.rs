@@ -56,13 +56,29 @@ pub async fn forward_intercepted_request(
     request: Option<InterceptForwardRequest>,
 ) -> Result<(), String> {
     let id = Uuid::parse_str(&request_id).map_err(|e| e.to_string())?;
-    let request = request.map(|request| ProxyRequest {
-        method: request.method,
-        uri: request.url,
-        http_version: "HTTP/1.1".to_string(),
-        headers: request.headers,
-        body: request.body.into_bytes(),
-        content_decoded: false,
+    let request = request.map(|request| {
+        let mut body = request.body.into_bytes();
+
+        if let Some(encoding) = request.headers.iter()
+            .find(|(k, _)| k.eq_ignore_ascii_case("content-encoding"))
+            .map(|(_, v)| v.clone())
+        {
+            if !encoding.is_empty() {
+                match crate::proxy::lifecycle::body_decoder::encode_body(&encoding, &body) {
+                    Ok(encoded) => body = encoded,
+                    Err(e) => eprintln!("[intercept] re-encode failed ({encoding}): {e}"),
+                }
+            }
+        }
+
+        ProxyRequest {
+            method: request.method,
+            uri: request.url,
+            http_version: "HTTP/1.1".to_string(),
+            headers: request.headers,
+            body,
+            content_decoded: false,
+        }
     });
     let proxy_state = state.lock().map_err(|error| format!("{error}"))?;
     let forwarded = proxy_state.forward_paused_request(&id, request);

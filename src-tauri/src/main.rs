@@ -54,6 +54,16 @@ fn main() {
                 eprintln!("[main] Mastra auto-start skipped: {}", error);
             }
 
+            #[cfg(desktop)]
+            {
+                let handle = app.handle().clone();
+                tauri::async_runtime::spawn(async move {
+                    if let Err(e) = check_for_updates(handle).await {
+                        eprintln!("[updater] startup check failed: {e}");
+                    }
+                });
+            }
+
             eprintln!("[main] Tauri setup complete");
             Ok(())
         })
@@ -129,18 +139,6 @@ fn main() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_process::init())
-        .setup(|app| {
-            #[cfg(desktop)]
-            {
-                let handle = app.handle().clone();
-                tauri::async_runtime::spawn(async move {
-                    if let Err(e) = check_for_updates(handle).await {
-                        eprintln!("[updater] startup check failed: {e}");
-                    }
-                });
-            }
-            Ok(())
-        })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

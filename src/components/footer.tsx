@@ -1,10 +1,11 @@
 import * as React from 'react';
 import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
-import { MessageSquare, Moon, Settings, Sun } from 'lucide-react';
+import { ArrowUp, Loader2, MessageSquare, Moon, Settings, Sun } from 'lucide-react';
 import { useAppStore } from '@/stores/app';
 import { useTheme } from './theme-provider';
 import { Button } from './ui/button';
 import { cn } from '@/lib/utils';
+import { useUpdater } from '@/hooks/use-updater';
 
 const proxyStatusLabel = {
   connected: 'Connected',
@@ -24,6 +25,7 @@ export function AppFooter({ isAssistantOpen, onToggleAssistant }: AppFooterProps
   const proxyDefaultPort = useAppStore((state) => state.proxyDefaultPort);
   const checkProxyStatus = useAppStore((state) => state.checkProxyStatus);
   const { theme, toggleTheme } = useTheme();
+  const { updateAvailable, updateVersion, downloading, installUpdate } = useUpdater();
   const activeProxyPort = proxyPort ?? proxyDefaultPort;
   const isDefaultPortChanged = proxyStatus === 'connected' && proxyPort !== null && proxyPort !== proxyDefaultPort;
   const proxyTitle = isDefaultPortChanged
@@ -79,6 +81,22 @@ export function AppFooter({ isAssistantOpen, onToggleAssistant }: AppFooterProps
         >
           <MessageSquare className="h-4 w-4" />
         </Button>
+        {updateAvailable && (
+          <Button
+            variant="ghost"
+            size="xs"
+            className="h-8 w-8 p-0 text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300"
+            title={`Update to v${updateVersion}`}
+            onClick={installUpdate}
+            disabled={downloading}
+          >
+            {downloading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <ArrowUp className="h-4 w-4" />
+            )}
+          </Button>
+        )}
         <Button
           variant="ghost"
           size="xs"

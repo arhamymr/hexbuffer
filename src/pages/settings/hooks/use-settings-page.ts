@@ -3,6 +3,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { save } from '@tauri-apps/plugin-dialog';
 import { toast } from 'sonner';
 import { getCaCert, saveCaCert, trustInterceptCa } from '@/pages/live-traffic/api';
+import { useUpdater } from '@/hooks/use-updater';
 import { AI_MODEL_OPTIONS_BY_PROVIDER } from '../constants';
 
 export interface AiSettings {
@@ -40,6 +41,16 @@ export function useSettingsPage() {
     url: DEFAULT_AI_SETTINGS.mastraUrl,
   });
   const [mastraBusy, setMastraBusy] = React.useState(false);
+
+  const {
+    checking: updateChecking,
+    downloading: updateDownloading,
+    downloadMessage: updateMessage,
+    updateAvailable,
+    updateVersion,
+    checkForUpdates,
+    installUpdate,
+  } = useUpdater();
 
   const refreshMastraStatus = React.useCallback(async () => {
     try {
@@ -247,5 +258,12 @@ export function useSettingsPage() {
     refreshMastraStatus,
     updateAiProvider,
     updateAiSettings,
+    updateAvailable,
+    updateChecking,
+    updateDownloading,
+    updateMessage,
+    updateVersion,
+    handleCheckForUpdates: checkForUpdates,
+    handleInstallUpdate: installUpdate,
   };
 }

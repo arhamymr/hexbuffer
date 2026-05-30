@@ -15,7 +15,7 @@ import { Switch } from '../../components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../../components/ui/accordion';
 import { Alert, AlertDescription, AlertTitle } from '../../components/ui/alert';
-import { BotIcon, DownloadIcon, KeyRoundIcon, PlayIcon, SaveIcon, SettingsIcon, ShieldCheckIcon, SquareIcon } from 'lucide-react';
+import { BotIcon, DownloadIcon, KeyRoundIcon, PlayIcon, RefreshCwIcon, SaveIcon, SettingsIcon, ShieldCheckIcon, SquareIcon } from 'lucide-react';
 import {
   AI_API_KEY_PLACEHOLDERS,
   AI_MODEL_OPTIONS_BY_PROVIDER,
@@ -33,9 +33,11 @@ export function Settings() {
     aiSettingsLoading,
     aiSettingsSaving,
     downloading,
+    handleCheckForUpdates,
     handleClearAiApiKey,
     handleDownloadCert,
     handleInstallMacCert,
+    handleInstallUpdate,
     handleSaveAiSettings,
     handleStartMastra,
     handleStopMastra,
@@ -45,6 +47,11 @@ export function Settings() {
     mastraStatus,
     updateAiProvider,
     updateAiSettings,
+    updateAvailable,
+    updateChecking,
+    updateDownloading,
+    updateMessage,
+    updateVersion,
   } = useSettingsPage();
   const SecurityNoticeIcon = SECURITY_NOTICE_ICON;
   const selectedProvider = AI_PROVIDER_OPTIONS.find((provider) => provider.id === aiSettings.provider);
@@ -76,18 +83,38 @@ export function Settings() {
           </TabsList>
         </div>
 
-        <TabsContent value="settings" className="flex-1 overflow-auto px-6 py-4">
+        <TabsContent value="settings" className="flex-1 overflow-auto px-6 py-4 space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Application</CardTitle>
+              <CardTitle>Updates</CardTitle>
               <CardDescription>
-                General application settings
+                Check for and install application updates
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-3">
               <p className="text-sm text-muted-foreground">
-                Application configuration options will appear here in future updates.
+                Current version: <span className="font-medium">0.1.0</span>
+                {updateVersion && (
+                  <span className="ml-2 text-green-600 dark:text-green-400">
+                    (v{updateVersion} available)
+                  </span>
+                )}
               </p>
+              <div className="flex flex-wrap gap-2">
+                <Button size="xs" onClick={handleCheckForUpdates} disabled={updateChecking || updateDownloading}>
+                  <RefreshCwIcon className={`mr-2 size-4 ${updateChecking ? 'animate-spin' : ''}`} />
+                  {updateChecking ? 'Checking...' : 'Check for Updates'}
+                </Button>
+                {updateAvailable && (
+                  <Button size="xs" variant="default" onClick={handleInstallUpdate} disabled={updateDownloading}>
+                    <DownloadIcon className={`mr-2 size-4 ${updateDownloading ? 'animate-spin' : ''}`} />
+                    {updateDownloading ? 'Installing...' : `Install v${updateVersion}`}
+                  </Button>
+                )}
+              </div>
+              {updateMessage && (
+                <p className="text-sm text-muted-foreground">{updateMessage}</p>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

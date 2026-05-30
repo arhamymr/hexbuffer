@@ -22,6 +22,10 @@ fn main() {
 
     tauri::Builder::default()
         .setup(|app| {
+            #[cfg(desktop)]
+            app.handle().plugin(tauri_plugin_updater::Builder::new().build())
+                .expect("Failed to initialize updater plugin");
+
             eprintln!("[main] Initializing database...");
             let app_dir = app
                 .path()
@@ -124,6 +128,55 @@ fn main() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
+        .plugin(tauri_plugin_process::init())
+        .setup(|app| {
+            #[cfg(desktop)]
+            {
+                let handle = app.handle().clone();
+                tauri::async_runtime::spawn(async move {
+                    if let Err(e) = check_for_updates(handle).await {
+                        eprintln!("[updater] startup check failed: {e}");
+                    }
+                });
+            }
+            Ok(())
+        })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
+}
+
+#[cfg(desktop)]
+async fn check_for_updates(app: tauri::AppHandle) -> tauri_plugin_updater::Result<()> {
+    use tauri_plugin_updater::UpdaterExt;
+
+    if let Some(update) = app.updater()?.check().await? {
+        eprintln!(
+            "[updater] update {} available (current: {})",
+            update.version, update.current_version
+        );
+
+        let mut downloaded = 0;
+        update
+            .download_and_install(
+                |chunk_length, content_length| {
+                    downloaded += chunk_length;
+                    if let Some(total) = content_length {
+                        eprintln!("[updater] downloaded {downloaded} / {total}");
+                    } else {
+                        eprintln!("[updater] downloaded {downloaded}");
+                    }
+                },
+                || {
+                    eprintln!("[updater] download finished");
+                },
+            )
+            .await?;
+
+        eprintln!("[updater] update installed, restarting");
+        app.restart();
+    } else {
+        eprintln!("[updater] no update available");
+    }
+
+    Ok(())
 }

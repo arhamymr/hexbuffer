@@ -93,7 +93,7 @@ fi
 
 # aws s3 CP wrapper for R2
 r2_cp() { aws s3 --endpoint-url "$R2_ENDPOINT" cp "$@"; }
-r2_cat() { aws s3 --endpoint-url "$R2_ENDPOINT" cp "$1" - 2>/dev/null || true; }
+r2_cat() { aws s3 --endpoint-url "$R2_ENDPOINT" cp "$1" - 2>/dev/null; }
 
 echo -e "[upload] detected platform: ${GREEN}${PLATFORM}${NC}"
 
@@ -129,6 +129,17 @@ echo "[upload] uploading bundle..."
 r2_cp "$BUNDLE_FILE" "s3://${R2_BUCKET}/${BUNDLE_NAME}"
 echo "[upload] uploading signature..."
 r2_cp "$SIG_FILE"   "s3://${R2_BUCKET}/${BUNDLE_NAME}.sig"
+
+# ── Upload installer (dmg / AppImage / exe) ───────────────────────────
+
+INSTALLER_FILE=$(find "$INSTALLER_DIR" -maxdepth 1 -name "$INSTALLER_GLOB" 2>/dev/null | head -1)
+if [ -n "${INSTALLER_FILE:-}" ] && [ -f "$INSTALLER_FILE" ]; then
+  INSTALLER_NAME=$(basename "$INSTALLER_FILE")
+  echo "[upload] uploading installer: ${GREEN}${INSTALLER_NAME}${NC}"
+  r2_cp "$INSTALLER_FILE" "s3://${R2_BUCKET}/${INSTALLER_NAME}"
+else
+  echo -e "${YELLOW}[upload] installer not found, skipping${NC}"
+fi
 
 # ── Update latest.json ───────────────────────────────────────────────
 

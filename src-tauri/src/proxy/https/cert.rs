@@ -6,6 +6,12 @@ use std::fs;
 use std::path::PathBuf;
 use std::sync::OnceLock;
 
+static CA_ROOT: OnceLock<PathBuf> = OnceLock::new();
+
+pub fn init_ca_dir(app_data_dir: PathBuf) {
+    CA_ROOT.get_or_init(|| app_data_dir.join(".0xbuffer"));
+}
+
 #[derive(Debug)]
 pub struct CaCerts {
     pub cert_pem: String,
@@ -13,9 +19,14 @@ pub struct CaCerts {
 }
 
 fn get_ca_dir() -> PathBuf {
-    std::env::current_dir()
-        .unwrap_or_else(|_| PathBuf::from("."))
-        .join(".0xbuffer")
+    CA_ROOT
+        .get()
+        .cloned()
+        .unwrap_or_else(|| {
+            std::env::current_dir()
+                .unwrap_or_else(|_| PathBuf::from("."))
+                .join(".0xbuffer")
+        })
 }
 
 fn get_ca_cert_path() -> PathBuf {
@@ -66,10 +77,10 @@ fn generate_ca(
     params.key_usages = vec![KeyUsagePurpose::KeyCertSign, KeyUsagePurpose::CrlSign];
     params
         .distinguished_name
-        .push(rcgen::DnType::OrganizationName, "Seven");
+        .push(rcgen::DnType::OrganizationName, "0xbuffer");
     params
         .distinguished_name
-        .push(rcgen::DnType::CommonName, "Seven Root CA");
+        .push(rcgen::DnType::CommonName, "0xbuffer Root CA");
 
     let key_pair = KeyPair::generate()?;
     let key_pem = key_pair.serialize_pem();

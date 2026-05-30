@@ -74,7 +74,7 @@ export function useSettingsPage() {
 
       const filePath = await save({
         title: 'Save CA Certificate',
-        defaultPath: 'seven-ca.pem',
+        defaultPath: '0xbuffer-ca.pem',
         filters: [
           {
             name: 'PEM Certificate',

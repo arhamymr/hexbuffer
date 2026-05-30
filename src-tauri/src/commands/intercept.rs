@@ -389,7 +389,7 @@ fn run_security(args: &[String]) -> Result<(), String> {
 fn install_intercept_ca_to_macos_keychain(app: &AppHandle) -> Result<String, String> {
     let ca_path = write_intercept_ca(app)?;
     let keychain_path = user_login_keychain_path()?;
-    let cert_name = "Seven Root CA".to_string();
+    let cert_name = "0xbuffer Root CA".to_string();
 
     let delete_args = vec![
         "delete-certificate".to_string(),

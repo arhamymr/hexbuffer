@@ -18,7 +18,7 @@ pub async fn start_proxy(app: AppHandle, port: u16, tls_port: u16) -> Result<Str
     let mut file = std::fs::OpenOptions::new()
         .create(true)
         .append(true)
-        .open("/tmp/seven_project.log")
+        .open("/tmp/0xbuffer.log")
         .map_err(|e| e.to_string())?;
     writeln!(
         file,
@@ -32,7 +32,7 @@ pub async fn start_proxy(app: AppHandle, port: u16, tls_port: u16) -> Result<Str
         let mut file = std::fs::OpenOptions::new()
             .create(true)
             .append(true)
-            .open("/tmp/seven_project.log")
+            .open("/tmp/0xbuffer.log")
             .unwrap();
         writeln!(file, "thread spawned, calling run()").unwrap();
         crate::proxy::run(

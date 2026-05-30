@@ -369,7 +369,7 @@ impl From<WebSocketConnectionRecord> for WebSocketConnectionSummary {
             url: record.url,
             host: record.host,
             path: record.path,
-            direction: format!("{} → {}", record.client_addr, record.server_addr),
+            direction: "→ server".to_string(),
             state: format!("{:?}", record.state).to_lowercase(),
             message_count: record.message_count,
             last_activity_at: record.last_activity_at.to_rfc3339(),

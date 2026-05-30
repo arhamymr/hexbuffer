@@ -14,7 +14,7 @@ export const allNavItems: NavItem[] = [
   { label: 'Intercept', icon: PauseCircle, href: '/intercept' },
   { label: 'Brute Force', icon: Crosshair, href: '/brute-force' },
   { label: 'Repeater', icon: RefreshCw, href: '/repeater' },
-  // { label: 'Browser', icon: Globe, href: '/browser-automation', devOnly: true },
+  { label: 'Browser', icon: Globe, href: '/browser-automation', devOnly: true },
   { label: 'Documents', icon: FileText, href: '/documents'},
   // { label: 'AI Tools', icon: Bot, href: '/ai-tools', devOnly: true },
   { label: 'Tools', icon: Wrench, href: '/tools' },

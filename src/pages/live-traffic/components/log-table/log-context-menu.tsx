@@ -17,7 +17,7 @@ import { useBruteForceStore } from '@/stores/bruto-force';
 import { useHistoryQuery } from '@/pages/live-traffic/hooks/use-history-query';
 import { adaptProxyRecordToApiCall } from '@/pages/live-traffic/hooks/use-history-table';
 import { useRepeaterStore } from '@/stores/repeater';
-import { buildHttpCurlCommand, buildRawHttpRequest } from '@/lib/http-message';
+import { buildHttpCurlCommand, buildRawHttpRequest, formatJsonBody } from '@/lib/http-message';
 import { useDocumentsStore } from '@/stores/documents';
 import { useTargetStore } from '@/stores/target';
 
@@ -41,31 +41,66 @@ export function LogEntryContextMenu({
     }
   };
 
-  const buildCurlCommand = (call: ApiCall): string => {
-    return buildHttpCurlCommand({
-      method: call.method,
-      url: call.url,
-      headers: call.headers,
-      body: call.request_body ?? '',
-    });
+  const handleCopyCurl = async () => {
+    try {
+      const detail = await fetchHistoryDetail(call.id);
+      const request = adaptProxyRecordToApiCall(detail);
+      const curl = buildHttpCurlCommand({
+        method: request.method,
+        url: request.url,
+        headers: request.headers,
+        body: request.request_body ?? '',
+      });
+      await copyToClipboard(curl);
+      toast.success('Copied as cURL');
+    } catch (error) {
+      console.error('Failed to copy cURL:', error);
+      toast.error('Failed to copy as cURL');
+    }
   };
 
-  const handleCopyCurl = () => {
-    copyToClipboard(buildCurlCommand(call));
+  const handleCopyUrl = async () => {
+    try {
+      const detail = await fetchHistoryDetail(call.id);
+      const request = adaptProxyRecordToApiCall(detail);
+      await copyToClipboard(request.url);
+      toast.success('Copied URL');
+    } catch {
+      await copyToClipboard(call.url);
+      toast.success('Copied URL');
+    }
   };
 
-  const handleCopyUrl = () => {
-    const port = call.url.includes(':443') ? 443 : 80;
-    const protocol = port === 443 ? 'https' : 'http';
-    copyToClipboard(`${protocol}://${call.host}${call.path}`);
+  const handleCopyRequestHeaders = async () => {
+    try {
+      const detail = await fetchHistoryDetail(call.id);
+      const request = adaptProxyRecordToApiCall(detail);
+      await copyToClipboard(JSON.stringify(request.headers, null, 2));
+      toast.success('Copied request headers');
+    } catch (error) {
+      console.error('Failed to copy request headers:', error);
+      toast.error('Failed to copy request headers');
+    }
   };
 
-  const handleCopyRequestHeaders = () => {
-    copyToClipboard(JSON.stringify(call.headers, null, 2));
-  };
-
-  const handleCopyResponseBody = () => {
-    copyToClipboard(call.response_body);
+  const handleCopyResponseBody = async () => {
+    try {
+      const detail = await fetchHistoryDetail(call.id);
+      const request = adaptProxyRecordToApiCall(detail);
+      const body = request.response_body;
+      if (!body) {
+        toast.error('No response body to copy');
+        return;
+      }
+      const formatted = request.response_content_type?.includes('json')
+        ? formatJsonBody(body)
+        : body;
+      await copyToClipboard(formatted);
+      toast.success('Copied response body');
+    } catch (error) {
+      console.error('Failed to copy response body:', error);
+      toast.error('Failed to copy response body');
+    }
   };
 
   const handleAddToScope = async () => {

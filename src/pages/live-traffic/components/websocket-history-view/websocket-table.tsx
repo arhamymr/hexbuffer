@@ -78,22 +78,22 @@ export function WebSocketTable({ selectedConnectionId, onSelectConnection }: Web
   return (
     <div className="overflow-auto h-full flex flex-col">
       {newEventsCount > 0 && (
-        <div className="flex items-center justify-center py-2 border-b bg-muted/50">
+        <div className="flex items-center justify-center py-1 border-b bg-muted/50">
           <Button variant="outline" size="xs" onClick={handleRefresh}>
             {newEventsCount} new connection{newEventsCount > 1 ? 's' : ''} - Click to refresh
           </Button>
         </div>
       )}
       <table className="w-full">
-        <thead className="sticky top-0 backdrop-blur z-10 border-b">
+        <thead className="sticky top-0 z-10 border-b bg-muted">
           <tr>
-            <th className="text-left text-xs font-medium text-muted-foreground px-3 py-2 w-[90px]">Time</th>
-            <th className="text-left text-xs font-medium text-muted-foreground px-3 py-2">Host</th>
-            <th className="text-left text-xs font-medium text-muted-foreground px-3 py-2">Path</th>
-            <th className="text-left text-xs font-medium text-muted-foreground px-3 py-2">State</th>
-            <th className="text-left text-xs font-medium text-muted-foreground px-3 py-2">Direction</th>
-            <th className="text-right text-xs font-medium text-muted-foreground px-3 py-2">Messages</th>
-            <th className="text-left text-xs font-medium text-muted-foreground px-3 py-2">Last Activity</th>
+            <th className="text-left text-xs font-medium text-muted-foreground px-3 py-1 w-[90px]">Time</th>
+            <th className="text-left text-xs font-medium text-muted-foreground px-3 py-1 w-[150px]">Host</th>
+            <th className="text-left text-xs font-medium text-muted-foreground px-3 py-1 flex-1">Path</th>
+            <th className="text-left text-xs font-medium text-muted-foreground px-3 py-1 w-[70px]">State</th>
+            <th className="text-left text-xs font-medium text-muted-foreground px-3 py-1 w-[90px]">Direction</th>
+            <th className="text-right text-xs font-medium text-muted-foreground px-3 py-1 w-[70px]">Messages</th>
+            <th className="text-left text-xs font-medium text-muted-foreground px-3 py-1 w-[80px]">Activity</th>
           </tr>
         </thead>
         <tbody>
@@ -107,30 +107,30 @@ export function WebSocketTable({ selectedConnectionId, onSelectConnection }: Web
               onDelete={removeConnectionLocally}
             >
               <tr
-                className={`border-b cursor-pointer transition-colors hover:bg-muted/50 ${
-                  selectedConnectionId === connection.id ? 'bg-muted/60' : ''
+                className={`font-mono transition-colors border-b cursor-pointer hover:bg-muted/50 ${
+                  selectedConnectionId === connection.id ? ' hover:!bg-muted bg-muted' : ''
                 }`}
                 onClick={() => onSelectConnection(connection.id)}
               >
-                <td className="text-xs font-mono text-muted-foreground px-3 py-2">
+                <td className="text-xs text-muted-foreground px-3 py-1">
                   {formatDateTime(connection.timestamp)}
                 </td>
-                <td className="text-xs px-3 py-2 truncate max-w-[180px]" title={connection.url}>
+                <td className="text-xs truncate max-w-[250px] px-3 py-1" title={connection.url}>
                   {connection.host}
                 </td>
-                <td className="text-xs text-muted-foreground px-3 py-2 truncate max-w-[320px]" title={connection.url}>
+                <td className="text-xs text-muted-foreground truncate max-w-[200px] px-3 py-1" title={connection.url}>
                   {connection.path}
                 </td>
-                <td className="text-xs px-3 py-2">
+                <td className="text-xs px-3 py-1">
                   <span className={`inline-flex items-center rounded border px-1.5 py-0.5 uppercase ${stateClassName(connection.state)}`}>
                     {connection.state}
                   </span>
                 </td>
-                <td className="text-xs px-3 py-2">
+                <td className="text-xs px-3 py-1">
                   {connection.direction}
                 </td>
-                <td className="text-xs text-right px-3 py-2">{connection.messageCount}</td>
-                <td className="text-xs text-muted-foreground px-3 py-2">{formatDateTime(connection.lastActivityAt)}</td>
+                <td className="text-xs text-right px-3 py-1">{connection.messageCount}</td>
+                <td className="text-xs text-muted-foreground px-3 py-1">{formatDateTime(connection.lastActivityAt)}</td>
               </tr>
             </WebSocketContextMenu>
           ))}

@@ -41,6 +41,8 @@ export interface BuildRawHttpResponseOptions {
 
 export interface BuildHttpCurlCommandOptions {
   multiline?: boolean;
+  insecure?: boolean;
+  compressed?: boolean;
 }
 
 function shellQuote(value: string): string {
@@ -208,26 +210,81 @@ export function buildRawHttpResponse(
   return [statusLine, ...headerLines, '', body].join('\n');
 }
 
+const PSEUDO_HEADERS = new Set([':method', ':path', ':scheme', ':authority', ':status']);
+
+const HOP_BY_HOP_HEADERS = new Set([
+  'connection',
+  'keep-alive',
+  'proxy-connection',
+  'transfer-encoding',
+  'te',
+  'trailer',
+  'upgrade',
+]);
+
+const ACCEPT_ENCODING_HEADER = 'accept-encoding';
+
+function shouldSkipHeader(key: string): boolean {
+  const lower = key.toLowerCase();
+  if (PSEUDO_HEADERS.has(lower)) return true;
+  if (HOP_BY_HOP_HEADERS.has(lower)) return true;
+  if (lower === 'host') return true;
+  if (lower === 'content-length') return true;
+  return false;
+}
+
+function hasCompressedEncoding(headers: Record<string, string>): boolean {
+  for (const [key, value] of Object.entries(headers)) {
+    if (key.toLowerCase() === ACCEPT_ENCODING_HEADER) {
+      if (/gzip|deflate|br\b/.test(value)) return true;
+    }
+  }
+  return false;
+}
+
 export function buildHttpCurlCommand(
   request: Partial<HttpRequestMessage>,
   options: BuildHttpCurlCommandOptions = {}
 ): string {
   const multiline = options.multiline ?? true;
-  const method = request.method || 'GET';
+  const insecure = options.insecure ?? true;
+  const compressed = options.compressed ?? true;
+  const method = (request.method || 'GET').toUpperCase();
   const url = request.url || '';
-  const lines = [`curl -X ${method}`];
+  const headers = request.headers ?? {};
 
-  for (const [key, value] of Object.entries(request.headers ?? {})) {
-    lines.push(`  -H ${shellQuote(`${key}: ${value}`)}`);
+  const lines: string[] = [];
+
+  if (insecure) {
+    lines.push('curl -k');
+  } else {
+    lines.push('curl');
+  }
+
+  if (method !== 'GET') {
+    lines[0] += ` -X ${method}`;
+  }
+
+  if (compressed && hasCompressedEncoding(headers)) {
+    lines[0] += ' --compressed';
+  }
+
+  for (const [key, value] of Object.entries(headers)) {
+    if (shouldSkipHeader(key)) continue;
+    lines.push(`-H ${shellQuote(`${key}: ${value}`)}`);
   }
 
   if (request.body) {
-    lines.push(`  -d ${shellQuote(request.body)}`);
+    lines.push(`-d ${shellQuote(request.body)}`);
   }
 
   if (url) {
-    lines.push(`  ${shellQuote(url)}`);
+    lines.push(shellQuote(url));
   }
 
-  return multiline ? lines.join(' \\\n') : lines.join(' ');
+  if (multiline) {
+    return lines.map((line, i) => (i === 0 ? line : `  ${line}`)).join(' \\\n');
+  }
+
+  return lines.join(' ');
 }

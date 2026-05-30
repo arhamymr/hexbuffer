@@ -67,7 +67,7 @@ export function LogFilters({
     filter.search || filter.pathFilter || filter.methods.size > 0 || filter.statusCodes.size > 0;
 
   return (
-    <div className="space-y-1">
+    <div className="space-y-1 p-1 bg-muted">
       <div className="flex items-center gap-4">
        
         <Input

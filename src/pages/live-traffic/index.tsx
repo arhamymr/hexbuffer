@@ -38,7 +38,7 @@ export function LiveTrafficPage() {
           </ContextMenuItem>
         )
       }
-      contentClassName="flex-1 flex flex-col overflow-hidden bg-background min-h-0"
+      contentClassName="flex-1 border rounded-lg flex flex-col overflow-hidden bg-background min-h-0"
     >
       <LogFilters
         historyMode={historyMode}
@@ -46,7 +46,7 @@ export function LiveTrafficPage() {
         sitemapVisible={sitemapVisible}
         setSitemapVisible={setSitemapVisible}
       />
-      <Card className="flex-1 flex flex-col overflow-hidden mt-3 !py-0">
+      <Card className="flex-1 flex flex-col overflow-hidden !py-0">
         <ResizablePanelGroup orientation="horizontal" className="flex-1">
           {shouldShowSitemap && (
             <>

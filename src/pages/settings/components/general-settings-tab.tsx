@@ -1,4 +1,4 @@
-import { DatabaseIcon, DownloadIcon, RefreshCwIcon } from 'lucide-react';
+import { Asterisk, DatabaseIcon, RefreshCwIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import type { SettingsPageState } from '../hooks/use-settings-page';
@@ -43,7 +43,7 @@ export function GeneralSettingsTab({ settings }: GeneralSettingsTabProps) {
             </Button>
             {updateAvailable && (
               <Button size="xs" variant="default" onClick={handleInstallUpdate} disabled={updateDownloading}>
-                <DownloadIcon className={`mr-2 size-4 ${updateDownloading ? 'animate-spin' : ''}`} />
+                <Asterisk className={`mr-2 size-4 ${updateDownloading ? 'animate-spin' : ''}`} />
                 {updateDownloading ? 'Installing...' : `Install v${updateVersion}`}
               </Button>
             )}

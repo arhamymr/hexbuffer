@@ -54,7 +54,7 @@ export function ProxyButton() {
           "h-6 px-1.5 text-xs transition-all rounded-md duration-300 group-hover:px-2 gap-0")}
       >
         {isConnected ? (
-          <Asterisk className="!size-4 shrink-0 animate-pulse animate-spin fill-current text-green-500" />
+          <Asterisk className="!size-4 shrink-0 animate-pulse animate-spin [animation-duration:1.2s] fill-current text-green-500" />
         ) : (
           <Asterisk className="!size-4 shrink-0" />
         )}

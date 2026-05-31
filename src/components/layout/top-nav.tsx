@@ -74,9 +74,11 @@ export function TopNav() {
           >
             <GripHorizontal className="size-5" data-tauri-drag-region />
           </div>
-          <div className="flex items-center gap-1">
+          <div className="group flex items-center gap-1 text-primary">
             <TriangleLogo />
-            <p className='text-sm font-bold font-mono hover:text-green-500 text-foreground transition-colors no-underline'>0xbuffer</p>
+            <p className="max-w-0 overflow-hidden whitespace-nowrap text-sm font-mono opacity-0 transition-all duration-200 no-underline group-hover:max-w-20 group-hover:opacity-100">
+              0xbuffer
+            </p>
           </div>
 
           <div className="relative min-w-0 flex-1">
@@ -101,7 +103,7 @@ export function TopNav() {
                       }
                   `}
                   >
-                    <Icon className="h-3 w-3" />
+                    <Icon className="size-3.5" />
                     <span>{item.label}</span>
                     {showProxyIndicator && (
                       <span

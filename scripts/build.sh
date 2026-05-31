@@ -1,14 +1,17 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-if [ -f .env ]; then
-  set -a; source .env; set +a
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+cd "$ROOT"
+
+if [ -f "$ROOT/.env" ]; then
+  set -a; source "$ROOT/.env"; set +a
 else
   echo "[env] .env not found; continuing with shell environment only"
 fi
 
 APP_NAME="0xbuffer"
-VERSION="$(cat VERSION)"
+VERSION="$(cat "$ROOT/VERSION")"
 PUB_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 BASE_URL="${UPDATER_BASE_URL:-https://releases.0xbuffer.com}"
 

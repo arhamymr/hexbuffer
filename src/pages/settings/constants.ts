@@ -1,4 +1,4 @@
-import { AlertTriangleIcon, InfoIcon } from 'lucide-react';
+import { AlertTriangleIcon, GitBranchIcon, InfoIcon, MessageCircleIcon } from 'lucide-react';
 
 export const INSTALLATION_GUIDES = [
   {
@@ -162,3 +162,16 @@ export const AI_API_KEY_PLACEHOLDERS: Record<string, string> = {
   openai: 'sk-...',
   deepseek: 'sk-...',
 };
+
+export const PROFILE_LINKS = [
+  {
+    label: 'Threads',
+    href: 'https://www.threads.com/@arhamymr',
+    Icon: MessageCircleIcon,
+  },
+  {
+    label: 'GitHub',
+    href: 'https://github.com/arhamymr',
+    Icon: GitBranchIcon,
+  },
+];

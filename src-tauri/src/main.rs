@@ -120,6 +120,7 @@ fn main() {
             zeroxbuffer::ai::stop_mastra,
             zeroxbuffer::commands::cert::get_ca_cert,
             zeroxbuffer::commands::cert::save_ca_cert,
+            zeroxbuffer::commands::storage::get_storage_info,
             zeroxbuffer::browser::get_browser_status,
             zeroxbuffer::browser::browser_open,
             zeroxbuffer::browser::browser_close,

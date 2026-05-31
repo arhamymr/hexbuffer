@@ -72,6 +72,8 @@ fn generate_ca(
     cert_path: &PathBuf,
     key_path: &PathBuf,
 ) -> Result<CaCerts, Box<dyn std::error::Error>> {
+    fs::create_dir_all(get_ca_dir())?;
+
     let mut params = CertificateParams::default();
     params.is_ca = IsCa::Ca(BasicConstraints::Unconstrained);
     params.key_usages = vec![KeyUsagePurpose::KeyCertSign, KeyUsagePurpose::CrlSign];

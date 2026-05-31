@@ -21,6 +21,11 @@ export interface MastraStatus {
   url: string;
 }
 
+export interface StorageInfo {
+  appDataDir: string;
+  databasePath: string;
+}
+
 const DEFAULT_AI_SETTINGS: AiSettings = {
   provider: 'openai',
   model: 'gpt-4.1-mini',
@@ -41,6 +46,7 @@ export function useSettingsPage() {
     url: DEFAULT_AI_SETTINGS.mastraUrl,
   });
   const [mastraBusy, setMastraBusy] = React.useState(false);
+  const [storageInfo, setStorageInfo] = React.useState<StorageInfo | null>(null);
 
   const {
     currentVersion,
@@ -79,6 +85,14 @@ export function useSettingsPage() {
   React.useEffect(() => {
     void loadAiSettings();
   }, [loadAiSettings]);
+
+  React.useEffect(() => {
+    invoke<StorageInfo>('get_storage_info')
+      .then(setStorageInfo)
+      .catch((error) => {
+        console.error('Failed to load storage info:', error);
+      });
+  }, []);
 
   const handleDownloadCert = React.useCallback(async () => {
     try {
@@ -258,6 +272,7 @@ export function useSettingsPage() {
     mastraBusy,
     mastraStatus,
     refreshMastraStatus,
+    storageInfo,
     updateAiProvider,
     updateAiSettings,
     updateAvailable,
@@ -269,3 +284,5 @@ export function useSettingsPage() {
     handleInstallUpdate: installUpdate,
   };
 }
+
+export type SettingsPageState = ReturnType<typeof useSettingsPage>;

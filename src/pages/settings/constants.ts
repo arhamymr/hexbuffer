@@ -9,7 +9,7 @@ export const INSTALLATION_GUIDES = [
       'Open Chrome and go to Settings → Privacy and security',
       'Click "Manage certificates"',
       'Go to the "Authorities" tab',
-      'Click "Import" and select the saved 0xbufferr-ca.pem file',
+      'Click "Import" and select the saved 0xbuffer-ca.pem file',
       'When prompted, check "Trust this certificate for identification of websites"',
       'Click "OK" and restart your browser',
     ],
@@ -22,7 +22,7 @@ export const INSTALLATION_GUIDES = [
       'Open Chrome and go to Settings → Privacy and security → Security',
       'Scroll down and click "Manage certificates"',
       'Click "Import" in the dialog that appears',
-      'Select the saved 0xbufferr-ca.pem file',
+      'Select the saved 0xbuffer-ca.pem file',
       'Check "Trust for SSL/TLS websites" when prompted',
       'Click "OK" and restart your browser',
     ],
@@ -35,7 +35,7 @@ export const INSTALLATION_GUIDES = [
       'Open Firefox and go to Options → Privacy & Security',
       'Scroll to "Certificates" section and click "View Certificates"',
       'Click "Authorities" tab',
-      'Click "Import" and select the saved 0xbufferr-ca.pem file',
+      'Click "Import" and select the saved 0xbuffer-ca.pem file',
       'Check "Trust this CA to identify websites"',
       'Click "OK" and restart Firefox',
     ],
@@ -47,7 +47,7 @@ export const INSTALLATION_GUIDES = [
       'Save the CA certificate above to a location you can find',
       'Open Safari → Preferences → Privacy',
       'Click "Manage Websites" then "Certificates"',
-      'Import the saved 0xbufferr-ca.pem file',
+      'Import the saved 0xbuffer-ca.pem file',
       'Set certificate trust to "Always Trust"',
       'Authenticate with Touch ID if prompted',
       'Restart Safari',
@@ -61,7 +61,7 @@ export const INSTALLATION_GUIDES = [
       'Go to Settings → General → VPN & Device Management',
       'Tap the downloaded profile to install it',
       'Go to Settings → General → About → Certificate Trust Settings',
-      'Enable full trust for "0xbufferr Root CA"',
+      'Enable full trust for "0xbuffer Root CA"',
     ],
     note: {
       Icon: InfoIcon,
@@ -75,7 +75,7 @@ export const INSTALLATION_GUIDES = [
       'Save the CA certificate to your device',
       'Go to Settings → Security → Advanced → Encryption & credentials',
       'Tap "Install a certificate" → "CA certificate"',
-      'Select the saved 0xbufferr-ca.pem file',
+      'Select the saved 0xbuffer-ca.pem file',
       'Name the certificate and confirm installation',
       'Some devices may require a PIN or password',
     ],
@@ -89,15 +89,15 @@ export const INSTALLATION_GUIDES = [
 export const HOW_IT_WORKS = [
   {
     title: '1. Certificate Generation',
-    body: 'When you first run the proxy, 0xbufferr generates a unique Root CA certificate stored locally on your device.',
+    body: 'When you first run the proxy, 0xbuffer generates a unique Root CA certificate stored locally on your device.',
   },
   {
     title: '2. CA Installation',
-    body: 'Installing this CA in your browser/device tells it to trust certificates signed by 0xbufferr.',
+    body: 'Installing this CA in your browser/device tells it to trust certificates signed by 0xbuffer.',
   },
   {
     title: '3. Dynamic Certificate Signing',
-    body: 'When you visit an HTTPS site (e.g., example.com), the proxy dynamically creates a certificate for that site, signed by the trusted 0xbufferr CA.',
+    body: 'When you visit an HTTPS site (e.g., example.com), the proxy dynamically creates a certificate for that site, signed by the trusted 0xbuffer CA.',
   },
   {
     title: '4. Secure Passthrough',
@@ -105,7 +105,7 @@ export const HOW_IT_WORKS = [
   },
   {
     title: '5. Privacy Note',
-    body: 'Only traffic passing through 0xbufferr proxy is intercepted. Your browsing outside the proxy remains private.',
+    body: 'Only traffic passing through 0xbuffer proxy is intercepted. Your browsing outside the proxy remains private.',
   },
 ];
 
@@ -129,10 +129,10 @@ export const TROUBLESHOOTING_GUIDES = [
     id: 'remove-ca',
     title: 'How to remove the CA certificate',
     bullets: [
-      'Windows: Internet Options → Content → Certificates → Authorities → Select "0xbufferr Root CA" → Remove',
-      'macOS: Keychain Access → System → Certificates → Delete "0xbufferr Root CA"',
+      'Windows: Internet Options → Content → Certificates → Authorities → Select "0xbuffer Root CA" → Remove',
+      'macOS: Keychain Access → System → Certificates → Delete "0xbuffer Root CA"',
       'Firefox: Options → Privacy → Certificates → View Certificates → Authorities → Delete',
-      'iOS: Settings → General → Profiles → Delete 0xbufferr profile',
+      'iOS: Settings → General → Profiles → Delete 0xbuffer profile',
       'Android: Settings → Security → Advanced → Encryption → Trusted certificates → Remove',
     ],
   },

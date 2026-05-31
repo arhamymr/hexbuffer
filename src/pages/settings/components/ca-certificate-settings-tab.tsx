@@ -58,7 +58,7 @@ export function CaCertificateSettingsTab({ settings }: CaCertificateSettingsTabP
               </Button>
             </div>
             <p className="text-xs text-muted-foreground">
-              Install directly on macOS, or choose a location to save <code className="bg-muted px-1 py-0.5 rounded">0xbufferr-ca.pem</code>
+              Install directly on macOS, or choose a location to save <code className="bg-muted px-1 py-0.5 rounded">0xbuffer-ca.pem</code>
             </p>
           </div>
         </CardContent>

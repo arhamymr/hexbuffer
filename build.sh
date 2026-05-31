@@ -7,10 +7,10 @@ else
   echo "[env] .env not found; continuing with shell environment only"
 fi
 
-APP_NAME="0xbufferr"
+APP_NAME="0xbuffer"
 VERSION="$(cat VERSION)"
 PUB_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-BASE_URL="${UPDATER_BASE_URL:-https://releases.0xbufferr.com}"
+BASE_URL="${UPDATER_BASE_URL:-https://releases.0xbuffer.com}"
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -165,7 +165,7 @@ fi
 
 # ── Update latest.json ───────────────────────────────────────────────
 
-LATEST_JSON="/tmp/0xbufferr_latest.json"
+LATEST_JSON="/tmp/0xbuffer_latest.json"
 
 echo "[upload] downloading existing latest.json..."
 r2_cat "s3://${R2_BUCKET}/latest.json" > "$LATEST_JSON" || echo '{}' > "$LATEST_JSON"

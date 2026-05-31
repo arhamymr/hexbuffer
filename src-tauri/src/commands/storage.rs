@@ -14,7 +14,7 @@ pub async fn get_storage_info(app: AppHandle) -> Result<StorageInfo, String> {
         .path()
         .app_data_dir()
         .map_err(|error| error.to_string())?;
-    let database_path = app_data_dir.join("0xbufferr.db");
+    let database_path = app_data_dir.join("0xbuffer.db");
 
     Ok(StorageInfo {
         app_data_dir: app_data_dir.display().to_string(),

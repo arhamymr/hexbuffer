@@ -389,7 +389,7 @@ fn run_security(args: &[String]) -> Result<(), String> {
 fn install_intercept_ca_to_macos_keychain(app: &AppHandle) -> Result<String, String> {
     let ca_path = write_intercept_ca(app)?;
     let keychain_path = user_login_keychain_path()?;
-    let cert_name = "0xbufferr Root CA".to_string();
+    let cert_name = "0xbuffer Root CA".to_string();
 
     let delete_args = vec![
         "delete-certificate".to_string(),
@@ -411,7 +411,7 @@ fn install_intercept_ca_to_macos_keychain(app: &AppHandle) -> Result<String, Str
     ];
 
     run_security(&add_args).map(|_| {
-        "0xbufferr CA installed in your macOS login keychain and trusted for SSL. Restart browsers that were already open.".to_string()
+        "0xbuffer CA installed in your macOS login keychain and trusted for SSL. Restart browsers that were already open.".to_string()
     })
 }
 

@@ -46,7 +46,7 @@ export function AppFooter({ isAssistantOpen, onToggleAssistant }: AppFooterProps
   return (
     <footer className="border-t px-4 py-1.5 flex items-center justify-between text-xs text-muted-foreground">
       <div className="flex items-center gap-4">
-        <span>© {new Date().getFullYear()} | 0xbufferr v{pkg.version}</span>
+        <span>© {new Date().getFullYear()} | 0xbuffer v{pkg.version}</span>
         <div className="flex items-center gap-2" title={proxyTitle}>
           <span
             className={`h-2 w-2 rounded-full ${
@@ -112,7 +112,7 @@ export function AppFooter({ isAssistantOpen, onToggleAssistant }: AppFooterProps
               }
               new WebviewWindow('settings', {
                 url: '/?window=settings',
-                title: '0xbufferr - Settings',
+                title: '0xbuffer - Settings',
                 width: 700,
                 height: 600,
                 decorations: true,

@@ -6,7 +6,7 @@ use std::sync::Mutex;
 use std::time::Duration;
 use tauri::{AppHandle, Manager, State};
 
-const KEYRING_SERVICE: &str = "0xbufferr";
+const KEYRING_SERVICE: &str = "0xbuffer";
 const KEYRING_OPENAI_ACCOUNT: &str = "openai-api-key";
 const KEYRING_DEEPSEEK_ACCOUNT: &str = "deepseek-api-key";
 

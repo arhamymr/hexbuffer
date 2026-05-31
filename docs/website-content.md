@@ -1,18 +1,18 @@
-# 0xbufferr — The All-in-One Security Testing Workstation
+# 0xbuffer — The All-in-One Security Testing Workstation
 
 **See everything. Break everything. Document everything.**
 
 ---
 
-## What is 0xbufferr?
+## What is 0xbuffer?
 
-0xbufferr is a desktop application that puts a complete security testing toolkit at your fingertips. Whether you are hunting for bugs in a web application, pentesting an API, or mapping out an attack surface, 0xbufferr gives you the visibility and control you need — without needing ten different tools.
+0xbuffer is a desktop application that puts a complete security testing toolkit at your fingertips. Whether you are hunting for bugs in a web application, pentesting an API, or mapping out an attack surface, 0xbuffer gives you the visibility and control you need — without needing ten different tools.
 
 ---
 
-## Why 0xbufferr?
+## Why 0xbuffer?
 
-Modern web security testing is fragmented. You jump between a proxy to watch traffic, a separate tool to intercept and tamper with requests, another to replay them, yet another to fuzz or brute-force, and then a document editor to write your report. 0xbufferr brings all of that into one seamless workspace.
+Modern web security testing is fragmented. You jump between a proxy to watch traffic, a separate tool to intercept and tamper with requests, another to replay them, yet another to fuzz or brute-force, and then a document editor to write your report. 0xbuffer brings all of that into one seamless workspace.
 
 ---
 
@@ -58,4 +58,4 @@ Built-in encoder/decoder, hash generators, subdomain enumeration, port scanning,
 
 ## How Is It Different?
 
-0xbufferr combines real-time traffic interception, manual request crafting, automated attacks, AI-driven reconnaissance, and professional report building in a single desktop application. No web-based tool sprawl. No juggling five different windows. Just open 0xbufferr and get to work.
+0xbuffer combines real-time traffic interception, manual request crafting, automated attacks, AI-driven reconnaissance, and professional report building in a single desktop application. No web-based tool sprawl. No juggling five different windows. Just open 0xbuffer and get to work.

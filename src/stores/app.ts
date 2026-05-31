@@ -91,7 +91,7 @@ export const useAppStore = create<AppState>()(
       },
     }),
     {
-      name: '0xbufferr-app',
+      name: '0xbuffer-app',
       partialize: (state) => ({
         proxyStatus: state.proxyStatus,
         proxyPort: state.proxyPort,

@@ -101,7 +101,7 @@ export const useTargetStore = create<TargetState>()(
       }
     }),
     {
-      name: '0xbuffer-targets',
+      name: '0xbufferr-targets',
       partialize: (state) => ({
         targets: state.targets,
       }),

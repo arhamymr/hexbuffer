@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "0xbuffer",
+  "productName": "0xbufferr",
   "version": "2026.1.0",
-  "identifier": "com.0xbuffer",
+  "identifier": "com.0xbufferr",
   "build": {
     "beforeDevCommand": "pnpm dev:clean",
     "devUrl": "http://localhost:1420",
@@ -13,7 +13,7 @@
     "macOSPrivateApi": true,
     "windows": [
       {
-        "title": "0xbuffer",
+        "title": "0xbufferr",
         "decorations": false,
         "transparent": true,
         "width": 900,
@@ -40,7 +40,7 @@
     "updater": {
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDk1ODlDNjUwQjEzMDYzODQKUldTRVl6Q3hVTWFKbGRENjAvWHZBUmhyN0p4Zm84RHU4TUl3ZHRLWVN4R3pTRFJrZkt2VGM2MXUK",
       "endpoints": [
-        "https://pub-b965b29daba44cb6b659dfaadd2b0b0f.r2.dev/latest.json"
+        "https://dist.0xbuffer.com/latest.json"
       ]
     }
   }

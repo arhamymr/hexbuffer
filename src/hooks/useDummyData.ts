@@ -11,7 +11,7 @@ import {
   generateDummyAttackConfig,
 } from "@/lib/dummy-data";
 
-const DUMMY_DATA_KEY = "0xbuffer_dummy_loaded";
+const DUMMY_DATA_KEY = "0xbufferr_dummy_loaded";
 
 interface DummyDataState {
   findings: ReturnType<typeof generateDummyFindings>;

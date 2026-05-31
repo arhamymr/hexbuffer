@@ -1,9 +1,19 @@
 import * as React from 'react';
+import { getVersion } from '@tauri-apps/api/app';
 import { check } from '@tauri-apps/plugin-updater';
 import { relaunch } from '@tauri-apps/plugin-process';
 import type { Update } from '@tauri-apps/plugin-updater';
 
+function toUpdaterErrorMessage(error: unknown) {
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  return String(error);
+}
+
 export function useUpdater() {
+  const [currentVersion, setCurrentVersion] = React.useState('');
   const [checking, setChecking] = React.useState(false);
   const [downloading, setDownloading] = React.useState(false);
   const [downloadMessage, setDownloadMessage] = React.useState('');
@@ -15,11 +25,18 @@ export function useUpdater() {
     try {
       setChecking(true);
       if (!silent) setDownloadMessage('');
-      const update = await check();
+      const update = await check({ timeout: 15000 });
       setPendingUpdate(update);
+      if (!silent && !update) {
+        setDownloadMessage('You are up to date.');
+      }
       return update;
-    } catch {
-      if (!silent) setDownloadMessage('Update check failed');
+    } catch (error) {
+      console.error('Update check failed:', error);
+      setPendingUpdate(null);
+      if (!silent) {
+        setDownloadMessage(`Update check failed: ${toUpdaterErrorMessage(error)}`);
+      }
       return null;
     } finally {
       setChecking(false);
@@ -54,7 +71,16 @@ export function useUpdater() {
     void checkForUpdates(true);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  React.useEffect(() => {
+    void getVersion()
+      .then(setCurrentVersion)
+      .catch((error) => {
+        console.error('Failed to load app version:', error);
+      });
+  }, []);
+
   return {
+    currentVersion,
     checking,
     downloading,
     downloadMessage,

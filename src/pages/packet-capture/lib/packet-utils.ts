@@ -131,7 +131,7 @@ export function buildTcpStreams(packets: Packet[]): TcpStream[] {
 
 export function exportPacketSession(packets: Packet[]) {
   const payload = {
-    format: '0xbuffer.packet-session.v1',
+    format: '0xbufferr.packet-session.v1',
     exportedAt: new Date().toISOString(),
     packets,
   };

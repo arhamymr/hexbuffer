@@ -17,7 +17,7 @@ fn main() {
     std::panic::set_hook(Box::new(|panic_info| {
         let msg = format!("PANIC: {:?}", panic_info);
         eprintln!("{}", msg);
-        let _ = std::fs::write("/tmp/0xbuffer_panic.log", msg);
+        let _ = std::fs::write("/tmp/0xbufferr_panic.log", msg);
     }));
 
     tauri::Builder::default()
@@ -34,7 +34,7 @@ fn main() {
             std::fs::create_dir_all(&app_dir).expect("Failed to create app data dir");
             zeroxbuffer::proxy::https::cert::init_ca_dir(app_dir.clone());
 
-            let db_path = app_dir.join("0xbuffer.db");
+            let db_path = app_dir.join("0xbufferr.db");
             eprintln!("[main] Opening database at {:?}", db_path);
             let history = HistoryBridge::new(db_path).expect("Failed to initialize history bridge");
             eprintln!("[main] History bridge initialized");

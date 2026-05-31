@@ -1,12 +1,16 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-set -a; source .env; set +a
+if [ -f .env ]; then
+  set -a; source .env; set +a
+else
+  echo "[env] .env not found; continuing with shell environment only"
+fi
 
-APP_NAME="0xbuffer"
+APP_NAME="0xbufferr"
 VERSION="$(cat VERSION)"
 PUB_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-BASE_URL="${UPDATER_BASE_URL:-https://releases.0xbuffer.com}"
+BASE_URL="${UPDATER_BASE_URL:-https://releases.0xbufferr.com}"
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -60,16 +64,31 @@ case "$(uname -s)" in
     ;;
 esac
 
+if [ -z "$BUNDLE_DIR" ] || [ -z "$BUNDLE_EXT" ] || [ -z "$INSTALLER_DIR" ] || [ -z "$INSTALLER_GLOB" ]; then
+  echo -e "${RED}Unsupported platform: $(uname -s) $(uname -m)${NC}"
+  exit 1
+fi
+
+find_first_artifact() {
+  local artifact_dir="$1"
+  local artifact_glob="$2"
+
+  if [ ! -d "$artifact_dir" ]; then
+    return 0
+  fi
+
+  find "$artifact_dir" -maxdepth 1 -name "$artifact_glob" ! -name "*.sig" 2>/dev/null | head -1 || true
+}
+
 # ── Check for existing artifacts ─────────────────────────────────────
 
 ARTIFACTS_EXIST=false
 
-if [ -n "${BUNDLE_DIR:-}" ]; then
-  EXISTING_BUNDLE=$(find "$BUNDLE_DIR" -maxdepth 1 -name "*${BUNDLE_EXT}" ! -name "*.sig" 2>/dev/null | head -1)
-  EXISTING_INSTALLER=$(find "$INSTALLER_DIR" -maxdepth 1 -name "$INSTALLER_GLOB" 2>/dev/null | head -1)
-  if [ -n "${EXISTING_BUNDLE:-}" ] && [ -f "${EXISTING_BUNDLE}.sig" ] && [ -n "${EXISTING_INSTALLER:-}" ]; then
-    ARTIFACTS_EXIST=true
-  fi
+EXISTING_BUNDLE=$(find_first_artifact "$BUNDLE_DIR" "*${BUNDLE_EXT}")
+EXISTING_INSTALLER=$(find_first_artifact "$INSTALLER_DIR" "$INSTALLER_GLOB")
+
+if [ -n "${EXISTING_BUNDLE:-}" ] && [ -f "${EXISTING_BUNDLE}.sig" ] && [ -n "${EXISTING_INSTALLER:-}" ]; then
+  ARTIFACTS_EXIST=true
 fi
 
 if $ARTIFACTS_EXIST; then
@@ -102,7 +121,7 @@ echo -e "[upload] detected platform: ${GREEN}${PLATFORM}${NC}"
 find_bundle() {
   local bundle_dir="$1"
   local bundle_ext="$2"
-  find "$bundle_dir" -maxdepth 1 -name "*${bundle_ext}" ! -name "*.sig" 2>/dev/null | head -1
+  find_first_artifact "$bundle_dir" "*${bundle_ext}"
 }
 
 BUNDLE_FILE=$(find_bundle "$BUNDLE_DIR" "$BUNDLE_EXT")
@@ -132,9 +151,12 @@ r2_cp "$SIG_FILE"   "s3://${R2_BUCKET}/${BUNDLE_NAME}.sig"
 
 # ── Upload installer (dmg / AppImage / exe) ───────────────────────────
 
-INSTALLER_FILE=$(find "$INSTALLER_DIR" -maxdepth 1 -name "$INSTALLER_GLOB" 2>/dev/null | head -1)
+INSTALLER_FILE=$(find_first_artifact "$INSTALLER_DIR" "$INSTALLER_GLOB")
 if [ -n "${INSTALLER_FILE:-}" ] && [ -f "$INSTALLER_FILE" ]; then
   INSTALLER_NAME=$(basename "$INSTALLER_FILE")
+  if [ "$(uname -s)" = "Darwin" ]; then
+    INSTALLER_NAME="${APP_NAME}_${PLATFORM#darwin-}.dmg"
+  fi
   echo "[upload] uploading installer: ${GREEN}${INSTALLER_NAME}${NC}"
   r2_cp "$INSTALLER_FILE" "s3://${R2_BUCKET}/${INSTALLER_NAME}"
 else
@@ -143,7 +165,7 @@ fi
 
 # ── Update latest.json ───────────────────────────────────────────────
 
-LATEST_JSON="/tmp/0xbuffer_latest.json"
+LATEST_JSON="/tmp/0xbufferr_latest.json"
 
 echo "[upload] downloading existing latest.json..."
 r2_cat "s3://${R2_BUCKET}/latest.json" > "$LATEST_JSON" || echo '{}' > "$LATEST_JSON"

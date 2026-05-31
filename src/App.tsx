@@ -10,6 +10,7 @@ import { DocumentsPage } from "@/pages/documents";
 import { BrowserAutomationPage } from "@/pages/browser-automation";
 import { PacketCapturePage } from "@/pages/packet-capture";
 import { GlobalCaInstallDialog } from "@/components/global-ca-install-dialog";
+import { AboutPage } from "@/pages/about";
 
 function AppRoutes() {
   return (
@@ -26,6 +27,7 @@ function AppRoutes() {
         <Route path="/ai-tools" element={<AIToolsPage />} />
         <Route path="/documents" element={<DocumentsPage />} />
         <Route path="/settings" element={<Settings />} />
+        <Route path="/about" element={<AboutPage />} />
       </Routes>
     </>
   );

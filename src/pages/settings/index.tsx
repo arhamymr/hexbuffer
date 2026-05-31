@@ -32,6 +32,7 @@ export function Settings() {
     aiSettings,
     aiSettingsLoading,
     aiSettingsSaving,
+    currentVersion,
     downloading,
     handleCheckForUpdates,
     handleClearAiApiKey,
@@ -93,7 +94,7 @@ export function Settings() {
             </CardHeader>
             <CardContent className="space-y-3">
               <p className="text-sm text-muted-foreground">
-                Current version: <span className="font-medium">0.1.0</span>
+                Current version: <span className="font-medium">{currentVersion || 'Unknown'}</span>
                 {updateVersion && (
                   <span className="ml-2 text-green-600 dark:text-green-400">
                     (v{updateVersion} available)
@@ -290,7 +291,7 @@ export function Settings() {
                   </Button>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Install directly on macOS, or choose a location to save <code className="bg-muted px-1 py-0.5 rounded">0xbuffer-ca.pem</code>
+                  Install directly on macOS, or choose a location to save <code className="bg-muted px-1 py-0.5 rounded">0xbufferr-ca.pem</code>
                 </p>
               </div>
             </CardContent>

@@ -74,7 +74,7 @@ export function TopNav() {
             <GripHorizontal className="size-5" data-tauri-drag-region />
           </div>
           <div className="flex items-center gap-1">
-            <p className='text-sm font-bold font-mono hover:text-green-500 text-foreground transition-colors no-underline'>0xbuffer</p>
+            <p className='text-sm font-bold font-mono hover:text-green-500 text-foreground transition-colors no-underline'>0xbufferr</p>
           </div>
 
           <div className="relative min-w-0 flex-1">

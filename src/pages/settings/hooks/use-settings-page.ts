@@ -43,6 +43,7 @@ export function useSettingsPage() {
   const [mastraBusy, setMastraBusy] = React.useState(false);
 
   const {
+    currentVersion,
     checking: updateChecking,
     downloading: updateDownloading,
     downloadMessage: updateMessage,
@@ -85,7 +86,7 @@ export function useSettingsPage() {
 
       const filePath = await save({
         title: 'Save CA Certificate',
-        defaultPath: '0xbuffer-ca.pem',
+        defaultPath: '0xbufferr-ca.pem',
         filters: [
           {
             name: 'PEM Certificate',
@@ -244,6 +245,7 @@ export function useSettingsPage() {
     aiSettings,
     aiSettingsLoading,
     aiSettingsSaving,
+    currentVersion,
     downloading,
     installingCa,
     handleDownloadCert,

@@ -3,17 +3,16 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 CURRENT=$(cat "$ROOT/VERSION")
-CURRENT_YEAR=${CURRENT%%.*}
-CURRENT_NUM=${CURRENT#*.}
 THIS_YEAR=$(date +%Y)
 
 if [ -n "${1:-}" ]; then
   NEW_VERSION="$1"
 else
+  IFS=. read -r CURRENT_YEAR MAJOR PATCH <<< "$CURRENT"
   if [ "$CURRENT_YEAR" = "$THIS_YEAR" ]; then
-    NEW_VERSION="${CURRENT_YEAR}.$((CURRENT_NUM + 1))"
+    NEW_VERSION="${CURRENT_YEAR}.${MAJOR}.$((PATCH + 1))"
   else
-    NEW_VERSION="${THIS_YEAR}.1"
+    NEW_VERSION="${THIS_YEAR}.1.0"
   fi
 fi
 

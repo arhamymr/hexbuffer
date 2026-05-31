@@ -73,7 +73,7 @@ fi
 
 VERSION="$(cat "$ROOT/VERSION")"
 PUB_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-BASE_URL="${UPDATER_BASE_URL:-https://releases.0xbuffer.com}"
+BASE_URL="${UPDATER_BASE_URL:-https://dist.0xbuffer.com}"
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -143,9 +143,30 @@ find_first_artifact() {
   find "$artifact_dir" -maxdepth 1 -name "$artifact_glob" ! -name "*.sig" 2>/dev/null | head -1 || true
 }
 
+has_newer_build_inputs() {
+  local artifact="$1"
+
+  if [ -z "$artifact" ] || [ ! -f "$artifact" ]; then
+    return 0
+  fi
+
+  [ -n "$(find \
+    "$ROOT/VERSION" \
+    "$ROOT/package.json" \
+    "$ROOT/pnpm-lock.yaml" \
+    "$ROOT/src" \
+    "$ROOT/src-tauri/Cargo.toml" \
+    "$ROOT/src-tauri/Cargo.lock" \
+    "$ROOT/src-tauri/tauri.conf.json" \
+    "$ROOT/src-tauri/src" \
+    "$ROOT/src-tauri/icons" \
+    -newer "$artifact" 2>/dev/null | head -1)" ]
+}
+
 # ── Check for existing artifacts ─────────────────────────────────────
 
 ARTIFACTS_EXIST=false
+ARTIFACTS_STALE=false
 
 EXISTING_BUNDLE=$(find_first_artifact "$BUNDLE_DIR" "*${BUNDLE_EXT}")
 EXISTING_INSTALLER=$(find_first_artifact "$INSTALLER_DIR" "$INSTALLER_GLOB")
@@ -154,11 +175,17 @@ if [ -n "${EXISTING_BUNDLE:-}" ] && [ -f "${EXISTING_BUNDLE}.sig" ] && [ -n "${E
   ARTIFACTS_EXIST=true
 fi
 
-if $ARTIFACTS_EXIST && ! $FORCE_BUILD; then
+if $ARTIFACTS_EXIST && has_newer_build_inputs "$EXISTING_BUNDLE"; then
+  ARTIFACTS_STALE=true
+fi
+
+if $ARTIFACTS_EXIST && ! $ARTIFACTS_STALE && ! $FORCE_BUILD; then
   echo -e "${GREEN}Artifacts for v${VERSION} already exist — skipping build.${NC}"
 else
   if $FORCE_BUILD; then
     echo "Version bump requested; building fresh artifacts for v${VERSION}..."
+  elif $ARTIFACTS_STALE; then
+    echo "Build inputs changed since the existing updater artifact; rebuilding fresh artifacts for v${VERSION}..."
   fi
 
   echo "Installing dependencies..."

@@ -1,6 +1,8 @@
 import * as React from 'react';
 import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
+import { relaunch } from '@tauri-apps/plugin-process';
 import { ArrowUp, Loader2, MessageSquare, Moon, Settings, Sun } from 'lucide-react';
+import { toast } from 'sonner';
 import { useAppStore } from '@/stores/app';
 import { useTheme } from './theme-provider';
 import { Button } from './ui/button';
@@ -26,12 +28,45 @@ export function AppFooter({ isAssistantOpen, onToggleAssistant }: AppFooterProps
   const proxyDefaultPort = useAppStore((state) => state.proxyDefaultPort);
   const checkProxyStatus = useAppStore((state) => state.checkProxyStatus);
   const { theme, toggleTheme } = useTheme();
-  const { updateAvailable, updateVersion, downloading, installUpdate } = useUpdater();
+  const {
+    updateAvailable,
+    updateVersion,
+    downloading,
+    downloadError,
+    updateInstalled,
+    installUpdate,
+  } = useUpdater();
   const activeProxyPort = proxyPort ?? proxyDefaultPort;
   const isDefaultPortChanged = proxyStatus === 'connected' && proxyPort !== null && proxyPort !== proxyDefaultPort;
   const proxyTitle = isDefaultPortChanged
     ? `Proxy connected on ${activeProxyPort}. Default port changed from ${proxyDefaultPort}.`
     : `Proxy ${proxyStatusLabel[proxyStatus].toLowerCase()}`;
+
+  const handleInstallUpdate = React.useCallback(async () => {
+    const toastId = toast.loading(`Installing v${updateVersion}...`);
+    const result = await installUpdate();
+
+    if (result.ok) {
+      toast.success(`Updated to v${updateVersion}`, {
+        id: toastId,
+        description: 'Restarting app to finish applying the update.',
+      });
+
+      window.setTimeout(() => {
+        void relaunch();
+      }, 1500);
+      return;
+    }
+
+    const errorMessage = result.error || downloadError;
+
+    toast.error('Update failed', {
+      id: toastId,
+      description: errorMessage.toLowerCase().includes('signature')
+        ? 'The release signature does not match the updater public key. Rebuild and re-upload the signed update artifact.'
+        : errorMessage || 'Please try again from Settings.',
+    });
+  }, [downloadError, installUpdate, updateVersion]);
 
   React.useEffect(() => {
     checkProxyStatus();
@@ -82,20 +117,21 @@ export function AppFooter({ isAssistantOpen, onToggleAssistant }: AppFooterProps
         >
           <MessageSquare className="h-4 w-4" />
         </Button>
-        {updateAvailable && (
+        {updateAvailable && !updateInstalled && (
           <Button
             variant="ghost"
             size="xs"
-            className="h-8 w-8 p-0 text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300"
+            className="h-8 px-2 text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300"
             title={`Update to v${updateVersion}`}
-            onClick={installUpdate}
+            onClick={handleInstallUpdate}
             disabled={downloading}
           >
             {downloading ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
+              <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
             ) : (
-              <ArrowUp className="h-4 w-4" />
+              <ArrowUp className="mr-1.5 h-4 w-4" />
             )}
+            {downloading ? 'Updating...' : `Update v${updateVersion}`}
           </Button>
         )}
         <Button

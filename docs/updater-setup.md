@@ -48,7 +48,7 @@ export R2_ENDPOINT="https://<account-id>.r2.cloudflarestorage.com"
 export R2_BUCKET="releases"
 export AWS_ACCESS_KEY_ID="<your-access-key-id>"
 export AWS_SECRET_ACCESS_KEY="<your-secret-access-key>"
-export UPDATER_BASE_URL="https://releases.0xbuffer.com"
+export UPDATER_BASE_URL="https://dist.0xbuffer.com"
 export TAURI_SIGNING_PRIVATE_KEY="$(cat ~/.tauri/0xbuffer.key)"
 ```
 
@@ -58,7 +58,7 @@ export TAURI_SIGNING_PRIVATE_KEY="$(cat ~/.tauri/0xbuffer.key)"
 | `R2_BUCKET` | Your bucket name |
 | `AWS_ACCESS_KEY_ID` | From the API token you created in step 2 |
 | `AWS_SECRET_ACCESS_KEY` | From the API token you created in step 2 |
-| `UPDATER_BASE_URL` | Your public domain (e.g. `https://releases.0xbuffer.com`) or `r2.dev` URL |
+| `UPDATER_BASE_URL` | Your public domain (e.g. `https://dist.0xbuffer.com`) or `r2.dev` URL |
 | `TAURI_SIGNING_PRIVATE_KEY` | Path to your private signing key |
 
 ---
@@ -73,14 +73,14 @@ Set the endpoint in `src-tauri/tauri.conf.json`:
     "updater": {
       "pubkey": "<your-public-key>",
       "endpoints": [
-        "https://releases.0xbuffer.com/latest.json"
+        "https://dist.0xbuffer.com/latest.json"
       ]
     }
   }
 }
 ```
 
-Replace `releases.0xbuffer.com` with your actual domain or `r2.dev` URL.
+Replace `dist.0xbuffer.com` with your actual domain or `r2.dev` URL.
 
 ---
 
@@ -103,7 +103,7 @@ The script will:
 Visit your endpoint URL in a browser:
 
 ```
-https://releases.0xbuffer.com/latest.json
+https://dist.0xbuffer.com/latest.json
 ```
 
 You should see:
@@ -116,7 +116,7 @@ You should see:
   "platforms": {
     "darwin-aarch64": {
       "signature": "dW50cnVzdGVk...",
-      "url": "https://releases.0xbuffer.com/0xbuffer_0.1.0_aarch64.dmg"
+      "url": "https://dist.0xbuffer.com/0xbuffer_0.1.0_aarch64.dmg"
     }
   }
 }

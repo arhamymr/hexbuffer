@@ -1,7 +1,6 @@
 import * as React from 'react';
 import { getVersion } from '@tauri-apps/api/app';
 import { check } from '@tauri-apps/plugin-updater';
-import { relaunch } from '@tauri-apps/plugin-process';
 import type { Update } from '@tauri-apps/plugin-updater';
 
 function toUpdaterErrorMessage(error: unknown) {
@@ -17,6 +16,8 @@ export function useUpdater() {
   const [checking, setChecking] = React.useState(false);
   const [downloading, setDownloading] = React.useState(false);
   const [downloadMessage, setDownloadMessage] = React.useState('');
+  const [downloadError, setDownloadError] = React.useState('');
+  const [updateInstalled, setUpdateInstalled] = React.useState(false);
   const [pendingUpdate, setPendingUpdate] = React.useState<Update | null>(null);
   const updateAvailable = pendingUpdate !== null;
 
@@ -24,9 +25,13 @@ export function useUpdater() {
     if (checking) return;
     try {
       setChecking(true);
-      if (!silent) setDownloadMessage('');
+      if (!silent) {
+        setDownloadMessage('');
+        setDownloadError('');
+      }
       const update = await check({ timeout: 15000 });
       setPendingUpdate(update);
+      setUpdateInstalled(false);
       if (!silent && !update) {
         setDownloadMessage('You are up to date.');
       }
@@ -35,7 +40,9 @@ export function useUpdater() {
       console.error('Update check failed:', error);
       setPendingUpdate(null);
       if (!silent) {
-        setDownloadMessage(`Update check failed: ${toUpdaterErrorMessage(error)}`);
+        const message = `Update check failed: ${toUpdaterErrorMessage(error)}`;
+        setDownloadMessage(message);
+        setDownloadError(message);
       }
       return null;
     } finally {
@@ -44,8 +51,16 @@ export function useUpdater() {
   }, [checking]);
 
   const installUpdate = React.useCallback(async () => {
-    if (!pendingUpdate || downloading) return;
+    if (!pendingUpdate || downloading) {
+      return {
+        ok: false,
+        error: 'No update is ready to install.',
+      };
+    }
+
     try {
+      setUpdateInstalled(false);
+      setDownloadError('');
       setDownloading(true);
       setDownloadMessage(`Downloading update ${pendingUpdate.version}...`);
 
@@ -57,11 +72,20 @@ export function useUpdater() {
         }
       });
 
-      setDownloadMessage('Update installed. Restarting...');
-      await relaunch();
+      setDownloadMessage('Update installed successfully. Restarting app...');
+      setUpdateInstalled(true);
+      setPendingUpdate(null);
+      return { ok: true };
     } catch (error) {
       console.error('Update install failed:', error);
-      setDownloadMessage(`Update failed: ${error}`);
+      const message = toUpdaterErrorMessage(error);
+      setDownloadMessage(`Update failed: ${message}`);
+      setDownloadError(message);
+      setUpdateInstalled(false);
+      return {
+        ok: false,
+        error: message,
+      };
     } finally {
       setDownloading(false);
     }
@@ -84,6 +108,8 @@ export function useUpdater() {
     checking,
     downloading,
     downloadMessage,
+    downloadError,
+    updateInstalled,
     updateAvailable,
     updateVersion: pendingUpdate?.version ?? null,
     checkForUpdates: () => checkForUpdates(false),

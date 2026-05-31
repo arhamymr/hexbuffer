@@ -4,6 +4,59 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
+usage() {
+  cat <<EOF
+Usage:
+  ./scripts/build.sh                 Build/upload current VERSION
+  ./scripts/build.sh 2026.1.1        Bump to exact version, then build/upload
+  ./scripts/build.sh --bump          Auto-increment patch version, then build/upload
+  ./scripts/build.sh --version 2026.1.1
+EOF
+}
+
+REQUESTED_VERSION=""
+AUTO_BUMP=false
+FORCE_BUILD=false
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --bump|-b)
+      AUTO_BUMP=true
+      FORCE_BUILD=true
+      shift
+      ;;
+    --version|-v)
+      if [ -z "${2:-}" ]; then
+        echo "Missing value for $1"
+        usage
+        exit 1
+      fi
+      REQUESTED_VERSION="$2"
+      FORCE_BUILD=true
+      shift 2
+      ;;
+    --help|-h)
+      usage
+      exit 0
+      ;;
+    -*)
+      echo "Unknown option: $1"
+      usage
+      exit 1
+      ;;
+    *)
+      if [ -n "$REQUESTED_VERSION" ]; then
+        echo "Unexpected extra argument: $1"
+        usage
+        exit 1
+      fi
+      REQUESTED_VERSION="$1"
+      FORCE_BUILD=true
+      shift
+      ;;
+  esac
+done
+
 if [ -f "$ROOT/.env" ]; then
   set -a; source "$ROOT/.env"; set +a
 else
@@ -11,6 +64,13 @@ else
 fi
 
 APP_NAME="0xbuffer"
+
+if $AUTO_BUMP; then
+  "$ROOT/scripts/bump-version.sh"
+elif [ -n "$REQUESTED_VERSION" ]; then
+  "$ROOT/scripts/bump-version.sh" "$REQUESTED_VERSION"
+fi
+
 VERSION="$(cat "$ROOT/VERSION")"
 PUB_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 BASE_URL="${UPDATER_BASE_URL:-https://releases.0xbuffer.com}"
@@ -94,9 +154,13 @@ if [ -n "${EXISTING_BUNDLE:-}" ] && [ -f "${EXISTING_BUNDLE}.sig" ] && [ -n "${E
   ARTIFACTS_EXIST=true
 fi
 
-if $ARTIFACTS_EXIST; then
+if $ARTIFACTS_EXIST && ! $FORCE_BUILD; then
   echo -e "${GREEN}Artifacts for v${VERSION} already exist — skipping build.${NC}"
 else
+  if $FORCE_BUILD; then
+    echo "Version bump requested; building fresh artifacts for v${VERSION}..."
+  fi
+
   echo "Installing dependencies..."
   pnpm install
 

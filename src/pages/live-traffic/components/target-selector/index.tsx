@@ -10,7 +10,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { Plus } from 'lucide-react';
+import { Plus, Target } from 'lucide-react';
 import { TargetSearchList } from './target-search-list';
 import { TargetDialogForm } from './target-dialog-form';
 import { useTargetSelectorDialog } from './hooks';
@@ -37,7 +37,7 @@ export function TargetSelectorDialog() {
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button size="xs" className="gap-2 h-7 gap-1 text-xs">
-          <Plus className="h-4 w-4" />
+          <Target className="h-4 w-4" />
           MANAGE TARGET
         </Button>
       </DialogTrigger>

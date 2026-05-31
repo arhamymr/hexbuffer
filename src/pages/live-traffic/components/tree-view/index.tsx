@@ -2,6 +2,7 @@
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Empty, EmptyDescription, EmptyTitle } from "@/components/ui/empty";
+import { useHistoryQuery } from '@/pages/live-traffic/hooks/use-history-query';
 import { useTreeViewData } from '@/pages/live-traffic/hooks/use-tree-view-data';
 import { TreeNode } from './tree-node';
 import type { TreeViewProps } from './types';
@@ -10,9 +11,12 @@ export type { TreeNodeData } from './types';
 
 export function TreeView({
   onSelectEndpoint,
+  onSelectHost,
   selectedId,
 }: TreeViewProps) {
   const { nodes, hasActiveScope, isLoading, loadError } = useTreeViewData();
+  const { filter } = useHistoryQuery();
+  const activeHostFilter = filter.search.trim();
 
   if (isLoading) {
     return (
@@ -54,8 +58,9 @@ export function TreeView({
           node={node}
           level={0}
           onSelectEndpoint={onSelectEndpoint}
+          onSelectHost={onSelectHost}
           selectedId={selectedId}
-          defaultExpanded={false}
+          defaultExpanded={activeHostFilter === node.label}
         />
       ))}
     </div>

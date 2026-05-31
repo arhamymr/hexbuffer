@@ -21,6 +21,8 @@ interface RepeaterState {
   addRequestTab: (request: RepeaterRequest) => string;
   addWsTab: (wsRequest: RepeaterWsRequest) => string;
   closeTab: (id: string) => void;
+  closeTabsToLeft: (id: string) => void;
+  closeTabsToRight: (id: string) => void;
 }
 
 const initialTab = createDefaultRepeaterTab(1);
@@ -101,6 +103,36 @@ export const useRepeaterStore = create<RepeaterState>()(
             tabs: remainingTabs,
             activeTabId: nextActiveTab.id,
           };
+        }),
+      closeTabsToLeft: (id) =>
+        set((state) => {
+          const tabIndex = state.tabs.findIndex((tab) => tab.id === id);
+
+          if (tabIndex <= 0) {
+            return state;
+          }
+
+          const tabs = state.tabs.slice(tabIndex);
+          const activeTabId = tabs.some((tab) => tab.id === state.activeTabId)
+            ? state.activeTabId
+            : id;
+
+          return { tabs, activeTabId };
+        }),
+      closeTabsToRight: (id) =>
+        set((state) => {
+          const tabIndex = state.tabs.findIndex((tab) => tab.id === id);
+
+          if (tabIndex === -1 || tabIndex === state.tabs.length - 1) {
+            return state;
+          }
+
+          const tabs = state.tabs.slice(0, tabIndex + 1);
+          const activeTabId = tabs.some((tab) => tab.id === state.activeTabId)
+            ? state.activeTabId
+            : id;
+
+          return { tabs, activeTabId };
         }),
     }),
     {

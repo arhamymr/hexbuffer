@@ -1,6 +1,5 @@
 import * as React from 'react';
-import { AlertTriangle, Loader2, Power } from 'lucide-react';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import {
   ResizableHandle,
@@ -58,11 +57,6 @@ export function InterceptPage() {
               onClick={handleStartProxy}
               disabled={isStarting || proxyStatus === 'starting'}
             >
-              {isStarting || proxyStatus === 'starting' ? (
-                <Loader2 className="h-3 w-3 animate-spin" />
-              ) : (
-                <Power className="h-3 w-3" />
-              )}
               Start Proxy
             </Button>
           </AlertDescription>

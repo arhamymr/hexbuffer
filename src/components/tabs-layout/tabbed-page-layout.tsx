@@ -11,6 +11,8 @@ interface TabbedPageLayoutProps {
   onTabChange: (id: string) => void;
   onTabRename?: (id: string, name: string) => void;
   onTabClose?: (id: string) => void;
+  onCloseTabsToLeft?: (id: string) => void;
+  onCloseTabsToRight?: (id: string) => void;
   renderTabContextMenuItems?: (tab: PageTabItem) => ReactNode;
   children: ReactNode;
   className?: string;
@@ -23,6 +25,8 @@ export function TabbedPageLayout({
   onTabChange,
   onTabRename,
   onTabClose,
+  onCloseTabsToLeft,
+  onCloseTabsToRight,
   renderTabContextMenuItems,
   children,
   className = 'flex flex-col h-full',
@@ -37,6 +41,8 @@ export function TabbedPageLayout({
           onTabChange={onTabChange}
           onTabRename={onTabRename}
           onTabClose={onTabClose}
+          onCloseTabsToLeft={onCloseTabsToLeft}
+          onCloseTabsToRight={onCloseTabsToRight}
           renderTabContextMenuItems={renderTabContextMenuItems}
         />
       </div>

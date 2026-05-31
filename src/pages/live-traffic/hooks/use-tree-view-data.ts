@@ -7,20 +7,21 @@ import type { TreeNodeData } from '@/pages/live-traffic/components/tree-view/typ
 
 function buildDisplayUrl(host: string, path: string): string {
   if (path.includes('://')) {
-    return path;
+    return stripDefaultPortFromUrl(path);
   }
 
   const normalizedPath = path.startsWith('/') ? path : `/${path}`;
   const protocol = host.includes(':443') ? 'https' : 'http';
 
-  return `${protocol}://${host}${normalizedPath}`;
+  return `${protocol}://${stripDefaultPortFromHost(host, protocol)}${normalizedPath}`;
 }
 
 function buildTreeNodeData(host: string, paths: TreePath[]): TreeNodeData {
+  const label = stripDefaultPortFromHost(host, host.includes(':443') ? 'https' : 'http');
   const hostNode: TreeNodeData = {
     id: `host-${host}`,
     type: 'host',
-    label: host,
+    label,
     children: [],
     count: paths.reduce((sum, path) => sum + path.count, 0),
     methods: [...new Set(paths.flatMap((path) => path.methods))],
@@ -39,6 +40,29 @@ function buildTreeNodeData(host: string, paths: TreePath[]): TreeNodeData {
     .sort((left, right) => left.label.localeCompare(right.label));
 
   return hostNode;
+}
+
+function stripDefaultPortFromHost(host: string, protocol: string): string {
+  if (protocol === 'https' && host.endsWith(':443')) {
+    return host.slice(0, -4);
+  }
+
+  if (protocol === 'http' && host.endsWith(':80')) {
+    return host.slice(0, -3);
+  }
+
+  return host;
+}
+
+function stripDefaultPortFromUrl(url: string): string {
+  const match = url.match(/^(https?):\/\/([^/?#]*)(.*)$/i);
+
+  if (!match) {
+    return url;
+  }
+
+  const [, protocol, host, rest] = match;
+  return `${protocol}://${stripDefaultPortFromHost(host, protocol.toLowerCase())}${rest}`;
 }
 
 export function useTreeViewData() {

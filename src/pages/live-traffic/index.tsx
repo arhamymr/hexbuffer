@@ -22,6 +22,7 @@ export function LiveTrafficPage() {
     setSitemapVisible,
     shouldShowSitemap,
     handleTreeSelect,
+    handleHostSelect,
     sendScopeToDocuments,
   } = useHttpHistoryPage();
 
@@ -51,7 +52,11 @@ export function LiveTrafficPage() {
           {shouldShowSitemap && (
             <>
               <ResizablePanel defaultSize={20} minSize={20}>
-                <TreeView onSelectEndpoint={handleTreeSelect} selectedId={null} />
+                <TreeView
+                  onSelectEndpoint={handleTreeSelect}
+                  onSelectHost={handleHostSelect}
+                  selectedId={null}
+                />
               </ResizablePanel>
               <ResizableHandle withHandle />
             </>

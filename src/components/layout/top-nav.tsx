@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { getCurrentWindow } from '@tauri-apps/api/window';
-import { GripHorizontal } from 'lucide-react';
+import {  GripHorizontal } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 import { useAppStore } from '@/stores/app';
@@ -11,6 +11,7 @@ import { OpenBrowserButton } from './open-browser';
 import { ProxyButton } from './proxy-button';
 import { mainNavItems } from './constants';
 import { TitlebarButtons } from './titlebar-buttons';
+import { Separator } from '../ui/separator';
 
 export function TopNav() {
   const location = useLocation();
@@ -130,9 +131,11 @@ export function TopNav() {
 
         </div>
 
-        <div className="flex shrink-0 items-center gap-1">
+        <div className="flex shrink-0 items-center gap-2 h-5">
           <ProxyButton />
+
           <OpenBrowserButton />
+          <Separator orientation='vertical'/>
           <TitlebarButtons />
         </div>
       </div>

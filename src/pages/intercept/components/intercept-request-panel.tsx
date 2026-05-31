@@ -29,9 +29,8 @@ export function InterceptRequestPanel({
       <div className="bg-muted flex h-10 items-center justify-between border-b px-3 py-2">
         <span className="text-sm font-medium">Request</span>
         <div className="flex items-center gap-2">
-          <ShieldCheck className="h-4 w-4 text-muted-foreground" />
           <Badge variant={isEnabled ? 'default' : 'secondary'} className="text-xs">
-            {isEnabled ? 'On' : 'Off'}
+            {isEnabled ? 'Intercept On' : 'Enable Intercept'}
           </Badge>
           <Switch checked={isEnabled} onCheckedChange={onToggleIntercept} />
         </div>

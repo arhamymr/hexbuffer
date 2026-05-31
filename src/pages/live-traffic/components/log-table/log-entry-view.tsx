@@ -262,9 +262,9 @@ export function LogEntryBurpView() {
                 <DropdownMenuItem onClick={handleSendToRepeater} className="text-xs">
                   <Send className="mr-2 h-4 w-4" /> Send to Repeater
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleSendToBruteForce} className="text-xs">
+                {/* <DropdownMenuItem onClick={handleSendToBruteForce} className="text-xs">
                   <Crosshair className="mr-2 h-4 w-4" /> Send to Brute Force
-                </DropdownMenuItem>
+                </DropdownMenuItem> */}
               </DropdownMenuContent>
             </DropdownMenu>
           </div>

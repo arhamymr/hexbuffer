@@ -1,6 +1,9 @@
 'use client';
 
-import { ArrowDown, ArrowUp, AlertTriangle } from "lucide-react";
+import type { MouseEvent } from "react";
+import { useNavigate } from "react-router-dom";
+import { ArrowDown, ArrowUp, AlertTriangle, Send } from "lucide-react";
+import { toast } from "sonner";
 import { Empty, EmptyTitle, EmptyDescription } from "@/components/ui/empty";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { formatTimestamp, formatBytes, getExtension } from "./utils";
@@ -9,6 +12,54 @@ import { LogEntryContextMenu } from "./log-context-menu";
 import type { ApiCall } from '@/types';
 import { useHistoryTable } from '@/pages/live-traffic/hooks/use-history-table';
 import { Button } from "@/components/ui/button";
+import { fetchHistoryDetail } from "@/pages/live-traffic/services/history-service";
+import { adaptProxyRecordToApiCall } from "@/pages/live-traffic/hooks/use-history-table";
+import { buildRawHttpRequest } from "@/lib/http-message";
+import { useRepeaterStore } from "@/stores/repeater";
+
+interface SendToRepeaterButtonProps {
+  call: ApiCall;
+}
+
+function SendToRepeaterButton({ call }: SendToRepeaterButtonProps) {
+  const navigate = useNavigate();
+
+  const handleSendToRepeater = async (event: MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
+
+    try {
+      const detail = await fetchHistoryDetail(call.id);
+      const request = adaptProxyRecordToApiCall(detail);
+      useRepeaterStore.getState().addRequestTab({
+        raw: buildRawHttpRequest({
+          method: request.method,
+          url: request.url,
+          headers: request.headers,
+          body: request.request_body || '',
+        }),
+        url: request.url,
+      });
+      navigate('/repeater');
+      toast.success('Sent to Repeater');
+    } catch (error) {
+      console.error('Failed to send request to Repeater:', error);
+      toast.error('Failed to send to Repeater');
+    }
+  };
+
+  return (
+    <Button
+      type="button"
+      size="xs"
+      variant="ghost"
+      className="h-6 px-2"
+      onClick={handleSendToRepeater}
+      title="Send to Repeater"
+    >
+      <Send className="h-3.5 w-3.5" />
+    </Button>
+  );
+}
 
 export const callsColumns: import("@tanstack/react-table").ColumnDef<ApiCall>[] = [
   {
@@ -77,6 +128,12 @@ export const callsColumns: import("@tanstack/react-table").ColumnDef<ApiCall>[] 
         {row.original.response_content_type || "-"}
       </span>
     ),
+  },
+  {
+    id: "action",
+    header: "Action",
+    size: 70,
+    cell: ({ row }) => <SendToRepeaterButton call={row.original} />,
   },
 ];
 
@@ -155,6 +212,7 @@ export function TrafficTable() {
             <th className="text-right text-xs font-medium text-muted-foreground px-3 py-1 w-[70px]">Size</th>
             <th className="text-right text-xs font-medium text-muted-foreground px-3 py-1 w-[70px]">Length</th>
             <th className="text-left text-xs font-medium text-muted-foreground px-3 py-1 w-[150px]">MIME Type</th>
+            <th className="text-center text-xs font-medium text-muted-foreground px-3 py-1 w-[70px]">Action</th>
           </tr>
         </thead>
         <tbody>
@@ -190,6 +248,9 @@ export function TrafficTable() {
                 </td>
                 <td className="text-xs text-muted-foreground px-3 py-1 truncate max-w-[150px]" title={call.response_content_type ?? undefined}>
                   {call.response_content_type || "-"}
+                </td>
+                <td className="text-center px-3 py-1">
+                  <SendToRepeaterButton call={call} />
                 </td>
               </tr>
             </LogEntryContextMenu>

@@ -12,10 +12,18 @@ const ALL_HISTORY_TAB_ID = 'all-scope';
 
 export function useHttpHistoryPage() {
   const [sitemapVisible, setSitemapVisible] = React.useState(false);
-  const [historyMode, setHistoryMode] = React.useState<HistoryMode>('http');
+  const [historyMode, setHistoryMode] = React.useState<HistoryMode>(() => {
+    const stored = localStorage.getItem('history-mode');
+    return stored === 'websocket' ? 'websocket' : 'http';
+  });
+
+  const persistHistoryMode = React.useCallback((mode: HistoryMode) => {
+    localStorage.setItem('history-mode', mode);
+    setHistoryMode(mode);
+  }, []);
   const targets = useTargetStore((state) => state.targets);
   const removeActiveTab = useTargetStore((state) => state.removeActiveTab);
-  const { setActiveScope, setSelectedCallId, setPathFilter } = useHistoryQuery();
+  const { filter, setActiveScope, setFilter, setSelectedCallId, setPathFilter } = useHistoryQuery();
   const activeTargets = React.useMemo(
     () => targets.filter((target) => target.tabActive),
     [targets]
@@ -56,6 +64,15 @@ export function useHttpHistoryPage() {
     setSelectedCallId(null);
   }, [setPathFilter, setSelectedCallId]);
 
+  const handleHostSelect = React.useCallback((node: TreeNodeData) => {
+    setFilter({
+      ...filter,
+      search: node.label,
+      pathFilter: null,
+    });
+    setSelectedCallId(null);
+  }, [filter, setFilter, setSelectedCallId]);
+
   const sendScopeToDocuments = React.useCallback((targetId: string) => {
     const target = activeTargets.find((activeTarget) => activeTarget.id === targetId);
 
@@ -91,11 +108,12 @@ export function useHttpHistoryPage() {
     setActiveTabId,
     removeTab,
     historyMode,
-    setHistoryMode,
+    setHistoryMode: persistHistoryMode,
     sitemapVisible,
     setSitemapVisible,
     shouldShowSitemap,
     handleTreeSelect,
+    handleHostSelect,
     sendScopeToDocuments,
   };
 }

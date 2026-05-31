@@ -1,6 +1,7 @@
 'use client';
 
-import { ChevronDown, ChevronRight, FileText, Globe } from 'lucide-react';
+import type { MouseEvent } from 'react';
+import { ChevronDown, ChevronRight, FileText, Lock, LockOpen } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTreeNode } from '@/pages/live-traffic/hooks/use-tree-node';
 import type { TreeNodeData } from './types';
@@ -11,11 +12,22 @@ interface TreeNodeProps {
   selectedId: string | null;
   defaultExpanded: boolean;
   onSelectEndpoint: (node: TreeNodeData) => void;
+  onSelectHost: (node: TreeNodeData) => void;
 }
 
-function getNodeIcon(nodeType: TreeNodeData['type']) {
-  if (nodeType === 'host') {
-    return { Icon: Globe, colorClassName: 'text-blue-500' };
+function isHttpsHost(node: TreeNodeData): boolean {
+  if (node.label.endsWith(':443')) {
+    return true;
+  }
+
+  return node.children.some((child) => child.label.toLowerCase().startsWith('https://'));
+}
+
+function getNodeIcon(node: TreeNodeData) {
+  if (node.type === 'host') {
+    return isHttpsHost(node)
+      ? { Icon: Lock, colorClassName: 'text-emerald-500' }
+      : { Icon: LockOpen, colorClassName: 'text-red-500' };
   }
 
   return { Icon: FileText, colorClassName: 'text-gray-500' };
@@ -27,11 +39,13 @@ export function TreeNode({
   selectedId,
   defaultExpanded,
   onSelectEndpoint,
+  onSelectHost,
 }: TreeNodeProps) {
   const { isExpanded, toggleExpanded } = useTreeNode(defaultExpanded);
   const hasChildren = node.children.length > 0;
   const isEndpoint = node.type === 'endpoint';
-  const { Icon, colorClassName } = getNodeIcon(node.type);
+  const isHost = node.type === 'host';
+  const { Icon, colorClassName } = getNodeIcon(node);
 
   const handleClick = () => {
     if (isEndpoint) {
@@ -39,6 +53,17 @@ export function TreeNode({
       return;
     }
 
+    if (isHost) {
+      onSelectHost(node);
+    }
+
+    if (hasChildren && !isExpanded) {
+      toggleExpanded();
+    }
+  };
+
+  const handleChevronClick = (event: MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
     toggleExpanded();
   };
 
@@ -53,11 +78,18 @@ export function TreeNode({
         onClick={handleClick}
       >
         {hasChildren ? (
-          isExpanded ? (
-            <ChevronDown className="w-3 h-3 text-muted-foreground flex-shrink-0" />
-          ) : (
-            <ChevronRight className="w-3 h-3 text-muted-foreground flex-shrink-0" />
-          )
+          <button
+            type="button"
+            className="flex h-3 w-3 flex-shrink-0 items-center justify-center text-muted-foreground"
+            onClick={handleChevronClick}
+            aria-label={isExpanded ? `Collapse ${node.label}` : `Expand ${node.label}`}
+          >
+            {isExpanded ? (
+              <ChevronDown className="size-4" />
+            ) : (
+              <ChevronRight className="size-4" />
+            )}
+          </button>
         ) : (
           <span className="w-3" />
         )}
@@ -82,6 +114,7 @@ export function TreeNode({
               selectedId={selectedId}
               defaultExpanded={false}
               onSelectEndpoint={onSelectEndpoint}
+              onSelectHost={onSelectHost}
             />
           ))}
         </div>

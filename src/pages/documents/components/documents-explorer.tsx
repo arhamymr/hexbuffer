@@ -13,6 +13,7 @@ import { ExternalLink, Send, Copy, Trash2, RotateCcw } from 'lucide-react';
 import { useBruteForceStore } from '@/stores/bruto-force';
 import { useRepeaterStore } from '@/stores/repeater';
 import { buildHttpCurlCommand, buildRawHttpRequest } from '@/lib/http-message';
+import { copyText } from '@/lib/clipboard';
 import { createDefaultAttackConfig, findRequestPayloadPositions } from '@/pages/brute-force/types';
 import { type ReconDocument, type SavedApiEntry } from '../types';
 import { type DocumentSectionKey } from '../constants';
@@ -51,24 +52,24 @@ export function DocumentsExplorer({
 }: DocumentsExplorerProps) {
   const navigate = useNavigate();
 
-  const copyToClipboard = async (text: string) => {
-    await navigator.clipboard.writeText(text);
-  };
-
-  const handleCopyCurl = (entry: SavedApiEntry) => {
+  const handleCopyCurlCommand = (entry: SavedApiEntry) => {
     const curl = buildHttpCurlCommand({
       method: entry.method,
       url: entry.url,
       headers: entry.headers,
       body: entry.requestBody ?? '',
     });
-    void copyToClipboard(curl);
-    toast.success('Copied as cURL');
+    copyText(curl).then((ok) => {
+      if (ok) toast.success('Copied as curl command (bash)');
+      else toast.error('Failed to copy as curl command (bash)');
+    });
   };
 
   const handleCopyUrl = (entry: SavedApiEntry) => {
-    void copyToClipboard(entry.url);
-    toast.success('Copied URL');
+    copyText(entry.url).then((ok) => {
+      if (ok) toast.success('Copied URL');
+      else toast.error('Failed to copy URL');
+    });
   };
 
   const handleOpenInBruteForce = (entry: SavedApiEntry) => {
@@ -252,8 +253,8 @@ export function DocumentsExplorer({
                         </button>
                       </ContextMenuTrigger>
                       <ContextMenuContent>
-                        <ContextMenuItem onClick={() => handleCopyCurl(entry)} className='text-xs'>
-                          <Copy className="mr-2 size-3" /> Copy as cURL
+                        <ContextMenuItem onClick={() => handleCopyCurlCommand(entry)} className='text-xs'>
+                          <Copy className="mr-2 size-3" /> Copy as curl command (bash)
                         </ContextMenuItem>
                         <ContextMenuItem onClick={() => handleCopyUrl(entry)} className='text-xs'>
                           <Copy className="mr-2 size-3" /> Copy URL

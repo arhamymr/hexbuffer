@@ -12,5 +12,6 @@ export interface TreeNodeData {
 
 export interface TreeViewProps {
   onSelectEndpoint: (node: TreeNodeData) => void;
+  onSelectHost: (node: TreeNodeData) => void;
   selectedId: string | null;
 }

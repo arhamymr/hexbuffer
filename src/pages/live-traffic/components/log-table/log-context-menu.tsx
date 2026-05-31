@@ -8,7 +8,7 @@ import {
   ContextMenuItem,
   ContextMenuSeparator,
 } from '@/components/ui/context-menu';
-import { Bot, Copy, ExternalLink, Plus, Trash2, Send, FilePlus2 } from 'lucide-react';
+import { Copy, Plus, Trash2, Send } from 'lucide-react';
 import { toast } from 'sonner';
 import type { ApiCall } from '@/types';
 import { deleteHistoryLog, fetchHistoryDetail } from '@/pages/live-traffic/services/history-service';
@@ -17,7 +17,8 @@ import { useBruteForceStore } from '@/stores/bruto-force';
 import { useHistoryQuery } from '@/pages/live-traffic/hooks/use-history-query';
 import { adaptProxyRecordToApiCall } from '@/pages/live-traffic/hooks/use-history-table';
 import { useRepeaterStore } from '@/stores/repeater';
-import { buildHttpCurlCommand, buildRawHttpRequest, formatJsonBody } from '@/lib/http-message';
+import { buildHttpCurlCommand, buildRawHttpRequest } from '@/lib/http-message';
+import { copyText } from '@/lib/clipboard';
 import { useDocumentsStore } from '@/stores/documents';
 import { useTargetStore } from '@/stores/target';
 
@@ -35,13 +36,7 @@ export function LogEntryContextMenu({
   const navigate = useNavigate();
   const { triggerRefresh } = useHistoryQuery();
 
-  const copyToClipboard = async (text: string | null | undefined) => {
-    if (text) {
-      await navigator.clipboard.writeText(text);
-    }
-  };
-
-  const handleCopyCurl = async () => {
+  const handleCopyCurlCommand = async () => {
     try {
       const detail = await fetchHistoryDetail(call.id);
       const request = adaptProxyRecordToApiCall(detail);
@@ -51,11 +46,11 @@ export function LogEntryContextMenu({
         headers: request.headers,
         body: request.request_body ?? '',
       });
-      await copyToClipboard(curl);
-      toast.success('Copied as cURL');
+      if (await copyText(curl)) toast.success('Copied as curl command (bash)');
+      else toast.error('Failed to copy as curl command (bash)');
     } catch (error) {
-      console.error('Failed to copy cURL:', error);
-      toast.error('Failed to copy as cURL');
+      console.error('Failed to copy curl command:', error);
+      toast.error('Failed to copy as curl command (bash)');
     }
   };
 
@@ -63,43 +58,11 @@ export function LogEntryContextMenu({
     try {
       const detail = await fetchHistoryDetail(call.id);
       const request = adaptProxyRecordToApiCall(detail);
-      await copyToClipboard(request.url);
-      toast.success('Copied URL');
+      if (await copyText(request.url)) toast.success('Copied URL');
+      else toast.error('Failed to copy URL');
     } catch {
-      await copyToClipboard(call.url);
-      toast.success('Copied URL');
-    }
-  };
-
-  const handleCopyRequestHeaders = async () => {
-    try {
-      const detail = await fetchHistoryDetail(call.id);
-      const request = adaptProxyRecordToApiCall(detail);
-      await copyToClipboard(JSON.stringify(request.headers, null, 2));
-      toast.success('Copied request headers');
-    } catch (error) {
-      console.error('Failed to copy request headers:', error);
-      toast.error('Failed to copy request headers');
-    }
-  };
-
-  const handleCopyResponseBody = async () => {
-    try {
-      const detail = await fetchHistoryDetail(call.id);
-      const request = adaptProxyRecordToApiCall(detail);
-      const body = request.response_body;
-      if (!body) {
-        toast.error('No response body to copy');
-        return;
-      }
-      const formatted = request.response_content_type?.includes('json')
-        ? formatJsonBody(body)
-        : body;
-      await copyToClipboard(formatted);
-      toast.success('Copied response body');
-    } catch (error) {
-      console.error('Failed to copy response body:', error);
-      toast.error('Failed to copy response body');
+      if (await copyText(call.url)) toast.success('Copied URL');
+      else toast.error('Failed to copy URL');
     }
   };
 
@@ -160,52 +123,52 @@ export function LogEntryContextMenu({
     }
   };
 
-  const handleOpenInPromptInjection = async () => {
-    try {
-      const detail = await fetchHistoryDetail(call.id);
-      const request = adaptProxyRecordToApiCall(detail);
-      navigate('/ai-tools', {
-        state: {
-          promptInjectionRequest: {
-            raw: buildRawHttpRequest({
-              method: request.method,
-              url: request.url,
-              headers: request.headers,
-              body: request.request_body || '',
-            }),
-            endpoint: request.url,
-          },
-        },
-      });
-    } catch (error) {
-      console.error('Failed to open request in Prompt Injection:', error);
-      toast.error('Failed to open request in Prompt Injection');
-    }
-  };
+  // const handleOpenInPromptInjection = async () => {
+  //   try {
+  //     const detail = await fetchHistoryDetail(call.id);
+  //     const request = adaptProxyRecordToApiCall(detail);
+  //     navigate('/ai-tools', {
+  //       state: {
+  //         promptInjectionRequest: {
+  //           raw: buildRawHttpRequest({
+  //             method: request.method,
+  //             url: request.url,
+  //             headers: request.headers,
+  //             body: request.request_body || '',
+  //           }),
+  //           endpoint: request.url,
+  //         },
+  //       },
+  //     });
+  //   } catch (error) {
+  //     console.error('Failed to open request in Prompt Injection:', error);
+  //     toast.error('Failed to open request in Prompt Injection');
+  //   }
+  // };
 
-  const handleSaveToDocuments = async () => {
-    try {
-      const detail = await fetchHistoryDetail(call.id);
-      const request = adaptProxyRecordToApiCall(detail);
+  // const handleSaveToDocuments = async () => {
+  //   try {
+  //     const detail = await fetchHistoryDetail(call.id);
+  //     const request = adaptProxyRecordToApiCall(detail);
 
-      useDocumentsStore.getState().addApiEntryToActiveDocument({
-        sourceHistoryId: request.id,
-        method: request.method,
-        url: request.url,
-        host: request.host,
-        path: request.path,
-        headers: request.headers,
-        requestBody: request.request_body,
-        responseStatus: request.response_status,
-        responseContentType: request.response_content_type,
-        capturedAt: request.timestamp,
-      });
-      toast.success('Saved API to active document');
-    } catch (error) {
-      console.error('Failed to save API to documents:', error);
-      toast.error('Failed to save API to documents');
-    }
-  };
+  //     useDocumentsStore.getState().addApiEntryToActiveDocument({
+  //       sourceHistoryId: request.id,
+  //       method: request.method,
+  //       url: request.url,
+  //       host: request.host,
+  //       path: request.path,
+  //       headers: request.headers,
+  //       requestBody: request.request_body,
+  //       responseStatus: request.response_status,
+  //       responseContentType: request.response_content_type,
+  //       capturedAt: request.timestamp,
+  //     });
+  //     toast.success('Saved API to active document');
+  //   } catch (error) {
+  //     console.error('Failed to save API to documents:', error);
+  //     toast.error('Failed to save API to documents');
+  //   }
+  // };
 
   const handleDelete = async () => {
     try {
@@ -223,17 +186,11 @@ export function LogEntryContextMenu({
         {children}
       </ContextMenuTrigger>
       <ContextMenuContent>
-        <ContextMenuItem onClick={handleCopyCurl} className='text-xs'>
-          <Copy className="mr-2 size-3" /> Copy as cURL
+        <ContextMenuItem onClick={handleCopyCurlCommand} className='text-xs'>
+          <Copy className="mr-2 size-3" /> Copy as curl command (bash)
         </ContextMenuItem>
         <ContextMenuItem onClick={handleCopyUrl} className='text-xs'>
           <Copy className="mr-2 size-3" /> Copy URL
-        </ContextMenuItem>
-        <ContextMenuItem onClick={handleCopyRequestHeaders} className='text-xs'>
-          <Copy className="mr-2 size-3" /> Copy Request Headers
-        </ContextMenuItem>
-        <ContextMenuItem onClick={handleCopyResponseBody} disabled={!call.response_body} className='text-xs'>
-          <Copy className="mr-2 size-3" /> Copy Response Body
         </ContextMenuItem>
         <ContextMenuSeparator />
         <ContextMenuItem onClick={handleAddToScope} className='text-xs'>
@@ -248,9 +205,9 @@ export function LogEntryContextMenu({
         {/* <ContextMenuItem onClick={handleOpenInPromptInjection} className='text-xs'>
           <Bot className="mr-2 h-4 w-4" /> Open in Prompt Injection
         </ContextMenuItem> */}
-        <ContextMenuItem onClick={handleSaveToDocuments} className='text-xs'>
+        {/* <ContextMenuItem onClick={handleSaveToDocuments} className='text-xs'>
           <FilePlus2 className="mr-2 h-4 w-4" /> Save to Documents
-        </ContextMenuItem>
+        </ContextMenuItem> */}
         <ContextMenuSeparator />
         <ContextMenuItem onClick={handleDelete} variant="destructive" className='text-xs'>
           <Trash2 className="mr-2 h-4 w-4" /> Delete

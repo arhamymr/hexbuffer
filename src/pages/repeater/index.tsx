@@ -18,6 +18,8 @@ export function RepeaterPage() {
     setActiveTabId,
     renameTab,
     closeTab,
+    closeTabsToLeft,
+    closeTabsToRight,
     activeTab,
     updateRawRequest,
     sendRequest,
@@ -35,6 +37,8 @@ export function RepeaterPage() {
       onTabChange={setActiveTabId}
       onTabRename={renameTab}
       onTabClose={closeTab}
+      onCloseTabsToLeft={closeTabsToLeft}
+      onCloseTabsToRight={closeTabsToRight}
       contentClassName="flex-1 border rounded-lg overflow-hidden bg-background min-h-0"
     >
       {activeTab.mode === 'websocket' ? (

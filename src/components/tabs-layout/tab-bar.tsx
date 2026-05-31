@@ -20,6 +20,8 @@ interface PageTabBarProps {
   onTabChange: (id: string) => void;
   onTabRename?: (id: string, name: string) => void;
   onTabClose?: (id: string) => void;
+  onCloseTabsToLeft?: (id: string) => void;
+  onCloseTabsToRight?: (id: string) => void;
   renderTabContextMenuItems?: (tab: PageTabItem) => ReactNode;
 }
 
@@ -29,6 +31,8 @@ export function PageTabBar({
   onTabChange,
   onTabRename,
   onTabClose,
+  onCloseTabsToLeft,
+  onCloseTabsToRight,
   renderTabContextMenuItems,
 }: PageTabBarProps) {
   const {
@@ -121,11 +125,25 @@ export function PageTabBar({
       >
         <div className="flex min-w-full w-max items-center gap-1">
           {tabs.map((tab) => {
+            const tabIndex = tabs.findIndex((currentTab) => currentTab.id === tab.id);
             const canRename = !tab.disabled && Boolean(onTabRename);
             const canClose = !tab.disabled && Boolean(onTabClose) && tab.closable !== false;
+            const hasClosableTabsToLeft = tabs
+              .slice(0, tabIndex)
+              .some((currentTab) => !currentTab.disabled && currentTab.closable !== false);
+            const hasClosableTabsToRight = tabs
+              .slice(tabIndex + 1)
+              .some((currentTab) => !currentTab.disabled && currentTab.closable !== false);
+            const canCloseTabsToLeft = !tab.disabled && Boolean(onCloseTabsToLeft) && hasClosableTabsToLeft;
+            const canCloseTabsToRight = !tab.disabled && Boolean(onCloseTabsToRight) && hasClosableTabsToRight;
             const customContextMenuItems = renderTabContextMenuItems?.(tab);
             const hasCustomContextMenuItems = Boolean(customContextMenuItems);
-            const hasContextMenu = canRename || canClose || hasCustomContextMenuItems;
+            const hasContextMenu =
+              canRename ||
+              canClose ||
+              canCloseTabsToLeft ||
+              canCloseTabsToRight ||
+              hasCustomContextMenuItems;
 
             if (!hasContextMenu) {
               return <div key={tab.id}>{renderTab(tab)}</div>;
@@ -142,7 +160,19 @@ export function PageTabBar({
                       Rename
                     </ContextMenuItem>
                   )}
-                  {canRename && canClose && <ContextMenuSeparator />}
+                  {canCloseTabsToLeft && (
+                    <ContextMenuItem onClick={() => onCloseTabsToLeft?.(tab.id)}>
+                      Close tabs to the left
+                    </ContextMenuItem>
+                  )}
+                  {canCloseTabsToRight && (
+                    <ContextMenuItem onClick={() => onCloseTabsToRight?.(tab.id)}>
+                      Close tabs to the right
+                    </ContextMenuItem>
+                  )}
+                  {(canRename || canCloseTabsToLeft || canCloseTabsToRight) && canClose && (
+                    <ContextMenuSeparator />
+                  )}
                   {canClose && (
                     <ContextMenuItem onClick={() => onTabClose?.(tab.id)} variant="destructive">
                       Delete

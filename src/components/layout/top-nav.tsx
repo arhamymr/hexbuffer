@@ -12,6 +12,7 @@ import { ProxyButton } from './proxy-button';
 import { mainNavItems } from './constants';
 import { TitlebarButtons } from './titlebar-buttons';
 import { Separator } from '../ui/separator';
+import { TriangleLogo } from './triangle-logo';
 
 export function TopNav() {
   const location = useLocation();
@@ -74,6 +75,7 @@ export function TopNav() {
             <GripHorizontal className="size-5" data-tauri-drag-region />
           </div>
           <div className="flex items-center gap-1">
+            <TriangleLogo />
             <p className='text-sm font-bold font-mono hover:text-green-500 text-foreground transition-colors no-underline'>0xbuffer</p>
           </div>
 

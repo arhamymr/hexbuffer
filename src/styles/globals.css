@@ -156,6 +156,47 @@
     animation: ripple 0.6s ease-out forwards;
   }
 
+  @keyframes triangle-pulse {
+    0%,
+    100% {
+      transform: scale(1);
+    }
+
+    45% {
+      transform: scale(1.08);
+    }
+  }
+
+  @keyframes triangle-solid {
+    0%,
+    38%,
+    100% {
+      opacity: 1;
+      transform: rotate(0deg) scale(1);
+    }
+
+    50%,
+    88% {
+      opacity: 0;
+      transform: rotate(8deg) scale(0.88);
+    }
+  }
+
+  @keyframes triangle-dashed {
+    0%,
+    38%,
+    100% {
+      opacity: 0;
+      transform: rotate(-8deg) scale(0.88);
+    }
+
+    50%,
+    88% {
+      opacity: 1;
+      transform: rotate(0deg) scale(1);
+    }
+  }
+
   @keyframes accordion-down {
     from {
       height: 0;

@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Triangle, TriangleDashed } from 'lucide-react';
+import { Asterisk, Triangle, TriangleDashed } from 'lucide-react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
@@ -54,9 +54,9 @@ export function ProxyButton() {
           "h-6 px-1.5 text-xs transition-all rounded-md duration-300 group-hover:px-2 gap-0")}
       >
         {isConnected ? (
-          <Triangle className="h-3 w-3 shrink-0 animate-pulse fill-current text-green-500" />
+          <Asterisk className="!size-4 shrink-0 animate-pulse animate-spin fill-current text-green-500" />
         ) : (
-          <TriangleDashed className="h-3 w-3 shrink-0" />
+          <Asterisk className="!size-4 shrink-0" />
         )}
         <span className="max-w-0 overflow-hidden whitespace-nowrap opacity-0 transition-all duration-300 group-hover:ml-1 group-hover:max-w-17 group-hover:opacity-100">
           {isConnected ? 'PROXY ON' : 'PROXY OFF'}

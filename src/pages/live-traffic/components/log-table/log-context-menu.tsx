@@ -239,15 +239,15 @@ export function LogEntryContextMenu({
         <ContextMenuItem onClick={handleAddToScope} className='text-xs'>
           <Plus className="mr-2 h-4 w-4" /> Add to Target
         </ContextMenuItem>
-        <ContextMenuItem onClick={handleOpenInBruteForce} className='text-xs'>
+        {/* <ContextMenuItem onClick={handleOpenInBruteForce} className='text-xs'>
           <ExternalLink className="mr-2 h-4 w-4" /> Open in Brute Force
-        </ContextMenuItem>
+        </ContextMenuItem> */}
         <ContextMenuItem onClick={handleOpenInRepeater} className='text-xs'>
           <Send className="mr-2 h-4 w-4" /> Send to Repeater
         </ContextMenuItem>
-        <ContextMenuItem onClick={handleOpenInPromptInjection} className='text-xs'>
+        {/* <ContextMenuItem onClick={handleOpenInPromptInjection} className='text-xs'>
           <Bot className="mr-2 h-4 w-4" /> Open in Prompt Injection
-        </ContextMenuItem>
+        </ContextMenuItem> */}
         <ContextMenuItem onClick={handleSaveToDocuments} className='text-xs'>
           <FilePlus2 className="mr-2 h-4 w-4" /> Save to Documents
         </ContextMenuItem>

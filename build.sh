@@ -4,7 +4,7 @@ set -euo pipefail
 set -a; source .env; set +a
 
 APP_NAME="0xbuffer"
-VERSION=$(node -e "console.log(require('./package.json').version)")
+VERSION="$(cat VERSION)"
 PUB_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 BASE_URL="${UPDATER_BASE_URL:-https://releases.0xbuffer.com}"
 

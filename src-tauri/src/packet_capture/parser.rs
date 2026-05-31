@@ -1,5 +1,5 @@
-use regex::Regex;
 use crate::packet_capture::types::CapturedPacketEvent;
+use regex::Regex;
 
 pub fn parse_tcpdump_line(
     line: &str,

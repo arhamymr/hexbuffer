@@ -4,6 +4,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Empty, EmptyDescription, EmptyTitle } from '@/components/ui/empty';
 import { useWebSocketTable } from '@/pages/live-traffic/hooks/use-websocket-table';
+import { HistoryLoadingState } from '../history-loading-state';
 import { WebSocketContextMenu } from './websocket-context-menu';
 
 interface WebSocketTableProps {
@@ -60,6 +61,10 @@ export function WebSocketTable({ selectedConnectionId, onSelectConnection }: Web
         </Alert>
       </div>
     );
+  }
+
+  if (isLoading && connections.length === 0) {
+    return <HistoryLoadingState label="Loading WebSocket history..." columns={7} />;
   }
 
   if (!isLoading && connections.length === 0) {

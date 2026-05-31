@@ -32,7 +32,6 @@ export function BruteForceResultsPanel() {
               <th className="px-3 py-2 text-left font-medium">URL</th>
               <th className="px-3 py-2 text-left font-medium w-16">Status</th>
               <th className="px-3 py-2 text-left font-medium w-20">Length</th>
-              <th className="px-3 py-2 text-left font-medium w-16">Grep</th>
               <th className="px-3 py-2 text-left font-medium w-20">Time</th>
             </tr>
           </thead>
@@ -74,13 +73,6 @@ export function BruteForceResultsPanel() {
                   {result.error && <span className="text-xs">Error</span>}
                 </td>
                 <td className="px-3 py-2 text-muted-foreground">{result.response_length ?? '-'}</td>
-                <td className="px-3 py-2">
-                  {result.grep_match && (
-                    <Badge variant="default" className="text-xs">
-                      Match
-                    </Badge>
-                  )}
-                </td>
                 <td className="px-3 py-2 text-muted-foreground">
                   {result.response_time_ms ? `${result.response_time_ms}ms` : '-'}
                 </td>
@@ -88,7 +80,7 @@ export function BruteForceResultsPanel() {
             ))}
             {filteredResults.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-3 py-8 text-center text-muted-foreground">
+                <td colSpan={6} className="px-3 py-8 text-center text-muted-foreground">
                   {isRunning ? 'Running attack...' : 'No results yet'}
                 </td>
               </tr>

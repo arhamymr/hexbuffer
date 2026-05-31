@@ -6,8 +6,8 @@ use futures_util::{SinkExt, StreamExt};
 use reqwest::Method;
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Emitter};
-use tokio_tungstenite::tungstenite::Message;
 use tokio_tungstenite::connect_async;
+use tokio_tungstenite::tungstenite::Message;
 
 #[derive(Debug, Deserialize)]
 pub struct RepeaterRequest {
@@ -45,7 +45,9 @@ pub async fn send_repeater_request(request: RepeaterRequest) -> Result<RepeaterR
     if !request.body.is_empty() {
         let mut body_bytes: Vec<u8> = request.body.into_bytes();
 
-        let content_encoding = request.headers.iter()
+        let content_encoding = request
+            .headers
+            .iter()
             .find(|(k, _)| k.eq_ignore_ascii_case("content-encoding"))
             .map(|(_, v)| v.clone());
 

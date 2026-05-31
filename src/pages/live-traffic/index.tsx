@@ -62,7 +62,12 @@ export function LiveTrafficPage() {
             </>
           )}
           <ResizablePanel defaultSize={shouldShowSitemap ? 80 : 100}>
-            {historyMode === 'http' ? <HttpHistoryView /> : <WebSocketHistoryView />}
+            <div
+              key={historyMode}
+              className="h-full animate-in fade-in-0 slide-in-from-bottom-1 duration-200"
+            >
+              {historyMode === 'http' ? <HttpHistoryView /> : <WebSocketHistoryView />}
+            </div>
           </ResizablePanel>
         </ResizablePanelGroup>
       </Card>

@@ -8,26 +8,12 @@ import {
 } from '@/components/ui/resizable';
 import { useAppStore } from '@/stores/app';
 import { toast } from 'sonner';
-import { InterceptQueuePanel } from './components/intercept-queue-panel';
-import { InterceptRequestPanel } from './components/intercept-request-panel';
+import { InterceptQueuePanel } from './components/queue-panel';
+import { InterceptRequestPanel } from './components/request-panel';
 import { useInterceptPage } from './hooks/use-intercept-page';
 
 export function InterceptPage() {
-  const {
-    status,
-    requests,
-    selectedRequestId,
-    rawRequest,
-    isBusy,
-    isRefreshing,
-    setSelectedRequestId,
-    setRawRequest,
-    refresh,
-    toggleIntercept,
-    forwardSelectedRequest,
-    dropSelectedRequest,
-    bypassHostAndForward,
-  } = useInterceptPage();
+  useInterceptPage();
   const proxyStatus = useAppStore((state) => state.proxyStatus);
   const startProxy = useAppStore((state) => state.startProxy);
   const [isStarting, setIsStarting] = React.useState(false);
@@ -66,28 +52,11 @@ export function InterceptPage() {
         <div className="bg-muted flex-1 min-h-0">
           <ResizablePanelGroup orientation="horizontal" className="min-h-0">
             <ResizablePanel defaultSize={50} minSize={20}>
-              <InterceptRequestPanel
-                status={status}
-                rawRequest={rawRequest}
-                hasSelection={Boolean(selectedRequestId)}
-                onRawRequestChange={setRawRequest}
-                onToggleIntercept={toggleIntercept}
-              />
+              <InterceptRequestPanel />
             </ResizablePanel>
             <ResizableHandle withHandle />
             <ResizablePanel defaultSize={50} minSize={20}>
-              <InterceptQueuePanel
-                status={status}
-                requests={requests}
-                selectedRequestId={selectedRequestId}
-                isBusy={isBusy}
-                isRefreshing={isRefreshing}
-                onSelectRequest={setSelectedRequestId}
-                onForward={forwardSelectedRequest}
-                onDrop={dropSelectedRequest}
-                onRefresh={refresh}
-                onBypassHost={bypassHostAndForward}
-              />
+              <InterceptQueuePanel />
             </ResizablePanel>
           </ResizablePanelGroup>
         </div>

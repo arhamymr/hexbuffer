@@ -5,35 +5,21 @@ import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import { MethodBadge } from '@/components/status-badge';
 import { cn } from '@/lib/utils';
-import { InterceptBypassPanel } from './intercept-bypass-panel';
-import type { InterceptStatus, PausedRequest } from '../types';
+import { InterceptBypassPanel } from './bypass-panel';
 import { formatRequestTime, getRequestHost, getRequestPath } from '../lib';
+import { useInterceptStore } from '../state/intercept-store';
 
-interface InterceptQueuePanelProps {
-  status: InterceptStatus | null;
-  requests: PausedRequest[];
-  selectedRequestId: string | null;
-  isBusy: boolean;
-  isRefreshing: boolean;
-  onSelectRequest: (requestId: string) => void;
-  onForward: () => void;
-  onDrop: (request: PausedRequest) => void;
-  onRefresh: () => void;
-  onBypassHost: (request: PausedRequest) => void;
-}
-
-export function InterceptQueuePanel({
-  status,
-  requests,
-  selectedRequestId,
-  isBusy,
-  isRefreshing,
-  onSelectRequest,
-  onForward,
-  onDrop,
-  onRefresh,
-  onBypassHost,
-}: InterceptQueuePanelProps) {
+export function InterceptQueuePanel() {
+  const status = useInterceptStore((state) => state.status);
+  const requests = useInterceptStore((state) => state.requests);
+  const selectedRequestId = useInterceptStore((state) => state.selectedRequestId);
+  const isBusy = useInterceptStore((state) => state.isBusy);
+  const isRefreshing = useInterceptStore((state) => state.isRefreshing);
+  const setSelectedRequestId = useInterceptStore((state) => state.setSelectedRequestId);
+  const forwardSelectedRequest = useInterceptStore((state) => state.forwardSelectedRequest);
+  const dropRequest = useInterceptStore((state) => state.dropRequest);
+  const refresh = useInterceptStore((state) => state.refresh);
+  const bypassHostAndForward = useInterceptStore((state) => state.bypassHostAndForward);
   const isEnabled = status?.mode === 'Enabled';
   const hasSelection = Boolean(selectedRequestId);
   const [removingIds, setRemovingIds] = React.useState<Set<string>>(new Set());
@@ -45,11 +31,11 @@ export function InterceptQueuePanel({
           <span className="text-sm font-medium">Request Queue</span>
         </div>
         <div className="flex items-center gap-2">
-          <Button size="xs" onClick={onForward} disabled={!hasSelection || isBusy}>
+          <Button size="xs" onClick={forwardSelectedRequest} disabled={!hasSelection || isBusy}>
             {isBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
             FORWARD
           </Button>
-          <Button size="xs" variant="ghost" onClick={onRefresh} disabled={isRefreshing}>
+          <Button size="xs" variant="ghost" onClick={refresh} disabled={isRefreshing}>
             Refresh
           </Button>
         </div>
@@ -90,22 +76,22 @@ export function InterceptQueuePanel({
                   <button
                     key={request.id}
                     type="button"
-                    onClick={() => onSelectRequest(request.id)}
+                    onClick={() => setSelectedRequestId(request.id)}
                     className={cn(
                       'grid w-full grid-cols-[auto_minmax(0,1fr)_auto_auto_auto] items-start gap-2 px-3 py-2 text-left text-sm hover:bg-muted/60',
                       isSelected && 'bg-muted',
                       isRemoving && 'pointer-events-none animate-slide-out-right'
                     )}
-                    title={getRequestHost(request)+getRequestPath(request)}
+                    title={`${getRequestHost(request)}${getRequestPath(request)}`}
                   >
                     <MethodBadge method={request.request.method} />
                     <span className="min-w-0">
-                      <span className="block truncate  text-xs font-medium">{getRequestHost(request)}</span>
+                      <span className="block truncate text-xs font-medium">{getRequestHost(request)}</span>
                       <span className="block truncate font-mono text-xs text-muted-foreground">
                         {getRequestPath(request)}
                       </span>
                     </span>
-                    <span className="pt-1 text-[11px] text-muted-foreground" >
+                    <span className="pt-1 text-[11px] text-muted-foreground">
                       {formatRequestTime(request.timestamp)}
                     </span>
                     <span
@@ -113,7 +99,7 @@ export function InterceptQueuePanel({
                       onClick={(e) => {
                         e.stopPropagation();
                         setRemovingIds((prev) => new Set([...prev, request.id]));
-                        onDrop(request);
+                        dropRequest(request);
                       }}
                     >
                       <Trash2 className="h-3 w-3" />
@@ -124,7 +110,7 @@ export function InterceptQueuePanel({
                       onClick={(e) => {
                         e.stopPropagation();
                         setRemovingIds((prev) => new Set([...prev, request.id]));
-                        onBypassHost(request);
+                        bypassHostAndForward(request);
                       }}
                     >
                       <Plus className="h-3 w-3" />

@@ -1,8 +1,8 @@
-use tauri::State;
 use crate::{
     DocumentRecord, HistoryBridge, PaginatedResponse, ProxyFilter, ProxyLogSummary, ProxyRecord,
     TreeNode, WebSocketConnectionDetail, WebSocketConnectionSummary, WebSocketFilter,
 };
+use tauri::State;
 
 #[tauri::command]
 pub async fn clear_proxy_all(history: State<'_, HistoryBridge>) -> Result<(), String> {

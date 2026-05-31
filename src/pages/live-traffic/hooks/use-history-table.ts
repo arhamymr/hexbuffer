@@ -108,7 +108,7 @@ export function useHistoryTable() {
 
   const [calls, setCalls] = useState<ApiCall[]>([]);
   const [pagination, setPagination] = useState({ page: 1, perPage: 100, total: 0, hasMore: false });
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [newEventsCount, setNewEventsCount] = useState(0);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -181,6 +181,10 @@ export function useHistoryTable() {
 
     if (debounceRef.current) {
       clearTimeout(debounceRef.current);
+    }
+
+    if (page === 1) {
+      setIsLoading(true);
     }
 
     debounceRef.current = setTimeout(() => {

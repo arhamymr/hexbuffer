@@ -204,7 +204,8 @@ fn encode_content_coding(coding: &str, body: &[u8]) -> Result<Vec<u8>, String> {
     match coding {
         "gzip" | "x-gzip" => {
             use std::io::Write;
-            let mut encoder = flate2::write::GzEncoder::new(Vec::new(), flate2::Compression::default());
+            let mut encoder =
+                flate2::write::GzEncoder::new(Vec::new(), flate2::Compression::default());
             encoder.write_all(body).map_err(|e| e.to_string())?;
             encoder.finish().map_err(|e| e.to_string())
         }
@@ -219,13 +220,16 @@ fn encode_content_coding(coding: &str, body: &[u8]) -> Result<Vec<u8>, String> {
         }
         "deflate" => {
             use std::io::Write;
-            let mut encoder = flate2::write::DeflateEncoder::new(Vec::new(), flate2::Compression::default());
+            let mut encoder =
+                flate2::write::DeflateEncoder::new(Vec::new(), flate2::Compression::default());
             encoder.write_all(body).map_err(|e| e.to_string())?;
             encoder.finish().map_err(|e| e.to_string())
         }
         "zstd" => zstd::stream::encode_all(&body[..], 0).map_err(|e| e.to_string()),
         "identity" => Ok(body.to_vec()),
-        unknown => Err(format!("unsupported content encoding for re-encoding: '{unknown}'")),
+        unknown => Err(format!(
+            "unsupported content encoding for re-encoding: '{unknown}'"
+        )),
     }
 }
 
@@ -386,10 +390,7 @@ mod tests {
         let encoded = encode_body("gzip", original).unwrap();
         assert_ne!(&encoded[..], &original[..]);
 
-        let decoded = decode_http_body(
-            &headers(&[("Content-Encoding", "gzip")]),
-            &encoded,
-        );
+        let decoded = decode_http_body(&headers(&[("Content-Encoding", "gzip")]), &encoded);
         assert_eq!(decoded.decoded_body, original);
         assert!(decoded.metadata.content_decoded);
     }
@@ -400,10 +401,7 @@ mod tests {
         let encoded = encode_body("deflate", original).unwrap();
         assert_ne!(&encoded[..], &original[..]);
 
-        let decoded = decode_http_body(
-            &headers(&[("Content-Encoding", "deflate")]),
-            &encoded,
-        );
+        let decoded = decode_http_body(&headers(&[("Content-Encoding", "deflate")]), &encoded);
         assert_eq!(decoded.decoded_body, original);
     }
 
@@ -413,10 +411,7 @@ mod tests {
         let encoded = encode_body("br", original).unwrap();
         assert_ne!(&encoded[..], &original[..]);
 
-        let decoded = decode_http_body(
-            &headers(&[("Content-Encoding", "br")]),
-            &encoded,
-        );
+        let decoded = decode_http_body(&headers(&[("Content-Encoding", "br")]), &encoded);
         assert_eq!(decoded.decoded_body, original);
     }
 }

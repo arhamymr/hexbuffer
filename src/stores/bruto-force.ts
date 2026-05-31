@@ -6,11 +6,14 @@ import type {
   AttackConfig,
   AttackProgress,
   AttackResult,
-  AttackMode,
   PayloadType,
+  PayloadConfig,
   PayloadProcessingStep,
 } from '@/pages/brute-force/types';
-import { createDefaultAttackConfig } from '@/pages/brute-force/types';
+import {
+  createDefaultAttackConfig,
+  syncPositionPayloads,
+} from '@/pages/brute-force/types';
 
 interface InterceptBypassState {
   bypassPatterns: string[];
@@ -33,6 +36,7 @@ export interface BruteForceTab {
   filterPayload: string;
   filterGrep: boolean;
   payloadDialogOpen: boolean;
+  payloadDialogPositionName: string | null;
   rawRequestDialogOpen: boolean;
   rawRequestContent: string;
 }
@@ -48,9 +52,9 @@ interface BruteForceState extends InterceptBypassState {
   addAttackTab: (config?: AttackConfig) => string;
   closeTab: (id: string) => void;
   updateConfig: (updates: Partial<AttackConfig>) => void;
-  updateAttackMode: (mode: AttackMode) => void;
   updatePayloadType: (payload_type: PayloadType) => void;
   updatePayloadValues: (values: string[]) => void;
+  updatePositionPayload: (positionName: string, updates: Partial<PayloadConfig>) => void;
   updateNumberRange: (updates: {
     number_start?: number;
     number_end?: number;
@@ -73,7 +77,7 @@ interface BruteForceState extends InterceptBypassState {
   setFilterStatus: (status: string) => void;
   setFilterPayload: (payload: string) => void;
   setFilterGrep: (grep: boolean) => void;
-  setPayloadDialogOpen: (open: boolean) => void;
+  setPayloadDialogOpen: (open: boolean, positionName?: string | null) => void;
   setRawRequestDialogOpen: (open: boolean) => void;
   setRawRequestContent: (content: string) => void;
 
@@ -92,6 +96,12 @@ function createAttackTab(index: number, config = createDefaultAttackConfig()): B
     name: String(index),
     config: {
       ...config,
+      mode: 'Sniper',
+      position_payloads: syncPositionPayloads(
+        config.positions,
+        config.position_payloads,
+        config.payload_config
+      ),
       name: config.name === 'New Attack' ? `Attack ${index}` : config.name,
     },
     results: [],
@@ -104,6 +114,7 @@ function createAttackTab(index: number, config = createDefaultAttackConfig()): B
     filterPayload: '',
     filterGrep: false,
     payloadDialogOpen: false,
+    payloadDialogPositionName: null,
     rawRequestDialogOpen: false,
     rawRequestContent: '',
   };
@@ -182,10 +193,19 @@ export const useBruteForceStore = create<BruteForceState>((set, get) => ({
     }),
 
   updateConfig: (updates) =>
-    updateActiveTab(set, (tab) => ({ ...tab, config: { ...tab.config, ...updates } })),
-
-  updateAttackMode: (mode) =>
-    updateActiveTab(set, (tab) => ({ ...tab, config: { ...tab.config, mode } })),
+    updateActiveTab(set, (tab) => ({
+      ...tab,
+      config: {
+        ...tab.config,
+        ...updates,
+        mode: 'Sniper',
+        position_payloads: syncPositionPayloads(
+          updates.positions ?? tab.config.positions,
+          updates.position_payloads ?? tab.config.position_payloads,
+          updates.payload_config ?? tab.config.payload_config
+        ),
+      },
+    })),
 
   updatePayloadType: (payload_type) =>
     updateActiveTab(set, (tab) => ({
@@ -204,6 +224,26 @@ export const useBruteForceStore = create<BruteForceState>((set, get) => ({
         payload_config: { ...tab.config.payload_config, values },
       },
     })),
+
+  updatePositionPayload: (positionName, updates) =>
+    updateActiveTab(set, (tab) => {
+      const currentPayload =
+        tab.config.position_payloads[positionName] ?? tab.config.payload_config;
+
+      return {
+        ...tab,
+        config: {
+          ...tab.config,
+          position_payloads: {
+            ...tab.config.position_payloads,
+            [positionName]: {
+              ...currentPayload,
+              ...updates,
+            },
+          },
+        },
+      };
+    }),
 
   updateNumberRange: (updates) =>
     updateActiveTab(set, (tab) => ({
@@ -290,7 +330,12 @@ export const useBruteForceStore = create<BruteForceState>((set, get) => ({
   setFilterStatus: (status) => updateActiveTab(set, (tab) => ({ ...tab, filterStatus: status })),
   setFilterPayload: (payload) => updateActiveTab(set, (tab) => ({ ...tab, filterPayload: payload })),
   setFilterGrep: (grep) => updateActiveTab(set, (tab) => ({ ...tab, filterGrep: grep })),
-  setPayloadDialogOpen: (open) => updateActiveTab(set, (tab) => ({ ...tab, payloadDialogOpen: open })),
+  setPayloadDialogOpen: (open, positionName = null) =>
+    updateActiveTab(set, (tab) => ({
+      ...tab,
+      payloadDialogOpen: open,
+      payloadDialogPositionName: open ? positionName : null,
+    })),
   setRawRequestDialogOpen: (open) => updateActiveTab(set, (tab) => ({ ...tab, rawRequestDialogOpen: open })),
   setRawRequestContent: (content) => updateActiveTab(set, (tab) => ({ ...tab, rawRequestContent: content })),
 
@@ -310,7 +355,9 @@ export const useBruteForceStore = create<BruteForceState>((set, get) => ({
     cleanupTabListeners(tab.id);
 
     try {
-      const id = await invoke<string>('start_intruder_attack', { config: tab.config });
+      const id = await invoke<string>('start_intruder_attack', {
+        config: { ...tab.config, mode: 'Sniper' },
+      });
       set((state) => ({
         tabs: state.tabs.map((currentTab) =>
           currentTab.id === tab.id

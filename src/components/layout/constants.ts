@@ -12,7 +12,7 @@ export const allNavItems: NavItem[] = [
   { label: 'Live Traffic', icon: ArrowUpDown, href: '/' },
   // { label: 'Packets', icon: Network, href: '/packet-capture', devOnly: true },
   { label: 'Intercept', icon: PauseCircle, href: '/intercept' },
-  // { label: 'Brute Force', icon: Crosshair, href: '/brute-force' },
+  { label: 'Brute Force', icon: Crosshair, href: '/brute-force' },
   { label: 'Repeater', icon: RefreshCw, href: '/repeater' },
   // { label: 'Browser', icon: Globe, href: '/browser-automation', devOnly: true },
   // { label: 'Documents', icon: FileText, href: '/documents'},

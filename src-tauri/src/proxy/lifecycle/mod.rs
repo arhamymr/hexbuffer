@@ -5,14 +5,13 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
+use hudsucker::tokio_tungstenite::tungstenite::Message;
 use hudsucker::{Body, HttpContext, HttpHandler, WebSocketContext, WebSocketHandler};
 use hyper::{header::HeaderName, header::HeaderValue, Method, Request, Response, Uri};
-use hudsucker::tokio_tungstenite::tungstenite::Message;
 use tauri::{AppHandle, Emitter, Manager};
 
 use crate::proxy::state::{
-    WebSocketMessageDirection, WebSocketMessageRecord,
-    WebSocketMessageType,
+    WebSocketMessageDirection, WebSocketMessageRecord, WebSocketMessageType,
 };
 use crate::proxy::websocket;
 
@@ -129,10 +128,7 @@ impl HttpHandler for AppHandler {
                     }
                 }
                 if let Err(e) = self.app_handle.emit("websocket-connection", &record) {
-                    eprintln!(
-                        "[lifecycle] failed to emit WS connection event: {}",
-                        e
-                    );
+                    eprintln!("[lifecycle] failed to emit WS connection event: {}", e);
                 }
                 let (host, path, _) =
                     websocket::parse_websocket_target(&ctx.req_uri, &ctx.req_headers);
@@ -149,7 +145,10 @@ impl HttpHandler for AppHandler {
             Ok(collected) => collected.to_bytes(),
             Err(e) => {
                 eprintln!("[lifecycle] Failed to read request body: {}", e);
-                return hudsucker::RequestOrResponse::Request(Request::from_parts(parts, Body::empty()));
+                return hudsucker::RequestOrResponse::Request(Request::from_parts(
+                    parts,
+                    Body::empty(),
+                ));
             }
         };
         ctx.req_body = body_bytes.to_vec();
@@ -175,7 +174,10 @@ impl HttpHandler for AppHandler {
         let mut body_modified = false;
 
         let proxy_state_handle = self.app_handle.state::<Mutex<ProxyState>>();
-        let should_bypass_uri = proxy_state_handle.lock().unwrap().should_bypass_uri(&ctx.req_uri);
+        let should_bypass_uri = proxy_state_handle
+            .lock()
+            .unwrap()
+            .should_bypass_uri(&ctx.req_uri);
 
         if ctx.req_method != "CONNECT" && !should_bypass_uri {
             let mode = proxy_state_handle.lock().unwrap().get_mode();
@@ -200,7 +202,10 @@ impl HttpHandler for AppHandler {
                     response: None,
                 };
 
-                proxy_state_handle.lock().unwrap().add_paused_request(paused_req);
+                proxy_state_handle
+                    .lock()
+                    .unwrap()
+                    .add_paused_request(paused_req);
 
                 loop {
                     tokio::time::sleep(Duration::from_millis(100)).await;
@@ -214,7 +219,10 @@ impl HttpHandler for AppHandler {
                     }
                 }
 
-                let action = proxy_state_handle.lock().unwrap().take_paused_action(&paused_id);
+                let action = proxy_state_handle
+                    .lock()
+                    .unwrap()
+                    .take_paused_action(&paused_id);
 
                 match action {
                     Some(crate::proxy::state::InterceptAction::Drop) => {
@@ -300,8 +308,7 @@ impl HttpHandler for AppHandler {
 
         let (parts, body) = res.into_parts();
 
-        let is_ws_handshake =
-            crate::proxy::websocket::is_successful_websocket_handshake(&ctx);
+        let is_ws_handshake = crate::proxy::websocket::is_successful_websocket_handshake(&ctx);
         eprintln!(
             "[lifecycle] handle_response txn_id={} status={} is_ws_handshake={} ws_upgrade_req_headers={}",
             ctx.transaction_id,
@@ -353,18 +360,18 @@ impl HttpHandler for AppHandler {
 }
 
 impl WebSocketHandler for AppHandler {
-    async fn handle_message(
-        &mut self,
-        ctx: &WebSocketContext,
-        msg: Message,
-    ) -> Option<Message> {
+    async fn handle_message(&mut self, ctx: &WebSocketContext, msg: Message) -> Option<Message> {
         let (client_addr, uri, direction) = match ctx {
-            WebSocketContext::ClientToServer { src, dst, .. } => {
-                (src.to_string(), dst.clone(), WebSocketMessageDirection::Inbound)
-            }
-            WebSocketContext::ServerToClient { src, dst, .. } => {
-                (dst.to_string(), src.clone(), WebSocketMessageDirection::Outbound)
-            }
+            WebSocketContext::ClientToServer { src, dst, .. } => (
+                src.to_string(),
+                dst.clone(),
+                WebSocketMessageDirection::Inbound,
+            ),
+            WebSocketContext::ServerToClient { src, dst, .. } => (
+                dst.to_string(),
+                src.clone(),
+                WebSocketMessageDirection::Outbound,
+            ),
         };
 
         eprintln!(
@@ -389,8 +396,7 @@ impl WebSocketHandler for AppHandler {
                 if let Some(frame) = data {
                     let reason = frame.reason.clone();
                     let code: u16 = frame.code.into();
-                    let mut payload =
-                        vec![(code >> 8) as u8, (code & 0xFF) as u8];
+                    let mut payload = vec![(code >> 8) as u8, (code & 0xFF) as u8];
                     payload.extend_from_slice(reason.as_bytes());
                     payload
                 } else {
@@ -402,12 +408,10 @@ impl WebSocketHandler for AppHandler {
 
         let uri_str = uri.to_string();
         let empty_headers = HashMap::new();
-        let (host, path, _) =
-            websocket::parse_websocket_target(&uri_str, &empty_headers);
+        let (host, path, _) = websocket::parse_websocket_target(&uri_str, &empty_headers);
         let key = format!("{}|{}|{}", client_addr, host, path);
 
-        let connection_id =
-            self.ws_connections.lock().unwrap().get(&key).copied();
+        let connection_id = self.ws_connections.lock().unwrap().get(&key).copied();
 
         if let Some(connection_id) = connection_id {
             let now = chrono::Utc::now();
@@ -421,30 +425,19 @@ impl WebSocketHandler for AppHandler {
                 payload_size: payload.len(),
             };
 
-            if let Some(history) =
-                self.app_handle.try_state::<crate::HistoryBridge>()
-            {
-                if let Err(e) = history.insert_websocket_message(&message_record)
-                {
+            if let Some(history) = self.app_handle.try_state::<crate::HistoryBridge>() {
+                if let Err(e) = history.insert_websocket_message(&message_record) {
                     eprintln!("[websocket] failed to save message: {}", e);
                 }
             }
 
-            if let Err(e) =
-                self.app_handle.emit("websocket-message", &message_record)
-            {
-                eprintln!(
-                    "[websocket] failed to emit message event: {}",
-                    e
-                );
+            if let Err(e) = self.app_handle.emit("websocket-message", &message_record) {
+                eprintln!("[websocket] failed to emit message event: {}", e);
             }
 
             if matches!(&msg, Message::Close(_)) {
                 self.ws_connections.lock().unwrap().remove(&key);
-                eprintln!(
-                    "[websocket] connection closed conn_id={}",
-                    connection_id
-                );
+                eprintln!("[websocket] connection closed conn_id={}", connection_id);
             }
         } else {
             eprintln!(

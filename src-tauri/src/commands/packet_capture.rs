@@ -38,7 +38,10 @@ pub async fn prepare_packet_capture_permissions() -> Result<String, String> {
 
     #[cfg(not(target_os = "macos"))]
     {
-        Err("Automatic packet capture permission setup is currently implemented for macOS only.".to_string())
+        Err(
+            "Automatic packet capture permission setup is currently implemented for macOS only."
+                .to_string(),
+        )
     }
 }
 
@@ -154,7 +157,8 @@ pub async fn start_packet_capture(
     }
 
     let tcpdump_path = find_command("tcpdump").ok_or_else(|| {
-        "tcpdump was not found. Install tcpdump or run this app on a system that includes it.".to_string()
+        "tcpdump was not found. Install tcpdump or run this app on a system that includes it."
+            .to_string()
     })?;
 
     let mut command = Command::new(tcpdump_path);
@@ -178,10 +182,18 @@ pub async fn start_packet_capture(
         command.arg("-p");
     }
 
-    let mut child = command.spawn().map_err(|error| format!("Failed to start tcpdump: {error}"))?;
+    let mut child = command
+        .spawn()
+        .map_err(|error| format!("Failed to start tcpdump: {error}"))?;
 
-    let stdout = child.stdout.take().ok_or_else(|| "Failed to read tcpdump stdout.".to_string())?;
-    let stderr = child.stderr.take().ok_or_else(|| "Failed to read tcpdump stderr.".to_string())?;
+    let stdout = child
+        .stdout
+        .take()
+        .ok_or_else(|| "Failed to read tcpdump stdout.".to_string())?;
+    let stderr = child
+        .stderr
+        .take()
+        .ok_or_else(|| "Failed to read tcpdump stderr.".to_string())?;
     let capture_id = Uuid::new_v4().to_string();
     let now = Utc::now().to_rfc3339();
     let capture = PacketCaptureRecord {
@@ -200,10 +212,20 @@ pub async fn start_packet_capture(
         .insert_packet_capture(&capture)
         .map_err(|error| format!("Failed to create capture record: {error}"))?;
 
-    state.running.store(true, std::sync::atomic::Ordering::SeqCst);
-    state.packet_number.store(0, std::sync::atomic::Ordering::SeqCst);
-    *state.active_capture_id.lock().map_err(|error| format!("Capture state lock failed: {error}"))? = Some(capture_id.clone());
-    *state.child.lock().map_err(|error| format!("Capture state lock failed: {error}"))? = Some(child);
+    state
+        .running
+        .store(true, std::sync::atomic::Ordering::SeqCst);
+    state
+        .packet_number
+        .store(0, std::sync::atomic::Ordering::SeqCst);
+    *state
+        .active_capture_id
+        .lock()
+        .map_err(|error| format!("Capture state lock failed: {error}"))? = Some(capture_id.clone());
+    *state
+        .child
+        .lock()
+        .map_err(|error| format!("Capture state lock failed: {error}"))? = Some(child);
 
     let running = state.running.clone();
     let packet_number = state.packet_number.clone();
@@ -266,13 +288,25 @@ pub async fn stop_packet_capture(
     app: AppHandle,
     state: State<'_, PacketCaptureState>,
 ) -> Result<PacketCaptureStatus, String> {
-    state.running.store(false, std::sync::atomic::Ordering::SeqCst);
+    state
+        .running
+        .store(false, std::sync::atomic::Ordering::SeqCst);
 
-    if let Some(mut child) = state.child.lock().map_err(|error| format!("Capture state lock failed: {error}"))?.take() {
+    if let Some(mut child) = state
+        .child
+        .lock()
+        .map_err(|error| format!("Capture state lock failed: {error}"))?
+        .take()
+    {
         let _ = child.kill();
         let _ = child.wait();
     }
-    if let Some(capture_id) = state.active_capture_id.lock().map_err(|error| format!("Capture state lock failed: {error}"))?.take() {
+    if let Some(capture_id) = state
+        .active_capture_id
+        .lock()
+        .map_err(|error| format!("Capture state lock failed: {error}"))?
+        .take()
+    {
         finish_capture(&app, &capture_id);
     }
 
@@ -290,7 +324,11 @@ pub async fn get_packet_capture_status(
     Ok(PacketCaptureStatus {
         running: state.running.load(std::sync::atomic::Ordering::SeqCst),
         interface_id: None,
-        capture_id: state.active_capture_id.lock().map_err(|error| format!("Capture state lock failed: {error}"))?.clone(),
+        capture_id: state
+            .active_capture_id
+            .lock()
+            .map_err(|error| format!("Capture state lock failed: {error}"))?
+            .clone(),
     })
 }
 
@@ -343,7 +381,10 @@ fn persist_packet_event(
         incomplete: !event.info.contains("Flags [F") && !event.info.contains("Flags [R"),
     };
 
-    if let Err(error) = app.state::<HistoryBridge>().insert_captured_packet(&packet, &connection) {
+    if let Err(error) = app
+        .state::<HistoryBridge>()
+        .insert_captured_packet(&packet, &connection)
+    {
         let _ = app.emit(
             "packet-capture-error",
             PacketCaptureErrorEvent {
@@ -355,7 +396,10 @@ fn persist_packet_event(
 
 fn finish_capture(app: &AppHandle, capture_id: &str) {
     let ended_at = Utc::now().to_rfc3339();
-    if let Err(error) = app.state::<HistoryBridge>().finish_packet_capture(capture_id, &ended_at) {
+    if let Err(error) = app
+        .state::<HistoryBridge>()
+        .finish_packet_capture(capture_id, &ended_at)
+    {
         let _ = app.emit(
             "packet-capture-error",
             PacketCaptureErrorEvent {
@@ -367,8 +411,16 @@ fn finish_capture(app: &AppHandle, capture_id: &str) {
 
 fn build_connection_id(capture_id: &str, event: &CapturedPacketEvent) -> String {
     let left = format!("{}:{}", event.source_ip, event.source_port.unwrap_or(0));
-    let right = format!("{}:{}", event.destination_ip, event.destination_port.unwrap_or(0));
-    let (source, destination) = if left <= right { (left, right) } else { (right, left) };
+    let right = format!(
+        "{}:{}",
+        event.destination_ip,
+        event.destination_port.unwrap_or(0)
+    );
+    let (source, destination) = if left <= right {
+        (left, right)
+    } else {
+        (right, left)
+    };
     format!("{capture_id}:{source}:{destination}:{}", event.protocol)
 }
 

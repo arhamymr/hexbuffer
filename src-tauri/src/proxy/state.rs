@@ -212,7 +212,9 @@ impl ProxyState {
         if mode == InterceptMode::Disabled && inner.intercept_mode == InterceptMode::Enabled {
             let ids: Vec<Uuid> = inner.paused_requests.iter().map(|r| r.id).collect();
             for id in &ids {
-                inner.paused_actions.insert(*id, InterceptAction::Forward(None));
+                inner
+                    .paused_actions
+                    .insert(*id, InterceptAction::Forward(None));
             }
             inner.paused_requests.clear();
         }
@@ -385,7 +387,7 @@ impl ProxyState {
         self.0.lock().unwrap().intercept_bypass_patterns.clone()
     }
 
-    pub fn set_bypass_patterns(&self, patterns: Vec<String>)  {
+    pub fn set_bypass_patterns(&self, patterns: Vec<String>) {
         self.0.lock().unwrap().intercept_bypass_patterns = patterns;
     }
 
@@ -400,9 +402,7 @@ impl ProxyState {
 
     pub fn remove_bypass_pattern(&self, pattern: &str) -> Vec<String> {
         let mut inner = self.0.lock().unwrap();
-        inner
-            .intercept_bypass_patterns
-            .retain(|p| p != pattern);
+        inner.intercept_bypass_patterns.retain(|p| p != pattern);
         inner.intercept_bypass_patterns.clone()
     }
 

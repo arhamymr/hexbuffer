@@ -1,7 +1,12 @@
 import * as React from 'react';
 import { toast } from 'sonner';
 import { useBruteForceStore } from '@/stores/bruto-force';
-import { findRequestPayloadPositions, type AttackConfig } from '../types';
+import {
+  allPositionsHavePayloads,
+  findRequestPayloadPositions,
+  syncPositionPayloads,
+  type AttackConfig,
+} from '../types';
 
 export function useBruteForcePage() {
   const {
@@ -9,13 +14,11 @@ export function useBruteForcePage() {
     activeTabId,
     setActiveTabId,
     renameTab,
-    addAttackTab,
     closeTab,
     setBaseRequest,
     setPendingRequest,
     clearStartError,
     stopAttack,
-    clearResults,
     startAttack,
     updateConfig,
   } = useBruteForceStore();
@@ -41,25 +44,19 @@ export function useBruteForcePage() {
     } as AttackConfig['base_request'];
 
     setBaseRequest(baseRequest);
-    updateConfig({ positions: findRequestPayloadPositions(baseRequest) });
+    const positions = findRequestPayloadPositions(baseRequest);
+    updateConfig({
+      positions,
+      position_payloads: syncPositionPayloads(positions, config?.position_payloads, config?.payload_config),
+    });
     setPendingRequest(null);
-  }, [pendingRequest, setBaseRequest, setPendingRequest, updateConfig]);
+  }, [config?.payload_config, config?.position_payloads, pendingRequest, setBaseRequest, setPendingRequest, updateConfig]);
 
   const handleStartAttack = React.useCallback(() => {
     if (!config) return;
 
-    const hasPayloads =
-      config.payload_config.payload_type === 'NumberRange' ||
-      config.payload_config.values.length > 0 ||
-      Boolean(config.payload_config.file_path);
-
     if (!config.base_request.url.trim()) {
       toast.error('Add a request URL before starting');
-      return;
-    }
-
-    if (!hasPayloads) {
-      toast.error('Add at least one payload before starting');
       return;
     }
 
@@ -71,7 +68,21 @@ export function useBruteForcePage() {
     }
 
     if (positions.length !== config.positions.length) {
-      updateConfig({ positions });
+      updateConfig({
+        positions,
+        position_payloads: syncPositionPayloads(positions, config.position_payloads, config.payload_config),
+      });
+    }
+
+    const nextConfig = {
+      ...config,
+      positions,
+      position_payloads: syncPositionPayloads(positions, config.position_payloads, config.payload_config),
+    };
+
+    if (!allPositionsHavePayloads(nextConfig)) {
+      toast.error('Add payloads for every marked position before starting');
+      return;
     }
 
     startAttack();
@@ -82,11 +93,9 @@ export function useBruteForcePage() {
     activeTabId,
     setActiveTabId,
     renameTab,
-    addAttackTab,
     closeTab,
     activeTab,
     stopAttack,
-    clearResults,
     clearStartError,
     handleStartAttack,
   };

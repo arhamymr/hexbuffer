@@ -1,27 +1,17 @@
 'use client';
 
-import { ShieldCheck } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { TextEditor } from '@/components/ui/text-editor';
-import type { InterceptStatus } from '../types';
+import { useInterceptStore } from '../state/intercept-store';
 
-interface InterceptRequestPanelProps {
-  status: InterceptStatus | null;
-  rawRequest: string;
-  hasSelection: boolean;
-  onRawRequestChange: (rawRequest: string) => void;
-  onToggleIntercept: (enabled: boolean) => void;
-}
-
-export function InterceptRequestPanel({
-  status,
-  rawRequest,
-  hasSelection,
-  onRawRequestChange,
-  onToggleIntercept,
-}: InterceptRequestPanelProps) {
+export function InterceptRequestPanel() {
+  const status = useInterceptStore((state) => state.status);
+  const rawRequest = useInterceptStore((state) => state.rawRequest);
+  const selectedRequestId = useInterceptStore((state) => state.selectedRequestId);
+  const setRawRequest = useInterceptStore((state) => state.setRawRequest);
+  const toggleIntercept = useInterceptStore((state) => state.toggleIntercept);
   const isEnabled = status?.mode === 'Enabled';
 
   return (
@@ -29,10 +19,10 @@ export function InterceptRequestPanel({
       <div className="bg-muted flex h-10 items-center justify-between border-b px-3 py-2">
         <span className="text-sm font-medium">Request</span>
         <div className="flex items-center gap-2">
-          <Badge variant={isEnabled ? 'default' : 'secondary'} className="text-xs">
+          <Badge variant={isEnabled ? 'default' : 'secondary'} className="text-xs rounded-md">
             {isEnabled ? 'Intercept On' : 'Enable Intercept'}
           </Badge>
-          <Switch checked={isEnabled} onCheckedChange={onToggleIntercept} />
+          <Switch checked={isEnabled} onCheckedChange={toggleIntercept} />
         </div>
       </div>
 
@@ -42,9 +32,9 @@ export function InterceptRequestPanel({
           <TextEditor
             language="http"
             value={rawRequest}
-            onChange={(value) => onRawRequestChange(value ?? '')}
+            onChange={(value) => setRawRequest(value ?? '')}
             options={{
-              readOnly: !hasSelection,
+              readOnly: !selectedRequestId,
               scrollBeyondLastLine: false,
             }}
           />

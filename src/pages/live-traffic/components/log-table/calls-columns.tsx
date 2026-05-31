@@ -16,6 +16,7 @@ import { fetchHistoryDetail } from "@/pages/live-traffic/services/history-servic
 import { adaptProxyRecordToApiCall } from "@/pages/live-traffic/hooks/use-history-table";
 import { buildRawHttpRequest } from "@/lib/http-message";
 import { useRepeaterStore } from "@/stores/repeater";
+import { HistoryLoadingState } from "../history-loading-state";
 
 interface SendToRepeaterButtonProps {
   call: ApiCall;
@@ -56,7 +57,7 @@ function SendToRepeaterButton({ call }: SendToRepeaterButtonProps) {
       onClick={handleSendToRepeater}
       title="Send to Repeater"
     >
-      <Send className="h-3.5 w-3.5" />
+      <Send className="size-3 text-muted-foreground" />
     </Button>
   );
 }
@@ -166,6 +167,10 @@ export function TrafficTable() {
         </Alert>
       </div>
     );
+  }
+
+  if (isLoading && calls.length === 0) {
+    return <HistoryLoadingState label="Loading HTTP history..." columns={8} />;
   }
 
   if (calls.length === 0 && !isLoading) {

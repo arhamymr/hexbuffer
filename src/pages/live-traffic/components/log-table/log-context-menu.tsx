@@ -194,23 +194,23 @@ export function LogEntryContextMenu({
         </ContextMenuItem>
         <ContextMenuSeparator />
         <ContextMenuItem onClick={handleAddToScope} className='text-xs'>
-          <Plus className="mr-2 h-4 w-4" /> Add to Target
+          <Plus className="mr-2 size-3" /> Add to Target
         </ContextMenuItem>
-        {/* <ContextMenuItem onClick={handleOpenInBruteForce} className='text-xs'>
-          <ExternalLink className="mr-2 h-4 w-4" /> Open in Brute Force
-        </ContextMenuItem> */}
+        <ContextMenuItem onClick={handleOpenInBruteForce} className='text-xs'>
+          <Send className="mr-2 size-3" /> Send to Brute Force
+        </ContextMenuItem>
         <ContextMenuItem onClick={handleOpenInRepeater} className='text-xs'>
-          <Send className="mr-2 h-4 w-4" /> Send to Repeater
+          <Send className="mr-2 size-3" /> Send to Repeater
         </ContextMenuItem>
         {/* <ContextMenuItem onClick={handleOpenInPromptInjection} className='text-xs'>
-          <Bot className="mr-2 h-4 w-4" /> Open in Prompt Injection
+          <Bot className="mr-2 size-4" /> Open in Prompt Injection
         </ContextMenuItem> */}
         {/* <ContextMenuItem onClick={handleSaveToDocuments} className='text-xs'>
-          <FilePlus2 className="mr-2 h-4 w-4" /> Save to Documents
+          <FilePlus2 className="mr-2 size-4" /> Save to Documents
         </ContextMenuItem> */}
         <ContextMenuSeparator />
         <ContextMenuItem onClick={handleDelete} variant="destructive" className='text-xs'>
-          <Trash2 className="mr-2 h-4 w-4" /> Delete
+          <Trash2 className="mr-2 size-3" /> Delete
         </ContextMenuItem>
       </ContextMenuContent>
     </ContextMenu>

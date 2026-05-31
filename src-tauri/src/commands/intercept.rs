@@ -59,7 +59,9 @@ pub async fn forward_intercepted_request(
     let request = request.map(|request| {
         let mut body = request.body.into_bytes();
 
-        if let Some(encoding) = request.headers.iter()
+        if let Some(encoding) = request
+            .headers
+            .iter()
             .find(|(k, _)| k.eq_ignore_ascii_case("content-encoding"))
             .map(|(_, v)| v.clone())
         {
@@ -237,7 +239,8 @@ fn write_intercept_ca(app: &AppHandle) -> Result<PathBuf, String> {
     std::fs::create_dir_all(&app_data_dir).map_err(|e| e.to_string())?;
 
     let ca_path = app_data_dir.join("apprecon-ca.pem");
-    let ca_pem = crate::proxy::https::cert::export_ca_cert_pem().map_err(|error| format!("{error}"))?;
+    let ca_pem =
+        crate::proxy::https::cert::export_ca_cert_pem().map_err(|error| format!("{error}"))?;
     std::fs::write(&ca_path, ca_pem).map_err(|e| e.to_string())?;
 
     Ok(ca_path)
@@ -285,7 +288,8 @@ pub async fn open_intercept_browser(app: AppHandle) -> Result<(), String> {
     let ca_import_result = import_intercept_ca_to_chrome_profile(&app);
 
     let mut last_error = None;
-    let proxy_port = crate::proxy::active_proxy_port().unwrap_or(crate::proxy::default_proxy_port());
+    let proxy_port =
+        crate::proxy::active_proxy_port().unwrap_or(crate::proxy::default_proxy_port());
     let args = vec![
         format!("--user-data-dir={}", profile_dir.display()),
         "--new-window".to_string(),

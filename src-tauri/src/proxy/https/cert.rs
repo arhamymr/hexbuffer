@@ -19,14 +19,11 @@ pub struct CaCerts {
 }
 
 fn get_ca_dir() -> PathBuf {
-    CA_ROOT
-        .get()
-        .cloned()
-        .unwrap_or_else(|| {
-            std::env::current_dir()
-                .unwrap_or_else(|_| PathBuf::from("."))
-                .join(".0xbuffer")
-        })
+    CA_ROOT.get().cloned().unwrap_or_else(|| {
+        std::env::current_dir()
+            .unwrap_or_else(|_| PathBuf::from("."))
+            .join(".0xbuffer")
+    })
 }
 
 fn get_ca_cert_path() -> PathBuf {

@@ -27,12 +27,6 @@ export function BruteForceResultDrawer() {
       }}
     >
       <DrawerContent className="h-[88vh] max-h-[88vh]">
-        <DrawerHeader className="border-b text-left">
-          <DrawerTitle>Response Detail</DrawerTitle>
-          <DrawerDescription>
-            Full response for the selected brute-force result.
-          </DrawerDescription>
-        </DrawerHeader>
         <div className="min-h-0 flex-1 flex flex-col p-4">
           <BruteForcePreviewPane />
         </div>

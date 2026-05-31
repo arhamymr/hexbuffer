@@ -1,4 +1,6 @@
-use crate::packet_capture::types::{PacketCaptureRecord, PacketConnectionRecord, StoredPacketRecord};
+use crate::packet_capture::types::{
+    PacketCaptureRecord, PacketConnectionRecord, StoredPacketRecord,
+};
 use crate::proxy::state::{
     ProxyFilter, ProxyRecord, ProxyRequest, ProxyResponse, WebSocketConnectionRecord,
     WebSocketConnectionState, WebSocketFilter, WebSocketMessageDirection, WebSocketMessageRecord,
@@ -960,7 +962,10 @@ fn row_to_proxy_record(row: &rusqlite::Row) -> SqlResult<ProxyRecord> {
 
     if !request.content_decoded
         && !request.body.is_empty()
-        && request.headers.keys().any(|k| k.eq_ignore_ascii_case("content-encoding"))
+        && request
+            .headers
+            .keys()
+            .any(|k| k.eq_ignore_ascii_case("content-encoding"))
     {
         request.content_decoded = true;
     }
@@ -982,7 +987,10 @@ fn row_to_proxy_record(row: &rusqlite::Row) -> SqlResult<ProxyRecord> {
     if let Some(ref mut resp) = response {
         if !resp.content_decoded
             && !resp.body.is_empty()
-            && resp.headers.keys().any(|k| k.eq_ignore_ascii_case("content-encoding"))
+            && resp
+                .headers
+                .keys()
+                .any(|k| k.eq_ignore_ascii_case("content-encoding"))
         {
             resp.content_decoded = true;
         }

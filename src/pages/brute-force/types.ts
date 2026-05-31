@@ -9,7 +9,7 @@ export interface HttpRequest {
   max_hops: number;
 }
 
-export type AttackMode = 'Sniper' | 'BatteringRam' | 'Pitchfork' | 'ClusterBomb';
+export type AttackMode = 'Sniper';
 
 export type PayloadType = 'SimpleList' | 'RuntimeFile' | 'NumberRange';
 
@@ -26,6 +26,7 @@ export interface PayloadPosition {
   name: string;
   start: number;
   end: number;
+  default_value: string;
 }
 
 export interface PayloadConfig {
@@ -64,6 +65,7 @@ export interface AttackConfig {
   base_request: HttpRequest;
   positions: PayloadPosition[];
   payload_config: PayloadConfig;
+  position_payloads: Record<string, PayloadConfig>;
   concurrency: number;
   delay_ms: number;
   delay_max_ms?: number;
@@ -100,6 +102,8 @@ export interface AttackResult {
 }
 
 export function createDefaultAttackConfig(): AttackConfig {
+  const payloadConfig = createDefaultPayloadConfig();
+
   return {
     name: 'New Attack',
     mode: 'Sniper',
@@ -112,13 +116,10 @@ export function createDefaultAttackConfig(): AttackConfig {
       max_hops: 10,
     },
     positions: [],
-    payload_config: {
-      payload_type: 'SimpleList',
-      values: [],
-      processing: [],
-    },
+    payload_config: payloadConfig,
+    position_payloads: {},
     concurrency: 10,
-    delay_ms: 0,
+    delay_ms: 100,
     retries: 0,
     grep_match: {
       enabled: false,
@@ -137,6 +138,47 @@ export function createDefaultAttackConfig(): AttackConfig {
       update_header_name: undefined,
     },
   };
+}
+
+export function createDefaultPayloadConfig(): PayloadConfig {
+  return {
+    payload_type: 'SimpleList',
+    values: [],
+    processing: [],
+  };
+}
+
+export function syncPositionPayloads(
+  positions: PayloadPosition[],
+  current: Record<string, PayloadConfig> = {},
+  fallback?: PayloadConfig
+): Record<string, PayloadConfig> {
+  return positions.reduce<Record<string, PayloadConfig>>((nextPayloads, position) => {
+    nextPayloads[position.name] = current[position.name] ?? {
+      ...(fallback ?? createDefaultPayloadConfig()),
+      values: fallback?.values ?? [],
+      file_path: fallback?.file_path,
+    };
+    return nextPayloads;
+  }, {});
+}
+
+export function payloadConfigHasValues(config: PayloadConfig) {
+  return (
+    config.payload_type === 'NumberRange' ||
+    config.values.length > 0 ||
+    Boolean(config.file_path)
+  );
+}
+
+export function allPositionsHavePayloads(config: AttackConfig) {
+  if (config.positions.length === 0) {
+    return false;
+  }
+
+  return config.positions.every((position) =>
+    payloadConfigHasValues(config.position_payloads[position.name] ?? config.payload_config)
+  );
 }
 
 export function markPayloadPosition(
@@ -166,6 +208,7 @@ export function findPayloadPositions(text: string): PayloadPosition[] {
       name: `position_${positions.length + 1}`,
       start: startIdx,
       end: endIdx,
+      default_value: text.slice(startIdx + 1, endIdx),
     });
 
     searchStart = endIdx + 1;
@@ -182,11 +225,12 @@ export function findRequestPayloadPositions(request: Partial<HttpRequest>): Payl
       return;
     }
 
-    findPayloadPositions(text).forEach(() => {
+    findPayloadPositions(text).forEach((position) => {
       positions.push({
         name: `position_${positions.length + 1}`,
         start: 0,
         end: 0,
+        default_value: position.default_value,
       });
     });
   };

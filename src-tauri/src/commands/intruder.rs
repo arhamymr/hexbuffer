@@ -96,6 +96,8 @@ pub struct IntruderAttackConfig {
     pub base_request: IntruderHttpRequest,
     pub positions: Vec<IntruderPayloadPosition>,
     pub payload_config: IntruderPayloadConfig,
+    #[serde(default)]
+    pub position_payloads: Option<HashMap<String, IntruderPayloadConfig>>,
     pub concurrency: usize,
     pub delay_ms: u64,
     pub delay_max_ms: Option<u64>,
@@ -221,7 +223,16 @@ pub fn validate_intruder_config(config: &IntruderAttackConfig) -> Result<(), Str
         return Err("Payload position ranges are invalid".to_string());
     }
 
-    if build_payload_source(&config.payload_config)?.is_empty() {
+    if config
+        .position_payloads
+        .as_ref()
+        .is_some_and(|position_payloads| !position_payloads.is_empty())
+    {
+        let sources = build_position_payload_sources(config, count_markers(&config.base_request))?;
+        if sources.is_empty() {
+            return Err("Add payloads for every marked position".to_string());
+        }
+    } else if build_payload_source(&config.payload_config)?.is_empty() {
         return Err("Add at least one payload".to_string());
     }
 
@@ -234,7 +245,9 @@ pub async fn run_intruder_attack(
     config: IntruderAttackConfig,
     cancel_flag: Arc<AtomicBool>,
 ) {
-    let payload_source = match build_payload_source(&config.payload_config) {
+    let defaults = marker_defaults(&config.base_request);
+    let position_count = defaults.len();
+    let payloads = match build_intruder_payload_rows(&config, position_count) {
         Ok(values) => values,
         Err(error) => {
             let _ = app.emit(
@@ -249,9 +262,6 @@ pub async fn run_intruder_attack(
         }
     };
 
-    let defaults = marker_defaults(&config.base_request);
-    let position_count = defaults.len();
-    let payloads = generate_intruder_payloads(&config, &payload_source, position_count);
     let total = payloads.len();
     let completed = Arc::new(std::sync::atomic::AtomicUsize::new(0));
     let semaphore = Arc::new(Semaphore::new(config.concurrency.clamp(1, 200)));
@@ -539,6 +549,71 @@ pub fn build_payload_source(config: &IntruderPayloadConfig) -> Result<Vec<String
         .collect())
 }
 
+pub fn build_intruder_payload_rows(
+    config: &IntruderAttackConfig,
+    position_count: usize,
+) -> Result<Vec<HashMap<String, String>>, String> {
+    if config
+        .position_payloads
+        .as_ref()
+        .is_some_and(|position_payloads| !position_payloads.is_empty())
+    {
+        let sources = build_position_payload_sources(config, position_count)?;
+        return Ok(generate_aligned_position_payloads(&sources));
+    }
+
+    let payload_source = build_payload_source(&config.payload_config)?;
+    Ok(generate_intruder_payloads(
+        config,
+        &payload_source,
+        position_count,
+    ))
+}
+
+pub fn build_position_payload_sources(
+    config: &IntruderAttackConfig,
+    position_count: usize,
+) -> Result<Vec<(String, Vec<String>)>, String> {
+    let Some(position_payloads) = config.position_payloads.as_ref() else {
+        return Ok(Vec::new());
+    };
+
+    let mut sources = Vec::with_capacity(position_count);
+
+    for position_index in 0..position_count {
+        let name = position_name(&config.positions, position_index);
+        let payload_config = position_payloads
+            .get(&name)
+            .ok_or_else(|| format!("Add payloads for {}", name))?;
+        let source = build_payload_source(payload_config)?;
+
+        if source.is_empty() {
+            return Err(format!("Add payloads for {}", name));
+        }
+
+        sources.push((name, source));
+    }
+
+    Ok(sources)
+}
+
+pub fn generate_aligned_position_payloads(
+    sources: &[(String, Vec<String>)],
+) -> Vec<HashMap<String, String>> {
+    let Some(row_count) = sources.iter().map(|(_, source)| source.len()).min() else {
+        return Vec::new();
+    };
+
+    (0..row_count)
+        .map(|row_index| {
+            sources
+                .iter()
+                .map(|(name, source)| (name.clone(), source[row_index].clone()))
+                .collect()
+        })
+        .collect()
+}
+
 pub fn format_number_payload(value: i64, format: Option<&str>) -> String {
     let format = format.unwrap_or("{}");
     if let Some(width_text) = format
@@ -553,7 +628,10 @@ pub fn format_number_payload(value: i64, format: Option<&str>) -> String {
     format.replace("{}", &value.to_string())
 }
 
-pub fn apply_payload_processing(mut value: String, steps: &[IntruderPayloadProcessingStep]) -> String {
+pub fn apply_payload_processing(
+    mut value: String,
+    steps: &[IntruderPayloadProcessingStep],
+) -> String {
     for step in steps {
         value = match step {
             IntruderPayloadProcessingStep::UrlEncode => percent_encode(&value),
@@ -907,4 +985,138 @@ pub fn md5_hex(input: &[u8]) -> String {
     digest.extend_from_slice(&c0.to_le_bytes());
     digest.extend_from_slice(&d0.to_le_bytes());
     hex_encode(&digest)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn payload_config(values: &[&str]) -> IntruderPayloadConfig {
+        IntruderPayloadConfig {
+            payload_type: IntruderPayloadType::SimpleList,
+            values: values.iter().map(|value| value.to_string()).collect(),
+            file_path: None,
+            number_start: None,
+            number_end: None,
+            number_step: None,
+            number_format: None,
+            processing: Vec::new(),
+        }
+    }
+
+    fn attack_config(
+        position_payloads: Option<HashMap<String, IntruderPayloadConfig>>,
+    ) -> IntruderAttackConfig {
+        IntruderAttackConfig {
+            name: "test".to_string(),
+            mode: IntruderAttackMode::Sniper,
+            base_request: IntruderHttpRequest {
+                method: "GET".to_string(),
+                url: "https://example.test/login?u=§user§&p=§pass§".to_string(),
+                headers: HashMap::new(),
+                body: String::new(),
+                follow_redirects: true,
+                max_hops: 10,
+            },
+            positions: vec![
+                IntruderPayloadPosition {
+                    name: "position_1".to_string(),
+                    start: 0,
+                    end: 0,
+                },
+                IntruderPayloadPosition {
+                    name: "position_2".to_string(),
+                    start: 0,
+                    end: 0,
+                },
+            ],
+            payload_config: payload_config(&["legacy-a", "legacy-b"]),
+            position_payloads,
+            concurrency: 1,
+            delay_ms: 0,
+            delay_max_ms: None,
+            retries: 0,
+            grep_match: IntruderGrepMatchConfig {
+                enabled: false,
+                keyword: String::new(),
+                case_sensitive: false,
+            },
+            grep_extract: IntruderGrepExtractConfig {
+                enabled: false,
+                regex: String::new(),
+                replacement: None,
+            },
+            session_handling: IntruderSessionHandlingConfig {
+                enabled: false,
+                extract_token_name: None,
+                extract_from_response: None,
+                update_header_name: None,
+            },
+        }
+    }
+
+    #[test]
+    fn aligned_position_payloads_pair_equal_length_sets() {
+        let sources = vec![
+            (
+                "position_1".to_string(),
+                vec!["admin".to_string(), "root".to_string()],
+            ),
+            (
+                "position_2".to_string(),
+                vec!["pass".to_string(), "toor".to_string()],
+            ),
+        ];
+
+        let rows = generate_aligned_position_payloads(&sources);
+
+        assert_eq!(rows.len(), 2);
+        assert_eq!(rows[0].get("position_1").map(String::as_str), Some("admin"));
+        assert_eq!(rows[0].get("position_2").map(String::as_str), Some("pass"));
+        assert_eq!(rows[1].get("position_1").map(String::as_str), Some("root"));
+        assert_eq!(rows[1].get("position_2").map(String::as_str), Some("toor"));
+    }
+
+    #[test]
+    fn aligned_position_payloads_stop_at_shortest_set() {
+        let sources = vec![
+            (
+                "position_1".to_string(),
+                vec!["admin".to_string(), "root".to_string(), "test".to_string()],
+            ),
+            ("position_2".to_string(), vec!["pass".to_string()]),
+        ];
+
+        let rows = generate_aligned_position_payloads(&sources);
+
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].get("position_1").map(String::as_str), Some("admin"));
+        assert_eq!(rows[0].get("position_2").map(String::as_str), Some("pass"));
+    }
+
+    #[test]
+    fn validation_requires_payloads_for_every_marker() {
+        let mut position_payloads = HashMap::new();
+        position_payloads.insert("position_1".to_string(), payload_config(&["admin"]));
+
+        let config = attack_config(Some(position_payloads));
+
+        assert_eq!(
+            validate_intruder_config(&config),
+            Err("Add payloads for position_2".to_string())
+        );
+    }
+
+    #[test]
+    fn legacy_single_payload_config_still_generates_sniper_rows() {
+        let config = attack_config(None);
+        let rows = build_intruder_payload_rows(&config, 2).expect("legacy rows");
+
+        assert_eq!(rows.len(), 4);
+        assert_eq!(
+            rows[0].get("position_1").map(String::as_str),
+            Some("legacy-a")
+        );
+        assert!(!rows[0].contains_key("position_2"));
+    }
 }

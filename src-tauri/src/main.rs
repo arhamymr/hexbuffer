@@ -3,13 +3,13 @@
 
 use std::sync::Mutex;
 use tauri::Manager;
-use zeroxbuffer::{
-    BrowserProcessState, HistoryBridge, PacketCaptureState,
-    PortScanState, ProxyState, SqliScanState,
-};
 use zeroxbuffer::ai::MastraProcessState;
 use zeroxbuffer::commands::intruder::IntruderState;
 use zeroxbuffer::commands::repeater::WsRepeaterState;
+use zeroxbuffer::{
+    BrowserProcessState, HistoryBridge, PacketCaptureState, PortScanState, ProxyState,
+    SqliScanState,
+};
 
 fn main() {
     eprintln!("[main] Application starting...");
@@ -23,7 +23,8 @@ fn main() {
     tauri::Builder::default()
         .setup(|app| {
             #[cfg(desktop)]
-            app.handle().plugin(tauri_plugin_updater::Builder::new().build())
+            app.handle()
+                .plugin(tauri_plugin_updater::Builder::new().build())
                 .expect("Failed to initialize updater plugin");
 
             eprintln!("[main] Initializing database...");

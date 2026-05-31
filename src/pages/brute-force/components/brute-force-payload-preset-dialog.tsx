@@ -49,9 +49,7 @@ export function BruteForcePayloadPresetDialog({
 
       return (
         matchesCategory &&
-        `${payload.name} ${payload.description} ${payload.values.join(' ')}`
-          .toLowerCase()
-          .includes(query)
+        `${payload.name} ${payload.description}`.toLowerCase().includes(query)
       );
     });
   }, [search, selectedCategory]);
@@ -60,6 +58,10 @@ export function BruteForcePayloadPresetDialog({
     PREDEFINED_PAYLOADS.find((payload) => payload.id === selectedPayloadId) ??
     visiblePayloads[0] ??
     PREDEFINED_PAYLOADS[0];
+  const previewValues = selectedPayload?.values.slice(0, 500) ?? [];
+  const hiddenPreviewCount = selectedPayload
+    ? Math.max(0, selectedPayload.values.length - previewValues.length)
+    : 0;
 
   React.useEffect(() => {
     if (
@@ -170,7 +172,10 @@ export function BruteForcePayloadPresetDialog({
 
                 <ScrollArea className="h-[410px] rounded-md border bg-muted/20">
                   <pre className="whitespace-pre-wrap p-3 font-mono text-xs leading-relaxed">
-                    {selectedPayload.values.join('\n')}
+                    {previewValues.join('\n')}
+                    {hiddenPreviewCount > 0
+                      ? `\n\n... ${hiddenPreviewCount.toLocaleString()} more payloads`
+                      : ''}
                   </pre>
                 </ScrollArea>
               </>

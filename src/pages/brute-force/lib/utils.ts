@@ -15,7 +15,6 @@ export function filterResults(
   filters: {
     status: string;
     payload: string;
-    grepOnly: boolean;
   }
 ) {
   return results.filter((result) => {
@@ -28,10 +27,6 @@ export function filterResults(
       if (!payloadStr.toLowerCase().includes(filters.payload.toLowerCase())) {
         return false;
       }
-    }
-
-    if (filters.grepOnly && !result.grep_match) {
-      return false;
     }
 
     return true;

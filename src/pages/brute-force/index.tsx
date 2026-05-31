@@ -14,8 +14,8 @@ import { BruteForceConfigDialog } from './components/brute-force-config';
 import { BruteForceFilters } from './components/brute-force-filters';
 import { BruteForcePayloadDialog } from './components/brute-force-payload-dialog';
 import { BruteForceProgress } from './components/brute-force-progress';
-import { BruteForceResultDrawer } from './components/brute-force-result-drawer';
-import { BruteForceResultsPanel } from './components/brute-force-results-panel';
+import { BruteForceResultDrawer } from './components/result-drawer';
+import { BruteForceResultsPanel } from './components/results-panel';
 import { useBruteForcePage } from './hooks/use-brute-force-page';
 import { allPositionsHavePayloads, findRequestPayloadPositions } from './types';
 

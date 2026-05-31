@@ -34,7 +34,6 @@ export interface BruteForceTab {
   startError: string | null;
   filterStatus: string;
   filterPayload: string;
-  filterGrep: boolean;
   payloadDialogOpen: boolean;
   payloadDialogPositionName: string | null;
   rawRequestDialogOpen: boolean;
@@ -76,7 +75,6 @@ interface BruteForceState extends InterceptBypassState {
   setPendingRequest: (request: AttackConfig['base_request'] | null) => void;
   setFilterStatus: (status: string) => void;
   setFilterPayload: (payload: string) => void;
-  setFilterGrep: (grep: boolean) => void;
   setPayloadDialogOpen: (open: boolean, positionName?: string | null) => void;
   setRawRequestDialogOpen: (open: boolean) => void;
   setRawRequestContent: (content: string) => void;
@@ -112,7 +110,6 @@ function createAttackTab(index: number, config = createDefaultAttackConfig()): B
     startError: null,
     filterStatus: '',
     filterPayload: '',
-    filterGrep: false,
     payloadDialogOpen: false,
     payloadDialogPositionName: null,
     rawRequestDialogOpen: false,
@@ -329,7 +326,6 @@ export const useBruteForceStore = create<BruteForceState>((set, get) => ({
 
   setFilterStatus: (status) => updateActiveTab(set, (tab) => ({ ...tab, filterStatus: status })),
   setFilterPayload: (payload) => updateActiveTab(set, (tab) => ({ ...tab, filterPayload: payload })),
-  setFilterGrep: (grep) => updateActiveTab(set, (tab) => ({ ...tab, filterGrep: grep })),
   setPayloadDialogOpen: (open, positionName = null) =>
     updateActiveTab(set, (tab) => ({
       ...tab,

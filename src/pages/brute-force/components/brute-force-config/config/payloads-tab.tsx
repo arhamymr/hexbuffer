@@ -70,7 +70,7 @@ export function PayloadsTab() {
           return (
             <TabsContent key={position.name} value={position.name} className="space-y-2">
               <div className="flex items-center justify-between gap-2">
-                <Label>
+                <Label className='truncate'>
                   Payloads for {position.name}
                   {position.default_value ? ` (${position.default_value})` : ''}
                 </Label>

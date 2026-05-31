@@ -2,7 +2,6 @@
 
 import { Badge } from '@/components/ui/badge';
 import { useBruteForceStore } from '@/stores/bruto-force';
-import type { AttackResult } from '../types';
 import { formatPayloadValues, getResultUrl } from '../lib/utils';
 import { useBruteForceFilters } from '../hooks/use-brute-force-filters';
 
@@ -25,7 +24,7 @@ export function BruteForceResultsPanel() {
       </div>
       <div className="min-h-0 flex-1 overflow-auto">
         <table className="w-full text-sm">
-          <thead className="bg-muted/30 sticky top-0">
+          <thead className="bg-muted sticky top-0">
             <tr>
               <th className="px-3 py-2 text-left font-medium w-12">#</th>
               <th className="px-3 py-2 text-left font-medium">Payload</th>

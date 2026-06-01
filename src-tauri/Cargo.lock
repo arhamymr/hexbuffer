@@ -7164,7 +7164,7 @@ dependencies = [
 
 [[package]]
 name = "zeroxbuffer"
-version = "2026.1.4"
+version = "2026.0.1"
 dependencies = [
  "async-trait",
  "base64 0.22.1",

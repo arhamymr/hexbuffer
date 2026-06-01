@@ -65,10 +65,10 @@ fi
 
 APP_NAME="0xbuffer"
 
-if $AUTO_BUMP; then
-  "$ROOT/scripts/bump-version.sh"
-elif [ -n "$REQUESTED_VERSION" ]; then
+if [ -n "$REQUESTED_VERSION" ]; then
   "$ROOT/scripts/bump-version.sh" "$REQUESTED_VERSION"
+elif $AUTO_BUMP; then
+  "$ROOT/scripts/bump-version.sh"
 fi
 
 VERSION="$(cat "$ROOT/VERSION")"
@@ -207,6 +207,16 @@ fi
 # aws s3 CP wrapper for R2
 r2_cp() { aws s3 --endpoint-url "$R2_ENDPOINT" cp "$@"; }
 r2_cat() { aws s3 --endpoint-url "$R2_ENDPOINT" cp "$1" - 2>/dev/null; }
+sha256_file() {
+  if command -v shasum >/dev/null 2>&1; then
+    shasum -a 256 "$1"
+  elif command -v sha256sum >/dev/null 2>&1; then
+    sha256sum "$1"
+  else
+    echo "Missing required command: shasum or sha256sum" >&2
+    return 1
+  fi
+}
 
 echo -e "[upload] detected platform: ${GREEN}${PLATFORM}${NC}"
 
@@ -242,6 +252,8 @@ echo "[upload] uploading bundle..."
 r2_cp "$BUNDLE_FILE" "s3://${R2_BUCKET}/${BUNDLE_NAME}"
 echo "[upload] uploading signature..."
 r2_cp "$SIG_FILE"   "s3://${R2_BUCKET}/${BUNDLE_NAME}.sig"
+echo "[upload] uploading install script..."
+r2_cp "$ROOT/scripts/install.sh" "s3://${R2_BUCKET}/install.sh"
 
 # ── Upload installer (dmg / AppImage / exe) ───────────────────────────
 
@@ -249,10 +261,16 @@ INSTALLER_FILE=$(find_first_artifact "$INSTALLER_DIR" "$INSTALLER_GLOB")
 if [ -n "${INSTALLER_FILE:-}" ] && [ -f "$INSTALLER_FILE" ]; then
   INSTALLER_NAME=$(basename "$INSTALLER_FILE")
   if [ "$(uname -s)" = "Darwin" ]; then
-    INSTALLER_NAME="${APP_NAME}_${PLATFORM#darwin-}.dmg"
+    INSTALLER_NAME="${APP_NAME}_${VERSION}_${PLATFORM#darwin-}.dmg"
   fi
   echo "[upload] uploading installer: ${GREEN}${INSTALLER_NAME}${NC}"
   r2_cp "$INSTALLER_FILE" "s3://${R2_BUCKET}/${INSTALLER_NAME}"
+
+  INSTALLER_SHA_FILE="/tmp/${INSTALLER_NAME}.sha256"
+  sha256_file "$INSTALLER_FILE" | awk -v name="$INSTALLER_NAME" '{print $1 "  " name}' > "$INSTALLER_SHA_FILE"
+  echo "[upload] uploading installer checksum: ${GREEN}${INSTALLER_NAME}.sha256${NC}"
+  r2_cp "$INSTALLER_SHA_FILE" "s3://${R2_BUCKET}/${INSTALLER_NAME}.sha256"
+  rm -f "$INSTALLER_SHA_FILE"
 else
   echo -e "${YELLOW}[upload] installer not found, skipping${NC}"
 fi

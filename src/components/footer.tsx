@@ -8,6 +8,7 @@ import { useTheme } from './theme-provider';
 import { Button } from './ui/button';
 // import { cn } from '@/lib/utils';
 import { useUpdater } from '@/hooks/use-updater';
+import { ManualUpdateCommand } from '@/pages/settings/components/manual-update-command';
 import pkg from '../../package.json';
 
 const proxyStatusLabel = {
@@ -62,9 +63,19 @@ export function AppFooter({ isAssistantOpen, onToggleAssistant }: AppFooterProps
 
     toast.error('Update failed', {
       id: toastId,
-      description: errorMessage.toLowerCase().includes('signature')
-        ? 'The release signature does not match the updater public key. Rebuild and re-upload the signed update artifact.'
-        : errorMessage || 'Please try again from Settings.',
+      description: (
+        <div className="space-y-2">
+          <p>
+            {errorMessage.toLowerCase().includes('signature')
+              ? 'The release signature does not match the updater public key.'
+              : errorMessage || 'The automatic update failed.'}
+          </p>
+          <ManualUpdateCommand
+            className="bg-background/70 p-2"
+            message="Copy this command and run it manually in your terminal to update."
+          />
+        </div>
+      ),
     });
   }, [downloadError, installUpdate, updateVersion]);
 

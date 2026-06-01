@@ -62,7 +62,9 @@ export function GeneralSettingsTab({ settings }: GeneralSettingsTabProps) {
           {updateMessage && (
             <p className="text-sm text-muted-foreground">{updateMessage}</p>
           )}
-          {updateError && <ManualUpdateCommand />}
+          {updateError && (
+            <ManualUpdateCommand message="Copy this command and run it manually in your terminal to update." />
+          )}
         </CardContent>
       </Card>
 

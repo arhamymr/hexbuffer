@@ -2,13 +2,14 @@
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Alert, AlertAction, AlertDescription } from '@/components/ui/alert';
 import {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
 } from '@/components/ui/resizable';
-import { AlertTriangle, Plus, Square, Play, InfoIcon } from 'lucide-react';
+import { useAppStore } from '@/stores/app';
+import { Square, Play, InfoIcon, X } from 'lucide-react';
 import { TabbedPageLayout } from '@/components/tabs-layout/tabbed-page-layout';
 import { BruteForceConfigDialog } from './components/brute-force-config';
 import { BruteForceFilters } from './components/filters';
@@ -16,10 +17,15 @@ import { BruteForcePayloadDialog } from './components/payload-dialog';
 import { BruteForceProgress } from './components/progress';
 import { BruteForceResultDrawer } from './components/result-drawer';
 import { BruteForceResultsPanel } from './components/results-panel';
-import { useBruteForcePage } from './hooks/use-brute-force-page';
-import { allPositionsHavePayloads, findRequestPayloadPositions } from './types';
+import { useBruteForcePage } from './hooks/use-page';
 
 export function BruteForcePage() {
+  const bruteForceSafetyAlertDismissed = useAppStore(
+    (state) => state.bruteForceSafetyAlertDismissed
+  );
+  const setBruteForceSafetyAlertDismissed = useAppStore(
+    (state) => state.setBruteForceSafetyAlertDismissed
+  );
   const {
     tabs,
     activeTabId,
@@ -27,6 +33,10 @@ export function BruteForcePage() {
     renameTab,
     closeTab,
     activeTab,
+    isRunning,
+    progress,
+    canStart,
+    startBlockedReason,
     stopAttack,
     clearStartError,
     handleStartAttack,
@@ -36,34 +46,26 @@ export function BruteForcePage() {
     return null;
   }
 
-  const config = activeTab.config;
-  const isRunning = activeTab.isRunning;
-  const progress = activeTab.progress;
-  const startError = activeTab.startError;
-
-  const markedPositions = findRequestPayloadPositions(config.base_request);
-  const hasPayloads = allPositionsHavePayloads({
-    ...config,
-    positions: markedPositions,
-  });
-  const canStart = true;
-  const startBlockedReason = !config.base_request.url
-    ? 'Add a request URL'
-    : markedPositions.length === 0
-      ? 'Mark a payload position with § markers'
-      : !hasPayloads
-        ? 'Add payloads for every marked position'
-        : startError;
-
   return (
     <>
-      <Alert className='mb-2'>
-        <InfoIcon />
-        <AlertDescription>
-          Only test systems you own or have explicit permission to assess. Unauthorized brute-force attempts may be illegal and can result in account lockouts or legal consequences
-        </AlertDescription>  
-      </Alert>
-      
+      {!bruteForceSafetyAlertDismissed && (
+        <Alert variant="default" className="mb-2 min-h-12 shrink-0 border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-500/50 dark:bg-amber-500/10 dark:text-amber-200">
+          <InfoIcon className='!text-amber-600'/>
+          <AlertDescription className='text-amber-600'>
+            Only run brute-force tests against systems you own or are explicitly authorized to assess. Unauthorized attempts can be illegal and may trigger account lockouts.
+          </AlertDescription>
+          <AlertAction>
+            <Button
+              variant="outline"
+              aria-label="Dismiss safety notice"
+              onClick={() => setBruteForceSafetyAlertDismissed(true)}
+            >
+              Dismiss
+            </Button>
+          </AlertAction>
+        </Alert>
+      )}
+
       <TabbedPageLayout
         tabs={tabs}
         activeTabId={activeTabId}

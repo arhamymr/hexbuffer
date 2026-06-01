@@ -101,23 +101,12 @@ export function InspectorSection({
           {items.length > 0 ? (
             <div>
               {defaultView === 'text' ? (
-                <div className="h-40 overflow-hidden">
+                <div className="h-80 overflow-hidden">
                   <TextEditor
-                    language="http"
+                    language="javascript"
                     value={formatItemsAsText(items)}
                     options={{
                       readOnly: true,
-                      scrollBeyondLastLine: false,
-                      lineNumbers: 'off',
-                      folding: false,
-                      glyphMargin: false,
-                      lineDecorationsWidth: 0,
-                      lineNumbersMinChars: 0,
-                      minimap: { enabled: false },
-                      fontSize: 12,
-                      lineHeight: 18,
-                      renderWhitespace: 'selection',
-                      padding: { top: 12, bottom: 12 },
                     }}
                   />
                 </div>

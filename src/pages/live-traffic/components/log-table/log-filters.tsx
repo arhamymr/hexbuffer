@@ -74,7 +74,7 @@ export function LogFilters({
           placeholder="Search URL, host, method, body..."
           value={filter.search}
           onChange={(e) => setFilter({ ...filter, search: e.target.value })}
-          className="flex-1 h-8 shadow-none"
+          className="flex-1 h-8 shadow-none bg-background"
         />
         {hasActiveFilters && (
           <Button variant="destructive" size="xs" onClick={clearFilters}>

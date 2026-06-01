@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Trash2 } from 'lucide-react';
-import { useBruteForceFilters } from '../hooks/use-brute-force-filters';
+import { useBruteForceFilters } from '../hooks/use-filters';
 
 export function BruteForceFilters() {
   const {
@@ -22,7 +22,7 @@ export function BruteForceFilters() {
         <Label className="text-xs">Status:</Label>
         <Input
           placeholder="Filter by status..."
-          className="h-8 w-24 text-sm"
+          className="h-8 text-sm"
           value={filterStatus}
           onChange={(event) => setFilterStatus(event.target.value)}
         />
@@ -31,7 +31,7 @@ export function BruteForceFilters() {
         <Label className="text-xs">Payload:</Label>
         <Input
           placeholder="Filter by payload..."
-          className="h-8 w-40 text-sm"
+          className="h-8 text-sm"
           value={filterPayload}
           onChange={(event) => setFilterPayload(event.target.value)}
         />

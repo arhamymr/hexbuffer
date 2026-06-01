@@ -1,20 +1,19 @@
 'use client';
 
 import * as React from 'react';
-import { Target } from 'lucide-react';
+import { Info, Target } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { TextEditor } from '@/components/ui/text-editor';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useBruteForceStore } from '@/stores/bruto-force';
 import {
   buildRawRequest,
   findRequestPayloadPositions,
   parseRawRequest,
 } from '../../../types';
-import { NumberInputField } from './number-input-field';
 
 export function RequestTab() {
   const config = useBruteForceStore((s) => {
@@ -39,14 +38,6 @@ export function RequestTab() {
   }, [config?.base_request]);
 
   if (!config) return null;
-
-  const updateBaseRequest = (updates: Partial<typeof config.base_request>) => {
-    const baseRequest = { ...config.base_request, ...updates };
-    updateConfig({
-      base_request: baseRequest,
-      positions: findRequestPayloadPositions(baseRequest),
-    });
-  };
 
   const updateRawRequest = (value: string) => {
     setRawRequestDraft(value);
@@ -100,9 +91,19 @@ export function RequestTab() {
               <Target className="mr-1 h-4 w-4" />
               Mark Target
             </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button type="button" variant="ghost" size="icon-sm" className="shrink-0">
+                  <Info className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent className="max-w-[320px]">
+                Select a URL, header, or body value and mark it as the payload insertion point.
+              </TooltipContent>
+            </Tooltip>
           </div>
         </div>
-        <div className="h-[360px] overflow-hidden rounded-md border">
+        <div className="h-[460px] overflow-hidden rounded-md border">
           <TextEditor
             language="plaintext"
             value={rawRequestDraft}
@@ -119,27 +120,6 @@ export function RequestTab() {
             }}
           />
         </div>
-        <p className="text-xs text-muted-foreground">
-          Select a URL, header, or body value and mark it as the payload insertion point.
-        </p>
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <div className="flex items-center gap-2">
-          <Checkbox
-            id="followRedirects"
-            checked={config.base_request.follow_redirects}
-            onCheckedChange={(checked) =>
-              updateBaseRequest({ follow_redirects: checked as boolean })
-            }
-          />
-          <Label htmlFor="followRedirects">Follow Redirects</Label>
-        </div>
-        <NumberInputField
-          label="Max Redirect Hops"
-          value={config.base_request.max_hops}
-          onChange={(value) => updateBaseRequest({ max_hops: parseInt(value, 10) || 1 })}
-        />
       </div>
     </div>
   );

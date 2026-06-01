@@ -118,7 +118,7 @@ export function BruteForcePreviewPane() {
               <Label className="text-xs text-muted-foreground mb-1 block">Raw Response</Label>
               <div className="flex-1 min-h-0 overflow-hidden rounded-md border">
                 <TextEditor
-                  language="http"
+                  language="javascript"
                   value={buildRawAttackResponse(selectedResult)}
                   options={{
                     readOnly: true,

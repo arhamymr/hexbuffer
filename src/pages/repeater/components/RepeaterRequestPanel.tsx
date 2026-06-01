@@ -38,7 +38,7 @@ export function RepeaterRequestPanel({
         </Label>
         <div className="flex-1 min-h-0 overflow-hidden rounded-md border">
           <TextEditor
-            language="plaintext"
+            language="javascript"
             value={rawRequest}
             onChange={(value) => onRawRequestChange(value ?? '')}
             options={{

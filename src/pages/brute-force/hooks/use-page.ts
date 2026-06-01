@@ -29,6 +29,26 @@ export function useBruteForcePage() {
   );
 
   const config = activeTab?.config;
+  const isRunning = activeTab?.isRunning ?? false;
+  const progress = activeTab?.progress ?? null;
+  const startError = activeTab?.startError ?? null;
+  const markedPositions = config
+    ? findRequestPayloadPositions(config.base_request)
+    : [];
+  const hasPayloads = config
+    ? allPositionsHavePayloads({
+        ...config,
+        positions: markedPositions,
+      })
+    : false;
+  const canStart = true;
+  const startBlockedReason = !config?.base_request.url
+    ? 'Add a request URL'
+    : markedPositions.length === 0
+      ? 'Mark a payload position with § markers'
+      : !hasPayloads
+        ? 'Add payloads for every marked position'
+        : startError;
 
   const pendingRequest = useBruteForceStore((s) => s.pendingRequest);
 
@@ -95,6 +115,10 @@ export function useBruteForcePage() {
     renameTab,
     closeTab,
     activeTab,
+    isRunning,
+    progress,
+    canStart,
+    startBlockedReason,
     stopAttack,
     clearStartError,
     handleStartAttack,

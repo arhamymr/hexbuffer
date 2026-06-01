@@ -114,7 +114,7 @@ export function PromptInjectionRequestPanel({
 
         <div className="min-h-[220px] flex-1 overflow-hidden rounded-md border bg-background">
           <TextEditor
-            language="http"
+            language="javascript"
             value={requestBody}
             onChange={(value) => onRequestBodyChange(value ?? '')}
             onMount={(editor) => {

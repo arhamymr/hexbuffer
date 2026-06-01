@@ -92,7 +92,7 @@ export function BruteForceResultDrawer() {
             </div>
             <div className="min-h-0 flex-1">
               <TextEditor
-                language="http"
+                language="javascript"
                 value={
                   selectedResult && config
                     ? buildModifiedRequest(config, selectedResult)
@@ -117,7 +117,7 @@ export function BruteForceResultDrawer() {
             </div>
             <div className="min-h-0 flex-1">
               <TextEditor
-                language="http"
+                language="javascript"
                 value={
                   selectedResult
                     ? buildRawAttackResponse(selectedResult)

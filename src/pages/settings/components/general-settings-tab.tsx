@@ -2,6 +2,7 @@ import { Asterisk, DatabaseIcon, RefreshCwIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import type { SettingsPageState } from '../hooks/use-settings-page';
+import { ManualUpdateCommand } from './manual-update-command';
 
 interface GeneralSettingsTabProps {
   settings: SettingsPageState;
@@ -15,6 +16,7 @@ export function GeneralSettingsTab({ settings }: GeneralSettingsTabProps) {
     updateAvailable,
     updateChecking,
     updateDownloading,
+    updateError,
     updateMessage,
     updateVersion,
     storageInfo,
@@ -37,12 +39,21 @@ export function GeneralSettingsTab({ settings }: GeneralSettingsTabProps) {
             )}
           </p>
           <div className="flex flex-wrap gap-2">
-            <Button size="xs" onClick={handleCheckForUpdates} disabled={updateChecking || updateDownloading}>
+            <Button
+              size="xs"
+              onClick={handleCheckForUpdates}
+              disabled={updateChecking || updateDownloading}
+            >
               <RefreshCwIcon className={`mr-2 size-4 ${updateChecking ? 'animate-spin' : ''}`} />
               {updateChecking ? 'Checking...' : 'Check for Updates'}
             </Button>
             {updateAvailable && (
-              <Button size="xs" variant="default" onClick={handleInstallUpdate} disabled={updateDownloading}>
+              <Button
+                size="xs"
+                variant="default"
+                onClick={handleInstallUpdate}
+                disabled={updateDownloading}
+              >
                 <Asterisk className={`mr-2 size-4 ${updateDownloading ? 'animate-spin' : ''}`} />
                 {updateDownloading ? 'Installing...' : `Install v${updateVersion}`}
               </Button>
@@ -51,6 +62,7 @@ export function GeneralSettingsTab({ settings }: GeneralSettingsTabProps) {
           {updateMessage && (
             <p className="text-sm text-muted-foreground">{updateMessage}</p>
           )}
+          {updateError && <ManualUpdateCommand />}
         </CardContent>
       </Card>
 

@@ -3,7 +3,7 @@
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useBruteForceStore } from '@/stores/bruto-force';
-import { useBruteForcePayloads } from '../hooks/use-brute-force-payloads';
+import { useBruteForcePayloads } from '../hooks/use-payloads';
 
 export function BruteForcePayloadDialog() {
   const payloadDialogOpen = useBruteForceStore((s) => {

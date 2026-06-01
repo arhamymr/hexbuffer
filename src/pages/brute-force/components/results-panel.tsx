@@ -3,7 +3,7 @@
 import { Badge } from '@/components/ui/badge';
 import { useBruteForceStore } from '@/stores/bruto-force';
 import { formatPayloadValues, getResultUrl } from '../lib/utils';
-import { useBruteForceFilters } from '../hooks/use-brute-force-filters';
+import { useBruteForceFilters } from '../hooks/use-filters';
 
 export function BruteForceResultsPanel() {
   const { filteredResults } = useBruteForceFilters();

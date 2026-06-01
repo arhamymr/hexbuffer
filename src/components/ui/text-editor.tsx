@@ -12,12 +12,42 @@ const defaultOptions: MonacoEditorProps['options'] = {
   lineNumbers: 'on',
   wordWrap: 'on',
   automaticLayout: true,
+  renderValidationDecorations: 'off',
 };
 
 type TextEditorProps = Omit<MonacoEditorProps, 'theme'>;
+type MonacoBeforeMount = NonNullable<MonacoEditorProps['beforeMount']>;
+type MonacoInstance = Parameters<MonacoBeforeMount>[0];
+
+function disableMonacoDiagnostics(monaco: MonacoInstance) {
+  monaco.languages.typescript.typescriptDefaults.setDiagnosticsOptions({
+    noSemanticValidation: true,
+    noSyntaxValidation: true,
+  });
+  monaco.languages.typescript.javascriptDefaults.setDiagnosticsOptions({
+    noSemanticValidation: true,
+    noSyntaxValidation: true,
+  });
+  monaco.languages.json.jsonDefaults.setDiagnosticsOptions({
+    validate: false,
+  });
+  monaco.languages.css.cssDefaults.setOptions({
+    validate: false,
+  });
+  monaco.languages.css.scssDefaults.setOptions({
+    validate: false,
+  });
+  monaco.languages.css.lessDefaults.setOptions({
+    validate: false,
+  });
+  monaco.languages.html.htmlDefaults.setOptions({
+    validate: false,
+  });
+}
 
 export function TextEditor({
   height = '100%',
+  beforeMount,
   options,
   ...props
 }: TextEditorProps) {
@@ -28,6 +58,10 @@ export function TextEditor({
     <Editor
       height={height}
       theme={editorTheme}
+      beforeMount={(monaco) => {
+        disableMonacoDiagnostics(monaco);
+        beforeMount?.(monaco);
+      }}
       options={{
         ...defaultOptions,
         ...options,

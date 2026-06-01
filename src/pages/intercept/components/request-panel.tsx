@@ -30,7 +30,7 @@ export function InterceptRequestPanel() {
         <Label className="mb-1 block text-xs text-muted-foreground">Raw Request</Label>
         <div className="min-h-0 flex-1 overflow-hidden rounded-md border">
           <TextEditor
-            language="http"
+            language="javascript"
             value={rawRequest}
             onChange={(value) => setRawRequest(value ?? '')}
             options={{

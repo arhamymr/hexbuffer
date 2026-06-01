@@ -11,7 +11,7 @@ export function BruteForceConfigDialog() {
   return (
     <div className="flex h-full min-h-0 flex-col rounded-lg border bg-background">
       <div className="min-h-0 overflow-auto p-3">
-        <Tabs defaultValue="request" className="w-full">
+        <Tabs defaultValue="request">
           <TabsList className="grid grid-cols-2 mb-2">
             <TabsTrigger value="request">Request</TabsTrigger>
             <TabsTrigger value="attack">Config</TabsTrigger>

@@ -15,7 +15,9 @@ interface AppState {
   proxyStatus: ProxyStatus;
   proxyPort: number | null;
   proxyDefaultPort: number;
+  bruteForceSafetyAlertDismissed: boolean;
   setProxyStatus: (status: ProxyStatus) => void;
+  setBruteForceSafetyAlertDismissed: (dismissed: boolean) => void;
   startProxy: () => Promise<void>;
   stopProxy: () => Promise<void>;
   checkProxyStatus: () => Promise<void>;
@@ -27,8 +29,11 @@ export const useAppStore = create<AppState>()(
       proxyStatus: 'disconnected',
       proxyPort: null,
       proxyDefaultPort: 8888,
+      bruteForceSafetyAlertDismissed: false,
 
       setProxyStatus: (proxyStatus) => set({ proxyStatus }),
+      setBruteForceSafetyAlertDismissed: (bruteForceSafetyAlertDismissed) =>
+        set({ bruteForceSafetyAlertDismissed }),
 
       startProxy: async () => {
         console.log('[store] startProxy called');
@@ -96,6 +101,7 @@ export const useAppStore = create<AppState>()(
         proxyStatus: state.proxyStatus,
         proxyPort: state.proxyPort,
         proxyDefaultPort: state.proxyDefaultPort,
+        bruteForceSafetyAlertDismissed: state.bruteForceSafetyAlertDismissed,
       }),
     }
   )

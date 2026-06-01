@@ -199,7 +199,7 @@ export function LogEntryBurpView() {
               </Label>
               <div className="min-h-0 flex-1 overflow-hidden rounded-md border">
                 <TextEditor
-                  language="http"
+                  language="javascript"
                   value={rawRequest}
                   options={{
                     readOnly: true,
@@ -276,7 +276,7 @@ export function LogEntryBurpView() {
               </Label>
               <div className="min-h-0 flex-1 overflow-hidden rounded-md border">
                 <TextEditor
-                  language="http"
+                  language="javascript"
                   value={rawResponse}
                   options={{
                     readOnly: true,

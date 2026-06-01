@@ -15,7 +15,7 @@ export function BruteForceProgress() {
   const percentage = Math.round((progress.current / progress.total) * 100);
 
   return (
-    <div className="mt-2">
+    <div className="mt-2 p-2">
       <div className="flex items-center justify-between text-sm mb-1">
         <span>Progress</span>
         <span>

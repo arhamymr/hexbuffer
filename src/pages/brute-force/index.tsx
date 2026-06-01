@@ -2,18 +2,18 @@
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Alert } from '@/components/ui/alert';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
 } from '@/components/ui/resizable';
-import { AlertTriangle, Plus, Square, Play } from 'lucide-react';
+import { AlertTriangle, Plus, Square, Play, InfoIcon } from 'lucide-react';
 import { TabbedPageLayout } from '@/components/tabs-layout/tabbed-page-layout';
 import { BruteForceConfigDialog } from './components/brute-force-config';
-import { BruteForceFilters } from './components/brute-force-filters';
-import { BruteForcePayloadDialog } from './components/brute-force-payload-dialog';
-import { BruteForceProgress } from './components/brute-force-progress';
+import { BruteForceFilters } from './components/filters';
+import { BruteForcePayloadDialog } from './components/payload-dialog';
+import { BruteForceProgress } from './components/progress';
 import { BruteForceResultDrawer } from './components/result-drawer';
 import { BruteForceResultsPanel } from './components/results-panel';
 import { useBruteForcePage } from './hooks/use-brute-force-page';
@@ -48,90 +48,100 @@ export function BruteForcePage() {
   });
   const canStart = true;
   const startBlockedReason = !config.base_request.url
-      ? 'Add a request URL'
-      : markedPositions.length === 0
-        ? 'Mark a payload position with § markers'
-        : !hasPayloads
-          ? 'Add payloads for every marked position'
-          : startError;
+    ? 'Add a request URL'
+    : markedPositions.length === 0
+      ? 'Mark a payload position with § markers'
+      : !hasPayloads
+        ? 'Add payloads for every marked position'
+        : startError;
 
   return (
-    <TabbedPageLayout
-      tabs={tabs}
-      activeTabId={activeTabId}
-      onTabChange={setActiveTabId}
-      onTabRename={renameTab}
-      onTabClose={closeTab}
-      contentClassName="flex-1 border rounded-lg overflow-hidden bg-background min-h-0"
-    >
-      <div className="flex h-full min-h-0 flex-col">
-        <ResizablePanelGroup
-          orientation="horizontal"
-          className="bg-muted min-h-0 flex-1"
-        >
-          <ResizablePanel defaultSize={50} minSize={20}>
-            <div className="flex min-h-0 flex-col h-full border-r">
-              <div className="bg-muted h-10 px-3 py-2 border-b flex items-center justify-between gap-3">
-                <div>
-{!isRunning && startBlockedReason && (
-                  <div className="max-w-full items-center border-amber-300/80 bg-amber-500/10 px-2 py-1 text-xs font-medium text-amber-800 dark:border-amber-500/50 dark:bg-amber-500/10 dark:text-amber-200">
-                    {startBlockedReason}
+    <>
+      <Alert className='mb-2'>
+        <InfoIcon />
+        <AlertDescription>
+          Only test systems you own or have explicit permission to assess. Unauthorized brute-force attempts may be illegal and can result in account lockouts or legal consequences
+        </AlertDescription>  
+      </Alert>
+      
+      <TabbedPageLayout
+        tabs={tabs}
+        activeTabId={activeTabId}
+        onTabChange={setActiveTabId}
+        onTabRename={renameTab}
+        onTabClose={closeTab}
+        contentClassName="flex-1 border rounded-lg overflow-hidden bg-background min-h-0"
+      >
+        <div className="flex h-full min-h-0 flex-col">
+          <ResizablePanelGroup
+            orientation="horizontal"
+            className="bg-muted min-h-0 flex-1"
+          >
+            <ResizablePanel defaultSize={50} minSize={20}>
+              <div className="flex min-h-0 flex-col h-full border-r">
+                <div className="bg-muted h-10 px-3 py-2 border-b flex items-center justify-between gap-3">
+                  <div>
+                    {!isRunning && startBlockedReason && (
+                      <div className="max-w-full items-center border-amber-300/80 bg-amber-500/10 px-2 py-1 text-xs font-medium text-amber-800 dark:border-amber-500/50 dark:bg-amber-500/10 dark:text-amber-200">
+                        {startBlockedReason}
+                      </div>
+                    )}
                   </div>
-                )}
+
+
+                  <div className="flex items-center gap-3">
+                    {isRunning && progress && (
+                      <Badge variant="secondary" className="animate-pulse">
+                        {progress.current} / {progress.total}
+                      </Badge>
+                    )}
+
+
+                    {isRunning ? (
+                      <Button variant="destructive" size="xs" onClick={stopAttack}>
+                        <Square className="h-4 w-4 mr-1" />
+                        Stop
+                      </Button>
+                    ) : (
+                      <Button size="xs" onClick={() => { clearStartError(); handleStartAttack(); }} disabled={!canStart}>
+                        <Play className="h-4 w-4 mr-1" />
+                        Start Attack
+                      </Button>
+                    )}
+                  </div>
                 </div>
-                
 
-                <div className="flex items-center gap-3">
-                  {isRunning && progress && (
-                    <Badge variant="secondary" className="animate-pulse">
-                      {progress.current} / {progress.total}
-                    </Badge>
-                  )}
+                <BruteForceProgress />
 
-
-                  {isRunning ? (
-                    <Button variant="destructive" size="xs" onClick={stopAttack}>
-                      <Square className="h-4 w-4 mr-1" />
-                      Stop
-                    </Button>
-                  ) : (
-                    <Button size="xs" onClick={() => { clearStartError(); handleStartAttack(); }} disabled={!canStart}>
-                      <Play className="h-4 w-4 mr-1" />
-                      Start Attack
-                    </Button>
-                  )}
-                </div>
-              </div>
-
-              <BruteForceProgress />
-
-              <div className="min-h-0 flex-1 p-2">
-                <BruteForceConfigDialog />
-              </div>
-            </div>
-          </ResizablePanel>
-          <ResizableHandle withHandle />
-          <ResizablePanel defaultSize={50} minSize={20}>
-            <div className="flex min-h-0 flex-col h-full">
-              <div className="bg-muted h-10 px-3 py-2 border-b flex items-center">
-                <span className="text-sm font-medium">Result</span>
-              </div>
-
-              <div className="flex min-h-0 flex-1 flex-col p-2">
-                <BruteForceFilters />
-
-                <div className="min-h-0 flex-1">
-                  <BruteForceResultsPanel />
+                <div className="min-h-0 flex-1 p-2">
+                  <BruteForceConfigDialog />
                 </div>
               </div>
-            </div>
-          </ResizablePanel>
-        </ResizablePanelGroup>
+            </ResizablePanel>
+            <ResizableHandle withHandle />
+            <ResizablePanel defaultSize={50} minSize={20}>
+              <div className="flex min-h-0 flex-col h-full">
+                <div className="bg-muted h-10 px-3 py-2 border-b flex items-center">
+                  <span className="text-sm font-medium">Result</span>
+                </div>
 
-        <BruteForceResultDrawer />
+                <div className="flex min-h-0 flex-1 flex-col p-2">
+                  <BruteForceFilters />
 
-        <BruteForcePayloadDialog />
-      </div>
-    </TabbedPageLayout>
+                  <div className="min-h-0 flex-1">
+                    <BruteForceResultsPanel />
+                  </div>
+                </div>
+              </div>
+            </ResizablePanel>
+          </ResizablePanelGroup>
+
+          <BruteForceResultDrawer />
+
+          <BruteForcePayloadDialog />
+        </div>
+      </TabbedPageLayout>
+    </>
+
   );
 }

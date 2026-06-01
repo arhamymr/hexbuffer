@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { TextEditor } from '@/components/ui/text-editor';
 import { useBruteForceStore } from '@/stores/bruto-force';
 import { createDefaultPayloadConfig } from '../../../types';
-import { BruteForcePayloadPresetDialog } from '../../brute-force-payload-preset-dialog';
+import { BruteForcePayloadPresetDialog } from '../../payload-preset-dialog';
 
 export function PayloadsTab() {
   const [presetDialogOpen, setPresetDialogOpen] = React.useState(false);

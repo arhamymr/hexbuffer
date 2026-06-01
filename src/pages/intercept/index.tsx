@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Alert, AlertDescription, AlertAction } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import {
   ResizableHandle,
@@ -36,6 +36,8 @@ export function InterceptPage() {
         <Alert variant="default" className="mb-2 items-center shrink-0 border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-500/50 dark:bg-amber-500/10 dark:text-amber-200">
           <AlertDescription className="flex items-center gap-2 text-amber-700 dark:text-amber-200/70">
             <span>Start the proxy to intercept HTTP requests.</span>
+          </AlertDescription>
+          <AlertAction>
             <Button
               variant="outline"
               size="xs"
@@ -45,7 +47,7 @@ export function InterceptPage() {
             >
               Start Proxy
             </Button>
-          </AlertDescription>
+          </AlertAction>
         </Alert>
       )}
       <div className="flex min-h-0 flex-1 overflow-hidden rounded-lg border bg-background">

@@ -9,6 +9,7 @@ import type {
   CrawlPage,
   CrawlSession,
   CrawlSetupConfig,
+  HumanInputRequest,
 } from '@/pages/browser-automation/types';
 
 export interface BrowserStatus {
@@ -51,10 +52,12 @@ interface BrowserAutomationState {
   logs: ActivityLog[];
   selectedPageId: string | null;
   expandedPageIds: string[];
+  humanInputRequest: HumanInputRequest | null;
   lastError: string | null;
 
   overview: () => CrawlOverview;
   updateSetup: (patch: Partial<CrawlSetupConfig>) => void;
+  saveConfig: () => void;
   startCrawl: () => Promise<void>;
   pauseCrawl: () => Promise<void>;
   resumeCrawl: () => Promise<void>;
@@ -72,6 +75,8 @@ interface BrowserAutomationState {
   applyPageUpdated: (page: Partial<CrawlPage> & { id: string }) => void;
   applyInsightCreated: (insight: AIInsight) => void;
   applyLogCreated: (log: ActivityLog) => void;
+  applyHumanInputRequested: (request: HumanInputRequest) => void;
+  clearHumanInputRequest: () => void;
 }
 
 function makeSession(setup: CrawlSetupConfig): CrawlSession {
@@ -98,14 +103,30 @@ async function invokeOptional(command: string, payload?: Record<string, unknown>
   }
 }
 
+const STORAGE_KEY = 'apprecon:crawl-setup-config';
+
+function loadSavedConfig(): CrawlSetupConfig {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      return { ...DEFAULT_CRAWL_SETUP, ...parsed };
+    }
+  } catch {
+    // Ignore corrupt storage.
+  }
+  return DEFAULT_CRAWL_SETUP;
+}
+
 export const useBrowserAutomationStore = create<BrowserAutomationState>((set, get) => ({
-  setup: DEFAULT_CRAWL_SETUP,
+  setup: loadSavedConfig(),
   session: null,
   pages: [],
   insights: [],
   logs: [],
   selectedPageId: null,
   expandedPageIds: ['page-root', 'page-products', 'page-login'],
+  humanInputRequest: null,
   lastError: null,
 
   overview: () => deriveOverview(get().session, get().pages),
@@ -114,6 +135,14 @@ export const useBrowserAutomationStore = create<BrowserAutomationState>((set, ge
     set((state) => ({
       setup: { ...state.setup, ...patch },
     })),
+
+  saveConfig: () => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(get().setup));
+    } catch {
+      // Storage full or unavailable — ignore.
+    }
+  },
 
   startCrawl: async () => {
     const setup = get().setup;
@@ -135,6 +164,7 @@ export const useBrowserAutomationStore = create<BrowserAutomationState>((set, ge
         },
       ],
       selectedPageId: null,
+      humanInputRequest: null,
       lastError: null,
     });
 
@@ -172,6 +202,7 @@ export const useBrowserAutomationStore = create<BrowserAutomationState>((set, ge
     const session = get().session;
     if (!session) return;
     set({ session: { ...session, status: 'running' } });
+    set({ humanInputRequest: null });
     await invokeOptional(commandName('resume'), { sessionId: session.id });
   },
 
@@ -179,7 +210,7 @@ export const useBrowserAutomationStore = create<BrowserAutomationState>((set, ge
     const session = get().session;
     if (!session) return;
     const finishedAt = new Date().toISOString();
-    set({ session: { ...session, status: 'stopped', finishedAt } });
+    set({ session: { ...session, status: 'stopped', finishedAt }, humanInputRequest: null });
     await invokeOptional(commandName('stop'), { sessionId: session.id });
   },
 
@@ -232,6 +263,7 @@ export const useBrowserAutomationStore = create<BrowserAutomationState>((set, ge
       insights: [],
       logs: [],
       selectedPageId: null,
+      humanInputRequest: null,
       lastError: null,
     }),
 
@@ -263,4 +295,12 @@ export const useBrowserAutomationStore = create<BrowserAutomationState>((set, ge
     set((state) => ({
       logs: state.logs.some((item) => item.id === log.id) ? state.logs : [...state.logs, log],
     })),
+
+  applyHumanInputRequested: (request) =>
+    set((state) => ({
+      humanInputRequest: request,
+      session: state.session ? { ...state.session, status: 'paused' } : state.session,
+    })),
+
+  clearHumanInputRequest: () => set({ humanInputRequest: null }),
 }));

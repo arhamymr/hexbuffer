@@ -5,14 +5,29 @@
 - [index.tsx](file://src/pages/browser-automation/index.tsx)
 - [browser-automation.ts](file://src/stores/browser-automation.ts)
 - [use-browser-automation-page.ts](file://src/pages/browser-automation/hooks/use-browser-automation-page.ts)
-- [InstructionPanel.tsx](file://src/pages/browser-automation/components/InstructionPanel.tsx)
-- [AccessibilityTreePanel.tsx](file://src/pages/browser-automation/components/AccessibilityTreePanel.tsx)
-- [ActionLogPanel.tsx](file://src/pages/browser-automation/components/ActionLogPanel.tsx)
-- [BrowserToolbar.tsx](file://src/pages/browser-automation/components/BrowserToolbar.tsx)
-- [mod.rs](file://src-tauri/src/browser/mod.rs)
+- [crawl-setup-screen.tsx](file://src/pages/browser-automation/components/crawl-setup-screen.tsx)
+- [ai-insights-panel.tsx](file://src/pages/browser-automation/components/ai-insights-panel.tsx)
+- [activity-log-panel.tsx](file://src/pages/browser-automation/components/activity-log-panel.tsx)
+- [crawl-overview-panel.tsx](file://src/pages/browser-automation/components/crawl-overview-panel.tsx)
+- [crawl-tree-panel.tsx](file://src/pages/browser-automation/components/crawl-tree-panel.tsx)
+- [page-detail-drawer.tsx](file://src/pages/browser-automation/components/page-detail-drawer.tsx)
+- [ai-engine/index.mjs](file://scripts/ai-engine/index.mjs)
+- [ai_browser.rs](file://src-tauri/src/ai_browser.rs)
+- [browser/mod.rs](file://src-tauri/src/browser/mod.rs)
 - [main.rs](file://src-tauri/src/main.rs)
-- [ai/mod.rs](file://src-tauri/src/ai/mod.rs)
+- [schema.rs](file://src-tauri/src/db/schema.rs)
+- [types.ts](file://src/pages/browser-automation/types.ts)
+- [constants.ts](file://src/pages/browser-automation/constants.ts)
 </cite>
+
+## Update Summary
+**Changes Made**
+- Updated architecture to reflect AI-powered browser automation system with JavaScript sidecar architecture
+- Enhanced crawling capabilities with Playwright integration for dynamic content extraction
+- Removed screenshot capture functionality in favor of AI-powered page analysis
+- Added comprehensive AI analysis with DeepSeek integration and heuristic fallback
+- Updated database schema to support AI browser sessions, pages, insights, and logs
+- Enhanced frontend components with real-time monitoring and AI insights visualization
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -20,425 +35,374 @@
 3. [Core Components](#core-components)
 4. [Architecture Overview](#architecture-overview)
 5. [Detailed Component Analysis](#detailed-component-analysis)
-6. [Dependency Analysis](#dependency-analysis)
-7. [Performance Considerations](#performance-considerations)
-8. [Troubleshooting Guide](#troubleshooting-guide)
-9. [Conclusion](#conclusion)
-10. [Appendices](#appendices)
+6. [AI-Powered Crawl System](#ai-powered-crawl-system)
+7. [Database Schema and Persistence](#database-schema-and-persistence)
+8. [Real-Time Monitoring and Events](#real-time-monitoring-and-events)
+9. [Frontend Components and UI](#frontend-components-and-ui)
+10. [Performance Considerations](#performance-considerations)
+11. [Troubleshooting Guide](#troubleshooting-guide)
+12. [Conclusion](#conclusion)
+13. [Appendices](#appendices)
 
 ## Introduction
-This document explains AppRecon’s Browser Automation functionality: an instruction-based automation framework that orchestrates a headless browser via a CLI agent, captures an accessibility tree for analysis, and integrates with an AI runtime (Mastra) to generate and execute browser actions. It covers instruction composition, execution workflow, action logging, accessibility tree analysis, script-like automation creation, execution control, result processing, and practical examples for testing and security assessment. It also addresses performance, error handling, debugging, and integration with traffic analysis and dynamic content testing.
+AppRecon's Browser Automation has been transformed into a comprehensive AI-powered system featuring a sophisticated three-tier architecture. The system now combines a Rust Tauri backend with a Node.js AI engine powered by Playwright for intelligent web crawling, real-time monitoring through event streaming, and persistent storage of crawl sessions, pages, insights, and logs. This enhancement enables automated testing, security assessment, and reconnaissance with AI-driven insights and comprehensive observability, replacing traditional screenshot-based analysis with advanced AI-powered page understanding.
 
 ## Project Structure
-The Browser Automation feature spans the frontend React/Tauri application and the Tauri backend:
-- Frontend pages and UI components manage user input, snapshots, logs, and execution control.
-- The Zustand store encapsulates automation state, actions, and Tauri invocations.
-- The Tauri backend exposes commands to control the external browser agent and to introspect the page.
+The enhanced Browser Automation system spans multiple layers with clear separation of concerns:
+
+- **Backend Core**: Rust Tauri application managing state, commands, and database persistence
+- **AI Engine**: Node.js sidecar powered by Playwright for dynamic content extraction and AI analysis
+- **Frontend Interface**: React components with real-time event streaming and comprehensive monitoring
+- **Database Layer**: SQLite persistence for crawl sessions, pages, insights, and logs
+- **Event System**: Real-time communication between backend, AI engine, and frontend
 
 ```mermaid
 graph TB
+subgraph "Backend Core (Rust Tauri)"
+AI["ai_browser.rs<br/>AI Browser Engine"]
+DB["schema.rs<br/>SQLite Database"]
+CMD["main.rs<br/>Command Registration"]
+STATE["AiBrowserState<br/>In-Memory State"]
+end
+subgraph "AI Engine (Node.js)"
+ENGINE["ai-engine/index.mjs<br/>Playwright Crawler"]
+ANALYZER["AI Analyzer<br/>DeepSeek Integration"]
+HEURISTIC["Heuristic Analyzer<br/>Fallback Logic"]
+EXTRACTOR["Content Extractor<br/>HTML Parser"]
+end
 subgraph "Frontend"
-UI["BrowserAutomationPage<br/>UI Panels"]
-Store["Zustand Store<br/>browser-automation.ts"]
-Hook["use-browser-automation-page.ts"]
+UI["BrowserAutomationPage<br/>Main Interface"]
+STORE["useBrowserAutomationStore<br/>State Management"]
+EVENTS["Event Listeners<br/>Real-time Updates"]
+COMPONENTS["Components<br/>Panels & Visualizations"]
 end
-subgraph "Tauri Backend"
-Main["main.rs<br/>Command Registration"]
-BrowserCmds["browser/mod.rs<br/>Browser Commands"]
-AI["ai/mod.rs<br/>Mastra Status/Control"]
-end
-Agent["agent-browser CLI"]
-UI --> Hook
-Hook --> Store
-Store --> Main
-Main --> BrowserCmds
-BrowserCmds --> Agent
-Store --> AI
-AI --> Main
+AI --> ENGINE
+ENGINE --> ANALYZER
+ENGINE --> HEURISTIC
+ENGINE --> EXTRACTOR
+AI --> DB
+AI --> STATE
+UI --> STORE
+STORE --> CMD
+CMD --> AI
+EVENTS --> COMPONENTS
 ```
 
 **Diagram sources**
-- [index.tsx:41-252](file://src/pages/browser-automation/index.tsx#L41-L252)
-- [browser-automation.ts:101-362](file://src/stores/browser-automation.ts#L101-L362)
-- [use-browser-automation-page.ts:13-132](file://src/pages/browser-automation/hooks/use-browser-automation-page.ts#L13-L132)
-- [mod.rs:102-505](file://src-tauri/src/browser/mod.rs#L102-L505)
-- [main.rs:125-139](file://src-tauri/src/main.rs#L125-L139)
-- [ai/mod.rs:87-121](file://src-tauri/src/ai/mod.rs#L87-L121)
+- [ai_browser.rs:1-798](file://src-tauri/src/ai_browser.rs#L1-L798)
+- [schema.rs:177-255](file://src-tauri/src/db/schema.rs#L177-L255)
+- [main.rs:72-149](file://src-tauri/src/main.rs#L72-L149)
+- [ai-engine/index.mjs:1-687](file://scripts/ai-engine/index.mjs#L1-L687)
+- [index.tsx:14-215](file://src/pages/browser-automation/index.tsx#L14-L215)
 
 **Section sources**
-- [index.tsx:41-252](file://src/pages/browser-automation/index.tsx#L41-L252)
-- [browser-automation.ts:101-362](file://src/stores/browser-automation.ts#L101-L362)
-- [use-browser-automation-page.ts:13-132](file://src/pages/browser-automation/hooks/use-browser-automation-page.ts#L13-L132)
-- [mod.rs:102-505](file://src-tauri/src/browser/mod.rs#L102-L505)
-- [main.rs:125-139](file://src-tauri/src/main.rs#L125-L139)
-- [ai/mod.rs:87-121](file://src-tauri/src/ai/mod.rs#L87-L121)
+- [ai_browser.rs:1-798](file://src-tauri/src/ai_browser.rs#L1-L798)
+- [schema.rs:177-255](file://src-tauri/src/db/schema.rs#L177-L255)
+- [main.rs:72-149](file://src-tauri/src/main.rs#L72-L149)
+- [ai-engine/index.mjs:1-687](file://scripts/ai-engine/index.mjs#L1-L687)
+- [index.tsx:14-215](file://src/pages/browser-automation/index.tsx#L14-L215)
 
 ## Core Components
-- UI orchestration and status display:
-  - Top toolbar for URL input, browser open/close, snapshot, run AI, stop, and tab management.
-  - Instruction panel for composing crawl instructions.
-  - Accessibility tree panel for inspecting interactive elements and triggering clicks.
-  - Action log panel for verbose event logging.
-- State and execution engine:
-  - Zustand store manages tabs, URLs, instructions, snapshots, action logs, discovered APIs, and browser status.
-  - Store functions invoke Tauri commands for browser control and AI prompts.
-- Backend browser control:
-  - Tauri commands spawn and control an external browser agent, capture snapshots, and execute actions.
-- AI runtime integration:
-  - Mastra status and lifecycle are exposed via Tauri commands and polled by the UI.
+The AI-powered Browser Automation system consists of several interconnected components:
+
+- **AI Browser Engine**: Rust backend managing crawl sessions, state coordination, and event emission
+- **AI Engine**: Intelligent crawler using Playwright for dynamic content extraction and AI analysis
+- **Real-time Event System**: WebSocket-based communication for live updates across UI components
+- **Comprehensive State Management**: Zustand store with filtering, searching, and real-time updates
+- **Enhanced Frontend Components**: Multiple panels for crawl overview, tree visualization, AI insights, and activity monitoring
+- **Persistent Storage**: SQLite database with dedicated tables for sessions, pages, insights, and logs
 
 **Section sources**
-- [index.tsx:41-252](file://src/pages/browser-automation/index.tsx#L41-L252)
-- [InstructionPanel.tsx:15-46](file://src/pages/browser-automation/components/InstructionPanel.tsx#L15-L46)
-- [AccessibilityTreePanel.tsx:12-61](file://src/pages/browser-automation/components/AccessibilityTreePanel.tsx#L12-L61)
-- [ActionLogPanel.tsx:13-61](file://src/pages/browser-automation/components/ActionLogPanel.tsx#L13-L61)
-- [BrowserToolbar.tsx:23-102](file://src/pages/browser-automation/components/BrowserToolbar.tsx#L23-L102)
-- [browser-automation.ts:47-77](file://src/stores/browser-automation.ts#L47-L77)
-- [mod.rs:102-505](file://src-tauri/src/browser/mod.rs#L102-L505)
-- [ai/mod.rs:87-121](file://src-tauri/src/ai/mod.rs#L87-L121)
+- [ai_browser.rs:85-91](file://src-tauri/src/ai_browser.rs#L85-L91)
+- [browser-automation.ts:46-75](file://src/stores/browser-automation.ts#L46-L75)
+- [index.tsx:14-215](file://src/pages/browser-automation/index.tsx#L14-L215)
 
 ## Architecture Overview
-The system follows a React frontend with a Tauri backend. The frontend composes instructions and orchestrates browser actions; the backend runs an external browser agent and returns structured snapshots. An AI runtime (Mastra) is integrated to evaluate prompts and drive automation.
+The system follows a distributed architecture pattern with clear separation between intelligence (AI), execution (Playwright), and presentation (React):
 
 ```mermaid
 sequenceDiagram
 participant UI as "BrowserAutomationPage"
-participant Hook as "use-browser-automation-page"
-participant Store as "Zustand Store"
-participant Tauri as "Tauri Commands"
-participant Agent as "agent-browser CLI"
-UI->>Hook : User triggers "Run AI"
-Hook->>Store : runAiAutomation(tabId)
-Store->>Tauri : browser_open(url)
-Tauri->>Agent : Launch browser with proxy and session
-Agent-->>Tauri : PID, URL
-Tauri-->>Store : BrowserStatus
-Store->>Tauri : browser_snapshot()
-Tauri->>Agent : Take snapshot
-Agent-->>Tauri : Snapshot JSON
-Tauri-->>Store : BrowserSnapshot
-Store->>Tauri : browser_execute(instruction)
-Tauri-->>Store : Prompt for AI
-Store->>Hook : Add action log entries
-Note over Store,Tauri : AI runtime (Mastra) evaluates prompt and executes commands
+participant Store as "useBrowserAutomationStore"
+participant Tauri as "ai_browser_start_crawl"
+participant Engine as "AI Engine"
+participant DB as "SQLite Database"
+participant Events as "Event System"
+UI->>Store : startCrawl()
+Store->>Tauri : ai_browser_start_crawl(config, sessionId)
+Tauri->>Engine : Spawn AI engine process
+Engine->>Engine : Initialize Playwright
+Engine->>Engine : Crawl target URL
+Engine->>Engine : Extract content & analyze
+Engine->>Tauri : Emit page_discovered
+Tauri->>DB : Persist session & page
+Tauri->>Events : Emit ai-browser : page-discovered
+Events->>Store : Apply state update
+Store->>UI : Update component state
+UI->>Store : Filter & display data
 ```
 
 **Diagram sources**
-- [index.tsx:87-91](file://src/pages/browser-automation/index.tsx#L87-L91)
-- [use-browser-automation-page.ts:87-91](file://src/pages/browser-automation/hooks/use-browser-automation-page.ts#L87-L91)
-- [browser-automation.ts:218-298](file://src/stores/browser-automation.ts#L218-L298)
-- [mod.rs:102-196](file://src-tauri/src/browser/mod.rs#L102-L196)
-- [ai/mod.rs:87-121](file://src-tauri/src/ai/mod.rs#L87-L121)
+- [browser-automation.ts:118-162](file://src/stores/browser-automation.ts#L118-L162)
+- [ai_browser.rs:489-595](file://src-tauri/src/ai_browser.rs#L489-L595)
+- [ai-engine/index.mjs:545-670](file://scripts/ai-engine/index.mjs#L545-L670)
 
 ## Detailed Component Analysis
 
-### UI Orchestration and Panels
-- BrowserAutomationPage renders:
-  - Toolbar with URL input, open/close browser, snapshot, run AI, stop, and clear log.
-  - Snapshot summary and interactive count.
-  - Action log panel with timestamps and categorized entries.
-  - Findings area for errors and crawl outcomes.
-- InstructionPanel allows editing an instruction string and starting/stopping automation.
-- AccessibilityTreePanel displays the current snapshot with clickable elements and ref IDs.
-- ActionLogPanel shows categorized logs (command, result, error, AI).
-- BrowserToolbar provides compact controls and status badges.
+### AI Browser Engine (Rust Backend)
+The core AI browser engine manages crawl sessions, coordinates with the AI engine, and maintains real-time state synchronization:
 
-```mermaid
-flowchart TD
-Start([User Interaction]) --> URL["Enter Target URL"]
-URL --> Open["Open Browser"]
-Open --> Snapshot["Take Snapshot"]
-Snapshot --> Instruction["Compose Instruction"]
-Instruction --> RunAI["Run AI Crawl"]
-RunAI --> Log["Action Log Updates"]
-RunAI --> Errors{"Errors?"}
-Errors --> |Yes| Findings["Show Errors in Findings Panel"]
-Errors --> |No| Ready["Ready"]
-Log --> Ready
-```
-
-**Diagram sources**
-- [index.tsx:71-252](file://src/pages/browser-automation/index.tsx#L71-L252)
-- [InstructionPanel.tsx:15-46](file://src/pages/browser-automation/components/InstructionPanel.tsx#L15-L46)
-- [AccessibilityTreePanel.tsx:12-61](file://src/pages/browser-automation/components/AccessibilityTreePanel.tsx#L12-L61)
-- [ActionLogPanel.tsx:13-61](file://src/pages/browser-automation/components/ActionLogPanel.tsx#L13-L61)
-- [BrowserToolbar.tsx:23-102](file://src/pages/browser-automation/components/BrowserToolbar.tsx#L23-L102)
-
-**Section sources**
-- [index.tsx:41-252](file://src/pages/browser-automation/index.tsx#L41-L252)
-- [InstructionPanel.tsx:15-46](file://src/pages/browser-automation/components/InstructionPanel.tsx#L15-L46)
-- [AccessibilityTreePanel.tsx:12-61](file://src/pages/browser-automation/components/AccessibilityTreePanel.tsx#L12-L61)
-- [ActionLogPanel.tsx:13-61](file://src/pages/browser-automation/components/ActionLogPanel.tsx#L13-L61)
-- [BrowserToolbar.tsx:23-102](file://src/pages/browser-automation/components/BrowserToolbar.tsx#L23-L102)
-
-### State Management and Execution Workflow
-- Tabs represent independent automation sessions with URL, instruction, snapshot, action logs, and discovered APIs.
-- The store exposes:
-  - Browser lifecycle: open, close, navigate, snapshot.
-  - Element actions: click, fill, type, press.
-  - AI orchestration: run AI automation and prepare prompt.
-  - Logging: add and clear action logs.
-  - Status polling: refresh browser and Mastra status.
-- Execution flow:
-  - Validate URL and instruction.
-  - Ensure browser is open and navigated to the target.
-  - Capture snapshot and prepare AI prompt.
-  - Emit action log entries for each step.
-
-```mermaid
-sequenceDiagram
-participant Store as "Zustand Store"
-participant Tauri as "Tauri Commands"
-participant Agent as "agent-browser CLI"
-Store->>Store : validate URL and instruction
-alt Browser closed
-Store->>Tauri : browser_open(url)
-Tauri->>Agent : start browser
-else Browser open but on different URL
-Store->>Tauri : browser_navigate(url)
-end
-Store->>Tauri : browser_snapshot()
-Tauri->>Agent : capture snapshot
-Agent-->>Tauri : snapshot JSON
-Tauri-->>Store : BrowserSnapshot
-Store->>Tauri : browser_execute(instruction)
-Tauri-->>Store : AI prompt
-Store->>Store : add action log entries
-```
-
-**Diagram sources**
-- [browser-automation.ts:218-298](file://src/stores/browser-automation.ts#L218-L298)
-- [mod.rs:102-196](file://src-tauri/src/browser/mod.rs#L102-L196)
-- [mod.rs:481-505](file://src-tauri/src/browser/mod.rs#L481-L505)
-
-**Section sources**
-- [browser-automation.ts:47-77](file://src/stores/browser-automation.ts#L47-L77)
-- [browser-automation.ts:218-298](file://src/stores/browser-automation.ts#L218-L298)
-
-### Accessibility Tree Analysis
-- The snapshot captures:
-  - Page URL and title.
-  - Interactive elements with ref IDs, roles, names, and values.
-- The frontend renders a scrollable tree of elements, enabling:
-  - Clicking elements by ref ID.
-  - Inspecting roles and values for dynamic content.
-- Parsing supports multiple output formats from the agent and marks interactive elements based on roles.
+- **State Management**: Thread-safe HashMap-based storage for sessions, pages, insights, and logs
+- **Command Processing**: Comprehensive command set for crawl control, querying, and state management
+- **Event Emission**: Real-time event broadcasting for UI updates across all components
+- **Persistence Layer**: Integration with HistoryBridge for SQLite database operations
+- **Process Coordination**: Process management and environment variable configuration
 
 ```mermaid
 classDiagram
-class BrowserSnapshot {
-+string url
-+string title
-+AccessibilityElement[] elements
+class AiBrowserState {
++HashMap~String, CrawlSession~ sessions
++HashMap~String, Vec~CrawlPage~~ pages
++HashMap~String, Vec~AIInsight~~ insights
++HashMap~String, Vec~ActivityLog~~ logs
 }
-class AccessibilityElement {
-+string refId
-+string role
-+string name
-+string|null value
-+boolean interactive
+class CrawlSession {
++String id
++String target_url
++String status
++String strategy
++u32 max_depth
++u32 max_pages
++Option~String~ started_at
++Option~String~ finished_at
 }
-BrowserSnapshot "1" --> "many" AccessibilityElement : "contains"
+class CrawlPage {
++String id
++String session_id
++String url
++Option~String~ title
++String status
++u32 depth
++Option~String~ parent_url
++Option~u16~ http_status
++u32 links_found
++u32 forms_found
++String discovered_at
++Option~String~ visited_at
++Option~String~ ai_summary
++Option~bool~ interesting
+}
+AiBrowserState --> CrawlSession : manages
+AiBrowserState --> CrawlPage : manages
 ```
 
 **Diagram sources**
-- [mod.rs:7-31](file://src-tauri/src/browser/mod.rs#L7-L31)
-- [mod.rs:420-478](file://src-tauri/src/browser/mod.rs#L420-L478)
-- [AccessibilityTreePanel.tsx:12-61](file://src/pages/browser-automation/components/AccessibilityTreePanel.tsx#L12-L61)
+- [ai_browser.rs:85-91](file://src-tauri/src/ai_browser.rs#L85-L91)
+- [ai_browser.rs:28-56](file://src-tauri/src/ai_browser.rs#L28-L56)
 
 **Section sources**
-- [mod.rs:7-31](file://src-tauri/src/browser/mod.rs#L7-L31)
-- [mod.rs:420-478](file://src-tauri/src/browser/mod.rs#L420-L478)
-- [AccessibilityTreePanel.tsx:12-61](file://src/pages/browser-automation/components/AccessibilityTreePanel.tsx#L12-L61)
+- [ai_browser.rs:85-91](file://src-tauri/src/ai_browser.rs#L85-L91)
+- [ai_browser.rs:28-56](file://src-tauri/src/ai_browser.rs#L28-L56)
 
-### Action Logging and Result Processing
-- Logs are categorized:
-  - command: user/system intent.
-  - result: successful outcome.
-  - error: failure with message.
-  - ai: AI prompt preparation and evaluation.
-- The UI displays logs with timestamps and color-coded badges.
-- Results include:
-  - Snapshot metadata and element counts.
-  - Browser status updates (PID, URL).
-  - Errors surfaced in the findings panel.
+### AI Engine with Playwright
+The intelligent crawler leverages Playwright for dynamic content extraction and AI analysis:
+
+- **Content Extraction**: HTML parsing with comprehensive element discovery
+- **Dynamic Rendering**: Playwright-based page rendering for JavaScript-heavy sites
+- **AI Integration**: DeepSeek API integration for intelligent page analysis
+- **Heuristic Analysis**: Fallback analysis when AI services are unavailable
+- **Restricted Workflow Detection**: Safety mechanisms for authentication, uploads, and payment flows
+- **Queue Management**: BFS-based crawling with configurable policies
+- **Error Handling**: Robust error recovery and reporting
 
 ```mermaid
 flowchart TD
-A["Invoke Tauri Command"] --> B{"Success?"}
-B --> |Yes| C["Add 'result' log"]
-B --> |No| D["Add 'error' log with message"]
-C --> E["Update UI state"]
-D --> F["Show error in findings"]
-E --> G["Render logs"]
-F --> G
+Start([Crawl Session Started]) --> Init[Initialize Playwright Context]
+Init --> Queue[Load Seed URLs]
+Queue --> Loop{Queue Not Empty?}
+Loop --> |Yes| Extract[Extract Page Content]
+Extract --> Analyze[AI/Heuristic Analysis]
+Analyze --> Insights[Generate Insights]
+Insights --> Persist[Persist Results]
+Persist --> Discover[Discover New Links]
+Discover --> Filter[Apply Crawl Policies]
+Filter --> Queue
+Loop --> |No| Finish[Session Complete]
+Finish --> End([Crawl Finished])
 ```
 
 **Diagram sources**
-- [browser-automation.ts:161-186](file://src/stores/browser-automation.ts#L161-L186)
-- [browser-automation.ts:188-197](file://src/stores/browser-automation.ts#L188-L197)
-- [browser-automation.ts:200-216](file://src/stores/browser-automation.ts#L200-L216)
-- [ActionLogPanel.tsx:13-61](file://src/pages/browser-automation/components/ActionLogPanel.tsx#L13-L61)
+- [ai-engine/index.mjs:545-670](file://scripts/ai-engine/index.mjs#L545-L670)
+- [ai-engine/index.mjs:159-210](file://scripts/ai-engine/index.mjs#L159-L210)
 
 **Section sources**
-- [browser-automation.ts:24-28](file://src/stores/browser-automation.ts#L24-L28)
-- [browser-automation.ts:161-186](file://src/stores/browser-automation.ts#L161-L186)
-- [browser-automation.ts:188-197](file://src/stores/browser-automation.ts#L188-L197)
-- [browser-automation.ts:200-216](file://src/stores/browser-automation.ts#L200-L216)
-- [ActionLogPanel.tsx:13-61](file://src/pages/browser-automation/components/ActionLogPanel.tsx#L13-L61)
+- [ai-engine/index.mjs:159-210](file://scripts/ai-engine/index.mjs#L159-L210)
+- [ai-engine/index.mjs:269-336](file://scripts/ai-engine/index.mjs#L269-L336)
 
-### AI Integration and Script Generation
-- The backend constructs an instruction-driven prompt embedding:
-  - Current page URL and title.
-  - Interactive elements with ref IDs and attributes.
-  - The user instruction.
-- The prompt instructs the AI to return a JSON array of commands (click, fill, type, navigate, press).
-- The frontend adds an AI log entry indicating prompt preparation and a status message indicating pending AI execution.
+### Real-Time Event System
+The event-driven architecture enables seamless communication between all system components:
 
-```mermaid
-sequenceDiagram
-participant Store as "Zustand Store"
-participant Tauri as "Tauri Commands"
-participant Agent as "agent-browser CLI"
-Store->>Tauri : browser_snapshot()
-Tauri->>Agent : capture snapshot
-Agent-->>Tauri : snapshot JSON
-Tauri-->>Store : BrowserSnapshot
-Store->>Tauri : browser_execute(instruction)
-Tauri-->>Store : AI prompt (JSON commands expected)
-Store->>Store : add AI log entry
-Note over Store,Tauri : AI runtime consumes prompt and executes commands
-```
-
-**Diagram sources**
-- [browser-automation.ts:278-289](file://src/stores/browser-automation.ts#L278-L289)
-- [mod.rs:481-505](file://src-tauri/src/browser/mod.rs#L481-L505)
+- **Event Types**: Comprehensive event spectrum covering sessions, pages, insights, and logs
+- **State Synchronization**: Automatic UI updates through reactive state management
+- **Filtering & Search**: Advanced filtering capabilities for insights and logs
+- **Export Functionality**: JSON export for crawl data, insights, and logs
+- **Status Tracking**: Real-time monitoring of crawl progress and health
 
 **Section sources**
-- [browser-automation.ts:278-289](file://src/stores/browser-automation.ts#L278-L289)
-- [mod.rs:481-505](file://src-tauri/src/browser/mod.rs#L481-L505)
+- [use-browser-automation-page.ts:59-118](file://src/pages/browser-automation/hooks/use-browser-automation-page.ts#L59-L118)
+- [browser-automation.ts:186-203](file://src/stores/browser-automation.ts#L186-L203)
 
-### Execution Control and Browser Lifecycle
-- Lifecycle commands:
-  - Open browser with a URL and proxy configuration.
-  - Close browser and clean up process state.
-  - Navigate to a URL.
-  - Take a snapshot and parse the accessibility tree.
-  - Click/fill/type/press keys on elements.
-  - Batch commands support.
-- Status polling keeps the UI informed about browser PID and URL.
+## AI-Powered Crawl System
+The enhanced crawl system provides intelligent web reconnaissance with multiple analysis modes:
 
-```mermaid
-flowchart TD
-Open["browser_open(url)"] --> Status["get_browser_status()"]
-Navigate["browser_navigate(url)"] --> Status
-Snapshot["browser_snapshot()"] --> Parse["parse_snapshot()"]
-Click["browser_click(@eX)"] --> Status
-Fill["browser_fill(@eX,text)"] --> Status
-Type["browser_type(@eX,text)"] --> Status
-Press["browser_press(key)"] --> Status
-Batch["browser_batch(commands)"] --> Status
-```
+### Heuristic Analysis
+Basic pattern-based detection for authentication, admin routes, uploads, and error pages:
 
-**Diagram sources**
-- [mod.rs:102-196](file://src-tauri/src/browser/mod.rs#L102-L196)
-- [mod.rs:198-355](file://src-tauri/src/browser/mod.rs#L198-L355)
-- [mod.rs:387-418](file://src-tauri/src/browser/mod.rs#L387-L418)
+- **Authentication Detection**: Password fields, login indicators, sign-in text
+- **Admin Route Discovery**: Admin-specific URL patterns and routing
+- **Upload Form Identification**: File input detection and handling
+- **Error Page Recognition**: HTTP status-based error detection
+
+### AI Analysis with DeepSeek
+Advanced analysis using Large Language Models for comprehensive page understanding:
+
+- **Intelligent Summaries**: Context-aware page summaries and categorization
+- **Priority Scoring**: Automated prioritization of interesting pages
+- **Insight Generation**: Structured insights with severity levels
+- **Schema Validation**: Type-safe AI responses with Zod validation
 
 **Section sources**
-- [mod.rs:102-196](file://src-tauri/src/browser/mod.rs#L102-L196)
-- [mod.rs:198-355](file://src-tauri/src/browser/mod.rs#L198-L355)
-- [mod.rs:387-418](file://src-tauri/src/browser/mod.rs#L387-L418)
+- [ai-engine/index.mjs:212-267](file://scripts/ai-engine/index.mjs#L212-L267)
+- [ai-engine/index.mjs:269-336](file://scripts/ai-engine/index.mjs#L269-L336)
 
-### Practical Workflows and Examples
-- Basic crawl:
-  - Enter target URL, open browser, take snapshot, compose instruction, run AI, observe logs and findings.
-- Form submission automation:
-  - Use the accessibility tree to locate input fields by ref ID, fill and type values, then click submit.
-- Dynamic content testing:
-  - Inspect element values after interactions; leverage snapshot diffs to detect changes.
-- Security testing scenarios:
-  - Compose instructions to discover API endpoints, authentication surfaces, and potential XSS sinks.
-  - Use “press” commands to trigger Enter or Tab navigation.
+## Database Schema and Persistence
+The system implements a comprehensive SQLite schema for persistent storage:
 
-[No sources needed since this section provides practical guidance without analyzing specific files]
+### AI Browser Tables
+- **ai_browser_sessions**: Crawl session metadata and status
+- **ai_browser_pages**: Discovered pages with analysis results
+- **ai_browser_edges**: URL relationship tracking
+- **ai_browser_insights**: AI-generated insights with review status
+- **ai_browser_logs**: Comprehensive activity logging
 
-## Dependency Analysis
-- Frontend depends on:
-  - Zustand store for state and Tauri invocations.
-  - UI components for rendering panels and logs.
-- Backend depends on:
-  - External agent-browser CLI for browser control and snapshotting.
-  - Mastra runtime for AI orchestration.
-- Commands registration ties frontend invocations to backend implementations.
-
-```mermaid
-graph LR
-UI["BrowserAutomationPage"] --> Hook["use-browser-automation-page"]
-Hook --> Store["Zustand Store"]
-Store --> Main["Tauri main.rs"]
-Main --> BrowserCmds["browser/mod.rs"]
-Main --> AI["ai/mod.rs"]
-BrowserCmds --> Agent["agent-browser CLI"]
-```
-
-**Diagram sources**
-- [index.tsx:41-252](file://src/pages/browser-automation/index.tsx#L41-L252)
-- [use-browser-automation-page.ts:13-132](file://src/pages/browser-automation/hooks/use-browser-automation-page.ts#L13-L132)
-- [browser-automation.ts:101-362](file://src/stores/browser-automation.ts#L101-L362)
-- [main.rs:125-139](file://src-tauri/src/main.rs#L125-L139)
-- [mod.rs:102-505](file://src-tauri/src/browser/mod.rs#L102-L505)
-- [ai/mod.rs:87-121](file://src-tauri/src/ai/mod.rs#L87-L121)
+### Index Optimization
+Strategic indexing for optimal query performance:
+- Session status and timestamp indexes
+- Page URL and session foreign key indexes
+- Insight session and page foreign key indexes
+- Log session and creation time indexes
 
 **Section sources**
-- [main.rs:125-139](file://src-tauri/src/main.rs#L125-L139)
-- [mod.rs:102-505](file://src-tauri/src/browser/mod.rs#L102-L505)
-- [ai/mod.rs:87-121](file://src-tauri/src/ai/mod.rs#L87-L121)
+- [schema.rs:177-255](file://src-tauri/src/db/schema.rs#L177-L255)
+
+## Real-Time Monitoring and Events
+The event-driven architecture provides comprehensive monitoring capabilities:
+
+### Event Types
+- **Session Events**: Start, update, finish, and failure notifications
+- **Page Events**: Discovery, visit, and status updates
+- **Insight Events**: AI-generated insights with severity classification
+- **Log Events**: Comprehensive activity logging with filtering
+
+### State Management
+- **Reactive Updates**: Automatic UI updates through event listeners
+- **Filtering System**: Multi-dimensional filtering for insights and logs
+- **Search Capabilities**: Full-text search across pages and logs
+- **Export Functionality**: JSON export for all crawl data categories
+
+**Section sources**
+- [use-browser-automation-page.ts:59-118](file://src/pages/browser-automation/hooks/use-browser-automation-page.ts#L59-L118)
+- [browser-automation.ts:186-203](file://src/stores/browser-automation.ts#L186-L203)
+
+## Frontend Components and UI
+The enhanced frontend provides comprehensive monitoring and control:
+
+### Main Interface Layout
+- **Header Controls**: Crawl configuration, start/pause/stop, and export functionality
+- **Activity Log Panel**: Real-time activity monitoring with filtering
+- **Crawl Overview Panel**: Live metrics and statistics
+- **Crawl Tree Panel**: Hierarchical page structure visualization
+- **AI Insights Panel**: Structured insights with severity and type filtering
+- **Page Detail Drawer**: Detailed page information and actions
+
+### Component Features
+- **Responsive Design**: Flexible layout with resizable panels
+- **Real-time Updates**: Live data synchronization through events
+- **Advanced Filtering**: Multi-dimensional filtering for insights and logs
+- **Export Capabilities**: JSON export for all data categories
+- **Status Indicators**: Visual indicators for crawl progress and health
+
+**Section sources**
+- [index.tsx:58-215](file://src/pages/browser-automation/index.tsx#L58-L215)
+- [crawl-setup-screen.tsx:31-180](file://src/pages/browser-automation/components/crawl-setup-screen.tsx#L31-L180)
+- [ai-insights-panel.tsx:35-143](file://src/pages/browser-automation/components/ai-insights-panel.tsx#L35-L143)
 
 ## Performance Considerations
-- Snapshot parsing:
-  - The backend parses textual output from the agent; ensure minimal re-parsing by caching snapshots until navigation occurs.
-- Command batching:
-  - Use batch commands to reduce IPC overhead when chaining multiple actions.
-- Polling intervals:
-  - Status polling is performed periodically; keep intervals reasonable to avoid excessive CPU usage.
-- Proxy and session:
-  - Running the browser under a proxy and session reduces repeated setup costs across commands.
+The AI-powered system incorporates several performance optimizations:
 
-[No sources needed since this section provides general guidance]
+### Concurrency Management
+- **Async Processing**: Non-blocking operations for crawl coordination
+- **Thread Safety**: Proper synchronization for shared state access
+- **Memory Management**: Efficient state cleanup and garbage collection
+- **Resource Limits**: Configurable limits for depth, pages, and timeouts
+
+### Network Optimization
+- **Proxy Integration**: Integrated proxy support for traffic interception
+- **Connection Pooling**: Efficient resource utilization across crawls
+- **Timeout Management**: Configurable timeouts for responsive operation
+- **Error Recovery**: Graceful degradation when AI services are unavailable
+
+### Storage Efficiency
+- **Incremental Updates**: Efficient state updates without full reloads
+- **Index Utilization**: Strategic indexing for optimal query performance
+- **Data Compression**: Efficient storage of crawl artifacts
+- **Cleanup Policies**: Automatic cleanup of old sessions and data
 
 ## Troubleshooting Guide
-Common issues and resolutions:
-- Agent not found:
-  - The backend searches for the agent-browser executable; ensure it is installed and discoverable in PATH or common locations.
-- Snapshot failures:
-  - Verify the browser is open and the current page is loaded; re-run snapshot capture.
-- Navigation errors:
-  - Confirm the URL is valid and reachable; check proxy configuration.
-- AI prompt failures:
-  - Ensure Mastra is running and reachable; verify AI settings and API keys.
-- Action failures:
-  - Review action logs for error messages; confirm element ref IDs exist in the current snapshot.
+Common issues and resolutions for the AI-powered system:
+
+### AI Integration Issues
+- **API Key Configuration**: Ensure DeepSeek API key is configured in AI settings
+- **Model Availability**: Verify selected AI model is supported and accessible
+- **Rate Limiting**: Monitor API rate limits and implement appropriate delays
+- **Fallback Mechanisms**: System automatically falls back to heuristic analysis
+
+### Crawl Configuration Problems
+- **Target URL Validation**: Ensure target URL is accessible and properly formatted
+- **Scope Configuration**: Verify domain restrictions and path filters are appropriate
+- **Timeout Settings**: Adjust timeout values for slow-loading pages
+- **Delay Configuration**: Balance crawl speed with server load considerations
+
+### Performance Issues
+- **Memory Usage**: Monitor memory consumption during long crawls
+- **CPU Utilization**: Optimize Playwright configuration for resource efficiency
+- **Network Latency**: Consider proxy configuration for improved performance
+- **Database Performance**: Regular maintenance of SQLite database
 
 **Section sources**
-- [mod.rs:39-60](file://src-tauri/src/browser/mod.rs#L39-L60)
-- [browser-automation.ts:161-186](file://src/stores/browser-automation.ts#L161-L186)
-- [browser-automation.ts:188-197](file://src/stores/browser-automation.ts#L188-L197)
-- [browser-automation.ts:200-216](file://src/stores/browser-automation.ts#L200-L216)
-- [ai/mod.rs:87-121](file://src-tauri/src/ai/mod.rs#L87-L121)
+- [ai-engine/index.mjs:270-287](file://scripts/ai-engine/index.mjs#L270-L287)
+- [ai-engine/index.mjs:43-59](file://scripts/ai-engine/index.mjs#L43-L59)
 
 ## Conclusion
-AppRecon’s Browser Automation provides a robust instruction-based framework for automated testing and security assessment. By combining an accessibility tree snapshot, explicit element actions, and AI-driven command generation, it enables repeatable, observable workflows. The modular architecture separates UI concerns from backend browser control and AI orchestration, facilitating maintainability and extensibility.
-
-[No sources needed since this section summarizes without analyzing specific files]
+AppRecon's enhanced Browser Automation system represents a significant advancement in automated web reconnaissance and testing. The AI-powered architecture combines intelligent crawling with real-time monitoring, comprehensive analysis, and persistent storage to deliver a robust platform for security assessment and automated testing. The modular design ensures maintainability while the event-driven architecture provides excellent user experience through real-time updates and comprehensive observability. The system's focus on AI-powered page analysis eliminates the need for screenshot capture while providing more meaningful insights through intelligent content understanding.
 
 ## Appendices
 
 ### API and Command Reference
-- Frontend invokes Tauri commands via the store; backend registers them in main.
-- Key commands:
-  - get_browser_status, browser_open, browser_close, browser_navigate, browser_snapshot, browser_click, browser_fill, browser_type, browser_press, browser_batch, browser_execute.
+- **Crawl Control**: ai_browser_start_crawl, ai_browser_pause_crawl, ai_browser_resume_crawl, ai_browser_stop_crawl
+- **Data Retrieval**: get_ai_browser_session, list_ai_browser_pages, list_ai_browser_insights, list_ai_browser_logs
+- **Configuration**: CrawlSetupConfig with target URL, depth limits, scope rules, and AI analysis options
+- **Event Types**: Comprehensive event spectrum for real-time monitoring and UI updates
 
 **Section sources**
-- [main.rs:125-139](file://src-tauri/src/main.rs#L125-L139)
-- [mod.rs:102-505](file://src-tauri/src/browser/mod.rs#L102-L505)
+- [main.rs:139-146](file://src-tauri/src/main.rs#L139-L146)
+- [types.ts:15-37](file://src/pages/browser-automation/types.ts#L15-L37)
+
+### Data Model Reference
+- **CrawlSession**: Session metadata, status tracking, and configuration
+- **CrawlPage**: Page discovery, analysis results, and status information
+- **AIInsight**: Structured insights with severity, type, and review status
+- **ActivityLog**: Comprehensive logging with filtering and categorization
+
+**Section sources**
+- [types.ts:28-67](file://src/pages/browser-automation/types.ts#L28-L67)

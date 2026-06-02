@@ -118,6 +118,33 @@ impl Database {
         .optional()
     }
 
+    pub fn list_recent_ai_browser_sessions(&self, limit: u32) -> SqlResult<Vec<CrawlSession>> {
+        let conn = self.conn.lock().unwrap();
+        let mut stmt = conn.prepare(
+            r#"SELECT id, target_url, status, strategy, max_depth, max_pages, started_at, finished_at
+               FROM ai_browser_sessions
+               ORDER BY COALESCE(started_at, created_at) DESC
+               LIMIT ?1"#,
+        )?;
+
+        let rows = stmt
+            .query_map(params![limit as i64], |row| {
+                Ok(CrawlSession {
+                    id: row.get(0)?,
+                    target_url: row.get(1)?,
+                    status: row.get(2)?,
+                    strategy: row.get(3)?,
+                    max_depth: row.get::<_, i64>(4)? as u32,
+                    max_pages: row.get::<_, i64>(5)? as u32,
+                    started_at: row.get(6)?,
+                    finished_at: row.get(7)?,
+                })
+            })?
+            .collect();
+
+        rows
+    }
+
     pub fn upsert_ai_browser_page(&self, page: &CrawlPage) -> SqlResult<()> {
         let conn = self.conn.lock().unwrap();
         let updated_at = chrono::Utc::now().to_rfc3339();

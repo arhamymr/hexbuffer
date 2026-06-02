@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use std::io::{BufRead, BufReader};
 use std::net::{TcpStream, ToSocketAddrs};
 use std::path::PathBuf;
 use std::process::{Child, Command, Stdio};
@@ -45,14 +46,14 @@ pub struct MastraStatus {
     pub url: String,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AiChatMessage {
     pub role: String,
     pub content: String,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AiChatRequest {
     pub messages: Vec<AiChatMessage>,
@@ -64,6 +65,35 @@ pub struct AiChatResponse {
     pub provider: String,
     pub model: String,
     pub content: String,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct AiChatContext {
+    crawl_sessions: Vec<crate::ai_browser::CrawlSession>,
+    latest_crawl: Option<AiChatCrawlContext>,
+    proxy_summary: Vec<Value>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct AiChatCrawlContext {
+    session: crate::ai_browser::CrawlSession,
+    pages: Vec<crate::ai_browser::CrawlPage>,
+    insights: Vec<crate::ai_browser::AIInsight>,
+    logs: Vec<crate::ai_browser::ActivityLog>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct AiEngineChatMessage {
+    #[serde(rename = "type")]
+    message_type: String,
+    provider: Option<String>,
+    model: Option<String>,
+    delta: Option<String>,
+    content: Option<String>,
+    message: Option<String>,
 }
 
 #[derive(Default)]
@@ -109,6 +139,7 @@ pub fn clear_ai_api_key(app: AppHandle) -> Result<AiSettings, String> {
 #[tauri::command]
 pub async fn send_ai_chat_message(
     app: AppHandle,
+    history: State<'_, crate::HistoryBridge>,
     request: AiChatRequest,
 ) -> Result<AiChatResponse, String> {
     let settings = read_ai_settings(&app)?;
@@ -123,11 +154,130 @@ pub async fn send_ai_chat_message(
         ));
     }
 
-    let content = request_provider_chat(&settings, &api_key, &request).await?;
+    let context = build_ai_chat_context(&history)?;
+    let response = tauri::async_runtime::spawn_blocking(move || {
+        run_ai_chat_engine(&app, &settings, &api_key, &request, &context)
+    })
+    .await
+    .map_err(|error| error.to_string())??;
+
+    Ok(response)
+}
+
+fn build_ai_chat_context(history: &crate::HistoryBridge) -> Result<AiChatContext, String> {
+    let crawl_sessions = history.list_recent_ai_browser_sessions(5)?;
+    let latest_crawl = if let Some(session) = crawl_sessions.first() {
+        Some(AiChatCrawlContext {
+            session: session.clone(),
+            pages: history.list_ai_browser_pages(&session.id)?,
+            insights: history.list_ai_browser_insights(&session.id)?,
+            logs: history.list_ai_browser_logs(&session.id)?,
+        })
+    } else {
+        None
+    };
+
+    Ok(AiChatContext {
+        crawl_sessions,
+        latest_crawl,
+        proxy_summary: Vec::new(),
+    })
+}
+
+fn run_ai_chat_engine(
+    app: &AppHandle,
+    settings: &AiSettings,
+    api_key: &str,
+    request: &AiChatRequest,
+    context: &AiChatContext,
+) -> Result<AiChatResponse, String> {
+    let script = find_ai_engine_script(app)?;
+    let node = if cfg!(windows) { "node.exe" } else { "node" };
+    let mut command = Command::new(node);
+    command
+        .arg(script)
+        .env("APPRECON_AI_ENGINE_MODE", "chat")
+        .env(
+            "APPRECON_AI_CHAT_REQUEST_JSON",
+            serde_json::to_string(request).map_err(|error| error.to_string())?,
+        )
+        .env(
+            "APPRECON_AI_CONTEXT_JSON",
+            serde_json::to_string(context).map_err(|error| error.to_string())?,
+        )
+        .env("APPRECON_AI_PROVIDER", settings.provider.trim())
+        .env("APPRECON_AI_MODEL", settings.model.trim())
+        .env(api_key_env_name(&settings.provider)?, api_key.trim())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped());
+
+    let mut child = command
+        .spawn()
+        .map_err(|error| format!("Failed to start AI engine: {}", error))?;
+    let stdout = child
+        .stdout
+        .take()
+        .ok_or_else(|| "Failed to capture AI engine stdout".to_string())?;
+    let reader = BufReader::new(stdout);
+    let mut provider = settings.provider.clone();
+    let mut model = settings.model.clone();
+    let mut content = String::new();
+    let mut failed = None;
+
+    for line in reader.lines() {
+        let line = line.map_err(|error| error.to_string())?;
+        if line.trim().is_empty() {
+            continue;
+        }
+
+        let message: AiEngineChatMessage = serde_json::from_str(&line)
+            .map_err(|error| format!("Invalid AI engine message: {} ({})", line, error))?;
+        match message.message_type.as_str() {
+            "chat_started" => {
+                if let Some(value) = message.provider {
+                    provider = value;
+                }
+                if let Some(value) = message.model {
+                    model = value;
+                }
+            }
+            "chat_delta" => {
+                if let Some(delta) = message.delta {
+                    content.push_str(&delta);
+                }
+            }
+            "chat_finished" => {
+                if let Some(value) = message.provider {
+                    provider = value;
+                }
+                if let Some(value) = message.model {
+                    model = value;
+                }
+                if let Some(value) = message.content {
+                    content = value;
+                }
+            }
+            "chat_failed" => {
+                failed = Some(message.message.unwrap_or_else(|| "AI chat failed".to_string()));
+            }
+            _ => {}
+        }
+    }
+
+    let status = child.wait().map_err(|error| error.to_string())?;
+    if let Some(error) = failed {
+        return Err(error);
+    }
+    if !status.success() {
+        return Err(format!("AI engine exited with {}", status));
+    }
+    if content.trim().is_empty() {
+        return Err("AI engine did not return chat content".to_string());
+    }
 
     Ok(AiChatResponse {
-        provider: settings.provider,
-        model: settings.model,
+        provider,
+        model,
         content,
     })
 }
@@ -191,81 +341,6 @@ pub(crate) fn read_ai_settings(app: &AppHandle) -> Result<AiSettings, String> {
     settings.api_key.clear();
     settings.has_api_key = read_api_key(&settings.provider).is_ok_and(|key| !key.is_empty());
     Ok(settings)
-}
-
-async fn request_provider_chat(
-    settings: &AiSettings,
-    api_key: &str,
-    request: &AiChatRequest,
-) -> Result<String, String> {
-    let endpoint = match settings.provider.as_str() {
-        "openai" => "https://api.openai.com/v1/chat/completions",
-        "deepseek" => "https://api.deepseek.com/chat/completions",
-        provider => return Err(format!("Unsupported AI provider: {}", provider)),
-    };
-
-    let mut messages = vec![serde_json::json!({
-        "role": "system",
-        "content": chat_system_prompt(),
-    })];
-
-    messages.extend(
-        request
-            .messages
-            .iter()
-            .filter(|message| {
-                matches!(message.role.as_str(), "user" | "assistant")
-                    && !message.content.trim().is_empty()
-            })
-            .map(|message| {
-                serde_json::json!({
-                    "role": message.role,
-                    "content": message.content,
-                })
-            }),
-    );
-
-    let body = serde_json::json!({
-        "model": settings.model,
-        "messages": messages,
-    });
-
-    let response = reqwest::Client::new()
-        .post(endpoint)
-        .bearer_auth(api_key)
-        .json(&body)
-        .send()
-        .await
-        .map_err(|error| format!("Failed to call {}: {}", settings.provider, error))?;
-
-    let status = response.status();
-    let payload = response
-        .json::<Value>()
-        .await
-        .map_err(|error| format!("Failed to decode {} response: {}", settings.provider, error))?;
-
-    if !status.is_success() {
-        let message = payload
-            .pointer("/error/message")
-            .and_then(Value::as_str)
-            .unwrap_or("Provider returned an error");
-        return Err(format!("{} API error: {}", settings.provider, message));
-    }
-
-    payload
-        .pointer("/choices/0/message/content")
-        .and_then(Value::as_str)
-        .map(str::to_string)
-        .ok_or_else(|| {
-            format!(
-                "{} response did not include chat content",
-                settings.provider
-            )
-        })
-}
-
-fn chat_system_prompt() -> &'static str {
-    "You are AppRecon's AI chat assistant. Be concise, practical, and helpful for application security and recon workflows."
 }
 
 fn write_ai_settings(app: &AppHandle, settings: &AiSettings) -> Result<(), String> {
@@ -420,6 +495,25 @@ fn find_mastra_dir(app: &AppHandle) -> Result<PathBuf, String> {
         .ok_or_else(|| {
             "Mastra folder not found. Expected a mastra/package.json near the app.".to_string()
         })
+}
+
+fn find_ai_engine_script(app: &AppHandle) -> Result<PathBuf, String> {
+    let mut candidates = Vec::new();
+
+    if let Ok(current_dir) = std::env::current_dir() {
+        candidates.push(current_dir.join("scripts/ai-engine/index.mjs"));
+        candidates.push(current_dir.join("../scripts/ai-engine/index.mjs"));
+    }
+
+    if let Ok(resource_dir) = app.path().resource_dir() {
+        candidates.push(resource_dir.join("scripts/ai-engine/index.mjs"));
+        candidates.push(resource_dir.join("scripts/ai-browser-sidecar/index.mjs"));
+    }
+
+    candidates
+        .into_iter()
+        .find(|candidate| candidate.exists())
+        .ok_or_else(|| "AI engine script not found".to_string())
 }
 
 fn read_mastra_env_file(

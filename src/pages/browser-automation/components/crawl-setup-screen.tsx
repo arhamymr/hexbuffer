@@ -1,6 +1,7 @@
 'use client';
 
-import { Bookmark, FolderOpen, Play, Settings2 } from 'lucide-react';
+import { useCallback, useState } from 'react';
+import { Settings2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -20,24 +21,94 @@ interface CrawlSetupScreenProps {
   setup: CrawlSetupConfig;
   disabled: boolean;
   onSetupChange: (patch: Partial<CrawlSetupConfig>) => void;
-  onStart: () => void;
+  onSave: () => void;
 }
 
-function numberValue(value: string, fallback: number) {
+/** Clamp a numeric string to [min, max] and return the clamped number. */
+function clampNumber(value: string, min: number, max: number, fallback: number) {
   const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : fallback;
+  if (!Number.isFinite(parsed)) return fallback;
+  return Math.min(max, Math.max(min, parsed));
+}
+
+/** Validation error messages per field. */
+interface ValidationErrors {
+  targetUrl?: string;
+  maxDepth?: string;
+  maxPages?: string;
+  requestDelayMs?: string;
+  timeoutMs?: string;
+  networkSettleMs?: string;
+  excludePaths?: string;
+}
+
+function validate(setup: CrawlSetupConfig): ValidationErrors {
+  const errors: ValidationErrors = {};
+
+  if (!setup.targetUrl.trim()) {
+    errors.targetUrl = 'Target URL is required.';
+  } else {
+    try {
+      const url = new URL(setup.targetUrl);
+      if (!['http:', 'https:'].includes(url.protocol)) {
+        errors.targetUrl = 'URL must start with http:// or https://.';
+      }
+    } catch {
+      errors.targetUrl = 'Enter a valid URL (e.g. https://example.com).';
+    }
+  }
+
+  if (setup.maxDepth < 1) errors.maxDepth = 'Must be at least 1.';
+  if (setup.maxDepth > 20) errors.maxDepth = 'Maximum depth is 20.';
+
+  if (setup.maxPages < 1) errors.maxPages = 'Must be at least 1.';
+  if (setup.maxPages > 10000) errors.maxPages = 'Maximum is 10,000.';
+
+  if (setup.requestDelayMs < 0) errors.requestDelayMs = 'Cannot be negative.';
+  if (setup.requestDelayMs > 30000) errors.requestDelayMs = 'Maximum is 30,000 ms.';
+
+  if (setup.timeoutMs < 1000) errors.timeoutMs = 'Must be at least 1,000 ms.';
+  if (setup.timeoutMs > 120000) errors.timeoutMs = 'Maximum is 120,000 ms.';
+
+  const settleMs = setup.networkSettleMs ?? 2000;
+  if (settleMs < 0) errors.networkSettleMs = 'Cannot be negative.';
+  if (settleMs > 30000) errors.networkSettleMs = 'Maximum is 30,000 ms.';
+
+  // Validate exclude paths: each entry should start with /
+  if (setup.excludePaths.trim()) {
+    const segments = setup.excludePaths.split(',').map((s) => s.trim()).filter(Boolean);
+    const invalid = segments.filter((s) => !s.startsWith('/'));
+    if (invalid.length > 0) {
+      errors.excludePaths = `Each path must start with /. Invalid: ${invalid.join(', ')}`;
+    }
+  }
+
+  return errors;
+}
+
+function hasErrors(errors: ValidationErrors) {
+  return Object.values(errors).some((v) => v !== undefined);
 }
 
 export function CrawlSetupScreen({
   setup,
   disabled,
   onSetupChange,
-  onStart,
+  onSave,
 }: CrawlSetupScreenProps) {
+  const [open, setOpen] = useState(false);
+  const errors = validate(setup);
+  const canSave = !hasErrors(errors) && setup.targetUrl.trim().length > 0;
+
+  const handleSave = useCallback(() => {
+    onSave();
+    setOpen(false);
+  }, [onSave]);
+
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline">
+        <Button variant="outline" disabled={disabled}>
           <Settings2 className="h-4 w-4" />
           Crawl Config
         </Button>
@@ -51,6 +122,7 @@ export function CrawlSetupScreen({
         </DialogHeader>
 
         <div className="max-h-[68vh] space-y-4 overflow-auto pr-1">
+          {/* Target URL */}
           <div className="space-y-2">
             <Label htmlFor="target-url">Target URL</Label>
             <Input
@@ -61,116 +133,137 @@ export function CrawlSetupScreen({
               onChange={(event) => onSetupChange({ targetUrl: event.target.value })}
               disabled={disabled}
             />
+            {errors.targetUrl && <p className="text-xs text-destructive">{errors.targetUrl}</p>}
           </div>
 
+          {/* Numeric fields */}
           <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-2">
-            <Label htmlFor="max-depth">Max Depth</Label>
-            <Input
-              id="max-depth"
-              type="number"
-              min={1}
-              value={setup.maxDepth}
-              onChange={(event) => onSetupChange({ maxDepth: numberValue(event.target.value, setup.maxDepth) })}
-              disabled={disabled}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="max-pages">Max Pages</Label>
-            <Input
-              id="max-pages"
-              type="number"
-              min={1}
-              value={setup.maxPages}
-              onChange={(event) => onSetupChange({ maxPages: numberValue(event.target.value, setup.maxPages) })}
-              disabled={disabled}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="request-delay">Delay</Label>
-            <Input
-              id="request-delay"
-              type="number"
-              min={0}
-              value={setup.requestDelayMs}
-              onChange={(event) =>
-                onSetupChange({ requestDelayMs: numberValue(event.target.value, setup.requestDelayMs) })
-              }
-              disabled={disabled}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="timeout">Timeout</Label>
-            <Input
-              id="timeout"
-              type="number"
-              min={1000}
-              value={setup.timeoutMs}
-              onChange={(event) => onSetupChange({ timeoutMs: numberValue(event.target.value, setup.timeoutMs) })}
-              disabled={disabled}
-            />
-          </div>
-        </div>
-
-        <div className="space-y-3">
-          <div className="flex items-center justify-between rounded-md border p-2">
-            <div>
-              <div className="text-sm font-medium">Same-domain only</div>
-              <div className="text-xs text-muted-foreground">Keep navigation inside the target origin.</div>
+            <div className="space-y-2">
+              <Label htmlFor="max-depth">Max Depth</Label>
+              <Input
+                id="max-depth"
+                type="number"
+                min={1}
+                max={20}
+                value={setup.maxDepth}
+                onChange={(event) =>
+                  onSetupChange({ maxDepth: clampNumber(event.target.value, 1, 20, setup.maxDepth) })
+                }
+                disabled={disabled}
+              />
+              {errors.maxDepth && <p className="text-xs text-destructive">{errors.maxDepth}</p>}
             </div>
-            <Switch
-              checked={setup.sameDomainOnly}
-              onCheckedChange={(checked) => onSetupChange({ sameDomainOnly: checked })}
-              disabled={disabled}
-            />
+            <div className="space-y-2">
+              <Label htmlFor="max-pages">Max Pages</Label>
+              <Input
+                id="max-pages"
+                type="number"
+                min={1}
+                max={10000}
+                value={setup.maxPages}
+                onChange={(event) =>
+                  onSetupChange({ maxPages: clampNumber(event.target.value, 1, 10000, setup.maxPages) })
+                }
+                disabled={disabled}
+              />
+              {errors.maxPages && <p className="text-xs text-destructive">{errors.maxPages}</p>}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="request-delay">Delay (ms)</Label>
+              <Input
+                id="request-delay"
+                type="number"
+                min={0}
+                max={30000}
+                value={setup.requestDelayMs}
+                onChange={(event) =>
+                  onSetupChange({ requestDelayMs: clampNumber(event.target.value, 0, 30000, setup.requestDelayMs) })
+                }
+                disabled={disabled}
+              />
+              {errors.requestDelayMs && <p className="text-xs text-destructive">{errors.requestDelayMs}</p>}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="timeout">Timeout (ms)</Label>
+              <Input
+                id="timeout"
+                type="number"
+                min={1000}
+                max={120000}
+                value={setup.timeoutMs}
+                onChange={(event) =>
+                  onSetupChange({ timeoutMs: clampNumber(event.target.value, 1000, 120000, setup.timeoutMs) })
+                }
+                disabled={disabled}
+              />
+              {errors.timeoutMs && <p className="text-xs text-destructive">{errors.timeoutMs}</p>}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="network-settle">Network Settle (ms)</Label>
+              <Input
+                id="network-settle"
+                type="number"
+                min={0}
+                max={30000}
+                step={500}
+                value={setup.networkSettleMs ?? 2000}
+                onChange={(event) =>
+                  onSetupChange({ networkSettleMs: clampNumber(event.target.value, 0, 30000, 2000) })
+                }
+                disabled={disabled}
+              />
+              <p className="text-xs text-muted-foreground">Extra wait after page load to capture API/XHR calls.</p>
+              {errors.networkSettleMs && <p className="text-xs text-destructive">{errors.networkSettleMs}</p>}
+            </div>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="include-paths">Include Paths</Label>
-            <Input
-              id="include-paths"
-              className="font-mono"
-              value={setup.includePaths}
-              onChange={(event) => onSetupChange({ includePaths: event.target.value })}
-              disabled={disabled}
-            />
+
+          {/* Scope rules */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between rounded-md border p-2">
+              <div>
+                <div className="text-sm font-medium">Same-domain only</div>
+                <div className="text-xs text-muted-foreground">Keep navigation inside the target origin.</div>
+              </div>
+              <Switch
+                checked={setup.sameDomainOnly}
+                onCheckedChange={(checked) => onSetupChange({ sameDomainOnly: checked })}
+                disabled={disabled}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="exclude-paths">Exclude Paths</Label>
+              <Input
+                id="exclude-paths"
+                className="font-mono"
+                placeholder="/logout, /delete, /billing"
+                value={setup.excludePaths}
+                onChange={(event) => onSetupChange({ excludePaths: event.target.value })}
+                disabled={disabled}
+              />
+              <p className="text-xs text-muted-foreground">Comma-separated paths to skip. Each must start with /.</p>
+              {errors.excludePaths && <p className="text-xs text-destructive">{errors.excludePaths}</p>}
+            </div>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="exclude-paths">Exclude Paths</Label>
-            <Input
-              id="exclude-paths"
-              className="font-mono"
-              value={setup.excludePaths}
-              onChange={(event) => onSetupChange({ excludePaths: event.target.value })}
-              disabled={disabled}
-            />
+
+          {/* AI insights toggle */}
+          <div className="grid grid-cols-1 gap-2">
+            <div className="flex items-center justify-between rounded-md border p-2">
+              <div>
+                <div className="text-sm">AI insights</div>
+                <div className="text-xs text-muted-foreground">Analyze each page for security findings.</div>
+              </div>
+              <Switch
+                checked={setup.enableAiInsights}
+                onCheckedChange={(checked) => onSetupChange({ enableAiInsights: checked })}
+                disabled={disabled}
+              />
+            </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-2">
-          <div className="flex items-center justify-between rounded-md border p-2">
-            <span className="text-sm">AI insights</span>
-            <Switch
-              checked={setup.enableAiInsights}
-              onCheckedChange={(checked) => onSetupChange({ enableAiInsights: checked })}
-              disabled={disabled}
-            />
-          </div>
-        </div>
-
-        </div>
-
-        <DialogFooter className="grid grid-cols-[1fr_auto_auto] gap-2 sm:flex">
-          <Button onClick={onStart} disabled={disabled || !setup.targetUrl.trim()}>
-            <Play className="h-4 w-4" />
-            Start Crawl
-          </Button>
-          <Button variant="outline" disabled={disabled}>
-            <Bookmark className="h-4 w-4" />
+        <DialogFooter>
+          <Button onClick={handleSave} disabled={disabled || !canSave}>
             Save
-          </Button>
-          <Button variant="outline" disabled={disabled}>
-            <FolderOpen className="h-4 w-4" />
-            Load
           </Button>
         </DialogFooter>
       </DialogContent>

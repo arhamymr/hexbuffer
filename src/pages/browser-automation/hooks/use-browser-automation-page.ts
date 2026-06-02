@@ -13,6 +13,7 @@ import type {
   CrawlPage,
   CrawlPageStatus,
   CrawlSession,
+  HumanInputRequest,
   InsightSeverity,
 } from '../types';
 
@@ -29,8 +30,10 @@ export function useBrowserAutomationPage() {
     logs,
     selectedPageId,
     expandedPageIds,
+    humanInputRequest,
     overview,
     updateSetup,
+    saveConfig,
     startCrawl,
     pauseCrawl,
     resumeCrawl,
@@ -47,6 +50,8 @@ export function useBrowserAutomationPage() {
     applyPageUpdated,
     applyInsightCreated,
     applyLogCreated,
+    applyHumanInputRequested,
+    clearHumanInputRequest,
   } = useBrowserAutomationStore();
 
   const [pageSearch, setPageSearch] = useState('');
@@ -79,6 +84,9 @@ export function useBrowserAutomationPage() {
         }));
         unlisteners.push(await listen<ActivityLog>('ai-browser:log-created', (event) => {
           applyLogCreated(event.payload);
+        }));
+        unlisteners.push(await listen<HumanInputRequest>('ai-browser:human-input-requested', (event) => {
+          applyHumanInputRequested(event.payload);
         }));
         unlisteners.push(await listen<CrawlSession>('ai-browser:session-finished', (event) => {
           applySessionUpdated({ ...event.payload, status: 'completed' });
@@ -114,6 +122,7 @@ export function useBrowserAutomationPage() {
     applyPageUpdated,
     applySessionStarted,
     applySessionUpdated,
+    applyHumanInputRequested,
     session?.id,
   ]);
 
@@ -196,6 +205,7 @@ export function useBrowserAutomationPage() {
     pages,
     insights,
     logs,
+    humanInputRequest,
     crawlTree,
     selectedPage,
     expandedPageIds,
@@ -209,10 +219,12 @@ export function useBrowserAutomationPage() {
     filteredInsights,
     filteredLogs,
     updateSetup,
+    saveConfig,
     startCrawl,
     pauseCrawl,
     resumeCrawl,
     stopCrawl,
+    clearHumanInputRequest,
     exportCrawl,
     exportInsights,
     exportLogs,

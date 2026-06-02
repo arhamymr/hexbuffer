@@ -84,7 +84,7 @@ export function CrawlTreePanel({
   const treeNodes = nodes.map(toTreeNode);
 
   return (
-    <section className="flex min-h-0 flex-col border-b bg-background xl:border-b-0 xl:border-r">
+    <section className="flex min-h-0 flex-col border-b bg-background">
       <div className="border-b flex gap-2 px-3 py-2">
         <div className='flex-1'>
           <div className="text-sm font-medium">Crawl Tree</div>

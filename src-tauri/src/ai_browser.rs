@@ -16,11 +16,11 @@ pub struct CrawlConfig {
     pub max_depth: u32,
     pub max_pages: u32,
     pub same_domain_only: bool,
-    pub include_paths: Option<String>,
     pub exclude_paths: Option<String>,
     pub request_delay_ms: u64,
     pub timeout_ms: u64,
     pub enable_ai_insights: bool,
+    pub network_settle_ms: Option<u64>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -116,6 +116,9 @@ struct SidecarMessage {
     severity: Option<String>,
     message: Option<String>,
     description: Option<String>,
+    reason: Option<String>,
+    requested_fields: Option<Vec<String>>,
+    safe_actions: Option<Vec<String>>,
     created_at: Option<String>,
     finished_at: Option<String>,
 }
@@ -206,11 +209,14 @@ fn find_sidecar_script(app: &AppHandle) -> Result<PathBuf, String> {
     let mut candidates = Vec::new();
 
     if let Ok(current_dir) = std::env::current_dir() {
+        candidates.push(current_dir.join("scripts/ai-engine/index.mjs"));
         candidates.push(current_dir.join("scripts/ai-browser-sidecar/index.mjs"));
+        candidates.push(current_dir.join("../scripts/ai-engine/index.mjs"));
         candidates.push(current_dir.join("../scripts/ai-browser-sidecar/index.mjs"));
     }
 
     if let Ok(resource_dir) = app.path().resource_dir() {
+        candidates.push(resource_dir.join("scripts/ai-engine/index.mjs"));
         candidates.push(resource_dir.join("scripts/ai-browser-sidecar/index.mjs"));
     }
 
@@ -368,6 +374,44 @@ fn apply_sidecar_message(
                 },
             );
         }
+        "human_input_requested" => {
+            let request = serde_json::json!({
+                "id": message.id.unwrap_or_else(|| Uuid::new_v4().to_string()),
+                "sessionId": message.session_id.clone().unwrap_or_else(|| session_id.to_string()),
+                "pageId": message.page_id,
+                "url": message.url,
+                "reason": message.reason.or(message.message).unwrap_or_else(|| "Human input is required before the agent can continue.".to_string()),
+                "requestedFields": message.requested_fields.unwrap_or_default(),
+                "safeActions": message.safe_actions.unwrap_or_else(|| vec![
+                    "continue".to_string(),
+                    "skip-branch".to_string(),
+                    "stop-crawl".to_string(),
+                ]),
+                "createdAt": message.created_at.unwrap_or_else(now),
+            });
+            let _ = update_session(app, state, session_id, "paused", None);
+            add_log(
+                app,
+                state,
+                ActivityLog {
+                    id: Uuid::new_v4().to_string(),
+                    session_id: session_id.to_string(),
+                    level: "warning".to_string(),
+                    r#type: "policy".to_string(),
+                    message: request
+                        .get("reason")
+                        .and_then(|value| value.as_str())
+                        .unwrap_or("Human input requested")
+                        .to_string(),
+                    url: request
+                        .get("url")
+                        .and_then(|value| value.as_str())
+                        .map(str::to_string),
+                    created_at: now(),
+                },
+            );
+            let _ = app.emit("ai-browser:human-input-requested", request);
+        }
         "session_finished" => {
             let finished_at = message.finished_at.unwrap_or_else(now);
             if let Ok(session) =
@@ -493,6 +537,16 @@ pub async fn ai_browser_start_crawl(
     config: CrawlConfig,
     session_id: Option<String>,
 ) -> Result<CrawlSession, String> {
+    // Ensure the AppRecon proxy is running before starting the crawl.
+    // Playwright routes all traffic through the proxy, so a missing proxy
+    // causes ERR_PROXY_CONNECTION_FAILED in the headless browser.
+    let proxy_port = crate::proxy::active_proxy_port().unwrap_or(0);
+    if proxy_port == 0 {
+        return Err(
+            "The AppRecon proxy is not running. Start the proxy first, then retry the crawl.".to_string()
+        );
+    }
+
     let session = CrawlSession {
         id: session_id.unwrap_or_else(|| format!("crawl-{}", Uuid::new_v4())),
         target_url: config.target_url.clone(),

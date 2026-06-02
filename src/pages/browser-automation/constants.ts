@@ -11,11 +11,11 @@ export const DEFAULT_CRAWL_SETUP: CrawlSetupConfig = {
   maxDepth: 5,
   maxPages: 500,
   sameDomainOnly: true,
-  includePaths: '/app/*, /dashboard/*',
   excludePaths: '/logout, /delete, /billing',
   requestDelayMs: 500,
   timeoutMs: 30000,
   enableAiInsights: true,
+  networkSettleMs: 2000,
 };
 
 export const PAGE_STATUS_LABELS: Record<CrawlPageStatus, string> = {

@@ -86,6 +86,12 @@ impl HistoryBridge {
             .map_err(|e| e.to_string())
     }
 
+    pub fn list_recent_ai_browser_sessions(&self, limit: u32) -> Result<Vec<CrawlSession>, String> {
+        self.db
+            .list_recent_ai_browser_sessions(limit)
+            .map_err(|e| e.to_string())
+    }
+
     pub fn upsert_ai_browser_page(&self, page: &CrawlPage) -> Result<(), String> {
         self.db
             .upsert_ai_browser_page(page)

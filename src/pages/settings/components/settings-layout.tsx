@@ -1,4 +1,4 @@
-import { InfoIcon, SettingsIcon, ShieldCheckIcon } from 'lucide-react';
+import { InfoIcon, SettingsIcon, ShieldCheckIcon, BotIcon } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import type { SettingsPageState } from '../hooks/use-settings-page';
 import { AboutSettingsTab } from './about-settings-tab';
@@ -29,10 +29,10 @@ export function SettingsLayout({ settings }: SettingsLayoutProps) {
               <ShieldCheckIcon className="size-4" />
               CA Certificate
             </TabsTrigger>
-            {/* <TabsTrigger value="ai">
+            <TabsTrigger value="ai">
               <BotIcon className="size-4" />
               AI
-            </TabsTrigger> */}
+            </TabsTrigger>
             <TabsTrigger value="about">
               <InfoIcon className="size-4" />
               About
@@ -48,9 +48,9 @@ export function SettingsLayout({ settings }: SettingsLayoutProps) {
           <AboutSettingsTab />
         </TabsContent>
 
-        {/* <TabsContent value="ai" className="flex-1 overflow-auto px-6 py-4 space-y-4">
+        <TabsContent value="ai" className="flex-1 overflow-auto px-6 py-4 space-y-4">
           <AiSettingsTab settings={settings} />
-        </TabsContent> */}
+        </TabsContent>
 
         <TabsContent value="ca-cert" className="flex-1 overflow-auto px-6 py-4 space-y-4">
           <CaCertificateSettingsTab settings={settings} />

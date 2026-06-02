@@ -18,11 +18,11 @@ export interface CrawlSetupConfig {
   maxDepth: number;
   maxPages: number;
   sameDomainOnly: boolean;
-  includePaths: string;
   excludePaths: string;
   requestDelayMs: number;
   timeoutMs: number;
   enableAiInsights: boolean;
+  networkSettleMs?: number;
 }
 
 export interface CrawlSession {
@@ -73,6 +73,17 @@ export interface ActivityLog {
   type: ActivityLogType;
   message: string;
   url?: string;
+  createdAt: string;
+}
+
+export interface HumanInputRequest {
+  id: string;
+  sessionId: string;
+  pageId?: string;
+  url?: string;
+  reason: string;
+  requestedFields: string[];
+  safeActions: Array<'continue' | 'skip-branch' | 'stop-crawl'>;
   createdAt: string;
 }
 

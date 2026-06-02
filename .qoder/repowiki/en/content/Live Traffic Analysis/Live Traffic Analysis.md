@@ -9,12 +9,12 @@
 - [use-http-history-page.ts](file://src/pages/live-traffic/hooks/use-http-history-page.ts)
 - [use-history-table.ts](file://src/pages/live-traffic/hooks/use-history-table.ts)
 - [use-history-tree.ts](file://src/pages/live-traffic/hooks/use-history-tree.ts)
+- [use-tree-view-data.ts](file://src/pages/live-traffic/hooks/use-tree-view-data.ts)
 - [use-websocket-table.ts](file://src/pages/live-traffic/hooks/use-websocket-table.ts)
 - [history-query-store.ts](file://src/pages/live-traffic/state/history-query-store.ts)
 - [build-history-query.ts](file://src/pages/live-traffic/state/build-history-query.ts)
 - [http-history-view/index.tsx](file://src/pages/live-traffic/components/http-history-view/index.tsx)
 - [websocket-history-view/index.tsx](file://src/pages/live-traffic/components/websocket-history-view/index.tsx)
-- [tree-view/index.tsx](file://src/pages/live-traffic/components/tree-view/index.tsx)
 - [log-filters.tsx](file://src/pages/live-traffic/components/log-table/log-filters.tsx)
 - [log-table/calls-columns.tsx](file://src/pages/live-traffic/components/log-table/calls-columns.tsx)
 - [log-table/log-entry-view.tsx](file://src/pages/live-traffic/components/log-table/log-entry-view.tsx)
@@ -26,7 +26,18 @@
 - [src-tauri/proxy/mod.rs](file://src-tauri/proxy/mod.rs)
 - [src-tauri/proxy/logger.rs](file://src-tauri/proxy/logger.rs)
 - [src-tauri/proxy/websocket.rs](file://src-tauri/proxy/websocket.rs)
+- [components/tree-view/index.tsx](file://src/components/tree-view/index.tsx)
+- [components/tree-view/tree-node.tsx](file://src/components/tree-view/tree-node.tsx)
+- [components/tree-view/types.ts](file://src/components/tree-view/types.ts)
+- [browser-automation/components/crawl-tree-panel.tsx](file://src/pages/browser-automation/components/crawl-tree-panel.tsx)
 </cite>
+
+## Update Summary
+**Changes Made**
+- Updated Tree View component location from live-traffic specific folder to shared components location
+- Added documentation for the shared TreeView component architecture and reusability benefits
+- Updated import references and component usage patterns
+- Enhanced Tree View component documentation with improved reusability information
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -41,10 +52,14 @@
 10. [Appendices](#appendices)
 
 ## Introduction
-This document explains AppRecon’s Live Traffic Analysis feature, covering real-time HTTP and WebSocket traffic visualization, filtering, and performance metrics display. It documents the HTTP history management system (request/response inspection, search/filtering, and clearing), the hierarchical tree view for traffic organization and target selection, and WebSocket-specific connection and message analysis. It also outlines the underlying database schema, query optimization strategies, data retention policies, and practical workflows for efficient traffic analysis.
+This document explains AppRecon's Live Traffic Analysis feature, covering real-time HTTP and WebSocket traffic visualization, filtering, and performance metrics display. It documents the HTTP history management system (request/response inspection, search/filtering, and clearing), the hierarchical tree view for traffic organization and target selection, and WebSocket-specific connection and message analysis. It also outlines the underlying database schema, query optimization strategies, data retention policies, and practical workflows for efficient traffic analysis.
+
+**Updated** The Tree View component has been reorganized from live-traffic specific components to a shared location (`src/components/tree-view/`) for better reusability across different features like browser automation and live traffic analysis.
 
 ## Project Structure
 The Live Traffic feature is implemented as a React page with TypeScript hooks, UI components, and a service layer that bridges to Tauri backend commands. The frontend manages state via zustand stores, debounced queries, and event listeners for real-time updates. The backend persists and retrieves traffic data using a Rust-based persistence layer.
+
+**Updated** The Tree View component has been moved to a shared location for better reusability across different parts of the application.
 
 ```mermaid
 graph TB
@@ -53,11 +68,16 @@ LT["LiveTrafficPage<br/>index.tsx"]
 HF["HTTP Filters<br/>log-filters.tsx"]
 HTV["HTTP History View<br/>http-history-view/index.tsx"]
 WSV["WebSocket History View<br/>websocket-history-view/index.tsx"]
-TV["Tree View<br/>tree-view/index.tsx"]
-HOOKS["Hooks<br/>use-history-table.ts, use-websocket-table.ts,<br/>use-history-tree.ts, use-http-history-page.ts"]
+TV["Tree View<br/>components/tree-view/index.tsx"]
+HOOKS["Hooks<br/>use-history-table.ts, use-websocket-table.ts,<br/>use-history-tree.ts, use-http-history-page.ts, use-tree-view-data.ts"]
 STORE["State Stores<br/>history-query-store.ts, build-history-query.ts"]
 SVC["Services<br/>history-service.ts"]
 API["API Layer<br/>api.ts"]
+end
+subgraph "Shared Components"
+SHARED_TV["Shared TreeView<br/>components/tree-view/"]
+SHARED_TN["TreeNode<br/>components/tree-view/tree-node.tsx"]
+SHARED_TYPES["Tree Types<br/>components/tree-view/types.ts"]
 end
 subgraph "Backend (Tauri)"
 CMD["Commands<br/>src-tauri/commands/history.rs"]
@@ -69,6 +89,9 @@ LT --> HF
 LT --> HTV
 LT --> WSV
 LT --> TV
+TV --> SHARED_TV
+SHARED_TV --> SHARED_TN
+SHARED_TV --> SHARED_TYPES
 HTV --> HOOKS
 WSV --> HOOKS
 TV --> HOOKS
@@ -86,10 +109,13 @@ WS --> CMD
 - [log-filters.tsx:36-186](file://src/pages/live-traffic/components/log-table/log-filters.tsx#L36-L186)
 - [http-history-view/index.tsx:7-20](file://src/pages/live-traffic/components/http-history-view/index.tsx#L7-L20)
 - [websocket-history-view/index.tsx:9-27](file://src/pages/live-traffic/components/websocket-history-view/index.tsx#L9-L27)
-- [tree-view/index.tsx:12-69](file://src/pages/live-traffic/components/tree-view/index.tsx#L12-L69)
+- [components/tree-view/index.tsx:12-69](file://src/components/tree-view/index.tsx#L12-L69)
+- [components/tree-view/tree-node.tsx:42-151](file://src/components/tree-view/tree-node.tsx#L42-L151)
+- [components/tree-view/types.ts:21-35](file://src/components/tree-view/types.ts#L21-L35)
 - [use-history-table.ts:96-278](file://src/pages/live-traffic/hooks/use-history-table.ts#L96-L278)
 - [use-websocket-table.ts:35-184](file://src/pages/live-traffic/hooks/use-websocket-table.ts#L35-L184)
 - [use-history-tree.ts:8-41](file://src/pages/live-traffic/hooks/use-history-tree.ts#L8-L41)
+- [use-tree-view-data.ts:68-87](file://src/pages/live-traffic/hooks/use-tree-view-data.ts#L68-L87)
 - [use-http-history-page.ts:13-120](file://src/pages/live-traffic/hooks/use-http-history-page.ts#L13-L120)
 - [history-query-store.ts:40-140](file://src/pages/live-traffic/state/history-query-store.ts#L40-L140)
 - [build-history-query.ts:12-98](file://src/pages/live-traffic/state/build-history-query.ts#L12-L98)
@@ -111,20 +137,25 @@ WS --> CMD
 - HTTP Filters provide search, method/status filtering, sitemap toggle, and bulk clear operations.
 - HTTP History View displays a table of calls and a detail panel for request/response inspection.
 - WebSocket History View displays connections and a detail panel for messages.
-- Tree View organizes traffic by host and path for quick navigation and filtering.
-- Hooks manage real-time updates, pagination, sorting, and filtering for both HTTP and WebSocket histories.
+- Tree View (Shared Component) organizes traffic by host and path for quick navigation and filtering, now located in a shared components directory for better reusability.
+- Hooks manage real-time updates, pagination, sorting, and filtering for both HTTP and WebSocket histories, including specialized hooks for tree view data management.
 - Services translate frontend queries into backend commands and handle pagination.
 - State stores encapsulate filter state, pagination, and refresh triggers.
+
+**Updated** The Tree View component has been moved to a shared location (`src/components/tree-view/`) to improve code reusability across different features like browser automation and live traffic analysis.
 
 **Section sources**
 - [index.tsx:13-77](file://src/pages/live-traffic/index.tsx#L13-L77)
 - [log-filters.tsx:36-186](file://src/pages/live-traffic/components/log-table/log-filters.tsx#L36-L186)
 - [http-history-view/index.tsx:7-20](file://src/pages/live-traffic/components/http-history-view/index.tsx#L7-L20)
 - [websocket-history-view/index.tsx:9-27](file://src/pages/live-traffic/components/websocket-history-view/index.tsx#L9-L27)
-- [tree-view/index.tsx:12-69](file://src/pages/live-traffic/components/tree-view/index.tsx#L12-L69)
+- [components/tree-view/index.tsx:12-69](file://src/components/tree-view/index.tsx#L12-L69)
+- [components/tree-view/tree-node.tsx:42-151](file://src/components/tree-view/tree-node.tsx#L42-L151)
+- [components/tree-view/types.ts:21-35](file://src/components/tree-view/types.ts#L21-L35)
 - [use-history-table.ts:96-278](file://src/pages/live-traffic/hooks/use-history-table.ts#L96-L278)
 - [use-websocket-table.ts:35-184](file://src/pages/live-traffic/hooks/use-websocket-table.ts#L35-L184)
 - [use-history-tree.ts:8-41](file://src/pages/live-traffic/hooks/use-history-tree.ts#L8-L41)
+- [use-tree-view-data.ts:68-87](file://src/pages/live-traffic/hooks/use-tree-view-data.ts#L68-L87)
 - [history-service.ts:20-57](file://src/pages/live-traffic/services/history-service.ts#L20-L57)
 - [history-query-store.ts:40-140](file://src/pages/live-traffic/state/history-query-store.ts#L40-L140)
 - [build-history-query.ts:12-98](file://src/pages/live-traffic/state/build-history-query.ts#L12-L98)
@@ -136,6 +167,9 @@ The Live Traffic feature follows a layered architecture:
 - Backend Commands: Persist and retrieve traffic data from the database.
 - Database: Stores HTTP and WebSocket records with indices for efficient querying.
 - Proxy/Logger: Captures and emits live traffic events to the frontend.
+- Shared Components: Reusable UI components like TreeView are centralized for better maintainability and code reuse.
+
+**Updated** The architecture now includes shared components that can be reused across different features, improving maintainability and reducing code duplication.
 
 ```mermaid
 sequenceDiagram
@@ -146,6 +180,7 @@ participant Service as "History Service"
 participant API as "Frontend API"
 participant Cmd as "Tauri Command"
 participant DB as "Database"
+participant SharedComp as "Shared Components"
 UI->>Hooks : User interacts (filters, pagination)
 Hooks->>Store : Update filter/page/sort
 Store-->>Hooks : Query derived from state
@@ -158,6 +193,8 @@ Cmd-->>API : JSON payload
 API-->>Service : Typed DTOs
 Service-->>Hooks : Data + pagination
 Hooks-->>UI : Render table/detail
+UI->>SharedComp : Use shared TreeView component
+SharedComp-->>UI : Render hierarchical navigation
 Note over Hooks,UI : Real-time updates via event listeners
 ```
 
@@ -169,11 +206,12 @@ Note over Hooks,UI : Real-time updates via event listeners
 - [src-tauri/commands/history.rs](file://src-tauri/commands/history.rs)
 - [src-tauri/db/schema.rs](file://src-tauri/db/schema.rs)
 - [src-tauri/db/repository.rs](file://src-tauri/db/repository.rs)
+- [components/tree-view/index.tsx:12-69](file://src/components/tree-view/index.tsx#L12-L69)
 
 ## Detailed Component Analysis
 
 ### Real-Time Traffic Visualization
-- HTTP table listens for proxy-record events and refreshes the first page after a debounce to avoid UI thrashing. New events increment a counter when off-first-page, enabling “new events” UX.
+- HTTP table listens for proxy-record events and refreshes the first page after a debounce to avoid UI thrashing. New events increment a counter when off-first-page, enabling "new events" UX.
 - WebSocket table listens for websocket-connection events and applies similar debounce logic for live updates.
 - Sorting is controlled via a sort order flag passed to the backend; pagination is handled by page/perPage parameters.
 
@@ -272,24 +310,27 @@ Hook-->>UI : Render detail panel
 ### Tree View Navigation and Target Selection
 - The tree is built from captured HTTP calls and grouped by host and path. Selecting a host applies a host filter; selecting an endpoint applies a path filter.
 - The tree is refreshed when filters change and supports expansion based on active host filter.
+- **Updated** The Tree View component is now a shared component located in `src/components/tree-view/`, making it reusable across different features like browser automation and live traffic analysis.
 
 ```mermaid
 flowchart TD
 Capture["Proxy captures calls"] --> BuildTree["buildSiteMapTree()<br/>utils.ts"]
 BuildTree --> TreeNodes["TreeNode[]"]
-TreeNodes --> Render["TreeView renders nodes"]
+TreeNodes --> Render["TreeView renders nodes<br/>(src/components/tree-view/index.tsx)"]
 Render --> SelectHost["On host select: filter by host"]
 Render --> SelectEndpoint["On endpoint select: filter by path"]
 ```
 
 **Diagram sources**
 - [utils.ts:4-96](file://src/pages/live-traffic/utils.ts#L4-L96)
-- [tree-view/index.tsx:12-69](file://src/pages/live-traffic/components/tree-view/index.tsx#L12-L69)
+- [components/tree-view/index.tsx:12-69](file://src/components/tree-view/index.tsx#L12-L69)
+- [components/tree-view/tree-node.tsx:42-151](file://src/components/tree-view/tree-node.tsx#L42-L151)
 - [use-http-history-page.ts:60-74](file://src/pages/live-traffic/hooks/use-http-history-page.ts#L60-L74)
 
 **Section sources**
 - [utils.ts:4-96](file://src/pages/live-traffic/utils.ts#L4-L96)
-- [tree-view/index.tsx:12-69](file://src/pages/live-traffic/components/tree-view/index.tsx#L12-L69)
+- [components/tree-view/index.tsx:12-69](file://src/components/tree-view/index.tsx#L12-L69)
+- [components/tree-view/tree-node.tsx:42-151](file://src/components/tree-view/tree-node.tsx#L42-L151)
 - [use-http-history-page.ts:60-74](file://src/pages/live-traffic/hooks/use-http-history-page.ts#L60-L74)
 
 ### WebSocket Traffic Analysis
@@ -330,7 +371,7 @@ UI-->>User : Select connection -> view messages
   - Observe live connections; select a connection to inspect messages.
   - Use search and scope filters to focus on specific hosts or paths.
 - Export and clear:
-  - Use the “Clear All” action to purge HTTP logs (bulk delete via backend).
+  - Use the "Clear All" action to purge HTTP logs (bulk delete via backend).
   - Export capability requires additional backend endpoints and UI handlers.
 
 **Section sources**
@@ -338,31 +379,40 @@ UI-->>User : Select connection -> view messages
 - [index.tsx:13-77](file://src/pages/live-traffic/index.tsx#L13-L77)
 
 ## Dependency Analysis
-The frontend depends on typed APIs and zustand stores to orchestrate queries and real-time updates. The service layer delegates to Tauri commands backed by a Rust persistence layer.
+The frontend depends on typed APIs and zustand stores to orchestrate queries and real-time updates. The service layer delegates to Tauri commands backed by a Rust persistence layer. **Updated** The Tree View component is now imported from a shared location, improving modularity and reusability.
+
+**Updated** The dependency structure now includes shared components that can be reused across different features, promoting better code organization and maintainability.
 
 ```mermaid
 graph LR
 UI_HTTP["HTTP UI"] --> HOOKS_HTTP["use-history-table.ts"]
 UI_WS["WebSocket UI"] --> HOOKS_WS["use-websocket-table.ts"]
 UI_TREE["Tree UI"] --> HOOKS_TREE["use-history-tree.ts"]
+UI_TREE_DATA["Tree Data"] --> HOOKS_TREE_DATA["use-tree-view-data.ts"]
 HOOKS_HTTP --> STORE["history-query-store.ts"]
 HOOKS_WS --> STORE
 HOOKS_TREE --> STORE
+HOOKS_TREE_DATA --> STORE
 STORE --> BUILD["build-history-query.ts"]
 HOOKS_HTTP --> SVC["history-service.ts"]
 HOOKS_WS --> SVC
+HOOKS_TREE --> SVC
+HOOKS_TREE_DATA --> SVC
 SVC --> API["api.ts"]
 API --> CMD["commands/history.rs"]
 CMD --> SCHEMA["db/schema.rs"]
 CMD --> REPO["db/repository.rs"]
 PROXY["proxy/logger.rs"] --> CMD
 WS["proxy/websocket.rs"] --> CMD
+SHARED_COMP["Shared TreeView"] --> UI_TREE
+SHARED_COMP --> UI_TREE_DATA
 ```
 
 **Diagram sources**
 - [use-history-table.ts:96-278](file://src/pages/live-traffic/hooks/use-history-table.ts#L96-L278)
 - [use-websocket-table.ts:35-184](file://src/pages/live-traffic/hooks/use-websocket-table.ts#L35-L184)
 - [use-history-tree.ts:8-41](file://src/pages/live-traffic/hooks/use-history-tree.ts#L8-L41)
+- [use-tree-view-data.ts:68-87](file://src/pages/live-traffic/hooks/use-tree-view-data.ts#L68-L87)
 - [history-query-store.ts:40-140](file://src/pages/live-traffic/state/history-query-store.ts#L40-L140)
 - [build-history-query.ts:12-98](file://src/pages/live-traffic/state/build-history-query.ts#L12-L98)
 - [history-service.ts:20-57](file://src/pages/live-traffic/services/history-service.ts#L20-L57)
@@ -373,6 +423,7 @@ WS["proxy/websocket.rs"] --> CMD
 - [src-tauri/proxy/mod.rs](file://src-tauri/proxy/mod.rs)
 - [src-tauri/proxy/logger.rs](file://src-tauri/proxy/logger.rs)
 - [src-tauri/proxy/websocket.rs](file://src-tauri/proxy/websocket.rs)
+- [components/tree-view/index.tsx:12-69](file://src/components/tree-view/index.tsx#L12-L69)
 
 **Section sources**
 - [history-service.ts:20-57](file://src/pages/live-traffic/services/history-service.ts#L20-L57)
@@ -385,9 +436,10 @@ WS["proxy/websocket.rs"] --> CMD
 - Debouncing: Both HTTP and WebSocket tables debounce query execution to reduce backend load and stabilize the UI.
 - Pagination: Always fetch in pages; avoid loading entire datasets at once.
 - Sorting: Keep sort order consistent across sessions; the backend receives a sort flag.
-- Real-time updates: Use event-driven refresh only on the first page to minimize re-render churn; otherwise, show a “new events” indicator.
+- Real-time updates: Use event-driven refresh only on the first page to minimize re-render churn; otherwise, show a "new events" indicator.
 - Payload decoding: Prefer streaming or chunked decoding for large bodies; avoid decoding entire payloads unnecessarily.
 - Database indexing: Ensure indices exist on frequently filtered columns (host, path, method, status, timestamp).
+- **Updated** Shared component benefits: The shared TreeView component improves performance by reducing code duplication and enabling optimized rendering across multiple features.
 
 [No sources needed since this section provides general guidance]
 
@@ -398,6 +450,7 @@ WS["proxy/websocket.rs"] --> CMD
   - The table hooks catch errors during fetch and display an error state; verify backend connectivity and filter validity.
 - No sitemap entries:
   - The tree view shows an empty state when no traffic matches the active scope or none is captured yet.
+  - **Updated** Tree View component issues: If the Tree View component fails to render, check that the shared component is properly imported from `@/components/tree-view`.
 - Clearing logs:
   - Bulk clear invokes a backend command; confirm the action via the dialog.
 - WebSocket detail not loading:
@@ -407,11 +460,11 @@ WS["proxy/websocket.rs"] --> CMD
 - [api.ts:35-45](file://src/pages/live-traffic/api.ts#L35-L45)
 - [use-history-table.ts:159-168](file://src/pages/live-traffic/hooks/use-history-table.ts#L159-L168)
 - [use-websocket-table.ts:85-94](file://src/pages/live-traffic/hooks/use-websocket-table.ts#L85-L94)
-- [tree-view/index.tsx:40-51](file://src/pages/live-traffic/components/tree-view/index.tsx#L40-L51)
+- [components/tree-view/index.tsx:40-51](file://src/components/tree-view/index.tsx#L40-L51)
 - [log-filters.tsx:169-182](file://src/pages/live-traffic/components/log-table/log-filters.tsx#L169-L182)
 
 ## Conclusion
-AppRecon’s Live Traffic Analysis provides a robust, real-time system for inspecting HTTP and WebSocket traffic. Its modular architecture separates concerns across UI, state, services, and backend commands, enabling scalable filtering, pagination, and live updates. Extending export capabilities, adding latency metrics, and optimizing database queries will further enhance the analyst’s productivity.
+AppRecon's Live Traffic Analysis provides a robust, real-time system for inspecting HTTP and WebSocket traffic. Its modular architecture separates concerns across UI, state, services, and backend commands, enabling scalable filtering, pagination, and live updates. **Updated** The recent reorganization of the Tree View component into a shared location enhances code reusability and maintainability across different features. Extending export capabilities, adding latency metrics, and optimizing database queries will further enhance the analyst's productivity.
 
 [No sources needed since this section summarizes without analyzing specific files]
 
@@ -439,3 +492,23 @@ AppRecon’s Live Traffic Analysis provides a robust, real-time system for inspe
 - [src-tauri/commands/history.rs](file://src-tauri/commands/history.rs)
 - [src-tauri/proxy/logger.rs](file://src-tauri/proxy/logger.rs)
 - [src-tauri/proxy/websocket.rs](file://src-tauri/proxy/websocket.rs)
+
+### Shared Tree View Component Architecture
+**Updated** The Tree View component has been reorganized into a shared location for better reusability:
+
+- **Location**: `src/components/tree-view/`
+- **Components**:
+  - `index.tsx`: Main TreeView component with loading states, error handling, and empty state management
+  - `tree-node.tsx`: Recursive TreeNode component with expand/collapse functionality and click handlers
+  - `types.ts`: Type definitions for TreeNodeData and TreeViewProps interfaces
+- **Benefits**:
+  - Code reusability across different features (live traffic, browser automation)
+  - Centralized maintenance and bug fixes
+  - Consistent styling and behavior across applications
+  - Improved testability and documentation
+
+**Section sources**
+- [components/tree-view/index.tsx:12-69](file://src/components/tree-view/index.tsx#L12-L69)
+- [components/tree-view/tree-node.tsx:42-151](file://src/components/tree-view/tree-node.tsx#L42-L151)
+- [components/tree-view/types.ts:21-35](file://src/components/tree-view/types.ts#L21-L35)
+- [browser-automation/components/crawl-tree-panel.tsx:7](file://src/pages/browser-automation/components/crawl-tree-panel.tsx#L7)

@@ -3,6 +3,7 @@
 import { randomUUID } from 'node:crypto';
 import { ToolLoopAgent, stepCountIs, tool } from 'ai';
 import { deepseek } from '@ai-sdk/deepseek';
+import { openai } from '@ai-sdk/openai';
 import { z } from 'zod';
 
 const DANGEROUS_PATTERNS = [
@@ -33,16 +34,34 @@ function log(sessionId, level, type, message, url) {
   });
 }
 
+function getApiKeyEnvName(provider) {
+  return provider === 'openai' ? 'OPENAI_API_KEY' : 'DEEPSEEK_API_KEY';
+}
+
+function getApiKey(provider) {
+  const envName = getApiKeyEnvName(provider);
+  const key = process.env[envName];
+  if (!key || !key.trim()) {
+    throw new Error(`No ${provider === 'openai' ? 'OpenAI' : 'DeepSeek'} API key found (env ${envName} is empty)`);
+  }
+  return key.trim();
+}
+
 function providerModel() {
   const provider = process.env.APPRECON_AI_PROVIDER || 'deepseek';
   const model = process.env.APPRECON_AI_MODEL || 'deepseek-chat';
-  if (provider !== 'deepseek') {
-    throw new Error(`Unsupported AI SDK agent provider: ${provider}`);
+
+  if (provider === 'openai') {
+    getApiKey(provider); // validates key exists
+    return openai(model);
   }
-  if (!process.env.DEEPSEEK_API_KEY) {
-    throw new Error('No DeepSeek API key found in Settings');
+
+  if (provider === 'deepseek') {
+    getApiKey(provider); // validates key exists
+    return deepseek(model);
   }
-  return deepseek(model);
+
+  throw new Error(`Unsupported AI SDK agent provider: ${provider}`);
 }
 
 function normalizeUrl(value) {
@@ -356,8 +375,12 @@ function analysisSchema() {
 
 async function analyzeWithAgent(extract, sessionId) {
   const fallback = heuristicAnalyze(extract);
-  if (!process.env.DEEPSEEK_API_KEY || process.env.APPRECON_AI_PROVIDER !== 'deepseek') {
-    log(sessionId, 'warning', 'ai', 'DeepSeek AI agent unavailable; using deterministic page analysis.', extract.finalUrl);
+  const provider = process.env.APPRECON_AI_PROVIDER || 'deepseek';
+  const apiKeyEnv = getApiKeyEnvName(provider);
+  const hasKey = !!process.env[apiKeyEnv]?.trim();
+
+  if (!hasKey || !['deepseek', 'openai'].includes(provider)) {
+    log(sessionId, 'warning', 'ai', `${provider === 'openai' ? 'OpenAI' : 'DeepSeek'} AI agent unavailable (${apiKeyEnv} ${hasKey ? 'set' : 'missing'}, provider=${provider}); using deterministic page analysis.`, extract.finalUrl);
     return fallback;
   }
 
@@ -593,7 +616,7 @@ async function runCrawl() {
       const extract = process.env.APPRECON_USE_FETCH_CRAWLER === '1'
         ? await fetchExtract(item.url, config)
         : await playwrightExtract(item.url, config);
-      const analysis = config.enableAiInsights ? await analyzeWithAgent(extract, sessionId) : heuristicAnalyze(extract);
+      const analysis = heuristicAnalyze(extract);
       emit({
         type: 'page_visited',
         id: pageId,
@@ -684,6 +707,16 @@ async function runCrawl() {
 
 export async function runCli() {
   const mode = process.env.APPRECON_AI_ENGINE_MODE || 'crawl';
+  const provider = process.env.APPRECON_AI_PROVIDER || 'deepseek';
+  const apiKeyEnv = getApiKeyEnvName(provider);
+  const hasKey = !!process.env[apiKeyEnv]?.trim();
+
+  // Startup diagnostic — helps verify key injection without leaking secrets.
+  const keyStatus = hasKey
+    ? `${apiKeyEnv} set (${process.env[apiKeyEnv].trim().length} chars)`
+    : `${apiKeyEnv} missing`;
+  process.stderr.write(`[ai-engine] mode=${mode} provider=${provider} model=${process.env.APPRECON_AI_MODEL || 'default'} ${keyStatus}\n`);
+
   if (mode === 'chat') {
     await runChat();
     return;

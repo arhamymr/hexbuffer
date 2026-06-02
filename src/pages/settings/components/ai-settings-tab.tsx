@@ -1,4 +1,5 @@
-import { PlayIcon, SaveIcon, SquareIcon } from 'lucide-react';
+import * as React from 'react';
+import { CheckIcon, EyeIcon, EyeOffIcon, SaveIcon, XIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -10,7 +11,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
 import {
   AI_API_KEY_PLACEHOLDERS,
   AI_MODEL_OPTIONS_BY_PROVIDER,
@@ -29,11 +29,7 @@ export function AiSettingsTab({ settings }: AiSettingsTabProps) {
     aiSettingsSaving,
     handleClearAiApiKey,
     handleSaveAiSettings,
-    handleStartMastra,
-    handleStopMastra,
-    handleToggleMastra,
-    mastraBusy,
-    mastraStatus,
+    providerKeyStatus,
     updateAiProvider,
     updateAiSettings,
   } = settings;
@@ -41,6 +37,13 @@ export function AiSettingsTab({ settings }: AiSettingsTabProps) {
   const selectedProvider = AI_PROVIDER_OPTIONS.find((provider) => provider.id === aiSettings.provider);
   const selectedProviderLabel = selectedProvider?.label ?? 'AI';
   const modelOptions = AI_MODEL_OPTIONS_BY_PROVIDER[aiSettings.provider] ?? [];
+  const [showApiKey, setShowApiKey] = React.useState(false);
+  const [apiKeyInput, setApiKeyInput] = React.useState(aiSettings.apiKey);
+
+  const handleApiKeyChange = (value: string) => {
+    setApiKeyInput(value);
+    updateAiSettings({ apiKey: value });
+  };
 
   return (
     <>
@@ -96,18 +99,33 @@ export function AiSettingsTab({ settings }: AiSettingsTabProps) {
 
           <div className="space-y-2">
             <Label htmlFor="ai-api-key">{selectedProviderLabel} API Key</Label>
-            <Input
-              id="ai-api-key"
-              type="password"
-              value={aiSettings.apiKey}
-              onChange={(event) => updateAiSettings({ apiKey: event.target.value })}
-              placeholder={AI_API_KEY_PLACEHOLDERS[aiSettings.provider] ?? 'API key'}
-              disabled={aiSettingsLoading}
-            />
+            <div className="relative">
+              <Input
+                id="ai-api-key"
+                type={showApiKey ? 'text' : 'password'}
+                value={apiKeyInput}
+                onChange={(event) => handleApiKeyChange(event.target.value)}
+                placeholder={
+                  aiSettings.hasApiKey && !aiSettings.apiKey
+                    ? '••••••••••••••••••••••••'
+                    : (AI_API_KEY_PLACEHOLDERS[aiSettings.provider] ?? 'API key')
+                }
+                disabled={aiSettingsLoading}
+                className="pr-10"
+              />
+              <button
+                type="button"
+                onClick={() => setShowApiKey((prev) => !prev)}
+                className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-muted-foreground hover:text-foreground"
+                tabIndex={-1}
+              >
+                {showApiKey ? <EyeOffIcon className="size-4" /> : <EyeIcon className="size-4" />}
+              </button>
+            </div>
             <p className="text-xs text-muted-foreground">
               {aiSettings.hasApiKey
-                ? 'A key is stored in your OS keychain. Enter a new value only if you want to replace it.'
-                : 'No key is stored yet. Provider and model are saved locally; API keys are kept in your OS keychain.'}
+                ? 'A key is stored locally. Enter a new value only if you want to replace it.'
+                : 'No key is stored yet. Provider and model are saved locally; API keys are kept in browser storage.'}
             </p>
           </div>
 
@@ -125,57 +143,35 @@ export function AiSettingsTab({ settings }: AiSettingsTabProps) {
               Clear API Key
             </Button>
           </div>
-        </CardContent>
-      </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Mastra Runtime</CardTitle>
-          <CardDescription>
-            Start the local Mastra workflow server automatically when AppRecon starts.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="mastra-url">Mastra URL</Label>
-            <Input
-              id="mastra-url"
-              value={aiSettings.mastraUrl}
-              onChange={(event) => updateAiSettings({ mastraUrl: event.target.value })}
-              placeholder="http://localhost:4111"
-              disabled={aiSettingsLoading}
-            />
-          </div>
-
-          <div className="flex items-center justify-between gap-4 rounded-md border p-3">
-            <div>
-              <Label htmlFor="mastra-enabled">Mastra runtime</Label>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Enable the local Mastra workflow server for AppRecon.
-              </p>
+            <Label>Saved Keys</Label>
+            <div className="grid gap-2">
+              {AI_PROVIDER_OPTIONS.map((provider) => {
+                const saved = !!providerKeyStatus[provider.id];
+                return (
+                  <div
+                    key={provider.id}
+                    className="flex items-center justify-between rounded-md border px-3 py-2"
+                  >
+                    <span className="text-sm font-medium">{provider.label}</span>
+                    <span className={`flex items-center gap-1.5 text-xs ${saved ? 'text-green-600' : 'text-muted-foreground'}`}>
+                      {saved ? (
+                        <>
+                          <CheckIcon className="size-3.5" />
+                          Key saved
+                        </>
+                      ) : (
+                        <>
+                          <XIcon className="size-3.5" />
+                          No key
+                        </>
+                      )}
+                    </span>
+                  </div>
+                );
+              })}
             </div>
-            <Switch
-              id="mastra-enabled"
-              checked={aiSettings.mastraAutoStart && mastraStatus.running}
-              onCheckedChange={handleToggleMastra}
-              disabled={aiSettingsLoading || mastraBusy}
-            />
-          </div>
-
-          <div className="flex flex-wrap items-center gap-3">
-            <Button size="xs" onClick={handleStartMastra} disabled={mastraBusy || mastraStatus.running}>
-              <PlayIcon className="mr-2 size-4" />
-              Start Mastra
-            </Button>
-            <Button size="xs" variant="outline" onClick={handleStopMastra} disabled={mastraBusy || !mastraStatus.running}>
-              <SquareIcon className="mr-2 size-4" />
-              Stop Mastra
-            </Button>
-            <span className="text-sm text-muted-foreground">
-              {mastraStatus.running
-                ? `Running${mastraStatus.pid ? `, PID ${mastraStatus.pid}` : ''}`
-                : 'Stopped'}
-            </span>
           </div>
         </CardContent>
       </Card>

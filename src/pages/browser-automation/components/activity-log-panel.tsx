@@ -1,75 +1,119 @@
 'use client';
 
-import { Download, Search, Terminal } from 'lucide-react';
+import { useState } from 'react';
+import { Clipboard } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+} from '@/components/ui/drawer';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { EventLogTable } from '@/pages/live-traffic/components/log-table/event-log-table';
-import { LOG_TYPES } from '../constants';
-import type { ActivityLog, ActivityLogType } from '../types';
-
-type LogTypeFilter = ActivityLogType | 'all';
+import { cn } from '@/lib/utils';
+import { copyText } from '@/lib/clipboard';
+import type { ActivityLog } from '../types';
 
 interface ActivityLogPanelProps {
   logs: ActivityLog[];
-  search: string;
-  typeFilter: LogTypeFilter;
-  onSearchChange: (value: string) => void;
-  onTypeFilterChange: (value: LogTypeFilter) => void;
-  onCopyLog: (log: ActivityLog) => void;
-  onExport: () => void;
 }
 
-export function ActivityLogPanel({
-  logs,
-  search,
-  typeFilter,
-  onSearchChange,
-  onTypeFilterChange,
-  onCopyLog,
-  onExport,
-}: ActivityLogPanelProps) {
+const levelStyles: Record<string, string> = {
+  info: 'border-sky-500/25 text-sky-700 dark:text-sky-300',
+  warning: 'border-amber-500/25 text-amber-700 dark:text-amber-300',
+  error: 'border-red-500/25 text-red-700 dark:text-red-300',
+};
+
+function DetailRow({ label, value }: { label: string; value: string | undefined }) {
+  return (
+    <div className="grid grid-cols-[100px_minmax(0,1fr)] gap-3 border-b py-2 text-sm">
+      <span className="text-muted-foreground">{label}</span>
+      <span className="min-w-0 break-words font-mono text-xs">{value ?? '-'}</span>
+    </div>
+  );
+}
+
+export function ActivityLogPanel({ logs }: ActivityLogPanelProps) {
+  const [selectedLog, setSelectedLog] = useState<ActivityLog | null>(null);
+
   return (
     <section className="flex min-h-[260px] flex-col border-t bg-background">
-      <div className="flex flex-col gap-2 border-b p-3 xl:flex-row xl:items-center xl:justify-between">
-        <div className="grid gap-2 sm:grid-cols-[260px_150px_auto]">
-          <div className="relative">
-            <Search className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              className="pl-8"
-              placeholder="Search logs"
-              value={search}
-              onChange={(event) => onSearchChange(event.target.value)}
-            />
-          </div>
-          <Select value={typeFilter} onValueChange={(value) => onTypeFilterChange(value as LogTypeFilter)}>
-            <SelectTrigger className="w-full">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All types</SelectItem>
-              {LOG_TYPES.map((type) => (
-                <SelectItem key={type} value={type}>
-                  {type}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Button variant="outline" onClick={onExport} disabled={logs.length === 0}>
-            <Download className="h-4 w-4" />
-            Export
-          </Button>
-        </div>
-      </div>
-
       <div className="min-h-0 flex-1">
         <EventLogTable
           logs={logs.map((log) => ({ ...log, timestamp: log.createdAt }))}
-          onCopyLog={onCopyLog}
+          onCopyLog={(row) => {
+            const original = logs.find((l) => l.id === row.id);
+            if (original) {
+              copyText(`${new Date(original.createdAt).toLocaleTimeString()} [${original.type}] ${original.message}`);
+            }
+          }}
+          onRowClick={(row) => {
+            const original = logs.find((l) => l.id === row.id);
+            if (original) setSelectedLog(original);
+          }}
           emptyTitle="No matching activity"
           emptyDescription="No crawl log entries match the current filters."
         />
       </div>
+
+      <Drawer open={Boolean(selectedLog)} onOpenChange={(open) => !open && setSelectedLog(null)} direction="right">
+        <DrawerContent className="sm:max-w-xl">
+          {selectedLog && (
+            <>
+              <DrawerHeader>
+                <DrawerTitle className="flex items-center gap-2">
+                  Activity Detail
+                  <Badge
+                    variant="outline"
+                    className={cn('h-5 px-1.5 text-[10px] capitalize', levelStyles[selectedLog.level])}
+                  >
+                    {selectedLog.level}
+                  </Badge>
+                  <Badge variant="outline" className="h-5 px-1.5 text-[10px]">
+                    {selectedLog.type}
+                  </Badge>
+                </DrawerTitle>
+                <DrawerDescription className="font-mono text-xs">
+                  {selectedLog.message}
+                </DrawerDescription>
+              </DrawerHeader>
+
+              <ScrollArea className="min-h-0 flex-1 px-4">
+                <div className="space-y-4 pb-4">
+                  <div className="rounded-md border p-3">
+                    <DetailRow label="ID" value={selectedLog.id} />
+                    <DetailRow label="Session" value={selectedLog.sessionId} />
+                    <DetailRow label="Level" value={selectedLog.level} />
+                    <DetailRow label="Type" value={selectedLog.type} />
+                    <DetailRow label="URL" value={selectedLog.url} />
+                    <DetailRow label="Timestamp" value={new Date(selectedLog.createdAt).toLocaleString()} />
+                  </div>
+
+                  <div className="rounded-md border p-3">
+                    <div className="mb-2 text-sm font-medium">Message</div>
+                    <p className="whitespace-pre-wrap font-mono text-xs leading-6 text-muted-foreground">
+                      {selectedLog.message}
+                    </p>
+                  </div>
+                </div>
+              </ScrollArea>
+
+              <DrawerFooter>
+                <Button variant="outline" onClick={() => {
+                  copyText(`${new Date(selectedLog.createdAt).toLocaleTimeString()} [${selectedLog.type}] ${selectedLog.message}`);
+                }}>
+                  <Clipboard className="h-4 w-4" />
+                  Copy Log
+                </Button>
+              </DrawerFooter>
+            </>
+          )}
+        </DrawerContent>
+      </Drawer>
     </section>
   );
 }

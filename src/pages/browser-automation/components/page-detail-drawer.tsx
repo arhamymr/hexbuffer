@@ -12,15 +12,14 @@ import {
   DrawerTitle,
 } from '@/components/ui/drawer';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useBrowserAutomationStore } from '@/stores/browser-automation';
+import { copyText } from '@/lib/clipboard';
+import { openUrl } from '@tauri-apps/plugin-opener';
 import { PAGE_STATUS_LABELS } from '../constants';
 import type { CrawlPage } from '../types';
 
 interface PageDetailDrawerProps {
   page: CrawlPage | null;
-  onClose: () => void;
-  onCopyUrl: (page: CrawlPage) => void;
-  onOpenPage: (page: CrawlPage) => void;
-  onToggleInteresting: (pageId: string) => void;
 }
 
 function DetailRow({ label, value }: { label: string; value: string | number | undefined }) {
@@ -32,15 +31,30 @@ function DetailRow({ label, value }: { label: string; value: string | number | u
   );
 }
 
-export function PageDetailDrawer({
-  page,
-  onClose,
-  onCopyUrl,
-  onOpenPage,
-  onToggleInteresting,
-}: PageDetailDrawerProps) {
+export function PageDetailDrawer({ page }: PageDetailDrawerProps) {
+  const selectPage = useBrowserAutomationStore((s) => s.selectPage);
+  const session = useBrowserAutomationStore((s) => s.session);
+  const markPageInteresting = useBrowserAutomationStore((s) => s.markPageInteresting);
+
+  const base = session?.targetUrl?.replace(/\/$/, '') ?? '';
+
+  function handleCopyUrl() {
+    if (!page) return;
+    copyText(page.url.startsWith('http') ? page.url : `${base}${page.url}`);
+  }
+
+  async function handleOpenPage() {
+    if (!page) return;
+    const url = page.url.startsWith('http') ? page.url : `${base}${page.url}`;
+    try {
+      await openUrl(url);
+    } catch {
+      window.open(url, '_blank', 'noopener,noreferrer');
+    }
+  }
+
   return (
-    <Drawer open={Boolean(page)} onOpenChange={(open) => !open && onClose()} direction="right">
+    <Drawer open={Boolean(page)} onOpenChange={(open) => !open && selectPage(null)} direction="right">
       <DrawerContent className="sm:max-w-xl">
         {page && (
           <>
@@ -75,24 +89,24 @@ export function PageDetailDrawer({
                 </div>
 
                 <div className="rounded-md border p-3">
-                  <div className="mb-2 text-sm font-medium">AI Summary</div>
+                  <div className="mb-2 text-sm font-medium">Summary</div>
                   <p className="text-sm leading-6 text-muted-foreground">
-                    {page.aiSummary || 'No AI summary is available for this page yet.'}
+                    {page.aiSummary || 'No summary is available for this page yet.'}
                   </p>
                 </div>
               </div>
             </ScrollArea>
 
             <DrawerFooter className="grid grid-cols-2 sm:grid-cols-3">
-              <Button variant="outline" onClick={() => onOpenPage(page)}>
+              <Button variant="outline" onClick={handleOpenPage}>
                 <ExternalLink className="h-4 w-4" />
                 Open
               </Button>
-              <Button variant="outline" onClick={() => onCopyUrl(page)}>
+              <Button variant="outline" onClick={handleCopyUrl}>
                 <Copy className="h-4 w-4" />
                 Copy
               </Button>
-              <Button variant={page.interesting ? 'secondary' : 'outline'} onClick={() => onToggleInteresting(page.id)}>
+              <Button variant={page.interesting ? 'secondary' : 'outline'} onClick={() => markPageInteresting(page.id)}>
                 <Star className="h-4 w-4" />
                 {page.interesting ? 'Saved' : 'Mark'}
               </Button>

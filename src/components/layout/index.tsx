@@ -4,7 +4,7 @@ import * as React from 'react';
 import { AppFooter } from '@/components/footer';
 import { cn } from '@/lib/utils';
 import { TopNav } from './top-nav';
-import { AIAssistantPane } from './ai-assistant-pane';
+import { AIAssistantPane } from './ai-chat';
 
 export function AppLayout({ children }: { children?: React.ReactNode }) {
   const [isAssistantOpen, setIsAssistantOpen] = React.useState(false);

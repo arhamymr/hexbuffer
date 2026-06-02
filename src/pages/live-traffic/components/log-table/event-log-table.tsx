@@ -19,6 +19,7 @@ export interface EventLogRow {
 interface EventLogTableProps<TLog extends EventLogRow> {
   logs: TLog[];
   onCopyLog?: (log: TLog) => void;
+  onRowClick?: (log: TLog) => void;
   emptyTitle?: string;
   emptyDescription?: string;
 }
@@ -32,6 +33,7 @@ const levelStyles: Record<EventLogRow['level'], string> = {
 export function EventLogTable<TLog extends EventLogRow>({
   logs,
   onCopyLog,
+  onRowClick,
   emptyTitle = 'No log entries',
   emptyDescription = 'Events will appear here once activity is available.',
 }: EventLogTableProps<TLog>) {
@@ -73,7 +75,14 @@ export function EventLogTable<TLog extends EventLogRow>({
         </thead>
         <tbody>
           {logs.map((log) => (
-            <tr key={log.id} className="cursor-default border-b font-mono transition-colors hover:bg-muted/50">
+            <tr
+              key={log.id}
+              className={cn(
+                'border-b font-mono transition-colors hover:bg-muted/50',
+                onRowClick ? 'cursor-pointer' : 'cursor-default',
+              )}
+              onClick={onRowClick ? () => onRowClick(log) : undefined}
+            >
               <td className="whitespace-nowrap px-3 py-1 text-xs text-muted-foreground">
                 {formatTimestamp(log.timestamp)}
               </td>
@@ -100,7 +109,10 @@ export function EventLogTable<TLog extends EventLogRow>({
                     variant="ghost"
                     size="icon-sm"
                     className="h-6 w-6"
-                    onClick={() => onCopyLog(log)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onCopyLog(log);
+                    }}
                     title="Copy log line"
                   >
                     <Clipboard className="h-3.5 w-3.5 text-muted-foreground" />

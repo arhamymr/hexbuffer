@@ -11,7 +11,7 @@ pub mod proxy;
 pub mod sqli;
 
 pub use ai::{
-    clear_ai_api_key, get_ai_settings, get_mastra_status, has_ai_api_key, save_ai_settings,
+    get_ai_settings, get_mastra_status, save_ai_settings,
     send_ai_chat_message, start_mastra, start_mastra_if_enabled, stop_mastra, AiSettings,
     MastraProcessState, MastraStatus,
 };

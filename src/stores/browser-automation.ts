@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { invoke } from '@tauri-apps/api/core';
+import { useAiKeyStore } from './ai-keys';
 import { DEFAULT_CRAWL_SETUP } from '@/pages/browser-automation/constants';
 import { deriveOverview, downloadJson } from '@/pages/browser-automation/lib/crawl-data';
 import type {
@@ -54,6 +55,8 @@ interface BrowserAutomationState {
   expandedPageIds: string[];
   humanInputRequest: HumanInputRequest | null;
   lastError: string | null;
+  search: string;
+  analyzingPageIds: Set<string>;
 
   overview: () => CrawlOverview;
   updateSetup: (patch: Partial<CrawlSetupConfig>) => void;
@@ -69,6 +72,8 @@ interface BrowserAutomationState {
   togglePageExpanded: (pageId: string) => void;
   toggleInsightReviewed: (insightId: string) => void;
   markPageInteresting: (pageId: string) => void;
+  setSearch: (value: string) => void;
+  analyzePageWithAi: (page: CrawlPage) => Promise<void>;
   applySessionStarted: (session: CrawlSession) => void;
   applySessionUpdated: (session: Partial<CrawlSession>) => void;
   applyPageDiscovered: (page: CrawlPage) => void;
@@ -128,6 +133,8 @@ export const useBrowserAutomationStore = create<BrowserAutomationState>((set, ge
   expandedPageIds: ['page-root', 'page-products', 'page-login'],
   humanInputRequest: null,
   lastError: null,
+  search: '',
+  analyzingPageIds: new Set(),
 
   overview: () => deriveOverview(get().session, get().pages),
 
@@ -169,7 +176,10 @@ export const useBrowserAutomationStore = create<BrowserAutomationState>((set, ge
     });
 
     try {
-      await invoke('ai_browser_start_crawl', { config: setup, sessionId: session.id });
+      // Get current AI settings to know the provider
+      const aiSettings = await invoke<{ provider: string }>('get_ai_settings');
+      const apiKey = useAiKeyStore.getState().getKey(aiSettings.provider) || '';
+      await invoke('ai_browser_start_crawl', { config: setup, sessionId: session.id, apiKey });
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       set((state) => ({
@@ -303,4 +313,61 @@ export const useBrowserAutomationStore = create<BrowserAutomationState>((set, ge
     })),
 
   clearHumanInputRequest: () => set({ humanInputRequest: null }),
+
+  setSearch: (value) => set({ search: value }),
+
+  analyzePageWithAi: async (page) => {
+    const { session, analyzingPageIds } = get();
+    if (!session || analyzingPageIds.has(page.id)) return;
+
+    set({ analyzingPageIds: new Set(analyzingPageIds).add(page.id) });
+
+    try {
+      const aiSettings = await invoke<{ provider: string; model: string }>('get_ai_settings');
+      const key = useAiKeyStore.getState().getKey(aiSettings.provider) || '';
+
+      const response = await invoke<{ content: string }>('send_ai_chat_message', {
+        request: {
+          messages: [
+            {
+              role: 'user',
+              content: `Analyze this crawled page for security reconnaissance insights:\n\nURL: ${page.url}\nTitle: ${page.title || 'unknown'}\nHTTP Status: ${page.httpStatus || 'unknown'}\nLinks Found: ${page.linksFound}\nForms Found: ${page.formsFound}\n${page.aiSummary ? `Previous summary: ${page.aiSummary}` : ''}\n\nProvide a brief analysis: potential vulnerabilities, interesting endpoints, and security observations.`,
+            },
+          ],
+        },
+        apiKey: key,
+      });
+
+      get().applyPageUpdated({ id: page.id, aiSummary: response.content });
+
+      get().applyInsightCreated({
+        id: `insight-ai-${Date.now()}`,
+        sessionId: session.id,
+        pageId: page.id,
+        severity: 'info',
+        type: 'ai-analysis',
+        title: `AI Analysis: ${page.title || page.url}`,
+        description: response.content,
+        url: page.url,
+        reviewed: false,
+        createdAt: new Date().toISOString(),
+      });
+    } catch (error) {
+      console.error('Failed to analyze page with AI:', error);
+      get().applyLogCreated({
+        id: `log-${Date.now()}`,
+        sessionId: session.id,
+        level: 'error',
+        type: 'ai',
+        message: `AI analysis failed for ${page.url}: ${error instanceof Error ? error.message : String(error)}`,
+        url: page.url,
+        createdAt: new Date().toISOString(),
+      });
+    } finally {
+      const { analyzingPageIds: current } = get();
+      const next = new Set(current);
+      next.delete(page.id);
+      set({ analyzingPageIds: next });
+    }
+  },
 }));

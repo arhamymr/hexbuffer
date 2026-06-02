@@ -4,7 +4,8 @@ import { save } from '@tauri-apps/plugin-dialog';
 import { toast } from 'sonner';
 import { getCaCert, saveCaCert, trustInterceptCa } from '@/pages/live-traffic/api';
 import { useUpdater } from '@/hooks/use-updater';
-import { AI_MODEL_OPTIONS_BY_PROVIDER } from '../constants';
+import { useAiKeyStore } from '@/stores/ai-keys';
+import { AI_MODEL_OPTIONS_BY_PROVIDER, AI_PROVIDER_OPTIONS } from '../constants';
 
 export interface AiSettings {
   provider: string;
@@ -47,6 +48,17 @@ export function useSettingsPage() {
   });
   const [mastraBusy, setMastraBusy] = React.useState(false);
   const [storageInfo, setStorageInfo] = React.useState<StorageInfo | null>(null);
+
+  const { keys: aiKeys, setKey: setAiKey, removeKey: removeAiKey, hasKey: hasAiKey } = useAiKeyStore();
+
+  // Derive provider key status from Zustand store
+  const providerKeyStatus = React.useMemo(() => {
+    const status: Record<string, boolean> = {};
+    for (const provider of AI_PROVIDER_OPTIONS) {
+      status[provider.id] = hasAiKey(provider.id);
+    }
+    return status;
+  }, [aiKeys, hasAiKey]);
 
   const {
     currentVersion,
@@ -138,34 +150,18 @@ export function useSettingsPage() {
     }
   }, []);
 
-  const loadAiApiKeyStatus = React.useCallback(async (provider: string) => {
-    try {
-      return await invoke<boolean>('has_ai_api_key', { provider });
-    } catch (error) {
-      console.error('Failed to load AI API key status:', error);
-      return false;
-    }
-  }, []);
-
   const updateAiProvider = React.useCallback((provider: string) => {
     const models = AI_MODEL_OPTIONS_BY_PROVIDER[provider] ?? [];
+    const hasKey = hasAiKey(provider);
 
     setAiSettings((current) => ({
       ...current,
       provider,
       model: models[0] ?? '',
       apiKey: '',
-      hasApiKey: false,
+      hasApiKey: hasKey,
     }));
-
-    void loadAiApiKeyStatus(provider).then((hasApiKey) => {
-      setAiSettings((current) => (
-        current.provider === provider
-          ? { ...current, hasApiKey }
-          : current
-      ));
-    });
-  }, [loadAiApiKeyStatus]);
+  }, [hasAiKey]);
 
   const updateAiSettings = React.useCallback((updates: Partial<AiSettings>) => {
     setAiSettings((current) => ({ ...current, ...updates }));
@@ -174,10 +170,18 @@ export function useSettingsPage() {
   const handleSaveAiSettings = React.useCallback(async () => {
     try {
       setAiSettingsSaving(true);
+
+      // Save API key to Zustand store if provided
+      if (aiSettings.apiKey.trim()) {
+        setAiKey(aiSettings.provider, aiSettings.apiKey.trim());
+      }
+
+      // Save provider/model settings to backend (without the key)
+      const settingsToSave = { ...aiSettings, apiKey: '' };
       const savedSettings = await invoke<AiSettings>('save_ai_settings', {
-        settings: aiSettings,
+        settings: settingsToSave,
       });
-      setAiSettings(savedSettings);
+      setAiSettings({ ...savedSettings, hasApiKey: hasAiKey(savedSettings.provider) });
       await refreshMastraStatus();
       toast.success('AI settings saved');
     } catch (error) {
@@ -186,13 +190,13 @@ export function useSettingsPage() {
     } finally {
       setAiSettingsSaving(false);
     }
-  }, [aiSettings, refreshMastraStatus]);
+  }, [aiSettings, refreshMastraStatus, setAiKey, hasAiKey]);
 
   const handleClearAiApiKey = React.useCallback(async () => {
     try {
       setAiSettingsSaving(true);
-      const savedSettings = await invoke<AiSettings>('clear_ai_api_key');
-      setAiSettings(savedSettings);
+      removeAiKey(aiSettings.provider);
+      setAiSettings((current) => ({ ...current, apiKey: '', hasApiKey: false }));
       toast.success('AI API key cleared');
     } catch (error) {
       console.error('Failed to clear AI API key:', error);
@@ -200,7 +204,7 @@ export function useSettingsPage() {
     } finally {
       setAiSettingsSaving(false);
     }
-  }, []);
+  }, [aiSettings.provider, removeAiKey]);
 
   const handleStartMastra = React.useCallback(async () => {
     try {
@@ -274,6 +278,7 @@ export function useSettingsPage() {
     mastraStatus,
     refreshMastraStatus,
     storageInfo,
+    providerKeyStatus,
     updateAiProvider,
     updateAiSettings,
     updateAvailable,

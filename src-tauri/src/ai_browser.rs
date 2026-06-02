@@ -455,6 +455,7 @@ fn run_sidecar_crawl(
     state: &AiBrowserState,
     config: &CrawlConfig,
     session_id: &str,
+    api_key: &str,
 ) -> Result<(), String> {
     let script = find_sidecar_script(app)?;
     let node = if cfg!(windows) { "node.exe" } else { "node" };
@@ -477,13 +478,12 @@ fn run_sidecar_crawl(
         .stdout(Stdio::piped())
         .stderr(Stdio::piped());
 
-    if let Ok(api_key) = crate::ai::read_api_key(&settings.provider) {
-        if !api_key.trim().is_empty() {
-            command.env(
-                crate::ai::api_key_env_name(&settings.provider)?,
-                api_key.trim(),
-            );
-        }
+    // API key passed from frontend (Zustand store)
+    if !api_key.trim().is_empty() {
+        command.env(
+            crate::ai::api_key_env_name(&settings.provider)?,
+            api_key.trim(),
+        );
     }
 
     let mut child = command
@@ -536,6 +536,7 @@ pub async fn ai_browser_start_crawl(
     state: State<'_, AiBrowserState>,
     config: CrawlConfig,
     session_id: Option<String>,
+    api_key: String,
 ) -> Result<CrawlSession, String> {
     // Ensure the AppRecon proxy is running before starting the crawl.
     // Playwright routes all traffic through the proxy, so a missing proxy
@@ -602,6 +603,7 @@ pub async fn ai_browser_start_crawl(
     let app_for_task = app.clone();
     let state_for_task = state.inner().clone();
     let session_id_for_task = session.id.clone();
+    let api_key_for_task = api_key.clone();
     tauri::async_runtime::spawn(async move {
         let sidecar_result = {
             let app = app_for_task.clone();
@@ -609,7 +611,7 @@ pub async fn ai_browser_start_crawl(
             let config = config.clone();
             let session_id = session_id_for_task.clone();
             tauri::async_runtime::spawn_blocking(move || {
-                run_sidecar_crawl(&app, &state, &config, &session_id)
+                run_sidecar_crawl(&app, &state, &config, &session_id, &api_key_for_task)
             })
             .await
             .map_err(|error| error.to_string())

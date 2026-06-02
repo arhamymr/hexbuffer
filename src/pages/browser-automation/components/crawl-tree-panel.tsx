@@ -1,26 +1,19 @@
 'use client';
 
-import { AlertTriangle, Circle, CircleDot, FileCheck2, Search, ShieldBan } from 'lucide-react';
+import { AlertTriangle, Circle, CircleDot, FileCheck2, ShieldBan } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { TreeView, type TreeNodeData } from '@/components/tree-view';
 import { cn } from '@/lib/utils';
+import { useBrowserAutomationStore } from '@/stores/browser-automation';
 import { PAGE_STATUS_LABELS } from '../constants';
 import type { CrawlPageStatus, CrawlTreeNode } from '../types';
 
-type StatusFilter = CrawlPageStatus | 'all';
 type CrawlTreeMeta = { pageId: string };
 
 interface CrawlTreePanelProps {
   nodes: CrawlTreeNode[];
   selectedPageId: string | null;
   expandedPageIds: string[];
-  search: string;
-  statusFilter: StatusFilter;
-  onSearchChange: (value: string) => void;
-  onStatusFilterChange: (value: StatusFilter) => void;
-  onSelectPage: (pageId: string) => void;
 }
 
 const statusStyles: Record<CrawlPageStatus, string> = {
@@ -75,49 +68,18 @@ export function CrawlTreePanel({
   nodes,
   selectedPageId,
   expandedPageIds,
-  search,
-  statusFilter,
-  onSearchChange,
-  onStatusFilterChange,
-  onSelectPage,
 }: CrawlTreePanelProps) {
+  const selectPage = useBrowserAutomationStore((s) => s.selectPage);
   const treeNodes = nodes.map(toTreeNode);
 
   return (
     <section className="flex min-h-0 flex-col border-b bg-background">
       <div className="border-b flex gap-2 px-3 py-2">
-        <div className='flex-1'>
-          <div className="text-sm font-medium">Crawl Tree</div>
+        <div>
+          <div className="text-sm font-medium">Pages</div>
           <div className="text-xs text-muted-foreground">Discovered page structure</div>
-
-        </div>
-        <div className="flex flex-2 gap-2">
-          <div className="relative w-full">
-            <Search className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              className="pl-8"
-              placeholder="Search URL"
-              value={search}
-              onChange={(event) => onSearchChange(event.target.value)}
-            />
-          </div>
-          <Select value={statusFilter} onValueChange={(value) => onStatusFilterChange(value as StatusFilter)}>
-            <SelectTrigger className="w-full">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All statuses</SelectItem>
-              {Object.entries(PAGE_STATUS_LABELS).map(([value, label]) => (
-                <SelectItem key={value} value={value}>
-                  {label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
         </div>
       </div>
-
-
 
       <TreeView<CrawlTreeMeta>
         nodes={treeNodes}
@@ -125,7 +87,7 @@ export function CrawlTreePanel({
         defaultExpandedIds={expandedPageIds}
         onSelectNode={(node) => {
           if (node.meta?.pageId) {
-            onSelectPage(node.meta.pageId);
+            selectPage(node.meta.pageId);
           }
         }}
         emptyTitle="No pages match"

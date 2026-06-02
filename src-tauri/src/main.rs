@@ -115,8 +115,6 @@ fn main() {
             zeroxbuffer::commands::packet_capture::get_packets_paginated,
             zeroxbuffer::ai::get_ai_settings,
             zeroxbuffer::ai::save_ai_settings,
-            zeroxbuffer::ai::has_ai_api_key,
-            zeroxbuffer::ai::clear_ai_api_key,
             zeroxbuffer::ai::send_ai_chat_message,
             zeroxbuffer::ai::get_mastra_status,
             zeroxbuffer::ai::start_mastra,

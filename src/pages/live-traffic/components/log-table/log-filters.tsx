@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { X, Trash2, Map } from 'lucide-react';
+import { X, Trash2, Map, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
@@ -68,13 +68,14 @@ export function LogFilters({
 
   return (
     <div className="space-y-1 p-1 bg-muted">
-      <div className="flex items-center gap-4">
-       
+      <div className="relative flex items-center gap-4">
+        <Search className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              
         <Input
           placeholder="Search URL, host, method, body..."
           value={filter.search}
           onChange={(e) => setFilter({ ...filter, search: e.target.value })}
-          className="flex-1 h-8 shadow-none bg-background"
+          className="pl-8 flex-1 shadow-none bg-background"
         />
         {hasActiveFilters && (
           <Button variant="destructive" size="xs" onClick={clearFilters}>

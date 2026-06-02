@@ -1,13 +1,14 @@
 'use client';
 
-import { Download, Pause, Play, RotateCcw, Square } from 'lucide-react';
+import { Pause, Play, RotateCcw, Search, Square, Target } from 'lucide-react';
 import { ActivityLogPanel } from './components/activity-log-panel';
-import { AiInsightsPanel } from './components/ai-insights-panel';
+import { AiInsightsPanel } from './components/insights-panel';
 import { CrawlOverviewPanel } from './components/crawl-overview-panel';
 import { CrawlSetupScreen } from './components/crawl-setup-screen';
 import { CrawlTreePanel } from './components/crawl-tree-panel';
 import { PageDetailDrawer } from './components/page-detail-drawer';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   Dialog,
   DialogContent,
@@ -17,26 +18,26 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
+import { useBrowserAutomationStore } from '@/stores/browser-automation';
 import { useBrowserAutomationPage } from './hooks/use-browser-automation-page';
 
 export function BrowserAutomationPage() {
   const {
-    setup,
-    session,
-    overview,
     crawlTree,
     selectedPage,
-    expandedPageIds,
-    humanInputRequest,
-    pageSearch,
-    pageStatusFilter,
-    insightSeverityFilter,
-    insightTypeFilter,
-    insightTypes,
-    logSearch,
-    logTypeFilter,
     filteredInsights,
     filteredLogs,
+    interestingPages,
+    overview,
+  } = useBrowserAutomationPage();
+
+  const {
+    setup,
+    session,
+    expandedPageIds,
+    humanInputRequest,
+    search,
+    analyzingPageIds,
     updateSetup,
     saveConfig,
     startCrawl,
@@ -44,23 +45,8 @@ export function BrowserAutomationPage() {
     resumeCrawl,
     stopCrawl,
     clearHumanInputRequest,
-    exportCrawl,
-    exportInsights,
-    exportLogs,
-    selectPage,
-    toggleInsightReviewed,
-    markPageInteresting,
-    setPageSearch,
-    setPageStatusFilter,
-    setInsightSeverityFilter,
-    setInsightTypeFilter,
-    setLogSearch,
-    setLogTypeFilter,
-    handleInsightOpen,
-    handleCopyLog,
-    handleCopyPageUrl,
-    handleOpenPage,
-  } = useBrowserAutomationPage();
+    setSearch,
+  } = useBrowserAutomationStore();
 
   const status = session?.status ?? 'idle';
   const isRunning = status === 'running';
@@ -68,11 +54,20 @@ export function BrowserAutomationPage() {
 
   return (
     <div className="flex h-full min-h-0 flex-col rounded-md border bg-background">
-      <header className="border-b px-3 py-3">
+      <header className="bg-muted px-3 py-3">
         <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-          <div className="grid min-w-0 flex-1 gap-2">
-            <div className="min-w-0 truncate text-xs text-muted-foreground">
-              Target <span className="font-mono font-semibold text-foreground">{session?.targetUrl || setup.targetUrl || '-'}</span>
+          <div className="flex min-w-0 flex-1 items-center gap-3">
+            <div className="flex gap-2 items-center min-w-0 truncate text-xs text-muted-foreground">
+              <Target className='size-3' /> <span className="font-mono font-semibold text-foreground">{session?.targetUrl || setup.targetUrl || '-'}</span>
+            </div>
+            <div className="relative w-full max-w-xs">
+              <Search className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                className="pl-8 bg-background"
+                placeholder="Search pages, logs, insights..."
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+              />
             </div>
           </div>
 
@@ -83,25 +78,18 @@ export function BrowserAutomationPage() {
               onSetupChange={updateSetup}
               onSave={saveConfig}
             />
-            <Button variant="outline" onClick={pauseCrawl} disabled={!isRunning}>
+            <Button variant="outline" size="xs" onClick={pauseCrawl} disabled={!isRunning}>
               <Pause className="h-4 w-4" />
-              Pause
             </Button>
-            <Button variant="outline" onClick={resumeCrawl} disabled={!isPaused}>
+            <Button variant="outline" size="xs" onClick={resumeCrawl} disabled={!isPaused}>
               <RotateCcw className="h-4 w-4" />
-              Resume
             </Button>
-            <Button variant="outline" onClick={stopCrawl} disabled={!isRunning && !isPaused}>
+            <Button variant="outline" size="xs" onClick={stopCrawl} disabled={!isRunning && !isPaused}>
               <Square className="h-4 w-4" />
-              Stop
             </Button>
-            <Button variant="outline" onClick={exportCrawl} disabled={!session}>
-              <Download className="h-4 w-4" />
-              Export
-            </Button>
-            <Button onClick={startCrawl} disabled={isRunning || !setup.targetUrl.trim()}>
+            <Button size="xs" onClick={startCrawl} disabled={isRunning || !setup.targetUrl.trim()}>
               <Play className="h-4 w-4" />
-              Start
+              Start Crawl
             </Button>
           </div>
         </div>
@@ -109,20 +97,10 @@ export function BrowserAutomationPage() {
 
       <main className="min-h-0 flex-1">
         <ResizablePanelGroup orientation="vertical" className="min-h-0">
-          
-           <ResizablePanel defaultSize={32} minSize={22}>
-            <ActivityLogPanel
-              logs={filteredLogs}
-              search={logSearch}
-              typeFilter={logTypeFilter}
-              onSearchChange={setLogSearch}
-              onTypeFilterChange={setLogTypeFilter}
-              onCopyLog={handleCopyLog}
-              onExport={exportLogs}
-            />
+          <ResizablePanel defaultSize={32} minSize={22}>
+            <ActivityLogPanel logs={filteredLogs} />
           </ResizablePanel>
 
-        
           <ResizableHandle withHandle />
           <ResizablePanel defaultSize={30} minSize={30}>
             <ResizablePanelGroup orientation="horizontal" className="min-h-0">
@@ -135,25 +113,14 @@ export function BrowserAutomationPage() {
                   nodes={crawlTree}
                   selectedPageId={selectedPage?.id ?? null}
                   expandedPageIds={expandedPageIds}
-                  search={pageSearch}
-                  statusFilter={pageStatusFilter}
-                  onSearchChange={setPageSearch}
-                  onStatusFilterChange={setPageStatusFilter}
-                  onSelectPage={selectPage}
                 />
               </ResizablePanel>
               <ResizableHandle withHandle />
               <ResizablePanel defaultSize={30} minSize={28}>
                 <AiInsightsPanel
                   insights={filteredInsights}
-                  insightTypes={insightTypes}
-                  severityFilter={insightSeverityFilter}
-                  typeFilter={insightTypeFilter}
-                  onSeverityFilterChange={setInsightSeverityFilter}
-                  onTypeFilterChange={setInsightTypeFilter}
-                  onOpenInsight={handleInsightOpen}
-                  onToggleReviewed={toggleInsightReviewed}
-                  onExport={exportInsights}
+                  interestingPages={interestingPages}
+                  analyzingPageIds={analyzingPageIds}
                 />
               </ResizablePanel>
             </ResizablePanelGroup>
@@ -161,13 +128,7 @@ export function BrowserAutomationPage() {
         </ResizablePanelGroup>
       </main>
 
-      <PageDetailDrawer
-        page={selectedPage}
-        onClose={() => selectPage(null)}
-        onCopyUrl={handleCopyPageUrl}
-        onOpenPage={handleOpenPage}
-        onToggleInteresting={markPageInteresting}
-      />
+      <PageDetailDrawer page={selectedPage} />
 
       <Dialog open={Boolean(humanInputRequest)} onOpenChange={(open) => {
         if (!open) clearHumanInputRequest();

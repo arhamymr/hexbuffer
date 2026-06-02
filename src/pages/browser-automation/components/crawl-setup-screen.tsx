@@ -14,7 +14,6 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
 import type { CrawlSetupConfig } from '../types';
 
 interface CrawlSetupScreenProps {
@@ -117,7 +116,7 @@ export function CrawlSetupScreen({
         <DialogHeader>
           <DialogTitle>Crawl Config</DialogTitle>
           <DialogDescription>
-            Configure the target, crawl limits, scope rules, timing, and AI analysis.
+            Configure the target, crawl limits, scope rules, and timing.
           </DialogDescription>
         </DialogHeader>
 
@@ -219,17 +218,6 @@ export function CrawlSetupScreen({
 
           {/* Scope rules */}
           <div className="space-y-3">
-            <div className="flex items-center justify-between rounded-md border p-2">
-              <div>
-                <div className="text-sm font-medium">Same-domain only</div>
-                <div className="text-xs text-muted-foreground">Keep navigation inside the target origin.</div>
-              </div>
-              <Switch
-                checked={setup.sameDomainOnly}
-                onCheckedChange={(checked) => onSetupChange({ sameDomainOnly: checked })}
-                disabled={disabled}
-              />
-            </div>
             <div className="space-y-2">
               <Label htmlFor="exclude-paths">Exclude Paths</Label>
               <Input
@@ -242,21 +230,6 @@ export function CrawlSetupScreen({
               />
               <p className="text-xs text-muted-foreground">Comma-separated paths to skip. Each must start with /.</p>
               {errors.excludePaths && <p className="text-xs text-destructive">{errors.excludePaths}</p>}
-            </div>
-          </div>
-
-          {/* AI insights toggle */}
-          <div className="grid grid-cols-1 gap-2">
-            <div className="flex items-center justify-between rounded-md border p-2">
-              <div>
-                <div className="text-sm">AI insights</div>
-                <div className="text-xs text-muted-foreground">Analyze each page for security findings.</div>
-              </div>
-              <Switch
-                checked={setup.enableAiInsights}
-                onCheckedChange={(checked) => onSetupChange({ enableAiInsights: checked })}
-                disabled={disabled}
-              />
             </div>
           </div>
         </div>

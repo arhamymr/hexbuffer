@@ -1,6 +1,7 @@
 import { useChat } from '@ai-sdk/react';
 import { invoke } from '@tauri-apps/api/core';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { FileUIPart } from 'ai';
 import { DASHBOARD_DEFAULT_AI_MODEL } from '../constants';
 import { DashboardSettingsChatTransport } from '../lib/dashboard-chat-transport';
 import type { DashboardAiSettings, DashboardChatMessage } from '../types';
@@ -11,10 +12,20 @@ const DEFAULT_AI_SETTINGS: DashboardAiSettings = {
   hasApiKey: false,
 };
 
+interface PromptInputMessage {
+  text: string;
+  files: FileUIPart[];
+}
+
 export function useDashboardPage() {
   const [aiSettings, setAiSettings] = useState<DashboardAiSettings>(DEFAULT_AI_SETTINGS);
   const [aiSettingsLoading, setAiSettingsLoading] = useState(true);
-  const [prompt, setPrompt] = useState('');
+  const aiSettingsRef = useRef(aiSettings);
+
+  useEffect(() => {
+    aiSettingsRef.current = aiSettings;
+  }, [aiSettings]);
+
   const transport = useMemo(() => new DashboardSettingsChatTransport(), []);
   const {
     clearError,
@@ -26,12 +37,6 @@ export function useDashboardPage() {
   } = useChat<DashboardChatMessage>({
     transport,
   });
-
-  async function refreshAiSettings() {
-    const settings = await invoke<DashboardAiSettings>('get_ai_settings');
-    setAiSettings(settings);
-    return settings;
-  }
 
   useEffect(() => {
     let active = true;
@@ -59,43 +64,41 @@ export function useDashboardPage() {
     };
   }, []);
 
-  const handleSend = async () => {
-    const text = prompt.trim();
-
-    if (!text) {
+  const handleSubmit = useCallback(async ({ text, files }: PromptInputMessage) => {
+    if (!text.trim()) {
       return;
-    }
-
-    let currentAiSettings = aiSettings;
-
-    try {
-      currentAiSettings = await refreshAiSettings();
-    } catch (error) {
-      console.error('Failed to refresh AI settings for chat:', error);
     }
 
     clearError();
     await sendMessage(
-      { text },
+      { text, files },
       {
         body: {
-          aiSettings: currentAiSettings,
+          aiSettings: aiSettingsRef.current,
         },
       }
     );
-    setPrompt('');
-  };
+  }, [clearError, sendMessage]);
+
+  const setModel = useCallback((model: string) => {
+    setAiSettings((prev) => ({ ...prev, model }));
+  }, []);
+
+  const setProvider = useCallback((provider: DashboardAiSettings['provider']) => {
+    setAiSettings((prev) => ({ ...prev, provider }));
+  }, []);
 
   return {
     aiSettings,
     aiSettingsLoading,
     error,
-    handleSend,
+    handleSubmit,
     isStreaming: status === 'submitted' || status === 'streaming',
     messages,
     model: aiSettings.model,
-    prompt,
-    setPrompt,
+    provider: aiSettings.provider,
+    setModel,
+    setProvider,
     status,
     stop,
   };

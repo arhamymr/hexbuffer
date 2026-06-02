@@ -1,21 +1,23 @@
 'use client';
 
 import type { MouseEvent } from 'react';
+import { useState } from 'react';
 import { ChevronDown, ChevronRight, FileText, Lock, LockOpen } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useTreeNode } from '@/pages/live-traffic/hooks/use-tree-node';
 import type { TreeNodeData } from './types';
 
-interface TreeNodeProps {
-  node: TreeNodeData;
+interface TreeNodeProps<TMeta = unknown> {
+  node: TreeNodeData<TMeta>;
   level: number;
   selectedId: string | null;
   defaultExpanded: boolean;
-  onSelectEndpoint: (node: TreeNodeData) => void;
-  onSelectHost: (node: TreeNodeData) => void;
+  defaultExpandedIds: string[];
+  onSelectNode?: (node: TreeNodeData<TMeta>) => void;
+  onSelectEndpoint?: (node: TreeNodeData<TMeta>) => void;
+  onSelectHost?: (node: TreeNodeData<TMeta>) => void;
 }
 
-function isHttpsHost(node: TreeNodeData): boolean {
+function isHttpsHost<TMeta>(node: TreeNodeData<TMeta>): boolean {
   if (node.label.endsWith(':443')) {
     return true;
   }
@@ -23,7 +25,11 @@ function isHttpsHost(node: TreeNodeData): boolean {
   return node.children.some((child) => child.label.toLowerCase().startsWith('https://'));
 }
 
-function getNodeIcon(node: TreeNodeData) {
+function getNodeIcon<TMeta>(node: TreeNodeData<TMeta>) {
+  if (node.icon) {
+    return { Icon: node.icon, colorClassName: node.iconClassName };
+  }
+
   if (node.type === 'host') {
     return isHttpsHost(node)
       ? { Icon: Lock, colorClassName: 'text-emerald-500' }
@@ -33,28 +39,36 @@ function getNodeIcon(node: TreeNodeData) {
   return { Icon: FileText, colorClassName: 'text-gray-500' };
 }
 
-export function TreeNode({
+export function TreeNode<TMeta = unknown>({
   node,
   level,
   selectedId,
   defaultExpanded,
+  defaultExpandedIds,
+  onSelectNode,
   onSelectEndpoint,
   onSelectHost,
-}: TreeNodeProps) {
-  const { isExpanded, toggleExpanded } = useTreeNode(defaultExpanded);
+}: TreeNodeProps<TMeta>) {
+  const [isExpanded, setIsExpanded] = useState(defaultExpanded);
   const hasChildren = node.children.length > 0;
   const isEndpoint = node.type === 'endpoint';
   const isHost = node.type === 'host';
   const { Icon, colorClassName } = getNodeIcon(node);
 
+  const toggleExpanded = () => {
+    setIsExpanded((currentValue) => !currentValue);
+  };
+
   const handleClick = () => {
+    onSelectNode?.(node);
+
     if (isEndpoint) {
-      onSelectEndpoint(node);
+      onSelectEndpoint?.(node);
       return;
     }
 
     if (isHost) {
-      onSelectHost(node);
+      onSelectHost?.(node);
     }
 
     if (hasChildren && !isExpanded) {
@@ -71,7 +85,7 @@ export function TreeNode({
     <div>
       <div
         className={cn(
-          'flex items-center font-mono gap-1.5 px-2 py-1 hover:bg-muted/50 cursor-pointer rounded-sm transition-colors',
+          'flex cursor-pointer items-center gap-1.5 rounded-sm px-2 py-1 font-mono transition-colors hover:bg-muted/50',
           selectedId === node.id && 'bg-muted'
         )}
         style={{ paddingLeft: `${level * 12}px` }}
@@ -93,12 +107,22 @@ export function TreeNode({
         ) : (
           <span className="w-3" />
         )}
-        <Icon className={cn('w-3 h-3 flex-shrink-0', colorClassName)} />
-        <span className={cn('text-xs truncate flex-1', isEndpoint && 'font-mono')}>
-          {node.label}
-        </span>
+        <Icon className={cn('h-3 w-3 flex-shrink-0', colorClassName)} />
+        <div className="min-w-0 flex-1">
+          <div className="flex min-w-0 items-center gap-1.5">
+            <span className={cn('truncate text-xs', isEndpoint && 'font-mono')}>
+              {node.label}
+            </span>
+            {node.badge}
+          </div>
+          {node.description && (
+            <div className="mt-0.5 truncate text-[11px] text-muted-foreground">
+              {node.description}
+            </div>
+          )}
+        </div>
         {node.count !== undefined && node.count > 0 && (
-          <span className="text-xs text-muted-foreground bg-muted px-1 rounded">
+          <span className="rounded bg-muted px-1 text-xs text-muted-foreground">
             {node.count}
           </span>
         )}
@@ -112,7 +136,9 @@ export function TreeNode({
               node={child}
               level={level + 1}
               selectedId={selectedId}
-              defaultExpanded={false}
+              defaultExpanded={defaultExpandedIds.includes(child.id)}
+              defaultExpandedIds={defaultExpandedIds}
+              onSelectNode={onSelectNode}
               onSelectEndpoint={onSelectEndpoint}
               onSelectHost={onSelectHost}
             />

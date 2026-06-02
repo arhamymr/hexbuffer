@@ -1,4 +1,5 @@
 pub mod ai;
+pub mod ai_browser;
 pub mod browser;
 pub mod commands;
 pub mod db;
@@ -13,6 +14,12 @@ pub use ai::{
     clear_ai_api_key, get_ai_settings, get_mastra_status, has_ai_api_key, save_ai_settings,
     start_mastra, start_mastra_if_enabled, stop_mastra, AiSettings, MastraProcessState,
     MastraStatus,
+};
+pub use ai_browser::{
+    ai_browser_pause_crawl, ai_browser_resume_crawl, ai_browser_start_crawl,
+    ai_browser_stop_crawl, get_ai_browser_session, list_ai_browser_insights,
+    list_ai_browser_logs, list_ai_browser_pages, ActivityLog, AiBrowserState, AIInsight,
+    CrawlConfig, CrawlPage, CrawlSession,
 };
 pub use browser::{
     browser_batch, browser_click, browser_close, browser_execute, browser_fill, browser_navigate,

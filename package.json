@@ -9,7 +9,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "fix:packet-permissions": "bash scripts/fix-packet-capture-permissions.sh",
-    "deploy": "bash ./scripts/build.sh --bump"
+    "deploy": "bash ./scripts/deploy.sh"
   },
   "dependencies": {
     "@fontsource-variable/geist": "^5.2.8",

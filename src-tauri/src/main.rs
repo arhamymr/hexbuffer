@@ -7,7 +7,7 @@ use zeroxbuffer::ai::MastraProcessState;
 use zeroxbuffer::commands::intruder::IntruderState;
 use zeroxbuffer::commands::repeater::WsRepeaterState;
 use zeroxbuffer::{
-    BrowserProcessState, HistoryBridge, PacketCaptureState, PortScanState, ProxyState,
+    AiBrowserState, BrowserProcessState, HistoryBridge, PacketCaptureState, PortScanState, ProxyState,
     SqliScanState,
 };
 
@@ -46,6 +46,7 @@ fn main() {
             app.manage(PortScanState::default());
             app.manage(PacketCaptureState::default());
             app.manage(BrowserProcessState::default());
+            app.manage(AiBrowserState::default());
             app.manage(SqliScanState::new());
             app.manage(WsRepeaterState::default());
             app.manage(history);
@@ -134,6 +135,14 @@ fn main() {
             zeroxbuffer::browser::browser_screenshot,
             zeroxbuffer::browser::browser_batch,
             zeroxbuffer::browser::browser_execute,
+            zeroxbuffer::ai_browser::ai_browser_start_crawl,
+            zeroxbuffer::ai_browser::ai_browser_pause_crawl,
+            zeroxbuffer::ai_browser::ai_browser_resume_crawl,
+            zeroxbuffer::ai_browser::ai_browser_stop_crawl,
+            zeroxbuffer::ai_browser::get_ai_browser_session,
+            zeroxbuffer::ai_browser::list_ai_browser_pages,
+            zeroxbuffer::ai_browser::list_ai_browser_insights,
+            zeroxbuffer::ai_browser::list_ai_browser_logs,
             zeroxbuffer::sqli::start_sqli_scan,
             zeroxbuffer::sqli::stop_sqli_scan
         ])

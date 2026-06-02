@@ -11,15 +11,22 @@ Usage:
   ./scripts/build.sh 2026.1.1        Bump to exact version, then build/upload
   ./scripts/build.sh --bump          Auto-increment patch version, then build/upload
   ./scripts/build.sh --version 2026.1.1
+  ./scripts/build.sh --windows-all   Build/upload Windows x64, x86, and ARM64
 EOF
 }
 
 REQUESTED_VERSION=""
 AUTO_BUMP=false
 FORCE_BUILD=false
+WINDOWS_ALL=false
 
 while [ $# -gt 0 ]; do
   case "$1" in
+    --windows-all)
+      WINDOWS_ALL=true
+      FORCE_BUILD=true
+      shift
+      ;;
     --bump|-b)
       AUTO_BUMP=true
       FORCE_BUILD=true
@@ -63,6 +70,20 @@ else
   echo "[env] .env not found; continuing with shell environment only"
 fi
 
+if $WINDOWS_ALL; then
+  case "$(uname -s)" in
+    MINGW*|MSYS*|CYGWIN*) ;;
+    *)
+      echo "--windows-all must be run on a Windows release machine."
+      echo "Install these Rust targets first:"
+      echo "  rustup target add x86_64-pc-windows-msvc"
+      echo "  rustup target add i686-pc-windows-msvc"
+      echo "  rustup target add aarch64-pc-windows-msvc"
+      exit 1
+      ;;
+  esac
+fi
+
 APP_NAME="0xbuffer"
 
 if [ -n "$REQUESTED_VERSION" ]; then
@@ -79,6 +100,12 @@ RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m'
+
+WINDOWS_TARGETS=(
+  "x86_64-pc-windows-msvc:windows-x86_64"
+  "i686-pc-windows-msvc:windows-i686"
+  "aarch64-pc-windows-msvc:windows-aarch64"
+)
 
 # ── Platform detection ───────────────────────────────────────────────
 
@@ -163,38 +190,63 @@ has_newer_build_inputs() {
     -newer "$artifact" 2>/dev/null | head -1)" ]
 }
 
-# ── Check for existing artifacts ─────────────────────────────────────
+windows_bundle_dir_for_target() {
+  local rust_target="$1"
+  echo "src-tauri/target/${rust_target}/release/bundle/nsis"
+}
 
-ARTIFACTS_EXIST=false
-ARTIFACTS_STALE=false
-
-EXISTING_BUNDLE=$(find_first_artifact "$BUNDLE_DIR" "*${BUNDLE_EXT}")
-EXISTING_INSTALLER=$(find_first_artifact "$INSTALLER_DIR" "$INSTALLER_GLOB")
-
-if [ -n "${EXISTING_BUNDLE:-}" ] && [ -f "${EXISTING_BUNDLE}.sig" ] && [ -n "${EXISTING_INSTALLER:-}" ]; then
-  ARTIFACTS_EXIST=true
-fi
-
-if $ARTIFACTS_EXIST && has_newer_build_inputs "$EXISTING_BUNDLE"; then
-  ARTIFACTS_STALE=true
-fi
-
-if $ARTIFACTS_EXIST && ! $ARTIFACTS_STALE && ! $FORCE_BUILD; then
-  echo -e "${GREEN}Artifacts for v${VERSION} already exist — skipping build.${NC}"
-else
-  if $FORCE_BUILD; then
-    echo "Version bump requested; building fresh artifacts for v${VERSION}..."
-  elif $ARTIFACTS_STALE; then
-    echo "Build inputs changed since the existing updater artifact; rebuilding fresh artifacts for v${VERSION}..."
-  fi
-
+build_windows_all() {
   echo "Installing dependencies..."
   pnpm install
 
-  echo "Building Tauri desktop app..."
-  pnpm tauri build --bundles app,dmg
+  local entry rust_target updater_platform
+  for entry in "${WINDOWS_TARGETS[@]}"; do
+    rust_target="${entry%%:*}"
+    updater_platform="${entry#*:}"
 
-  echo "Build complete."
+    echo "Building Tauri Windows app for ${updater_platform} (${rust_target})..."
+    pnpm tauri build --target "$rust_target" --bundles nsis
+  done
+
+  echo "Windows builds complete."
+}
+
+if $WINDOWS_ALL; then
+  build_windows_all
+else
+  # ── Check for existing artifacts ─────────────────────────────────────
+
+  ARTIFACTS_EXIST=false
+  ARTIFACTS_STALE=false
+
+  EXISTING_BUNDLE=$(find_first_artifact "$BUNDLE_DIR" "*${BUNDLE_EXT}")
+  EXISTING_INSTALLER=$(find_first_artifact "$INSTALLER_DIR" "$INSTALLER_GLOB")
+
+  if [ -n "${EXISTING_BUNDLE:-}" ] && [ -f "${EXISTING_BUNDLE}.sig" ] && [ -n "${EXISTING_INSTALLER:-}" ]; then
+    ARTIFACTS_EXIST=true
+  fi
+
+  if $ARTIFACTS_EXIST && has_newer_build_inputs "$EXISTING_BUNDLE"; then
+    ARTIFACTS_STALE=true
+  fi
+
+  if $ARTIFACTS_EXIST && ! $ARTIFACTS_STALE && ! $FORCE_BUILD; then
+    echo -e "${GREEN}Artifacts for v${VERSION} already exist — skipping build.${NC}"
+  else
+    if $FORCE_BUILD; then
+      echo "Version bump requested; building fresh artifacts for v${VERSION}..."
+    elif $ARTIFACTS_STALE; then
+      echo "Build inputs changed since the existing updater artifact; rebuilding fresh artifacts for v${VERSION}..."
+    fi
+
+    echo "Installing dependencies..."
+    pnpm install
+
+    echo "Building Tauri desktop app..."
+    pnpm tauri build --bundles app,dmg
+
+    echo "Build complete."
+  fi
 fi
 
 # ── Upload to Cloudflare R2 ──────────────────────────────────────────
@@ -218,62 +270,111 @@ sha256_file() {
   fi
 }
 
-echo -e "[upload] detected platform: ${GREEN}${PLATFORM}${NC}"
-
-# ── Find updater bundle + signature ──────────────────────────────────
-
 find_bundle() {
   local bundle_dir="$1"
   local bundle_ext="$2"
   find_first_artifact "$bundle_dir" "*${bundle_ext}"
 }
 
-BUNDLE_FILE=$(find_bundle "$BUNDLE_DIR" "$BUNDLE_EXT")
-SIG_FILE="${BUNDLE_FILE}.sig"
+upload_installer_checksum() {
+  local installer_file="$1"
+  local installer_name="$2"
+  local installer_sha_file
 
-if [ -z "$BUNDLE_FILE" ] || [ ! -f "$BUNDLE_FILE" ]; then
-  echo -e "${RED}[upload] updater bundle not found${NC}"
-  exit 1
-fi
-if [ ! -f "$SIG_FILE" ]; then
-  echo -e "${RED}[upload] signature file not found: $SIG_FILE${NC}"
-  exit 1
-fi
+  installer_sha_file="/tmp/${installer_name}.sha256"
+  sha256_file "$installer_file" | awk -v name="$installer_name" '{print $1 "  " name}' > "$installer_sha_file"
+  echo "[upload] uploading installer checksum: ${GREEN}${installer_name}.sha256${NC}"
+  r2_cp "$installer_sha_file" "s3://${R2_BUCKET}/${installer_name}.sha256"
+  rm -f "$installer_sha_file"
+}
 
-BUNDLE_NAME=$(basename "$BUNDLE_FILE")
-SIGNATURE=$(<"$SIG_FILE")
+update_latest_platform() {
+  local latest_json="$1"
+  local platform="$2"
+  local signature="$3"
+  local bundle_name="$4"
 
-echo -e "[upload] bundle: ${GREEN}${BUNDLE_NAME}${NC}"
-echo -e "[upload] bucket: ${GREEN}${R2_BUCKET}${NC}"
+  export UPDATER_SIGNATURE="$signature"
+  export UPDATER_PLATFORM="$platform"
+  export UPDATER_VERSION="$VERSION"
+  export UPDATER_PUB_DATE="$PUB_DATE"
+  export UPDATER_BASE_URL="${BASE_URL%/}"
+  export UPDATER_BUNDLE_NAME="$bundle_name"
+  export UPDATER_LATEST_JSON="$latest_json"
 
-# ── Upload bundle & signature ────────────────────────────────────────
+  node -e "
+    const fs = require('fs');
+    const latest = JSON.parse(fs.readFileSync(process.env.UPDATER_LATEST_JSON, 'utf-8'));
+    if (!latest.platforms) latest.platforms = {};
 
-echo "[upload] uploading bundle..."
-r2_cp "$BUNDLE_FILE" "s3://${R2_BUCKET}/${BUNDLE_NAME}"
-echo "[upload] uploading signature..."
-r2_cp "$SIG_FILE"   "s3://${R2_BUCKET}/${BUNDLE_NAME}.sig"
+    latest.version = process.env.UPDATER_VERSION;
+    latest.notes = process.env.UPDATER_NOTES || '';
+    latest.pub_date = process.env.UPDATER_PUB_DATE;
+
+    latest.platforms[process.env.UPDATER_PLATFORM] = {
+      signature: process.env.UPDATER_SIGNATURE,
+      url: process.env.UPDATER_BASE_URL + '/' + process.env.UPDATER_BUNDLE_NAME,
+    };
+
+    fs.writeFileSync(process.env.UPDATER_LATEST_JSON, JSON.stringify(latest, null, 2) + '\n');
+  "
+}
+
+upload_platform_artifacts() {
+  local platform="$1"
+  local bundle_dir="$2"
+  local bundle_ext="$3"
+  local installer_dir="$4"
+  local installer_glob="$5"
+  local latest_json="$6"
+  local installer_name_override="${7:-}"
+  local bundle_file sig_file bundle_name signature installer_file installer_name
+
+  bundle_file=$(find_bundle "$bundle_dir" "$bundle_ext")
+  sig_file="${bundle_file}.sig"
+
+  if [ -z "$bundle_file" ] || [ ! -f "$bundle_file" ]; then
+    echo -e "${RED}[upload] updater bundle not found for ${platform}${NC}"
+    exit 1
+  fi
+  if [ ! -f "$sig_file" ]; then
+    echo -e "${RED}[upload] signature file not found for ${platform}: $sig_file${NC}"
+    exit 1
+  fi
+
+  bundle_name=$(basename "$bundle_file")
+  signature=$(<"$sig_file")
+
+  echo -e "[upload] platform: ${GREEN}${platform}${NC}"
+  echo -e "[upload] bundle: ${GREEN}${bundle_name}${NC}"
+  echo -e "[upload] bucket: ${GREEN}${R2_BUCKET}${NC}"
+
+  echo "[upload] uploading bundle..."
+  r2_cp "$bundle_file" "s3://${R2_BUCKET}/${bundle_name}"
+  echo "[upload] uploading signature..."
+  r2_cp "$sig_file" "s3://${R2_BUCKET}/${bundle_name}.sig"
+
+  installer_file=$(find_first_artifact "$installer_dir" "$installer_glob")
+  if [ -n "${installer_file:-}" ] && [ -f "$installer_file" ]; then
+    installer_name=$(basename "$installer_file")
+    if [ -n "$installer_name_override" ]; then
+      installer_name="$installer_name_override"
+    fi
+
+    echo "[upload] uploading installer: ${GREEN}${installer_name}${NC}"
+    r2_cp "$installer_file" "s3://${R2_BUCKET}/${installer_name}"
+    upload_installer_checksum "$installer_file" "$installer_name"
+  else
+    echo -e "${YELLOW}[upload] installer not found for ${platform}, skipping${NC}"
+  fi
+
+  update_latest_platform "$latest_json" "$platform" "$signature" "$bundle_name"
+}
+
+echo -e "[upload] detected platform: ${GREEN}${PLATFORM}${NC}"
+
 echo "[upload] uploading install script..."
 r2_cp "$ROOT/scripts/install.sh" "s3://${R2_BUCKET}/install.sh"
-
-# ── Upload installer (dmg / AppImage / exe) ───────────────────────────
-
-INSTALLER_FILE=$(find_first_artifact "$INSTALLER_DIR" "$INSTALLER_GLOB")
-if [ -n "${INSTALLER_FILE:-}" ] && [ -f "$INSTALLER_FILE" ]; then
-  INSTALLER_NAME=$(basename "$INSTALLER_FILE")
-  if [ "$(uname -s)" = "Darwin" ]; then
-    INSTALLER_NAME="${APP_NAME}_${VERSION}_${PLATFORM#darwin-}.dmg"
-  fi
-  echo "[upload] uploading installer: ${GREEN}${INSTALLER_NAME}${NC}"
-  r2_cp "$INSTALLER_FILE" "s3://${R2_BUCKET}/${INSTALLER_NAME}"
-
-  INSTALLER_SHA_FILE="/tmp/${INSTALLER_NAME}.sha256"
-  sha256_file "$INSTALLER_FILE" | awk -v name="$INSTALLER_NAME" '{print $1 "  " name}' > "$INSTALLER_SHA_FILE"
-  echo "[upload] uploading installer checksum: ${GREEN}${INSTALLER_NAME}.sha256${NC}"
-  r2_cp "$INSTALLER_SHA_FILE" "s3://${R2_BUCKET}/${INSTALLER_NAME}.sha256"
-  rm -f "$INSTALLER_SHA_FILE"
-else
-  echo -e "${YELLOW}[upload] installer not found, skipping${NC}"
-fi
 
 # ── Update latest.json ───────────────────────────────────────────────
 
@@ -282,30 +383,21 @@ LATEST_JSON="/tmp/0xbuffer_latest.json"
 echo "[upload] downloading existing latest.json..."
 r2_cat "s3://${R2_BUCKET}/latest.json" > "$LATEST_JSON" || echo '{}' > "$LATEST_JSON"
 
-export UPDATER_SIGNATURE="$SIGNATURE"
-export UPDATER_PLATFORM="$PLATFORM"
-export UPDATER_VERSION="$VERSION"
-export UPDATER_PUB_DATE="$PUB_DATE"
-export UPDATER_BASE_URL="${BASE_URL%/}"
-export UPDATER_BUNDLE_NAME="$BUNDLE_NAME"
-export UPDATER_LATEST_JSON="$LATEST_JSON"
+if $WINDOWS_ALL; then
+  for entry in "${WINDOWS_TARGETS[@]}"; do
+    rust_target="${entry%%:*}"
+    updater_platform="${entry#*:}"
+    target_bundle_dir=$(windows_bundle_dir_for_target "$rust_target")
+    upload_platform_artifacts "$updater_platform" "$target_bundle_dir" ".exe" "$target_bundle_dir" "*.exe" "$LATEST_JSON"
+  done
+else
+  INSTALLER_NAME_OVERRIDE=""
+  if [ "$(uname -s)" = "Darwin" ]; then
+    INSTALLER_NAME_OVERRIDE="${APP_NAME}_${VERSION}_${PLATFORM#darwin-}.dmg"
+  fi
 
-node -e "
-  const fs = require('fs');
-  const latest = JSON.parse(fs.readFileSync(process.env.UPDATER_LATEST_JSON, 'utf-8'));
-  if (!latest.platforms) latest.platforms = {};
-
-  latest.version = process.env.UPDATER_VERSION;
-  latest.notes = process.env.UPDATER_NOTES || '';
-  latest.pub_date = process.env.UPDATER_PUB_DATE;
-
-  latest.platforms[process.env.UPDATER_PLATFORM] = {
-    signature: process.env.UPDATER_SIGNATURE,
-    url: process.env.UPDATER_BASE_URL + '/' + process.env.UPDATER_BUNDLE_NAME,
-  };
-
-  fs.writeFileSync(process.env.UPDATER_LATEST_JSON, JSON.stringify(latest, null, 2) + '\n');
-"
+  upload_platform_artifacts "$PLATFORM" "$BUNDLE_DIR" "$BUNDLE_EXT" "$INSTALLER_DIR" "$INSTALLER_GLOB" "$LATEST_JSON" "$INSTALLER_NAME_OVERRIDE"
+fi
 
 echo "[upload] latest.json updated:"
 cat "$LATEST_JSON"

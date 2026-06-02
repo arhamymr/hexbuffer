@@ -1,5 +1,21 @@
 import { create } from 'zustand';
 import { invoke } from '@tauri-apps/api/core';
+import { DEFAULT_CRAWL_SETUP } from '@/pages/browser-automation/constants';
+import { createMockCrawl, deriveOverview, downloadJson } from '@/pages/browser-automation/lib/crawl-data';
+import type {
+  ActivityLog,
+  AIInsight,
+  CrawlOverview,
+  CrawlPage,
+  CrawlSession,
+  CrawlSetupConfig,
+} from '@/pages/browser-automation/types';
+
+export interface BrowserStatus {
+  running: boolean;
+  url: string | null;
+  pid: number | null;
+}
 
 export interface AccessibilityElement {
   refId: string;
@@ -15,10 +31,10 @@ export interface BrowserSnapshot {
   elements: AccessibilityElement[];
 }
 
-export interface BrowserStatus {
-  running: boolean;
-  url: string | null;
-  pid: number | null;
+export interface DiscoveredApi {
+  method: string;
+  path: string;
+  timestamp: Date;
 }
 
 export interface ActionLogEntry {
@@ -27,335 +43,216 @@ export interface ActionLogEntry {
   message: string;
 }
 
-export interface BrowserAutomationTab {
-  id: string;
-  name: string;
-  url: string;
-  instruction: string;
-  isRunning: boolean;
-  snapshot: BrowserSnapshot | null;
-  actions: ActionLogEntry[];
-  discoveredApis: DiscoveredApi[];
-}
-
-export interface DiscoveredApi {
-  method: string;
-  path: string;
-  timestamp: Date;
-}
-
 interface BrowserAutomationState {
-  tabs: BrowserAutomationTab[];
-  activeTabId: string;
-  nextTabNumber: number;
-  browserStatus: BrowserStatus | null;
+  setup: CrawlSetupConfig;
+  session: CrawlSession | null;
+  pages: CrawlPage[];
+  insights: AIInsight[];
+  logs: ActivityLog[];
+  selectedPageId: string | null;
+  expandedPageIds: string[];
+  lastError: string | null;
 
-  setActiveTabId: (id: string) => void;
-  addTab: () => string;
-  closeTab: (id: string) => void;
-  renameTab: (id: string, name: string) => void;
-
-  updateUrl: (id: string, url: string) => void;
-  updateInstruction: (id: string, instruction: string) => void;
-
-  openBrowser: (tabId: string) => Promise<void>;
-  closeBrowser: () => Promise<void>;
-  navigateBrowser: (tabId: string, url: string) => Promise<void>;
-  takeSnapshot: (tabId: string) => Promise<void>;
-  runAiAutomation: (tabId: string) => Promise<void>;
-  stopAutomation: (tabId: string) => void;
-
-  clickElement: (tabId: string, refId: string) => Promise<void>;
-  fillElement: (tabId: string, refId: string, text: string) => Promise<void>;
-  typeElement: (tabId: string, refId: string, text: string) => Promise<void>;
-  pressKey: (tabId: string, key: string) => Promise<void>;
-
-  addActionLog: (tabId: string, entry: ActionLogEntry) => void;
-  clearActionLog: (tabId: string) => void;
-
-  refreshBrowserStatus: () => Promise<void>;
+  overview: () => CrawlOverview;
+  updateSetup: (patch: Partial<CrawlSetupConfig>) => void;
+  startCrawl: () => Promise<void>;
+  pauseCrawl: () => Promise<void>;
+  resumeCrawl: () => Promise<void>;
+  stopCrawl: () => Promise<void>;
+  exportCrawl: () => void;
+  exportInsights: () => void;
+  exportLogs: () => void;
+  selectPage: (pageId: string | null) => void;
+  togglePageExpanded: (pageId: string) => void;
+  toggleInsightReviewed: (insightId: string) => void;
+  markPageInteresting: (pageId: string) => void;
+  applySessionStarted: (session: CrawlSession) => void;
+  applySessionUpdated: (session: Partial<CrawlSession>) => void;
+  applyPageDiscovered: (page: CrawlPage) => void;
+  applyPageUpdated: (page: Partial<CrawlPage> & { id: string }) => void;
+  applyInsightCreated: (insight: AIInsight) => void;
+  applyLogCreated: (log: ActivityLog) => void;
 }
 
-function createAutomationTab(index: number): BrowserAutomationTab {
+function makeSession(setup: CrawlSetupConfig): CrawlSession {
   return {
-    id: `browser-auto-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
-    name: `Crawl ${index}`,
-    url: '',
-    instruction: '',
-    isRunning: false,
-    snapshot: null,
-    actions: [],
-    discoveredApis: [],
+    id: `crawl-${Date.now()}`,
+    targetUrl: setup.targetUrl,
+    status: 'running',
+    strategy: setup.strategy,
+    maxDepth: setup.maxDepth,
+    maxPages: setup.maxPages,
+    startedAt: new Date().toISOString(),
   };
 }
 
-const DEFAULT_CRAWL_INSTRUCTION = [
-  'Crawl the entire target.',
-  'Discover routes, forms, authentication surfaces, API endpoints, and security-relevant behavior.',
-  'Look for vulnerabilities such as missing access controls, exposed secrets, unsafe forms, injection points, XSS sinks, CSRF risk, open redirects, and sensitive data exposure.',
-  'Return concise findings with evidence and next actions.',
-].join(' ');
+function commandName(action: 'pause' | 'resume' | 'stop') {
+  return `ai_browser_${action}_crawl`;
+}
 
-const initialTab = createAutomationTab(1);
+async function invokeOptional(command: string, payload?: Record<string, unknown>) {
+  try {
+    await invoke(command, payload);
+  } catch (error) {
+    console.warn(`[browser automation] Optional Tauri command failed: ${command}`, error);
+  }
+}
 
 export const useBrowserAutomationStore = create<BrowserAutomationState>((set, get) => ({
-  tabs: [initialTab],
-  activeTabId: initialTab.id,
-  nextTabNumber: 2,
-  browserStatus: null,
+  setup: DEFAULT_CRAWL_SETUP,
+  session: null,
+  pages: [],
+  insights: [],
+  logs: [],
+  selectedPageId: null,
+  expandedPageIds: ['page-root', 'page-products', 'page-login'],
+  lastError: null,
 
-  setActiveTabId: (id) => set({ activeTabId: id }),
+  overview: () => deriveOverview(get().session, get().pages),
 
-  addTab: () => {
-    const { nextTabNumber } = get();
-    const newTab = createAutomationTab(nextTabNumber);
+  updateSetup: (patch) =>
     set((state) => ({
-      tabs: [...state.tabs, newTab],
-      activeTabId: newTab.id,
-      nextTabNumber: state.nextTabNumber + 1,
-    }));
-    return newTab.id;
-  },
-
-  closeTab: (id) =>
-    set((state) => {
-      const remainingTabs = state.tabs.filter((tab) => tab.id !== id);
-      if (remainingTabs.length === 0) {
-        const replacementTab = createAutomationTab(1);
-        return {
-          tabs: [replacementTab],
-          activeTabId: replacementTab.id,
-          nextTabNumber: 2,
-        };
-      }
-      if (state.activeTabId === id) {
-        return { tabs: remainingTabs, activeTabId: remainingTabs[0].id };
-      }
-      return { tabs: remainingTabs };
-    }),
-
-  renameTab: (id, name) =>
-    set((state) => ({
-      tabs: state.tabs.map((tab) => (tab.id === id ? { ...tab, name } : tab)),
+      setup: { ...state.setup, ...patch },
     })),
 
-  updateUrl: (id, url) =>
-    set((state) => ({
-      tabs: state.tabs.map((tab) => (tab.id === id ? { ...tab, url } : tab)),
-    })),
+  startCrawl: async () => {
+    const setup = get().setup;
+    const session = makeSession(setup);
 
-  updateInstruction: (id, instruction) =>
-    set((state) => ({
-      tabs: state.tabs.map((tab) => (tab.id === id ? { ...tab, instruction } : tab)),
-    })),
-
-  refreshBrowserStatus: async () => {
-    try {
-      const status = await invoke<BrowserStatus>('get_browser_status');
-      set({ browserStatus: status });
-    } catch (error) {
-      console.error('Failed to get browser status:', error);
-    }
-  },
-
-  openBrowser: async (tabId) => {
-    const tab = get().tabs.find((t) => t.id === tabId);
-    if (!tab) return;
-
-    try {
-      get().addActionLog(tabId, { timestamp: new Date(), type: 'command', message: `Opening ${tab.url}...` });
-      const status = await invoke<BrowserStatus>('browser_open', { url: tab.url });
-      set({ browserStatus: status });
-      get().addActionLog(tabId, { timestamp: new Date(), type: 'result', message: `Browser opened at ${tab.url}` });
-    } catch (error) {
-      const msg = error instanceof Error ? error.message : String(error);
-      get().addActionLog(tabId, { timestamp: new Date(), type: 'error', message: `Failed to open browser: ${msg}` });
-    }
-  },
-
-  closeBrowser: async () => {
-    try {
-      const status = await invoke<BrowserStatus>('browser_close');
-      set({ browserStatus: status });
-      set((state) => ({
-        tabs: state.tabs.map((tab) => ({ ...tab, snapshot: null })),
-      }));
-    } catch (error) {
-      console.error('Failed to close browser:', error);
-    }
-  },
-
-  navigateBrowser: async (tabId, url) => {
-    try {
-      get().addActionLog(tabId, { timestamp: new Date(), type: 'command', message: `Navigating to ${url}...` });
-      await invoke('browser_navigate', { url });
-      get().addActionLog(tabId, { timestamp: new Date(), type: 'result', message: `Navigated to ${url}` });
-    } catch (error) {
-      const msg = error instanceof Error ? error.message : String(error);
-      get().addActionLog(tabId, { timestamp: new Date(), type: 'error', message: `Navigate failed: ${msg}` });
-    }
-  },
-
-  takeSnapshot: async (tabId) => {
-    try {
-      const snapshot = await invoke<BrowserSnapshot>('browser_snapshot');
-      set((state) => ({
-        tabs: state.tabs.map((tab) =>
-          tab.id === tabId ? { ...tab, snapshot } : tab
-        ),
-      }));
-      get().addActionLog(tabId, {
-        timestamp: new Date(),
-        type: 'result',
-        message: `Snapshot: ${snapshot.title} (${snapshot.elements.length} elements)`,
-      });
-    } catch (error) {
-      const msg = error instanceof Error ? error.message : String(error);
-      get().addActionLog(tabId, { timestamp: new Date(), type: 'error', message: `Snapshot failed: ${msg}` });
-    }
-  },
-
-  runAiAutomation: async (tabId) => {
-    const tab = get().tabs.find((t) => t.id === tabId);
-    if (!tab) return;
-
-    if (!tab.url.trim()) {
-      get().addActionLog(tabId, {
-        timestamp: new Date(),
-        type: 'error',
-        message: 'Target URL is required before starting a crawl.',
-      });
-      return;
-    }
-
-    set((state) => ({
-      tabs: state.tabs.map((t) =>
-        t.id === tabId
-          ? {
-            ...t,
-            instruction: t.instruction || DEFAULT_CRAWL_INSTRUCTION,
-            isRunning: true,
-          }
-          : t
-      ),
-    }));
-
-    const instruction = tab.instruction || DEFAULT_CRAWL_INSTRUCTION;
-
-    get().addActionLog(tabId, {
-      timestamp: new Date(),
-      type: 'ai',
-      message: `Starting target crawl for ${tab.url}`,
+    set({
+      session,
+      pages: [],
+      insights: [],
+      logs: [
+        {
+          id: `log-${Date.now()}`,
+          sessionId: session.id,
+          level: 'info',
+          type: 'session',
+          message: `Started crawl for ${setup.targetUrl}`,
+          url: setup.targetUrl,
+          createdAt: session.startedAt ?? new Date().toISOString(),
+        },
+      ],
+      selectedPageId: null,
+      lastError: null,
     });
 
     try {
-      const status = get().browserStatus;
-
-      if (!status?.running) {
-        get().addActionLog(tabId, {
-          timestamp: new Date(),
-          type: 'command',
-          message: `Launching browser at ${tab.url}`,
-        });
-        const nextStatus = await invoke<BrowserStatus>('browser_open', { url: tab.url });
-        set({ browserStatus: nextStatus });
-        get().addActionLog(tabId, {
-          timestamp: new Date(),
-          type: 'result',
-          message: `Browser ready at ${nextStatus.url || tab.url}`,
-        });
-      } else if (status.url !== tab.url) {
-        await get().navigateBrowser(tabId, tab.url);
-      }
-
-      await get().takeSnapshot(tabId);
-      const currentTab = get().tabs.find((t) => t.id === tabId);
-      if (!currentTab?.snapshot) {
-        get().addActionLog(tabId, { timestamp: new Date(), type: 'error', message: 'No snapshot available' });
-        return;
-      }
-
-      const prompt = await invoke<string>('browser_execute', { instruction });
-      get().addActionLog(tabId, {
-        timestamp: new Date(),
-        type: 'ai',
-        message: `Vulnerability analysis prompt prepared (${prompt.length} characters).`,
-      });
-
-      get().addActionLog(tabId, {
-        timestamp: new Date(),
-        type: 'result',
-        message: 'Crawl handoff complete. AI execution is pending Mastra integration.',
-      });
+      await invoke('ai_browser_start_crawl', { config: setup, sessionId: session.id });
     } catch (error) {
-      const msg = error instanceof Error ? error.message : String(error);
-      get().addActionLog(tabId, { timestamp: new Date(), type: 'error', message: `Crawl failed: ${msg}` });
-    } finally {
+      const { pages, insights, logs } = createMockCrawl(session);
       set((state) => ({
-        tabs: state.tabs.map((t) => (t.id === tabId ? { ...t, isRunning: false } : t)),
+        pages,
+        insights,
+        logs: [...state.logs, ...logs],
+        selectedPageId: pages[0]?.id ?? null,
+        lastError: null,
       }));
+      console.warn('[browser automation] Using static crawl data until backend crawl commands are available.', error);
     }
   },
 
-  stopAutomation: (tabId) => {
+  pauseCrawl: async () => {
+    const session = get().session;
+    if (!session) return;
+    set({ session: { ...session, status: 'paused' } });
+    await invokeOptional(commandName('pause'), { sessionId: session.id });
+  },
+
+  resumeCrawl: async () => {
+    const session = get().session;
+    if (!session) return;
+    set({ session: { ...session, status: 'running' } });
+    await invokeOptional(commandName('resume'), { sessionId: session.id });
+  },
+
+  stopCrawl: async () => {
+    const session = get().session;
+    if (!session) return;
+    const finishedAt = new Date().toISOString();
+    set({ session: { ...session, status: 'stopped', finishedAt } });
+    await invokeOptional(commandName('stop'), { sessionId: session.id });
+  },
+
+  exportCrawl: () => {
+    const state = get();
+    downloadJson('ai-browser-crawl.json', {
+      session: state.session,
+      overview: state.overview(),
+      pages: state.pages,
+      insights: state.insights,
+      logs: state.logs,
+    });
+  },
+
+  exportInsights: () => {
+    downloadJson('ai-browser-insights.json', get().insights);
+  },
+
+  exportLogs: () => {
+    downloadJson('ai-browser-activity-log.json', get().logs);
+  },
+
+  selectPage: (pageId) => set({ selectedPageId: pageId }),
+
+  togglePageExpanded: (pageId) =>
     set((state) => ({
-      tabs: state.tabs.map((tab) => (tab.id === tabId ? { ...tab, isRunning: false } : tab)),
-    }));
-  },
+      expandedPageIds: state.expandedPageIds.includes(pageId)
+        ? state.expandedPageIds.filter((id) => id !== pageId)
+        : [...state.expandedPageIds, pageId],
+    })),
 
-  clickElement: async (tabId, refId) => {
-    try {
-      get().addActionLog(tabId, { timestamp: new Date(), type: 'command', message: `Click @e${refId}` });
-      await invoke('browser_click', { refId });
-      get().addActionLog(tabId, { timestamp: new Date(), type: 'result', message: `Clicked @e${refId}` });
-    } catch (error) {
-      const msg = error instanceof Error ? error.message : String(error);
-      get().addActionLog(tabId, { timestamp: new Date(), type: 'error', message: `Click failed: ${msg}` });
-    }
-  },
-
-  fillElement: async (tabId, refId, text) => {
-    try {
-      get().addActionLog(tabId, { timestamp: new Date(), type: 'command', message: `Fill @e${refId}: "${text}"` });
-      await invoke('browser_fill', { refId, text });
-      get().addActionLog(tabId, { timestamp: new Date(), type: 'result', message: `Filled @e${refId}` });
-    } catch (error) {
-      const msg = error instanceof Error ? error.message : String(error);
-      get().addActionLog(tabId, { timestamp: new Date(), type: 'error', message: `Fill failed: ${msg}` });
-    }
-  },
-
-  typeElement: async (tabId, refId, text) => {
-    try {
-      get().addActionLog(tabId, { timestamp: new Date(), type: 'command', message: `Type @e${refId}: "${text}"` });
-      await invoke('browser_type', { refId, text });
-      get().addActionLog(tabId, { timestamp: new Date(), type: 'result', message: `Typed @e${refId}` });
-    } catch (error) {
-      const msg = error instanceof Error ? error.message : String(error);
-      get().addActionLog(tabId, { timestamp: new Date(), type: 'error', message: `Type failed: ${msg}` });
-    }
-  },
-
-  pressKey: async (tabId, key) => {
-    try {
-      get().addActionLog(tabId, { timestamp: new Date(), type: 'command', message: `Press ${key}` });
-      await invoke('browser_press', { key });
-      get().addActionLog(tabId, { timestamp: new Date(), type: 'result', message: `Pressed ${key}` });
-    } catch (error) {
-      const msg = error instanceof Error ? error.message : String(error);
-      get().addActionLog(tabId, { timestamp: new Date(), type: 'error', message: `Press failed: ${msg}` });
-    }
-  },
-
-  addActionLog: (tabId, entry) =>
+  toggleInsightReviewed: (insightId) =>
     set((state) => ({
-      tabs: state.tabs.map((tab) =>
-        tab.id === tabId ? { ...tab, actions: [...tab.actions, entry] } : tab
+      insights: state.insights.map((insight) =>
+        insight.id === insightId ? { ...insight, reviewed: !insight.reviewed } : insight
       ),
     })),
 
-  clearActionLog: (tabId) =>
+  markPageInteresting: (pageId) =>
     set((state) => ({
-      tabs: state.tabs.map((tab) => (tab.id === tabId ? { ...tab, actions: [] } : tab)),
+      pages: state.pages.map((page) =>
+        page.id === pageId ? { ...page, interesting: !page.interesting } : page
+      ),
+    })),
+
+  applySessionStarted: (session) =>
+    set({
+      session,
+      pages: [],
+      insights: [],
+      logs: [],
+      selectedPageId: null,
+      lastError: null,
+    }),
+
+  applySessionUpdated: (patch) =>
+    set((state) => ({
+      session: state.session ? { ...state.session, ...patch } : null,
+    })),
+
+  applyPageDiscovered: (page) =>
+    set((state) => ({
+      pages: state.pages.some((item) => item.id === page.id)
+        ? state.pages.map((item) => (item.id === page.id ? page : item))
+        : [...state.pages, page],
+    })),
+
+  applyPageUpdated: (patch) =>
+    set((state) => ({
+      pages: state.pages.map((page) => (page.id === patch.id ? { ...page, ...patch } : page)),
+    })),
+
+  applyInsightCreated: (insight) =>
+    set((state) => ({
+      insights: state.insights.some((item) => item.id === insight.id)
+        ? state.insights
+        : [insight, ...state.insights],
+    })),
+
+  applyLogCreated: (log) =>
+    set((state) => ({
+      logs: state.logs.some((item) => item.id === log.id) ? state.logs : [...state.logs, log],
     })),
 }));

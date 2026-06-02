@@ -4,7 +4,7 @@ import type { PageTabItem } from '@/components/tabs-layout/types';
 import { useDocumentsStore } from '@/stores/documents';
 import { useTargetStore } from '@/stores/target';
 import { toast } from 'sonner';
-import type { TreeNodeData } from '../components/tree-view';
+import type { TreeNodeData } from '@/components/tree-view';
 import { useHistoryQuery } from './use-history-query';
 
 export type HistoryMode = 'http' | 'websocket';

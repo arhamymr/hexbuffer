@@ -173,3 +173,83 @@ CREATE INDEX IF NOT EXISTS idx_packet_http_requests_capture ON packet_http_reque
 CREATE INDEX IF NOT EXISTS idx_packet_http_responses_capture ON packet_http_responses(capture_id);
 CREATE INDEX IF NOT EXISTS idx_packet_bodies_capture ON packet_bodies(capture_id);
 "#;
+
+pub const CREATE_AI_BROWSER_TABLES: &str = r#"
+CREATE TABLE IF NOT EXISTS ai_browser_sessions (
+    id TEXT PRIMARY KEY,
+    target_url TEXT NOT NULL,
+    strategy TEXT NOT NULL,
+    status TEXT NOT NULL,
+    max_depth INTEGER NOT NULL,
+    max_pages INTEGER NOT NULL,
+    started_at TEXT,
+    finished_at TEXT,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS ai_browser_pages (
+    id TEXT PRIMARY KEY,
+    session_id TEXT NOT NULL,
+    url TEXT NOT NULL,
+    title TEXT,
+    status TEXT NOT NULL,
+    depth INTEGER NOT NULL,
+    parent_url TEXT,
+    http_status INTEGER,
+    links_found INTEGER NOT NULL DEFAULT 0,
+    forms_found INTEGER NOT NULL DEFAULT 0,
+    ai_summary TEXT,
+    interesting INTEGER NOT NULL DEFAULT 0,
+    discovered_at TEXT NOT NULL,
+    visited_at TEXT,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    FOREIGN KEY(session_id) REFERENCES ai_browser_sessions(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS ai_browser_edges (
+    id TEXT PRIMARY KEY,
+    session_id TEXT NOT NULL,
+    from_url TEXT NOT NULL,
+    to_url TEXT NOT NULL,
+    source TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    FOREIGN KEY(session_id) REFERENCES ai_browser_sessions(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS ai_browser_insights (
+    id TEXT PRIMARY KEY,
+    session_id TEXT NOT NULL,
+    page_id TEXT,
+    url TEXT,
+    severity TEXT NOT NULL,
+    type TEXT NOT NULL,
+    title TEXT NOT NULL,
+    description TEXT NOT NULL,
+    reviewed INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL,
+    FOREIGN KEY(session_id) REFERENCES ai_browser_sessions(id) ON DELETE CASCADE,
+    FOREIGN KEY(page_id) REFERENCES ai_browser_pages(id) ON DELETE SET NULL
+);
+
+CREATE TABLE IF NOT EXISTS ai_browser_logs (
+    id TEXT PRIMARY KEY,
+    session_id TEXT NOT NULL,
+    level TEXT NOT NULL,
+    type TEXT NOT NULL,
+    message TEXT NOT NULL,
+    url TEXT,
+    created_at TEXT NOT NULL,
+    FOREIGN KEY(session_id) REFERENCES ai_browser_sessions(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_ai_browser_sessions_status ON ai_browser_sessions(status);
+CREATE INDEX IF NOT EXISTS idx_ai_browser_sessions_started_at ON ai_browser_sessions(started_at);
+CREATE INDEX IF NOT EXISTS idx_ai_browser_pages_session_id ON ai_browser_pages(session_id);
+CREATE INDEX IF NOT EXISTS idx_ai_browser_pages_url ON ai_browser_pages(url);
+CREATE INDEX IF NOT EXISTS idx_ai_browser_edges_session_id ON ai_browser_edges(session_id);
+CREATE INDEX IF NOT EXISTS idx_ai_browser_insights_session_id ON ai_browser_insights(session_id);
+CREATE INDEX IF NOT EXISTS idx_ai_browser_logs_session_id ON ai_browser_logs(session_id);
+CREATE INDEX IF NOT EXISTS idx_ai_browser_logs_created_at ON ai_browser_logs(created_at);
+"#;

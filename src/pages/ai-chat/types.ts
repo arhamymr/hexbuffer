@@ -1,11 +1,16 @@
-import type { Target } from '@/types';
-import type { DashboardAnalysisResult } from './lib/analyze-asset-input';
+import type { UIMessage } from '@ai-sdk/react';
 
-export interface DashboardAnalysisMessage {
-  id: string;
-  target: Target;
-  result: DashboardAnalysisResult;
-  provider: 'local' | 'openai';
-  model?: string;
-  error?: string;
+export type DashboardAiProvider = 'openai' | 'deepseek';
+
+export interface DashboardAiSettings {
+  provider: DashboardAiProvider;
+  model: string;
+  hasApiKey: boolean;
 }
+
+export interface DashboardChatMetadata {
+  model?: string;
+  provider?: DashboardAiProvider;
+}
+
+export type DashboardChatMessage = UIMessage<DashboardChatMetadata>;

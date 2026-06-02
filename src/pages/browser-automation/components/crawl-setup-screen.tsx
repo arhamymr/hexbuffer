@@ -46,7 +46,7 @@ export function CrawlSetupScreen({
         <DialogHeader>
           <DialogTitle>Crawl Config</DialogTitle>
           <DialogDescription>
-            Configure the target, crawl limits, scope rules, timing, and evidence capture.
+            Configure the target, crawl limits, scope rules, timing, and AI analysis.
           </DialogDescription>
         </DialogHeader>
 
@@ -146,15 +146,7 @@ export function CrawlSetupScreen({
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-2">
-          <div className="flex items-center justify-between rounded-md border p-2">
-            <span className="text-sm">Screenshots</span>
-            <Switch
-              checked={setup.captureScreenshots}
-              onCheckedChange={(checked) => onSetupChange({ captureScreenshots: checked })}
-              disabled={disabled}
-            />
-          </div>
+        <div className="grid grid-cols-1 gap-2">
           <div className="flex items-center justify-between rounded-md border p-2">
             <span className="text-sm">AI insights</span>
             <Switch

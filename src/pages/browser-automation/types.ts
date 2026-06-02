@@ -1,5 +1,5 @@
 export type CrawlStatus = 'idle' | 'running' | 'paused' | 'completed' | 'failed' | 'stopped';
-export type CrawlStrategy = 'bfs' | 'dfs';
+export type CrawlStrategy = 'bfs';
 export type CrawlPageStatus = 'queued' | 'current' | 'visited' | 'error' | 'blocked';
 export type InsightSeverity = 'info' | 'low' | 'medium' | 'high' | 'critical';
 export type ActivityLogLevel = 'info' | 'warning' | 'error';
@@ -10,7 +10,6 @@ export type ActivityLogType =
   | 'ai'
   | 'policy'
   | 'error'
-  | 'screenshot'
   | 'queue';
 
 export interface CrawlSetupConfig {
@@ -23,7 +22,6 @@ export interface CrawlSetupConfig {
   excludePaths: string;
   requestDelayMs: number;
   timeoutMs: number;
-  captureScreenshots: boolean;
   enableAiInsights: boolean;
 }
 
@@ -49,7 +47,6 @@ export interface CrawlPage {
   httpStatus?: number;
   linksFound: number;
   formsFound: number;
-  screenshotPath?: string;
   discoveredAt: string;
   visitedAt?: string;
   aiSummary?: string;
@@ -88,7 +85,6 @@ export interface CrawlOverview {
   errors: number;
   blockedPages: number;
   formsFound: number;
-  screenshotsCaptured: number;
   durationSeconds: number;
 }
 

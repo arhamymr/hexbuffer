@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use std::net::{TcpStream, ToSocketAddrs};
 use std::path::PathBuf;
 use std::process::{Child, Command, Stdio};
@@ -44,6 +45,27 @@ pub struct MastraStatus {
     pub url: String,
 }
 
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AiChatMessage {
+    pub role: String,
+    pub content: String,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AiChatRequest {
+    pub messages: Vec<AiChatMessage>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AiChatResponse {
+    pub provider: String,
+    pub model: String,
+    pub content: String,
+}
+
 #[derive(Default)]
 pub struct MastraProcessState {
     child: Mutex<Option<Child>>,
@@ -82,6 +104,32 @@ pub fn clear_ai_api_key(app: AppHandle) -> Result<AiSettings, String> {
     settings.has_api_key = false;
     write_ai_settings(&app, &settings)?;
     Ok(settings)
+}
+
+#[tauri::command]
+pub async fn send_ai_chat_message(
+    app: AppHandle,
+    request: AiChatRequest,
+) -> Result<AiChatResponse, String> {
+    let settings = read_ai_settings(&app)?;
+    let api_key = read_api_key(&settings.provider)
+        .map_err(|_| format!("No {} API key is stored in Settings", settings.provider))?;
+    let api_key = api_key.trim().to_string();
+
+    if api_key.is_empty() {
+        return Err(format!(
+            "No {} API key is stored in Settings",
+            settings.provider
+        ));
+    }
+
+    let content = request_provider_chat(&settings, &api_key, &request).await?;
+
+    Ok(AiChatResponse {
+        provider: settings.provider,
+        model: settings.model,
+        content,
+    })
 }
 
 #[tauri::command]
@@ -131,7 +179,7 @@ pub fn start_mastra_if_enabled(app: &AppHandle) -> Result<(), String> {
     Ok(())
 }
 
-fn read_ai_settings(app: &AppHandle) -> Result<AiSettings, String> {
+pub(crate) fn read_ai_settings(app: &AppHandle) -> Result<AiSettings, String> {
     let path = ai_settings_path(app)?;
     let mut settings = if path.exists() {
         let content = std::fs::read_to_string(path).map_err(|error| error.to_string())?;
@@ -143,6 +191,81 @@ fn read_ai_settings(app: &AppHandle) -> Result<AiSettings, String> {
     settings.api_key.clear();
     settings.has_api_key = read_api_key(&settings.provider).is_ok_and(|key| !key.is_empty());
     Ok(settings)
+}
+
+async fn request_provider_chat(
+    settings: &AiSettings,
+    api_key: &str,
+    request: &AiChatRequest,
+) -> Result<String, String> {
+    let endpoint = match settings.provider.as_str() {
+        "openai" => "https://api.openai.com/v1/chat/completions",
+        "deepseek" => "https://api.deepseek.com/chat/completions",
+        provider => return Err(format!("Unsupported AI provider: {}", provider)),
+    };
+
+    let mut messages = vec![serde_json::json!({
+        "role": "system",
+        "content": chat_system_prompt(),
+    })];
+
+    messages.extend(
+        request
+            .messages
+            .iter()
+            .filter(|message| {
+                matches!(message.role.as_str(), "user" | "assistant")
+                    && !message.content.trim().is_empty()
+            })
+            .map(|message| {
+                serde_json::json!({
+                    "role": message.role,
+                    "content": message.content,
+                })
+            }),
+    );
+
+    let body = serde_json::json!({
+        "model": settings.model,
+        "messages": messages,
+    });
+
+    let response = reqwest::Client::new()
+        .post(endpoint)
+        .bearer_auth(api_key)
+        .json(&body)
+        .send()
+        .await
+        .map_err(|error| format!("Failed to call {}: {}", settings.provider, error))?;
+
+    let status = response.status();
+    let payload = response
+        .json::<Value>()
+        .await
+        .map_err(|error| format!("Failed to decode {} response: {}", settings.provider, error))?;
+
+    if !status.is_success() {
+        let message = payload
+            .pointer("/error/message")
+            .and_then(Value::as_str)
+            .unwrap_or("Provider returned an error");
+        return Err(format!("{} API error: {}", settings.provider, message));
+    }
+
+    payload
+        .pointer("/choices/0/message/content")
+        .and_then(Value::as_str)
+        .map(str::to_string)
+        .ok_or_else(|| {
+            format!(
+                "{} response did not include chat content",
+                settings.provider
+            )
+        })
+}
+
+fn chat_system_prompt() -> &'static str {
+    "You are AppRecon's AI chat assistant. Be concise, practical, and helpful for application security and recon workflows."
 }
 
 fn write_ai_settings(app: &AppHandle, settings: &AiSettings) -> Result<(), String> {
@@ -363,7 +486,7 @@ fn provider_keyring_account(provider: &str) -> Result<&'static str, String> {
     }
 }
 
-fn api_key_env_name(provider: &str) -> Result<&'static str, String> {
+pub(crate) fn api_key_env_name(provider: &str) -> Result<&'static str, String> {
     match provider {
         "openai" => Ok("OPENAI_API_KEY"),
         "deepseek" => Ok("DEEPSEEK_API_KEY"),
@@ -376,7 +499,7 @@ fn keyring_entry(provider: &str) -> Result<keyring::Entry, String> {
         .map_err(|error| error.to_string())
 }
 
-fn read_api_key(provider: &str) -> Result<String, String> {
+pub(crate) fn read_api_key(provider: &str) -> Result<String, String> {
     keyring_entry(provider)?
         .get_password()
         .map_err(|error| error.to_string())

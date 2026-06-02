@@ -1,89 +1,102 @@
+import { useChat } from '@ai-sdk/react';
+import { invoke } from '@tauri-apps/api/core';
 import { useEffect, useMemo, useState } from 'react';
-import { useTargets } from '@/hooks/useTargets';
-import type { Target } from '@/types';
-import {
-  DASHBOARD_DEFAULT_AI_MODEL,
-  DASHBOARD_DUMMY_TARGETS,
-} from '../constants';
-import { analyzeAssetInput, type DashboardAnalysisFramework } from '../lib/analyze-asset-input';
-import type { DashboardAnalysisMessage } from '../types';
+import { DASHBOARD_DEFAULT_AI_MODEL } from '../constants';
+import { DashboardSettingsChatTransport } from '../lib/dashboard-chat-transport';
+import type { DashboardAiSettings, DashboardChatMessage } from '../types';
 
-function buildAnalysisInput(target: Target) {
-  return [
-    `Target name: ${target.name}`,
-    target.description ? `Description: ${target.description}` : '',
-    target.scope.length > 0 ? `Scope:\n${target.scope.join('\n')}` : 'Scope: not set',
-  ]
-    .filter(Boolean)
-    .join('\n\n');
-}
+const DEFAULT_AI_SETTINGS: DashboardAiSettings = {
+  provider: 'openai',
+  model: DASHBOARD_DEFAULT_AI_MODEL,
+  hasApiKey: false,
+};
 
 export function useDashboardPage() {
-  const { targets, fetchTargets } = useTargets(null);
-  const [selectedTargetId, setSelectedTargetId] = useState('');
-  const [framework, setFramework] = useState<DashboardAnalysisFramework>('general');
-  const [model, setModel] = useState(DASHBOARD_DEFAULT_AI_MODEL);
+  const [aiSettings, setAiSettings] = useState<DashboardAiSettings>(DEFAULT_AI_SETTINGS);
+  const [aiSettingsLoading, setAiSettingsLoading] = useState(true);
   const [prompt, setPrompt] = useState('');
-  const [messages, setMessages] = useState<DashboardAnalysisMessage[]>([]);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const transport = useMemo(() => new DashboardSettingsChatTransport(), []);
+  const {
+    clearError,
+    error,
+    messages,
+    sendMessage,
+    status,
+    stop,
+  } = useChat<DashboardChatMessage>({
+    transport,
+  });
 
-  const libraryTargets = useMemo(
-    () => (targets.length > 0 ? targets : DASHBOARD_DUMMY_TARGETS),
-    [targets]
-  );
-  const usingDummyData = targets.length === 0;
+  async function refreshAiSettings() {
+    const settings = await invoke<DashboardAiSettings>('get_ai_settings');
+    setAiSettings(settings);
+    return settings;
+  }
 
   useEffect(() => {
-    if (!selectedTargetId && libraryTargets.length > 0) {
-      setSelectedTargetId(libraryTargets[0].id);
+    let active = true;
+
+    async function loadAiSettings() {
+      try {
+        setAiSettingsLoading(true);
+        const settings = await invoke<DashboardAiSettings>('get_ai_settings');
+        if (active) {
+          setAiSettings(settings);
+        }
+      } catch (error) {
+        console.error('Failed to load AI settings for chat:', error);
+      } finally {
+        if (active) {
+          setAiSettingsLoading(false);
+        }
+      }
     }
-  }, [libraryTargets, selectedTargetId]);
 
-  const selectedTarget = useMemo(
-    () => libraryTargets.find((target) => target.id === selectedTargetId) ?? null,
-    [libraryTargets, selectedTargetId]
-  );
+    void loadAiSettings();
 
-  const handleAnalyze = async () => {
-    if (!selectedTarget) {
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const handleSend = async () => {
+    const text = prompt.trim();
+
+    if (!text) {
       return;
     }
 
-    setIsAnalyzing(true);
-    await new Promise((resolve) => window.setTimeout(resolve, 320));
+    let currentAiSettings = aiSettings;
 
-    const assetInput = buildAnalysisInput(selectedTarget);
-    const analysisInput = [assetInput, prompt.trim() ? `Analyst prompt:\n${prompt.trim()}` : '']
-      .filter(Boolean)
-      .join('\n\n');
-    const result = analyzeAssetInput(analysisInput, 'surface', framework);
+    try {
+      currentAiSettings = await refreshAiSettings();
+    } catch (error) {
+      console.error('Failed to refresh AI settings for chat:', error);
+    }
 
-    const message: DashboardAnalysisMessage = {
-      id: `${selectedTarget.id}-${Date.now()}`,
-      target: selectedTarget,
-      result,
-      provider: 'local',
-    };
-
-    setMessages((current) => [...current, message]);
-    setIsAnalyzing(false);
+    clearError();
+    await sendMessage(
+      { text },
+      {
+        body: {
+          aiSettings: currentAiSettings,
+        },
+      }
+    );
+    setPrompt('');
   };
 
   return {
-    fetchTargets,
-    handleAnalyze,
-    isAnalyzing,
-    framework,
-    libraryTargets,
+    aiSettings,
+    aiSettingsLoading,
+    error,
+    handleSend,
+    isStreaming: status === 'submitted' || status === 'streaming',
     messages,
-    model,
+    model: aiSettings.model,
     prompt,
-    selectedTarget,
-    selectedTargetId,
-    setFramework,
-    setModel,
     setPrompt,
-    setSelectedTargetId,
-    usingDummyData,
+    status,
+    stop,
   };
 }

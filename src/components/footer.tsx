@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import { useAppStore } from '@/stores/app';
 import { useTheme } from './theme-provider';
 import { Button } from './ui/button';
-// import { cn } from '@/lib/utils';
+import { cn } from '@/lib/utils';
 import { useUpdater } from '@/hooks/use-updater';
 import { ManualUpdateCommand } from '@/pages/settings/components/manual-update-command';
 import pkg from '../../package.json';
@@ -119,7 +119,7 @@ export function AppFooter({ isAssistantOpen, onToggleAssistant }: AppFooterProps
         >
           {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
         </Button>
-        {/* <Button
+        <Button
           variant="ghost"
           size="xs"
           className={cn('h-8 w-8 p-0', isAssistantOpen && 'bg-muted text-foreground')}
@@ -127,7 +127,7 @@ export function AppFooter({ isAssistantOpen, onToggleAssistant }: AppFooterProps
           title={isAssistantOpen ? 'Hide Chat' : 'Show Chat'}
         >
           <MessageSquare className="h-4 w-4" />
-        </Button> */}
+        </Button>
         {updateAvailable && !updateInstalled && (
           <Button
             variant="ghost"

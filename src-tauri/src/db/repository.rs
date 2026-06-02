@@ -1,3 +1,4 @@
+use crate::ai_browser::{AIInsight, ActivityLog, CrawlPage, CrawlSession};
 use crate::packet_capture::types::{
     PacketCaptureRecord, PacketConnectionRecord, StoredPacketRecord,
 };
@@ -6,7 +7,7 @@ use crate::proxy::state::{
     WebSocketConnectionState, WebSocketFilter, WebSocketMessageDirection, WebSocketMessageRecord,
     WebSocketMessageType,
 };
-use rusqlite::{params, Connection, Result as SqlResult};
+use rusqlite::{params, Connection, OptionalExtension, Result as SqlResult};
 use serde::{Deserialize, Serialize};
 use serde_json;
 use std::path::PathBuf;
@@ -54,7 +55,247 @@ impl Database {
         conn.execute_batch(crate::db::schema::CREATE_WEBSOCKET_TABLES)?;
         conn.execute_batch(crate::db::schema::CREATE_DOCUMENTS_TABLE)?;
         conn.execute_batch(crate::db::schema::CREATE_PACKET_CAPTURE_TABLES)?;
+        conn.execute_batch(crate::db::schema::CREATE_AI_BROWSER_TABLES)?;
         Ok(())
+    }
+
+    pub fn upsert_ai_browser_session(&self, session: &CrawlSession) -> SqlResult<()> {
+        let conn = self.conn.lock().unwrap();
+        let updated_at = chrono::Utc::now().to_rfc3339();
+        let created_at = session.started_at.as_deref().unwrap_or(&updated_at);
+
+        conn.execute(
+            r#"INSERT INTO ai_browser_sessions (
+                id, target_url, strategy, status, max_depth, max_pages,
+                started_at, finished_at, created_at, updated_at
+            ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)
+            ON CONFLICT(id) DO UPDATE SET
+                target_url = excluded.target_url,
+                strategy = excluded.strategy,
+                status = excluded.status,
+                max_depth = excluded.max_depth,
+                max_pages = excluded.max_pages,
+                started_at = excluded.started_at,
+                finished_at = excluded.finished_at,
+                updated_at = excluded.updated_at"#,
+            params![
+                session.id,
+                session.target_url,
+                session.strategy,
+                session.status,
+                session.max_depth as i64,
+                session.max_pages as i64,
+                session.started_at,
+                session.finished_at,
+                created_at,
+                updated_at,
+            ],
+        )?;
+
+        Ok(())
+    }
+
+    pub fn get_ai_browser_session(&self, session_id: &str) -> SqlResult<Option<CrawlSession>> {
+        let conn = self.conn.lock().unwrap();
+
+        conn.query_row(
+            r#"SELECT id, target_url, status, strategy, max_depth, max_pages, started_at, finished_at
+               FROM ai_browser_sessions WHERE id = ?1"#,
+            params![session_id],
+            |row| {
+                Ok(CrawlSession {
+                    id: row.get(0)?,
+                    target_url: row.get(1)?,
+                    status: row.get(2)?,
+                    strategy: row.get(3)?,
+                    max_depth: row.get::<_, i64>(4)? as u32,
+                    max_pages: row.get::<_, i64>(5)? as u32,
+                    started_at: row.get(6)?,
+                    finished_at: row.get(7)?,
+                })
+            },
+        )
+        .optional()
+    }
+
+    pub fn upsert_ai_browser_page(&self, page: &CrawlPage) -> SqlResult<()> {
+        let conn = self.conn.lock().unwrap();
+        let updated_at = chrono::Utc::now().to_rfc3339();
+        let created_at = &page.discovered_at;
+
+        conn.execute(
+            r#"INSERT INTO ai_browser_pages (
+                id, session_id, url, title, status, depth, parent_url, http_status,
+                links_found, forms_found, ai_summary, interesting, discovered_at,
+                visited_at, created_at, updated_at
+            ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16)
+            ON CONFLICT(id) DO UPDATE SET
+                url = excluded.url,
+                title = excluded.title,
+                status = excluded.status,
+                depth = excluded.depth,
+                parent_url = excluded.parent_url,
+                http_status = excluded.http_status,
+                links_found = excluded.links_found,
+                forms_found = excluded.forms_found,
+                ai_summary = excluded.ai_summary,
+                interesting = excluded.interesting,
+                discovered_at = excluded.discovered_at,
+                visited_at = excluded.visited_at,
+                updated_at = excluded.updated_at"#,
+            params![
+                page.id,
+                page.session_id,
+                page.url,
+                page.title,
+                page.status,
+                page.depth as i64,
+                page.parent_url,
+                page.http_status.map(|status| status as i64),
+                page.links_found as i64,
+                page.forms_found as i64,
+                page.ai_summary,
+                if page.interesting.unwrap_or(false) {
+                    1i64
+                } else {
+                    0i64
+                },
+                page.discovered_at,
+                page.visited_at,
+                created_at,
+                updated_at,
+            ],
+        )?;
+
+        Ok(())
+    }
+
+    pub fn list_ai_browser_pages(&self, session_id: &str) -> SqlResult<Vec<CrawlPage>> {
+        let conn = self.conn.lock().unwrap();
+        let mut stmt = conn.prepare(
+            r#"SELECT id, session_id, url, title, status, depth, parent_url, http_status,
+               links_found, forms_found, ai_summary, interesting, discovered_at, visited_at
+               FROM ai_browser_pages WHERE session_id = ?1 ORDER BY depth ASC, discovered_at ASC"#,
+        )?;
+
+        let rows = stmt
+            .query_map(params![session_id], |row| {
+                Ok(CrawlPage {
+                    id: row.get(0)?,
+                    session_id: row.get(1)?,
+                    url: row.get(2)?,
+                    title: row.get(3)?,
+                    status: row.get(4)?,
+                    depth: row.get::<_, i64>(5)? as u32,
+                    parent_url: row.get(6)?,
+                    http_status: row.get::<_, Option<i64>>(7)?.map(|value| value as u16),
+                    links_found: row.get::<_, i64>(8)? as u32,
+                    forms_found: row.get::<_, i64>(9)? as u32,
+                    ai_summary: row.get(10)?,
+                    interesting: Some(row.get::<_, i64>(11)? != 0),
+                    discovered_at: row.get(12)?,
+                    visited_at: row.get(13)?,
+                })
+            })?
+            .collect();
+
+        rows
+    }
+
+    pub fn insert_ai_browser_insight(&self, insight: &AIInsight) -> SqlResult<()> {
+        let conn = self.conn.lock().unwrap();
+
+        conn.execute(
+            r#"INSERT OR REPLACE INTO ai_browser_insights (
+                id, session_id, page_id, url, severity, type, title, description, reviewed, created_at
+            ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)"#,
+            params![
+                insight.id,
+                insight.session_id,
+                insight.page_id,
+                insight.url,
+                insight.severity,
+                insight.r#type,
+                insight.title,
+                insight.description,
+                if insight.reviewed { 1i64 } else { 0i64 },
+                insight.created_at,
+            ],
+        )?;
+
+        Ok(())
+    }
+
+    pub fn list_ai_browser_insights(&self, session_id: &str) -> SqlResult<Vec<AIInsight>> {
+        let conn = self.conn.lock().unwrap();
+        let mut stmt = conn.prepare(
+            r#"SELECT id, session_id, page_id, severity, type, title, description, url, reviewed, created_at
+               FROM ai_browser_insights WHERE session_id = ?1 ORDER BY created_at DESC"#,
+        )?;
+
+        let rows = stmt
+            .query_map(params![session_id], |row| {
+                Ok(AIInsight {
+                    id: row.get(0)?,
+                    session_id: row.get(1)?,
+                    page_id: row.get(2)?,
+                    severity: row.get(3)?,
+                    r#type: row.get(4)?,
+                    title: row.get(5)?,
+                    description: row.get(6)?,
+                    url: row.get(7)?,
+                    reviewed: row.get::<_, i64>(8)? != 0,
+                    created_at: row.get(9)?,
+                })
+            })?
+            .collect();
+
+        rows
+    }
+
+    pub fn insert_ai_browser_log(&self, log: &ActivityLog) -> SqlResult<()> {
+        let conn = self.conn.lock().unwrap();
+
+        conn.execute(
+            r#"INSERT OR IGNORE INTO ai_browser_logs (
+                id, session_id, level, type, message, url, created_at
+            ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)"#,
+            params![
+                log.id,
+                log.session_id,
+                log.level,
+                log.r#type,
+                log.message,
+                log.url,
+                log.created_at,
+            ],
+        )?;
+
+        Ok(())
+    }
+
+    pub fn list_ai_browser_logs(&self, session_id: &str) -> SqlResult<Vec<ActivityLog>> {
+        let conn = self.conn.lock().unwrap();
+        let mut stmt = conn.prepare(
+            r#"SELECT id, session_id, level, type, message, url, created_at
+               FROM ai_browser_logs WHERE session_id = ?1 ORDER BY created_at ASC"#,
+        )?;
+
+        let rows = stmt
+            .query_map(params![session_id], |row| {
+                Ok(ActivityLog {
+                    id: row.get(0)?,
+                    session_id: row.get(1)?,
+                    level: row.get(2)?,
+                    r#type: row.get(3)?,
+                    message: row.get(4)?,
+                    url: row.get(5)?,
+                    created_at: row.get(6)?,
+                })
+            })?
+            .collect();
+
+        rows
     }
 
     pub fn insert_packet_capture(&self, capture: &PacketCaptureRecord) -> SqlResult<()> {

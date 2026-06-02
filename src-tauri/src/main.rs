@@ -7,8 +7,8 @@ use zeroxbuffer::ai::MastraProcessState;
 use zeroxbuffer::commands::intruder::IntruderState;
 use zeroxbuffer::commands::repeater::WsRepeaterState;
 use zeroxbuffer::{
-    AiBrowserState, BrowserProcessState, HistoryBridge, PacketCaptureState, PortScanState, ProxyState,
-    SqliScanState,
+    AiBrowserState, BrowserProcessState, HistoryBridge, PacketCaptureState, PortScanState,
+    ProxyState, SqliScanState,
 };
 
 fn main() {
@@ -117,6 +117,7 @@ fn main() {
             zeroxbuffer::ai::save_ai_settings,
             zeroxbuffer::ai::has_ai_api_key,
             zeroxbuffer::ai::clear_ai_api_key,
+            zeroxbuffer::ai::send_ai_chat_message,
             zeroxbuffer::ai::get_mastra_status,
             zeroxbuffer::ai::start_mastra,
             zeroxbuffer::ai::stop_mastra,

@@ -16,7 +16,6 @@ The browser itself does not need to be visible in Phase 1. The UI should focus o
 - Activity logs
 - Session controls
 - Page details
-- Screenshot evidence
 
 The frontend should not duplicate existing AppRecon features like API Mapping, Live Traffic, Repeater, or HTTP History.
 
@@ -64,7 +63,6 @@ Used before starting a crawl.
 ### Fields
 
 - Target URL
-- Crawl strategy: BFS or DFS
 - Max depth
 - Max pages
 - Same-domain only
@@ -72,7 +70,6 @@ Used before starting a crawl.
 - Exclude paths
 - Request delay
 - Timeout
-- Capture screenshots
 - Enable AI insights
 
 ### Actions
@@ -86,10 +83,6 @@ Used before starting a crawl.
 ```text
 Target URL
 [ https://target.com ]
-
-Crawl Strategy
-(•) BFS Recommended
-( ) DFS
 
 Limits
 Max Depth: [ 5 ]
@@ -161,7 +154,6 @@ Shows real-time crawl metrics.
 - Errors
 - Blocked pages
 - Forms found
-- Screenshots captured
 - Crawl duration
 
 ### Example
@@ -173,7 +165,6 @@ URLs Discovered: 348
 Queued URLs: 34
 Errors: 2
 Forms Found: 12
-Screenshots: 178
 Duration: 00:12:47
 ```
 
@@ -237,7 +228,6 @@ Shows real-time crawl events.
 10:01:27 Queued /pricing
 10:02:01 Opened /login
 10:02:02 Login form detected
-10:02:04 Screenshot captured
 ```
 
 ### Required Features
@@ -256,7 +246,6 @@ Shows real-time crawl events.
 - AI
 - Policy
 - Error
-- Screenshot
 - Queue
 
 ---
@@ -275,7 +264,6 @@ Opened when user clicks a Crawl Tree node.
 - HTTP status
 - Links found
 - Forms found
-- Screenshot
 - Discovered at
 - Visited at
 - AI summary
@@ -290,7 +278,6 @@ Depth: 2
 HTTP Status: 200
 Links Found: 12
 Forms Found: 1
-Screenshot: Available
 Discovered From: /products
 ```
 
@@ -298,7 +285,6 @@ Discovered From: /products
 
 - Open in browser
 - Copy URL
-- View screenshot
 - Send URL to existing AppRecon modules
 - Mark as interesting
 
@@ -313,7 +299,7 @@ type CrawlSession = {
   id: string;
   targetUrl: string;
   status: "idle" | "running" | "paused" | "completed" | "failed" | "stopped";
-  strategy: "bfs" | "dfs";
+  strategy: "bfs";
   maxDepth: number;
   maxPages: number;
   startedAt?: string;
@@ -335,7 +321,6 @@ type CrawlPage = {
   httpStatus?: number;
   linksFound: number;
   formsFound: number;
-  screenshotPath?: string;
 };
 ```
 
@@ -363,7 +348,7 @@ type ActivityLog = {
   id: string;
   sessionId: string;
   level: "info" | "warning" | "error";
-  type: "session" | "navigation" | "extraction" | "ai" | "policy" | "screenshot" | "queue";
+  type: "session" | "navigation" | "extraction" | "ai" | "policy" | "queue";
   message: string;
   url?: string;
   createdAt: string;
@@ -422,7 +407,6 @@ ai-browser:session-failed
 ## Milestone 4: Details
 
 - Add page detail drawer
-- Add screenshot viewer
 - Add insight filters
 - Add log filters
 - Add URL search
@@ -446,7 +430,6 @@ These should remain in other AppRecon modules or future phases.
 
 # Phase 2 Ideas
 
-- Live screenshot stream
 - Browser playback timeline
 - Interactive browser preview
 - Human approval for risky actions

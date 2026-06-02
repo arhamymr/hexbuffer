@@ -1,6 +1,7 @@
 use std::path::PathBuf;
 
 use crate::{
+    ai_browser::{AIInsight, ActivityLog, CrawlPage, CrawlSession},
     db::repository::{Database, DocumentRecord, PaginatedResponse, TreeNode},
     packet_capture::types::{PacketCaptureRecord, PacketConnectionRecord, StoredPacketRecord},
     proxy::state::{
@@ -71,6 +72,54 @@ impl HistoryBridge {
 
     pub fn insert_record(&self, record: &ProxyRecord) -> Result<(), String> {
         self.db.insert_log(record).map_err(|e| e.to_string())
+    }
+
+    pub fn upsert_ai_browser_session(&self, session: &CrawlSession) -> Result<(), String> {
+        self.db
+            .upsert_ai_browser_session(session)
+            .map_err(|e| e.to_string())
+    }
+
+    pub fn get_ai_browser_session(&self, session_id: &str) -> Result<Option<CrawlSession>, String> {
+        self.db
+            .get_ai_browser_session(session_id)
+            .map_err(|e| e.to_string())
+    }
+
+    pub fn upsert_ai_browser_page(&self, page: &CrawlPage) -> Result<(), String> {
+        self.db
+            .upsert_ai_browser_page(page)
+            .map_err(|e| e.to_string())
+    }
+
+    pub fn list_ai_browser_pages(&self, session_id: &str) -> Result<Vec<CrawlPage>, String> {
+        self.db
+            .list_ai_browser_pages(session_id)
+            .map_err(|e| e.to_string())
+    }
+
+    pub fn insert_ai_browser_insight(&self, insight: &AIInsight) -> Result<(), String> {
+        self.db
+            .insert_ai_browser_insight(insight)
+            .map_err(|e| e.to_string())
+    }
+
+    pub fn list_ai_browser_insights(&self, session_id: &str) -> Result<Vec<AIInsight>, String> {
+        self.db
+            .list_ai_browser_insights(session_id)
+            .map_err(|e| e.to_string())
+    }
+
+    pub fn insert_ai_browser_log(&self, log: &ActivityLog) -> Result<(), String> {
+        self.db
+            .insert_ai_browser_log(log)
+            .map_err(|e| e.to_string())
+    }
+
+    pub fn list_ai_browser_logs(&self, session_id: &str) -> Result<Vec<ActivityLog>, String> {
+        self.db
+            .list_ai_browser_logs(session_id)
+            .map_err(|e| e.to_string())
     }
 
     pub fn insert_packet_capture(&self, capture: &PacketCaptureRecord) -> Result<(), String> {

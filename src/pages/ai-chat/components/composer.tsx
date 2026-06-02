@@ -1,100 +1,91 @@
 'use client';
 
-import { SendHorizonal } from 'lucide-react';
+import { KeyRound, SendHorizonal, Square } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { DASHBOARD_AI_MODELS, DASHBOARD_FRAMEWORKS } from '../constants';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import type { Target } from '@/types';
-import type { DashboardAnalysisFramework } from '../lib/analyze-asset-input';
 
 interface DashboardComposerProps {
-  framework: DashboardAnalysisFramework;
-  isAnalyzing: boolean;
-  libraryTargets: Target[];
+  aiProvider: string;
+  aiSettingsLoading: boolean;
+  hasApiKey: boolean;
+  isStreaming: boolean;
   model: string;
-  onAnalyze: () => Promise<void>;
+  onSend: () => Promise<void>;
+  onStop: () => void;
   prompt: string;
-  selectedTarget: Target | null;
-  selectedTargetId: string;
-  setFramework: (value: DashboardAnalysisFramework) => void;
-  setModel: (value: string) => void;
   setPrompt: (value: string) => void;
-  setSelectedTargetId: (value: string) => void;
 }
 
 export function DashboardComposer({
-  framework,
-  isAnalyzing,
-  libraryTargets,
+  aiProvider,
+  aiSettingsLoading,
+  hasApiKey,
+  isStreaming,
   model,
-  onAnalyze,
+  onSend,
+  onStop,
   prompt,
-  selectedTarget,
-  selectedTargetId,
-  setFramework,
-  setModel,
   setPrompt,
-  setSelectedTargetId,
 }: DashboardComposerProps) {
+  const providerLabel = aiProvider === 'deepseek' ? 'DeepSeek' : 'OpenAI';
+  const canSend = prompt.trim().length > 0 && !isStreaming;
+
   return (
     <div className="mt-2 min-w-0 shrink-0">
       <Card className="border bg-background">
         <CardContent className="flex min-w-0 flex-col gap-2 p-2">
-          <div className="flex min-w-0 flex-col gap-2">
-            <div className="flex gap-2">
-              <Select value={selectedTargetId} onValueChange={setSelectedTargetId}>
-                <SelectTrigger className="w-full min-w-0">
-                  <SelectValue placeholder="Select target" />
-                </SelectTrigger>
-                <SelectContent>
-                  {libraryTargets.map((target) => (
-                    <SelectItem key={target.id} value={target.id}>
-                      {target.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              <Select value={framework} onValueChange={(value) => setFramework(value as DashboardAnalysisFramework)}>
-                <SelectTrigger className="w-full min-w-0">
-                  <SelectValue placeholder="Select framework" />
-                </SelectTrigger>
-                <SelectContent>
-                  {DASHBOARD_FRAMEWORKS.map((item) => (
-                    <SelectItem key={item.id} value={item.id}>
-                      {item.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              <Select value={model} onValueChange={setModel}>
-                <SelectTrigger className="w-full min-w-0">
-                  <SelectValue placeholder="Select model" />
-                </SelectTrigger>
-                <SelectContent>
-                  {DASHBOARD_AI_MODELS.map((item) => (
-                    <SelectItem key={item} value={item}>
-                      {item}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <Button size="xs" className="w-full" onClick={() => void onAnalyze()} disabled={!selectedTarget || isAnalyzing}>
-              <SendHorizonal className="mr-2 h-4 w-4" />
-              {isAnalyzing ? 'Analyzing...' : 'Analyze'}
-            </Button>
+          <div className="flex min-h-9 min-w-0 items-center justify-between gap-2 rounded-md border bg-background px-3 py-2 text-sm">
+            <span className="min-w-0 truncate">
+              {aiSettingsLoading ? 'Loading AI settings...' : model}
+            </span>
+            <Badge variant="outline" className="shrink-0 gap-1">
+              <KeyRound className="h-3 w-3" />
+              {hasApiKey ? providerLabel : 'No key'}
+            </Badge>
           </div>
+
+          <Textarea
+            className="min-h-24 resize-none"
+            placeholder="Message AI..."
+            value={prompt}
+            onChange={(event) => setPrompt(event.target.value)}
+            onKeyDown={(event) => {
+              if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
+                event.preventDefault();
+                if (canSend) {
+                  void onSend();
+                }
+              }
+            }}
+          />
+
+          <Button
+            size="xs"
+            className="w-full"
+            onClick={() => {
+              if (isStreaming) {
+                onStop();
+                return;
+              }
+
+              void onSend();
+            }}
+            disabled={!canSend && !isStreaming}
+          >
+            {isStreaming ? (
+              <>
+                <Square className="mr-2 h-4 w-4" />
+                Stop
+              </>
+            ) : (
+              <>
+                <SendHorizonal className="mr-2 h-4 w-4" />
+                Send
+              </>
+            )}
+          </Button>
         </CardContent>
       </Card>
     </div>

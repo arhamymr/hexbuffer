@@ -153,8 +153,8 @@ export const AI_MODEL_OPTIONS_BY_PROVIDER: Record<string, string[]> = {
     'gpt-5.2',
   ],
   deepseek: [
-    'deepseek-v4-flash',
-    'deepseek-v4-pro',
+    'deepseek-chat',
+    'deepseek-reasoner',
   ],
 };
 

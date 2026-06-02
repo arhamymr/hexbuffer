@@ -1,27 +1,19 @@
 'use client';
 
+import { Bot } from 'lucide-react';
 import { ChatMessage } from '@/components/ui/chat-message';
-import type { Target } from '@/types';
 
-interface DashboardEmptyStateProps {
-  selectedTarget: Target | null;
-}
-
-export function DashboardEmptyState({ selectedTarget }: DashboardEmptyStateProps) {
+export function DashboardEmptyState() {
   return (
     <ChatMessage role="assistant">
       <div className="space-y-2">
+        <div className="flex items-center gap-2">
+          <Bot className="h-4 w-4 shrink-0" />
+          <span className="min-w-0 truncate font-medium">AI chat</span>
+        </div>
         <p className="text-sm leading-6">
-          No analysis yet. The dummy library is loaded automatically when the real target library is empty, so this panel is never blank.
+          Ask a question, draft notes, or work through an AppRecon task with the provider configured in Settings.
         </p>
-        {selectedTarget ? (
-          <div className="rounded-sm border bg-background p-3">
-            <p className="text-sm font-medium">{selectedTarget.name}</p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              {selectedTarget.description || 'No description yet.'}
-            </p>
-          </div>
-        ) : null}
       </div>
     </ChatMessage>
   );

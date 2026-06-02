@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { invoke } from '@tauri-apps/api/core';
 import { DEFAULT_CRAWL_SETUP } from '@/pages/browser-automation/constants';
-import { createMockCrawl, deriveOverview, downloadJson } from '@/pages/browser-automation/lib/crawl-data';
+import { deriveOverview, downloadJson } from '@/pages/browser-automation/lib/crawl-data';
 import type {
   ActivityLog,
   AIInsight,
@@ -141,15 +141,23 @@ export const useBrowserAutomationStore = create<BrowserAutomationState>((set, ge
     try {
       await invoke('ai_browser_start_crawl', { config: setup, sessionId: session.id });
     } catch (error) {
-      const { pages, insights, logs } = createMockCrawl(session);
+      const message = error instanceof Error ? error.message : String(error);
       set((state) => ({
-        pages,
-        insights,
-        logs: [...state.logs, ...logs],
-        selectedPageId: pages[0]?.id ?? null,
-        lastError: null,
+        session: { ...session, status: 'failed', finishedAt: new Date().toISOString() },
+        logs: [
+          ...state.logs,
+          {
+            id: `log-${Date.now()}`,
+            sessionId: session.id,
+            level: 'error',
+            type: 'error',
+            message: `Failed to start crawl: ${message}`,
+            url: setup.targetUrl,
+            createdAt: new Date().toISOString(),
+          },
+        ],
+        lastError: message,
       }));
-      console.warn('[browser automation] Using static crawl data until backend crawl commands are available.', error);
     }
   },
 

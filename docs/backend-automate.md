@@ -11,7 +11,7 @@ The backend runs a headless browser crawler that explores target websites, extra
 The selected stack is:
 
 ```text
-Vercel AI SDK + Playwright + Custom Crawl Engine
+Vercel AI SDK + DeepSeek Provider + Playwright + Custom Crawl Engine
 ```
 
 The crawler should generate traffic through the existing AppRecon Proxy so the existing Live Traffic, HTTP History, Site Map, API Mapping, Repeater, and Scanner modules can process the traffic.
@@ -74,7 +74,6 @@ Responsible for:
 - Running custom crawl engine
 - Running Vercel AI SDK calls
 - Extracting page data
-- Capturing screenshots
 - Sending crawl events back to Rust
 
 ## Existing AppRecon Proxy
@@ -111,7 +110,7 @@ Policy guard filters unsafe or out-of-scope actions
     ↓
 Queue manager adds next URLs
     ↓
-Rust stores pages, logs, insights, screenshots
+Rust stores pages, logs, and insights
     ↓
 Frontend receives real-time Tauri events
 ```
@@ -209,12 +208,12 @@ export const PageAnalysisSchema = z.object({
 
 ```ts
 import { generateObject } from "ai";
-import { openai } from "@ai-sdk/openai";
+import { deepseek } from "@ai-sdk/deepseek";
 import { PageAnalysisSchema } from "./schemas";
 
 export async function analyzePage(input: PageExtractResult) {
   const result = await generateObject({
-    model: openai("gpt-4.1-mini"),
+    model: deepseek("deepseek-chat"),
     schema: PageAnalysisSchema,
     prompt: `
 Analyze this web page for reconnaissance.
@@ -276,7 +275,6 @@ The extractor should collect:
 - Buttons
 - Meta tags
 - Script URLs
-- Screenshot path
 
 ## Example Extract Result
 
@@ -302,7 +300,6 @@ type PageExtractResult = {
   }>;
   buttons: string[];
   scripts: string[];
-  screenshotPath?: string;
 };
 ```
 
@@ -310,7 +307,7 @@ type PageExtractResult = {
 
 # Crawl Queue
 
-The custom crawl engine should support BFS and DFS.
+The custom crawl engine should use BFS by default.
 
 ## BFS
 
@@ -318,14 +315,6 @@ Use queue behavior:
 
 ```ts
 const next = queue.shift();
-```
-
-## DFS
-
-Use stack behavior:
-
-```ts
-const next = queue.pop();
 ```
 
 ## Queue Item
@@ -410,7 +399,6 @@ CREATE TABLE ai_browser_pages (
   http_status INTEGER,
   links_found INTEGER DEFAULT 0,
   forms_found INTEGER DEFAULT 0,
-  screenshot_path TEXT,
   ai_summary TEXT,
   discovered_at TEXT,
   visited_at TEXT,
@@ -544,8 +532,7 @@ The Node sidecar should send JSON messages to Rust.
   "title": "About",
   "httpStatus": 200,
   "linksFound": 12,
-  "formsFound": 1,
-  "screenshotPath": "/screenshots/session_123/about.png"
+  "formsFound": 1
 }
 ```
 
@@ -587,12 +574,10 @@ The Node sidecar should send JSON messages to Rust.
 ## Milestone 3: Custom Crawl Engine
 
 - Implement BFS crawl
-- Implement DFS crawl
 - Implement queue manager
 - Implement visited URL set
 - Implement scope validation
 - Implement max depth and max page limit
-- Implement screenshot capture
 
 ## Milestone 4: Page Extraction
 
@@ -602,7 +587,6 @@ The Node sidecar should send JSON messages to Rust.
 - Extract title
 - Extract visible text
 - Extract script URLs
-- Save screenshot
 
 ## Milestone 5: AI Analysis
 
@@ -651,7 +635,6 @@ Do not implement:
 
 # Phase 2 Ideas
 
-- Screenshot streaming
 - Live browser preview
 - Browser playback timeline
 - Human approval for risky actions

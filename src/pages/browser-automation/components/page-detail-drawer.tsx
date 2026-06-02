@@ -1,6 +1,6 @@
 'use client';
 
-import { Camera, Copy, ExternalLink, Star } from 'lucide-react';
+import { Copy, ExternalLink, Star } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -75,23 +75,6 @@ export function PageDetailDrawer({
                 </div>
 
                 <div className="rounded-md border p-3">
-                  <div className="mb-2 flex items-center gap-2 text-sm font-medium">
-                    <Camera className="h-4 w-4" />
-                    Screenshot Evidence
-                  </div>
-                  <div className="flex aspect-video items-center justify-center rounded-md border border-dashed bg-muted/30 p-4 text-center text-sm text-muted-foreground">
-                    {page.screenshotPath ? (
-                      <div>
-                        <div>Screenshot captured</div>
-                        <div className="mt-1 break-all font-mono text-xs">{page.screenshotPath}</div>
-                      </div>
-                    ) : (
-                      'No screenshot captured'
-                    )}
-                  </div>
-                </div>
-
-                <div className="rounded-md border p-3">
                   <div className="mb-2 text-sm font-medium">AI Summary</div>
                   <p className="text-sm leading-6 text-muted-foreground">
                     {page.aiSummary || 'No AI summary is available for this page yet.'}
@@ -100,7 +83,7 @@ export function PageDetailDrawer({
               </div>
             </ScrollArea>
 
-            <DrawerFooter className="grid grid-cols-2 sm:grid-cols-4">
+            <DrawerFooter className="grid grid-cols-2 sm:grid-cols-3">
               <Button variant="outline" onClick={() => onOpenPage(page)}>
                 <ExternalLink className="h-4 w-4" />
                 Open
@@ -108,10 +91,6 @@ export function PageDetailDrawer({
               <Button variant="outline" onClick={() => onCopyUrl(page)}>
                 <Copy className="h-4 w-4" />
                 Copy
-              </Button>
-              <Button variant="outline" disabled={!page.screenshotPath}>
-                <Camera className="h-4 w-4" />
-                View
               </Button>
               <Button variant={page.interesting ? 'secondary' : 'outline'} onClick={() => onToggleInteresting(page.id)}>
                 <Star className="h-4 w-4" />

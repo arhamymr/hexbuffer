@@ -15,7 +15,6 @@ export const DEFAULT_CRAWL_SETUP: CrawlSetupConfig = {
   excludePaths: '/logout, /delete, /billing',
   requestDelayMs: 500,
   timeoutMs: 30000,
-  captureScreenshots: true,
   enableAiInsights: true,
 };
 
@@ -44,7 +43,6 @@ export const LOG_TYPES: ActivityLogType[] = [
   'ai',
   'policy',
   'error',
-  'screenshot',
   'queue',
 ];
 

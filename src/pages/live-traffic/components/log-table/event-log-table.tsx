@@ -1,9 +1,9 @@
 'use client';
 
 import { Clipboard } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Empty, EmptyDescription, EmptyTitle } from '@/components/ui/empty';
+import { ActivityStatusBadge, LevelBadge, type StatusActivityValue } from '@/components/status-badge';
 import { cn } from '@/lib/utils';
 import { formatTimestamp } from './utils';
 
@@ -11,7 +11,7 @@ export interface EventLogRow {
   id: string;
   timestamp: string;
   level: 'info' | 'warning' | 'error';
-  type: string;
+  type: StatusActivityValue;
   message: string;
   url?: string;
 }
@@ -23,12 +23,6 @@ interface EventLogTableProps<TLog extends EventLogRow> {
   emptyTitle?: string;
   emptyDescription?: string;
 }
-
-const levelStyles: Record<EventLogRow['level'], string> = {
-  info: 'border-sky-500/25 text-sky-700 dark:text-sky-300',
-  warning: 'border-amber-500/25 text-amber-700 dark:text-amber-300',
-  error: 'border-red-500/25 text-red-700 dark:text-red-300',
-};
 
 export function EventLogTable<TLog extends EventLogRow>({
   logs,
@@ -87,14 +81,10 @@ export function EventLogTable<TLog extends EventLogRow>({
                 {formatTimestamp(log.timestamp)}
               </td>
               <td className="px-3 py-1">
-                <Badge variant="outline" className={cn('h-5 px-1.5 text-[10px] capitalize', levelStyles[log.level])}>
-                  {log.level}
-                </Badge>
+                <LevelBadge level={log.level} />
               </td>
               <td className="px-3 py-1">
-                <Badge variant="outline" className="h-5 px-1.5 text-[10px]">
-                  {log.type}
-                </Badge>
+                <ActivityStatusBadge status={log.type} />
               </td>
               <td className="max-w-[520px] truncate px-3 py-1 text-xs" title={log.message}>
                 {log.message}

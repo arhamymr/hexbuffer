@@ -14,6 +14,7 @@ import type { ApiCall } from '@/types';
 import { deleteHistoryLog, fetchHistoryDetail } from '@/pages/live-traffic/services/history-service';
 import { createDefaultAttackConfig, findRequestPayloadPositions } from '@/pages/brute-force/types';
 import { useBruteForceStore } from '@/stores/bruto-force';
+import { useBrowserAutomationStore } from '@/stores/browser-automation';
 import { useHistoryQuery } from '@/pages/live-traffic/hooks/use-history-query';
 import { adaptProxyRecordToApiCall } from '@/pages/live-traffic/hooks/use-history-table';
 import { useRepeaterStore } from '@/stores/repeater';
@@ -26,6 +27,15 @@ interface LogEntryContextMenuProps {
   call: ApiCall;
   children: React.ReactNode;
   onDelete?: (id: string) => void;
+}
+
+function buildAutomationTargetUrl(request: ApiCall) {
+  try {
+    return new URL(request.url).origin;
+  } catch {
+    const host = request.host || request.url.replace(/^https?:\/\//i, '').split('/')[0];
+    return host ? `https://${host}` : request.url;
+  }
 }
 
 export function LogEntryContextMenu({
@@ -123,6 +133,23 @@ export function LogEntryContextMenu({
     }
   };
 
+  const handleOpenInBrowserAutomation = async () => {
+    try {
+      const detail = await fetchHistoryDetail(call.id);
+      const request = adaptProxyRecordToApiCall(detail);
+      const targetUrl = buildAutomationTargetUrl(request);
+
+      useBrowserAutomationStore.getState().addAutomationTab(
+        { targetUrl },
+        request.host || targetUrl
+      );
+      navigate('/browser-automation');
+    } catch (error) {
+      console.error('Failed to open target in Browser Automation:', error);
+      toast.error('Failed to open target in Browser Automation');
+    }
+  };
+
   // const handleOpenInPromptInjection = async () => {
   //   try {
   //     const detail = await fetchHistoryDetail(call.id);
@@ -201,6 +228,9 @@ export function LogEntryContextMenu({
         </ContextMenuItem>
         <ContextMenuItem onClick={handleOpenInRepeater} className='text-xs'>
           <Send className="mr-2 size-3" /> Send to Repeater
+        </ContextMenuItem>
+        <ContextMenuItem onClick={handleOpenInBrowserAutomation} className='text-xs'>
+          <Send className="mr-2 size-3" /> Send to Automate Browser
         </ContextMenuItem>
         {/* <ContextMenuItem onClick={handleOpenInPromptInjection} className='text-xs'>
           <Bot className="mr-2 size-4" /> Open in Prompt Injection

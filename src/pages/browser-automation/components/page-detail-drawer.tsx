@@ -33,7 +33,7 @@ function DetailRow({ label, value }: { label: string; value: string | number | u
 
 export function PageDetailDrawer({ page }: PageDetailDrawerProps) {
   const selectPage = useBrowserAutomationStore((s) => s.selectPage);
-  const session = useBrowserAutomationStore((s) => s.session);
+  const session = useBrowserAutomationStore((s) => s.getActiveTab()?.session ?? null);
   const markPageInteresting = useBrowserAutomationStore((s) => s.markPageInteresting);
 
   const base = session?.targetUrl?.replace(/\/$/, '') ?? '';

@@ -1,3 +1,4 @@
+pub mod browser;
 pub mod cert;
 pub mod history;
 pub mod intercept;

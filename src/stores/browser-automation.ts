@@ -45,7 +45,9 @@ export interface ActionLogEntry {
   message: string;
 }
 
-interface BrowserAutomationState {
+export interface BrowserAutomationTab {
+  id: string;
+  name: string;
   setup: CrawlSetupConfig;
   session: CrawlSession | null;
   pages: CrawlPage[];
@@ -57,8 +59,19 @@ interface BrowserAutomationState {
   lastError: string | null;
   search: string;
   analyzingPageIds: Set<string>;
+}
 
-  overview: () => CrawlOverview;
+interface BrowserAutomationState {
+  tabs: BrowserAutomationTab[];
+  activeTabId: string;
+  nextTabNumber: number;
+
+  getActiveTab: () => BrowserAutomationTab | null;
+  overview: (tabId?: string) => CrawlOverview;
+  setActiveTabId: (id: string) => void;
+  renameTab: (id: string, name: string) => void;
+  addAutomationTab: (setup?: Partial<CrawlSetupConfig>, name?: string) => string;
+  closeTab: (id: string) => void;
   updateSetup: (patch: Partial<CrawlSetupConfig>) => void;
   saveConfig: () => void;
   startCrawl: () => Promise<void>;
@@ -84,6 +97,15 @@ interface BrowserAutomationState {
   clearHumanInputRequest: () => void;
 }
 
+type BrowserAutomationSet = (
+  partial:
+    | Partial<BrowserAutomationState>
+    | ((state: BrowserAutomationState) => Partial<BrowserAutomationState>),
+) => void;
+
+const STORAGE_KEY = 'apprecon:crawl-setup-config';
+const DEFAULT_EXPANDED_PAGE_IDS = ['page-root', 'page-products', 'page-login'];
+
 function makeSession(setup: CrawlSetupConfig): CrawlSession {
   return {
     id: `crawl-${Date.now()}`,
@@ -100,6 +122,10 @@ function commandName(action: 'pause' | 'resume' | 'stop') {
   return `ai_browser_${action}_crawl`;
 }
 
+function isTerminalStatus(status: CrawlSession['status']) {
+  return status === 'completed' || status === 'failed' || status === 'stopped';
+}
+
 async function invokeOptional(command: string, payload?: Record<string, unknown>) {
   try {
     await invoke(command, payload);
@@ -107,8 +133,6 @@ async function invokeOptional(command: string, payload?: Record<string, unknown>
     console.warn(`[browser automation] Optional Tauri command failed: ${command}`, error);
   }
 }
-
-const STORAGE_KEY = 'apprecon:crawl-setup-config';
 
 function loadSavedConfig(): CrawlSetupConfig {
   try {
@@ -120,42 +144,169 @@ function loadSavedConfig(): CrawlSetupConfig {
   } catch {
     // Ignore corrupt storage.
   }
-  return DEFAULT_CRAWL_SETUP;
+  return { ...DEFAULT_CRAWL_SETUP };
+}
+
+function createAutomationTab(
+  index: number,
+  setup: CrawlSetupConfig = loadSavedConfig(),
+  name = String(index)
+): BrowserAutomationTab {
+  return {
+    id: `browser-automation-tab-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+    name,
+    setup: { ...setup },
+    session: null,
+    pages: [],
+    insights: [],
+    logs: [],
+    selectedPageId: null,
+    expandedPageIds: [...DEFAULT_EXPANDED_PAGE_IDS],
+    humanInputRequest: null,
+    lastError: null,
+    search: '',
+    analyzingPageIds: new Set(),
+  };
+}
+
+const initialTab = createAutomationTab(1);
+
+function getActiveTabFromState(state: BrowserAutomationState) {
+  return state.tabs.find((tab) => tab.id === state.activeTabId) ?? state.tabs[0] ?? null;
+}
+
+function updateActiveTab(
+  set: BrowserAutomationSet,
+  updater: (tab: BrowserAutomationTab) => BrowserAutomationTab
+) {
+  set((state) => ({
+    tabs: state.tabs.map((tab) => (tab.id === state.activeTabId ? updater(tab) : tab)),
+  }));
+}
+
+function updateTab(
+  set: BrowserAutomationSet,
+  id: string,
+  updater: (tab: BrowserAutomationTab) => BrowserAutomationTab
+) {
+  set((state) => ({
+    tabs: state.tabs.map((tab) => (tab.id === id ? updater(tab) : tab)),
+  }));
+}
+
+function updateTabForSession(
+  set: BrowserAutomationSet,
+  get: () => BrowserAutomationState,
+  sessionId: string | undefined,
+  updater: (tab: BrowserAutomationTab) => BrowserAutomationTab
+) {
+  const state = get();
+  const tab =
+    (sessionId
+      ? state.tabs.find((item) => item.session?.id === sessionId)
+      : null) ?? getActiveTabFromState(state);
+
+  if (!tab) return;
+  updateTab(set, tab.id, updater);
 }
 
 export const useBrowserAutomationStore = create<BrowserAutomationState>((set, get) => ({
-  setup: loadSavedConfig(),
-  session: null,
-  pages: [],
-  insights: [],
-  logs: [],
-  selectedPageId: null,
-  expandedPageIds: ['page-root', 'page-products', 'page-login'],
-  humanInputRequest: null,
-  lastError: null,
-  search: '',
-  analyzingPageIds: new Set(),
+  tabs: [initialTab],
+  activeTabId: initialTab.id,
+  nextTabNumber: 2,
 
-  overview: () => deriveOverview(get().session, get().pages),
+  getActiveTab: () => getActiveTabFromState(get()),
+
+  overview: (tabId) => {
+    const state = get();
+    const tab = tabId
+      ? state.tabs.find((item) => item.id === tabId)
+      : getActiveTabFromState(state);
+
+    return deriveOverview(tab?.session ?? null, tab?.pages ?? []);
+  },
+
+  setActiveTabId: (id) => set({ activeTabId: id }),
+
+  renameTab: (id, name) =>
+    set((state) => ({
+      tabs: state.tabs.map((tab) => (tab.id === id ? { ...tab, name } : tab)),
+    })),
+
+  addAutomationTab: (setupPatch, name) => {
+    const { nextTabNumber } = get();
+    const newTab = createAutomationTab(
+      nextTabNumber,
+      { ...loadSavedConfig(), ...setupPatch },
+      name || String(nextTabNumber)
+    );
+
+    set((state) => ({
+      tabs: [...state.tabs, newTab],
+      activeTabId: newTab.id,
+      nextTabNumber: state.nextTabNumber + 1,
+    }));
+
+    return newTab.id;
+  },
+
+  closeTab: (id) => {
+    const tab = get().tabs.find((item) => item.id === id);
+    if (tab?.session && !isTerminalStatus(tab.session.status)) {
+      void invokeOptional(commandName('stop'), { sessionId: tab.session.id });
+    }
+
+    set((state) => {
+      const remainingTabs = state.tabs.filter((item) => item.id !== id);
+
+      if (remainingTabs.length === 0) {
+        const replacementTab = createAutomationTab(1);
+        return {
+          tabs: [replacementTab],
+          activeTabId: replacementTab.id,
+          nextTabNumber: 2,
+        };
+      }
+
+      if (state.activeTabId !== id) {
+        return { tabs: remainingTabs };
+      }
+
+      const closedTabIndex = state.tabs.findIndex((item) => item.id === id);
+      const nextActiveTab = remainingTabs[Math.max(0, closedTabIndex - 1)] ?? remainingTabs[0];
+      return {
+        tabs: remainingTabs,
+        activeTabId: nextActiveTab.id,
+      };
+    });
+  },
 
   updateSetup: (patch) =>
-    set((state) => ({
-      setup: { ...state.setup, ...patch },
+    updateActiveTab(set, (tab) => ({
+      ...tab,
+      setup: { ...tab.setup, ...patch },
     })),
 
   saveConfig: () => {
+    const tab = getActiveTabFromState(get());
+    if (!tab) return;
+
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(get().setup));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(tab.setup));
     } catch {
-      // Storage full or unavailable — ignore.
+      // Storage full or unavailable - ignore.
     }
   },
 
   startCrawl: async () => {
-    const setup = get().setup;
+    const tab = getActiveTabFromState(get());
+    if (!tab) return;
+
+    const setup = tab.setup;
     const session = makeSession(setup);
 
-    set({
+    updateTab(set, tab.id, (current) => ({
+      ...current,
       session,
       pages: [],
       insights: [],
@@ -173,19 +324,19 @@ export const useBrowserAutomationStore = create<BrowserAutomationState>((set, ge
       selectedPageId: null,
       humanInputRequest: null,
       lastError: null,
-    });
+    }));
 
     try {
-      // Get current AI settings to know the provider
       const aiSettings = await invoke<{ provider: string }>('get_ai_settings');
       const apiKey = useAiKeyStore.getState().getKey(aiSettings.provider) || '';
       await invoke('ai_browser_start_crawl', { config: setup, sessionId: session.id, apiKey });
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      set((state) => ({
+      updateTab(set, tab.id, (current) => ({
+        ...current,
         session: { ...session, status: 'failed', finishedAt: new Date().toISOString() },
         logs: [
-          ...state.logs,
+          ...current.logs,
           {
             id: `log-${Date.now()}`,
             sessionId: session.id,
@@ -202,72 +353,107 @@ export const useBrowserAutomationStore = create<BrowserAutomationState>((set, ge
   },
 
   pauseCrawl: async () => {
-    const session = get().session;
-    if (!session) return;
-    set({ session: { ...session, status: 'paused' } });
+    const tab = getActiveTabFromState(get());
+    const session = tab?.session;
+    if (!tab || !session) return;
+
+    updateTab(set, tab.id, (current) => ({
+      ...current,
+      session: { ...session, status: 'paused' },
+    }));
     await invokeOptional(commandName('pause'), { sessionId: session.id });
   },
 
   resumeCrawl: async () => {
-    const session = get().session;
-    if (!session) return;
-    set({ session: { ...session, status: 'running' } });
-    set({ humanInputRequest: null });
+    const tab = getActiveTabFromState(get());
+    const session = tab?.session;
+    if (!tab || !session) return;
+
+    if (isTerminalStatus(session.status)) {
+      updateTab(set, tab.id, (current) => ({ ...current, humanInputRequest: null }));
+      return;
+    }
+
+    updateTab(set, tab.id, (current) => ({
+      ...current,
+      session: { ...session, status: 'running' },
+      humanInputRequest: null,
+    }));
     await invokeOptional(commandName('resume'), { sessionId: session.id });
   },
 
   stopCrawl: async () => {
-    const session = get().session;
-    if (!session) return;
+    const tab = getActiveTabFromState(get());
+    const session = tab?.session;
+    if (!tab || !session) return;
+
     const finishedAt = new Date().toISOString();
-    set({ session: { ...session, status: 'stopped', finishedAt }, humanInputRequest: null });
+    updateTab(set, tab.id, (current) => ({
+      ...current,
+      session: { ...session, status: 'stopped', finishedAt },
+      humanInputRequest: null,
+    }));
     await invokeOptional(commandName('stop'), { sessionId: session.id });
   },
 
   exportCrawl: () => {
-    const state = get();
+    const tab = getActiveTabFromState(get());
+    if (!tab) return;
+
     downloadJson('ai-browser-crawl.json', {
-      session: state.session,
-      overview: state.overview(),
-      pages: state.pages,
-      insights: state.insights,
-      logs: state.logs,
+      session: tab.session,
+      overview: deriveOverview(tab.session, tab.pages),
+      pages: tab.pages,
+      insights: tab.insights,
+      logs: tab.logs,
     });
   },
 
   exportInsights: () => {
-    downloadJson('ai-browser-insights.json', get().insights);
+    const tab = getActiveTabFromState(get());
+    if (!tab) return;
+    downloadJson('ai-browser-insights.json', tab.insights);
   },
 
   exportLogs: () => {
-    downloadJson('ai-browser-activity-log.json', get().logs);
+    const tab = getActiveTabFromState(get());
+    if (!tab) return;
+    downloadJson('ai-browser-activity-log.json', tab.logs);
   },
 
-  selectPage: (pageId) => set({ selectedPageId: pageId }),
+  selectPage: (pageId) =>
+    updateActiveTab(set, (tab) => ({
+      ...tab,
+      selectedPageId: pageId,
+    })),
 
   togglePageExpanded: (pageId) =>
-    set((state) => ({
-      expandedPageIds: state.expandedPageIds.includes(pageId)
-        ? state.expandedPageIds.filter((id) => id !== pageId)
-        : [...state.expandedPageIds, pageId],
+    updateActiveTab(set, (tab) => ({
+      ...tab,
+      expandedPageIds: tab.expandedPageIds.includes(pageId)
+        ? tab.expandedPageIds.filter((id) => id !== pageId)
+        : [...tab.expandedPageIds, pageId],
     })),
 
   toggleInsightReviewed: (insightId) =>
-    set((state) => ({
-      insights: state.insights.map((insight) =>
+    updateActiveTab(set, (tab) => ({
+      ...tab,
+      insights: tab.insights.map((insight) =>
         insight.id === insightId ? { ...insight, reviewed: !insight.reviewed } : insight
       ),
     })),
 
   markPageInteresting: (pageId) =>
-    set((state) => ({
-      pages: state.pages.map((page) =>
+    updateActiveTab(set, (tab) => ({
+      ...tab,
+      pages: tab.pages.map((page) =>
         page.id === pageId ? { ...page, interesting: !page.interesting } : page
       ),
     })),
 
   applySessionStarted: (session) =>
-    set({
+    updateTabForSession(set, get, session.id, (tab) => ({
+      ...tab,
       session,
       pages: [],
       insights: [],
@@ -275,52 +461,81 @@ export const useBrowserAutomationStore = create<BrowserAutomationState>((set, ge
       selectedPageId: null,
       humanInputRequest: null,
       lastError: null,
-    }),
-
-  applySessionUpdated: (patch) =>
-    set((state) => ({
-      session: state.session ? { ...state.session, ...patch } : null,
     })),
 
+  applySessionUpdated: (patch) =>
+    updateTabForSession(set, get, patch.id, (tab) => {
+      const session =
+        tab.session && isTerminalStatus(tab.session.status) && patch.status !== tab.session.status
+          ? tab.session
+          : tab.session
+            ? { ...tab.session, ...patch }
+            : null;
+
+      return {
+        ...tab,
+        session,
+        humanInputRequest:
+          session && isTerminalStatus(session.status) ? null : tab.humanInputRequest,
+      };
+    }),
+
   applyPageDiscovered: (page) =>
-    set((state) => ({
-      pages: state.pages.some((item) => item.id === page.id)
-        ? state.pages.map((item) => (item.id === page.id ? page : item))
-        : [...state.pages, page],
+    updateTabForSession(set, get, page.sessionId, (tab) => ({
+      ...tab,
+      pages: tab.pages.some((item) => item.id === page.id)
+        ? tab.pages.map((item) => (item.id === page.id ? page : item))
+        : [...tab.pages, page],
     })),
 
   applyPageUpdated: (patch) =>
-    set((state) => ({
-      pages: state.pages.map((page) => (page.id === patch.id ? { ...page, ...patch } : page)),
+    updateTabForSession(set, get, patch.sessionId, (tab) => ({
+      ...tab,
+      pages: tab.pages.map((page) => (page.id === patch.id ? { ...page, ...patch } : page)),
     })),
 
   applyInsightCreated: (insight) =>
-    set((state) => ({
-      insights: state.insights.some((item) => item.id === insight.id)
-        ? state.insights
-        : [insight, ...state.insights],
+    updateTabForSession(set, get, insight.sessionId, (tab) => ({
+      ...tab,
+      insights: tab.insights.some((item) => item.id === insight.id)
+        ? tab.insights
+        : [insight, ...tab.insights],
     })),
 
   applyLogCreated: (log) =>
-    set((state) => ({
-      logs: state.logs.some((item) => item.id === log.id) ? state.logs : [...state.logs, log],
+    updateTabForSession(set, get, log.sessionId, (tab) => ({
+      ...tab,
+      logs: tab.logs.some((item) => item.id === log.id) ? tab.logs : [...tab.logs, log],
     })),
 
   applyHumanInputRequested: (request) =>
-    set((state) => ({
-      humanInputRequest: request,
-      session: state.session ? { ...state.session, status: 'paused' } : state.session,
+    updateTabForSession(set, get, request.sessionId, (tab) => ({
+      ...tab,
+      humanInputRequest:
+        tab.session && isTerminalStatus(tab.session.status) ? tab.humanInputRequest : request,
     })),
 
-  clearHumanInputRequest: () => set({ humanInputRequest: null }),
+  clearHumanInputRequest: () =>
+    updateActiveTab(set, (tab) => ({
+      ...tab,
+      humanInputRequest: null,
+    })),
 
-  setSearch: (value) => set({ search: value }),
+  setSearch: (value) =>
+    updateActiveTab(set, (tab) => ({
+      ...tab,
+      search: value,
+    })),
 
   analyzePageWithAi: async (page) => {
-    const { session, analyzingPageIds } = get();
-    if (!session || analyzingPageIds.has(page.id)) return;
+    const tab =
+      get().tabs.find((item) => item.session?.id === page.sessionId) ?? getActiveTabFromState(get());
+    if (!tab || !tab.session || tab.analyzingPageIds.has(page.id)) return;
 
-    set({ analyzingPageIds: new Set(analyzingPageIds).add(page.id) });
+    updateTab(set, tab.id, (current) => ({
+      ...current,
+      analyzingPageIds: new Set(current.analyzingPageIds).add(page.id),
+    }));
 
     try {
       const aiSettings = await invoke<{ provider: string; model: string }>('get_ai_settings');
@@ -338,11 +553,11 @@ export const useBrowserAutomationStore = create<BrowserAutomationState>((set, ge
         apiKey: key,
       });
 
-      get().applyPageUpdated({ id: page.id, aiSummary: response.content });
+      get().applyPageUpdated({ id: page.id, sessionId: page.sessionId, aiSummary: response.content });
 
       get().applyInsightCreated({
         id: `insight-ai-${Date.now()}`,
-        sessionId: session.id,
+        sessionId: tab.session.id,
         pageId: page.id,
         severity: 'info',
         type: 'ai-analysis',
@@ -356,7 +571,7 @@ export const useBrowserAutomationStore = create<BrowserAutomationState>((set, ge
       console.error('Failed to analyze page with AI:', error);
       get().applyLogCreated({
         id: `log-${Date.now()}`,
-        sessionId: session.id,
+        sessionId: tab.session.id,
         level: 'error',
         type: 'ai',
         message: `AI analysis failed for ${page.url}: ${error instanceof Error ? error.message : String(error)}`,
@@ -364,10 +579,11 @@ export const useBrowserAutomationStore = create<BrowserAutomationState>((set, ge
         createdAt: new Date().toISOString(),
       });
     } finally {
-      const { analyzingPageIds: current } = get();
-      const next = new Set(current);
-      next.delete(page.id);
-      set({ analyzingPageIds: next });
+      updateTab(set, tab.id, (current) => {
+        const next = new Set(current.analyzingPageIds);
+        next.delete(page.id);
+        return { ...current, analyzingPageIds: next };
+      });
     }
   },
 }));

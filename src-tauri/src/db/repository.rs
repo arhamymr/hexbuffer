@@ -1,4 +1,4 @@
-use crate::ai_browser::{AIInsight, ActivityLog, CrawlPage, CrawlSession};
+use crate::commands::browser::{AIInsight, ActivityLog, CrawlPage, CrawlSession};
 use crate::packet_capture::types::{
     PacketCaptureRecord, PacketConnectionRecord, StoredPacketRecord,
 };

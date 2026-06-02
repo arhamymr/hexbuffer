@@ -2,8 +2,8 @@
 
 import { useState } from 'react';
 import { Clipboard } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { ActivityStatusBadge, LevelBadge } from '@/components/status-badge';
 import {
   Drawer,
   DrawerContent,
@@ -14,19 +14,12 @@ import {
 } from '@/components/ui/drawer';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { EventLogTable } from '@/pages/live-traffic/components/log-table/event-log-table';
-import { cn } from '@/lib/utils';
 import { copyText } from '@/lib/clipboard';
 import type { ActivityLog } from '../types';
 
 interface ActivityLogPanelProps {
   logs: ActivityLog[];
 }
-
-const levelStyles: Record<string, string> = {
-  info: 'border-sky-500/25 text-sky-700 dark:text-sky-300',
-  warning: 'border-amber-500/25 text-amber-700 dark:text-amber-300',
-  error: 'border-red-500/25 text-red-700 dark:text-red-300',
-};
 
 function DetailRow({ label, value }: { label: string; value: string | undefined }) {
   return (
@@ -67,15 +60,8 @@ export function ActivityLogPanel({ logs }: ActivityLogPanelProps) {
               <DrawerHeader>
                 <DrawerTitle className="flex items-center gap-2">
                   Activity Detail
-                  <Badge
-                    variant="outline"
-                    className={cn('h-5 px-1.5 text-[10px] capitalize', levelStyles[selectedLog.level])}
-                  >
-                    {selectedLog.level}
-                  </Badge>
-                  <Badge variant="outline" className="h-5 px-1.5 text-[10px]">
-                    {selectedLog.type}
-                  </Badge>
+                  <LevelBadge level={selectedLog.level} />
+                  <ActivityStatusBadge status={selectedLog.type} />
                 </DrawerTitle>
                 <DrawerDescription className="font-mono text-xs">
                   {selectedLog.message}

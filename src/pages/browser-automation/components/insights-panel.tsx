@@ -31,7 +31,7 @@ export function AiInsightsPanel({
   const selectPage = useBrowserAutomationStore((s) => s.selectPage);
   const toggleInsightReviewed = useBrowserAutomationStore((s) => s.toggleInsightReviewed);
   const analyzePageWithAi = useBrowserAutomationStore((s) => s.analyzePageWithAi);
-  const pages = useBrowserAutomationStore((s) => s.pages);
+  const pages = useBrowserAutomationStore((s) => s.getActiveTab()?.pages ?? []);
 
   function handleInsightOpen(insight: AIInsight) {
     if (insight.pageId) {

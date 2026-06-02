@@ -648,6 +648,18 @@ async function runCrawl() {
         });
       }
 
+      const candidates = [...new Set(
+        [...extract.links, ...(analysis.prioritizedUrls || [])]
+          .map((entry) => normalizeUrl(entry.href || entry.url))
+          .filter(Boolean)
+      )];
+      for (const candidate of candidates) {
+        if (!enqueued.has(candidate) && !shouldBlockUrl(candidate, config, visited, item.depth + 1)) {
+          enqueued.add(candidate);
+          queue.push({ url: candidate, depth: item.depth + 1, parentUrl: extract.finalUrl, discoveredBy: 'link' });
+        }
+      }
+
       const gate = analysis.humanInputRequest || restrictedGate(extract);
       if (gate) {
         emit({
@@ -662,22 +674,7 @@ async function runCrawl() {
           createdAt: new Date().toISOString(),
         });
         log(sessionId, 'warning', 'policy', `Skipped restricted page ${extract.finalUrl}: ${gate.reason}`, extract.finalUrl);
-        // Do NOT break — continue crawling other URLs in the queue.
-        // Breaking would kill the sidecar process, making resume impossible
-        // since the Rust backend has no mechanism to restart it.
         continue;
-      }
-
-      const candidates = [...new Set(
-        [...extract.links, ...(analysis.prioritizedUrls || [])]
-          .map((entry) => normalizeUrl(entry.href || entry.url))
-          .filter(Boolean)
-      )];
-      for (const candidate of candidates) {
-        if (!enqueued.has(candidate) && !shouldBlockUrl(candidate, config, visited, item.depth + 1)) {
-          enqueued.add(candidate);
-          queue.push({ url: candidate, depth: item.depth + 1, parentUrl: extract.finalUrl, discoveredBy: 'link' });
-        }
       }
     } catch (error) {
       emit({

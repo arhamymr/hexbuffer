@@ -16,8 +16,10 @@ interface AppState {
   proxyPort: number | null;
   proxyDefaultPort: number;
   bruteForceSafetyAlertDismissed: boolean;
+  browserAutomationSafetyAlertDismissed: boolean;
   setProxyStatus: (status: ProxyStatus) => void;
   setBruteForceSafetyAlertDismissed: (dismissed: boolean) => void;
+  setBrowserAutomationSafetyAlertDismissed: (dismissed: boolean) => void;
   startProxy: () => Promise<void>;
   stopProxy: () => Promise<void>;
   checkProxyStatus: () => Promise<void>;
@@ -30,10 +32,13 @@ export const useAppStore = create<AppState>()(
       proxyPort: null,
       proxyDefaultPort: 8888,
       bruteForceSafetyAlertDismissed: false,
+      browserAutomationSafetyAlertDismissed: false,
 
       setProxyStatus: (proxyStatus) => set({ proxyStatus }),
       setBruteForceSafetyAlertDismissed: (bruteForceSafetyAlertDismissed) =>
         set({ bruteForceSafetyAlertDismissed }),
+      setBrowserAutomationSafetyAlertDismissed: (browserAutomationSafetyAlertDismissed) =>
+        set({ browserAutomationSafetyAlertDismissed }),
 
       startProxy: async () => {
         console.log('[store] startProxy called');
@@ -102,6 +107,7 @@ export const useAppStore = create<AppState>()(
         proxyPort: state.proxyPort,
         proxyDefaultPort: state.proxyDefaultPort,
         bruteForceSafetyAlertDismissed: state.bruteForceSafetyAlertDismissed,
+        browserAutomationSafetyAlertDismissed: state.browserAutomationSafetyAlertDismissed,
       }),
     }
   )

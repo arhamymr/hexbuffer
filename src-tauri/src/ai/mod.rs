@@ -66,7 +66,7 @@ pub struct AiChatResponse {
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 struct AiChatContext {
-    crawl_sessions: Vec<crate::ai_browser::CrawlSession>,
+    crawl_sessions: Vec<crate::commands::browser::CrawlSession>,
     latest_crawl: Option<AiChatCrawlContext>,
     proxy_summary: Vec<Value>,
 }
@@ -74,10 +74,10 @@ struct AiChatContext {
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 struct AiChatCrawlContext {
-    session: crate::ai_browser::CrawlSession,
-    pages: Vec<crate::ai_browser::CrawlPage>,
-    insights: Vec<crate::ai_browser::AIInsight>,
-    logs: Vec<crate::ai_browser::ActivityLog>,
+    session: crate::commands::browser::CrawlSession,
+    pages: Vec<crate::commands::browser::CrawlPage>,
+    insights: Vec<crate::commands::browser::AIInsight>,
+    logs: Vec<crate::commands::browser::ActivityLog>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -121,10 +121,7 @@ pub async fn send_ai_chat_message(
     let settings = read_ai_settings(&app)?;
 
     if api_key.trim().is_empty() {
-        return Err(format!(
-            "No {} API key provided",
-            settings.provider
-        ));
+        return Err(format!("No {} API key provided", settings.provider));
     }
 
     let context = build_ai_chat_context(&history)?;
@@ -231,7 +228,11 @@ fn run_ai_chat_engine(
                 }
             }
             "chat_failed" => {
-                failed = Some(message.message.unwrap_or_else(|| "AI chat failed".to_string()));
+                failed = Some(
+                    message
+                        .message
+                        .unwrap_or_else(|| "AI chat failed".to_string()),
+                );
             }
             _ => {}
         }

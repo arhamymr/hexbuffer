@@ -14,12 +14,11 @@ import type {
 
 export function useBrowserAutomationPage() {
   const {
-    session,
-    pages,
-    insights,
-    logs,
-    selectedPageId,
-    search,
+    tabs,
+    activeTabId,
+    setActiveTabId,
+    renameTab,
+    closeTab,
     overview,
     applySessionStarted,
     applySessionUpdated,
@@ -29,6 +28,17 @@ export function useBrowserAutomationPage() {
     applyLogCreated,
     applyHumanInputRequested,
   } = useBrowserAutomationStore();
+
+  const activeTab = useMemo(
+    () => tabs.find((tab) => tab.id === activeTabId) ?? tabs[0] ?? null,
+    [activeTabId, tabs]
+  );
+
+  const pages = activeTab?.pages ?? [];
+  const insights = activeTab?.insights ?? [];
+  const logs = activeTab?.logs ?? [];
+  const selectedPageId = activeTab?.selectedPageId ?? null;
+  const search = activeTab?.search ?? '';
 
   useEffect(() => {
     const unlisteners: Array<() => void> = [];
@@ -60,11 +70,11 @@ export function useBrowserAutomationPage() {
         unlisteners.push(await listen<CrawlSession>('ai-browser:session-finished', (event) => {
           applySessionUpdated({ ...event.payload, status: 'completed' });
         }));
-        unlisteners.push(await listen<{ message?: string }>('ai-browser:session-failed', (event) => {
-          applySessionUpdated({ status: 'failed', finishedAt: new Date().toISOString() });
+        unlisteners.push(await listen<{ message?: string; sessionId?: string }>('ai-browser:session-failed', (event) => {
+          applySessionUpdated({ id: event.payload?.sessionId, status: 'failed', finishedAt: new Date().toISOString() });
           applyLogCreated({
             id: `log-${Date.now()}`,
-            sessionId: session?.id ?? 'unknown',
+            sessionId: event.payload?.sessionId ?? useBrowserAutomationStore.getState().getActiveTab()?.session?.id ?? 'unknown',
             level: 'error',
             type: 'error',
             message: event.payload?.message ?? 'Crawl failed',
@@ -92,7 +102,6 @@ export function useBrowserAutomationPage() {
     applySessionStarted,
     applySessionUpdated,
     applyHumanInputRequested,
-    session?.id,
   ]);
 
   const filteredPages = useMemo(() => {
@@ -134,11 +143,17 @@ export function useBrowserAutomationPage() {
   }, [pages]);
 
   return {
+    tabs: tabs.map((tab) => ({ id: tab.id, name: tab.name })),
+    activeTabId,
+    setActiveTabId,
+    renameTab,
+    closeTab,
+    activeTab,
     crawlTree,
     selectedPage,
     filteredInsights,
     filteredLogs,
     interestingPages,
-    overview: overview(),
+    overview: overview(activeTab?.id),
   };
 }

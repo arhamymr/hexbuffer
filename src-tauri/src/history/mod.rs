@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use crate::{
-    ai_browser::{AIInsight, ActivityLog, CrawlPage, CrawlSession},
+    commands::browser::{AIInsight, ActivityLog, CrawlPage, CrawlSession},
     db::repository::{Database, DocumentRecord, PaginatedResponse, TreeNode},
     packet_capture::types::{PacketCaptureRecord, PacketConnectionRecord, StoredPacketRecord},
     proxy::state::{

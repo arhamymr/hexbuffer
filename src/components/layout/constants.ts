@@ -17,7 +17,7 @@ export const allNavItems: NavItem[] = [
   { label: 'Browser', icon: Globe, href: '/browser-automation'},
   // { label: 'Documents', icon: FileText, href: '/documents'},
   // { label: 'AI Tools', icon: Bot, href: '/ai-tools', devOnly: true },
-  // { label: 'Tools', icon: Wrench, href: '/tools' },
+  { label: 'Tools', icon: Wrench, href: '/tools' },
 ];
 
 export const mainNavItems = import.meta.env.PROD

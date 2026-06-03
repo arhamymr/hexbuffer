@@ -103,7 +103,7 @@ type BrowserAutomationSet = (
     | ((state: BrowserAutomationState) => Partial<BrowserAutomationState>),
 ) => void;
 
-const STORAGE_KEY = 'apprecon:crawl-setup-config';
+const STORAGE_KEY = '0xbuffer:crawl-setup-config';
 const DEFAULT_EXPANDED_PAGE_IDS = ['page-root', 'page-products', 'page-login'];
 
 function makeSession(setup: CrawlSetupConfig): CrawlSession {
@@ -296,6 +296,34 @@ export const useBrowserAutomationStore = create<BrowserAutomationState>((set, ge
     } catch {
       // Storage full or unavailable - ignore.
     }
+
+    const s = tab.setup;
+    const summary = [
+      `URL: ${s.targetUrl}`,
+      `Depth: ${s.maxDepth}`,
+      `Pages: ${s.maxPages}`,
+      `Delay: ${s.requestDelayMs}ms`,
+      `Timeout: ${s.timeoutMs}ms`,
+      `Settle: ${s.networkSettleMs ?? 2000}ms`,
+      s.excludePaths.trim() ? `Exclude: ${s.excludePaths}` : null,
+    ].filter(Boolean).join(', ');
+
+    const sessionId = tab.session?.id ?? `pre-${Date.now()}`;
+    updateTab(set, tab.id, (current) => ({
+      ...current,
+      logs: [
+        ...current.logs,
+        {
+          id: `log-${Date.now()}`,
+          sessionId,
+          level: 'info',
+          type: 'session',
+          message: `Config saved — ${summary}`,
+          url: s.targetUrl,
+          createdAt: new Date().toISOString(),
+        },
+      ],
+    }));
   },
 
   startCrawl: async () => {

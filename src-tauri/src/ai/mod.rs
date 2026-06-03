@@ -166,17 +166,17 @@ fn run_ai_chat_engine(
     let mut command = Command::new(node);
     command
         .arg(script)
-        .env("APPRECON_AI_ENGINE_MODE", "chat")
+        .env("0XBUFFER_AI_ENGINE_MODE", "chat")
         .env(
-            "APPRECON_AI_CHAT_REQUEST_JSON",
+            "0XBUFFER_AI_CHAT_REQUEST_JSON",
             serde_json::to_string(request).map_err(|error| error.to_string())?,
         )
         .env(
-            "APPRECON_AI_CONTEXT_JSON",
+            "0XBUFFER_AI_CONTEXT_JSON",
             serde_json::to_string(context).map_err(|error| error.to_string())?,
         )
-        .env("APPRECON_AI_PROVIDER", settings.provider.trim())
-        .env("APPRECON_AI_MODEL", settings.model.trim())
+        .env("XBUFFER_AI_PROVIDER", settings.provider.trim())
+        .env("0XBUFFER_AI_MODEL", settings.model.trim())
         .env(api_key_env_name(&settings.provider)?, api_key.trim())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped());
@@ -409,8 +409,8 @@ fn start_mastra_process(
         command.env(name, value);
     }
 
-    command.env("APPRECON_AI_PROVIDER", settings.provider.trim());
-    command.env("APPRECON_AI_MODEL", settings.model.trim());
+    command.env("XBUFFER_AI_PROVIDER", settings.provider.trim());
+    command.env("0XBUFFER_AI_MODEL", settings.model.trim());
 
     let process = command
         .spawn()

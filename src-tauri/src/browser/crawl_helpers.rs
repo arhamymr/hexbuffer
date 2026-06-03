@@ -68,7 +68,7 @@ pub(crate) fn update_session(
         .map_err(|_| "Failed to lock AI browser sessions".to_string())?;
     let session = sessions
         .get_mut(session_id)
-        .ok_or_else(|| "Crawl session not found".to_string())?;
+        .ok_or_else(|| "Automation session not found".to_string())?;
 
     session.status = status.to_string();
     if finished_at.is_some() {

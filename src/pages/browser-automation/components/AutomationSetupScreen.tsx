@@ -109,12 +109,12 @@ export function CrawlSetupScreen({
       <DialogTrigger asChild>
         <Button variant="outline" disabled={disabled}>
           <Settings2 className="h-4 w-4" />
-          Crawl Config
+          Automation Config
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[720px]">
         <DialogHeader>
-          <DialogTitle>Crawl Config</DialogTitle>
+          <DialogTitle>Automation Config</DialogTitle>
           <DialogDescription>
             Configure the target, crawl limits, scope rules, and timing.
           </DialogDescription>

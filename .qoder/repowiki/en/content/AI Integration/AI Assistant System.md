@@ -67,7 +67,7 @@ TYPES["Types<br/>types.ts"]
 end
 subgraph "Frontend - Browser Automation"
 BA_PAGE["Browser Automation Page<br/>index.tsx"]
-BA_SETUP["Crawl Setup Screen<br/>crawl-setup-screen.tsx"]
+BA_SETUP["Automation Setup Screen<br/>crawl-setup-screen.tsx"]
 BA_HOOK["Browser Automation Hook<br/>use-browser-automation-page.ts"]
 BA_STORE["Browser Store<br/>browser-automation.ts"]
 end
@@ -162,7 +162,7 @@ Mod->>Mod : write_ai_settings(app, settings)
 Mod-->>Cmd : AiSettings (no API key)
 Cmd-->>Hook : AiSettings
 Hook-->>UI : Updated settings
-BrowserUI->>BrowserCmd : Start AI Browser Crawl
+BrowserUI->>BrowserCmd : Start AI Browser Automation
 BrowserCmd->>Sidecar : Spawn Node.js sidecar with config
 Sidecar->>Sidecar : AI-powered page analysis
 Sidecar-->>BrowserCmd : Emit events (page_discovered, insights)
@@ -281,11 +281,11 @@ The AI Browser Automation system provides comprehensive web crawling capabilitie
 
 ### Core Components
 - **Browser Automation Page**: Main interface for managing crawl sessions with resizable panels for activity logs, crawl overview, and AI insights.
-- **Crawl Setup Screen**: Configuration interface for target URL, crawl limits, scope rules, timing, and AI analysis options.
+- **Automation Setup Screen**: Configuration interface for target URL, crawl limits, scope rules, timing, and AI analysis options.
 - **AI Browser Commands**: Tauri commands for controlling crawl sessions, managing state, and retrieving historical data.
 - **AI Browser Sidecar**: Node.js process that handles actual crawling, AI analysis, and event emission.
 
-### Crawl Configuration and Control
+### Automation Configuration and Control
 - **Configuration Options**: Target URL, max depth, max pages, same-domain only, include/exclude paths, request delay, timeout, and AI insights toggle.
 - **Session Management**: Start, pause, resume, and stop crawl operations with real-time status updates.
 - **Real-time Monitoring**: Activity logs, crawl tree visualization, and AI insights panel with filtering capabilities.
@@ -293,7 +293,7 @@ The AI Browser Automation system provides comprehensive web crawling capabilitie
 ```mermaid
 sequenceDiagram
 participant User as "User"
-participant Setup as "Crawl Setup<br/>crawl-setup-screen.tsx"
+participant Setup as "Automation Setup<br/>crawl-setup-screen.tsx"
 participant Store as "Browser Store<br/>browser-automation.ts"
 participant Cmd as "AI Browser Commands<br/>ai_browser.rs"
 participant Sidecar as "AI Browser Sidecar<br/>index.mjs"
@@ -430,8 +430,8 @@ ABCMD --> STORE
 ## Troubleshooting Guide
 - **API key not applied**: Verify the key is present in the OS keyring for the selected provider. Confirm saving settings writes the key and that the in-memory field is cleared.
 - **Mastra not starting**: Ensure the Mastra directory contains a package manifest and that the NPM command is available. Check Mastra URL liveness; the system probes the configured address/port.
-- **AI Browser Sidecar failing**: Verify Node.js is available in PATH, check that the sidecar script exists in the expected location, and ensure APPRECON_CRAWL_CONFIG_JSON environment variable is properly formatted.
-- **Crawl not progressing**: Check proxy configuration (APPRECON_PROXY_PORT), verify target URL accessibility, and review activity logs for specific error messages.
+- **AI Browser Sidecar failing**: Verify Node.js is available in PATH, check that the sidecar script exists in the expected location, and ensure 0XBUFFER_CRAWL_CONFIG_JSON environment variable is properly formatted.
+- **Automation not progressing**: Check proxy configuration (0XBUFFER_PROXY_PORT), verify target URL accessibility, and review activity logs for specific error messages.
 - **AI insights not appearing**: Ensure AI insights are enabled in crawl configuration and that a valid API key is configured for the selected provider.
 - **Auto-start not working**: Confirm the auto-start flag is enabled and that the app loads settings on startup. Manually start Mastra to validate the process lifecycle.
 

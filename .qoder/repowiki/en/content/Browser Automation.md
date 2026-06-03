@@ -35,7 +35,7 @@
 3. [Core Components](#core-components)
 4. [Architecture Overview](#architecture-overview)
 5. [Detailed Component Analysis](#detailed-component-analysis)
-6. [AI-Powered Crawl System](#ai-powered-crawl-system)
+6. [AI-Powered Automation System](#ai-powered-crawl-system)
 7. [Database Schema and Persistence](#database-schema-and-persistence)
 8. [Real-Time Monitoring and Events](#real-time-monitoring-and-events)
 9. [Frontend Components and UI](#frontend-components-and-ui)
@@ -132,7 +132,7 @@ UI->>Store : startCrawl()
 Store->>Tauri : ai_browser_start_crawl(config, sessionId)
 Tauri->>Engine : Spawn AI engine process
 Engine->>Engine : Initialize Playwright
-Engine->>Engine : Crawl target URL
+Engine->>Engine : Automation target URL
 Engine->>Engine : Extract content & analyze
 Engine->>Tauri : Emit page_discovered
 Tauri->>DB : Persist session & page
@@ -217,7 +217,7 @@ The intelligent crawler leverages Playwright for dynamic content extraction and 
 
 ```mermaid
 flowchart TD
-Start([Crawl Session Started]) --> Init[Initialize Playwright Context]
+Start([Automation Session Started]) --> Init[Initialize Playwright Context]
 Init --> Queue[Load Seed URLs]
 Queue --> Loop{Queue Not Empty?}
 Loop --> |Yes| Extract[Extract Page Content]
@@ -225,10 +225,10 @@ Extract --> Analyze[AI/Heuristic Analysis]
 Analyze --> Insights[Generate Insights]
 Insights --> Persist[Persist Results]
 Persist --> Discover[Discover New Links]
-Discover --> Filter[Apply Crawl Policies]
+Discover --> Filter[Apply Automation Policies]
 Filter --> Queue
 Loop --> |No| Finish[Session Complete]
-Finish --> End([Crawl Finished])
+Finish --> End([Automation Finished])
 ```
 
 **Diagram sources**
@@ -252,7 +252,7 @@ The event-driven architecture enables seamless communication between all system 
 - [use-browser-automation-page.ts:59-118](file://src/pages/browser-automation/hooks/use-browser-automation-page.ts#L59-L118)
 - [browser-automation.ts:186-203](file://src/stores/browser-automation.ts#L186-L203)
 
-## AI-Powered Crawl System
+## AI-Powered Automation System
 The enhanced crawl system provides intelligent web reconnaissance with multiple analysis modes:
 
 ### Heuristic Analysis
@@ -279,7 +279,7 @@ Advanced analysis using Large Language Models for comprehensive page understandi
 The system implements a comprehensive SQLite schema for persistent storage:
 
 ### AI Browser Tables
-- **ai_browser_sessions**: Crawl session metadata and status
+- **ai_browser_sessions**: Automation session metadata and status
 - **ai_browser_pages**: Discovered pages with analysis results
 - **ai_browser_edges**: URL relationship tracking
 - **ai_browser_insights**: AI-generated insights with review status
@@ -318,10 +318,10 @@ The event-driven architecture provides comprehensive monitoring capabilities:
 The enhanced frontend provides comprehensive monitoring and control:
 
 ### Main Interface Layout
-- **Header Controls**: Crawl configuration, start/pause/stop, and export functionality
+- **Header Controls**: Automation configuration, start/pause/stop, and export functionality
 - **Activity Log Panel**: Real-time activity monitoring with filtering
-- **Crawl Overview Panel**: Live metrics and statistics
-- **Crawl Tree Panel**: Hierarchical page structure visualization
+- **Automation Overview Panel**: Live metrics and statistics
+- **Automation Tree Panel**: Hierarchical page structure visualization
 - **AI Insights Panel**: Structured insights with severity and type filtering
 - **Page Detail Drawer**: Detailed page information and actions
 
@@ -367,7 +367,7 @@ Common issues and resolutions for the AI-powered system:
 - **Rate Limiting**: Monitor API rate limits and implement appropriate delays
 - **Fallback Mechanisms**: System automatically falls back to heuristic analysis
 
-### Crawl Configuration Problems
+### Automation Configuration Problems
 - **Target URL Validation**: Ensure target URL is accessible and properly formatted
 - **Scope Configuration**: Verify domain restrictions and path filters are appropriate
 - **Timeout Settings**: Adjust timeout values for slow-loading pages
@@ -389,7 +389,7 @@ AppRecon's enhanced Browser Automation system represents a significant advanceme
 ## Appendices
 
 ### API and Command Reference
-- **Crawl Control**: ai_browser_start_crawl, ai_browser_pause_crawl, ai_browser_resume_crawl, ai_browser_stop_crawl
+- **Automation Control**: ai_browser_start_crawl, ai_browser_pause_crawl, ai_browser_resume_crawl, ai_browser_stop_crawl
 - **Data Retrieval**: get_ai_browser_session, list_ai_browser_pages, list_ai_browser_insights, list_ai_browser_logs
 - **Configuration**: CrawlSetupConfig with target URL, depth limits, scope rules, and AI analysis options
 - **Event Types**: Comprehensive event spectrum for real-time monitoring and UI updates

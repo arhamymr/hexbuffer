@@ -253,16 +253,16 @@ pub(crate) fn run_sidecar_crawl(
 
     command
         .arg(script)
-        .env("APPRECON_CRAWL_SESSION_ID", session_id)
-        .env("APPRECON_CRAWL_CONFIG_JSON", config_json)
+        .env("0XBUFFER_CRAWL_SESSION_ID", session_id)
+        .env("0XBUFFER_CRAWL_CONFIG_JSON", config_json)
         .env(
-            "APPRECON_PROXY_PORT",
+            "0XBUFFER_PROXY_PORT",
             crate::proxy::active_proxy_port()
                 .unwrap_or_else(crate::proxy::default_proxy_port)
                 .to_string(),
         )
-        .env("APPRECON_AI_PROVIDER", &settings.provider)
-        .env("APPRECON_AI_MODEL", &settings.model)
+        .env("XBUFFER_AI_PROVIDER", &settings.provider)
+        .env("0XBUFFER_AI_MODEL", &settings.model)
         .stdout(Stdio::piped())
         .stderr(Stdio::piped());
 

@@ -278,7 +278,7 @@ Tauri --> Agent["agent-browser (external)"]
   - Click the submit button
   - Capture screenshot for verification
 - API endpoint discovery:
-  - Crawl with configured depth and path filters
+  - Automation with configured depth and path filters
   - Inspect insights and logs for suspicious endpoints
   - Export crawl data for downstream analysis
 - Cross-browser compatibility:

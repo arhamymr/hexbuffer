@@ -72,7 +72,7 @@ AIB["AI Browser Models"]
 end
 subgraph "Runtime"
 DEC["Body Decoder<br/>ZSTD/GZIP/Brotli/Deflate"]
-SIDE["Node Sidecar<br/>Crawl Engine"]
+SIDE["Node Sidecar<br/>Automation Engine"]
 end
 HISTORY --> ENDPOINTS
 HISTORY --> SCHEMA

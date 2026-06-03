@@ -1,12 +1,12 @@
 'use client';
 
 import { Pause, Play, RotateCcw, Search, Square, Target, InfoIcon } from 'lucide-react';
-import { ActivityLogPanel } from './components/activity-log-panel';
-import { AiInsightsPanel } from './components/insights-panel';
-import { CrawlOverviewPanel } from './components/crawl-overview-panel';
-import { CrawlSetupScreen } from './components/crawl-setup-screen';
-import { CrawlTreePanel } from './components/crawl-tree-panel';
-import { PageDetailDrawer } from './components/page-detail-drawer';
+import { ActivityLogPanel } from './components/ActivityLogPanel';
+import { AiInsightsPanel } from './components/InsightsPanel';
+import { CrawlOverviewPanel } from './components/AutomationOverviewPanel';
+import { CrawlSetupScreen } from './components/AutomationSetupScreen';
+import { CrawlTreePanel } from './components/AutomationTreePanel';
+import { PageDetailDrawer } from './components/PageDetailDrawer';
 import { Alert, AlertAction, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -22,7 +22,7 @@ import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/componen
 import { TabbedPageLayout } from '@/components/tabs-layout/tabbed-page-layout';
 import { useAppStore } from '@/stores/app';
 import { useBrowserAutomationStore } from '@/stores/browser-automation';
-import { useBrowserAutomationPage } from './hooks/use-browser-automation-page';
+import { useBrowserAutomationPage } from './hooks/use-page';
 
 export function BrowserAutomationPage() {
   const browserAutomationSafetyAlertDismissed = useAppStore(
@@ -138,7 +138,7 @@ export function BrowserAutomationPage() {
                 </Button>
                 <Button size="xs" onClick={startCrawl} disabled={isRunning || !setup.targetUrl.trim()}>
                   <Play className="h-4 w-4" />
-                  Start Crawl
+                  Start Automation
                 </Button>
               </div>
             </div>
@@ -215,7 +215,7 @@ export function BrowserAutomationPage() {
                   Skip Branch
                 </Button>
                 <Button onClick={stopCrawl}>
-                  Stop Crawl
+                  Stop Automation
                 </Button>
               </DialogFooter>
             </DialogContent>

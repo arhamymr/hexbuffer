@@ -238,7 +238,7 @@ fn write_intercept_ca(app: &AppHandle) -> Result<PathBuf, String> {
     let app_data_dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
     std::fs::create_dir_all(&app_data_dir).map_err(|e| e.to_string())?;
 
-    let ca_path = app_data_dir.join("apprecon-ca.pem");
+    let ca_path = app_data_dir.join("0xbuffer-ca.pem");
     let ca_pem =
         crate::proxy::https::cert::export_ca_cert_pem().map_err(|error| format!("{error}"))?;
     std::fs::write(&ca_path, ca_pem).map_err(|e| e.to_string())?;
@@ -324,7 +324,7 @@ fn import_intercept_ca_to_chrome_profile(app: &AppHandle) -> Result<String, Stri
     std::fs::create_dir_all(&profile_dir).map_err(|e| e.to_string())?;
     let ca_path = write_intercept_ca(app)?;
     let db_dir = format!("sql:{}", profile_dir.display());
-    let nickname = "AppRecon Root CA".to_string();
+    let nickname = "0xbuffer Root CA".to_string();
 
     let init_args = vec![
         "-N".to_string(),
@@ -356,7 +356,7 @@ fn import_intercept_ca_to_chrome_profile(app: &AppHandle) -> Result<String, Stri
     ];
 
     match run_certutil(&add_args) {
-        Ok(()) => Ok("AppRecon CA imported into the managed Chrome profile. Close old Intercept browser windows and open it again.".to_string()),
+        Ok(()) => Ok("0xbuffer CA imported into the managed Chrome profile. Close old Intercept browser windows and open it again.".to_string()),
         Err(error) => Err(format!(
             "Chrome-profile CA import failed: {error}. Install NSS tools with `brew install nss`, then try again."
         )),

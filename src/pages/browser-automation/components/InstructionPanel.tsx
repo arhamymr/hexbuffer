@@ -23,7 +23,7 @@ export function InstructionPanel({
     <div className="flex-1 p-3 flex flex-col gap-3 min-h-0">
       <Textarea
         className="flex-1 resize-none"
-        placeholder="Enter your AI instruction here...&#10;&#10;Example:&#10;- Crawl this website and find all API endpoints&#10;- Fill in the search form and find results&#10;- Navigate to the login page and fill in credentials"
+        placeholder="Enter your AI instruction here...&#10;&#10;Example:&#10;- Automation this website and find all API endpoints&#10;- Fill in the search form and find results&#10;- Navigate to the login page and fill in credentials"
         value={instruction}
         onChange={(e) => onInstructionChange(e.target.value)}
         disabled={isRunning}
@@ -37,7 +37,7 @@ export function InstructionPanel({
         ) : (
           <Button size="sm" onClick={onRunAi} className="w-full" disabled={!instruction}>
             <Play className="h-4 w-4 mr-2" />
-            Start AI Crawl
+            Start AI Automation
           </Button>
         )}
       </div>

@@ -5,8 +5,8 @@ import { toast } from 'sonner';
 import { CaInstallDialog } from '@/components/ca-install-dialog';
 import { trustInterceptCa } from '@/pages/live-traffic/api';
 
-const GLOBAL_CA_INSTALL_MODAL_SEEN_KEY = 'apprecon:ca-install-modal-seen';
-const LEGACY_INTERCEPT_CA_INSTALL_MODAL_SEEN_KEY = 'apprecon:intercept-ca-install-modal-seen';
+const GLOBAL_CA_INSTALL_MODAL_SEEN_KEY = '0xbuffer:ca-install-modal-seen';
+const LEGACY_INTERCEPT_CA_INSTALL_MODAL_SEEN_KEY = '0xbuffer:intercept-ca-install-modal-seen';
 
 export function GlobalCaInstallDialog() {
   const [open, setOpen] = React.useState(false);

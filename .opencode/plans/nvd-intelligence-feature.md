@@ -1,7 +1,7 @@
 # NVD CVE Intelligence Feature Plan
 
 ## Overview
-Add NVD (National Vulnerability Database) CVE intelligence to the existing Findings feature in apprecon. Users can search for CVEs and link them to their findings.
+Add NVD (National Vulnerability Database) CVE intelligence to the existing Findings feature in 0xbuffer. Users can search for CVEs and link them to their findings.
 
 ---
 

@@ -77,7 +77,7 @@ export function useBrowserAutomationPage() {
             sessionId: event.payload?.sessionId ?? useBrowserAutomationStore.getState().getActiveTab()?.session?.id ?? 'unknown',
             level: 'error',
             type: 'error',
-            message: event.payload?.message ?? 'Crawl failed',
+            message: event.payload?.message ?? 'Automation failed',
             createdAt: new Date().toISOString(),
           });
         }));

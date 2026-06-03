@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
-import { AlertTriangle, ArrowDown, ArrowUp, Database, Download, Loader2, Minus, Play, Square, Table2, Trash2, Zap } from 'lucide-react';
+import { AlertTriangle, Database, Download,Play, Square, Table2, Trash2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -13,8 +13,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import type { SqliProgressEvent, SqliScanResult, SqliVulnerability, SqliExtractedDatabase, SqliExtractedTable } from './types';
+import type { SqliProgressEvent, SqliScanResult, SqliVulnerability, SqliExtractedDatabase } from './types';
 
 type RiskLevel = 'low' | 'medium' | 'high';
 type InjectionTechnique = 'boolean_blind' | 'time_based' | 'union' | 'error_based';

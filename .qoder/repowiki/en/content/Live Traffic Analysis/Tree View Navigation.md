@@ -147,7 +147,7 @@ BrowserAuto->>TreeNode : "Render crawl page nodes with status badges"
 - **Default Expansion**: Automatically expands matching host when host filter is active
 
 ### Browser Automation Integration  
-- **Data Transformation**: Crawl page data is transformed with status indicators and badges
+- **Data Transformation**: Automation page data is transformed with status indicators and badges
 - **Custom Icons**: Uses status-specific icons (visited, queued, current, error, blocked)
 - **Metadata Support**: Includes pageId in node metadata for page selection
 
@@ -239,7 +239,7 @@ const buildTreeNodeData = (host: string, paths: TreePath[]): TreeNodeData => {
 };
 ```
 
-#### Crawl Page Transformation  
+#### Automation Page Transformation  
 ```typescript
 // Browser Automation: Transform crawl data to TreeNodeData
 function toTreeNode(node: CrawlTreeNode): TreeNodeData<CrawlTreeMeta> {
@@ -370,7 +370,7 @@ The Tree View Navigation system has been successfully consolidated into a shared
 ```mermaid
 flowchart TD
 StartHTTP(["HTTP Traffic Logs"]) --> TransformHTTP["Transform to TreeNodeData<br/>Live Traffic Module"]
-StartCrawl(["Crawl Data"]) --> TransformCrawl["Transform to TreeNodeData<br/>Browser Automation Module"]
+StartCrawl(["Automation Data"]) --> TransformCrawl["Transform to TreeNodeData<br/>Browser Automation Module"]
 TransformHTTP --> ScopeFilter["Apply Active Scope Filter"]
 TransformCrawl --> StatusFilter["Apply Status Filters"]
 ScopeFilter --> BuildHost["Build Host Nodes<br/>Aggregate Counts & Methods"]

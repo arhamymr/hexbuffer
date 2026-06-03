@@ -21,7 +21,7 @@ export function CrawlOverviewPanel({ overview }: CrawlOverviewPanelProps) {
   return (
     <section className="flex min-h-0 flex-col border-b bg-background xl:border-b-0">
       <div className="border-b px-3 py-2">
-        <div className="text-sm font-medium">Crawl Overview</div>
+        <div className="text-sm font-medium">Automation Overview</div>
         <div className="text-xs text-muted-foreground">Real-time crawl metrics.</div>
       </div>
 

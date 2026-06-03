@@ -452,8 +452,8 @@ Export --> End["Done"]
 
 ```mermaid
 flowchart TD
-Start(["Start Crawl"]) --> Setup["Configure Crawl Settings"]
-Setup --> Session["Create Crawl Session"]
+Start(["Start Automation"]) --> Setup["Configure Automation Settings"]
+Setup --> Session["Create Automation Session"]
 Session --> Queue["Initialize URL Queue"]
 Queue --> Fetch["Fetch Page Content"]
 Fetch --> Analyze["AI Analysis<br/>(DeepSeek or Heuristic)"]

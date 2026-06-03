@@ -202,7 +202,7 @@ pub fn browser_open(
             .arg("--args")
             .arg(format!("--proxy-server=http://localhost:{}", proxy_port))
             .arg("--session")
-            .arg("apprecon-browser")
+            .arg("0xbuffer-browser")
             .stdout(Stdio::piped())
             .stderr(Stdio::piped());
 
@@ -218,7 +218,7 @@ pub fn browser_open(
             .session_name
             .lock()
             .map_err(|_| "Failed to lock session name".to_string())?;
-        *session = "apprecon-browser".to_string();
+        *session = "0xbuffer-browser".to_string();
     }
 
     get_browser_status(app, state)
@@ -522,7 +522,7 @@ pub fn browser_execute(
     Ok(prompt)
 }
 
-// ── AI Crawl commands ──
+// ── AI Automation commands ──
 
 #[tauri::command]
 pub async fn ai_browser_start_crawl(
@@ -535,7 +535,7 @@ pub async fn ai_browser_start_crawl(
     let proxy_port = crate::proxy::active_proxy_port().unwrap_or(0);
     if proxy_port == 0 {
         return Err(
-            "The AppRecon proxy is not running. Start the proxy first, then retry the crawl."
+            "The 0xbuffer proxy is not running. Start the proxy first, then retry the crawl."
                 .to_string(),
         );
     }
@@ -810,7 +810,7 @@ pub async fn get_ai_browser_session(
         .map_err(|_| "Failed to lock AI browser sessions".to_string())?
         .get(&session_id)
         .cloned()
-        .ok_or_else(|| "Crawl session not found".to_string())
+        .ok_or_else(|| "Automation session not found".to_string())
 }
 
 #[tauri::command]

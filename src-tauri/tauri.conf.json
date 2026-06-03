@@ -34,7 +34,11 @@
       }
     ],
     "security": {
-      "csp": null
+      "csp": null,
+      "assetProtocol": {
+        "enable": true,
+        "scope": ["**"]
+      }
     }
   },
   "bundle": {
@@ -44,9 +48,6 @@
     "externalBin": [
       "binaries/ai-engine"
     ],
-    "resources": {
-      "resources/playwright-browsers": "playwright-browsers"
-    },
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",

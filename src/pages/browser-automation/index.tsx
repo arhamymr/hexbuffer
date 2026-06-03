@@ -78,21 +78,23 @@ export function BrowserAutomationPage() {
   return (
     <>
       {!browserAutomationSafetyAlertDismissed && (
-        <Alert variant="default" className="mb-2 min-h-12 shrink-0 border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-500/50 dark:bg-amber-500/10 dark:text-amber-200">
-          <InfoIcon className='!text-amber-600' />
-          <AlertDescription className='text-amber-600'>
-            The browser automation agent will interact with external websites. Only scan targets you own or are authorized to assess. Unauthorized scanning may violate terms of service or applicable laws.
-          </AlertDescription>
-          <AlertAction>
-            <Button
-              variant="outline"
-              aria-label="Dismiss safety notice"
-              onClick={() => setBrowserAutomationSafetyAlertDismissed(true)}
-            >
-              Dismiss
-            </Button>
-          </AlertAction>
-        </Alert>
+        <div className='p-2'>
+          <Alert variant="default" className="min-h-12 mb-0 shrink-0 border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-500/50 dark:bg-amber-500/10 dark:text-amber-200">
+            <InfoIcon className='!text-amber-600 shrink-0' />
+            <AlertDescription className='text-amber-600'>
+              The browser automation agent will interact with external websites. Only scan targets you own or are authorized to assess. Unauthorized scanning may violate terms of service or applicable laws.
+            </AlertDescription>
+            <AlertAction>
+              <Button
+                variant="outline"
+                aria-label="Dismiss safety notice"
+                onClick={() => setBrowserAutomationSafetyAlertDismissed(true)}
+              >
+                Dismiss
+              </Button>
+            </AlertAction>
+          </Alert>
+        </div>
       )}
       <TabbedPageLayout
         tabs={tabs}
@@ -143,17 +145,8 @@ export function BrowserAutomationPage() {
 
           <main className="min-h-0 flex-1">
             <ResizablePanelGroup orientation="vertical" className="min-h-0">
-              <ResizablePanel defaultSize={32} minSize={22}>
-                <ActivityLogPanel logs={filteredLogs} />
-              </ResizablePanel>
-
-              <ResizableHandle withHandle />
-              <ResizablePanel defaultSize={30} minSize={30}>
+              <ResizablePanel defaultSize={60} minSize={20}>
                 <ResizablePanelGroup orientation="horizontal" className="min-h-0">
-                  <ResizablePanel defaultSize={20} minSize={14}>
-                    <CrawlOverviewPanel overview={overview} />
-                  </ResizablePanel>
-                  <ResizableHandle withHandle />
                   <ResizablePanel defaultSize={20} minSize={20}>
                     <CrawlTreePanel
                       nodes={crawlTree}
@@ -162,8 +155,6 @@ export function BrowserAutomationPage() {
                     />
                   </ResizablePanel>
                   <ResizableHandle withHandle />
-                  
-                  
                   <ResizablePanel defaultSize={20} minSize={20}>
                     <PageDetailPanel page={selectedPage} />
                   </ResizablePanel>
@@ -174,6 +165,18 @@ export function BrowserAutomationPage() {
                       interestingPages={interestingPages}
                       analyzingPageIds={analyzingPageIds}
                     />
+                  </ResizablePanel>
+                </ResizablePanelGroup>
+              </ResizablePanel>
+              <ResizableHandle withHandle />
+              <ResizablePanel defaultSize={40} minSize={14}>
+                <ResizablePanelGroup orientation="horizontal">
+                  <ResizablePanel defaultSize={20} minSize={14}>
+                    <CrawlOverviewPanel overview={overview} />
+                  </ResizablePanel>
+                  <ResizableHandle withHandle />
+                  <ResizablePanel defaultSize={80} minSize={22}>
+                    <ActivityLogPanel logs={filteredLogs} />
                   </ResizablePanel>
                 </ResizablePanelGroup>
               </ResizablePanel>

@@ -123,6 +123,7 @@ fn main() {
             zeroxbuffer::commands::cert::save_ca_cert,
             zeroxbuffer::commands::storage::get_storage_info,
             zeroxbuffer::commands::storage::clear_browser_automation_artifacts,
+            zeroxbuffer::commands::storage::reset_local_data,
             zeroxbuffer::commands::browser::get_browser_status,
             zeroxbuffer::commands::browser::browser_open,
             zeroxbuffer::commands::browser::browser_close,
@@ -143,6 +144,7 @@ fn main() {
             zeroxbuffer::commands::browser::list_ai_browser_pages,
             zeroxbuffer::commands::browser::list_ai_browser_insights,
             zeroxbuffer::commands::browser::list_ai_browser_logs,
+            zeroxbuffer::commands::browser::list_recent_ai_browser_sessions,
             zeroxbuffer::sqli::start_sqli_scan,
             zeroxbuffer::sqli::stop_sqli_scan,
             show_main_window

@@ -9,6 +9,7 @@
     "core:default",
     "core:webview:allow-create-webview-window",
     "opener:default",
+    "opener:allow-open-path",
     "dialog:default",
     "core:window:allow-close",
     "core:window:allow-minimize",

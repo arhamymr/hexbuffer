@@ -78,6 +78,7 @@ export async function runCrawl() {
           insightType: insight.type,
           title: insight.title,
           description: insight.description,
+          aiUsedForAnalysis: !!analysis.aiUsedForAnalysis,
           createdAt: new Date().toISOString(),
         });
       }

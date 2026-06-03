@@ -30,8 +30,8 @@ export function CaCertificateSettingsTab({ settings }: CaCertificateSettingsTabP
         <SecurityNoticeIcon className="size-4" />
         <AlertTitle>Important Security Notice</AlertTitle>
         <AlertDescription>
-          To intercept HTTPS traffic, you must install the Apprecon CA certificate in your browser or device.
-          This allows the proxy to inspect encrypted connections for security analysis.
+          Open Browser uses an isolated Chrome profile managed by 0xbuffer. Install the 0xbuffer CA only
+          when you want to intercept HTTPS traffic from external browsers or apps.
         </AlertDescription>
       </Alert>
 
@@ -42,7 +42,7 @@ export function CaCertificateSettingsTab({ settings }: CaCertificateSettingsTabP
             <CardTitle>CA Certificate</CardTitle>
           </div>
           <CardDescription>
-            Download and install the CA certificate to enable HTTPS interception
+            Download or install the CA certificate for external browsers and apps
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -58,7 +58,7 @@ export function CaCertificateSettingsTab({ settings }: CaCertificateSettingsTabP
               </Button>
             </div>
             <p className="text-xs text-muted-foreground">
-              Install directly on macOS, or choose a location to save <code className="bg-muted px-1 py-0.5 rounded">0xbuffer-ca.pem</code>
+              Use Open Browser for the managed Chrome profile. Install or save the CA only for external browsers and apps.
             </p>
           </div>
         </CardContent>

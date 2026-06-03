@@ -1,4 +1,15 @@
 import { Asterisk, DatabaseIcon, RefreshCwIcon, Trash2Icon } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import type { SettingsPageState } from '../hooks/use-settings-page';
@@ -20,8 +31,8 @@ export function GeneralSettingsTab({ settings }: GeneralSettingsTabProps) {
     updateMessage,
     updateVersion,
     storageInfo,
-    clearingBrowserArtifacts,
-    handleClearBrowserArtifacts,
+    resettingLocalData,
+    handleResetLocalData,
   } = settings;
 
   return (
@@ -95,15 +106,33 @@ export function GeneralSettingsTab({ settings }: GeneralSettingsTabProps) {
             Proxy history, documents, and other local records are stored in this database on your device.
           </p>
           <div className="flex flex-wrap gap-2">
-            <Button
-              size="xs"
-              variant="destructive"
-              onClick={handleClearBrowserArtifacts}
-              disabled={clearingBrowserArtifacts}
-            >
-              <Trash2Icon className="mr-2 size-4" />
-              {clearingBrowserArtifacts ? 'Clearing...' : 'Clear Browser Artifacts'}
-            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  size="xs"
+                  variant="destructive"
+                  disabled={resettingLocalData}
+                >
+                  <Trash2Icon className="mr-2 size-4" />
+                  {resettingLocalData ? 'Resetting...' : 'Reset'}
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Reset local browser data?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This clears browser automation artifacts, resets the managed intercept browser profile,
+                    and removes saved 0xbuffer CA files. Proxy history and documents stay in the database.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleResetLocalData}>
+                    Reset
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         </CardContent>
       </Card>

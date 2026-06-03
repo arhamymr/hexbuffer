@@ -36,6 +36,11 @@ export interface ClearBrowserArtifactsResult {
   pagesUpdated: number;
 }
 
+export interface ResetLocalDataResult extends ClearBrowserArtifactsResult {
+  interceptBrowserProfileRemoved: boolean;
+  caFileRemoved: boolean;
+}
+
 const DEFAULT_AI_SETTINGS: AiSettings = {
   provider: 'openai',
   model: 'gpt-4.1-mini',
@@ -57,7 +62,7 @@ export function useSettingsPage() {
   });
   const [mastraBusy, setMastraBusy] = React.useState(false);
   const [storageInfo, setStorageInfo] = React.useState<StorageInfo | null>(null);
-  const [clearingBrowserArtifacts, setClearingBrowserArtifacts] = React.useState(false);
+  const [resettingLocalData, setResettingLocalData] = React.useState(false);
 
   const { keys: aiKeys, setKey: setAiKey, removeKey: removeAiKey, hasKey: hasAiKey } = useAiKeyStore();
   const clearBrowserAutomationArtifactPaths = useBrowserAutomationStore((state) => state.clearArtifactPaths);
@@ -118,20 +123,20 @@ export function useSettingsPage() {
       });
   }, []);
 
-  const handleClearBrowserArtifacts = React.useCallback(async () => {
+  const handleResetLocalData = React.useCallback(async () => {
     try {
-      setClearingBrowserArtifacts(true);
-      const result = await invoke<ClearBrowserArtifactsResult>('clear_browser_automation_artifacts');
+      setResettingLocalData(true);
+      const result = await invoke<ResetLocalDataResult>('reset_local_data');
       clearBrowserAutomationArtifactPaths();
       const sizeMb = result.bytesDeleted / 1024 / 1024;
       toast.success(
-        `Cleared ${result.filesDeleted} browser artifact file${result.filesDeleted === 1 ? '' : 's'} (${sizeMb.toFixed(2)} MB)`
+        `Reset local browser data and cleared ${result.filesDeleted} artifact file${result.filesDeleted === 1 ? '' : 's'} (${sizeMb.toFixed(2)} MB)`
       );
     } catch (error) {
-      console.error('Failed to clear browser automation artifacts:', error);
-      toast.error(`Failed to clear browser artifacts: ${error}`);
+      console.error('Failed to reset local data:', error);
+      toast.error(`Failed to reset local data: ${error}`);
     } finally {
-      setClearingBrowserArtifacts(false);
+      setResettingLocalData(false);
     }
   }, [clearBrowserAutomationArtifactPaths]);
 
@@ -293,13 +298,13 @@ export function useSettingsPage() {
     aiSettingsLoading,
     aiSettingsSaving,
     currentVersion,
-    clearingBrowserArtifacts,
+    resettingLocalData,
     downloading,
     installingCa,
     handleDownloadCert,
     handleInstallMacCert,
     handleClearAiApiKey,
-    handleClearBrowserArtifacts,
+    handleResetLocalData,
     handleSaveAiSettings,
     handleStartMastra,
     handleStopMastra,

@@ -1,13 +1,23 @@
 'use client';
 
 import { convertFileSrc } from '@tauri-apps/api/core';
-import { Copy, ExternalLink, FileCode2, ImageIcon, Star } from 'lucide-react';
+import { useCallback, useState } from 'react';
+import { Copy, ExternalLink, FileCode2, ImageIcon, Loader2, Maximize2, Star } from 'lucide-react';
+import { readTextFile } from '@tauri-apps/plugin-fs';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { TextEditor } from '@/components/ui/text-editor';
 import { useBrowserAutomationStore } from '@/stores/browser-automation';
 import { copyText } from '@/lib/clipboard';
-import { openPath, openUrl } from '@tauri-apps/plugin-opener';
+import { openUrl } from '@tauri-apps/plugin-opener';
 import { PAGE_STATUS_LABELS } from '../constants';
 import type { CrawlPage } from '../types';
 
@@ -24,24 +34,23 @@ function DetailRow({ label, value }: { label: string; value: string | number | u
   );
 }
 
-function ArtifactActions({ label, path, icon: Icon }: { label: string; path?: string; icon: typeof ImageIcon }) {
+function ArtifactActions({ label, path, onView }: { label: string; path?: string; onView?: () => void }) {
   if (!path) return null;
 
   return (
     <div className="space-y-1 rounded-md border p-2">
       <div className="flex items-center gap-1.5 text-xs font-medium">
-        <Icon className="h-3.5 w-3.5" />
         {label}
       </div>
       <p className="break-all font-mono text-[11px] leading-4 text-muted-foreground">{path}</p>
       <div className="flex gap-1.5">
-        <Button variant="outline" size="xs" onClick={() => openPath(path)}>
-          <ExternalLink className="h-3.5 w-3.5" />
-          Open
-        </Button>
+        {onView && (
+          <Button variant="outline" size="xs" onClick={onView}>
+            <Maximize2 className="h-3.5 w-3.5" />
+          </Button>
+        )}
         <Button variant="outline" size="xs" onClick={() => copyText(path)}>
           <Copy className="h-3.5 w-3.5" />
-          Copy Path
         </Button>
       </div>
     </div>
@@ -49,9 +58,13 @@ function ArtifactActions({ label, path, icon: Icon }: { label: string; path?: st
 }
 
 export function PageDetailPanel({ page }: PageDetailPanelProps) {
-  const selectPage = useBrowserAutomationStore((s) => s.selectPage);
   const session = useBrowserAutomationStore((s) => s.getActiveTab()?.session ?? null);
   const markPageInteresting = useBrowserAutomationStore((s) => s.markPageInteresting);
+
+  const [screenshotOpen, setScreenshotOpen] = useState(false);
+  const [htmlViewerOpen, setHtmlViewerOpen] = useState(false);
+  const [htmlContent, setHtmlContent] = useState<string | null>(null);
+  const [htmlLoading, setHtmlLoading] = useState(false);
 
   const base = session?.targetUrl?.replace(/\/$/, '') ?? '';
 
@@ -69,6 +82,20 @@ export function PageDetailPanel({ page }: PageDetailPanelProps) {
       window.open(url, '_blank', 'noopener,noreferrer');
     }
   }
+
+  const handleViewHtml = useCallback(async () => {
+    if (!page?.renderedHtmlPath) return;
+    setHtmlLoading(true);
+    setHtmlViewerOpen(true);
+    try {
+      const content = await readTextFile(page.renderedHtmlPath);
+      setHtmlContent(content);
+    } catch {
+      setHtmlContent(null);
+    } finally {
+      setHtmlLoading(false);
+    }
+  }, [page?.renderedHtmlPath]);
 
   if (!page) {
     return (
@@ -124,17 +151,17 @@ export function PageDetailPanel({ page }: PageDetailPanelProps) {
                 <button
                   type="button"
                   className="block overflow-hidden rounded-md border bg-muted/30"
-                  onClick={() => openPath(page.screenshotPath!)}
+                  onClick={() => setScreenshotOpen(true)}
                 >
                   <img
                     src={convertFileSrc(page.screenshotPath)}
                     alt={`Screenshot of ${page.title || page.url}`}
-                    className="max-h-48 w-full object-contain"
+                    className="max-h-48 w-full object-cover object-top"
                   />
                 </button>
               )}
-              <ArtifactActions label="Screenshot" path={page.screenshotPath} icon={ImageIcon} />
-              <ArtifactActions label="Rendered HTML" path={page.renderedHtmlPath} icon={FileCode2} />
+              <ArtifactActions label="Screenshot" path={page.screenshotPath} />
+              <ArtifactActions label="Rendered HTML" path={page.renderedHtmlPath}onView={handleViewHtml} />
             </div>
           )}
         </div>
@@ -160,6 +187,60 @@ export function PageDetailPanel({ page }: PageDetailPanelProps) {
           </Button>
         </div>
       </div>
+
+      <Dialog open={screenshotOpen} onOpenChange={setScreenshotOpen}>
+        <DialogContent className="sm:max-w-[90vw] max-h-[90vh] flex flex-col p-4">
+          <DialogHeader>
+            <DialogTitle className="truncate text-sm font-mono">
+              {page.screenshotPath?.split('/').pop() ?? 'Screenshot'}
+            </DialogTitle>
+          </DialogHeader>
+          <ScrollArea className="flex-1 overflow-auto rounded-md border bg-muted/20">
+            <img
+              src={page.screenshotPath ? convertFileSrc(page.screenshotPath) : ''}
+              alt={`Screenshot of ${page.title || page.url}`}
+              className="block max-w-none"
+            />
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={htmlViewerOpen} onOpenChange={setHtmlViewerOpen}>
+        <DialogContent className="sm:max-w-[90vw] h-[85vh] flex flex-col p-4">
+          <DialogHeader>
+            <DialogTitle className="truncate text-sm font-mono">
+              {page.renderedHtmlPath?.split('/').pop() ?? 'Rendered HTML'}
+            </DialogTitle>
+          </DialogHeader>
+          {htmlLoading ? (
+            <div className="flex flex-1 items-center justify-center">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : (
+            <Tabs defaultValue="source" className="flex flex-1 flex-col min-h-0">
+              <TabsList className="shrink-0">
+                <TabsTrigger value="source">Source</TabsTrigger>
+                <TabsTrigger value="preview">Preview</TabsTrigger>
+              </TabsList>
+              <TabsContent value="source" className="flex-1 min-h-0">
+                <TextEditor
+                  value={htmlContent ?? ''}
+                  language="html"
+                  options={{ readOnly: true }}
+                />
+              </TabsContent>
+              <TabsContent value="preview" className="flex-1 min-h-0">
+                <iframe
+                  srcDoc={htmlContent ?? ''}
+                  className="w-full h-full border-0 rounded-md"
+                  sandbox="allow-scripts"
+                  title="HTML Preview"
+                />
+              </TabsContent>
+            </Tabs>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

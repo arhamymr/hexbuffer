@@ -878,6 +878,14 @@ pub async fn list_ai_browser_logs(
         .unwrap_or_default())
 }
 
+#[tauri::command]
+pub async fn list_recent_ai_browser_sessions(
+    history: State<'_, crate::HistoryBridge>,
+    limit: Option<u32>,
+) -> Result<Vec<CrawlSession>, String> {
+    history.list_recent_ai_browser_sessions(limit.unwrap_or(20))
+}
+
 pub fn init_browser_state(_app: &AppHandle) -> BrowserProcessState {
     BrowserProcessState::default()
 }

@@ -65,6 +65,34 @@ export function getActivityStatusColor(status: StatusActivityValue) {
   if (status === statusActivity.queue) return 'bg-gray-600';
   return 'bg-gray-600';
 }
+export const severity = {
+  info: 'info',
+  low: 'low',
+  medium: 'medium',
+  high: 'high',
+  critical: 'critical',
+} as const;
+
+export type SeverityBadgeValue = (typeof severity)[keyof typeof severity];
+
+export function getSeverityColor(sev: SeverityBadgeValue) {
+  if (sev === severity.info) return 'bg-blue-600';
+  if (sev === severity.low) return 'bg-green-600';
+  if (sev === severity.medium) return 'bg-yellow-600';
+  if (sev === severity.high) return 'bg-orange-600';
+  if (sev === severity.critical) return 'bg-red-600';
+  return 'bg-gray-600';
+}
+
+export function SeverityBadge({ severity: sev }: { severity: SeverityBadgeValue }) {
+  const colorClass = getSeverityColor(sev);
+  return (
+    <span className={`text-xs px-1 py-0.5 rounded font-mono text-white ${colorClass}`}>
+      {sev}
+    </span>
+  );
+}
+
 export function ActivityStatusBadge({ status }: { status: StatusActivityValue }) {
   const colorClass = getActivityStatusColor(status);
   return (

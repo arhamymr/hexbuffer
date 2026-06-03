@@ -22,6 +22,17 @@ pub struct ClearBrowserArtifactsResult {
     pages_updated: usize,
 }
 
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ResetLocalDataResult {
+    artifact_dir: String,
+    files_deleted: u64,
+    bytes_deleted: u64,
+    pages_updated: usize,
+    intercept_browser_profile_removed: bool,
+    ca_file_removed: bool,
+}
+
 #[tauri::command]
 pub async fn get_storage_info(app: AppHandle) -> Result<StorageInfo, String> {
     let app_data_dir = app
@@ -85,5 +96,46 @@ pub async fn clear_browser_automation_artifacts(
         files_deleted,
         bytes_deleted,
         pages_updated,
+    })
+}
+
+#[tauri::command]
+pub async fn reset_local_data(
+    app: AppHandle,
+    history: State<'_, HistoryBridge>,
+) -> Result<ResetLocalDataResult, String> {
+    let app_data_dir = app
+        .path()
+        .app_data_dir()
+        .map_err(|error| error.to_string())?;
+    let artifact_dir = app_data_dir.join("ai-browser-artifacts");
+    let intercept_browser_profile_dir = app_data_dir.join("intercept-browser-profile");
+    let ca_path = app_data_dir.join("0xbuffer-ca.pem");
+    let (files_deleted, bytes_deleted) = count_files(&artifact_dir)?;
+
+    if artifact_dir.exists() {
+        fs::remove_dir_all(&artifact_dir).map_err(|error| error.to_string())?;
+    }
+    fs::create_dir_all(&artifact_dir).map_err(|error| error.to_string())?;
+
+    let intercept_browser_profile_removed = intercept_browser_profile_dir.exists();
+    if intercept_browser_profile_removed {
+        fs::remove_dir_all(&intercept_browser_profile_dir).map_err(|error| error.to_string())?;
+    }
+
+    let ca_file_removed = ca_path.exists();
+    if ca_file_removed {
+        fs::remove_file(&ca_path).map_err(|error| error.to_string())?;
+    }
+
+    let pages_updated = history.clear_ai_browser_artifact_paths()?;
+
+    Ok(ResetLocalDataResult {
+        artifact_dir: artifact_dir.display().to_string(),
+        files_deleted,
+        bytes_deleted,
+        pages_updated,
+        intercept_browser_profile_removed,
+        ca_file_removed,
     })
 }

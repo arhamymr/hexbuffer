@@ -67,6 +67,7 @@ export interface AIInsight {
   title: string;
   description: string;
   url?: string;
+  aiUsedForAnalysis?: boolean;
   reviewed: boolean;
   createdAt: string;
 }

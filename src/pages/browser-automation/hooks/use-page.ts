@@ -20,6 +20,7 @@ export function useBrowserAutomationPage() {
     renameTab,
     closeTab,
     overview,
+    loadPersistedSessions,
     applySessionStarted,
     applySessionUpdated,
     applyPageDiscovered,
@@ -39,6 +40,10 @@ export function useBrowserAutomationPage() {
   const logs = activeTab?.logs ?? [];
   const selectedPageId = activeTab?.selectedPageId ?? null;
   const search = activeTab?.search ?? '';
+
+  useEffect(() => {
+    loadPersistedSessions();
+  }, [loadPersistedSessions]);
 
   useEffect(() => {
     const unlisteners: Array<() => void> = [];

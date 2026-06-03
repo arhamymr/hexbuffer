@@ -9,12 +9,12 @@ import { AIToolsPage } from "@/pages/ai-tools";
 import { DocumentsPage } from "@/pages/documents";
 import { BrowserAutomationPage } from "@/pages/browser-automation";
 import { PacketCapturePage } from "@/pages/packet-capture";
-import { GlobalCaInstallDialog } from "@/components/global-ca-install-dialog";
+// import { CaInstallDialog } from "@/components/ca-install-dialog";
 
 function AppRoutes() {
   return (
     <>
-      <GlobalCaInstallDialog />
+      {/* <CaInstallDialog /> */}
       <Routes>
         <Route path="/" element={<LiveTrafficPage />} />
         <Route path="/intercept" element={<InterceptPage />} />

@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo } from 'react';
 import { AlertTriangle, Circle, CircleDot, FileCheck2, ShieldBan } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { TreeView, type TreeNodeData } from '@/components/tree-view';
@@ -72,6 +73,13 @@ export function CrawlTreePanel({
   const selectPage = useBrowserAutomationStore((s) => s.selectPage);
   const treeNodes = nodes.map(toTreeNode);
 
+  const allPageIds = useMemo(() => {
+    function collect(node: CrawlTreeNode): string[] {
+      return [node.id, ...node.children.flatMap(collect)];
+    }
+    return nodes.flatMap(collect);
+  }, [nodes]);
+
   return (
     <section className="flex min-h-0 flex-col border-b bg-background">
       <div className="border-b flex gap-2 px-3 py-2">
@@ -84,7 +92,7 @@ export function CrawlTreePanel({
       <TreeView<CrawlTreeMeta>
         nodes={treeNodes}
         selectedId={selectedPageId}
-        defaultExpandedIds={expandedPageIds}
+        defaultExpandedIds={allPageIds}
         onSelectNode={(node) => {
           if (node.meta?.pageId) {
             selectPage(node.meta.pageId);

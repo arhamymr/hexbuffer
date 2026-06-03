@@ -51,7 +51,7 @@ export function AiSettingsTab({ settings }: AiSettingsTabProps) {
         <CardHeader>
           <CardTitle>AI Provider</CardTitle>
           <CardDescription>
-            Configure BYOK and the model used by the AppRecon AI workflow.
+            Configure BYOK and the model used by the 0xbuffer AI workflow.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">

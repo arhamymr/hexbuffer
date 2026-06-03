@@ -31,7 +31,7 @@ export function InterceptPage() {
   };
 
   return (
-    <div className="flex h-full min-h-0 flex-col">
+    <div className="flex h-full min-h-0 flex-col p-2">
       {proxyStatus !== 'connected' && (
         <Alert variant="default" className="mb-2 min-h-11 items-center shrink-0 border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-500/50 dark:bg-amber-500/10 dark:text-amber-200">
           <AlertDescription className="flex items-center gap-2 text-amber-700 dark:text-amber-200/70">
@@ -50,7 +50,7 @@ export function InterceptPage() {
           </AlertAction>
         </Alert>
       )}
-      <div className="flex min-h-0 flex-1 overflow-hidden rounded-lg border bg-background">
+      <div className="flex min-h-0 flex-1 rounded-lg border bg-background">
         <div className="bg-muted flex-1 min-h-0">
           <ResizablePanelGroup orientation="horizontal" className="min-h-0">
             <ResizablePanel defaultSize={50} minSize={20}>

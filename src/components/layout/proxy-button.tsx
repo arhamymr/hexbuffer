@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Asterisk, Triangle, TriangleDashed } from 'lucide-react';
+import { Asterisk } from 'lucide-react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
@@ -48,7 +48,7 @@ export function ProxyButton() {
   return (
     <div className="group flex items-center gap-2" title={title}>
       <Badge
-        variant={isConnected ? 'outline' : 'secondary'}
+        variant={'secondary'}
         className={cn(
           isConnected ? 'text-green-500' : '',
           "h-6 px-1.5 text-xs transition-all rounded-md duration-300 group-hover:px-2 gap-0")}

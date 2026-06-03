@@ -61,7 +61,7 @@ export const INSTALLATION_GUIDES = [
       'Go to Settings → General → VPN & Device Management',
       'Tap the downloaded profile to install it',
       'Go to Settings → General → About → Certificate Trust Settings',
-      'Enable full trust for "0xbuffer Root CA"',
+      'Enable full trust for "0xbuffer Security Tools Root CA"',
     ],
     note: {
       Icon: InfoIcon,
@@ -129,8 +129,8 @@ export const TROUBLESHOOTING_GUIDES = [
     id: 'remove-ca',
     title: 'How to remove the CA certificate',
     bullets: [
-      'Windows: Internet Options → Content → Certificates → Authorities → Select "0xbuffer Root CA" → Remove',
-      'macOS: Keychain Access → System → Certificates → Delete "0xbuffer Root CA"',
+      'Windows: Internet Options → Content → Certificates → Authorities → Select "0xbuffer Security Tools Root CA" → Remove',
+      'macOS: Keychain Access → System → Certificates → Delete "0xbuffer Security Tools Root CA"',
       'Firefox: Options → Privacy → Certificates → View Certificates → Authorities → Delete',
       'iOS: Settings → General → Profiles → Delete 0xbuffer profile',
       'Android: Settings → Security → Advanced → Encryption → Trusted certificates → Remove',

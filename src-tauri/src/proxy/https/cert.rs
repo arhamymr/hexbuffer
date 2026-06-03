@@ -79,7 +79,7 @@ fn generate_ca(
         .push(rcgen::DnType::OrganizationName, "0xbuffer");
     params
         .distinguished_name
-        .push(rcgen::DnType::CommonName, "0xbuffer Root CA");
+        .push(rcgen::DnType::CommonName, "0xbuffer Security Tools Root CA");
 
     let key_pair = KeyPair::generate()?;
     let key_pem = key_pair.serialize_pem();

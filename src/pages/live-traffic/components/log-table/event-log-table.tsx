@@ -26,7 +26,6 @@ interface EventLogTableProps<TLog extends EventLogRow> {
 
 export function EventLogTable<TLog extends EventLogRow>({
   logs,
-  onCopyLog,
   onRowClick,
   emptyTitle = 'No log entries',
   emptyDescription = 'Events will appear here once activity is available.',
@@ -43,7 +42,7 @@ export function EventLogTable<TLog extends EventLogRow>({
   return (
     <div className="h-full overflow-auto">
       <table className="w-full">
-        <thead className="sticky top-0 z-10 border-b bg-muted">
+        <thead className="sticky top-0 z-1 border-b bg-muted">
           <tr>
             <th className="w-[90px] px-3 py-1 text-left text-xs font-medium text-muted-foreground">
               Time
@@ -60,11 +59,6 @@ export function EventLogTable<TLog extends EventLogRow>({
             <th className="w-[180px] px-3 py-1 text-left text-xs font-medium text-muted-foreground">
               URL
             </th>
-            {onCopyLog && (
-              <th className="w-[64px] px-3 py-1 text-center text-xs font-medium text-muted-foreground">
-                Action
-              </th>
-            )}
           </tr>
         </thead>
         <tbody>
@@ -92,23 +86,6 @@ export function EventLogTable<TLog extends EventLogRow>({
               <td className="max-w-[220px] truncate px-3 py-1 text-xs text-muted-foreground" title={log.url}>
                 {log.url || '-'}
               </td>
-              {onCopyLog && (
-                <td className="px-3 py-1 text-center">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon-sm"
-                    className="h-6 w-6"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onCopyLog(log);
-                    }}
-                    title="Copy log line"
-                  >
-                    <Clipboard className="h-3.5 w-3.5 text-muted-foreground" />
-                  </Button>
-                </td>
-              )}
             </tr>
           ))}
         </tbody>

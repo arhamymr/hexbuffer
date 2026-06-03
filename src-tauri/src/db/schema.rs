@@ -230,6 +230,7 @@ CREATE TABLE IF NOT EXISTS ai_browser_insights (
     type TEXT NOT NULL,
     title TEXT NOT NULL,
     description TEXT NOT NULL,
+    ai_used_for_analysis INTEGER,
     reviewed INTEGER NOT NULL DEFAULT 0,
     created_at TEXT NOT NULL,
     FOREIGN KEY(session_id) REFERENCES ai_browser_sessions(id) ON DELETE CASCADE,

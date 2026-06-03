@@ -96,6 +96,7 @@ interface BrowserAutomationState {
   applyLogCreated: (log: ActivityLog) => void;
   applyHumanInputRequested: (request: HumanInputRequest) => void;
   clearHumanInputRequest: () => void;
+  loadPersistedSessions: () => Promise<void>;
 }
 
 type BrowserAutomationSet = (
@@ -607,6 +608,7 @@ export const useBrowserAutomationStore = create<BrowserAutomationState>((set, ge
         title: `AI Analysis: ${page.title || page.url}`,
         description: response.content,
         url: page.url,
+        aiUsedForAnalysis: true,
         reviewed: false,
         createdAt: new Date().toISOString(),
       });
@@ -627,6 +629,58 @@ export const useBrowserAutomationStore = create<BrowserAutomationState>((set, ge
         next.delete(page.id);
         return { ...current, analyzingPageIds: next };
       });
+    }
+  },
+
+  loadPersistedSessions: async () => {
+    try {
+      const sessions = await invoke<CrawlSession[]>('list_recent_ai_browser_sessions', { limit: 20 });
+      if (!sessions.length) return;
+
+      const state = get();
+      const hasActiveData = state.tabs.some(
+        (tab) => tab.session || tab.pages.length > 0 || tab.insights.length > 0 || tab.logs.length > 0
+      );
+      if (hasActiveData) return;
+
+      const hydratedTabs: BrowserAutomationTab[] = [];
+      let tabNumber = 1;
+
+      for (const session of sessions) {
+        const [pages, insights, logs] = await Promise.all([
+          invoke<CrawlPage[]>('list_ai_browser_pages', { sessionId: session.id }).catch(() => [] as CrawlPage[]),
+          invoke<AIInsight[]>('list_ai_browser_insights', { sessionId: session.id }).catch(() => [] as AIInsight[]),
+          invoke<ActivityLog[]>('list_ai_browser_logs', { sessionId: session.id }).catch(() => [] as ActivityLog[]),
+        ]);
+
+        hydratedTabs.push({
+          id: `browser-automation-tab-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+          name: tabNumber === 1 ? String(tabNumber) : String(tabNumber),
+          setup: { ...loadSavedConfig() },
+          session,
+          pages,
+          insights,
+          logs,
+          selectedPageId: null,
+          expandedPageIds: [...DEFAULT_EXPANDED_PAGE_IDS],
+          humanInputRequest: null,
+          lastError: null,
+          search: '',
+          analyzingPageIds: new Set(),
+        });
+
+        tabNumber++;
+      }
+
+      if (hydratedTabs.length > 0) {
+        set({
+          tabs: hydratedTabs,
+          activeTabId: hydratedTabs[0].id,
+          nextTabNumber: hydratedTabs.length + 1,
+        });
+      }
+    } catch (error) {
+      console.warn('[browser automation] Failed to load persisted sessions:', error);
     }
   },
 }));

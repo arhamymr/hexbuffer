@@ -1,0 +1,13 @@
+{
+  "name": "0xbuffer-ai-engine-sidecar",
+  "private": true,
+  "type": "module",
+  "bin": "./index.mjs",
+  "dependencies": {
+    "@ai-sdk/deepseek": "^2.0.35",
+    "@ai-sdk/openai": "^3.0.67",
+    "ai": "^6.0.194",
+    "playwright": "^1.60.0",
+    "zod": "^4.4.1"
+  }
+}

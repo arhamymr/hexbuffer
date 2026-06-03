@@ -39,21 +39,23 @@ export function CaInstallDialog({
         <DialogHeader>
           <DialogTitle>Install Root CA Certificate</DialogTitle>
           <DialogDescription>
-            AppRecon needs its root CA trusted in your keychain before HTTPS interception can work cleanly.
+            0xbuffer uses your installed Chrome with an isolated profile. Install the CA only when you want
+            to intercept traffic from your regular browser or other apps.
           </DialogDescription>
         </DialogHeader>
 
         <Alert>
           <AlertTriangle className="size-4" />
-          <AlertTitle>HTTPS requests need this certificate</AlertTitle>
+          <AlertTitle>External apps need this certificate</AlertTitle>
           <AlertDescription>
-            If the CA is not installed, intercepted HTTPS requests may be blocked by the browser or shown as
-            untrusted because the proxy signs traffic with an unknown certificate.
+            Browsers or apps outside 0xbuffer may block intercepted HTTPS requests unless they trust the
+            0xbuffer CA that signs proxy certificates.
           </AlertDescription>
         </Alert>
 
         <p className="text-sm text-muted-foreground">
-          You can install it now, or install it later from Settings under CA Certificate.
+          Use Open Browser for ready-to-go interception, or install the CA from here when you need external
+          traffic capture.
         </p>
 
         <DialogFooter>

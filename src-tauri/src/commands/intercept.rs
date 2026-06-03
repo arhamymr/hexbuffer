@@ -4,6 +4,7 @@ use std::process::Command;
 use std::sync::Mutex;
 
 use serde::Deserialize;
+use sha2::{Digest, Sha256};
 use tauri::{AppHandle, Manager, State};
 use uuid::Uuid;
 
@@ -145,51 +146,16 @@ pub async fn remove_intercept_bypass_pattern(
 }
 
 fn browser_candidates() -> Vec<PathBuf> {
-    fn workspace_chrome_candidates() -> Vec<PathBuf> {
-        let mut roots = Vec::new();
-
-        if let Ok(current_dir) = std::env::current_dir() {
-            roots.push(current_dir.clone());
-            if let Some(parent) = current_dir.parent() {
-                roots.push(parent.to_path_buf());
-            }
-        }
-
-        let mut candidates = Vec::new();
-
-        for root in roots {
-            let chrome_root = root.join("chrome");
-
-            if let Ok(entries) = std::fs::read_dir(&chrome_root) {
-                for entry in entries.flatten() {
-                    let version_dir = entry.path();
-                    candidates.push(
-                        version_dir
-                            .join("chrome-mac-arm64")
-                            .join("Google Chrome for Testing.app")
-                            .join("Contents")
-                            .join("MacOS")
-                            .join("Google Chrome for Testing"),
-                    );
-                }
-            }
-        }
-
-        candidates
-    }
-
     #[cfg(target_os = "macos")]
     {
-        let mut candidates = workspace_chrome_candidates();
-        candidates.extend([
+        return vec![
+            PathBuf::from("/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"),
             PathBuf::from("/Applications/Chromium.app/Contents/MacOS/Chromium"),
             PathBuf::from(
                 "/Applications/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing",
             ),
-            PathBuf::from("/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"),
             PathBuf::from("/Applications/Google Chrome Canary.app/Contents/MacOS/Google Chrome Canary"),
-        ]);
-        return candidates;
+        ];
     }
 
     #[cfg(target_os = "windows")]
@@ -290,7 +256,7 @@ pub async fn open_intercept_browser(app: AppHandle) -> Result<(), String> {
     let mut last_error = None;
     let proxy_port =
         crate::proxy::active_proxy_port().unwrap_or(crate::proxy::default_proxy_port());
-    let args = vec![
+    let mut args = vec![
         format!("--user-data-dir={}", profile_dir.display()),
         "--new-window".to_string(),
         "--no-first-run".to_string(),
@@ -298,6 +264,8 @@ pub async fn open_intercept_browser(app: AppHandle) -> Result<(), String> {
         format!("--proxy-server=127.0.0.1:{proxy_port}"),
         "about:blank".to_string(),
     ];
+    #[cfg(target_os = "macos")]
+    args.push("--use-mock-keychain".to_string());
 
     for candidate in browser_candidates() {
         if candidate.components().count() > 1 && !candidate.exists() {
@@ -316,15 +284,28 @@ pub async fn open_intercept_browser(app: AppHandle) -> Result<(), String> {
         }
     }
 
-    Err(last_error.unwrap_or_else(|| "Chromium or Google Chrome was not found.".to_string()))
+    Err(last_error.unwrap_or_else(|| {
+        "Google Chrome or Chromium was not found. Install Chrome or Chromium to use Open Browser."
+            .to_string()
+    }))
 }
 
 fn import_intercept_ca_to_chrome_profile(app: &AppHandle) -> Result<String, String> {
     let profile_dir = intercept_browser_profile_dir(app)?;
     std::fs::create_dir_all(&profile_dir).map_err(|e| e.to_string())?;
     let ca_path = write_intercept_ca(app)?;
+    let ca_pem = std::fs::read_to_string(&ca_path).map_err(|e| e.to_string())?;
+    let ca_fingerprint = format!("{:x}", Sha256::digest(ca_pem.as_bytes()));
+    let import_marker_path = profile_dir.join("0xbuffer-ca.sha256");
+    if std::fs::read_to_string(&import_marker_path)
+        .map(|value| value.trim() == ca_fingerprint)
+        .unwrap_or(false)
+    {
+        return Ok("0xbuffer CA is already trusted in the managed Chrome profile.".to_string());
+    }
+
     let db_dir = format!("sql:{}", profile_dir.display());
-    let nickname = "0xbuffer Root CA".to_string();
+    let nickname = "0xbuffer Security Tools Root CA".to_string();
 
     let init_args = vec![
         "-N".to_string(),
@@ -356,7 +337,10 @@ fn import_intercept_ca_to_chrome_profile(app: &AppHandle) -> Result<String, Stri
     ];
 
     match run_certutil(&add_args) {
-        Ok(()) => Ok("0xbuffer CA imported into the managed Chrome profile. Close old Intercept browser windows and open it again.".to_string()),
+        Ok(()) => {
+            std::fs::write(import_marker_path, ca_fingerprint).map_err(|e| e.to_string())?;
+            Ok("0xbuffer CA imported into the managed Chrome profile. Close old Intercept browser windows and open it again.".to_string())
+        }
         Err(error) => Err(format!(
             "Chrome-profile CA import failed: {error}. Install NSS tools with `brew install nss`, then try again."
         )),
@@ -393,7 +377,7 @@ fn run_security(args: &[String]) -> Result<(), String> {
 fn install_intercept_ca_to_macos_keychain(app: &AppHandle) -> Result<String, String> {
     let ca_path = write_intercept_ca(app)?;
     let keychain_path = user_login_keychain_path()?;
-    let cert_name = "0xbuffer Root CA".to_string();
+    let cert_name = "0xbuffer Security Tools Root CA".to_string();
 
     let delete_args = vec![
         "delete-certificate".to_string(),

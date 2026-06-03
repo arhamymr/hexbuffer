@@ -25,9 +25,9 @@ export async function runChat() {
       id: '0xbuffer-chat-agent',
       model: providerModel(),
       instructions: [
-        'You are AppRecon AI chat assistant.',
+        'You are the 0xbuffer AI chat assistant.',
         'Be concise, practical, and focused on web security reconnaissance.',
-        'Use read-only AppRecon context tools when they help answer the user.',
+        'Use read-only 0xbuffer context tools when they help answer the user.',
         'Do not claim you performed scans or actions that are not present in context.',
       ].join('\n'),
       stopWhen: stepCountIs(6),

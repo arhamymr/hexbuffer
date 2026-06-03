@@ -1,15 +1,14 @@
 #!/usr/bin/env node
 
 import { execFileSync } from 'node:child_process';
-import os from 'node:os';
 import fs from 'node:fs';
 import path from 'node:path';
+import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const require = createRequire(import.meta.url);
 const binariesDir = path.join(root, 'src-tauri', 'binaries');
-const resourceDir = path.join(root, 'src-tauri', 'resources');
-const playwrightBrowsersDir = path.join(resourceDir, 'playwright-browsers');
 const pkgCacheDir = path.join(root, 'src-tauri', '.pkg-cache');
 
 function run(command, args, options = {}) {
@@ -71,22 +70,54 @@ function pkgTargetForTriple(targetTriple) {
 function buildSidecar({ name, entry, target, targetTriple }) {
   const ext = process.platform === 'win32' ? '.exe' : '';
   const output = path.join(binariesDir, `${name}-${targetTriple}${ext}`);
+  const publicPackages = [
+    'ai',
+    'zod',
+    '@ai-sdk/deepseek',
+    '@ai-sdk/openai',
+    'playwright',
+    'playwright-core',
+  ].join(',');
+  const playwrightRoot = path.dirname(require.resolve('playwright/package.json'));
+  const playwrightCoreRoot = path.join(path.dirname(playwrightRoot), 'playwright-core');
+  const playwrightBrowsersJson = path.join(playwrightCoreRoot, 'browsers.json');
+  const playwrightBrowsersJsonAsset = path.relative(root, playwrightBrowsersJson);
+  const pkgConfigPath = path.join(root, `${name}.pkg.config.json`);
+  fs.writeFileSync(
+    pkgConfigPath,
+    JSON.stringify(
+      {
+        assets: [playwrightBrowsersJsonAsset],
+      },
+      null,
+      2
+    )
+  );
 
-  run('pnpm', [
-    'exec',
-    'pkg',
-    entry,
-    '--targets',
-    target,
-    '--output',
-    output,
-    '--public-packages',
-    '*',
-  ], {
-    env: {
-      PKG_CACHE_PATH: pkgCacheDir,
-    },
-  });
+  try {
+    run('pnpm', [
+      'exec',
+      'pkg',
+      '--config',
+      pkgConfigPath,
+      entry,
+      '--targets',
+      target,
+      '--output',
+      output,
+      '--compress',
+      'GZip',
+      '--fallback-to-source',
+      '--public-packages',
+      publicPackages,
+    ], {
+      env: {
+        PKG_CACHE_PATH: pkgCacheDir,
+      },
+    });
+  } finally {
+    fs.rmSync(pkgConfigPath, { force: true });
+  }
 
   fs.chmodSync(output, 0o755);
 }
@@ -98,73 +129,12 @@ function removeLegacySidecars(targetTriple) {
   });
 }
 
-function hasBundledChromium() {
-  return fs.existsSync(playwrightBrowsersDir)
-    && fs.readdirSync(playwrightBrowsersDir).some((entry) => entry.startsWith('chromium-'));
-}
-
-function defaultPlaywrightCacheDir() {
-  if (process.env.PLAYWRIGHT_BROWSERS_PATH && process.env.PLAYWRIGHT_BROWSERS_PATH !== '0') {
-    return process.env.PLAYWRIGHT_BROWSERS_PATH;
-  }
-  if (process.platform === 'darwin') {
-    return path.join(os.homedir(), 'Library', 'Caches', 'ms-playwright');
-  }
-  if (process.platform === 'win32') {
-    return path.join(process.env.LOCALAPPDATA || path.join(os.homedir(), 'AppData', 'Local'), 'ms-playwright');
-  }
-  return path.join(process.env.XDG_CACHE_HOME || path.join(os.homedir(), '.cache'), 'ms-playwright');
-}
-
-function copyCachedChromium() {
-  const cacheDir = defaultPlaywrightCacheDir();
-  if (!fs.existsSync(cacheDir)) {
-    return false;
-  }
-
-  const chromiumEntries = fs
-    .readdirSync(cacheDir)
-    .filter((entry) => entry.startsWith('chromium-') || entry.startsWith('chromium_headless_shell-'));
-  if (chromiumEntries.length === 0) {
-    return false;
-  }
-
-  for (const entry of chromiumEntries) {
-    fs.cpSync(path.join(cacheDir, entry), path.join(playwrightBrowsersDir, entry), {
-      recursive: true,
-      force: true,
-    });
-  }
-  return true;
-}
-
-function ensureBundledChromium() {
-  if (hasBundledChromium()) {
-    console.log(`[sidecars] Reusing bundled Chromium in ${playwrightBrowsersDir}`);
-    return;
-  }
-
-  if (copyCachedChromium()) {
-    console.log(`[sidecars] Copied local Playwright Chromium cache into ${playwrightBrowsersDir}`);
-    return;
-  }
-
-  console.log(`[sidecars] Installing bundled Chromium into ${playwrightBrowsersDir}`);
-  run('pnpm', ['exec', 'playwright', 'install', 'chromium'], {
-    env: {
-      PLAYWRIGHT_BROWSERS_PATH: playwrightBrowsersDir,
-    },
-  });
-}
-
 fs.mkdirSync(binariesDir, { recursive: true });
 fs.mkdirSync(pkgCacheDir, { recursive: true });
-fs.mkdirSync(playwrightBrowsersDir, { recursive: true });
 
 const targetTriple = readTargetTriple();
 const target = pkgTargetForTriple(targetTriple);
 
-ensureBundledChromium();
 console.log(`[sidecars] Building sidecars for ${targetTriple} (${target})`);
 removeLegacySidecars(targetTriple);
 buildSidecar({

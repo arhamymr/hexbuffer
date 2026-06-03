@@ -59,6 +59,7 @@ impl Database {
         Self::ensure_column(&conn, "ai_browser_pages", "ai_used_for_analysis", "INTEGER")?;
         Self::ensure_column(&conn, "ai_browser_pages", "screenshot_path", "TEXT")?;
         Self::ensure_column(&conn, "ai_browser_pages", "rendered_html_path", "TEXT")?;
+        Self::ensure_column(&conn, "ai_browser_insights", "ai_used_for_analysis", "INTEGER")?;
         Self::ensure_column(&conn, "ai_browser_logs", "ai_used_for_analysis", "INTEGER")?;
         Ok(())
     }
@@ -287,8 +288,8 @@ impl Database {
 
         conn.execute(
             r#"INSERT OR REPLACE INTO ai_browser_insights (
-                id, session_id, page_id, url, severity, type, title, description, reviewed, created_at
-            ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)"#,
+                id, session_id, page_id, url, severity, type, title, description, ai_used_for_analysis, reviewed, created_at
+            ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)"#,
             params![
                 insight.id,
                 insight.session_id,
@@ -298,6 +299,9 @@ impl Database {
                 insight.r#type,
                 insight.title,
                 insight.description,
+                insight
+                    .ai_used_for_analysis
+                    .map(|used| if used { 1i64 } else { 0i64 }),
                 if insight.reviewed { 1i64 } else { 0i64 },
                 insight.created_at,
             ],
@@ -309,7 +313,7 @@ impl Database {
     pub fn list_ai_browser_insights(&self, session_id: &str) -> SqlResult<Vec<AIInsight>> {
         let conn = self.conn.lock().unwrap();
         let mut stmt = conn.prepare(
-            r#"SELECT id, session_id, page_id, severity, type, title, description, url, reviewed, created_at
+            r#"SELECT id, session_id, page_id, severity, type, title, description, url, ai_used_for_analysis, reviewed, created_at
                FROM ai_browser_insights WHERE session_id = ?1 ORDER BY created_at DESC"#,
         )?;
 
@@ -324,8 +328,9 @@ impl Database {
                     title: row.get(5)?,
                     description: row.get(6)?,
                     url: row.get(7)?,
-                    reviewed: row.get::<_, i64>(8)? != 0,
-                    created_at: row.get(9)?,
+                    ai_used_for_analysis: row.get::<_, Option<i64>>(8)?.map(|value| value != 0),
+                    reviewed: row.get::<_, i64>(9)? != 0,
+                    created_at: row.get(10)?,
                 })
             })?
             .collect();

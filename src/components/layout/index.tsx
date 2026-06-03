@@ -17,7 +17,7 @@ export function AppLayout({ children }: { children?: React.ReactNode }) {
     >
       <TopNav />
       <main className="relative flex min-h-0 flex-1 overflow-hidden">
-        <section className={cn('min-w-0 flex-1 overflow-hidden', isAssistantOpen && 'lg:pr-2')}>
+        <section className={cn('min-w-0 flex-1 overflow-hidden ', isAssistantOpen && 'lg:pr-2')}>
           {children}
         </section>
         {isAssistantOpen && <AIAssistantPane />}

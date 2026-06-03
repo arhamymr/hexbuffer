@@ -119,6 +119,7 @@ pub(crate) fn apply_sidecar_message(
                 title: message.title.unwrap_or_else(|| "Insight".to_string()),
                 description: message.description.unwrap_or_default(),
                 url: message.url,
+                ai_used_for_analysis: message.ai_used_for_analysis,
                 reviewed: false,
                 created_at: message.created_at.unwrap_or_else(now),
             };
@@ -298,10 +299,6 @@ pub(crate) fn run_sidecar_crawl(
         command.env("0XBUFFER_AI_ARTIFACT_DIR", dir);
     }
 
-    if let Some(dir) = find_playwright_browsers_dir(app) {
-        command.env("PLAYWRIGHT_BROWSERS_PATH", dir);
-    }
-
     #[cfg(unix)]
     command.process_group(0);
 
@@ -388,20 +385,4 @@ pub(crate) fn run_sidecar_crawl(
     } else {
         Err(format!("AI browser sidecar exited with {}", status))
     }
-}
-
-fn find_playwright_browsers_dir(app: &AppHandle) -> Option<std::path::PathBuf> {
-    let mut candidates = Vec::new();
-
-    if let Ok(current_dir) = std::env::current_dir() {
-        candidates.push(current_dir.join("src-tauri/resources/playwright-browsers"));
-        candidates.push(current_dir.join("resources/playwright-browsers"));
-        candidates.push(current_dir.join("../src-tauri/resources/playwright-browsers"));
-    }
-
-    if let Ok(resource_dir) = app.path().resource_dir() {
-        candidates.push(resource_dir.join("playwright-browsers"));
-    }
-
-    candidates.into_iter().find(|path| path.exists())
 }

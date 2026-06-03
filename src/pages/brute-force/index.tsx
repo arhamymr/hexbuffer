@@ -49,21 +49,24 @@ export function BruteForcePage() {
   return (
     <>
       {!bruteForceSafetyAlertDismissed && (
-        <Alert variant="default" className="mb-2 min-h-12 shrink-0 border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-500/50 dark:bg-amber-500/10 dark:text-amber-200">
-          <InfoIcon className='!text-amber-600'/>
-          <AlertDescription className='text-amber-600'>
-            Only run brute-force tests against systems you own or are explicitly authorized to assess. Unauthorized attempts can be illegal and may trigger account lockouts.
-          </AlertDescription>
-          <AlertAction>
-            <Button
-              variant="outline"
-              aria-label="Dismiss safety notice"
-              onClick={() => setBruteForceSafetyAlertDismissed(true)}
-            >
-              Dismiss
-            </Button>
-          </AlertAction>
-        </Alert>
+        <div className='p-2'>
+          <Alert variant="default" className="min-h-12 shrink-0 border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-500/50 dark:bg-amber-500/10 dark:text-amber-200">
+            <InfoIcon className='!text-amber-600' />
+            <AlertDescription className='text-amber-600'>
+              Only run brute-force tests against systems you own or are explicitly authorized to assess. Unauthorized attempts can be illegal and may trigger account lockouts.
+            </AlertDescription>
+            <AlertAction>
+              <Button
+                variant="outline"
+                aria-label="Dismiss safety notice"
+                onClick={() => setBruteForceSafetyAlertDismissed(true)}
+              >
+                Dismiss
+              </Button>
+            </AlertAction>
+          </Alert>
+        </div>
+
       )}
 
       <TabbedPageLayout

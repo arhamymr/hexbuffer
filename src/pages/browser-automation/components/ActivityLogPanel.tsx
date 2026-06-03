@@ -30,8 +30,8 @@ function LogDetailPane({
   onClose: () => void;
 }) {
   return (
-    <div className="flex h-full flex-col border rounded-md bg-background">
-      <div className="flex items-center justify-between border-b px-4 py-2">
+    <div className="flex h-full flex-col">
+      <div className="flex items-center justify-between border-b px-4">
         <div className="flex items-center gap-2 text-sm font-semibold">
           Activity Detail
           <LevelBadge level={log.level} />
@@ -96,26 +96,17 @@ export function ActivityLogPanel({ logs }: ActivityLogPanelProps) {
       >
         <EventLogTable
           logs={[...logs].reverse().map((log) => ({ ...log, timestamp: log.createdAt }))}
-          onCopyLog={(row) => {
-            const original = logs.find((l) => l.id === row.id);
-            if (original) {
-              copyText(
-                `${new Date(original.createdAt).toLocaleTimeString()} [${original.type}] ${original.message}`
-              );
-            }
-          }}
           onRowClick={(row) => {
             const original = logs.find((l) => l.id === row.id);
             if (original) setSelectedLog(original);
           }}
-          emptyTitle="No matching activity"
-          emptyDescription="No crawl log entries match the current filters."
+          emptyTitle="No Activity"
         />
       </div>
 
       {/* Detail side — slides in from the right, scrolls independently */}
       <div
-        className="p-2 border-l bg-muted h-full min-h-0 overflow-hidden transition-all duration-300 ease-in-out"
+        className="border-l h-full min-h-0 overflow-hidden transition-all duration-300 ease-in-out"
         style={{
           width: selectedLog ? '50%' : '0%',
           opacity: selectedLog ? 1 : 0,

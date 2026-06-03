@@ -7,8 +7,69 @@ import {
   extractVisibleText,
 } from './extract-html.mjs';
 import { normalizeUrl } from './url-policy.mjs';
+import { existsSync } from 'node:fs';
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { execFileSync } from 'node:child_process';
+import { chromium } from 'playwright';
+
+function executableInPath(name) {
+  try {
+    return execFileSync(process.platform === 'win32' ? 'where' : 'which', [name], {
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+    })
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .find(Boolean);
+  } catch {
+    return undefined;
+  }
+}
+
+function installedChromeExecutable() {
+  const candidates = [];
+
+  if (process.platform === 'darwin') {
+    candidates.push(
+      '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+      '/Applications/Chromium.app/Contents/MacOS/Chromium',
+      '/Applications/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing',
+      '/Applications/Google Chrome Canary.app/Contents/MacOS/Google Chrome Canary'
+    );
+  } else if (process.platform === 'win32') {
+    if (process.env.LOCALAPPDATA) {
+      candidates.push(
+        path.join(process.env.LOCALAPPDATA, 'Google/Chrome/Application/chrome.exe'),
+        path.join(process.env.LOCALAPPDATA, 'Chromium/Application/chrome.exe')
+      );
+    }
+    if (process.env.PROGRAMFILES) {
+      candidates.push(
+        path.join(process.env.PROGRAMFILES, 'Google/Chrome/Application/chrome.exe'),
+        path.join(process.env.PROGRAMFILES, 'Chromium/Application/chrome.exe')
+      );
+    }
+    if (process.env['PROGRAMFILES(X86)']) {
+      candidates.push(path.join(process.env['PROGRAMFILES(X86)'], 'Google/Chrome/Application/chrome.exe'));
+    }
+  } else {
+    candidates.push(
+      '/usr/bin/google-chrome',
+      '/usr/bin/google-chrome-stable',
+      '/usr/bin/chromium',
+      '/usr/bin/chromium-browser'
+    );
+  }
+
+  return candidates.find((candidate) => {
+    try {
+      return existsSync(candidate);
+    } catch {
+      return false;
+    }
+  }) || executableInPath('google-chrome') || executableInPath('google-chrome-stable') || executableInPath('chromium') || executableInPath('chromium-browser');
+}
 
 export async function fetchExtract(url, config) {
   const controller = new AbortController();
@@ -70,8 +131,15 @@ async function capturePageArtifacts(page, config, pageId) {
 }
 
 export async function playwrightExtract(url, config, pageId) {
-  const { chromium } = await import('playwright');
-  const browser = await chromium.launch({ headless: true });
+  const executablePath = installedChromeExecutable();
+  if (!executablePath) {
+    throw new Error('Google Chrome or Chromium is required for browser automation. Install Chrome or Chromium and retry.');
+  }
+
+  const browser = await chromium.launch({
+    headless: true,
+    executablePath,
+  });
   try {
     const proxyPort = process.env['0XBUFFER_PROXY_PORT'] || '8888';
     const context = await browser.newContext({
@@ -90,7 +158,7 @@ export async function playwrightExtract(url, config, pageId) {
 
     const artifacts = await capturePageArtifacts(page, config, pageId);
 
-    const extract = await page.evaluate(() => {
+    const extract = await page.evaluate(`(() => {
       const links = Array.from(document.querySelectorAll('a[href]')).map((anchor) => ({
         href: anchor.href,
         text: anchor.textContent?.trim() || '',
@@ -116,7 +184,7 @@ export async function playwrightExtract(url, config, pageId) {
         buttons,
         scripts,
       };
-    });
+    })()`);
 
     return {
       url,

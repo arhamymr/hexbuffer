@@ -73,6 +73,8 @@ pub struct AIInsight {
     pub title: String,
     pub description: String,
     pub url: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub ai_used_for_analysis: Option<bool>,
     pub reviewed: bool,
     pub created_at: String,
 }

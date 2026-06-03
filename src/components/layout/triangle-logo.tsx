@@ -1,5 +1,6 @@
 import { Triangle, TriangleDashed } from "lucide-react";
 
+import { useAppStore } from "@/stores/app";
 import { cn } from "@/lib/utils";
 
 type PulseTriangleSize = "small" | "medium" | "large";
@@ -26,12 +27,15 @@ type PulseTriangleProps = {
 
 export function TriangleLogo({ size = "medium", className }: PulseTriangleProps) {
   const sizeClass = triangleLogoSizes[size];
+  const proxyStatus = useAppStore((state) => state.proxyStatus);
+  const isConnected = proxyStatus === "connected";
 
   return (
     <span
       className={cn(
         "relative inline-flex shrink-0",
-        pulseTriangleAnimation,
+        isConnected && pulseTriangleAnimation,
+        isConnected ? "text-primary" : "text-muted-foreground",
         sizeClass,
         className
       )}
@@ -40,14 +44,14 @@ export function TriangleLogo({ size = "medium", className }: PulseTriangleProps)
       <Triangle
         className={cn(
           pulseTriangleIconBase,
-          pulseTriangleSolidAnimation,
+          isConnected && pulseTriangleSolidAnimation,
           sizeClass
         )}
       />
       <TriangleDashed
         className={cn(
           pulseTriangleIconBase,
-          pulseTriangleDashedAnimation,
+          isConnected && pulseTriangleDashedAnimation,
           sizeClass
         )}
       />

@@ -16,6 +16,8 @@ export const DEFAULT_CRAWL_SETUP: CrawlSetupConfig = {
   timeoutMs: 30000,
   enableAiInsights: true,
   networkSettleMs: 2000,
+  captureScreenshots: true,
+  captureRenderedHtml: true,
 };
 
 export const PAGE_STATUS_LABELS: Record<CrawlPageStatus, string> = {

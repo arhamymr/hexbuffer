@@ -74,9 +74,11 @@ export function TopNav() {
           >
             <GripHorizontal className="size-5" data-tauri-drag-region />
           </div>
-          <div className="group flex items-center gap-1 text-primary">
+          <div className="group flex items-center gap-1">
             <TriangleLogo />
-            <p className="max-w-0 overflow-hidden whitespace-nowrap text-sm font-mono opacity-0 transition-all duration-200 no-underline group-hover:max-w-20 group-hover:opacity-100">
+            <p className={cn(
+              proxyStatus === "connected" ? "text-primary" : "text-muted-foreground",
+              "max-w-0 overflow-hidden whitespace-nowrap text-sm font-mono opacity-0 transition-all duration-200 no-underline group-hover:max-w-20 group-hover:opacity-100")}>
               0xbuffer
             </p>
           </div>
@@ -89,7 +91,7 @@ export function TopNav() {
               {mainNavItems.map((item) => {
                 const Icon = item.icon;
                 const isActive = pathname === item.href;
-                const showProxyIndicator = item.href === '/' && proxyStatus === 'connected';
+
                 return (
                   <Link
                     key={item.href}
@@ -105,16 +107,6 @@ export function TopNav() {
                   >
                     <Icon className="size-3.5" />
                     <span>{item.label}</span>
-                    {showProxyIndicator && (
-                      <span
-                        className="relative flex h-2 w-2"
-                        aria-label="Proxy running"
-                        title="Proxy running"
-                      >
-                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75" />
-                        <span className="relative inline-flex h-2 w-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.9)]" />
-                      </span>
-                    )}
                   </Link>
                 );
               })}

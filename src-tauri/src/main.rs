@@ -122,6 +122,7 @@ fn main() {
             zeroxbuffer::commands::cert::get_ca_cert,
             zeroxbuffer::commands::cert::save_ca_cert,
             zeroxbuffer::commands::storage::get_storage_info,
+            zeroxbuffer::commands::storage::clear_browser_automation_artifacts,
             zeroxbuffer::commands::browser::get_browser_status,
             zeroxbuffer::commands::browser::browser_open,
             zeroxbuffer::commands::browser::browser_close,

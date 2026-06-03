@@ -23,6 +23,8 @@ export interface CrawlSetupConfig {
   timeoutMs: number;
   enableAiInsights: boolean;
   networkSettleMs?: number;
+  captureScreenshots: boolean;
+  captureRenderedHtml: boolean;
 }
 
 export interface CrawlSession {
@@ -50,7 +52,10 @@ export interface CrawlPage {
   discoveredAt: string;
   visitedAt?: string;
   aiSummary?: string;
+  aiUsedForAnalysis?: boolean;
   interesting?: boolean;
+  screenshotPath?: string;
+  renderedHtmlPath?: string;
 }
 
 export interface AIInsight {
@@ -73,6 +78,7 @@ export interface ActivityLog {
   type: ActivityLogType;
   message: string;
   url?: string;
+  aiUsedForAnalysis?: boolean;
   createdAt: string;
 }
 
@@ -84,6 +90,7 @@ export interface HumanInputRequest {
   reason: string;
   requestedFields: string[];
   safeActions: Array<'continue' | 'skip-branch' | 'stop-crawl'>;
+  aiUsedForAnalysis?: boolean;
   createdAt: string;
 }
 

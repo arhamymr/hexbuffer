@@ -56,6 +56,36 @@ impl Database {
         conn.execute_batch(crate::db::schema::CREATE_DOCUMENTS_TABLE)?;
         conn.execute_batch(crate::db::schema::CREATE_PACKET_CAPTURE_TABLES)?;
         conn.execute_batch(crate::db::schema::CREATE_AI_BROWSER_TABLES)?;
+        Self::ensure_column(&conn, "ai_browser_pages", "ai_used_for_analysis", "INTEGER")?;
+        Self::ensure_column(&conn, "ai_browser_pages", "screenshot_path", "TEXT")?;
+        Self::ensure_column(&conn, "ai_browser_pages", "rendered_html_path", "TEXT")?;
+        Self::ensure_column(&conn, "ai_browser_logs", "ai_used_for_analysis", "INTEGER")?;
+        Ok(())
+    }
+
+    fn ensure_column(
+        conn: &Connection,
+        table_name: &str,
+        column_name: &str,
+        column_type: &str,
+    ) -> SqlResult<()> {
+        let mut stmt = conn.prepare(&format!("PRAGMA table_info({})", table_name))?;
+        let exists = stmt
+            .query_map([], |row| row.get::<_, String>(1))?
+            .collect::<SqlResult<Vec<_>>>()?
+            .iter()
+            .any(|name| name == column_name);
+
+        if !exists {
+            conn.execute(
+                &format!(
+                    "ALTER TABLE {} ADD COLUMN {} {}",
+                    table_name, column_name, column_type
+                ),
+                [],
+            )?;
+        }
+
         Ok(())
     }
 
@@ -153,9 +183,10 @@ impl Database {
         conn.execute(
             r#"INSERT INTO ai_browser_pages (
                 id, session_id, url, title, status, depth, parent_url, http_status,
-                links_found, forms_found, ai_summary, interesting, discovered_at,
-                visited_at, created_at, updated_at
-            ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16)
+                links_found, forms_found, ai_summary, ai_used_for_analysis, interesting,
+                screenshot_path, rendered_html_path, discovered_at, visited_at, created_at,
+                updated_at
+            ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19)
             ON CONFLICT(id) DO UPDATE SET
                 url = excluded.url,
                 title = excluded.title,
@@ -166,7 +197,10 @@ impl Database {
                 links_found = excluded.links_found,
                 forms_found = excluded.forms_found,
                 ai_summary = excluded.ai_summary,
+                ai_used_for_analysis = excluded.ai_used_for_analysis,
                 interesting = excluded.interesting,
+                screenshot_path = excluded.screenshot_path,
+                rendered_html_path = excluded.rendered_html_path,
                 discovered_at = excluded.discovered_at,
                 visited_at = excluded.visited_at,
                 updated_at = excluded.updated_at"#,
@@ -182,11 +216,18 @@ impl Database {
                 page.links_found as i64,
                 page.forms_found as i64,
                 page.ai_summary,
+                page.ai_used_for_analysis.map(|used| if used {
+                    1i64
+                } else {
+                    0i64
+                }),
                 if page.interesting.unwrap_or(false) {
                     1i64
                 } else {
                     0i64
                 },
+                page.screenshot_path,
+                page.rendered_html_path,
                 page.discovered_at,
                 page.visited_at,
                 created_at,
@@ -201,7 +242,8 @@ impl Database {
         let conn = self.conn.lock().unwrap();
         let mut stmt = conn.prepare(
             r#"SELECT id, session_id, url, title, status, depth, parent_url, http_status,
-               links_found, forms_found, ai_summary, interesting, discovered_at, visited_at
+               links_found, forms_found, ai_summary, ai_used_for_analysis, interesting,
+               screenshot_path, rendered_html_path, discovered_at, visited_at
                FROM ai_browser_pages WHERE session_id = ?1 ORDER BY depth ASC, discovered_at ASC"#,
         )?;
 
@@ -219,14 +261,25 @@ impl Database {
                     links_found: row.get::<_, i64>(8)? as u32,
                     forms_found: row.get::<_, i64>(9)? as u32,
                     ai_summary: row.get(10)?,
-                    interesting: Some(row.get::<_, i64>(11)? != 0),
-                    discovered_at: row.get(12)?,
-                    visited_at: row.get(13)?,
+                    ai_used_for_analysis: row.get::<_, Option<i64>>(11)?.map(|value| value != 0),
+                    interesting: Some(row.get::<_, i64>(12)? != 0),
+                    screenshot_path: row.get(13)?,
+                    rendered_html_path: row.get(14)?,
+                    discovered_at: row.get(15)?,
+                    visited_at: row.get(16)?,
                 })
             })?
             .collect();
 
         rows
+    }
+
+    pub fn clear_ai_browser_artifact_paths(&self) -> SqlResult<usize> {
+        let conn = self.conn.lock().unwrap();
+        conn.execute(
+            "UPDATE ai_browser_pages SET screenshot_path = NULL, rendered_html_path = NULL WHERE screenshot_path IS NOT NULL OR rendered_html_path IS NOT NULL",
+            [],
+        )
     }
 
     pub fn insert_ai_browser_insight(&self, insight: &AIInsight) -> SqlResult<()> {
@@ -285,8 +338,8 @@ impl Database {
 
         conn.execute(
             r#"INSERT OR IGNORE INTO ai_browser_logs (
-                id, session_id, level, type, message, url, created_at
-            ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)"#,
+                id, session_id, level, type, message, url, ai_used_for_analysis, created_at
+            ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)"#,
             params![
                 log.id,
                 log.session_id,
@@ -294,6 +347,8 @@ impl Database {
                 log.r#type,
                 log.message,
                 log.url,
+                log.ai_used_for_analysis
+                    .map(|used| if used { 1i64 } else { 0i64 }),
                 log.created_at,
             ],
         )?;
@@ -304,7 +359,7 @@ impl Database {
     pub fn list_ai_browser_logs(&self, session_id: &str) -> SqlResult<Vec<ActivityLog>> {
         let conn = self.conn.lock().unwrap();
         let mut stmt = conn.prepare(
-            r#"SELECT id, session_id, level, type, message, url, created_at
+            r#"SELECT id, session_id, level, type, message, url, ai_used_for_analysis, created_at
                FROM ai_browser_logs WHERE session_id = ?1 ORDER BY created_at ASC"#,
         )?;
 
@@ -317,7 +372,8 @@ impl Database {
                     r#type: row.get(3)?,
                     message: row.get(4)?,
                     url: row.get(5)?,
-                    created_at: row.get(6)?,
+                    ai_used_for_analysis: row.get::<_, Option<i64>>(6)?.map(|value| value != 0),
+                    created_at: row.get(7)?,
                 })
             })?
             .collect();

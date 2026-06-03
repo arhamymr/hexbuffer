@@ -15,7 +15,10 @@ pub async fn grab_banner(
     let probe_data;
     let probe = match port {
         80 | 8000 | 8080 | 8081 | 8888 | 9000 => {
-            probe_data = format!("HEAD / HTTP/1.1\r\nHost: {}\r\nConnection: close\r\n\r\n", host);
+            probe_data = format!(
+                "HEAD / HTTP/1.1\r\nHost: {}\r\nConnection: close\r\n\r\n",
+                host
+            );
             Some(probe_data.as_bytes())
         }
         25 | 587 => Some(b"EHLO 0xbuffer.local\r\n".as_slice()),

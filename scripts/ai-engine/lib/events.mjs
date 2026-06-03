@@ -4,7 +4,7 @@ export function emit(message) {
   process.stdout.write(`${JSON.stringify(message)}\n`);
 }
 
-export function log(sessionId, level, type, message, url) {
+export function log(sessionId, level, type, message, url, extra = {}) {
   emit({
     type: 'log_created',
     id: randomUUID(),
@@ -14,5 +14,6 @@ export function log(sessionId, level, type, message, url) {
     message,
     url,
     createdAt: new Date().toISOString(),
+    ...extra,
   });
 }

@@ -23,6 +23,7 @@ pub struct ProxyLogSummary {
     pub request_body_size: usize,
     pub response_body_size: usize,
     pub server_addr: String,
+    pub user_agent: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -101,6 +102,12 @@ impl HistoryBridge {
     pub fn list_ai_browser_pages(&self, session_id: &str) -> Result<Vec<CrawlPage>, String> {
         self.db
             .list_ai_browser_pages(session_id)
+            .map_err(|e| e.to_string())
+    }
+
+    pub fn clear_ai_browser_artifact_paths(&self) -> Result<usize, String> {
+        self.db
+            .clear_ai_browser_artifact_paths()
             .map_err(|e| e.to_string())
     }
 
@@ -386,6 +393,8 @@ impl From<ProxyRecord> for ProxyLogSummary {
             .as_ref()
             .and_then(|response| response.headers.get("content-type").cloned());
 
+        let user_agent = record.request.headers.get("user-agent").cloned();
+
         let response_body_size = record
             .response
             .as_ref()
@@ -412,6 +421,7 @@ impl From<ProxyRecord> for ProxyLogSummary {
             request_body_size: record.request.body.len(),
             response_body_size,
             server_addr: record.server_addr,
+            user_agent,
         }
     }
 }

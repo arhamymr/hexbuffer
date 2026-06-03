@@ -91,6 +91,7 @@ export function heuristicAnalyze(extract) {
 
   return {
     summary: extract.title || extract.visibleText.slice(0, 180) || 'No page summary available.',
+    aiUsedForAnalysis: false,
     interesting: insights.length > 0,
     priorityScore: insights.length > 0 ? 80 : 40,
     insights,
@@ -128,7 +129,9 @@ export async function analyzeWithAgent(extract, sessionId) {
   const hasKey = !!process.env[apiKeyEnv]?.trim();
 
   if (!hasKey || !['deepseek', 'openai'].includes(provider)) {
-    log(sessionId, 'warning', 'ai', `${provider === 'openai' ? 'OpenAI' : 'DeepSeek'} AI agent unavailable (${apiKeyEnv} ${hasKey ? 'set' : 'missing'}, provider=${provider}); using deterministic page analysis.`, extract.finalUrl);
+    log(sessionId, 'warning', 'ai', `${provider === 'openai' ? 'OpenAI' : 'DeepSeek'} AI agent unavailable (${apiKeyEnv} ${hasKey ? 'set' : 'missing'}, provider=${provider}); using deterministic page analysis.`, extract.finalUrl, {
+      aiUsedForAnalysis: false,
+    });
     return fallback;
   }
 
@@ -227,13 +230,16 @@ export async function analyzeWithAgent(extract, sessionId) {
       ].join('\n'),
     });
   } catch (error) {
-    log(sessionId, 'warning', 'ai', `AI agent analysis unavailable; using deterministic analysis: ${error.message}`, extract.finalUrl);
+    log(sessionId, 'warning', 'ai', `AI agent analysis unavailable; using deterministic analysis: ${error.message}`, extract.finalUrl, {
+      aiUsedForAnalysis: false,
+    });
     return fallback;
   }
 
   const finalAnalysis = state.finalAnalysis || fallback;
   return {
     ...finalAnalysis,
+    aiUsedForAnalysis: true,
     insights: state.insightDrafts.length > 0 ? state.insightDrafts : finalAnalysis.insights,
     prioritizedUrls: state.prioritizedUrls.length > 0 ? state.prioritizedUrls : finalAnalysis.prioritizedUrls,
     humanInputRequest: state.humanInputRequest,

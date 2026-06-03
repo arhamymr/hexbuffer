@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 
-import { heuristicAnalyze, restrictedGate } from './analysis.mjs';
+import { analyzeWithAgent, heuristicAnalyze, restrictedGate } from './analysis.mjs';
 import { emit, log } from './events.mjs';
 import { fetchExtract, playwrightExtract } from './extractors.mjs';
 import { normalizeUrl, shouldBlockUrl } from './url-policy.mjs';
@@ -17,7 +17,7 @@ export async function runCrawl() {
   const visited = new Set();
   const enqueued = new Set(queue.map((item) => item.url));
 
-  log(sessionId, 'info', 'session', 'AI SDK agent crawl started (BFS)', config.targetUrl);
+  log(sessionId, 'info', 'session', 'Browser Automation started (BFS)', config.targetUrl);
 
   while (queue.length > 0 && visited.size < config.maxPages) {
     const item = queue.shift();
@@ -42,8 +42,10 @@ export async function runCrawl() {
     try {
       const extract = process.env['0XBUFFER_USE_FETCH_CRAWLER'] === '1'
         ? await fetchExtract(item.url, config)
-        : await playwrightExtract(item.url, config);
-      const analysis = heuristicAnalyze(extract);
+        : await playwrightExtract(item.url, config, pageId);
+      const analysis = config.enableAiInsights
+        ? await analyzeWithAgent(extract, sessionId)
+        : heuristicAnalyze(extract);
       emit({
         type: 'page_visited',
         id: pageId,
@@ -56,9 +58,14 @@ export async function runCrawl() {
         status: (extract.httpStatus || 0) >= 500 ? 'error' : (extract.httpStatus || 0) >= 400 ? 'blocked' : 'visited',
         visitedAt: new Date().toISOString(),
         aiSummary: analysis.summary,
+        aiUsedForAnalysis: !!analysis.aiUsedForAnalysis,
         interesting: analysis.interesting,
+        screenshotPath: extract.screenshotPath,
+        renderedHtmlPath: extract.renderedHtmlPath,
       });
-      log(sessionId, 'info', 'navigation', `Visited ${extract.finalUrl}`, extract.finalUrl);
+      log(sessionId, 'info', 'navigation', `Visited ${extract.finalUrl}`, extract.finalUrl, {
+        aiUsedForAnalysis: !!analysis.aiUsedForAnalysis,
+      });
 
       for (const insight of analysis.insights || []) {
         emit({
@@ -98,9 +105,12 @@ export async function runCrawl() {
           reason: gate.reason,
           requestedFields: [...new Set(gate.requestedFields || [])],
           safeActions: gate.safeActions?.length ? gate.safeActions : ['continue', 'skip-branch', 'stop-crawl'],
+          aiUsedForAnalysis: !!analysis.aiUsedForAnalysis,
           createdAt: new Date().toISOString(),
         });
-        log(sessionId, 'warning', 'policy', `Skipped restricted page ${extract.finalUrl}: ${gate.reason}`, extract.finalUrl);
+        log(sessionId, 'warning', 'policy', `Skipped restricted page ${extract.finalUrl}: ${gate.reason}`, extract.finalUrl, {
+          aiUsedForAnalysis: !!analysis.aiUsedForAnalysis,
+        });
         continue;
       }
     } catch (error) {
@@ -116,9 +126,12 @@ export async function runCrawl() {
         status: 'error',
         visitedAt: new Date().toISOString(),
         aiSummary: `Automation failed: ${error.message}`,
+        aiUsedForAnalysis: false,
         interesting: false,
       });
-      log(sessionId, 'error', 'error', `Failed to crawl ${item.url}: ${error.message}`, item.url);
+      log(sessionId, 'error', 'error', `Failed to crawl ${item.url}: ${error.message}`, item.url, {
+        aiUsedForAnalysis: false,
+      });
     }
 
     if (config.requestDelayMs > 0) {

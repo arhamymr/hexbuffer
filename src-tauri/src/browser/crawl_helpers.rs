@@ -1,4 +1,4 @@
-use super::crawl_types::{ActivityLog, AIInsight, AiBrowserState, CrawlPage, CrawlSession};
+use super::crawl_types::{AIInsight, ActivityLog, AiBrowserState, CrawlPage, CrawlSession};
 use chrono::Utc;
 use std::path::PathBuf;
 use std::process::{Child, Command};
@@ -96,7 +96,10 @@ pub(crate) fn is_terminal_status(status: &str) -> bool {
 }
 
 #[cfg(unix)]
-pub(crate) fn signal_child_process_group(child: &Arc<Mutex<Child>>, signal: &str) -> Result<(), String> {
+pub(crate) fn signal_child_process_group(
+    child: &Arc<Mutex<Child>>,
+    signal: &str,
+) -> Result<(), String> {
     let pid = child
         .lock()
         .map_err(|_| "Failed to lock AI browser child process".to_string())?
@@ -119,7 +122,10 @@ pub(crate) fn signal_child_process_group(child: &Arc<Mutex<Child>>, signal: &str
 }
 
 #[cfg(not(unix))]
-pub(crate) fn signal_child_process_group(_child: &Arc<Mutex<Child>>, _signal: &str) -> Result<(), String> {
+pub(crate) fn signal_child_process_group(
+    _child: &Arc<Mutex<Child>>,
+    _signal: &str,
+) -> Result<(), String> {
     Err("Pause and resume are not supported on this platform yet".to_string())
 }
 
@@ -166,7 +172,11 @@ pub(crate) fn upsert_page_memory(state: &AiBrowserState, page: CrawlPage) {
     }
 }
 
-pub(crate) fn existing_page(state: &AiBrowserState, session_id: &str, page_id: &str) -> Option<CrawlPage> {
+pub(crate) fn existing_page(
+    state: &AiBrowserState,
+    session_id: &str,
+    page_id: &str,
+) -> Option<CrawlPage> {
     state.pages.lock().ok().and_then(|pages| {
         pages
             .get(session_id)

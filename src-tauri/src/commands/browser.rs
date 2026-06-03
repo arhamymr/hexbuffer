@@ -4,7 +4,7 @@ use crate::browser::crawl_helpers::{
 };
 use crate::browser::crawl_sidecar::run_sidecar_crawl;
 pub use crate::browser::{
-    ActivityLog, AIInsight, AiBrowserState, CrawlConfig, CrawlPage, CrawlSession,
+    AIInsight, ActivityLog, AiBrowserState, CrawlConfig, CrawlPage, CrawlSession,
 };
 
 // ── Agent browser types ──
@@ -592,8 +592,9 @@ pub async fn ai_browser_start_crawl(
             session_id: session.id.clone(),
             level: "info".to_string(),
             r#type: "session".to_string(),
-            message: format!("Started crawl for {}", session.target_url),
+            message: format!("Started for {}", session.target_url),
             url: Some(session.target_url.clone()),
+            ai_used_for_analysis: None,
             created_at: now(),
         },
     );
@@ -658,6 +659,7 @@ pub async fn ai_browser_start_crawl(
                     r#type: "error".to_string(),
                     message: format!("Sidecar crawl failed: {}", error),
                     url: None,
+                    ai_used_for_analysis: None,
                     created_at: now(),
                 },
             );
@@ -706,6 +708,7 @@ pub async fn ai_browser_pause_crawl(
             r#type: "session".to_string(),
             message: "Paused crawl".to_string(),
             url: None,
+            ai_used_for_analysis: None,
             created_at: now(),
         },
     );
@@ -747,6 +750,7 @@ pub async fn ai_browser_resume_crawl(
             r#type: "session".to_string(),
             message: "Resumed crawl".to_string(),
             url: None,
+            ai_used_for_analysis: None,
             created_at: now(),
         },
     );
@@ -788,6 +792,7 @@ pub async fn ai_browser_stop_crawl(
             r#type: "session".to_string(),
             message: "Stopped crawl".to_string(),
             url: None,
+            ai_used_for_analysis: None,
             created_at: now(),
         },
     );

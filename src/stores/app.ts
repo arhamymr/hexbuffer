@@ -44,9 +44,7 @@ export const useAppStore = create<AppState>()(
         console.log('[store] startProxy called');
         set({ proxyStatus: 'starting' });
         try {
-          console.log('[store] calling invoke with port=8888, tlsPort=8889');
           await invoke('start_proxy', { port: 8888, tlsPort: 8889 });
-          console.log('[store] invoke completed, checking status...');
           await new Promise((resolve) => window.setTimeout(resolve, 300));
           const status = await invoke<ProxyRuntimeStatus>('get_proxy_status');
           set({
@@ -88,14 +86,12 @@ export const useAppStore = create<AppState>()(
       checkProxyStatus: async () => {
         try {
           const status = await invoke<ProxyRuntimeStatus>('get_proxy_status');
-          console.log('[store] proxy status check result:', status);
           set({
             proxyStatus: status.running ? 'connected' : 'disconnected',
             proxyPort: status.port,
             proxyDefaultPort: status.default_port,
           });
         } catch (error) {
-          console.log('[store] proxy status check failed:', error);
           set({ proxyStatus: 'disconnected', proxyPort: null });
         }
       },

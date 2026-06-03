@@ -115,7 +115,7 @@ export function ActivityLogPanel({ logs }: ActivityLogPanelProps) {
 
       {/* Detail side — slides in from the right, scrolls independently */}
       <div
-        className="p-2 bg-muted h-full min-h-0 overflow-hidden transition-all duration-300 ease-in-out"
+        className="p-2 border-l bg-muted h-full min-h-0 overflow-hidden transition-all duration-300 ease-in-out"
         style={{
           width: selectedLog ? '50%' : '0%',
           opacity: selectedLog ? 1 : 0,

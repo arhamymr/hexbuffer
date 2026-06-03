@@ -1,4 +1,4 @@
-import { Asterisk, DatabaseIcon, RefreshCwIcon } from 'lucide-react';
+import { Asterisk, DatabaseIcon, RefreshCwIcon, Trash2Icon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import type { SettingsPageState } from '../hooks/use-settings-page';
@@ -20,6 +20,8 @@ export function GeneralSettingsTab({ settings }: GeneralSettingsTabProps) {
     updateMessage,
     updateVersion,
     storageInfo,
+    clearingBrowserArtifacts,
+    handleClearBrowserArtifacts,
   } = settings;
 
   return (
@@ -83,9 +85,26 @@ export function GeneralSettingsTab({ settings }: GeneralSettingsTabProps) {
               {storageInfo?.databasePath ?? 'Loading...'}
             </p>
           </div>
+          <div className="space-y-1">
+            <p className="text-sm font-medium">Browser Automation Artifacts</p>
+            <p className="break-all rounded-md border bg-muted/40 px-3 py-2 font-mono text-xs text-muted-foreground">
+              {storageInfo?.browserArtifactsPath ?? 'Loading...'}
+            </p>
+          </div>
           <p className="text-sm text-muted-foreground">
             Proxy history, documents, and other local records are stored in this database on your device.
           </p>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              size="xs"
+              variant="destructive"
+              onClick={handleClearBrowserArtifacts}
+              disabled={clearingBrowserArtifacts}
+            >
+              <Trash2Icon className="mr-2 size-4" />
+              {clearingBrowserArtifacts ? 'Clearing...' : 'Clear Browser Artifacts'}
+            </Button>
+          </div>
         </CardContent>
       </Card>
     </>

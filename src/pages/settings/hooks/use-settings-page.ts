@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { getCaCert, saveCaCert, trustInterceptCa } from '@/pages/live-traffic/api';
 import { useUpdater } from '@/hooks/use-updater';
 import { useAiKeyStore } from '@/stores/ai-keys';
+import { useBrowserAutomationStore } from '@/stores/browser-automation';
 import { AI_MODEL_OPTIONS_BY_PROVIDER, AI_PROVIDER_OPTIONS } from '../constants';
 
 export interface AiSettings {
@@ -25,6 +26,14 @@ export interface MastraStatus {
 export interface StorageInfo {
   appDataDir: string;
   databasePath: string;
+  browserArtifactsPath: string;
+}
+
+export interface ClearBrowserArtifactsResult {
+  artifactDir: string;
+  filesDeleted: number;
+  bytesDeleted: number;
+  pagesUpdated: number;
 }
 
 const DEFAULT_AI_SETTINGS: AiSettings = {
@@ -48,8 +57,10 @@ export function useSettingsPage() {
   });
   const [mastraBusy, setMastraBusy] = React.useState(false);
   const [storageInfo, setStorageInfo] = React.useState<StorageInfo | null>(null);
+  const [clearingBrowserArtifacts, setClearingBrowserArtifacts] = React.useState(false);
 
   const { keys: aiKeys, setKey: setAiKey, removeKey: removeAiKey, hasKey: hasAiKey } = useAiKeyStore();
+  const clearBrowserAutomationArtifactPaths = useBrowserAutomationStore((state) => state.clearArtifactPaths);
 
   // Derive provider key status from Zustand store
   const providerKeyStatus = React.useMemo(() => {
@@ -106,6 +117,23 @@ export function useSettingsPage() {
         console.error('Failed to load storage info:', error);
       });
   }, []);
+
+  const handleClearBrowserArtifacts = React.useCallback(async () => {
+    try {
+      setClearingBrowserArtifacts(true);
+      const result = await invoke<ClearBrowserArtifactsResult>('clear_browser_automation_artifacts');
+      clearBrowserAutomationArtifactPaths();
+      const sizeMb = result.bytesDeleted / 1024 / 1024;
+      toast.success(
+        `Cleared ${result.filesDeleted} browser artifact file${result.filesDeleted === 1 ? '' : 's'} (${sizeMb.toFixed(2)} MB)`
+      );
+    } catch (error) {
+      console.error('Failed to clear browser automation artifacts:', error);
+      toast.error(`Failed to clear browser artifacts: ${error}`);
+    } finally {
+      setClearingBrowserArtifacts(false);
+    }
+  }, [clearBrowserAutomationArtifactPaths]);
 
   const handleDownloadCert = React.useCallback(async () => {
     try {
@@ -265,11 +293,13 @@ export function useSettingsPage() {
     aiSettingsLoading,
     aiSettingsSaving,
     currentVersion,
+    clearingBrowserArtifacts,
     downloading,
     installingCa,
     handleDownloadCert,
     handleInstallMacCert,
     handleClearAiApiKey,
+    handleClearBrowserArtifacts,
     handleSaveAiSettings,
     handleStartMastra,
     handleStopMastra,

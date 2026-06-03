@@ -2,11 +2,11 @@
 
 import { Pause, Play, RotateCcw, Search, Square, Target, InfoIcon } from 'lucide-react';
 import { ActivityLogPanel } from './components/ActivityLogPanel';
-import { AiInsightsPanel } from './components/InsightsPanel';
-import { CrawlOverviewPanel } from './components/AutomationOverviewPanel';
-import { CrawlSetupScreen } from './components/AutomationSetupScreen';
-import { CrawlTreePanel } from './components/AutomationTreePanel';
-import { PageDetailDrawer } from './components/PageDetailDrawer';
+import { AiInsightsPanel } from './components/insight-panel';
+import { CrawlOverviewPanel } from './components/overview-panel';
+import { CrawlSetupScreen } from './components/setup-screen';
+import { CrawlTreePanel } from './components/tree-panel';
+import { PageDetailPanel } from './components/page-detail-panel';
 import { Alert, AlertAction, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -81,7 +81,7 @@ export function BrowserAutomationPage() {
         <Alert variant="default" className="mb-2 min-h-12 shrink-0 border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-500/50 dark:bg-amber-500/10 dark:text-amber-200">
           <InfoIcon className='!text-amber-600' />
           <AlertDescription className='text-amber-600'>
-            The AI browser automation agent will interact with external websites. Only scan targets you own or are authorized to assess. Unauthorized scanning may violate terms of service or applicable laws.
+            The browser automation agent will interact with external websites. Only scan targets you own or are authorized to assess. Unauthorized scanning may violate terms of service or applicable laws.
           </AlertDescription>
           <AlertAction>
             <Button
@@ -104,12 +104,9 @@ export function BrowserAutomationPage() {
       >
         <div className="flex h-full min-h-0 flex-col bg-background">
           <header className="bg-muted px-3 py-3">
-            <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+            <div className="flex flex-row gap-3 xl:items-center xl:justify-between">
               <div className="flex min-w-0 flex-1 items-center gap-3">
-                <div className="flex gap-2 items-center min-w-0 truncate text-xs text-muted-foreground">
-                  <Target className='size-3' /> <span className="font-mono font-semibold text-foreground">{session?.targetUrl || setup.targetUrl || '-'}</span>
-                </div>
-                <div className="relative w-full max-w-[250px]">
+                <div className="relative w-full max-w-[230px]">
                   <Search className="absolute left-2 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                   <Input
                     className="pl-8 bg-background"
@@ -153,11 +150,11 @@ export function BrowserAutomationPage() {
               <ResizableHandle withHandle />
               <ResizablePanel defaultSize={30} minSize={30}>
                 <ResizablePanelGroup orientation="horizontal" className="min-h-0">
-                  <ResizablePanel defaultSize={30} minSize={14}>
+                  <ResizablePanel defaultSize={20} minSize={14}>
                     <CrawlOverviewPanel overview={overview} />
                   </ResizablePanel>
                   <ResizableHandle withHandle />
-                  <ResizablePanel defaultSize={30} minSize={24}>
+                  <ResizablePanel defaultSize={20} minSize={20}>
                     <CrawlTreePanel
                       nodes={crawlTree}
                       selectedPageId={selectedPage?.id ?? null}
@@ -165,7 +162,13 @@ export function BrowserAutomationPage() {
                     />
                   </ResizablePanel>
                   <ResizableHandle withHandle />
-                  <ResizablePanel defaultSize={30} minSize={28}>
+                  
+                  
+                  <ResizablePanel defaultSize={20} minSize={20}>
+                    <PageDetailPanel page={selectedPage} />
+                  </ResizablePanel>
+                  <ResizableHandle withHandle />
+                  <ResizablePanel defaultSize={20} minSize={20}>
                     <AiInsightsPanel
                       insights={filteredInsights}
                       interestingPages={interestingPages}
@@ -177,7 +180,6 @@ export function BrowserAutomationPage() {
             </ResizablePanelGroup>
           </main>
 
-          <PageDetailDrawer page={selectedPage} />
 
           <Dialog open={Boolean(humanInputRequest)} onOpenChange={(open) => {
             if (!open) clearHumanInputRequest();

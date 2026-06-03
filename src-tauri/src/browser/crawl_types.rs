@@ -1,10 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::process::Child;
-use std::sync::{
-    atomic::AtomicBool,
-    Arc, Mutex,
-};
+use std::sync::{atomic::AtomicBool, Arc, Mutex};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -19,6 +16,14 @@ pub struct CrawlConfig {
     pub timeout_ms: u64,
     pub enable_ai_insights: bool,
     pub network_settle_ms: Option<u64>,
+    #[serde(default = "default_true")]
+    pub capture_screenshots: bool,
+    #[serde(default = "default_true")]
+    pub capture_rendered_html: bool,
+}
+
+fn default_true() -> bool {
+    true
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -50,7 +55,11 @@ pub struct CrawlPage {
     pub discovered_at: String,
     pub visited_at: Option<String>,
     pub ai_summary: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub ai_used_for_analysis: Option<bool>,
     pub interesting: Option<bool>,
+    pub screenshot_path: Option<String>,
+    pub rendered_html_path: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -77,6 +86,8 @@ pub struct ActivityLog {
     pub r#type: String,
     pub message: String,
     pub url: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub ai_used_for_analysis: Option<bool>,
     pub created_at: String,
 }
 
@@ -109,7 +120,10 @@ pub(crate) struct SidecarMessage {
     pub discovered_at: Option<String>,
     pub visited_at: Option<String>,
     pub ai_summary: Option<String>,
+    pub ai_used_for_analysis: Option<bool>,
     pub interesting: Option<bool>,
+    pub screenshot_path: Option<String>,
+    pub rendered_html_path: Option<String>,
     pub level: Option<String>,
     pub log_type: Option<String>,
     pub insight_type: Option<String>,

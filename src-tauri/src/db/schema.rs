@@ -200,7 +200,10 @@ CREATE TABLE IF NOT EXISTS ai_browser_pages (
     links_found INTEGER NOT NULL DEFAULT 0,
     forms_found INTEGER NOT NULL DEFAULT 0,
     ai_summary TEXT,
+    ai_used_for_analysis INTEGER,
     interesting INTEGER NOT NULL DEFAULT 0,
+    screenshot_path TEXT,
+    rendered_html_path TEXT,
     discovered_at TEXT NOT NULL,
     visited_at TEXT,
     created_at TEXT NOT NULL,
@@ -240,6 +243,7 @@ CREATE TABLE IF NOT EXISTS ai_browser_logs (
     type TEXT NOT NULL,
     message TEXT NOT NULL,
     url TEXT,
+    ai_used_for_analysis INTEGER,
     created_at TEXT NOT NULL,
     FOREIGN KEY(session_id) REFERENCES ai_browser_sessions(id) ON DELETE CASCADE
 );

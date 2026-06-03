@@ -86,6 +86,7 @@ interface BrowserAutomationState {
   toggleInsightReviewed: (insightId: string) => void;
   markPageInteresting: (pageId: string) => void;
   setSearch: (value: string) => void;
+  clearArtifactPaths: () => void;
   analyzePageWithAi: (page: CrawlPage) => Promise<void>;
   applySessionStarted: (session: CrawlSession) => void;
   applySessionUpdated: (session: Partial<CrawlSession>) => void;
@@ -306,6 +307,8 @@ export const useBrowserAutomationStore = create<BrowserAutomationState>((set, ge
       `Timeout: ${s.timeoutMs}ms`,
       `Settle: ${s.networkSettleMs ?? 2000}ms`,
       s.excludePaths.trim() ? `Exclude: ${s.excludePaths}` : null,
+      s.captureScreenshots ? 'Screenshots: on' : 'Screenshots: off',
+      s.captureRenderedHtml ? 'Rendered HTML: on' : 'Rendered HTML: off',
     ].filter(Boolean).join(', ');
 
     const sessionId = tab.session?.id ?? `pre-${Date.now()}`;
@@ -344,7 +347,7 @@ export const useBrowserAutomationStore = create<BrowserAutomationState>((set, ge
           sessionId: session.id,
           level: 'info',
           type: 'session',
-          message: `Started crawl for ${setup.targetUrl}`,
+          message: `Started for ${setup.targetUrl}`,
           url: setup.targetUrl,
           createdAt: session.startedAt ?? new Date().toISOString(),
         },
@@ -553,6 +556,18 @@ export const useBrowserAutomationStore = create<BrowserAutomationState>((set, ge
     updateActiveTab(set, (tab) => ({
       ...tab,
       search: value,
+    })),
+
+  clearArtifactPaths: () =>
+    set((state) => ({
+      tabs: state.tabs.map((tab) => ({
+        ...tab,
+        pages: tab.pages.map((page) => ({
+          ...page,
+          screenshotPath: undefined,
+          renderedHtmlPath: undefined,
+        })),
+      })),
     })),
 
   analyzePageWithAi: async (page) => {

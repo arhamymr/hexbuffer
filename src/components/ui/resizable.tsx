@@ -40,7 +40,7 @@ function ResizableHandle({
       {...props}
     >
       {withHandle && (
-        <div className="z-10 flex h-6 w-4 shrink-0 items-center justify-center rounded-sm bg-border">
+        <div className="z-10 flex h-6 w-4 shrink-0 items-center justify-center rounded-sm border border-border bg-card">
           <div className="[aria-orientation=horizontal>*]:hidden block h-3 w-3 text-muted-foreground ([aria-orientation=horizontal]>*)::before:content-[' ']">
             <GripVertical className="h-3 w-3" />
           </div>

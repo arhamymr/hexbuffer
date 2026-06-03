@@ -1,9 +1,11 @@
 use super::crawl_helpers::{
     add_log, existing_page, find_sidecar_script, is_terminal_status, kill_child_process_group, now,
-    persist_insight, persist_page, session_status, signal_child_process_group,
-    update_session, upsert_page_memory,
+    persist_insight, persist_page, session_status, signal_child_process_group, update_session,
+    upsert_page_memory,
 };
-use super::crawl_types::{ActivityLog, AIInsight, AiBrowserState, CrawlConfig, CrawlPage, SidecarMessage};
+use super::crawl_types::{
+    AIInsight, ActivityLog, AiBrowserState, CrawlConfig, CrawlPage, SidecarMessage,
+};
 use std::io::{BufRead, BufReader};
 #[cfg(unix)]
 use std::os::unix::process::CommandExt;
@@ -12,7 +14,7 @@ use std::sync::{
     atomic::{AtomicBool, Ordering},
     Arc, Mutex,
 };
-use tauri::{AppHandle, Emitter};
+use tauri::{AppHandle, Emitter, Manager};
 use uuid::Uuid;
 
 fn page_id() -> String {
@@ -43,7 +45,10 @@ pub(crate) fn apply_sidecar_message(
                 discovered_at: message.discovered_at.unwrap_or_else(now),
                 visited_at: None,
                 ai_summary: None,
+                ai_used_for_analysis: None,
                 interesting: Some(false),
+                screenshot_path: None,
+                rendered_html_path: None,
             };
             upsert_page_memory(state, page.clone());
             persist_page(app, &page);
@@ -88,7 +93,15 @@ pub(crate) fn apply_sidecar_message(
                     .unwrap_or_else(now),
                 visited_at: Some(message.visited_at.unwrap_or_else(now)),
                 ai_summary: message.ai_summary,
+                ai_used_for_analysis: message.ai_used_for_analysis,
                 interesting: Some(message.interesting.unwrap_or(false)),
+                screenshot_path: message
+                    .screenshot_path
+                    .or_else(|| base.as_ref().and_then(|page| page.screenshot_path.clone())),
+                rendered_html_path: message.rendered_html_path.or_else(|| {
+                    base.as_ref()
+                        .and_then(|page| page.rendered_html_path.clone())
+                }),
             };
             upsert_page_memory(state, page.clone());
             persist_page(app, &page);
@@ -129,6 +142,7 @@ pub(crate) fn apply_sidecar_message(
                     r#type: message.log_type.unwrap_or_else(|| "session".to_string()),
                     message: message.message.unwrap_or_default(),
                     url: message.url,
+                    ai_used_for_analysis: message.ai_used_for_analysis,
                     created_at: message.created_at.unwrap_or_else(now),
                 },
             );
@@ -144,6 +158,7 @@ pub(crate) fn apply_sidecar_message(
                     r#type: "ai".to_string(),
                     message: message.message.unwrap_or_default(),
                     url: None,
+                    ai_used_for_analysis: message.ai_used_for_analysis,
                     created_at: now(),
                 },
             );
@@ -161,6 +176,7 @@ pub(crate) fn apply_sidecar_message(
                     "skip-branch".to_string(),
                     "stop-crawl".to_string(),
                 ]),
+                "aiUsedForAnalysis": message.ai_used_for_analysis,
                 "createdAt": message.created_at.unwrap_or_else(now),
             });
             add_log(
@@ -180,6 +196,7 @@ pub(crate) fn apply_sidecar_message(
                         .get("url")
                         .and_then(|value| value.as_str())
                         .map(str::to_string),
+                    ai_used_for_analysis: message.ai_used_for_analysis,
                     created_at: now(),
                 },
             );
@@ -223,6 +240,7 @@ pub(crate) fn apply_sidecar_message(
                     r#type: "error".to_string(),
                     message: error.clone(),
                     url: None,
+                    ai_used_for_analysis: message.ai_used_for_analysis,
                     created_at: now(),
                 },
             );
@@ -249,6 +267,17 @@ pub(crate) fn run_sidecar_crawl(
     let node = if cfg!(windows) { "node.exe" } else { "node" };
     let settings = crate::ai::read_ai_settings(app).unwrap_or_default();
     let config_json = serde_json::to_string(config).map_err(|error| error.to_string())?;
+    let artifact_dir = if config.capture_screenshots || config.capture_rendered_html {
+        let dir = app
+            .path()
+            .app_data_dir()
+            .map_err(|error| error.to_string())?
+            .join("ai-browser-artifacts");
+        std::fs::create_dir_all(&dir).map_err(|error| error.to_string())?;
+        Some(dir)
+    } else {
+        None
+    };
     let mut command = Command::new(node);
 
     command
@@ -265,6 +294,10 @@ pub(crate) fn run_sidecar_crawl(
         .env("0XBUFFER_AI_MODEL", &settings.model)
         .stdout(Stdio::piped())
         .stderr(Stdio::piped());
+
+    if let Some(dir) = artifact_dir {
+        command.env("0XBUFFER_AI_ARTIFACT_DIR", dir);
+    }
 
     #[cfg(unix)]
     command.process_group(0);
@@ -319,6 +352,7 @@ pub(crate) fn run_sidecar_crawl(
                                 r#type: "error".to_string(),
                                 message: format!("Ignored sidecar message: {}", error),
                                 url: None,
+                                ai_used_for_analysis: None,
                                 created_at: now(),
                             },
                         );

@@ -17,6 +17,7 @@ import { adaptProxyRecordToApiCall } from "@/pages/live-traffic/hooks/use-histor
 import { buildRawHttpRequest } from "@/lib/http-message";
 import { useRepeaterStore } from "@/stores/repeater";
 import { HistoryLoadingState } from "../history-loading-state";
+import { BrowserIcon } from "./browser-icon";
 
 interface SendToRepeaterButtonProps {
   call: ApiCall;
@@ -87,7 +88,13 @@ export const callsColumns: import("@tanstack/react-table").ColumnDef<ApiCall>[] 
   {
     accessorKey: "host",
     header: "Host",
-    size: 150,
+    size: 180,
+    cell: ({ row }) => (
+      <div className="flex items-center gap-1.5 truncate">
+        <BrowserIcon userAgent={row.original.user_agent} />
+        <span className="truncate">{row.original.host}</span>
+      </div>
+    ),
   },
   {
     accessorKey: "path",
@@ -240,7 +247,10 @@ export function TrafficTable() {
                   )}
                 </td>
                 <td className="text-xs truncate max-w-[250px] px-3 py-1" title={call.url}>
-                  {call.host}
+                  <div className="flex items-center gap-1.5">
+                    <BrowserIcon userAgent={call.user_agent} />
+                    <span className="truncate">{call.host}</span>
+                  </div>
                 </td>
                 <td className="text-xs text-muted-foreground truncate max-w-[200px] px-3 py-1" title={call.url}>
                   {call.path}

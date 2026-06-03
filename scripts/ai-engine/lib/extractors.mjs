@@ -7,6 +7,8 @@ import {
   extractVisibleText,
 } from './extract-html.mjs';
 import { normalizeUrl } from './url-policy.mjs';
+import fs from 'node:fs/promises';
+import path from 'node:path';
 
 export async function fetchExtract(url, config) {
   const controller = new AbortController();
@@ -33,7 +35,41 @@ export async function fetchExtract(url, config) {
   }
 }
 
-export async function playwrightExtract(url, config) {
+async function capturePageArtifacts(page, config, pageId) {
+  const artifactRoot = process.env['0XBUFFER_AI_ARTIFACT_DIR'];
+  const sessionId = process.env['0XBUFFER_CRAWL_SESSION_ID'];
+  if (!artifactRoot || !sessionId || !pageId) {
+    return {};
+  }
+
+  const pageDir = path.join(artifactRoot, sessionId);
+  await fs.mkdir(pageDir, { recursive: true });
+
+  const artifacts = {};
+  if (config.captureScreenshots !== false) {
+    const screenshotPath = path.join(pageDir, `${pageId}.png`);
+    try {
+      await page.screenshot({ path: screenshotPath, fullPage: true });
+      artifacts.screenshotPath = screenshotPath;
+    } catch (error) {
+      process.stderr.write(`[ai-engine] screenshot capture failed for ${page.url()}: ${error.message}\n`);
+    }
+  }
+
+  if (config.captureRenderedHtml !== false) {
+    const renderedHtmlPath = path.join(pageDir, `${pageId}.html`);
+    try {
+      await fs.writeFile(renderedHtmlPath, await page.content(), 'utf8');
+      artifacts.renderedHtmlPath = renderedHtmlPath;
+    } catch (error) {
+      process.stderr.write(`[ai-engine] rendered HTML capture failed for ${page.url()}: ${error.message}\n`);
+    }
+  }
+
+  return artifacts;
+}
+
+export async function playwrightExtract(url, config, pageId) {
   const { chromium } = await import('playwright');
   const browser = await chromium.launch({ headless: true });
   try {
@@ -51,6 +87,8 @@ export async function playwrightExtract(url, config) {
 
     const settleMs = config.networkSettleMs || 2000;
     await page.waitForTimeout(settleMs);
+
+    const artifacts = await capturePageArtifacts(page, config, pageId);
 
     const extract = await page.evaluate(() => {
       const links = Array.from(document.querySelectorAll('a[href]')).map((anchor) => ({
@@ -84,6 +122,7 @@ export async function playwrightExtract(url, config) {
       url,
       finalUrl: normalizeUrl(page.url()) || url,
       httpStatus: response?.status(),
+      ...artifacts,
       ...extract,
     };
   } finally {

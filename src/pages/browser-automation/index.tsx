@@ -135,7 +135,7 @@ export function BrowserAutomationPage() {
                 </Button>
                 <Button size="xs" onClick={startCrawl} disabled={isRunning || !setup.targetUrl.trim()}>
                   <Play className="h-4 w-4" />
-                  Start Automation
+                  Start
                 </Button>
               </div>
             </div>

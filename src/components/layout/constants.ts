@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowUpDown, Bot, Crosshair, FileText, Globe, Network, PauseCircle, RefreshCw, Wrench } from 'lucide-react';
+import { ArrowUpDown, Box, Cog, Crosshair, Globe, PauseCircle, RefreshCw } from 'lucide-react';
 
 interface NavItem {
   label: string;
@@ -17,7 +17,7 @@ export const allNavItems: NavItem[] = [
   { label: 'Browser', icon: Globe, href: '/browser-automation'},
   // { label: 'Documents', icon: FileText, href: '/documents'},
   // { label: 'AI Tools', icon: Bot, href: '/ai-tools', devOnly: true },
-  { label: 'Tools', icon: Wrench, href: '/tools' },
+  { label: 'Tools', icon: Box, href: '/tools' },
 ];
 
 export const mainNavItems = import.meta.env.PROD

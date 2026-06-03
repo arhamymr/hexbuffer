@@ -107,7 +107,7 @@ export function BruteForcePage() {
                     ) : (
                       <Button size="xs" onClick={() => { clearStartError(); handleStartAttack(); }} disabled={!canStart}>
                         <Play className="h-4 w-4 mr-1" />
-                        Start Attack
+                        Start
                       </Button>
                     )}
                   </div>

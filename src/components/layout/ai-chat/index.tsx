@@ -113,7 +113,7 @@ export function AIAssistantPane() {
 
   return (
     <PromptInputProvider>
-      <aside className="absolute inset-2 z-40 flex min-h-0 flex-col overflow-hidden rounded-md border bg-background shadow-lg lg:static lg:z-auto lg:h-full lg:w-[clamp(320px,30vw,460px)] lg:shrink-0 lg:rounded-none lg:border-y-0 lg:border-r-0 lg:shadow-none">
+      <aside className="absolute inset-2 z-40 flex min-h-0 flex-col overflow-hidden rounded-md border bg-background  lg:static lg:z-auto lg:h-full lg:w-[30vw] lg:rounded-none lg:border-y-0 lg:border-r-0 ">
         {/* Header */}
         <div className="flex shrink-0 items-center justify-between border-b pr-3">
           <AgentHeader

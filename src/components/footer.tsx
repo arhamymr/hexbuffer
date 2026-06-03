@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
 import { relaunch } from '@tauri-apps/plugin-process';
-import { ArrowUp, Loader2, MessageSquare, Moon, Settings, Sun } from 'lucide-react';
+import { ArrowUp, Asterisk, Loader2, MessageSquare, Moon, Settings, Sun } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAppStore } from '@/stores/app';
 import { useTheme } from './theme-provider';
@@ -92,7 +92,7 @@ export function AppFooter({ isAssistantOpen, onToggleAssistant }: AppFooterProps
   return (
     <footer className="border-t px-4 py-1.5 flex items-center justify-between text-xs text-muted-foreground">
       <div className="flex items-center gap-4">
-        <span>© {new Date().getFullYear()} | 0xbuffer v{pkg.version}</span>
+        <span>© 0xbuffer v{pkg.version}</span>
         <div className="flex items-center gap-2" title={proxyTitle}>
           <span
             className={`h-2 w-2 rounded-full ${
@@ -103,8 +103,8 @@ export function AppFooter({ isAssistantOpen, onToggleAssistant }: AppFooterProps
                 : 'bg-muted-foreground/50'
             }`}
           />
-          <span>
-            Proxy: {proxyStatusLabel[proxyStatus]} | *:{activeProxyPort}
+          <span className='flex items-center'>
+            Proxy: {proxyStatusLabel[proxyStatus]} | <Asterisk className='size-3' />:{activeProxyPort}
             {isDefaultPortChanged ? ' (default port changed)' : ''}
           </span>
         </div>

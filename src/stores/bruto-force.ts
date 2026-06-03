@@ -403,7 +403,7 @@ export const useBruteForceStore = create<BruteForceState>((set, get) => ({
       unlistenResultByTab.set(tab.id, unlistenResult);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      console.error('Failed to start attack:', error);
+      console.error('Failed to start:', error);
       set((state) => ({
         tabs: state.tabs.map((currentTab) =>
           currentTab.id === tab.id
@@ -411,7 +411,7 @@ export const useBruteForceStore = create<BruteForceState>((set, get) => ({
             : currentTab
         ),
       }));
-      toast.error(message || 'Failed to start attack');
+      toast.error(message || 'Failed to start');
     }
   },
 

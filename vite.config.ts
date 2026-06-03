@@ -21,6 +21,10 @@ export default defineConfig({
   build: {
     chunkSizeWarningLimit: 900,
     rollupOptions: {
+      input: {
+        main: path.resolve(__dirname, "index.html"),
+        splashscreen: path.resolve(__dirname, "splashscreen.html"),
+      },
       output: {
         manualChunks(id) {
           if (id.includes("node_modules")) {

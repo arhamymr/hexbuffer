@@ -144,13 +144,15 @@ fn main() {
             zeroxbuffer::commands::browser::list_ai_browser_insights,
             zeroxbuffer::commands::browser::list_ai_browser_logs,
             zeroxbuffer::sqli::start_sqli_scan,
-            zeroxbuffer::sqli::stop_sqli_scan
+            zeroxbuffer::sqli::stop_sqli_scan,
+            show_main_window
         ])
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_clipboard_manager::init())
+        .plugin(tauri_plugin_shell::init())
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
@@ -187,6 +189,22 @@ async fn check_for_updates(app: tauri::AppHandle) -> tauri_plugin_updater::Resul
     } else {
         eprintln!("[updater] no update available");
     }
+
+    Ok(())
+}
+
+#[tauri::command]
+fn show_main_window(app: tauri::AppHandle) -> Result<(), String> {
+    if let Some(splash_window) = app.get_webview_window("splashscreen") {
+        splash_window.close().map_err(|error| error.to_string())?;
+    }
+
+    let main_window = app
+        .get_webview_window("main")
+        .ok_or_else(|| "main window was not found".to_string())?;
+
+    main_window.show().map_err(|error| error.to_string())?;
+    main_window.set_focus().map_err(|error| error.to_string())?;
 
     Ok(())
 }

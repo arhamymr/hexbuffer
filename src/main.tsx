@@ -1,6 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
+import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AppLayout } from "@/components/layout";
@@ -23,6 +24,20 @@ function getResponseDetailCallId(): string | null {
   if (params.get("window") === "response-detail") {
     return params.get("callId");
   }
+  return null;
+}
+
+function MainWindowReadySignal() {
+  React.useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      invoke("show_main_window").catch((error) => {
+        console.error("Failed to show main window:", error);
+      });
+    }, 250);
+
+    return () => window.clearTimeout(timeoutId);
+  }, []);
+
   return null;
 }
 
@@ -58,6 +73,7 @@ function Root() {
         <AppLayout>
           <AppRoutes />
         </AppLayout>
+        <MainWindowReadySignal />
         <Toaster />
       </ThemeProvider>
     </BrowserRouter>

@@ -30,6 +30,27 @@
     "fs:allow-document-write-recursive",
     "fs:allow-document-meta-recursive",
     "updater:default",
+    {
+      "identifier": "shell:allow-execute",
+      "allow": [
+        {
+          "args": true,
+          "name": "binaries/ai-engine",
+          "sidecar": true
+        }
+      ]
+    },
+    {
+      "identifier": "shell:allow-spawn",
+      "allow": [
+        {
+          "args": true,
+          "name": "binaries/ai-engine",
+          "sidecar": true
+        }
+      ]
+    },
+    "shell:allow-kill",
     "clipboard-manager:allow-write-text",
     "clipboard-manager:allow-read-text",
     "process:allow-restart",

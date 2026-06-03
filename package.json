@@ -7,6 +7,7 @@
     "dev": "vite",
     "dev:clean": "lsof -ti:1420 | xargs kill -9 2>/dev/null || true && vite",
     "build": "vite build",
+    "sidecars:build": "node scripts/build-sidecars.mjs",
     "preview": "vite preview",
     "fix:packet-permissions": "bash scripts/fix-packet-capture-permissions.sh",
     "deploy": "bash ./scripts/deploy.sh"
@@ -104,6 +105,7 @@
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
     "@vitejs/plugin-react": "^4.6.0",
+    "@yao-pkg/pkg": "^6.20.0",
     "typescript": "~5.8.3",
     "vite": "^7.0.4"
   }

@@ -13,11 +13,24 @@
     "macOSPrivateApi": true,
     "windows": [
       {
+        "label": "main",
         "title": "0xbuffer",
         "decorations": false,
         "transparent": true,
-        "width": 900,
-        "height": 700
+        "visible": false,
+        "width": 1000,
+        "height": 800
+      },
+      {
+        "label": "splashscreen",
+        "url": "/splashscreen.html",
+        "title": "0xbuffer",
+        "decorations": false,
+        "transparent": true,
+        "resizable": false,
+        "center": true,
+        "width": 492,
+        "height": 199
       }
     ],
     "security": {
@@ -28,6 +41,12 @@
     "active": true,
     "targets": "all",
     "createUpdaterArtifacts": true,
+    "externalBin": [
+      "binaries/ai-engine"
+    ],
+    "resources": {
+      "resources/playwright-browsers": "playwright-browsers"
+    },
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",

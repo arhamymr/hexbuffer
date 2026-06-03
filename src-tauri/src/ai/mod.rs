@@ -7,6 +7,7 @@ use std::process::{Child, Command, Stdio};
 use std::sync::Mutex;
 use std::time::Duration;
 use tauri::{AppHandle, Manager, State};
+use tauri_plugin_shell::ShellExt;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -161,34 +162,28 @@ fn run_ai_chat_engine(
     request: &AiChatRequest,
     context: &AiChatContext,
 ) -> Result<AiChatResponse, String> {
-    let script = find_ai_engine_script(app)?;
-    let node = if cfg!(windows) { "node.exe" } else { "node" };
-    let mut command = Command::new(node);
-    command
-        .arg(script)
-        .env("0XBUFFER_AI_ENGINE_MODE", "chat")
-        .env(
-            "0XBUFFER_AI_CHAT_REQUEST_JSON",
-            serde_json::to_string(request).map_err(|error| error.to_string())?,
-        )
-        .env(
-            "0XBUFFER_AI_CONTEXT_JSON",
-            serde_json::to_string(context).map_err(|error| error.to_string())?,
-        )
-        .env("XBUFFER_AI_PROVIDER", settings.provider.trim())
-        .env("0XBUFFER_AI_MODEL", settings.model.trim())
-        .env(api_key_env_name(&settings.provider)?, api_key.trim())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped());
-
-    let mut child = command
-        .spawn()
-        .map_err(|error| format!("Failed to start AI engine: {}", error))?;
-    let stdout = child
-        .stdout
-        .take()
-        .ok_or_else(|| "Failed to capture AI engine stdout".to_string())?;
-    let reader = BufReader::new(stdout);
+    let output = tauri::async_runtime::block_on(
+        app.shell()
+            .sidecar("ai-engine")
+            .map_err(|error| format!("Failed to prepare AI engine sidecar: {}", error))?
+            .env("0XBUFFER_AI_ENGINE_MODE", "chat")
+            .env(
+                "0XBUFFER_AI_CHAT_REQUEST_JSON",
+                serde_json::to_string(request).map_err(|error| error.to_string())?,
+            )
+            .env(
+                "0XBUFFER_AI_CONTEXT_JSON",
+                serde_json::to_string(context).map_err(|error| error.to_string())?,
+            )
+            .env("XBUFFER_AI_PROVIDER", settings.provider.trim())
+            .env("0XBUFFER_AI_MODEL", settings.model.trim())
+            .env(api_key_env_name(&settings.provider)?, api_key.trim())
+            .output(),
+    )
+    .map_err(|error| format!("Failed to run AI engine sidecar: {}", error))?;
+    let stdout = String::from_utf8(output.stdout)
+        .map_err(|error| format!("Invalid AI engine stdout: {}", error))?;
+    let reader = BufReader::new(stdout.as_bytes());
     let mut provider = settings.provider.clone();
     let mut model = settings.model.clone();
     let mut content = String::new();
@@ -238,12 +233,16 @@ fn run_ai_chat_engine(
         }
     }
 
-    let status = child.wait().map_err(|error| error.to_string())?;
     if let Some(error) = failed {
         return Err(error);
     }
-    if !status.success() {
-        return Err(format!("AI engine exited with {}", status));
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        return Err(format!(
+            "AI engine sidecar exited with code {:?}: {}",
+            output.status.code(),
+            stderr.trim()
+        ));
     }
     if content.trim().is_empty() {
         return Err("AI engine did not return chat content".to_string());
@@ -463,25 +462,6 @@ fn find_mastra_dir(app: &AppHandle) -> Result<PathBuf, String> {
         .ok_or_else(|| {
             "Mastra folder not found. Expected a mastra/package.json near the app.".to_string()
         })
-}
-
-fn find_ai_engine_script(app: &AppHandle) -> Result<PathBuf, String> {
-    let mut candidates = Vec::new();
-
-    if let Ok(current_dir) = std::env::current_dir() {
-        candidates.push(current_dir.join("scripts/ai-engine/index.mjs"));
-        candidates.push(current_dir.join("../scripts/ai-engine/index.mjs"));
-    }
-
-    if let Ok(resource_dir) = app.path().resource_dir() {
-        candidates.push(resource_dir.join("scripts/ai-engine/index.mjs"));
-        candidates.push(resource_dir.join("scripts/ai-browser-sidecar/index.mjs"));
-    }
-
-    candidates
-        .into_iter()
-        .find(|candidate| candidate.exists())
-        .ok_or_else(|| "AI engine script not found".to_string())
 }
 
 fn read_mastra_env_file(

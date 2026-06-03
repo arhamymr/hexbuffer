@@ -97,7 +97,7 @@ export function TopNav() {
                     key={item.href}
                     to={item.href}
                     className={`
-                    flex shrink-0 items-center gap-2 whitespace-nowrap px-2 py-2 text-sm transition-colors
+                    flex shrink-0 items-center gap-2 whitespace-nowrap px-2 py-2 text-xs transition-colors
                     border-b border-b-2
                     ${isActive
                         ? 'border-green-500 text-foreground bg-muted/30'

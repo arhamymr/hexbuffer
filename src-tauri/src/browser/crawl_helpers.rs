@@ -1,6 +1,5 @@
 use super::crawl_types::{AIInsight, ActivityLog, AiBrowserState, CrawlPage, CrawlSession};
 use chrono::Utc;
-use std::path::PathBuf;
 use std::process::{Child, Command};
 use std::sync::{Arc, Mutex};
 use tauri::{AppHandle, Emitter, Manager};
@@ -138,27 +137,6 @@ pub(crate) fn kill_child_process_group(child: &Arc<Mutex<Child>>) {
     if let Ok(mut child) = child.lock() {
         let _ = child.kill();
     }
-}
-
-pub(crate) fn find_sidecar_script(app: &AppHandle) -> Result<PathBuf, String> {
-    let mut candidates = Vec::new();
-
-    if let Ok(current_dir) = std::env::current_dir() {
-        candidates.push(current_dir.join("scripts/ai-engine/index.mjs"));
-        candidates.push(current_dir.join("scripts/ai-browser-sidecar/index.mjs"));
-        candidates.push(current_dir.join("../scripts/ai-engine/index.mjs"));
-        candidates.push(current_dir.join("../scripts/ai-browser-sidecar/index.mjs"));
-    }
-
-    if let Ok(resource_dir) = app.path().resource_dir() {
-        candidates.push(resource_dir.join("scripts/ai-engine/index.mjs"));
-        candidates.push(resource_dir.join("scripts/ai-browser-sidecar/index.mjs"));
-    }
-
-    candidates
-        .into_iter()
-        .find(|path| path.exists())
-        .ok_or_else(|| "AI browser sidecar script not found".to_string())
 }
 
 pub(crate) fn upsert_page_memory(state: &AiBrowserState, page: CrawlPage) {

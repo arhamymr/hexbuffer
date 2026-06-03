@@ -1,7 +1,6 @@
 use super::crawl_helpers::{
-    add_log, existing_page, find_sidecar_script, is_terminal_status, kill_child_process_group, now,
-    persist_insight, persist_page, session_status, signal_child_process_group, update_session,
-    upsert_page_memory,
+    add_log, existing_page, is_terminal_status, kill_child_process_group, now, persist_insight,
+    persist_page, session_status, signal_child_process_group, update_session, upsert_page_memory,
 };
 use super::crawl_types::{
     AIInsight, ActivityLog, AiBrowserState, CrawlConfig, CrawlPage, SidecarMessage,
@@ -15,6 +14,7 @@ use std::sync::{
     Arc, Mutex,
 };
 use tauri::{AppHandle, Emitter, Manager};
+use tauri_plugin_shell::ShellExt;
 use uuid::Uuid;
 
 fn page_id() -> String {
@@ -263,8 +263,6 @@ pub(crate) fn run_sidecar_crawl(
     api_key: &str,
     cancel_flag: Arc<AtomicBool>,
 ) -> Result<(), String> {
-    let script = find_sidecar_script(app)?;
-    let node = if cfg!(windows) { "node.exe" } else { "node" };
     let settings = crate::ai::read_ai_settings(app).unwrap_or_default();
     let config_json = serde_json::to_string(config).map_err(|error| error.to_string())?;
     let artifact_dir = if config.capture_screenshots || config.capture_rendered_html {
@@ -278,10 +276,10 @@ pub(crate) fn run_sidecar_crawl(
     } else {
         None
     };
-    let mut command = Command::new(node);
-
-    command
-        .arg(script)
+    let sidecar_command = app
+        .shell()
+        .sidecar("ai-engine")
+        .map_err(|error| format!("Failed to prepare AI browser sidecar: {}", error))?
         .env("0XBUFFER_CRAWL_SESSION_ID", session_id)
         .env("0XBUFFER_CRAWL_CONFIG_JSON", config_json)
         .env(
@@ -291,12 +289,17 @@ pub(crate) fn run_sidecar_crawl(
                 .to_string(),
         )
         .env("XBUFFER_AI_PROVIDER", &settings.provider)
-        .env("0XBUFFER_AI_MODEL", &settings.model)
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped());
+        .env("0XBUFFER_AI_MODEL", &settings.model);
+    let mut command: Command = sidecar_command.into();
+
+    command.stdout(Stdio::piped()).stderr(Stdio::piped());
 
     if let Some(dir) = artifact_dir {
         command.env("0XBUFFER_AI_ARTIFACT_DIR", dir);
+    }
+
+    if let Some(dir) = find_playwright_browsers_dir(app) {
+        command.env("PLAYWRIGHT_BROWSERS_PATH", dir);
     }
 
     #[cfg(unix)]
@@ -328,6 +331,7 @@ pub(crate) fn run_sidecar_crawl(
     if session_status(state, session_id).as_deref() == Some("paused") {
         signal_child_process_group(&child, "-STOP")?;
     }
+
     let reader = BufReader::new(stdout);
 
     if !cancel_flag.load(Ordering::SeqCst) {
@@ -384,4 +388,20 @@ pub(crate) fn run_sidecar_crawl(
     } else {
         Err(format!("AI browser sidecar exited with {}", status))
     }
+}
+
+fn find_playwright_browsers_dir(app: &AppHandle) -> Option<std::path::PathBuf> {
+    let mut candidates = Vec::new();
+
+    if let Ok(current_dir) = std::env::current_dir() {
+        candidates.push(current_dir.join("src-tauri/resources/playwright-browsers"));
+        candidates.push(current_dir.join("resources/playwright-browsers"));
+        candidates.push(current_dir.join("../src-tauri/resources/playwright-browsers"));
+    }
+
+    if let Ok(resource_dir) = app.path().resource_dir() {
+        candidates.push(resource_dir.join("playwright-browsers"));
+    }
+
+    candidates.into_iter().find(|path| path.exists())
 }

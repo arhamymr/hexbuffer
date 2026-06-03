@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 import { Tabs } from '@/components/ui/tabs';
 import { PageTabBar } from './tab-bar';
 import type { PageTabItem } from './types';
+import { cn } from '@/lib/utils';
 
 interface TabbedPageLayoutProps {
   tabs: PageTabItem[];
@@ -34,7 +35,7 @@ export function TabbedPageLayout({
 }: TabbedPageLayoutProps) {
   return (
     <div className={className}>
-      <div className="mb-2 border-b border-green-500">
+      <div className="border-b-2 border-green-500">
         <PageTabBar
           tabs={tabs}
           activeTabId={activeTabId}
@@ -46,7 +47,7 @@ export function TabbedPageLayout({
           renderTabContextMenuItems={renderTabContextMenuItems}
         />
       </div>
-      <div className={contentClassName}>
+      <div className={contentClassName + ' m-2'}>
         <Tabs value={activeTabId} onValueChange={onTabChange} className="gap-0 h-full flex flex-col">
           {children}
         </Tabs>

@@ -63,10 +63,10 @@ export function PageTabBar({
     return (
       <div
         className={cn(
-          'flex min-w-max shrink-0 items-center gap-1 rounded-t-md border text-sm transition-colors',
+          'flex min-w-max shrink-0 items-center gap-1 rounded-t-md border text-sm transition-colors px-1 -mb-0.5',
           tab.disabled
             ? 'text-muted-foreground/60'
-            : 'hover:bg-muted/50',
+            : 'hover:bg-muted',
           activeTabId === tab.id
             ? 'bg-background font-medium border-x border-t border-primary shadow-xl text-foreground'
             : 'text-muted-foreground'
@@ -123,7 +123,7 @@ export function PageTabBar({
         ref={scrollContainerRef}
         className="flex items-center gap-1 overflow-x-auto bg-muted/30"
       >
-        <div className="flex min-w-full w-max items-center gap-1">
+        <div className="flex min-w-full w-max items-center gap-1 px-2 pt-2">
           {tabs.map((tab) => {
             const tabIndex = tabs.findIndex((currentTab) => currentTab.id === tab.id);
             const canRename = !tab.disabled && Boolean(onTabRename);

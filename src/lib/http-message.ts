@@ -30,6 +30,11 @@ export interface ParseRawHttpRequestOptions {
   uppercaseMethod?: boolean;
 }
 
+export interface ParseRawHttpResponseOptions {
+  invalidMode?: 'throw' | 'null';
+  trim?: boolean;
+}
+
 export interface BuildRawHttpRequestOptions {
   addHostHeader?: boolean;
   decodePayloadMarkers?: boolean;
@@ -236,6 +241,46 @@ export function buildRawHttpResponse(
   const headerLines = Object.entries(response.headers).map(([key, value]) => `${key}: ${value}`);
   const body = options.prettyJsonBody ? formatJsonBody(response.body) : response.body;
   return [statusLine, ...headerLines, '', body].join('\n');
+}
+
+export function parseRawHttpResponse(
+  raw: string,
+  options: ParseRawHttpResponseOptions = {}
+): HttpResponseMessage | null {
+  const invalidMode = options.invalidMode ?? 'throw';
+  const normalized = normalizeHttpText(raw, options.trim ?? false);
+  const [head, ...bodyParts] = normalized.split('\n\n');
+  const lines = head.split('\n').filter(Boolean);
+  const statusLine = lines[0]?.trim();
+
+  if (!statusLine) {
+    return fail('Status line is missing.', invalidMode);
+  }
+
+  const match = statusLine.match(/^HTTP\/\d(?:\.\d)?\s+(\d{3})(?:\s+(.*))?$/i);
+  if (!match) {
+    return fail('Status line must look like HTTP/1.1 200 OK.', invalidMode);
+  }
+
+  const headers: Record<string, string> = {};
+
+  for (const line of lines.slice(1)) {
+    const separatorIndex = line.indexOf(':');
+    if (separatorIndex <= 0) {
+      continue;
+    }
+
+    const key = line.slice(0, separatorIndex).trim();
+    const value = line.slice(separatorIndex + 1).trim();
+    headers[key] = value;
+  }
+
+  return {
+    status: Number(match[1]),
+    status_text: match[2] ?? '',
+    headers,
+    body: bodyParts.join('\n\n'),
+  };
 }
 
 const PSEUDO_HEADERS = new Set([':method', ':path', ':scheme', ':authority', ':status']);

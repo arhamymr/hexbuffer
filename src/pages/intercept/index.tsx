@@ -6,16 +6,26 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
 } from '@/components/ui/resizable';
+import { TabbedPageLayout } from '@/components/tabs-layout/tabbed-page-layout';
 import { useAppStore } from '@/stores/app';
 import { toast } from 'sonner';
 import { InterceptQueuePanel } from './components/queue-panel';
 import { InterceptRequestPanel } from './components/request-panel';
 import { useInterceptPage } from './hooks/use-intercept-page';
+import { useInterceptStore } from './state/intercept-store';
 
 export function InterceptPage() {
   useInterceptPage();
   const proxyStatus = useAppStore((state) => state.proxyStatus);
   const startProxy = useAppStore((state) => state.startProxy);
+  const tabs = useInterceptStore((state) => state.tabs);
+  const activeTabId = useInterceptStore((state) => state.activeTabId);
+  const setActiveTabId = useInterceptStore((state) => state.setActiveTabId);
+  const addTab = useInterceptStore((state) => state.addTab);
+  const renameTab = useInterceptStore((state) => state.renameTab);
+  const closeTab = useInterceptStore((state) => state.closeTab);
+  const closeTabsToLeft = useInterceptStore((state) => state.closeTabsToLeft);
+  const closeTabsToRight = useInterceptStore((state) => state.closeTabsToRight);
   const [isStarting, setIsStarting] = React.useState(false);
 
   const handleStartProxy = async () => {
@@ -50,8 +60,19 @@ export function InterceptPage() {
           </AlertAction>
         </Alert>
       )}
-      <div className="flex min-h-0 flex-1 rounded-lg border bg-background">
-        <div className="bg-muted flex-1 min-h-0">
+      <TabbedPageLayout
+        tabs={tabs}
+        activeTabId={activeTabId}
+        onTabChange={setActiveTabId}
+        onTabAdd={addTab}
+        onTabRename={renameTab}
+        onTabClose={(tabId) => void closeTab(tabId)}
+        onCloseTabsToLeft={(tabId) => void closeTabsToLeft(tabId)}
+        onCloseTabsToRight={(tabId) => void closeTabsToRight(tabId)}
+        className="flex min-h-0 flex-1 flex-col"
+        contentClassName="flex-1 rounded-lg border bg-background min-h-0 overflow-hidden"
+      >
+        <div className="bg-muted h-full min-h-0">
           <ResizablePanelGroup orientation="horizontal" className="min-h-0">
             <ResizablePanel defaultSize={50} minSize={20}>
               <InterceptRequestPanel />
@@ -62,7 +83,7 @@ export function InterceptPage() {
             </ResizablePanel>
           </ResizablePanelGroup>
         </div>
-      </div>
+      </TabbedPageLayout>
     </div>
   );
 }

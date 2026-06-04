@@ -10,16 +10,18 @@ pub mod proxy;
 pub mod sqli;
 
 pub use ai::{
-    get_ai_settings, get_mastra_status, save_ai_settings, send_ai_chat_message, start_mastra,
-    start_mastra_if_enabled, stop_mastra, AiSettings, MastraProcessState, MastraStatus,
+    clear_ai_api_key, get_ai_key_status, get_ai_settings, get_mastra_status, save_ai_settings,
+    send_ai_chat_message, set_ai_api_key, start_mastra, start_mastra_if_enabled, stop_mastra,
+    AiSettings, MastraProcessState, MastraStatus,
 };
 pub use browser::{AIInsight, ActivityLog, AiBrowserState, CrawlConfig, CrawlPage, CrawlSession};
 pub use commands::browser::{
     ai_browser_pause_crawl, ai_browser_resume_crawl, ai_browser_start_crawl, ai_browser_stop_crawl,
     browser_batch, browser_click, browser_close, browser_execute, browser_fill, browser_navigate,
     browser_open, browser_press, browser_screenshot, browser_snapshot, browser_type,
-    get_ai_browser_session, get_browser_status, list_ai_browser_insights, list_ai_browser_logs,
-    list_ai_browser_pages, list_recent_ai_browser_sessions, BrowserProcessState,
+    delete_ai_browser_session, get_ai_browser_session, get_browser_status,
+    list_ai_browser_insights, list_ai_browser_logs, list_ai_browser_pages,
+    list_recent_ai_browser_sessions, BrowserProcessState,
 };
 pub use commands::packet_capture::{
     configure_capture_network, get_packet_capture_status, get_packets_paginated,

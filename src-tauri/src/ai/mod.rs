@@ -1,5 +1,7 @@
+use keyring::{Entry, Error as KeyringError};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use std::collections::BTreeMap;
 use std::io::{BufRead, BufReader};
 use std::net::{TcpStream, ToSocketAddrs};
 use std::path::PathBuf;
@@ -8,6 +10,9 @@ use std::sync::Mutex;
 use std::time::Duration;
 use tauri::{AppHandle, Manager, State};
 use tauri_plugin_shell::ShellExt;
+
+const AI_KEYRING_SERVICE: &str = "0xbuffer.ai";
+const AI_PROVIDERS: [&str; 2] = ["openai", "deepseek"];
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -18,6 +23,8 @@ pub struct AiSettings {
     pub api_key: String,
     #[serde(default)]
     pub has_api_key: bool,
+    #[serde(default)]
+    pub provider_key_status: BTreeMap<String, bool>,
     pub mastra_auto_start: bool,
     pub mastra_url: String,
 }
@@ -29,6 +36,7 @@ impl Default for AiSettings {
             model: "gpt-4.1-mini".to_string(),
             api_key: String::new(),
             has_api_key: false,
+            provider_key_status: default_ai_key_status(),
             mastra_auto_start: true,
             mastra_url: "http://localhost:4111".to_string(),
         }
@@ -104,10 +112,43 @@ pub fn get_ai_settings(app: AppHandle) -> Result<AiSettings, String> {
 }
 
 #[tauri::command]
+pub fn get_ai_key_status(app: AppHandle) -> Result<BTreeMap<String, bool>, String> {
+    Ok(read_ai_settings(&app)?.provider_key_status)
+}
+
+#[tauri::command]
+pub fn set_ai_api_key(
+    app: AppHandle,
+    provider: String,
+    api_key: String,
+) -> Result<BTreeMap<String, bool>, String> {
+    let provider = normalize_ai_provider(&provider)?;
+    let api_key = api_key.trim();
+    if api_key.is_empty() {
+        return Err(format!("No {} API key provided", provider));
+    }
+
+    keyring_entry(provider)?
+        .set_password(api_key)
+        .map_err(keyring_error)?;
+    write_ai_key_status(&app, provider, true)
+}
+
+#[tauri::command]
+pub fn clear_ai_api_key(app: AppHandle, provider: String) -> Result<BTreeMap<String, bool>, String> {
+    let provider = normalize_ai_provider(&provider)?;
+    match keyring_entry(provider)?.delete_credential() {
+        Ok(()) | Err(KeyringError::NoEntry) => write_ai_key_status(&app, provider, false),
+        Err(error) => Err(keyring_error(error)),
+    }
+}
+
+#[tauri::command]
 pub fn save_ai_settings(app: AppHandle, settings: AiSettings) -> Result<AiSettings, String> {
     let mut settings = settings;
-    // API key is managed by frontend (Zustand store)
+    // API keys are managed by the OS credential store.
     settings.api_key.clear();
+    settings.provider_key_status = read_ai_settings(&app)?.provider_key_status;
     write_ai_settings(&app, &settings)?;
     read_ai_settings(&app)
 }
@@ -117,9 +158,9 @@ pub async fn send_ai_chat_message(
     app: AppHandle,
     history: State<'_, crate::HistoryBridge>,
     request: AiChatRequest,
-    api_key: String,
 ) -> Result<AiChatResponse, String> {
     let settings = read_ai_settings(&app)?;
+    let api_key = read_required_ai_api_key(&settings.provider)?;
 
     if api_key.trim().is_empty() {
         return Err(format!("No {} API key provided", settings.provider));
@@ -312,7 +353,19 @@ pub(crate) fn read_ai_settings(app: &AppHandle) -> Result<AiSettings, String> {
     };
 
     settings.api_key.clear();
-    // has_api_key is set by frontend based on Zustand store
+    let legacy_has_api_key = settings.has_api_key;
+    let had_provider_status = !settings.provider_key_status.is_empty();
+    settings.provider_key_status = normalized_ai_key_status(settings.provider_key_status);
+    if !had_provider_status && legacy_has_api_key {
+        settings
+            .provider_key_status
+            .insert(settings.provider.trim().to_string(), true);
+    }
+    settings.has_api_key = settings
+        .provider_key_status
+        .get(settings.provider.trim())
+        .copied()
+        .unwrap_or(false);
     Ok(settings)
 }
 
@@ -526,4 +579,68 @@ pub(crate) fn api_key_env_name(provider: &str) -> Result<&'static str, String> {
         "deepseek" => Ok("DEEPSEEK_API_KEY"),
         _ => Err(format!("Unsupported AI provider: {}", provider)),
     }
+}
+
+pub(crate) fn read_optional_ai_api_key(provider: &str) -> Result<Option<String>, String> {
+    let provider = normalize_ai_provider(provider)?;
+    match keyring_entry(provider)?.get_password() {
+        Ok(key) if key.trim().is_empty() => Ok(None),
+        Ok(key) => Ok(Some(key)),
+        Err(KeyringError::NoEntry) => Ok(None),
+        Err(error) => Err(keyring_error(error)),
+    }
+}
+
+pub(crate) fn read_required_ai_api_key(provider: &str) -> Result<String, String> {
+    read_optional_ai_api_key(provider)?
+        .ok_or_else(|| format!("No {} API key saved in OS credential store", provider))
+}
+
+fn write_ai_key_status(
+    app: &AppHandle,
+    provider: &str,
+    has_key: bool,
+) -> Result<BTreeMap<String, bool>, String> {
+    let mut settings = read_ai_settings(app)?;
+    settings
+        .provider_key_status
+        .insert(provider.to_string(), has_key);
+    settings.has_api_key = settings
+        .provider_key_status
+        .get(settings.provider.trim())
+        .copied()
+        .unwrap_or(false);
+    write_ai_settings(app, &settings)?;
+    Ok(settings.provider_key_status)
+}
+
+fn default_ai_key_status() -> BTreeMap<String, bool> {
+    let mut status = BTreeMap::new();
+    for provider in AI_PROVIDERS {
+        status.insert(provider.to_string(), false);
+    }
+    status
+}
+
+fn normalized_ai_key_status(mut status: BTreeMap<String, bool>) -> BTreeMap<String, bool> {
+    for provider in AI_PROVIDERS {
+        status.entry(provider.to_string()).or_insert(false);
+    }
+    status
+}
+
+fn keyring_entry(provider: &str) -> Result<Entry, String> {
+    Entry::new(AI_KEYRING_SERVICE, provider).map_err(keyring_error)
+}
+
+fn normalize_ai_provider(provider: &str) -> Result<&str, String> {
+    let provider = provider.trim();
+    match provider {
+        "openai" | "deepseek" => Ok(provider),
+        _ => Err(format!("Unsupported AI provider: {}", provider)),
+    }
+}
+
+fn keyring_error(error: KeyringError) -> String {
+    format!("OS credential store error: {}", error)
 }

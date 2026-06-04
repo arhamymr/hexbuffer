@@ -22,19 +22,15 @@ export function SettingsLayout({ settings }: SettingsLayoutProps) {
         <div className="px-6 pt-4">
           <TabsList>
             <TabsTrigger value="settings">
-              <SettingsIcon className="size-4" />
               Settings
             </TabsTrigger>
             <TabsTrigger value="ca-cert">
-              <ShieldCheckIcon className="size-4" />
               CA Certificate
             </TabsTrigger>
             <TabsTrigger value="ai">
-              <BotIcon className="size-4" />
-              AI
+              AI Settings
             </TabsTrigger>
             <TabsTrigger value="about">
-              <InfoIcon className="size-4" />
               About
             </TabsTrigger>
           </TabsList>

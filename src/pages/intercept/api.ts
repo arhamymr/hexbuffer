@@ -1,5 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
-import type { HttpRequestMessage } from '@/lib/http-message';
+import type { HttpRequestMessage, HttpResponseMessage } from '@/lib/http-message';
 import type { InterceptStatus, PausedRequest } from './types';
 
 export async function getInterceptStatus(): Promise<InterceptStatus> {
@@ -10,19 +10,39 @@ export async function setInterceptEnabled(enabled: boolean): Promise<InterceptSt
   return invoke<InterceptStatus>('set_intercept_enabled', { enabled });
 }
 
+export async function setInterceptScope(tabId: string, capturePatterns: string[]): Promise<void> {
+  await invoke('set_intercept_scope', { tabId, capturePatterns });
+}
+
 export async function getPausedRequests(): Promise<PausedRequest[]> {
   return invoke<PausedRequest[]>('get_paused_requests');
 }
 
 export async function forwardInterceptedRequest(
   requestId: string,
-  request: HttpRequestMessage
+  request: HttpRequestMessage,
+  options: { interceptResponse?: boolean } = {}
 ): Promise<void> {
-  await invoke('forward_intercepted_request', { requestId, request });
+  await invoke('forward_intercepted_request', {
+    requestId,
+    request,
+    interceptResponse: options.interceptResponse ?? false,
+  });
+}
+
+export async function forwardInterceptedResponse(
+  requestId: string,
+  response: HttpResponseMessage
+): Promise<void> {
+  await invoke('forward_intercepted_response', { requestId, response });
 }
 
 export async function dropInterceptedRequest(requestId: string): Promise<void> {
   await invoke('drop_intercepted_request', { requestId });
+}
+
+export async function forwardInterceptedTab(tabId: string): Promise<void> {
+  await invoke('forward_intercepted_tab', { tabId });
 }
 
 export async function openInterceptBrowser(): Promise<void> {

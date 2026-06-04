@@ -1,6 +1,5 @@
 import { create } from 'zustand';
 import { invoke } from '@tauri-apps/api/core';
-import { useAiKeyStore } from './ai-keys';
 import { DEFAULT_CRAWL_SETUP } from '@/pages/browser-automation/constants';
 import { deriveOverview, downloadJson } from '@/pages/browser-automation/lib/crawl-data';
 import type {
@@ -106,6 +105,7 @@ type BrowserAutomationSet = (
 ) => void;
 
 const STORAGE_KEY = '0xbuffer:crawl-setup-config';
+const DELETED_SESSIONS_STORAGE_KEY = '0xbuffer:deleted-ai-browser-sessions';
 const DEFAULT_EXPANDED_PAGE_IDS = ['page-root', 'page-products', 'page-login'];
 
 function makeSession(setup: CrawlSetupConfig): CrawlSession {
@@ -147,6 +147,32 @@ function loadSavedConfig(): CrawlSetupConfig {
     // Ignore corrupt storage.
   }
   return { ...DEFAULT_CRAWL_SETUP };
+}
+
+function loadDeletedSessionIds(): Set<string> {
+  try {
+    const raw = localStorage.getItem(DELETED_SESSIONS_STORAGE_KEY);
+    if (!raw) return new Set();
+
+    const parsed = JSON.parse(raw);
+    return new Set(Array.isArray(parsed) ? parsed.filter((id): id is string => typeof id === 'string') : []);
+  } catch {
+    return new Set();
+  }
+}
+
+function saveDeletedSessionIds(sessionIds: Set<string>) {
+  try {
+    localStorage.setItem(DELETED_SESSIONS_STORAGE_KEY, JSON.stringify([...sessionIds]));
+  } catch {
+    // Storage full or unavailable - ignore.
+  }
+}
+
+function markSessionDeleted(sessionId: string) {
+  const deletedSessionIds = loadDeletedSessionIds();
+  deletedSessionIds.add(sessionId);
+  saveDeletedSessionIds(deletedSessionIds);
 }
 
 function createAutomationTab(
@@ -203,10 +229,9 @@ function updateTabForSession(
   updater: (tab: BrowserAutomationTab) => BrowserAutomationTab
 ) {
   const state = get();
-  const tab =
-    (sessionId
-      ? state.tabs.find((item) => item.session?.id === sessionId)
-      : null) ?? getActiveTabFromState(state);
+  const tab = sessionId
+    ? state.tabs.find((item) => item.session?.id === sessionId)
+    : getActiveTabFromState(state);
 
   if (!tab) return;
   updateTab(set, tab.id, updater);
@@ -254,8 +279,9 @@ export const useBrowserAutomationStore = create<BrowserAutomationState>((set, ge
 
   closeTab: (id) => {
     const tab = get().tabs.find((item) => item.id === id);
-    if (tab?.session && !isTerminalStatus(tab.session.status)) {
-      void invokeOptional(commandName('stop'), { sessionId: tab.session.id });
+    if (tab?.session) {
+      markSessionDeleted(tab.session.id);
+      void invokeOptional('delete_ai_browser_session', { sessionId: tab.session.id });
     }
 
     set((state) => {
@@ -359,9 +385,7 @@ export const useBrowserAutomationStore = create<BrowserAutomationState>((set, ge
     }));
 
     try {
-      const aiSettings = await invoke<{ provider: string }>('get_ai_settings');
-      const apiKey = useAiKeyStore.getState().getKey(aiSettings.provider) || '';
-      await invoke('ai_browser_start_crawl', { config: setup, sessionId: session.id, apiKey });
+      await invoke('ai_browser_start_crawl', { config: setup, sessionId: session.id });
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       updateTab(set, tab.id, (current) => ({
@@ -582,9 +606,6 @@ export const useBrowserAutomationStore = create<BrowserAutomationState>((set, ge
     }));
 
     try {
-      const aiSettings = await invoke<{ provider: string; model: string }>('get_ai_settings');
-      const key = useAiKeyStore.getState().getKey(aiSettings.provider) || '';
-
       const response = await invoke<{ content: string }>('send_ai_chat_message', {
         request: {
           messages: [
@@ -594,7 +615,6 @@ export const useBrowserAutomationStore = create<BrowserAutomationState>((set, ge
             },
           ],
         },
-        apiKey: key,
       });
 
       get().applyPageUpdated({ id: page.id, sessionId: page.sessionId, aiSummary: response.content });
@@ -636,6 +656,16 @@ export const useBrowserAutomationStore = create<BrowserAutomationState>((set, ge
     try {
       const sessions = await invoke<CrawlSession[]>('list_recent_ai_browser_sessions', { limit: 20 });
       if (!sessions.length) return;
+      const deletedSessionIds = loadDeletedSessionIds();
+      const visibleSessions = sessions.filter((session) => !deletedSessionIds.has(session.id));
+
+      sessions
+        .filter((session) => deletedSessionIds.has(session.id))
+        .forEach((session) => {
+          void invokeOptional('delete_ai_browser_session', { sessionId: session.id });
+        });
+
+      if (!visibleSessions.length) return;
 
       const state = get();
       const hasActiveData = state.tabs.some(
@@ -646,7 +676,7 @@ export const useBrowserAutomationStore = create<BrowserAutomationState>((set, ge
       const hydratedTabs: BrowserAutomationTab[] = [];
       let tabNumber = 1;
 
-      for (const session of sessions) {
+      for (const session of visibleSessions) {
         const [pages, insights, logs] = await Promise.all([
           invoke<CrawlPage[]>('list_ai_browser_pages', { sessionId: session.id }).catch(() => [] as CrawlPage[]),
           invoke<AIInsight[]>('list_ai_browser_insights', { sessionId: session.id }).catch(() => [] as AIInsight[]),

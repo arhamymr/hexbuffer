@@ -195,7 +195,8 @@ pub fn browser_open(
             let _ = process.wait();
         }
 
-        let proxy_port = 8888;
+        let proxy_port =
+            crate::proxy::active_proxy_port().unwrap_or_else(crate::proxy::default_proxy_port);
         let mut command = Command::new(&browser_path);
         command
             .args(["open", &url])
@@ -530,7 +531,6 @@ pub async fn ai_browser_start_crawl(
     state: State<'_, AiBrowserState>,
     config: CrawlConfig,
     session_id: Option<String>,
-    api_key: String,
 ) -> Result<CrawlSession, String> {
     let proxy_port = crate::proxy::active_proxy_port().unwrap_or(0);
     if proxy_port == 0 {
@@ -602,7 +602,8 @@ pub async fn ai_browser_start_crawl(
     let app_for_task = app.clone();
     let state_for_task = state.inner().clone();
     let session_id_for_task = session.id.clone();
-    let api_key_for_task = api_key.clone();
+    let settings = crate::ai::read_ai_settings(&app)?;
+    let api_key_for_task = crate::ai::read_optional_ai_api_key(&settings.provider)?;
     let cancel_flag_for_task = cancel_flag.clone();
     tauri::async_runtime::spawn(async move {
         let sidecar_result = {
@@ -617,7 +618,7 @@ pub async fn ai_browser_start_crawl(
                     &state,
                     &config,
                     &session_id,
-                    &api_key_for_task,
+                    api_key_for_task.as_deref(),
                     cancel_flag,
                 )
             })
@@ -796,6 +797,67 @@ pub async fn ai_browser_stop_crawl(
             created_at: now(),
         },
     );
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn delete_ai_browser_session(
+    state: State<'_, AiBrowserState>,
+    history: State<'_, crate::HistoryBridge>,
+    session_id: String,
+) -> Result<(), String> {
+    if let Some(cancel_flag) = state
+        .cancellations
+        .lock()
+        .map_err(|_| "Failed to lock AI browser cancellations".to_string())?
+        .remove(&session_id)
+    {
+        cancel_flag.store(true, Ordering::SeqCst);
+    }
+
+    if let Some(child) = state
+        .children
+        .lock()
+        .map_err(|_| "Failed to lock AI browser child processes".to_string())?
+        .remove(&session_id)
+    {
+        kill_child_process_group(&child);
+    }
+
+    state
+        .sessions
+        .lock()
+        .map_err(|_| "Failed to lock AI browser sessions".to_string())?
+        .remove(&session_id);
+    state
+        .pages
+        .lock()
+        .map_err(|_| "Failed to lock AI browser pages".to_string())?
+        .remove(&session_id);
+    state
+        .insights
+        .lock()
+        .map_err(|_| "Failed to lock AI browser insights".to_string())?
+        .remove(&session_id);
+    state
+        .logs
+        .lock()
+        .map_err(|_| "Failed to lock AI browser logs".to_string())?
+        .remove(&session_id);
+
+    for page in history.list_ai_browser_pages(&session_id)? {
+        for artifact_path in [page.screenshot_path, page.rendered_html_path]
+            .into_iter()
+            .flatten()
+        {
+            let path = PathBuf::from(artifact_path);
+            if path.is_file() {
+                let _ = std::fs::remove_file(path);
+            }
+        }
+    }
+
+    history.delete_ai_browser_session(&session_id)?;
     Ok(())
 }
 

@@ -4,7 +4,7 @@ import { save } from '@tauri-apps/plugin-dialog';
 import { toast } from 'sonner';
 import { getCaCert, saveCaCert, trustInterceptCa } from '@/pages/live-traffic/api';
 import { useUpdater } from '@/hooks/use-updater';
-import { useAiKeyStore } from '@/stores/ai-keys';
+import { useAppStore } from '@/stores/app';
 import { useBrowserAutomationStore } from '@/stores/browser-automation';
 import { AI_MODEL_OPTIONS_BY_PROVIDER, AI_PROVIDER_OPTIONS } from '../constants';
 
@@ -41,6 +41,8 @@ export interface ResetLocalDataResult extends ClearBrowserArtifactsResult {
   caFileRemoved: boolean;
 }
 
+type AiKeyStatus = Record<string, boolean>;
+
 const DEFAULT_AI_SETTINGS: AiSettings = {
   provider: 'openai',
   model: 'gpt-4.1-mini',
@@ -49,6 +51,11 @@ const DEFAULT_AI_SETTINGS: AiSettings = {
   mastraAutoStart: true,
   mastraUrl: 'http://localhost:4111',
 };
+const DEFAULT_PROXY_PORT = 8888;
+
+function isValidProxyPort(port: number) {
+  return Number.isInteger(port) && port >= 1 && port <= 65535;
+}
 
 export function useSettingsPage() {
   const [downloading, setDownloading] = React.useState(false);
@@ -56,6 +63,7 @@ export function useSettingsPage() {
   const [aiSettings, setAiSettings] = React.useState<AiSettings>(DEFAULT_AI_SETTINGS);
   const [aiSettingsLoading, setAiSettingsLoading] = React.useState(true);
   const [aiSettingsSaving, setAiSettingsSaving] = React.useState(false);
+  const [providerKeyStatus, setProviderKeyStatus] = React.useState<AiKeyStatus>({});
   const [mastraStatus, setMastraStatus] = React.useState<MastraStatus>({
     running: false,
     url: DEFAULT_AI_SETTINGS.mastraUrl,
@@ -63,18 +71,13 @@ export function useSettingsPage() {
   const [mastraBusy, setMastraBusy] = React.useState(false);
   const [storageInfo, setStorageInfo] = React.useState<StorageInfo | null>(null);
   const [resettingLocalData, setResettingLocalData] = React.useState(false);
+  const proxyDefaultPort = useAppStore((state) => state.proxyDefaultPort);
+  const proxyPort = useAppStore((state) => state.proxyPort);
+  const proxyStatus = useAppStore((state) => state.proxyStatus);
+  const setProxyDefaultPort = useAppStore((state) => state.setProxyDefaultPort);
+  const [proxyPortDraft, setProxyPortDraft] = React.useState(String(proxyDefaultPort));
 
-  const { keys: aiKeys, setKey: setAiKey, removeKey: removeAiKey, hasKey: hasAiKey } = useAiKeyStore();
   const clearBrowserAutomationArtifactPaths = useBrowserAutomationStore((state) => state.clearArtifactPaths);
-
-  // Derive provider key status from Zustand store
-  const providerKeyStatus = React.useMemo(() => {
-    const status: Record<string, boolean> = {};
-    for (const provider of AI_PROVIDER_OPTIONS) {
-      status[provider.id] = hasAiKey(provider.id);
-    }
-    return status;
-  }, [aiKeys, hasAiKey]);
 
   const {
     currentVersion,
@@ -97,11 +100,44 @@ export function useSettingsPage() {
     }
   }, []);
 
+  const refreshAiKeyStatus = React.useCallback(async () => {
+    const status = await invoke<AiKeyStatus>('get_ai_key_status');
+    setProviderKeyStatus(status);
+    return status;
+  }, []);
+
+  const migrateLegacyAiKeys = React.useCallback(async () => {
+    const legacyValue = window.localStorage.getItem('0xbuffer-ai-keys');
+    if (!legacyValue) {
+      return;
+    }
+
+    try {
+      const parsed = JSON.parse(legacyValue) as { state?: { keys?: Record<string, string> }; keys?: Record<string, string> };
+      const keys = parsed.state?.keys ?? parsed.keys ?? {};
+      const entries = Object.entries(keys).filter(([, value]) => value.trim().length > 0);
+
+      for (const [provider, apiKey] of entries) {
+        await invoke<AiKeyStatus>('set_ai_api_key', { provider, apiKey });
+      }
+
+      window.localStorage.removeItem('0xbuffer-ai-keys');
+      if (entries.length > 0) {
+        toast.success('Migrated saved AI API keys to the OS credential store');
+      }
+    } catch (error) {
+      console.error('Failed to migrate legacy AI API keys:', error);
+      toast.error(`Failed to migrate saved AI API keys: ${error}`);
+    }
+  }, []);
+
   const loadAiSettings = React.useCallback(async () => {
     try {
       setAiSettingsLoading(true);
+      await migrateLegacyAiKeys();
+      const keyStatus = await refreshAiKeyStatus();
       const settings = await invoke<AiSettings>('get_ai_settings');
-      setAiSettings(settings);
+      setAiSettings({ ...settings, hasApiKey: !!keyStatus[settings.provider] });
       await refreshMastraStatus();
     } catch (error) {
       console.error('Failed to load AI settings:', error);
@@ -109,7 +145,7 @@ export function useSettingsPage() {
     } finally {
       setAiSettingsLoading(false);
     }
-  }, [refreshMastraStatus]);
+  }, [migrateLegacyAiKeys, refreshAiKeyStatus, refreshMastraStatus]);
 
   React.useEffect(() => {
     void loadAiSettings();
@@ -122,6 +158,10 @@ export function useSettingsPage() {
         console.error('Failed to load storage info:', error);
       });
   }, []);
+
+  React.useEffect(() => {
+    setProxyPortDraft(String(proxyDefaultPort));
+  }, [proxyDefaultPort]);
 
   const handleResetLocalData = React.useCallback(async () => {
     try {
@@ -185,16 +225,15 @@ export function useSettingsPage() {
 
   const updateAiProvider = React.useCallback((provider: string) => {
     const models = AI_MODEL_OPTIONS_BY_PROVIDER[provider] ?? [];
-    const hasKey = hasAiKey(provider);
 
     setAiSettings((current) => ({
       ...current,
       provider,
       model: models[0] ?? '',
       apiKey: '',
-      hasApiKey: hasKey,
+      hasApiKey: !!providerKeyStatus[provider],
     }));
-  }, [hasAiKey]);
+  }, [providerKeyStatus]);
 
   const updateAiSettings = React.useCallback((updates: Partial<AiSettings>) => {
     setAiSettings((current) => ({ ...current, ...updates }));
@@ -204,9 +243,13 @@ export function useSettingsPage() {
     try {
       setAiSettingsSaving(true);
 
-      // Save API key to Zustand store if provided
+      let nextKeyStatus = providerKeyStatus;
       if (aiSettings.apiKey.trim()) {
-        setAiKey(aiSettings.provider, aiSettings.apiKey.trim());
+        nextKeyStatus = await invoke<AiKeyStatus>('set_ai_api_key', {
+          provider: aiSettings.provider,
+          apiKey: aiSettings.apiKey.trim(),
+        });
+        setProviderKeyStatus(nextKeyStatus);
       }
 
       // Save provider/model settings to backend (without the key)
@@ -214,7 +257,7 @@ export function useSettingsPage() {
       const savedSettings = await invoke<AiSettings>('save_ai_settings', {
         settings: settingsToSave,
       });
-      setAiSettings({ ...savedSettings, hasApiKey: hasAiKey(savedSettings.provider) });
+      setAiSettings({ ...savedSettings, hasApiKey: !!nextKeyStatus[savedSettings.provider] });
       await refreshMastraStatus();
       toast.success('AI settings saved');
     } catch (error) {
@@ -223,12 +266,15 @@ export function useSettingsPage() {
     } finally {
       setAiSettingsSaving(false);
     }
-  }, [aiSettings, refreshMastraStatus, setAiKey, hasAiKey]);
+  }, [aiSettings, providerKeyStatus, refreshMastraStatus]);
 
   const handleClearAiApiKey = React.useCallback(async () => {
     try {
       setAiSettingsSaving(true);
-      removeAiKey(aiSettings.provider);
+      const nextKeyStatus = await invoke<AiKeyStatus>('clear_ai_api_key', {
+        provider: aiSettings.provider,
+      });
+      setProviderKeyStatus(nextKeyStatus);
       setAiSettings((current) => ({ ...current, apiKey: '', hasApiKey: false }));
       toast.success('AI API key cleared');
     } catch (error) {
@@ -237,7 +283,7 @@ export function useSettingsPage() {
     } finally {
       setAiSettingsSaving(false);
     }
-  }, [aiSettings.provider, removeAiKey]);
+  }, [aiSettings.provider]);
 
   const handleStartMastra = React.useCallback(async () => {
     try {
@@ -293,11 +339,38 @@ export function useSettingsPage() {
     }
   }, [aiSettings, loadAiSettings]);
 
+  const handleSaveProxyDefaultPort = React.useCallback(() => {
+    const parsedPort = Number(proxyPortDraft);
+
+    if (!isValidProxyPort(parsedPort)) {
+      toast.error('Enter a port between 1 and 65535');
+      return;
+    }
+
+    setProxyDefaultPort(parsedPort);
+    toast.success(
+      proxyStatus === 'connected'
+        ? `Default proxy port saved. Restart the proxy to use ${parsedPort}.`
+        : `Default proxy port saved: ${parsedPort}`
+    );
+  }, [proxyPortDraft, proxyStatus, setProxyDefaultPort]);
+
+  const handleResetProxyDefaultPort = React.useCallback(() => {
+    setProxyDefaultPort(DEFAULT_PROXY_PORT);
+    setProxyPortDraft(String(DEFAULT_PROXY_PORT));
+    toast.success('Default proxy port reset');
+  }, [setProxyDefaultPort]);
+
   return {
     aiSettings,
     aiSettingsLoading,
     aiSettingsSaving,
     currentVersion,
+    proxyDefaultPort,
+    proxyFactoryDefaultPort: DEFAULT_PROXY_PORT,
+    proxyPort,
+    proxyPortDraft,
+    proxyStatus,
     resettingLocalData,
     downloading,
     installingCa,
@@ -305,6 +378,8 @@ export function useSettingsPage() {
     handleInstallMacCert,
     handleClearAiApiKey,
     handleResetLocalData,
+    handleResetProxyDefaultPort,
+    handleSaveProxyDefaultPort,
     handleSaveAiSettings,
     handleStartMastra,
     handleStopMastra,
@@ -312,6 +387,7 @@ export function useSettingsPage() {
     mastraBusy,
     mastraStatus,
     refreshMastraStatus,
+    setProxyPortDraft,
     storageInfo,
     providerKeyStatus,
     updateAiProvider,

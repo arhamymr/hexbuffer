@@ -37,7 +37,7 @@ export function OpenBrowserButton() {
   };
 
   const openBrowserTitle = isDefaultPortChanged
-    ? `Open browser through proxy on 127.0.0.1:${activeProxyPort}. Default port changed from ${proxyDefaultPort}.`
+    ? `Open browser through proxy on 127.0.0.1:${activeProxyPort}. Restart the proxy to use default port ${proxyDefaultPort}.`
     : `Open browser through proxy on 127.0.0.1:${activeProxyPort}`;
 
   const openBrowser = React.useCallback(async () => {
@@ -49,7 +49,7 @@ export function OpenBrowserButton() {
       const { proxyPort, proxyDefaultPort } = useAppStore.getState();
       const activeProxyPort = proxyPort ?? proxyDefaultPort;
       const portChangedMessage = proxyPort !== null && proxyPort !== proxyDefaultPort
-        ? ` Default port changed from ${proxyDefaultPort}.`
+        ? ` Restart the proxy to use default port ${proxyDefaultPort}.`
         : '';
 
       toast.success(`Browser opened with proxy 127.0.0.1:${activeProxyPort}.${portChangedMessage}`);

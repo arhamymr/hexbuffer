@@ -22,6 +22,7 @@ import { buildHttpCurlCommand, buildRawHttpRequest } from '@/lib/http-message';
 import { copyText } from '@/lib/clipboard';
 import { useDocumentsStore } from '@/stores/documents';
 import { useTargetStore } from '@/stores/target';
+import { useInterceptStore } from '@/pages/intercept/state/intercept-store';
 
 interface LogEntryContextMenuProps {
   call: ApiCall;
@@ -133,6 +134,19 @@ export function LogEntryContextMenu({
     }
   };
 
+  const handleSendToIntercept = () => {
+    const host = call.host?.trim();
+
+    if (!host) {
+      toast.error('Host is unavailable');
+      return;
+    }
+
+    useInterceptStore.getState().addTabForHost(host);
+    navigate('/intercept');
+    toast.success(`Intercept tab created for ${host}`);
+  };
+
   const handleOpenInBrowserAutomation = async () => {
     try {
       const detail = await fetchHistoryDetail(call.id);
@@ -228,6 +242,9 @@ export function LogEntryContextMenu({
         </ContextMenuItem>
         <ContextMenuItem onClick={handleOpenInRepeater} className='text-xs'>
           <Send className="mr-2 size-3" /> Send to Repeater
+        </ContextMenuItem>
+        <ContextMenuItem onClick={handleSendToIntercept} className='text-xs'>
+          <Send className="mr-2 size-3" /> Send to Intercept
         </ContextMenuItem>
         <ContextMenuItem onClick={handleOpenInBrowserAutomation} className='text-xs'>
           <Send className="mr-2 size-3" /> Send to Automate Browser

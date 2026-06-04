@@ -171,11 +171,9 @@ export function PageDetailPanel({ page }: PageDetailPanelProps) {
         <div className="flex gap-1.5">
           <Button variant="outline" size="xs" onClick={handleOpenPage}>
             <ExternalLink className="h-3.5 w-3.5" />
-            Open
           </Button>
           <Button variant="outline" size="xs" onClick={handleCopyUrl}>
             <Copy className="h-3.5 w-3.5" />
-            Copy
           </Button>
           <Button
             variant={page.interesting ? 'secondary' : 'outline'}
@@ -199,7 +197,7 @@ export function PageDetailPanel({ page }: PageDetailPanelProps) {
             <img
               src={page.screenshotPath ? convertFileSrc(page.screenshotPath) : ''}
               alt={`Screenshot of ${page.title || page.url}`}
-              className="block max-w-none"
+              className="object-contain object-top" 
             />
           </ScrollArea>
         </DialogContent>

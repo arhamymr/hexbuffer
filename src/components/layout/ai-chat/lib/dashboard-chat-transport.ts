@@ -1,6 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
 import { createUIMessageStream, type ChatTransport } from 'ai';
-import { useAiKeyStore } from '@/stores/ai-keys';
 import type { DashboardAiSettings, DashboardChatMessage } from '../types';
 
 interface DashboardChatBody {
@@ -60,12 +59,10 @@ export class DashboardSettingsChatTransport implements ChatTransport<DashboardCh
           if (!aiSettings?.hasApiKey) {
             content = fallbackContent(aiSettings);
           } else {
-            const apiKey = useAiKeyStore.getState().getKey(aiSettings?.provider || '') || '';
             const response = await invoke<AiChatResponse>('send_ai_chat_message', {
               request: {
                 messages: toProviderMessages(messages),
               },
-              apiKey,
             });
             provider = response.provider;
             model = response.model;

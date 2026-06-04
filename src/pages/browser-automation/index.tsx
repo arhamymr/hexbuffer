@@ -68,7 +68,6 @@ export function BrowserAutomationPage() {
     expandedPageIds,
     humanInputRequest,
     search,
-    analyzingPageIds,
   } = activeTab;
 
   const status = session?.status ?? 'idle';
@@ -82,7 +81,7 @@ export function BrowserAutomationPage() {
           <Alert variant="default" className="min-h-12 mb-0 shrink-0 border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-500/50 dark:bg-amber-500/10 dark:text-amber-200">
             <InfoIcon className='!text-amber-600 shrink-0' />
             <AlertDescription className='text-amber-600'>
-              The browser automation agent will interact with external websites. Only scan targets you own or are authorized to assess. Unauthorized scanning may violate terms of service or applicable laws.
+              The browser automation will interact with external websites. Only scan targets you own or are authorized to assess. Unauthorized scanning may violate terms of service or applicable laws.
             </AlertDescription>
             <AlertAction>
               <Button
@@ -163,7 +162,6 @@ export function BrowserAutomationPage() {
                     <AiInsightsPanel
                       insights={filteredInsights}
                       interestingPages={interestingPages}
-                      analyzingPageIds={analyzingPageIds}
                     />
                   </ResizablePanel>
                 </ResizablePanelGroup>

@@ -7,7 +7,7 @@ use std::time::Duration;
 
 use hudsucker::tokio_tungstenite::tungstenite::Message;
 use hudsucker::{Body, HttpContext, HttpHandler, WebSocketContext, WebSocketHandler};
-use hyper::{header::HeaderName, header::HeaderValue, Method, Request, Response, Uri};
+use hyper::{header::HeaderName, header::HeaderValue, Method, Request, Response, StatusCode, Uri};
 use tauri::{AppHandle, Emitter, Manager};
 
 use crate::proxy::state::{
@@ -39,6 +39,8 @@ pub struct Ctx {
     pub response_recorded: bool,
     pub is_mitm_loopback: bool,
     pub sni_override: Option<String>,
+    pub intercept_response: bool,
+    pub intercept_tab_id: Option<String>,
 }
 
 impl Ctx {
@@ -64,6 +66,8 @@ impl Ctx {
             response_recorded: false,
             is_mitm_loopback: false,
             sni_override: None,
+            intercept_response: false,
+            intercept_tab_id: None,
         }
     }
 }
@@ -82,6 +86,33 @@ impl AppHandler {
             ctx: None,
             ws_connections: Arc::new(Mutex::new(HashMap::new())),
         }
+    }
+}
+
+fn remove_header_case_insensitive(headers: &mut HashMap<String, String>, name: &str) {
+    if let Some(key) = headers
+        .keys()
+        .find(|key| key.eq_ignore_ascii_case(name))
+        .cloned()
+    {
+        headers.remove(&key);
+    }
+}
+
+fn normalize_decoded_body_headers(
+    headers: &mut HashMap<String, String>,
+    body_len: usize,
+    content_decoded: bool,
+    was_chunked: bool,
+) {
+    if content_decoded {
+        remove_header_case_insensitive(headers, "content-encoding");
+    }
+
+    if content_decoded || was_chunked {
+        remove_header_case_insensitive(headers, "transfer-encoding");
+        remove_header_case_insensitive(headers, "content-length");
+        headers.insert("content-length".to_string(), body_len.to_string());
     }
 }
 
@@ -183,14 +214,28 @@ impl HttpHandler for AppHandler {
             let mode = proxy_state_handle.lock().unwrap().get_mode();
 
             if mode == InterceptMode::Enabled {
+                let intercept_tab_id = proxy_state_handle
+                    .lock()
+                    .unwrap()
+                    .matching_intercept_tab_id(&ctx.req_uri);
+
+                if intercept_tab_id.is_none() {
+                    self.ctx = Some(ctx);
+                    let mut req = Request::from_parts(parts, Body::from(body_bytes.to_vec()));
+                    req.headers_mut().insert("x-rusxy", "1".parse().unwrap());
+                    return hudsucker::RequestOrResponse::Request(req);
+                }
+
                 let paused_id = ctx.transaction_id;
                 ctx.paused_id = Some(paused_id);
+                ctx.intercept_tab_id = intercept_tab_id.clone();
 
                 let paused_req = PausedRequest {
                     id: paused_id,
                     timestamp: chrono::Utc::now(),
                     client_addr: ctx.client_addr.clone(),
                     server_addr: ctx.server_addr.clone(),
+                    tab_id: intercept_tab_id,
                     request: crate::proxy::state::ProxyRequest {
                         method: ctx.req_method.clone(),
                         uri: ctx.req_uri.clone(),
@@ -233,7 +278,12 @@ impl HttpHandler for AppHandler {
                                 .unwrap_or_else(|_| Response::new(Body::empty())),
                         );
                     }
-                    Some(crate::proxy::state::InterceptAction::Forward(Some(modified))) => {
+                    Some(crate::proxy::state::InterceptAction::Forward {
+                        request: Some(modified),
+                        intercept_response,
+                    }) => {
+                        ctx.intercept_response = intercept_response;
+
                         if let Ok(method) = modified.method.parse::<Method>() {
                             ctx.req_method = method.to_string();
                             parts.method = method;
@@ -259,6 +309,12 @@ impl HttpHandler for AppHandler {
 
                         ctx.req_body = modified.body;
                         body_modified = true;
+                    }
+                    Some(crate::proxy::state::InterceptAction::Forward {
+                        request: None,
+                        intercept_response,
+                    }) => {
+                        ctx.intercept_response = intercept_response;
                     }
                     _ => {}
                 }
@@ -306,7 +362,7 @@ impl HttpHandler for AppHandler {
             }
         }
 
-        let (parts, body) = res.into_parts();
+        let (mut parts, body) = res.into_parts();
 
         let is_ws_handshake = crate::proxy::websocket::is_successful_websocket_handshake(&ctx);
         eprintln!(
@@ -350,12 +406,117 @@ impl HttpHandler for AppHandler {
         }
         ctx.res_content_decoded = decoded.metadata.content_decoded;
         ctx.res_body = decoded.decoded_body;
+        normalize_decoded_body_headers(
+            &mut ctx.res_headers,
+            ctx.res_body.len(),
+            ctx.res_content_decoded,
+            decoded.metadata.was_chunked,
+        );
+
+        let mut response_body = body_bytes.to_vec();
+
+        if ctx.req_method != "CONNECT" {
+            let proxy_state_handle = self.app_handle.state::<Mutex<crate::proxy::ProxyState>>();
+            let should_bypass_uri = proxy_state_handle
+                .lock()
+                .unwrap()
+                .should_bypass_uri(&ctx.req_uri);
+            let mode = proxy_state_handle.lock().unwrap().get_mode();
+
+            if ctx.intercept_response
+                && mode == crate::proxy::state::InterceptMode::Enabled
+                && !should_bypass_uri
+                && ctx.intercept_tab_id.is_some()
+            {
+                let paused_id = ctx.transaction_id;
+                ctx.paused_id = Some(paused_id);
+
+                let paused_req = crate::proxy::state::PausedRequest {
+                    id: paused_id,
+                    timestamp: chrono::Utc::now(),
+                    client_addr: ctx.client_addr.clone(),
+                    server_addr: ctx.server_addr.clone(),
+                    tab_id: ctx.intercept_tab_id.clone(),
+                    request: crate::proxy::state::ProxyRequest {
+                        method: ctx.req_method.clone(),
+                        uri: ctx.req_uri.clone(),
+                        http_version: ctx.req_http_version.clone(),
+                        headers: ctx.req_headers.clone(),
+                        body: ctx.req_body.clone(),
+                        content_decoded: ctx.req_content_decoded,
+                    },
+                    response: Some(crate::proxy::state::ProxyResponse {
+                        status_code: ctx.res_status_code,
+                        status_text: ctx.res_status_text.clone(),
+                        http_version: ctx.res_http_version.clone(),
+                        headers: ctx.res_headers.clone(),
+                        body: ctx.res_body.clone(),
+                        content_decoded: ctx.res_content_decoded,
+                    }),
+                };
+
+                proxy_state_handle
+                    .lock()
+                    .unwrap()
+                    .add_paused_request(paused_req);
+
+                loop {
+                    tokio::time::sleep(Duration::from_millis(100)).await;
+                    if proxy_state_handle
+                        .lock()
+                        .unwrap()
+                        .get_paused_request(&paused_id)
+                        .is_none()
+                    {
+                        break;
+                    }
+                }
+
+                let action = proxy_state_handle
+                    .lock()
+                    .unwrap()
+                    .take_paused_action(&paused_id);
+
+                match action {
+                    Some(crate::proxy::state::InterceptAction::Drop) => {
+                        return Response::builder()
+                            .status(502)
+                            .body(Body::from("Dropped by intercept"))
+                            .unwrap_or_else(|_| Response::new(Body::empty()));
+                    }
+                    Some(crate::proxy::state::InterceptAction::ForwardResponse(Some(modified))) => {
+                        if let Ok(status) = StatusCode::from_u16(modified.status_code) {
+                            parts.status = status;
+                            ctx.res_status_code = modified.status_code;
+                            ctx.res_status_text = modified.status_text.clone();
+                        }
+
+                        parts.headers.clear();
+                        ctx.res_headers = modified.headers.clone();
+                        for (name, value) in modified.headers.iter() {
+                            let Ok(header_name) = HeaderName::from_bytes(name.as_bytes()) else {
+                                continue;
+                            };
+                            let Ok(header_value) = HeaderValue::from_str(value) else {
+                                continue;
+                            };
+                            parts.headers.insert(header_name, header_value);
+                        }
+
+                        ctx.res_body = modified.body.clone();
+                        ctx.res_content_decoded = false;
+                        response_body = modified.body;
+                    }
+                    _ => {}
+                }
+            }
+        }
 
         if ctx.req_method != "CONNECT" {
             save_and_emit(&ctx, &self.app_handle);
         }
 
-        Response::from_parts(parts, Body::from(body_bytes))
+        Response::from_parts(parts, Body::from(response_body))
     }
 }
 

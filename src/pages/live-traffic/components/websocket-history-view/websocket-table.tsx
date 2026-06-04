@@ -26,16 +26,6 @@ function formatDateTime(value: string) {
   });
 }
 
-function stateClassName(state: string) {
-  switch (state.toLowerCase()) {
-    case 'open':
-      return 'bg-green-500/10 text-green-600 border-green-500/30';
-    case 'error':
-      return 'bg-red-500/10 text-red-600 border-red-500/30';
-    default:
-      return 'bg-muted text-muted-foreground border-border';
-  }
-}
 
 export function WebSocketTable({ selectedConnectionId, onSelectConnection }: WebSocketTableProps) {
   const {
@@ -95,8 +85,6 @@ export function WebSocketTable({ selectedConnectionId, onSelectConnection }: Web
             <th className="text-left text-xs font-medium text-muted-foreground px-3 py-1 w-[90px]">Time</th>
             <th className="text-left text-xs font-medium text-muted-foreground px-3 py-1 w-[150px]">Host</th>
             <th className="text-left text-xs font-medium text-muted-foreground px-3 py-1 flex-1">Path</th>
-            <th className="text-left text-xs font-medium text-muted-foreground px-3 py-1 w-[70px]">State</th>
-            <th className="text-left text-xs font-medium text-muted-foreground px-3 py-1 w-[90px]">Direction</th>
             <th className="text-right text-xs font-medium text-muted-foreground px-3 py-1 w-[70px]">Messages</th>
             <th className="text-left text-xs font-medium text-muted-foreground px-3 py-1 w-[80px]">Activity</th>
           </tr>
@@ -125,14 +113,6 @@ export function WebSocketTable({ selectedConnectionId, onSelectConnection }: Web
                 </td>
                 <td className="text-xs text-muted-foreground truncate max-w-[200px] px-3 py-1" title={connection.url}>
                   {connection.path}
-                </td>
-                <td className="text-xs px-3 py-1">
-                  <span className={`inline-flex items-center rounded border px-1.5 py-0.5 uppercase ${stateClassName(connection.state)}`}>
-                    {connection.state}
-                  </span>
-                </td>
-                <td className="text-xs px-3 py-1">
-                  {connection.direction}
                 </td>
                 <td className="text-xs text-right px-3 py-1">{connection.messageCount}</td>
                 <td className="text-xs text-muted-foreground px-3 py-1">{formatDateTime(connection.lastActivityAt)}</td>

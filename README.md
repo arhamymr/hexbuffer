@@ -1,4 +1,4 @@
-# AppRecon
+# 0xbuffer
 
 A network proxy and traffic inspection tool built with Tauri, React, and TypeScript.
 
@@ -56,8 +56,8 @@ pnpm tauri
 │       ├── port-scanner/ # Port scanning and banner grabbing
 │       └── ai/           # AI integration
 └── docs/
-    ├── feature-spec-detail.md  # Full technical specification
-    └── mitm-spec.md           # MITM proxy technical reference
+    ├── privacy-policy.md      # Privacy policy
+    └── security-audit.md      # Security audit notes
 ```
 
 ## Commands
@@ -74,6 +74,5 @@ pnpm tauri
 
 ## Documentation
 
-- [Marketing Website](./docs/website/) - Landing page for advertising the app
-- [Feature Specification](./docs/feature-spec-detail.md) - Complete technical documentation
-- [MITM Proxy Reference](./docs/mitm-spec.md) - Man-in-the-middle proxy implementation details
+- [Privacy Policy](./docs/privacy-policy.md) - Data handling and privacy details
+- [Security Audit](./docs/security-audit.md) - Security review notes

@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { getCurrentWindow } from '@tauri-apps/api/window';
-import {  GripHorizontal } from 'lucide-react';
+import { GripHorizontal } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 import { useAppStore } from '@/stores/app';
@@ -53,27 +53,23 @@ export function TopNav() {
   }, []);
 
   return (
-    <header data-tauri-drag-region className="title-bar border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
-      <div className="flex items-center justify-between h-8.5 px-4">
+    <header data-tauri-drag-region
+      className={cn(
+        'flex shrink-0 justify-between text-muted-foreground title-bar border-b bg-background backdrop-blur sticky top-0 z-50',
+        isDraggingWindow ? 'cursor-grabbing' : 'cursor-grab',
+      )}
+      onMouseDown={(event) => {
+        if (event.buttons === 1) {
+          setIsDraggingWindow(true);
+          appWindow.startDragging();
+        }
+      }}
+      onMouseUp={() => setIsDraggingWindow(false)}
+      onMouseLeave={() => setIsDraggingWindow(false)}
+    >
+      <div className="flex w-full items-center justify-between h-8.5 px-4">
         <div className='flex min-w-0 flex-1 items-center align-center gap-4'>
-          <div
-            data-tauri-drag-region
-            className={cn(
-              'flex h-8 w-8 shrink-0 items-center justify-center text-muted-foreground',
-              isDraggingWindow ? 'cursor-grabbing' : 'cursor-grab',
-            )}
-            onMouseDown={(event) => {
-              if (event.buttons === 1) {
-                setIsDraggingWindow(true);
-                appWindow.startDragging();
-              }
-            }}
-            onMouseUp={() => setIsDraggingWindow(false)}
-            onMouseLeave={() => setIsDraggingWindow(false)}
-            title="Drag window"
-          >
-            <GripHorizontal className="size-5" data-tauri-drag-region />
-          </div>
+          <TitlebarButtons />
           <div className="group flex items-center gap-1">
             <TriangleLogo />
             <p className={cn(
@@ -98,7 +94,7 @@ export function TopNav() {
                     to={item.href}
                     className={`
                     flex shrink-0 items-center gap-2 whitespace-nowrap px-2 py-2 text-xs transition-colors
-                    border-b border-b-2
+                    border-b-2
                     ${isActive
                         ? 'border-green-500 text-foreground bg-muted/30'
                         : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-t-md'
@@ -124,15 +120,18 @@ export function TopNav() {
               `}
             />
           </div>
-
         </div>
 
-        <div className="flex shrink-0 items-center gap-2 h-5">
+        <div className="flex shrink-0 items-center gap-2 h-5 bg-background pl-2">
           <ProxyButton />
-
           <OpenBrowserButton />
-          <Separator orientation='vertical'/>
-          <TitlebarButtons />
+          <div
+            data-tauri-drag-region
+            className='flex h-8 w-8 shrink-0 items-center justify-center text-muted-foreground'
+            title="Drag window"
+          >
+            <GripHorizontal className="size-5" data-tauri-drag-region />
+          </div>
         </div>
       </div>
     </header>

@@ -125,7 +125,7 @@ export function AiSettingsTab({ settings }: AiSettingsTabProps) {
             <p className="text-xs text-muted-foreground">
               {aiSettings.hasApiKey
                 ? 'A key is stored locally. Enter a new value only if you want to replace it.'
-                : 'No key is stored yet. Provider and model are saved locally; API keys are kept in browser storage.'}
+                : 'No key is stored yet. Provider and model are saved locally; API keys are kept in the OS credential store.'}
             </p>
           </div>
 

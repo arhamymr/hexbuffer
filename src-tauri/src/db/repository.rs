@@ -176,6 +176,35 @@ impl Database {
         rows
     }
 
+    pub fn delete_ai_browser_session(&self, session_id: &str) -> SqlResult<usize> {
+        let mut conn = self.conn.lock().unwrap();
+        let tx = conn.transaction()?;
+
+        tx.execute(
+            "DELETE FROM ai_browser_edges WHERE session_id = ?1",
+            params![session_id],
+        )?;
+        tx.execute(
+            "DELETE FROM ai_browser_insights WHERE session_id = ?1",
+            params![session_id],
+        )?;
+        tx.execute(
+            "DELETE FROM ai_browser_logs WHERE session_id = ?1",
+            params![session_id],
+        )?;
+        tx.execute(
+            "DELETE FROM ai_browser_pages WHERE session_id = ?1",
+            params![session_id],
+        )?;
+        let deleted = tx.execute(
+            "DELETE FROM ai_browser_sessions WHERE id = ?1",
+            params![session_id],
+        )?;
+
+        tx.commit()?;
+        Ok(deleted)
+    }
+
     pub fn upsert_ai_browser_page(&self, page: &CrawlPage) -> SqlResult<()> {
         let conn = self.conn.lock().unwrap();
         let updated_at = chrono::Utc::now().to_rfc3339();

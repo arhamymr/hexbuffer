@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import { AlertTriangle, Circle, CircleDot, FileCheck2, ShieldBan } from 'lucide-react';
+import { AlertTriangle, CircleDot, FileCheck2, ShieldBan, Loader } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { TreeView, type TreeNodeData } from '@/components/tree-view';
 import { cn } from '@/lib/utils';
@@ -27,7 +27,7 @@ const statusStyles: Record<CrawlPageStatus, string> = {
 
 const statusIcon = {
   visited: FileCheck2,
-  queued: Circle,
+  queued: Loader,
   current: CircleDot,
   error: AlertTriangle,
   blocked: ShieldBan,
@@ -35,7 +35,7 @@ const statusIcon = {
 
 const statusIconClassName: Record<CrawlPageStatus, string> = {
   visited: 'text-emerald-500',
-  queued: 'text-muted-foreground',
+  queued: 'text-muted-foreground animate-spin',
   current: 'text-sky-500',
   error: 'text-red-500',
   blocked: 'text-amber-500',
@@ -81,10 +81,10 @@ export function CrawlTreePanel({
   }, [nodes]);
 
   return (
-    <section className="flex min-h-0 flex-col border-b bg-background">
-      <div className="border-b flex gap-2 px-3 py-2">
-        <div>
-          <div className="text-sm font-medium">Pages</div>
+    <section className="flex min-h-0 min-w-0 flex-col border-b bg-background">
+      <div className="sticky top-0 z-10 flex min-w-0 gap-2 border-b bg-background px-3 py-1">
+        <div className="min-w-0">
+          <div className="text-xs font-medium">Pages</div>
           <div className="text-xs text-muted-foreground">Discovered page structure</div>
         </div>
       </div>

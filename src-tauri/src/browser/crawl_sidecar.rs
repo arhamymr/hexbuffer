@@ -261,7 +261,7 @@ pub(crate) fn run_sidecar_crawl(
     state: &AiBrowserState,
     config: &CrawlConfig,
     session_id: &str,
-    api_key: &str,
+    api_key: Option<&str>,
     cancel_flag: Arc<AtomicBool>,
 ) -> Result<(), String> {
     let settings = crate::ai::read_ai_settings(app).unwrap_or_default();
@@ -302,8 +302,8 @@ pub(crate) fn run_sidecar_crawl(
     #[cfg(unix)]
     command.process_group(0);
 
-    // API key passed from frontend (Zustand store)
-    if !api_key.trim().is_empty() {
+    // API key is read from the OS credential store by the backend.
+    if let Some(api_key) = api_key.filter(|key| !key.trim().is_empty()) {
         command.env(
             crate::ai::api_key_env_name(&settings.provider)?,
             api_key.trim(),

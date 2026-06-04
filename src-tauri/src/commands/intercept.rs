@@ -8,7 +8,9 @@ use sha2::{Digest, Sha256};
 use tauri::{AppHandle, Manager, State};
 use uuid::Uuid;
 
-pub use crate::proxy::state::{InterceptMode, InterceptStatus, PausedRequest, ProxyRequest};
+pub use crate::proxy::state::{
+    InterceptMode, InterceptStatus, PausedRequest, ProxyRequest, ProxyResponse,
+};
 
 #[derive(Debug, Deserialize)]
 pub struct InterceptForwardRequest {
@@ -16,6 +18,37 @@ pub struct InterceptForwardRequest {
     url: String,
     headers: HashMap<String, String>,
     body: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct InterceptForwardResponse {
+    status: u16,
+    status_text: Option<String>,
+    headers: HashMap<String, String>,
+    body: String,
+}
+
+fn sync_content_length(headers: &mut HashMap<String, String>, body_len: usize, insert_if_missing: bool) {
+    let content_length_key = headers
+        .keys()
+        .find(|key| key.eq_ignore_ascii_case("content-length"))
+        .cloned();
+
+    if let Some(content_length_key) = content_length_key {
+        headers.insert(content_length_key, body_len.to_string());
+    } else if insert_if_missing && body_len > 0 {
+        headers.insert("content-length".to_string(), body_len.to_string());
+    }
+
+    if body_len > 0 {
+        if let Some(transfer_encoding_key) = headers
+            .keys()
+            .find(|key| key.eq_ignore_ascii_case("transfer-encoding"))
+            .cloned()
+        {
+            headers.remove(&transfer_encoding_key);
+        }
+    }
 }
 
 #[tauri::command]
@@ -43,6 +76,17 @@ pub async fn set_intercept_enabled(
 }
 
 #[tauri::command]
+pub async fn set_intercept_scope(
+    state: State<'_, Mutex<crate::proxy::ProxyState>>,
+    tab_id: String,
+    capture_patterns: Vec<String>,
+) -> Result<(), String> {
+    let proxy_state = state.lock().map_err(|error| format!("{error}"))?;
+    proxy_state.set_intercept_scope(tab_id, capture_patterns);
+    Ok(())
+}
+
+#[tauri::command]
 pub async fn get_paused_requests(
     state: State<'_, Mutex<crate::proxy::ProxyState>>,
 ) -> Result<Vec<PausedRequest>, String> {
@@ -55,6 +99,7 @@ pub async fn forward_intercepted_request(
     state: State<'_, Mutex<crate::proxy::ProxyState>>,
     request_id: String,
     request: Option<InterceptForwardRequest>,
+    intercept_response: Option<bool>,
 ) -> Result<(), String> {
     let id = Uuid::parse_str(&request_id).map_err(|e| e.to_string())?;
     let request = request.map(|request| {
@@ -74,22 +119,72 @@ pub async fn forward_intercepted_request(
             }
         }
 
+        let mut headers = request.headers;
+        sync_content_length(&mut headers, body.len(), true);
+
         ProxyRequest {
             method: request.method,
             uri: request.url,
             http_version: "HTTP/1.1".to_string(),
-            headers: request.headers,
+            headers,
             body,
             content_decoded: false,
         }
     });
     let proxy_state = state.lock().map_err(|error| format!("{error}"))?;
-    let forwarded = proxy_state.forward_paused_request(&id, request);
+    let forwarded =
+        proxy_state.forward_paused_request(&id, request, intercept_response.unwrap_or(false));
 
     if forwarded {
         Ok(())
     } else {
         Err("Paused request not found.".to_string())
+    }
+}
+
+#[tauri::command]
+pub async fn forward_intercepted_response(
+    state: State<'_, Mutex<crate::proxy::ProxyState>>,
+    request_id: String,
+    response: Option<InterceptForwardResponse>,
+) -> Result<(), String> {
+    let id = Uuid::parse_str(&request_id).map_err(|e| e.to_string())?;
+    let response = response.map(|response| {
+        let mut body = response.body.into_bytes();
+
+        if let Some(encoding) = response
+            .headers
+            .iter()
+            .find(|(k, _)| k.eq_ignore_ascii_case("content-encoding"))
+            .map(|(_, v)| v.clone())
+        {
+            if !encoding.is_empty() {
+                match crate::proxy::lifecycle::body_decoder::encode_body(&encoding, &body) {
+                    Ok(encoded) => body = encoded,
+                    Err(e) => eprintln!("[intercept] response re-encode failed ({encoding}): {e}"),
+                }
+            }
+        }
+
+        let mut headers = response.headers;
+        sync_content_length(&mut headers, body.len(), false);
+
+        ProxyResponse {
+            status_code: response.status,
+            status_text: response.status_text.unwrap_or_default(),
+            http_version: "HTTP/1.1".to_string(),
+            headers,
+            body,
+            content_decoded: false,
+        }
+    });
+    let proxy_state = state.lock().map_err(|error| format!("{error}"))?;
+    let forwarded = proxy_state.forward_paused_response(&id, response);
+
+    if forwarded {
+        Ok(())
+    } else {
+        Err("Paused response not found.".to_string())
     }
 }
 
@@ -107,6 +202,15 @@ pub async fn drop_intercepted_request(
     } else {
         Err("Paused request not found.".to_string())
     }
+}
+
+#[tauri::command]
+pub async fn forward_intercepted_tab(
+    state: State<'_, Mutex<crate::proxy::ProxyState>>,
+    tab_id: String,
+) -> Result<usize, String> {
+    let proxy_state = state.lock().map_err(|error| format!("{error}"))?;
+    Ok(proxy_state.forward_paused_by_tab(&tab_id))
 }
 
 #[tauri::command]

@@ -40,7 +40,7 @@ export function AppFooter({ isAssistantOpen, onToggleAssistant }: AppFooterProps
   const activeProxyPort = proxyPort ?? proxyDefaultPort;
   const isDefaultPortChanged = proxyStatus === 'connected' && proxyPort !== null && proxyPort !== proxyDefaultPort;
   const proxyTitle = isDefaultPortChanged
-    ? `Proxy connected on ${activeProxyPort}. Default port changed from ${proxyDefaultPort}.`
+    ? `Proxy connected on ${activeProxyPort}. Restart to use default port ${proxyDefaultPort}.`
     : `Proxy ${proxyStatusLabel[proxyStatus].toLowerCase()}`;
 
   const handleInstallUpdate = React.useCallback(async () => {

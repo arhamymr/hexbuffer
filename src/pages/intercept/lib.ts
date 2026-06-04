@@ -1,10 +1,14 @@
-import { buildRawHttpRequest } from '@/lib/http-message';
+import { buildRawHttpRequest, buildRawHttpResponse } from '@/lib/http-message';
 import type { PausedRequest } from './types';
 
 const textDecoder = new TextDecoder();
 
 export function decodeRequestBody(body: number[]): string {
   return textDecoder.decode(new Uint8Array(body));
+}
+
+export function getPausedDirection(pausedRequest: PausedRequest): 'request' | 'response' {
+  return pausedRequest.response ? 'response' : 'request';
 }
 
 export function buildRawPausedRequest(pausedRequest: PausedRequest | null): string {
@@ -21,6 +25,27 @@ export function buildRawPausedRequest(pausedRequest: PausedRequest | null): stri
     },
     { addHostHeader: false }
   );
+}
+
+export function buildRawPausedResponse(pausedRequest: PausedRequest | null): string {
+  if (!pausedRequest?.response) {
+    return '';
+  }
+
+  return buildRawHttpResponse({
+    status: pausedRequest.response.status_code,
+    status_text: pausedRequest.response.status_text,
+    headers: pausedRequest.response.headers,
+    body: decodeRequestBody(pausedRequest.response.body),
+  });
+}
+
+export function buildRawPausedMessage(pausedRequest: PausedRequest | null): string {
+  if (!pausedRequest) {
+    return '';
+  }
+
+  return pausedRequest.response ? buildRawPausedResponse(pausedRequest) : buildRawPausedRequest(pausedRequest);
 }
 
 export function getRequestHost(pausedRequest: PausedRequest): string {

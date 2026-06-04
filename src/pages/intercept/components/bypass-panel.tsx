@@ -5,23 +5,26 @@ import { ChevronDown, ChevronRight, Plus, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { useBruteForceStore } from '@/stores/bruto-force';
+import { useInterceptStore } from '../state/intercept-store';
 
 export function InterceptBypassPanel() {
-  const patterns = useBruteForceStore((s) => s.bypassPatterns);
-  const addPattern = useBruteForceStore((s) => s.addBypassPattern);
-  const removePattern = useBruteForceStore((s) => s.removeBypassPattern);
+  const tabs = useInterceptStore((state) => state.tabs);
+  const activeTabId = useInterceptStore((state) => state.activeTabId);
+  const addCaptureHost = useInterceptStore((state) => state.addCaptureHost);
+  const removeCaptureHost = useInterceptStore((state) => state.removeCaptureHost);
+  const activeTab = tabs.find((tab) => tab.id === activeTabId) ?? tabs[0];
+  const patterns = activeTab?.captureHosts ?? [];
 
   const [value, setValue] = React.useState('');
-  const [open, setOpen] = React.useState(false);
+  const [open, setOpen] = React.useState(true);
 
   const handleAdd = React.useCallback(() => {
     const trimmed = value.trim();
     if (trimmed) {
-      addPattern(trimmed);
+      addCaptureHost(trimmed);
       setValue('');
     }
-  }, [value, addPattern]);
+  }, [value, addCaptureHost]);
 
   const handleKeyDown = React.useCallback(
     (e: React.KeyboardEvent) => {
@@ -44,22 +47,21 @@ export function InterceptBypassPanel() {
         ) : (
           <ChevronRight className="h-3 w-3" />
         )}
-        Passthrough Hostnames
-        {patterns.length > 0 && (
-          <Badge variant="secondary" className="ml-1 text-[10px] h-4 px-1">
-            {patterns.length}
-          </Badge>
-        )}
-        {!open && patterns.length > 0 && (
+        Capture Hosts
+        <Badge variant="secondary" className="ml-1 h-4 px-1 text-[10px]">
+          {patterns.length}
+        </Badge>
+        {!open && (
           <span className="truncate text-[10px] text-muted-foreground/60">
-            {patterns.slice(0, 3).join(', ')}{patterns.length > 3 ? '...' : ''}
+            {patterns.length > 0 ? patterns.slice(0, 3).join(', ') : 'empty tab captures nothing'}
+            {patterns.length > 3 ? '...' : ''}
           </span>
         )}
       </button>
 
       {open && (
         <div className="px-3 pb-2">
-          {patterns.length > 0 && (
+          {patterns.length > 0 ? (
             <div className="mb-2 flex flex-wrap gap-1">
               {patterns.map((pattern) => (
                 <Badge
@@ -70,7 +72,7 @@ export function InterceptBypassPanel() {
                   <span className="max-w-[180px] truncate">{pattern}</span>
                   <button
                     type="button"
-                    onClick={() => removePattern(pattern)}
+                    onClick={() => removeCaptureHost(pattern)}
                     className="ml-0.5 inline-flex h-4 w-4 items-center justify-center rounded-full hover:bg-muted-foreground/20"
                     aria-label={`Remove ${pattern}`}
                   >
@@ -78,6 +80,10 @@ export function InterceptBypassPanel() {
                   </button>
                 </Badge>
               ))}
+            </div>
+          ) : (
+            <div className="mb-2 rounded border border-dashed px-2 py-1.5 text-xs text-muted-foreground">
+              This tab captures nothing until a host is added.
             </div>
           )}
 

@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, type MouseEvent, type ReactNode } from 'react';
-import { X } from 'lucide-react';
+import { Plus, X } from 'lucide-react';
 import {
   ContextMenu,
   ContextMenuContent,
@@ -20,6 +20,7 @@ interface PageTabBarProps {
   onTabChange: (id: string) => void;
   onTabRename?: (id: string, name: string) => void;
   onTabClose?: (id: string) => void;
+  onTabAdd?: () => void;
   onCloseTabsToLeft?: (id: string) => void;
   onCloseTabsToRight?: (id: string) => void;
   renderTabContextMenuItems?: (tab: PageTabItem) => ReactNode;
@@ -31,6 +32,7 @@ export function PageTabBar({
   onTabChange,
   onTabRename,
   onTabClose,
+  onTabAdd,
   onCloseTabsToLeft,
   onCloseTabsToRight,
   renderTabContextMenuItems,
@@ -182,6 +184,16 @@ export function PageTabBar({
               </ContextMenu>
             );
           })}
+          {onTabAdd && (
+            <button
+              type="button"
+              className="mb-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-t-md border text-muted-foreground hover:bg-muted hover:text-foreground"
+              onClick={onTabAdd}
+              aria-label="Add tab"
+            >
+              <Plus className="h-4 w-4" />
+            </button>
+          )}
         </div>
       </div>
       <div

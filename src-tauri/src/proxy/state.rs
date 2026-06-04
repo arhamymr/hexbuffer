@@ -139,6 +139,8 @@ pub struct PausedRequest {
     pub timestamp: DateTime<Utc>,
     pub client_addr: String,
     pub server_addr: String,
+    #[serde(default)]
+    pub tab_id: Option<String>,
     pub request: ProxyRequest,
     pub response: Option<ProxyResponse>,
 }
@@ -179,12 +181,18 @@ pub struct ProxyStateInner {
     pub intercept_mode: InterceptMode,
     pub paused_requests: Vec<PausedRequest>,
     pub paused_actions: HashMap<Uuid, InterceptAction>,
+    pub active_intercept_tab_id: Option<String>,
+    pub intercept_capture_patterns: Vec<String>,
     pub intercept_bypass_patterns: Vec<String>,
 }
 
 #[derive(Debug, Clone)]
 pub enum InterceptAction {
-    Forward(Option<ProxyRequest>),
+    Forward {
+        request: Option<ProxyRequest>,
+        intercept_response: bool,
+    },
+    ForwardResponse(Option<ProxyResponse>),
     Drop,
 }
 
@@ -210,11 +218,17 @@ impl ProxyState {
     pub fn set_mode(&self, mode: InterceptMode) {
         let mut inner = self.0.lock().unwrap();
         if mode == InterceptMode::Disabled && inner.intercept_mode == InterceptMode::Enabled {
-            let ids: Vec<Uuid> = inner.paused_requests.iter().map(|r| r.id).collect();
-            for id in &ids {
-                inner
-                    .paused_actions
-                    .insert(*id, InterceptAction::Forward(None));
+            let paused_requests = inner.paused_requests.clone();
+            for paused_request in &paused_requests {
+                let action = if paused_request.response.is_some() {
+                    InterceptAction::ForwardResponse(None)
+                } else {
+                    InterceptAction::Forward {
+                        request: None,
+                        intercept_response: false,
+                    }
+                };
+                inner.paused_actions.insert(paused_request.id, action);
             }
             inner.paused_requests.clear();
         }
@@ -264,14 +278,78 @@ impl ProxyState {
         self.0.lock().unwrap().paused_requests.clone()
     }
 
-    pub fn forward_paused_request(&self, id: &Uuid, request: Option<ProxyRequest>) -> bool {
+    pub fn set_intercept_scope(&self, tab_id: String, capture_patterns: Vec<String>) {
+        let mut inner = self.0.lock().unwrap();
+        inner.active_intercept_tab_id = Some(tab_id);
+        inner.intercept_capture_patterns = capture_patterns
+            .into_iter()
+            .map(|pattern| pattern.trim().to_lowercase())
+            .filter(|pattern| !pattern.is_empty())
+            .collect();
+    }
+
+    pub fn matching_intercept_tab_id(&self, uri: &str) -> Option<String> {
+        let host = uri
+            .split("://")
+            .nth(1)
+            .unwrap_or(uri)
+            .split('/')
+            .next()
+            .unwrap_or(uri)
+            .to_lowercase();
+        let host_without_port = host.split(':').next().unwrap_or(&host);
+
+        let inner = self.0.lock().unwrap();
+        let tab_id = inner.active_intercept_tab_id.clone()?;
+
+        if inner.intercept_capture_patterns.is_empty() {
+            return None;
+        }
+
+        for pattern in &inner.intercept_capture_patterns {
+            if let Some(domain) = pattern.strip_prefix("*.") {
+                if host_without_port.ends_with(domain) || host.ends_with(domain) {
+                    return Some(tab_id);
+                }
+            } else if host == *pattern || host_without_port == pattern {
+                return Some(tab_id);
+            }
+        }
+
+        None
+    }
+
+    pub fn forward_paused_request(
+        &self,
+        id: &Uuid,
+        request: Option<ProxyRequest>,
+        intercept_response: bool,
+    ) -> bool {
+        let mut inner = self.0.lock().unwrap();
+        let existed = inner.paused_requests.iter().any(|r| r.id == *id);
+
+        if existed {
+            inner.paused_actions.insert(
+                *id,
+                InterceptAction::Forward {
+                    request,
+                    intercept_response,
+                },
+            );
+            inner.paused_requests.retain(|request| request.id != *id);
+        }
+
+        existed
+    }
+
+    pub fn forward_paused_response(&self, id: &Uuid, response: Option<ProxyResponse>) -> bool {
         let mut inner = self.0.lock().unwrap();
         let existed = inner.paused_requests.iter().any(|r| r.id == *id);
 
         if existed {
             inner
                 .paused_actions
-                .insert(*id, InterceptAction::Forward(request));
+                .insert(*id, InterceptAction::ForwardResponse(response));
             inner.paused_requests.retain(|request| request.id != *id);
         }
 
@@ -292,6 +370,34 @@ impl ProxyState {
 
     pub fn take_paused_action(&self, id: &Uuid) -> Option<InterceptAction> {
         self.0.lock().unwrap().paused_actions.remove(id)
+    }
+
+    pub fn forward_paused_by_tab(&self, tab_id: &str) -> usize {
+        let mut inner = self.0.lock().unwrap();
+        let matching_requests: Vec<PausedRequest> = inner
+            .paused_requests
+            .iter()
+            .filter(|request| request.tab_id.as_deref() == Some(tab_id))
+            .cloned()
+            .collect();
+
+        for request in &matching_requests {
+            let action = if request.response.is_some() {
+                InterceptAction::ForwardResponse(None)
+            } else {
+                InterceptAction::Forward {
+                    request: None,
+                    intercept_response: false,
+                }
+            };
+            inner.paused_actions.insert(request.id, action);
+        }
+
+        inner
+            .paused_requests
+            .retain(|request| request.tab_id.as_deref() != Some(tab_id));
+
+        matching_requests.len()
     }
 
     pub fn get_records_filtered(&self, filter: &ProxyFilter) -> Vec<ProxyRecord> {

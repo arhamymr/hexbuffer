@@ -1,4 +1,12 @@
-import { Asterisk, DatabaseIcon, RefreshCwIcon, Trash2Icon } from 'lucide-react';
+import {
+  Asterisk,
+  DatabaseIcon,
+  NetworkIcon,
+  RefreshCwIcon,
+  RotateCcwIcon,
+  SaveIcon,
+  Trash2Icon,
+} from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -12,6 +20,8 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import type { SettingsPageState } from '../hooks/use-settings-page';
 import { ManualUpdateCommand } from './manual-update-command';
 
@@ -30,13 +40,77 @@ export function GeneralSettingsTab({ settings }: GeneralSettingsTabProps) {
     updateError,
     updateMessage,
     updateVersion,
+    proxyDefaultPort,
+    proxyFactoryDefaultPort,
+    proxyPort,
+    proxyPortDraft,
+    proxyStatus,
+    setProxyPortDraft,
+    handleSaveProxyDefaultPort,
+    handleResetProxyDefaultPort,
     storageInfo,
     resettingLocalData,
     handleResetLocalData,
   } = settings;
+  const parsedProxyPort = Number(proxyPortDraft);
+  const proxyPortIsValid =
+    Number.isInteger(parsedProxyPort) && parsedProxyPort >= 1 && parsedProxyPort <= 65535;
+  const proxyPortIsChanged = proxyPortIsValid && parsedProxyPort !== proxyDefaultPort;
+  const activeProxyPort = proxyPort ?? proxyDefaultPort;
 
   return (
     <>
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <NetworkIcon className="size-5 text-primary" />
+            <CardTitle>Proxy Listener</CardTitle>
+          </div>
+          <CardDescription>Choose the port used when the proxy starts</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="grid max-w-sm gap-2">
+            <Label htmlFor="default-proxy-port">Default port</Label>
+            <Input
+              id="default-proxy-port"
+              type="number"
+              min={1}
+              max={65535}
+              step={1}
+              inputMode="numeric"
+              value={proxyPortDraft}
+              aria-invalid={!proxyPortIsValid}
+              onChange={(event) => setProxyPortDraft(event.target.value)}
+            />
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Current listener: <span className="font-medium">127.0.0.1:{activeProxyPort}</span>
+            {proxyStatus === 'connected' && proxyPortIsChanged
+              ? `; restart the proxy to use ${parsedProxyPort}.`
+              : ''}
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              size="xs"
+              onClick={handleSaveProxyDefaultPort}
+              disabled={!proxyPortIsChanged}
+            >
+              <SaveIcon className="mr-2 size-4" />
+              Save Port
+            </Button>
+            <Button
+              size="xs"
+              variant="outline"
+              onClick={handleResetProxyDefaultPort}
+              disabled={proxyDefaultPort === proxyFactoryDefaultPort}
+            >
+              <RotateCcwIcon className="mr-2 size-4" />
+              Reset Port
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader>
           <CardTitle>Updates</CardTitle>

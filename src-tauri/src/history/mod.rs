@@ -93,6 +93,12 @@ impl HistoryBridge {
             .map_err(|e| e.to_string())
     }
 
+    pub fn delete_ai_browser_session(&self, session_id: &str) -> Result<usize, String> {
+        self.db
+            .delete_ai_browser_session(session_id)
+            .map_err(|e| e.to_string())
+    }
+
     pub fn upsert_ai_browser_page(&self, page: &CrawlPage) -> Result<(), String> {
         self.db
             .upsert_ai_browser_page(page)

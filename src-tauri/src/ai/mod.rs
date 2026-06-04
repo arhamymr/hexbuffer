@@ -6,13 +6,14 @@ use std::io::{BufRead, BufReader};
 use std::net::{TcpStream, ToSocketAddrs};
 use std::path::PathBuf;
 use std::process::{Child, Command, Stdio};
-use std::sync::Mutex;
+use std::sync::{Mutex, OnceLock};
 use std::time::Duration;
 use tauri::{AppHandle, Manager, State};
 use tauri_plugin_shell::ShellExt;
 
 const AI_KEYRING_SERVICE: &str = "0xbuffer.ai";
 const AI_PROVIDERS: [&str; 2] = ["openai", "deepseek"];
+static AI_API_KEY_CACHE: OnceLock<Mutex<BTreeMap<String, String>>> = OnceLock::new();
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -131,6 +132,16 @@ pub fn set_ai_api_key(
     keyring_entry(provider)?
         .set_password(api_key)
         .map_err(keyring_error)?;
+    let saved_key = keyring_entry(provider)?
+        .get_password()
+        .map_err(|error| {
+            format!(
+                "{} The key was written, but the app could not read it back. Unlock Keychain Access, delete the stale 0xbuffer.ai {} item if needed, then save the key again.",
+                keyring_error(error),
+                provider
+            )
+        })?;
+    cache_ai_api_key(provider, Some(saved_key))?;
     write_ai_key_status(&app, provider, true)
 }
 
@@ -138,7 +149,10 @@ pub fn set_ai_api_key(
 pub fn clear_ai_api_key(app: AppHandle, provider: String) -> Result<BTreeMap<String, bool>, String> {
     let provider = normalize_ai_provider(&provider)?;
     match keyring_entry(provider)?.delete_credential() {
-        Ok(()) | Err(KeyringError::NoEntry) => write_ai_key_status(&app, provider, false),
+        Ok(()) | Err(KeyringError::NoEntry) => {
+            cache_ai_api_key(provider, None)?;
+            write_ai_key_status(&app, provider, false)
+        }
         Err(error) => Err(keyring_error(error)),
     }
 }
@@ -583,9 +597,16 @@ pub(crate) fn api_key_env_name(provider: &str) -> Result<&'static str, String> {
 
 pub(crate) fn read_optional_ai_api_key(provider: &str) -> Result<Option<String>, String> {
     let provider = normalize_ai_provider(provider)?;
+    if let Some(key) = cached_ai_api_key(provider)? {
+        return Ok(Some(key));
+    }
+
     match keyring_entry(provider)?.get_password() {
         Ok(key) if key.trim().is_empty() => Ok(None),
-        Ok(key) => Ok(Some(key)),
+        Ok(key) => {
+            cache_ai_api_key(provider, Some(key.clone()))?;
+            Ok(Some(key))
+        }
         Err(KeyringError::NoEntry) => Ok(None),
         Err(error) => Err(keyring_error(error)),
     }
@@ -633,6 +654,33 @@ fn keyring_entry(provider: &str) -> Result<Entry, String> {
     Entry::new(AI_KEYRING_SERVICE, provider).map_err(keyring_error)
 }
 
+fn ai_api_key_cache() -> &'static Mutex<BTreeMap<String, String>> {
+    AI_API_KEY_CACHE.get_or_init(|| Mutex::new(BTreeMap::new()))
+}
+
+fn cached_ai_api_key(provider: &str) -> Result<Option<String>, String> {
+    Ok(ai_api_key_cache()
+        .lock()
+        .map_err(|_| "Failed to lock AI API key cache".to_string())?
+        .get(provider)
+        .cloned()
+        .filter(|key| !key.trim().is_empty()))
+}
+
+fn cache_ai_api_key(provider: &str, api_key: Option<String>) -> Result<(), String> {
+    let mut cache = ai_api_key_cache()
+        .lock()
+        .map_err(|_| "Failed to lock AI API key cache".to_string())?;
+
+    if let Some(api_key) = api_key.filter(|key| !key.trim().is_empty()) {
+        cache.insert(provider.to_string(), api_key);
+    } else {
+        cache.remove(provider);
+    }
+
+    Ok(())
+}
+
 fn normalize_ai_provider(provider: &str) -> Result<&str, String> {
     let provider = provider.trim();
     match provider {
@@ -642,5 +690,13 @@ fn normalize_ai_provider(provider: &str) -> Result<&str, String> {
 }
 
 fn keyring_error(error: KeyringError) -> String {
-    format!("OS credential store error: {}", error)
+    let message = error.to_string();
+    if message.contains("Platform secure storage failure") {
+        return format!(
+            "OS credential store error: {}. Unlock Keychain Access and re-save the API key. If it keeps failing, delete the stale 0xbuffer.ai item for this provider from Keychain Access, then save the key again.",
+            message
+        );
+    }
+
+    format!("OS credential store error: {}", message)
 }

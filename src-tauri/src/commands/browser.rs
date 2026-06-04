@@ -603,7 +603,29 @@ pub async fn ai_browser_start_crawl(
     let state_for_task = state.inner().clone();
     let session_id_for_task = session.id.clone();
     let settings = crate::ai::read_ai_settings(&app)?;
-    let api_key_for_task = crate::ai::read_optional_ai_api_key(&settings.provider)?;
+    let api_key_for_task = match crate::ai::read_optional_ai_api_key(&settings.provider) {
+        Ok(api_key) => api_key,
+        Err(error) => {
+            add_log(
+                &app,
+                &state,
+                ActivityLog {
+                    id: Uuid::new_v4().to_string(),
+                    session_id: session.id.clone(),
+                    level: "warning".to_string(),
+                    r#type: "settings".to_string(),
+                    message: format!(
+                        "Could not read the saved {} API key, so this crawl will continue without AI key injection. {}",
+                        settings.provider, error
+                    ),
+                    url: Some(session.target_url.clone()),
+                    ai_used_for_analysis: Some(false),
+                    created_at: now(),
+                },
+            );
+            None
+        }
+    };
     let cancel_flag_for_task = cancel_flag.clone();
     tauri::async_runtime::spawn(async move {
         let sidecar_result = {

@@ -40,6 +40,11 @@ export function AiSettingsTab({ settings }: AiSettingsTabProps) {
   const [showApiKey, setShowApiKey] = React.useState(false);
   const [apiKeyInput, setApiKeyInput] = React.useState(aiSettings.apiKey);
 
+  React.useEffect(() => {
+    setApiKeyInput(aiSettings.apiKey);
+    setShowApiKey(false);
+  }, [aiSettings.apiKey, aiSettings.provider]);
+
   const handleApiKeyChange = (value: string) => {
     setApiKeyInput(value);
     updateAiSettings({ apiKey: value });
@@ -124,8 +129,8 @@ export function AiSettingsTab({ settings }: AiSettingsTabProps) {
             </div>
             <p className="text-xs text-muted-foreground">
               {aiSettings.hasApiKey
-                ? 'A key is stored locally. Enter a new value only if you want to replace it.'
-                : 'No key is stored yet. Provider and model are saved locally; API keys are kept in the OS credential store.'}
+                ? 'A key is saved in your OS credential store. Enter a new value only if you want to replace it.'
+                : 'No readable key is saved yet. Provider and model are saved locally; API keys are kept in the OS credential store.'}
             </p>
           </div>
 

@@ -6,7 +6,7 @@ authors = ["Arham"]
 edition = "2021"
 
 [build-dependencies]
-tauri-build = { version = "2", features = ["try-icon] }
+tauri-build = { version = "2", features = [] }
 
 [dependencies]
 tauri = { version = "2", features = ["protocol-asset", "macos-private-api"] }

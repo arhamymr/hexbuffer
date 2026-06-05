@@ -54,6 +54,7 @@
     "shell:allow-kill",
     "clipboard-manager:allow-write-text",
     "clipboard-manager:allow-read-text",
+    "notification:default",
     "process:allow-restart",
     "clipboard-manager:default"
   ]

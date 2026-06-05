@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS http_logs (
 CREATE INDEX IF NOT EXISTS idx_http_logs_timestamp ON http_logs(timestamp);
 CREATE INDEX IF NOT EXISTS idx_http_logs_method ON http_logs(method);
 CREATE INDEX IF NOT EXISTS idx_http_logs_url ON http_logs(url);
+CREATE INDEX IF NOT EXISTS idx_http_logs_response_status ON http_logs(response_status);
 "#;
 
 pub const CREATE_WEBSOCKET_TABLES: &str = r#"

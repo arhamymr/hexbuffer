@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { invoke } from '@tauri-apps/api/core';
+import { toast } from 'sonner';
 
 export type ProxyStatus = 'connected' | 'disconnected' | 'starting' | 'stopping';
 
@@ -49,15 +50,23 @@ export const useAppStore = create<AppState>()(
           await invoke('start_proxy', { port, tlsPort: Math.min(port + 1, 65535) });
           await new Promise((resolve) => window.setTimeout(resolve, 300));
           const status = await invoke<ProxyRuntimeStatus>('get_proxy_status');
+          if (!status.running || status.port === null) {
+            throw new Error(`Failed to start proxy on port ${port}`);
+          }
+
+          if (status.port !== port) {
+            toast.warning(`Port ${port} is already in use. Proxy started on ${status.port}.`);
+          }
+
           set({
-            proxyStatus: status.running ? 'connected' : 'disconnected',
+            proxyStatus: 'connected',
             proxyPort: status.port,
             proxyDefaultPort: port,
           });
         } catch (error) {
           console.error('[store] Failed to start proxy:', error);
           set({ proxyStatus: 'disconnected', proxyPort: null });
-          throw error;
+          throw new Error(error instanceof Error ? error.message : String(error));
         }
       },
 

@@ -108,10 +108,12 @@ export function useHistoryTable({ isStreamPaused = false }: UseHistoryTableOptio
     filter,
     page,
     selectedCallId,
+    isStreamManuallyPaused,
     setPage,
     setSortOrder,
     setSelectedCallId,
   } = useHistoryQuery();
+  const isHistoryStreamPaused = isStreamPaused || isStreamManuallyPaused;
 
   const [calls, setCalls] = useState<ApiCall[]>([]);
   const [pagination, setPagination] = useState({ page: 1, perPage: 100, total: 0, hasMore: false });
@@ -123,7 +125,7 @@ export function useHistoryTable({ isStreamPaused = false }: UseHistoryTableOptio
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingEventRef = useRef(false);
   const pendingPausedEventRef = useRef(false);
-  const isStreamPausedRef = useRef(isStreamPaused);
+  const isStreamPausedRef = useRef(isHistoryStreamPaused);
   const lastBaseQueryRef = useRef<string>('');
   const currentPageRef = useRef(page);
 
@@ -132,8 +134,8 @@ export function useHistoryTable({ isStreamPaused = false }: UseHistoryTableOptio
   }, [page]);
 
   useEffect(() => {
-    isStreamPausedRef.current = isStreamPaused;
-  }, [isStreamPaused]);
+    isStreamPausedRef.current = isHistoryStreamPaused;
+  }, [isHistoryStreamPaused]);
 
   const baseQueryKey = useMemo(
     () =>

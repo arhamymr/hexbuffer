@@ -14,6 +14,7 @@ interface HistoryQueryState {
   page: number;
   perPage: number;
   selectedCallId: string | null;
+  isStreamManuallyPaused: boolean;
   refreshKey: number;
 
   setSearch: (search: string) => void;
@@ -27,6 +28,7 @@ interface HistoryQueryState {
   setPage: (page: number) => void;
   resetPage: () => void;
   setSelectedCallId: (id: string | null) => void;
+  setStreamManuallyPaused: (paused: boolean) => void;
   triggerRefresh: () => void;
 }
 
@@ -44,6 +46,7 @@ export const useHistoryQueryStore = create<HistoryQueryState>()((set) => ({
   page: 1,
   perPage: 100,
   selectedCallId: null,
+  isStreamManuallyPaused: false,
   refreshKey: 0,
 
   setSearch: (search) =>
@@ -131,6 +134,8 @@ export const useHistoryQueryStore = create<HistoryQueryState>()((set) => ({
   resetPage: () => set({ page: 1 }),
 
   setSelectedCallId: (id) => set({ selectedCallId: id }),
+
+  setStreamManuallyPaused: (paused) => set({ isStreamManuallyPaused: paused }),
 
   triggerRefresh: () =>
     set((state) => ({

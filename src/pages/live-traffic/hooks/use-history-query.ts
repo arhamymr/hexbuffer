@@ -13,6 +13,7 @@ export function useHistoryQuery() {
       page: state.page,
       perPage: state.perPage,
       selectedCallId: state.selectedCallId,
+      isStreamManuallyPaused: state.isStreamManuallyPaused,
       refreshKey: state.refreshKey,
       setSearch: state.setSearch,
       setFilter: state.setFilter,
@@ -25,6 +26,7 @@ export function useHistoryQuery() {
       setPage: state.setPage,
       resetPage: state.resetPage,
       setSelectedCallId: state.setSelectedCallId,
+      setStreamManuallyPaused: state.setStreamManuallyPaused,
       triggerRefresh: state.triggerRefresh,
     }))
   );
@@ -36,6 +38,7 @@ export function useHistoryQuery() {
     page,
     perPage,
     selectedCallId,
+    isStreamManuallyPaused,
     refreshKey,
     setSearch,
     setFilter,
@@ -48,6 +51,7 @@ export function useHistoryQuery() {
     setPage,
     resetPage,
     setSelectedCallId,
+    setStreamManuallyPaused,
     triggerRefresh,
   } = historyQueryState;
 
@@ -73,6 +77,7 @@ export function useHistoryQuery() {
       page,
       perPage,
       selectedCallId,
+      isStreamManuallyPaused,
       refreshKey,
       query,
       hasActiveFilters,
@@ -87,6 +92,7 @@ export function useHistoryQuery() {
       setPage,
       resetPage,
       setSelectedCallId,
+      setStreamManuallyPaused,
       triggerRefresh,
     }),
     [
@@ -96,6 +102,7 @@ export function useHistoryQuery() {
       page,
       perPage,
       selectedCallId,
+      isStreamManuallyPaused,
       refreshKey,
       query,
       hasActiveFilters,
@@ -110,6 +117,7 @@ export function useHistoryQuery() {
       setPage,
       resetPage,
       setSelectedCallId,
+      setStreamManuallyPaused,
       triggerRefresh,
     ]
   );

@@ -13,12 +13,14 @@ pub use state::{
 pub use utils::ensure_port_free;
 
 use hudsucker::{rustls::crypto::aws_lc_rs, Proxy};
-use std::net::SocketAddr;
+use std::io;
+use std::net::Ipv4Addr;
 use std::sync::{
     atomic::{AtomicU16, Ordering},
     Mutex, OnceLock,
 };
 use tauri::AppHandle;
+use tokio::net::TcpListener;
 use tokio::sync::oneshot;
 
 use crate::proxy::https::cert::ensure_ca_exists;
@@ -51,8 +53,67 @@ pub fn default_proxy_port() -> u16 {
 fn resolve_proxy_port(config: &ProxyConfig) -> Result<u16, String> {
     DEFAULT_PROXY_PORT.store(config.port, Ordering::SeqCst);
 
-    ensure_port_free(config.port, config.reuse)?;
+    if let Some(port) = active_proxy_port() {
+        return Ok(port);
+    }
+
+    if let Err(error) = ensure_port_free(config.port, config.reuse) {
+        if !config.reuse {
+            return Err(error);
+        }
+
+        eprintln!(
+            "[proxy] WARN: Could not free port {}: {}. Will try fallback ports.",
+            config.port, error
+        );
+    }
+
     Ok(config.port)
+}
+
+fn bind_proxy_listener(
+    runtime: &tokio::runtime::Runtime,
+    preferred_port: u16,
+    allow_fallback: bool,
+) -> Result<(u16, TcpListener), String> {
+    let max_attempts = if allow_fallback { 20 } else { 1 };
+
+    for offset in 0..max_attempts {
+        let Some(port) = preferred_port.checked_add(offset) else {
+            break;
+        };
+
+        match runtime.block_on(TcpListener::bind((Ipv4Addr::UNSPECIFIED, port))) {
+            Ok(listener) => {
+                if port != preferred_port {
+                    eprintln!(
+                        "[proxy] WARN: Port {} is unavailable; using fallback port {}",
+                        preferred_port, port
+                    );
+                }
+
+                return Ok((port, listener));
+            }
+            Err(error) if error.kind() == io::ErrorKind::AddrInUse && allow_fallback => {
+                eprintln!(
+                    "[proxy] WARN: Port {} is still in use: {} ({:?})",
+                    port, error, error
+                );
+            }
+            Err(error) => {
+                return Err(format!(
+                    "Failed to bind port {}: {} ({:?})",
+                    port, error, error
+                ));
+            }
+        }
+    }
+
+    Err(format!(
+        "Failed to bind proxy listener: no available port found from {} to {}",
+        preferred_port,
+        preferred_port.saturating_add(max_attempts.saturating_sub(1))
+    ))
 }
 
 fn clear_proxy_runtime() {
@@ -95,6 +156,11 @@ pub fn run(config: ProxyConfig, app_handle: AppHandle) {
 
     ensure_ca_exists();
 
+    if let Some(port) = active_proxy_port() {
+        eprintln!("[proxy] Proxy already running on port {}", port);
+        return;
+    }
+
     let port = match resolve_proxy_port(&config) {
         Ok(port) => port,
         Err(e) => {
@@ -126,8 +192,6 @@ pub fn run(config: ProxyConfig, app_handle: AppHandle) {
 
         *shutdown = Some(shutdown_tx);
     }
-    ACTIVE_PROXY_PORT.store(port, Ordering::SeqCst);
-
     // Create AppHandler instance
     let handler = lifecycle::AppHandler::new(app_handle.clone());
 
@@ -141,18 +205,36 @@ pub fn run(config: ProxyConfig, app_handle: AppHandle) {
         }
     };
 
-    let graceful_shutdown = async move {
-        let _ = shutdown_rx.await;
+    // Start proxy with tokio runtime (blocking)
+    let runtime = match tokio::runtime::Runtime::new() {
+        Ok(rt) => rt,
+        Err(e) => {
+            eprintln!("[proxy] FATAL: Failed to create tokio runtime: {}", e);
+            clear_proxy_runtime();
+            return;
+        }
     };
+
+    let (port, listener) = match bind_proxy_listener(&runtime, port, config.reuse) {
+        Ok(result) => result,
+        Err(error) => {
+            eprintln!("[proxy] FATAL: {}", error);
+            clear_proxy_runtime();
+            return;
+        }
+    };
+    ACTIVE_PROXY_PORT.store(port, Ordering::SeqCst);
 
     // Build proxy with Hudsucker
     let proxy = match Proxy::builder()
-        .with_addr(SocketAddr::from(([0, 0, 0, 0], port)))
+        .with_listener(listener)
         .with_ca(authority)
         .with_rustls_connector(aws_lc_rs::default_provider())
         .with_http_handler(handler.clone())
         .with_websocket_handler(handler)
-        .with_graceful_shutdown(graceful_shutdown)
+        .with_graceful_shutdown(async move {
+            let _ = shutdown_rx.await;
+        })
         .build()
     {
         Ok(p) => p,
@@ -168,19 +250,9 @@ pub fn run(config: ProxyConfig, app_handle: AppHandle) {
         port
     );
 
-    // Start proxy with tokio runtime (blocking)
-    let runtime = match tokio::runtime::Runtime::new() {
-        Ok(rt) => rt,
-        Err(e) => {
-            eprintln!("[proxy] FATAL: Failed to create tokio runtime: {}", e);
-            clear_proxy_runtime();
-            return;
-        }
-    };
-
     runtime.block_on(async {
         if let Err(e) = proxy.start().await {
-            eprintln!("[proxy] FATAL: Proxy error: {}", e);
+            eprintln!("[proxy] Proxy stopped: {} ({:?})", e, e);
         }
     });
     clear_proxy_runtime();

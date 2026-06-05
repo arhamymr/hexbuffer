@@ -14,6 +14,10 @@ pub struct ProxyRuntimeStatus {
 
 #[tauri::command]
 pub async fn start_proxy(app: AppHandle, port: u16, tls_port: u16) -> Result<String, String> {
+    if let Some(active_port) = crate::proxy::active_proxy_port() {
+        return Ok(format!("Proxy already running on port {}", active_port));
+    }
+
     use std::io::Write;
     let mut file = std::fs::OpenOptions::new()
         .create(true)
@@ -60,7 +64,15 @@ pub async fn stop_proxy() -> Result<String, String> {
 #[tauri::command]
 pub async fn get_proxy_status() -> Result<ProxyRuntimeStatus, String> {
     let default_port = crate::proxy::default_proxy_port();
-    let port = crate::proxy::active_proxy_port().unwrap_or(default_port);
+    let Some(port) = crate::proxy::active_proxy_port() else {
+        return Ok(ProxyRuntimeStatus {
+            running: false,
+            port: None,
+            default_port,
+            connections: 0,
+        });
+    };
+
     let addr = SocketAddr::from(([127, 0, 0, 1], port));
     let running = TcpStream::connect_timeout(&addr, Duration::from_millis(200)).is_ok();
 

@@ -1,5 +1,6 @@
 'use client';
 
+import { useCallback, memo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ContextMenu,
@@ -20,7 +21,6 @@ import { adaptProxyRecordToApiCall } from '@/pages/live-traffic/hooks/use-histor
 import { useRepeaterStore } from '@/stores/repeater';
 import { buildHttpCurlCommand, buildRawHttpRequest } from '@/lib/http-message';
 import { copyText } from '@/lib/clipboard';
-import { useDocumentsStore } from '@/stores/documents';
 import { useTargetStore } from '@/stores/target';
 import { useInterceptStore } from '@/pages/intercept/state/intercept-store';
 
@@ -40,7 +40,7 @@ function buildAutomationTargetUrl(request: ApiCall) {
   }
 }
 
-export function LogEntryContextMenu({
+export const LogEntryContextMenu = memo(function LogEntryContextMenu({
   call,
   children,
   onDelete,
@@ -49,7 +49,7 @@ export function LogEntryContextMenu({
   const navigate = useNavigate();
   const { triggerRefresh } = useHistoryQuery();
 
-  const handleCopyCurlCommand = async () => {
+  const handleCopyCurlCommand = useCallback(async () => {
     try {
       const detail = await fetchHistoryDetail(call.id);
       const request = adaptProxyRecordToApiCall(detail);
@@ -65,9 +65,9 @@ export function LogEntryContextMenu({
       console.error('Failed to copy curl command:', error);
       toast.error('Failed to copy as curl command (bash)');
     }
-  };
+  }, [call.id]);
 
-  const handleCopyUrl = async () => {
+  const handleCopyUrl = useCallback(async () => {
     try {
       const detail = await fetchHistoryDetail(call.id);
       const request = adaptProxyRecordToApiCall(detail);
@@ -88,9 +88,9 @@ export function LogEntryContextMenu({
     }
 
     toast.success(`Added ${target.name} to targets`);
-  };
+  }, [call.host]);
 
-  const handleOpenInInvoker = async () => {
+  const handleOpenInInvoker = useCallback(async () => {
     try {
       const detail = await fetchHistoryDetail(call.id);
       const request = adaptProxyRecordToApiCall(detail);
@@ -115,9 +115,9 @@ export function LogEntryContextMenu({
       console.error('Failed to open request in Invoker:', error);
       toast.error('Failed to open request in Invoker');
     }
-  };
+  }, [call.id, navigate]);
 
-  const handleOpenInRepeater = async () => {
+  const handleOpenInRepeater = useCallback(async () => {
     try {
       const detail = await fetchHistoryDetail(call.id);
       const request = adaptProxyRecordToApiCall(detail);
@@ -134,9 +134,9 @@ export function LogEntryContextMenu({
     } catch (error) {
       console.error('Failed to open request in Repeater:', error);
     }
-  };
+  }, [call.id, navigate]);
 
-  const handleSendToIntercept = () => {
+  const handleSendToIntercept = useCallback(() => {
     const host = call.host?.trim();
 
     if (!host) {
@@ -147,9 +147,9 @@ export function LogEntryContextMenu({
     useInterceptStore.getState().addTabForHost(host);
     navigate('/intercept');
     toast.success(`Intercept tab created for ${host}`);
-  };
+  }, [call.host, navigate]);
 
-  const handleOpenInBrowserAutomation = async () => {
+  const handleOpenInBrowserAutomation = useCallback(async () => {
     try {
       const detail = await fetchHistoryDetail(call.id);
       const request = adaptProxyRecordToApiCall(detail);
@@ -164,7 +164,7 @@ export function LogEntryContextMenu({
       console.error('Failed to open target in Browser Automation:', error);
       toast.error('Failed to open target in Browser Automation');
     }
-  };
+  }, [call.id, navigate]);
 
   // const handleOpenInPromptInjection = async () => {
   //   try {
@@ -213,7 +213,7 @@ export function LogEntryContextMenu({
   //   }
   // };
 
-  const handleDelete = async () => {
+  const handleDelete = useCallback(async () => {
     try {
       await deleteHistoryLog(call.id);
       onDelete?.(call.id);
@@ -221,7 +221,7 @@ export function LogEntryContextMenu({
     } catch (error) {
       console.error('Failed to delete:', error);
     }
-  };
+  }, [call.id, onDelete, triggerRefresh]);
 
   return (
     <ContextMenu onOpenChange={onOpenChange}>
@@ -264,4 +264,4 @@ export function LogEntryContextMenu({
       </ContextMenuContent>
     </ContextMenu>
   );
-}
+});

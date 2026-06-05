@@ -12,12 +12,12 @@ export function TitlebarButtons() {
     await getCurrentWindow().minimize()
   }
 
-  const handleFullscreen = async() => {
+  const handleFullscreen = async () => {
     setToggleFullscreen(!toggleFullscreen)
     await getCurrentWindow().setFullscreen(!toggleFullscreen)
   }
 
-  const handleClose = async() => {
+  const handleClose = async () => {
     await getCurrentWindow().close();
   }
 
@@ -29,13 +29,6 @@ export function TitlebarButtons() {
         title="Close"
         onClick={handleClose}
       />
-      
-      <button
-        id="titlebar-maximize"
-        className={`${baseClass} bg-[#28C840]`}
-        title="Fullscreen"
-        onClick={handleFullscreen}
-      />
 
       <button
         id="titlebar-minimize"
@@ -43,7 +36,14 @@ export function TitlebarButtons() {
         title="Minimize"
         onClick={handleMinimize}
       />
-     
+
+      <button
+        id="titlebar-maximize"
+        className={`${baseClass} bg-[#28C840]`}
+        title="Fullscreen"
+        onClick={handleFullscreen}
+      />
+
     </div>
   );
 }

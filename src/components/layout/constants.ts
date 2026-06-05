@@ -15,7 +15,7 @@ export const allNavItems: NavItem[] = [
   { label: 'Invoker', icon: Crosshair, href: '/invoker' },
   { label: 'Repeater', icon: RefreshCw, href: '/repeater' },
   { label: 'Browser', icon: Globe, href: '/browser-automation'},
-  { label: 'Listener', icon: Radio, href: '/listener' },
+  // { label: 'Listener', icon: Radio, href: '/listener' },
   // { label: 'Documents', icon: FileText, href: '/documents'},
   // { label: 'AI Tools', icon: Bot, href: '/ai-tools', devOnly: true },
   { label: 'Tools', icon: Box, href: '/tools' },

@@ -146,7 +146,10 @@ pub fn set_ai_api_key(
 }
 
 #[tauri::command]
-pub fn clear_ai_api_key(app: AppHandle, provider: String) -> Result<BTreeMap<String, bool>, String> {
+pub fn clear_ai_api_key(
+    app: AppHandle,
+    provider: String,
+) -> Result<BTreeMap<String, bool>, String> {
     let provider = normalize_ai_provider(&provider)?;
     match keyring_entry(provider)?.delete_credential() {
         Ok(()) | Err(KeyringError::NoEntry) => {

@@ -14,11 +14,37 @@ use std::sync::{
     Arc, Mutex,
 };
 use tauri::{AppHandle, Emitter, Manager};
+use tauri_plugin_notification::NotificationExt;
 use tauri_plugin_shell::ShellExt;
 use uuid::Uuid;
 
 fn page_id() -> String {
     format!("page-{}", Uuid::new_v4())
+}
+
+fn notify_human_intervention(app: &AppHandle, target: Option<&str>, reason: &str) {
+    let target = target
+        .and_then(|value| {
+            url::Url::parse(value)
+                .ok()
+                .and_then(|url| url.host_str().map(str::to_string))
+                .or_else(|| Some(value.to_string()))
+        })
+        .unwrap_or_else(|| "browser automation".to_string());
+    let body = format!("{}: {}", target, reason);
+
+    if let Err(error) = app
+        .notification()
+        .builder()
+        .title("Human intervention needed")
+        .body(body)
+        .show()
+    {
+        eprintln!(
+            "[ai-browser] failed to send human intervention notification: {}",
+            error
+        );
+    }
 }
 
 pub(crate) fn apply_sidecar_message(
@@ -186,12 +212,21 @@ pub(crate) fn apply_sidecar_message(
             );
         }
         "human_input_requested" => {
+            let request_id = message.id.unwrap_or_else(|| Uuid::new_v4().to_string());
+            let request_session_id = message
+                .session_id
+                .clone()
+                .unwrap_or_else(|| session_id.to_string());
+            let request_url = message.url.clone();
+            let reason = message.reason.or(message.message).unwrap_or_else(|| {
+                "Human input is required before the agent can continue.".to_string()
+            });
             let request = serde_json::json!({
-                "id": message.id.unwrap_or_else(|| Uuid::new_v4().to_string()),
-                "sessionId": message.session_id.clone().unwrap_or_else(|| session_id.to_string()),
+                "id": request_id,
+                "sessionId": request_session_id,
                 "pageId": message.page_id,
-                "url": message.url,
-                "reason": message.reason.or(message.message).unwrap_or_else(|| "Human input is required before the agent can continue.".to_string()),
+                "url": request_url,
+                "reason": reason,
                 "requestedFields": message.requested_fields.unwrap_or_default(),
                 "safeActions": message.safe_actions.unwrap_or_else(|| vec![
                     "continue".to_string(),
@@ -201,6 +236,14 @@ pub(crate) fn apply_sidecar_message(
                 "aiUsedForAnalysis": message.ai_used_for_analysis,
                 "createdAt": message.created_at.unwrap_or_else(now),
             });
+            notify_human_intervention(
+                app,
+                request.get("url").and_then(|value| value.as_str()),
+                request
+                    .get("reason")
+                    .and_then(|value| value.as_str())
+                    .unwrap_or("Human input requested"),
+            );
             add_log(
                 app,
                 state,

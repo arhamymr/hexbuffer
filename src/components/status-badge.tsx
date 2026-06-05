@@ -34,7 +34,7 @@ export function StatusBadge({ status }: { status: StatusBadgeValue }) {
   }
   const colorClass = getStatusColor(status);
   return (
-    <span className={`text-xs px-1 py-0.5 rounded font-mono text-white ${colorClass}`}>
+    <span className={`text-[10px] px-1 py-0.5 rounded font-mono text-white ${colorClass}`}>
       {status}
     </span>
   );
@@ -50,7 +50,7 @@ export function getLevelColor(level: LevelBadgeValue) {
 export function LevelBadge({ level }: { level: LevelBadgeValue }) {
   const colorClass = getLevelColor(level);
   return (
-    <span className={`text-xs px-1 py-0.5 rounded font-mono text-white ${colorClass}`}>
+    <span className={`text-[10px] px-1 py-0.5 rounded font-mono text-white ${colorClass}`}>
       {level}
     </span>
   );
@@ -89,7 +89,7 @@ export function getSeverityColor(sev: SeverityBadgeValue) {
 export function SeverityBadge({ severity: sev }: { severity: SeverityBadgeValue }) {
   const colorClass = getSeverityColor(sev);
   return (
-    <span className={`text-xs px-1 py-0.5 rounded font-mono text-white ${colorClass}`}>
+    <span className={`text-[10px] px-1 py-0.5 rounded font-mono text-white ${colorClass}`}>
       {sev}
     </span>
   );
@@ -97,7 +97,7 @@ export function SeverityBadge({ severity: sev }: { severity: SeverityBadgeValue 
 
 export function InterestingBadge() {
   return (
-    <span className="text-xs px-1 py-0.5 rounded font-mono text-white bg-yellow-600">
+    <span className="text-[10px] px-1 py-0.5 rounded font-mono text-white bg-yellow-600">
       Interesting
     </span>
   );
@@ -106,7 +106,7 @@ export function InterestingBadge() {
 export function ActivityStatusBadge({ status }: { status: StatusActivityValue }) {
   const colorClass = getActivityStatusColor(status);
   return (
-    <span className={`text-xs px-1 py-0.5 rounded font-mono text-white ${colorClass}`}>
+    <span className={`text-[10px] px-1 py-0.5 rounded font-mono text-white ${colorClass}`}>
       {status}
     </span>
   );
@@ -125,7 +125,7 @@ export function MethodBadge({ method }: { method: string }) {
     TRACE: 'bg-cyan-600',
   };
   return (
-    <span className={`text-xs px-1 py-0.5 rounded font-mono text-white ${colors[method.toUpperCase()] || 'bg-gray-600'}`}>
+    <span className={`text-[10px] px-1 py-0.5 rounded font-mono text-white ${colors[method.toUpperCase()] || 'bg-gray-600'}`}>
       {method.toUpperCase()}
     </span>
   );

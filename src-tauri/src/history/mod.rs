@@ -244,12 +244,28 @@ impl HistoryBridge {
         let result = match filter {
             Some(filter) if self.has_active_filters(&filter) => self
                 .db
-                .get_filtered_paginated(&filter, page, per_page, sort_order),
-            _ => self.db.get_paginated(page, per_page, sort_order),
+                .get_filtered_summary_paginated(&filter, page, per_page, sort_order),
+            _ => self.db.get_summary_paginated(page, per_page, sort_order),
         }?;
 
         Ok(PaginatedResponse {
-            data: result.data.into_iter().map(ProxyLogSummary::from).collect(),
+            data: result
+                .data
+                .into_iter()
+                .map(|r| ProxyLogSummary {
+                    id: r.id,
+                    timestamp: r.timestamp,
+                    method: r.method,
+                    url: r.url,
+                    response_status: r.response_status,
+                    response_status_text: r.response_status_text,
+                    request_body_size: r.request_body_size,
+                    response_body_size: r.response_body_size,
+                    server_addr: r.server_addr,
+                    user_agent: r.user_agent,
+                    response_content_type: r.response_content_type,
+                })
+                .collect(),
             total: result.total,
             page: result.page,
             per_page: result.per_page,
@@ -367,51 +383,88 @@ impl HistoryBridge {
     // ── Collaborator ──────────────────────────────────────────────
 
     pub fn list_collaborator_servers(&self) -> Result<Vec<CollaboratorServer>, String> {
-        self.db.list_collaborator_servers().map_err(|e| e.to_string())
+        self.db
+            .list_collaborator_servers()
+            .map_err(|e| e.to_string())
     }
 
     pub fn get_collaborator_server(&self, id: &str) -> Result<Option<CollaboratorServer>, String> {
-        self.db.get_collaborator_server(id).map_err(|e| e.to_string())
+        self.db
+            .get_collaborator_server(id)
+            .map_err(|e| e.to_string())
     }
 
     pub fn insert_collaborator_server(&self, s: &CollaboratorServer) -> Result<(), String> {
-        self.db.insert_collaborator_server(s).map_err(|e| e.to_string())
+        self.db
+            .insert_collaborator_server(s)
+            .map_err(|e| e.to_string())
     }
 
     pub fn update_collaborator_server(&self, s: &CollaboratorServer) -> Result<(), String> {
-        self.db.update_collaborator_server(s).map_err(|e| e.to_string())
+        self.db
+            .update_collaborator_server(s)
+            .map_err(|e| e.to_string())
     }
 
     pub fn delete_collaborator_server(&self, id: &str) -> Result<(), String> {
-        self.db.delete_collaborator_server(id).map_err(|e| e.to_string())
+        self.db
+            .delete_collaborator_server(id)
+            .map_err(|e| e.to_string())
     }
 
     pub fn insert_collaborator_payload(&self, p: &CollaboratorPayload) -> Result<(), String> {
-        self.db.insert_collaborator_payload(p).map_err(|e| e.to_string())
+        self.db
+            .insert_collaborator_payload(p)
+            .map_err(|e| e.to_string())
     }
 
-    pub fn list_collaborator_payloads(&self, sid: Option<&str>) -> Result<Vec<CollaboratorPayload>, String> {
-        self.db.list_collaborator_payloads(sid).map_err(|e| e.to_string())
+    pub fn list_collaborator_payloads(
+        &self,
+        sid: Option<&str>,
+    ) -> Result<Vec<CollaboratorPayload>, String> {
+        self.db
+            .list_collaborator_payloads(sid)
+            .map_err(|e| e.to_string())
     }
 
-    pub fn get_collaborator_payload(&self, id: &str) -> Result<Option<CollaboratorPayload>, String> {
-        self.db.get_collaborator_payload(id).map_err(|e| e.to_string())
+    pub fn get_collaborator_payload(
+        &self,
+        id: &str,
+    ) -> Result<Option<CollaboratorPayload>, String> {
+        self.db
+            .get_collaborator_payload(id)
+            .map_err(|e| e.to_string())
     }
 
     pub fn update_collaborator_payload_status(&self, id: &str, status: &str) -> Result<(), String> {
-        self.db.update_collaborator_payload_status(id, status).map_err(|e| e.to_string())
+        self.db
+            .update_collaborator_payload_status(id, status)
+            .map_err(|e| e.to_string())
     }
 
     pub fn delete_collaborator_payload(&self, id: &str) -> Result<(), String> {
-        self.db.delete_collaborator_payload(id).map_err(|e| e.to_string())
+        self.db
+            .delete_collaborator_payload(id)
+            .map_err(|e| e.to_string())
     }
 
-    pub fn increment_collaborator_payload_interactions(&self, id: &str, count: i64) -> Result<(), String> {
-        self.db.increment_collaborator_payload_interactions(id, count).map_err(|e| e.to_string())
+    pub fn increment_collaborator_payload_interactions(
+        &self,
+        id: &str,
+        count: i64,
+    ) -> Result<(), String> {
+        self.db
+            .increment_collaborator_payload_interactions(id, count)
+            .map_err(|e| e.to_string())
     }
 
-    pub fn insert_collaborator_interaction(&self, i: &CollaboratorInteraction) -> Result<(), String> {
-        self.db.insert_collaborator_interaction(i).map_err(|e| e.to_string())
+    pub fn insert_collaborator_interaction(
+        &self,
+        i: &CollaboratorInteraction,
+    ) -> Result<(), String> {
+        self.db
+            .insert_collaborator_interaction(i)
+            .map_err(|e| e.to_string())
     }
 
     pub fn list_collaborator_interactions(
@@ -419,15 +472,24 @@ impl HistoryBridge {
         payload_id: Option<&str>,
         interaction_type: Option<&str>,
     ) -> Result<Vec<CollaboratorInteraction>, String> {
-        self.db.list_collaborator_interactions(payload_id, interaction_type).map_err(|e| e.to_string())
+        self.db
+            .list_collaborator_interactions(payload_id, interaction_type)
+            .map_err(|e| e.to_string())
     }
 
-    pub fn get_collaborator_interaction(&self, id: &str) -> Result<Option<CollaboratorInteraction>, String> {
-        self.db.get_collaborator_interaction(id).map_err(|e| e.to_string())
+    pub fn get_collaborator_interaction(
+        &self,
+        id: &str,
+    ) -> Result<Option<CollaboratorInteraction>, String> {
+        self.db
+            .get_collaborator_interaction(id)
+            .map_err(|e| e.to_string())
     }
 
     pub fn get_collaborator_dashboard_stats(&self) -> Result<CollaboratorDashboardStats, String> {
-        self.db.get_collaborator_dashboard_stats().map_err(|e| e.to_string())
+        self.db
+            .get_collaborator_dashboard_stats()
+            .map_err(|e| e.to_string())
     }
 }
 

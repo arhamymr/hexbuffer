@@ -1,7 +1,25 @@
 import * as React from 'react';
 import { getVersion } from '@tauri-apps/api/app';
 import { check } from '@tauri-apps/plugin-updater';
-import type { Update } from '@tauri-apps/plugin-updater';
+import type { DownloadEvent, Update } from '@tauri-apps/plugin-updater';
+
+type DownloadProgressPhase = 'idle' | 'downloading' | 'installing' | 'installed' | 'failed';
+
+interface DownloadProgress {
+  phase: DownloadProgressPhase;
+  downloadedBytes: number;
+  totalBytes: number | null;
+  percent: number | null;
+  message: string;
+}
+
+const idleDownloadProgress: DownloadProgress = {
+  phase: 'idle',
+  downloadedBytes: 0,
+  totalBytes: null,
+  percent: null,
+  message: '',
+};
 
 function toUpdaterErrorMessage(error: unknown) {
   if (error instanceof Error) {
@@ -17,9 +35,53 @@ export function useUpdater() {
   const [downloading, setDownloading] = React.useState(false);
   const [downloadMessage, setDownloadMessage] = React.useState('');
   const [downloadError, setDownloadError] = React.useState('');
+  const [downloadProgress, setDownloadProgress] = React.useState<DownloadProgress>(idleDownloadProgress);
   const [updateInstalled, setUpdateInstalled] = React.useState(false);
   const [pendingUpdate, setPendingUpdate] = React.useState<Update | null>(null);
   const updateAvailable = pendingUpdate !== null;
+
+  const updateDownloadProgress = React.useCallback((event: DownloadEvent) => {
+    switch (event.event) {
+      case 'Started': {
+        const totalBytes = event.data.contentLength ?? null;
+
+        setDownloadProgress({
+          phase: 'downloading',
+          downloadedBytes: 0,
+          totalBytes,
+          percent: totalBytes ? 0 : null,
+          message: 'Downloading update...',
+        });
+        setDownloadMessage('Downloading update...');
+        break;
+      }
+      case 'Progress':
+        setDownloadProgress((current) => {
+          const downloadedBytes = current.downloadedBytes + event.data.chunkLength;
+          const percent = current.totalBytes
+            ? Math.min(100, Math.round((downloadedBytes / current.totalBytes) * 100))
+            : null;
+
+          return {
+            ...current,
+            phase: 'downloading',
+            downloadedBytes,
+            percent,
+            message: percent === null ? 'Downloading update...' : `Downloading update... ${percent}%`,
+          };
+        });
+        break;
+      case 'Finished':
+        setDownloadProgress((current) => ({
+          ...current,
+          phase: 'installing',
+          percent: current.totalBytes ? 100 : current.percent,
+          message: 'Installing update...',
+        }));
+        setDownloadMessage('Installing...');
+        break;
+    }
+  }, []);
 
   const checkForUpdates = React.useCallback(async (silent = false) => {
     if (checking) return;
@@ -63,16 +125,23 @@ export function useUpdater() {
       setDownloadError('');
       setDownloading(true);
       setDownloadMessage(`Downloading update ${pendingUpdate.version}...`);
-
-      await pendingUpdate.downloadAndInstall((event) => {
-        switch (event.event) {
-          case 'Finished':
-            setDownloadMessage('Installing...');
-            break;
-        }
+      setDownloadProgress({
+        phase: 'downloading',
+        downloadedBytes: 0,
+        totalBytes: null,
+        percent: null,
+        message: `Downloading update ${pendingUpdate.version}...`,
       });
 
+      await pendingUpdate.downloadAndInstall(updateDownloadProgress);
+
       setDownloadMessage('Update installed successfully. Restarting app...');
+      setDownloadProgress((current) => ({
+        ...current,
+        phase: 'installed',
+        percent: current.totalBytes ? 100 : current.percent,
+        message: 'Update installed successfully. Restarting app...',
+      }));
       setUpdateInstalled(true);
       setPendingUpdate(null);
       return { ok: true };
@@ -81,6 +150,11 @@ export function useUpdater() {
       const message = toUpdaterErrorMessage(error);
       setDownloadMessage(`Update failed: ${message}`);
       setDownloadError(message);
+      setDownloadProgress((current) => ({
+        ...current,
+        phase: 'failed',
+        message,
+      }));
       setUpdateInstalled(false);
       return {
         ok: false,
@@ -89,7 +163,7 @@ export function useUpdater() {
     } finally {
       setDownloading(false);
     }
-  }, [pendingUpdate, downloading]);
+  }, [pendingUpdate, downloading, updateDownloadProgress]);
 
   React.useEffect(() => {
     void checkForUpdates(true);
@@ -107,6 +181,7 @@ export function useUpdater() {
     currentVersion,
     checking,
     downloading,
+    downloadProgress,
     downloadMessage,
     downloadError,
     updateInstalled,

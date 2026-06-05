@@ -16,6 +16,10 @@ pub use ai::{
     AiSettings, MastraProcessState, MastraStatus,
 };
 pub use browser::{AIInsight, ActivityLog, AiBrowserState, CrawlConfig, CrawlPage, CrawlSession};
+pub use collaborator::{
+    CollaboratorDashboardStats, CollaboratorInteraction, CollaboratorPayload,
+    CollaboratorPollingState, CollaboratorServer,
+};
 pub use commands::browser::{
     ai_browser_pause_crawl, ai_browser_resume_crawl, ai_browser_start_crawl, ai_browser_stop_crawl,
     ai_browser_submit_human_input, browser_batch, browser_click, browser_close, browser_execute,
@@ -52,8 +56,4 @@ pub use sqli::types::SqliScanState;
 pub use sqli::{
     start_sqli_scan, stop_sqli_scan, SqliParam, SqliParamLocation, SqliRiskLevel, SqliScanResult,
     SqliSeverity, SqliTechnique, SqliVulnerability,
-};
-pub use collaborator::{
-    CollaboratorDashboardStats, CollaboratorInteraction, CollaboratorPayload,
-    CollaboratorPollingState, CollaboratorServer,
 };

@@ -28,7 +28,11 @@ pub struct InterceptForwardResponse {
     body: String,
 }
 
-fn sync_content_length(headers: &mut HashMap<String, String>, body_len: usize, insert_if_missing: bool) {
+fn sync_content_length(
+    headers: &mut HashMap<String, String>,
+    body_len: usize,
+    insert_if_missing: bool,
+) {
     let content_length_key = headers
         .keys()
         .find(|key| key.eq_ignore_ascii_case("content-length"))

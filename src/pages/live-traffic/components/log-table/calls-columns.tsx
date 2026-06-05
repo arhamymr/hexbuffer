@@ -19,7 +19,7 @@ import { buildRawHttpRequest } from "@/lib/http-message";
 import { useRepeaterStore } from "@/stores/repeater";
 import { HistoryLoadingState } from "../history-loading-state";
 import { BrowserIcon } from "./browser-icon";
-import { Spinner } from "@/components/ui/spinner";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface SendToRepeaterButtonProps {
   call: ApiCall;
@@ -147,6 +147,41 @@ export const callsColumns: import("@tanstack/react-table").ColumnDef<ApiCall>[] 
   },
 ];
 
+const trafficTableSkeletonWidths = ["70%", "85%", "80%", "95%", "60%", "55%", "75%", "36px"];
+
+function TrafficTableSkeletonRows({ rows = 3 }: { rows?: number }) {
+  return (
+    <>
+      {Array.from({ length: rows }).map((_, rowIndex) => (
+        <tr
+          key={rowIndex}
+          className="border-b animate-in fade-in-0 slide-in-from-top-1 duration-300"
+          aria-hidden="true"
+        >
+          {trafficTableSkeletonWidths.map((width, columnIndex) => (
+            <td
+              key={columnIndex}
+              className={columnIndex === 4 || columnIndex === 5 ? "px-3 py-2 text-right" : "px-3 py-2"}
+            >
+              <Skeleton
+                className={columnIndex === 7 ? "mx-auto h-5 w-9" : "h-3"}
+                style={{
+                  width:
+                    columnIndex === 7
+                      ? undefined
+                      : rowIndex % 2 === 0
+                        ? width
+                        : `${Math.max(45, Number.parseInt(width, 10) - 12)}%`,
+                }}
+              />
+            </td>
+          ))}
+        </tr>
+      ))}
+    </>
+  );
+}
+
 export function TrafficTable() {
   const [isContextMenuOpen, setIsContextMenuOpen] = useState(false);
   const {
@@ -236,16 +271,6 @@ export function TrafficTable() {
           </tr>
         </thead>
         <tbody>
-          {isLoading && calls.length > 0 && (
-            <tr>
-              <td colSpan={8} className="border-b bg-muted/40 px-3 py-2">
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <Spinner className="size-3.5" />
-                  <span>Applying filters...</span>
-                </div>
-              </td>
-            </tr>
-          )}
           {calls.map((call) => (
             <LogEntryContextMenu
               key={call.id}
@@ -295,6 +320,8 @@ export function TrafficTable() {
               </tr>
             </LogEntryContextMenu>
           ))}
+          {isLoading && calls.length > 0 && <TrafficTableSkeletonRows />}
+          {isLoadingMore && <TrafficTableSkeletonRows rows={2} />}
         </tbody>
       </table>
       <div className="flex items-center justify-between gap-3 px-3 py-4 border-t">

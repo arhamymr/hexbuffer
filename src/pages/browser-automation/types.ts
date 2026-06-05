@@ -81,6 +81,7 @@ export interface ActivityLog {
   url?: string;
   aiUsedForAnalysis?: boolean;
   createdAt: string;
+  humanInputRequest?: HumanInputRequest;
 }
 
 export interface HumanInputRequest {

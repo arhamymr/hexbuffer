@@ -10,14 +10,6 @@ import { PageDetailPanel } from './components/page-detail-panel';
 import { Alert, AlertAction, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
 import { TabbedPageLayout } from '@/components/tabs-layout/tabbed-page-layout';
 import { useAppStore } from '@/stores/app';
@@ -54,7 +46,7 @@ export function BrowserAutomationPage() {
     pauseCrawl,
     resumeCrawl,
     stopCrawl,
-    clearHumanInputRequest,
+    submitHumanInput,
     setSearch,
   } = useBrowserAutomationStore();
 
@@ -66,7 +58,6 @@ export function BrowserAutomationPage() {
     setup,
     session,
     expandedPageIds,
-    humanInputRequest,
     search,
   } = activeTab;
 
@@ -174,55 +165,12 @@ export function BrowserAutomationPage() {
                   </ResizablePanel>
                   <ResizableHandle withHandle />
                   <ResizablePanel defaultSize={80} minSize={22}>
-                    <ActivityLogPanel logs={filteredLogs} />
+                    <ActivityLogPanel logs={filteredLogs} onSubmitHumanInput={submitHumanInput} />
                   </ResizablePanel>
                 </ResizablePanelGroup>
               </ResizablePanel>
             </ResizablePanelGroup>
           </main>
-
-
-          <Dialog open={Boolean(humanInputRequest)} onOpenChange={(open) => {
-            if (!open) clearHumanInputRequest();
-          }}>
-            <DialogContent className="sm:max-w-[560px]">
-              <DialogHeader>
-                <DialogTitle>Human Input Required</DialogTitle>
-                <DialogDescription>
-                  The AI agent skipped a restricted workflow and continued with safe crawl targets.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-3 text-sm">
-                <div className="rounded-md border p-3">
-                  <div className="font-medium">Reason</div>
-                  <p className="mt-1 text-muted-foreground">{humanInputRequest?.reason}</p>
-                </div>
-                {humanInputRequest?.url ? (
-                  <div className="min-w-0 rounded-md border p-3">
-                    <div className="font-medium">Page</div>
-                    <p className="mt-1 truncate font-mono text-xs text-muted-foreground">{humanInputRequest.url}</p>
-                  </div>
-                ) : null}
-                {humanInputRequest?.requestedFields.length ? (
-                  <div className="rounded-md border p-3">
-                    <div className="font-medium">Requested Fields</div>
-                    <p className="mt-1 text-muted-foreground">{humanInputRequest.requestedFields.join(', ')}</p>
-                  </div>
-                ) : null}
-              </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={resumeCrawl}>
-                  Continue
-                </Button>
-                <Button variant="outline" onClick={clearHumanInputRequest}>
-                  Skip Branch
-                </Button>
-                <Button onClick={stopCrawl}>
-                  Stop Automation
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
         </div>
       </TabbedPageLayout>
     </>

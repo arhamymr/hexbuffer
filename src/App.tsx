@@ -8,6 +8,7 @@ import { ToolsPage } from "@/pages/tools";
 import { AIToolsPage } from "@/pages/ai-tools";
 import { DocumentsPage } from "@/pages/documents";
 import { BrowserAutomationPage } from "@/pages/browser-automation";
+import { CollaboratorPage } from "@/pages/collaborator";
 import { PacketCapturePage } from "@/pages/packet-capture";
 // import { CaInstallDialog } from "@/components/ca-install-dialog";
 
@@ -21,6 +22,7 @@ function AppRoutes() {
         <Route path="/repeater" element={<RepeaterPage />} />
         <Route path="/brute-force" element={<BruteForcePage />} />
         <Route path="/browser-automation" element={<BrowserAutomationPage />} />
+        <Route path="/collaborator" element={<CollaboratorPage />} />
         {/* <Route path="/packet-capture" element={<PacketCapturePage />} /> */}
         <Route path="/tools" element={<ToolsPage />} />
         <Route path="/ai-tools" element={<AIToolsPage />} />

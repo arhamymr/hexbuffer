@@ -258,3 +258,52 @@ CREATE INDEX IF NOT EXISTS idx_ai_browser_insights_session_id ON ai_browser_insi
 CREATE INDEX IF NOT EXISTS idx_ai_browser_logs_session_id ON ai_browser_logs(session_id);
 CREATE INDEX IF NOT EXISTS idx_ai_browser_logs_created_at ON ai_browser_logs(created_at);
 "#;
+
+pub const CREATE_COLLABORATOR_TABLES: &str = r#"
+CREATE TABLE IF NOT EXISTS collaborator_servers (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    url TEXT NOT NULL,
+    api_key TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'unknown',
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS collaborator_payloads (
+    id TEXT PRIMARY KEY,
+    server_id TEXT NOT NULL,
+    identifier TEXT NOT NULL,
+    payload_url TEXT NOT NULL,
+    name TEXT NOT NULL,
+    description TEXT NOT NULL DEFAULT '',
+    tags TEXT NOT NULL DEFAULT '[]',
+    interaction_count INTEGER NOT NULL DEFAULT 0,
+    status TEXT NOT NULL DEFAULT 'active',
+    created_at TEXT NOT NULL,
+    last_seen_at TEXT,
+    FOREIGN KEY(server_id) REFERENCES collaborator_servers(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS collaborator_interactions (
+    id TEXT PRIMARY KEY,
+    payload_id TEXT NOT NULL,
+    interaction_type TEXT NOT NULL,
+    source_ip TEXT NOT NULL,
+    method TEXT,
+    path TEXT,
+    headers TEXT,
+    raw_request TEXT,
+    request_body TEXT,
+    server_response TEXT,
+    timestamp TEXT NOT NULL,
+    FOREIGN KEY(payload_id) REFERENCES collaborator_payloads(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_collab_payloads_server ON collaborator_payloads(server_id);
+CREATE INDEX IF NOT EXISTS idx_collab_payloads_status ON collaborator_payloads(status);
+CREATE INDEX IF NOT EXISTS idx_collab_payloads_identifier ON collaborator_payloads(identifier);
+CREATE INDEX IF NOT EXISTS idx_collab_interactions_payload ON collaborator_interactions(payload_id);
+CREATE INDEX IF NOT EXISTS idx_collab_interactions_type ON collaborator_interactions(interaction_type);
+CREATE INDEX IF NOT EXISTS idx_collab_interactions_ts ON collaborator_interactions(timestamp);
+"#;

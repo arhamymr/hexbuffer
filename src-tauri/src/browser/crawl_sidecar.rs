@@ -133,6 +133,22 @@ pub(crate) fn apply_sidecar_message(
             let _ = app.emit("ai-browser:insight-created", insight);
         }
         "log_created" => {
+            let human_input_request = message.human_input_request_id.as_ref().map(|request_id| {
+                serde_json::json!({
+                    "id": request_id,
+                    "sessionId": message.session_id.clone().unwrap_or_else(|| session_id.to_string()),
+                    "url": message.url.clone(),
+                    "reason": message.message.clone().unwrap_or_else(|| "Human input is required before the agent can continue.".to_string()),
+                    "requestedFields": message.requested_fields.clone().unwrap_or_default(),
+                    "safeActions": [
+                        "continue",
+                        "skip-branch",
+                        "stop-crawl",
+                    ],
+                    "aiUsedForAnalysis": message.ai_used_for_analysis,
+                    "createdAt": message.created_at.clone().unwrap_or_else(now),
+                })
+            });
             add_log(
                 app,
                 state,
@@ -145,6 +161,7 @@ pub(crate) fn apply_sidecar_message(
                     url: message.url,
                     ai_used_for_analysis: message.ai_used_for_analysis,
                     created_at: message.created_at.unwrap_or_else(now),
+                    human_input_request,
                 },
             );
         }
@@ -161,6 +178,7 @@ pub(crate) fn apply_sidecar_message(
                     url: None,
                     ai_used_for_analysis: message.ai_used_for_analysis,
                     created_at: now(),
+                    human_input_request: None,
                 },
             );
         }
@@ -180,6 +198,7 @@ pub(crate) fn apply_sidecar_message(
                 "aiUsedForAnalysis": message.ai_used_for_analysis,
                 "createdAt": message.created_at.unwrap_or_else(now),
             });
+            let _ = update_session(app, state, session_id, "paused", None);
             add_log(
                 app,
                 state,
@@ -199,6 +218,7 @@ pub(crate) fn apply_sidecar_message(
                         .map(str::to_string),
                     ai_used_for_analysis: message.ai_used_for_analysis,
                     created_at: now(),
+                    human_input_request: Some(request.clone()),
                 },
             );
             let _ = app.emit("ai-browser:human-input-requested", request);
@@ -243,6 +263,7 @@ pub(crate) fn apply_sidecar_message(
                     url: None,
                     ai_used_for_analysis: message.ai_used_for_analysis,
                     created_at: now(),
+                    human_input_request: None,
                 },
             );
             let _ = app.emit(
@@ -293,7 +314,10 @@ pub(crate) fn run_sidecar_crawl(
         .env("0XBUFFER_AI_MODEL", &settings.model);
     let mut command: Command = sidecar_command.into();
 
-    command.stdout(Stdio::piped()).stderr(Stdio::piped());
+    command
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped());
 
     if let Some(dir) = artifact_dir {
         command.env("0XBUFFER_AI_ARTIFACT_DIR", dir);
@@ -355,6 +379,7 @@ pub(crate) fn run_sidecar_crawl(
                                 url: None,
                                 ai_used_for_analysis: None,
                                 created_at: now(),
+                                human_input_request: None,
                             },
                         );
                     }

@@ -94,6 +94,11 @@ interface BrowserAutomationState {
   applyInsightCreated: (insight: AIInsight) => void;
   applyLogCreated: (log: ActivityLog) => void;
   applyHumanInputRequested: (request: HumanInputRequest) => void;
+  submitHumanInput: (
+    request: HumanInputRequest,
+    action: 'continue' | 'skip-branch' | 'stop-crawl',
+    fields?: Record<string, string>
+  ) => Promise<void>;
   clearHumanInputRequest: () => void;
   loadPersistedSessions: () => Promise<void>;
 }
@@ -570,6 +575,41 @@ export const useBrowserAutomationStore = create<BrowserAutomationState>((set, ge
       humanInputRequest:
         tab.session && isTerminalStatus(tab.session.status) ? tab.humanInputRequest : request,
     })),
+
+  submitHumanInput: async (request, action, fields = {}) => {
+    updateTabForSession(set, get, request.sessionId, (tab) => ({
+      ...tab,
+      humanInputRequest: null,
+      session:
+        tab.session && !isTerminalStatus(tab.session.status) && action === 'continue'
+          ? { ...tab.session, status: 'running' }
+          : tab.session,
+    }));
+
+    try {
+      await invoke('ai_browser_submit_human_input', {
+        sessionId: request.sessionId,
+        requestId: request.id,
+        action,
+        fields: action === 'continue' ? fields : {},
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      get().applyLogCreated({
+        id: `log-${Date.now()}`,
+        sessionId: request.sessionId,
+        level: 'error',
+        type: 'policy',
+        message: `Failed to submit human input: ${message}`,
+        url: request.url,
+        createdAt: new Date().toISOString(),
+      });
+      updateTabForSession(set, get, request.sessionId, (tab) => ({
+        ...tab,
+        humanInputRequest: request,
+      }));
+    }
+  },
 
   clearHumanInputRequest: () =>
     updateActiveTab(set, (tab) => ({

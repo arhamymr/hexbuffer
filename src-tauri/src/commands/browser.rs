@@ -9,6 +9,8 @@ pub use crate::browser::{
 
 // ── Agent browser types ──
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
+use std::io::Write;
 use std::path::PathBuf;
 use std::process::{Child, Command, Stdio};
 use std::sync::{
@@ -596,6 +598,7 @@ pub async fn ai_browser_start_crawl(
             url: Some(session.target_url.clone()),
             ai_used_for_analysis: None,
             created_at: now(),
+            human_input_request: None,
         },
     );
 
@@ -621,6 +624,7 @@ pub async fn ai_browser_start_crawl(
                     url: Some(session.target_url.clone()),
                     ai_used_for_analysis: Some(false),
                     created_at: now(),
+                    human_input_request: None,
                 },
             );
             None
@@ -684,6 +688,7 @@ pub async fn ai_browser_start_crawl(
                     url: None,
                     ai_used_for_analysis: None,
                     created_at: now(),
+                    human_input_request: None,
                 },
             );
             let _ = app_for_task.emit(
@@ -733,6 +738,7 @@ pub async fn ai_browser_pause_crawl(
             url: None,
             ai_used_for_analysis: None,
             created_at: now(),
+            human_input_request: None,
         },
     );
     Ok(())
@@ -775,6 +781,87 @@ pub async fn ai_browser_resume_crawl(
             url: None,
             ai_used_for_analysis: None,
             created_at: now(),
+            human_input_request: None,
+        },
+    );
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn ai_browser_submit_human_input(
+    app: AppHandle,
+    state: State<'_, AiBrowserState>,
+    session_id: String,
+    request_id: String,
+    action: String,
+    fields: Option<HashMap<String, String>>,
+) -> Result<(), String> {
+    if session_status(&state, &session_id)
+        .as_deref()
+        .map(is_terminal_status)
+        .unwrap_or(false)
+    {
+        return Ok(());
+    }
+
+    let child = state
+        .children
+        .lock()
+        .map_err(|_| "Failed to lock AI browser child processes".to_string())?
+        .get(&session_id)
+        .cloned()
+        .ok_or_else(|| "AI browser sidecar is not running".to_string())?;
+
+    let payload = serde_json::json!({
+        "type": "human_input_response",
+        "requestId": request_id,
+        "action": action,
+        "fields": fields.unwrap_or_default(),
+    });
+    let line = format!("{}\n", payload);
+    {
+        let mut child = child
+            .lock()
+            .map_err(|_| "Failed to lock AI browser child process".to_string())?;
+        let stdin = child
+            .stdin
+            .as_mut()
+            .ok_or_else(|| "AI browser sidecar input channel is closed".to_string())?;
+        stdin
+            .write_all(line.as_bytes())
+            .map_err(|error| format!("Failed to send human input to AI browser: {}", error))?;
+        stdin
+            .flush()
+            .map_err(|error| format!("Failed to flush human input to AI browser: {}", error))?;
+    }
+
+    if action == "stop-crawl" {
+        if let Some(cancel_flag) = state
+            .cancellations
+            .lock()
+            .map_err(|_| "Failed to lock AI browser cancellations".to_string())?
+            .remove(&session_id)
+        {
+            cancel_flag.store(true, Ordering::SeqCst);
+        }
+        update_session(&app, &state, &session_id, "stopped", Some(now()))?;
+    } else {
+        update_session(&app, &state, &session_id, "running", None)?;
+    }
+
+    add_log(
+        &app,
+        &state,
+        ActivityLog {
+            id: Uuid::new_v4().to_string(),
+            session_id,
+            level: "info".to_string(),
+            r#type: "policy".to_string(),
+            message: format!("Human selected {} for restricted workflow.", action),
+            url: None,
+            ai_used_for_analysis: None,
+            created_at: now(),
+            human_input_request: None,
         },
     );
     Ok(())
@@ -817,6 +904,7 @@ pub async fn ai_browser_stop_crawl(
             url: None,
             ai_used_for_analysis: None,
             created_at: now(),
+            human_input_request: None,
         },
     );
     Ok(())

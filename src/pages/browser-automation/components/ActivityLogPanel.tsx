@@ -1,16 +1,22 @@
 'use client';
 
-import { useState } from 'react';
-import { Clipboard, X } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { Clipboard, KeyRound, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { ActivityStatusBadge, LevelBadge } from '@/components/status-badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { EventLogTable } from '@/pages/live-traffic/components/log-table/event-log-table';
 import { copyText } from '@/lib/clipboard';
-import type { ActivityLog } from '../types';
+import type { ActivityLog, HumanInputRequest } from '../types';
 
 interface ActivityLogPanelProps {
   logs: ActivityLog[];
+  onSubmitHumanInput?: (
+    request: HumanInputRequest,
+    action: 'continue' | 'skip-branch' | 'stop-crawl',
+    fields?: Record<string, string>
+  ) => Promise<void> | void;
 }
 
 function DetailRow({ label, value }: { label: string; value: string | undefined }) {
@@ -25,10 +31,38 @@ function DetailRow({ label, value }: { label: string; value: string | undefined 
 function LogDetailPane({
   log,
   onClose,
+  onSubmitHumanInput,
 }: {
   log: ActivityLog;
   onClose: () => void;
+  onSubmitHumanInput?: ActivityLogPanelProps['onSubmitHumanInput'];
 }) {
+  const request = log.humanInputRequest;
+  const requestedFields = useMemo(() => {
+    const fields = request?.requestedFields.length ? request.requestedFields : ['username', 'password'];
+    return [...new Set(fields)];
+  }, [request]);
+  const [fieldValues, setFieldValues] = useState<Record<string, string>>({});
+  const [submittingAction, setSubmittingAction] = useState<string | null>(null);
+
+  useEffect(() => {
+    setFieldValues(Object.fromEntries(requestedFields.map((field) => [field, ''])));
+  }, [log.id, requestedFields]);
+
+  const submitAction = async (
+    action: 'continue' | 'skip-branch' | 'stop-crawl',
+    fields?: Record<string, string>
+  ) => {
+    if (!request || !onSubmitHumanInput) return;
+
+    setSubmittingAction(action);
+    try {
+      await onSubmitHumanInput(request, action, fields);
+    } finally {
+      setSubmittingAction(null);
+    }
+  };
+
   return (
     <div className="flex h-full flex-col">
       <div className="flex items-center justify-between border-b px-4">
@@ -63,6 +97,64 @@ function LogDetailPane({
               {log.message}
             </p>
           </div>
+
+          {request ? (
+            <form
+              className="rounded-md border p-3"
+              onSubmit={(event) => {
+                event.preventDefault();
+                void submitAction('continue', fieldValues);
+              }}
+            >
+              <div className="mb-3 flex items-center gap-2 text-sm font-medium">
+                <KeyRound className="h-4 w-4 text-muted-foreground" />
+                Human Input
+              </div>
+              <p className="mb-3 text-xs leading-5 text-muted-foreground">
+                Playwright paused on this page and needs these values before it can continue crawling the protected area.
+              </p>
+              <div className="space-y-3">
+                {requestedFields.map((field) => {
+                  const isSecret = /pass|otp|mfa|2fa|token|code/i.test(field);
+                  return (
+                    <label key={field} className="block space-y-1.5">
+                      <span className="text-xs font-medium text-muted-foreground">{field}</span>
+                      <Input
+                        type={isSecret ? 'password' : 'text'}
+                        value={fieldValues[field] ?? ''}
+                        onChange={(event) =>
+                          setFieldValues((current) => ({ ...current, [field]: event.target.value }))
+                        }
+                      />
+                    </label>
+                  );
+                })}
+              </div>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <Button size="sm" type="submit" disabled={!onSubmitHumanInput || submittingAction !== null}>
+                  Continue
+                </Button>
+                <Button
+                  size="sm"
+                  type="button"
+                  variant="outline"
+                  disabled={!onSubmitHumanInput || submittingAction !== null}
+                  onClick={() => void submitAction('skip-branch')}
+                >
+                  Skip Branch
+                </Button>
+                <Button
+                  size="sm"
+                  type="button"
+                  variant="outline"
+                  disabled={!onSubmitHumanInput || submittingAction !== null}
+                  onClick={() => void submitAction('stop-crawl')}
+                >
+                  Stop Crawl
+                </Button>
+              </div>
+            </form>
+          ) : null}
         </div>
       </ScrollArea>
 
@@ -84,7 +176,7 @@ function LogDetailPane({
   );
 }
 
-export function ActivityLogPanel({ logs }: ActivityLogPanelProps) {
+export function ActivityLogPanel({ logs, onSubmitHumanInput }: ActivityLogPanelProps) {
   const [selectedLog, setSelectedLog] = useState<ActivityLog | null>(null);
 
   return (
@@ -116,6 +208,7 @@ export function ActivityLogPanel({ logs }: ActivityLogPanelProps) {
           <LogDetailPane
             log={selectedLog}
             onClose={() => setSelectedLog(null)}
+            onSubmitHumanInput={onSubmitHumanInput}
           />
         )}
       </div>

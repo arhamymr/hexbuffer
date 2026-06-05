@@ -1,5 +1,6 @@
 pub mod ai;
 pub mod browser;
+pub mod collaborator;
 pub mod commands;
 pub mod db;
 pub mod history;
@@ -17,10 +18,10 @@ pub use ai::{
 pub use browser::{AIInsight, ActivityLog, AiBrowserState, CrawlConfig, CrawlPage, CrawlSession};
 pub use commands::browser::{
     ai_browser_pause_crawl, ai_browser_resume_crawl, ai_browser_start_crawl, ai_browser_stop_crawl,
-    browser_batch, browser_click, browser_close, browser_execute, browser_fill, browser_navigate,
-    browser_open, browser_press, browser_screenshot, browser_snapshot, browser_type,
-    delete_ai_browser_session, get_ai_browser_session, get_browser_status,
-    list_ai_browser_insights, list_ai_browser_logs, list_ai_browser_pages,
+    ai_browser_submit_human_input, browser_batch, browser_click, browser_close, browser_execute,
+    browser_fill, browser_navigate, browser_open, browser_press, browser_screenshot,
+    browser_snapshot, browser_type, delete_ai_browser_session, get_ai_browser_session,
+    get_browser_status, list_ai_browser_insights, list_ai_browser_logs, list_ai_browser_pages,
     list_recent_ai_browser_sessions, BrowserProcessState,
 };
 pub use commands::packet_capture::{
@@ -51,4 +52,8 @@ pub use sqli::types::SqliScanState;
 pub use sqli::{
     start_sqli_scan, stop_sqli_scan, SqliParam, SqliParamLocation, SqliRiskLevel, SqliScanResult,
     SqliSeverity, SqliTechnique, SqliVulnerability,
+};
+pub use collaborator::{
+    CollaboratorDashboardStats, CollaboratorInteraction, CollaboratorPayload,
+    CollaboratorPollingState, CollaboratorServer,
 };

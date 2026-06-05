@@ -23,25 +23,27 @@ export function TitlebarButtons() {
 
   return (
     <div className="flex items-center gap-2">
-      
-      <button
-        id="titlebar-minimize"
-        className={`${baseClass} bg-[#FFBD2E]`}
-        title="Minimize"
-        onClick={handleMinimize}
-      />
-      <button
-        id="titlebar-maximize"
-        className={`${baseClass} bg-[#28C840]`}
-        title="Fullscreen"
-        onClick={handleFullscreen}
-      />
       <button
         id="titlebar-close"
         className={`${baseClass} bg-[#FF5F57]`}
         title="Close"
         onClick={handleClose}
       />
+      
+      <button
+        id="titlebar-maximize"
+        className={`${baseClass} bg-[#28C840]`}
+        title="Fullscreen"
+        onClick={handleFullscreen}
+      />
+
+      <button
+        id="titlebar-minimize"
+        className={`${baseClass} bg-[#FFBD2E]`}
+        title="Minimize"
+        onClick={handleMinimize}
+      />
+     
     </div>
   );
 }

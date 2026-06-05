@@ -7,8 +7,8 @@ use zeroxbuffer::ai::MastraProcessState;
 use zeroxbuffer::commands::intruder::IntruderState;
 use zeroxbuffer::commands::repeater::WsRepeaterState;
 use zeroxbuffer::{
-    AiBrowserState, BrowserProcessState, HistoryBridge, PacketCaptureState, PortScanState,
-    ProxyState, SqliScanState,
+    AiBrowserState, BrowserProcessState, CollaboratorPollingState, HistoryBridge,
+    PacketCaptureState, PortScanState, ProxyState, SqliScanState,
 };
 
 fn main() {
@@ -49,6 +49,7 @@ fn main() {
             app.manage(AiBrowserState::default());
             app.manage(SqliScanState::new());
             app.manage(WsRepeaterState::default());
+            app.manage(CollaboratorPollingState::default());
             app.manage(history);
             eprintln!("[main] Building Tauri app...");
 
@@ -146,6 +147,7 @@ fn main() {
             zeroxbuffer::commands::browser::ai_browser_pause_crawl,
             zeroxbuffer::commands::browser::ai_browser_resume_crawl,
             zeroxbuffer::commands::browser::ai_browser_stop_crawl,
+            zeroxbuffer::commands::browser::ai_browser_submit_human_input,
             zeroxbuffer::commands::browser::delete_ai_browser_session,
             zeroxbuffer::commands::browser::get_ai_browser_session,
             zeroxbuffer::commands::browser::list_ai_browser_pages,
@@ -154,6 +156,19 @@ fn main() {
             zeroxbuffer::commands::browser::list_recent_ai_browser_sessions,
             zeroxbuffer::sqli::start_sqli_scan,
             zeroxbuffer::sqli::stop_sqli_scan,
+            zeroxbuffer::commands::collaborator::list_collaborator_servers,
+            zeroxbuffer::commands::collaborator::add_collaborator_server,
+            zeroxbuffer::commands::collaborator::update_collaborator_server,
+            zeroxbuffer::commands::collaborator::delete_collaborator_server,
+            zeroxbuffer::commands::collaborator::check_collaborator_server_health,
+            zeroxbuffer::commands::collaborator::create_collaborator_payload,
+            zeroxbuffer::commands::collaborator::list_collaborator_payloads,
+            zeroxbuffer::commands::collaborator::delete_collaborator_payload,
+            zeroxbuffer::commands::collaborator::archive_collaborator_payload,
+            zeroxbuffer::commands::collaborator::list_collaborator_interactions,
+            zeroxbuffer::commands::collaborator::get_collaborator_interaction,
+            zeroxbuffer::commands::collaborator::poll_collaborator_interactions,
+            zeroxbuffer::commands::collaborator::get_collaborator_dashboard_stats,
             show_main_window
         ])
         .plugin(tauri_plugin_opener::init())

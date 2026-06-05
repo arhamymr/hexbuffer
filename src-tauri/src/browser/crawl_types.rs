@@ -91,6 +91,8 @@ pub struct ActivityLog {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub ai_used_for_analysis: Option<bool>,
     pub created_at: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub human_input_request: Option<serde_json::Value>,
 }
 
 #[derive(Default, Clone)]
@@ -133,6 +135,7 @@ pub(crate) struct SidecarMessage {
     pub message: Option<String>,
     pub description: Option<String>,
     pub reason: Option<String>,
+    pub human_input_request_id: Option<String>,
     pub requested_fields: Option<Vec<String>>,
     pub safe_actions: Option<Vec<String>>,
     pub created_at: Option<String>,

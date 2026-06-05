@@ -4,14 +4,12 @@ import type { PageTabItem } from '@/components/tabs-layout/types';
 import { useDocumentsStore } from '@/stores/documents';
 import { useTargetStore } from '@/stores/target';
 import { toast } from 'sonner';
-import type { TreeNodeData } from '@/components/tree-view';
 import { useHistoryQuery } from './use-history-query';
 
 export type HistoryMode = 'http' | 'websocket';
 const ALL_HISTORY_TAB_ID = 'all-scope';
 
 export function useHttpHistoryPage() {
-  const [sitemapVisible, setSitemapVisible] = React.useState(false);
   const [historyMode, setHistoryMode] = React.useState<HistoryMode>(() => {
     const stored = localStorage.getItem('history-mode');
     return stored === 'websocket' ? 'websocket' : 'http';
@@ -23,7 +21,7 @@ export function useHttpHistoryPage() {
   }, []);
   const targets = useTargetStore((state) => state.targets);
   const removeActiveTab = useTargetStore((state) => state.removeActiveTab);
-  const { filter, setActiveScope, setFilter, setSelectedCallId, setPathFilter } = useHistoryQuery();
+  const { setActiveScope } = useHistoryQuery();
   const activeTargets = React.useMemo(
     () => targets.filter((target) => target.tabActive),
     [targets]
@@ -54,24 +52,6 @@ export function useHttpHistoryPage() {
   React.useEffect(() => {
     setActiveScope(activeTab?.scope ?? null);
   }, [activeTab?.scope, setActiveScope]);
-
-  const shouldShowSitemap = historyMode === 'http' && sitemapVisible;
-
-  const handleTreeSelect = React.useCallback((node: TreeNodeData) => {
-    if (node.fullPath) {
-      setPathFilter(node.fullPath);
-    }
-    setSelectedCallId(null);
-  }, [setPathFilter, setSelectedCallId]);
-
-  const handleHostSelect = React.useCallback((node: TreeNodeData) => {
-    setFilter({
-      ...filter,
-      search: node.label,
-      pathFilter: null,
-    });
-    setSelectedCallId(null);
-  }, [filter, setFilter, setSelectedCallId]);
 
   const sendScopeToDocuments = React.useCallback((targetId: string) => {
     const target = activeTargets.find((activeTarget) => activeTarget.id === targetId);
@@ -109,11 +89,6 @@ export function useHttpHistoryPage() {
     removeTab,
     historyMode,
     setHistoryMode: persistHistoryMode,
-    sitemapVisible,
-    setSitemapVisible,
-    shouldShowSitemap,
-    handleTreeSelect,
-    handleHostSelect,
     sendScopeToDocuments,
   };
 }

@@ -3,6 +3,7 @@
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Empty, EmptyDescription, EmptyTitle } from '@/components/ui/empty';
+import { HighlightedText } from '@/components/highlighted-text';
 import { useWebSocketTable } from '@/pages/live-traffic/hooks/use-websocket-table';
 import { HistoryLoadingState } from '../history-loading-state';
 import { WebSocketContextMenu } from './websocket-context-menu';
@@ -35,6 +36,7 @@ export function WebSocketTable({ selectedConnectionId, onSelectConnection }: Web
     isLoadingMore,
     newEventsCount,
     loadError,
+    searchQuery,
     hasActiveFilters,
     loadMore,
     handleRefresh,
@@ -109,10 +111,10 @@ export function WebSocketTable({ selectedConnectionId, onSelectConnection }: Web
                   {formatDateTime(connection.timestamp)}
                 </td>
                 <td className="text-xs truncate max-w-[250px] px-3 py-1" title={connection.url}>
-                  {connection.host}
+                  <HighlightedText text={connection.host} query={searchQuery} />
                 </td>
                 <td className="text-xs text-muted-foreground truncate max-w-[200px] px-3 py-1" title={connection.url}>
-                  {connection.path}
+                  <HighlightedText text={connection.path} query={searchQuery} />
                 </td>
                 <td className="text-xs text-right px-3 py-1">{connection.messageCount}</td>
                 <td className="text-xs text-muted-foreground px-3 py-1">{formatDateTime(connection.lastActivityAt)}</td>

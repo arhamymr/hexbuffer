@@ -19,7 +19,7 @@ export function InterceptRequestPanel() {
   return (
     <div className="flex h-full flex-col">
       <div className="bg-muted flex h-10 items-center justify-between border-b px-3 py-2">
-        <span className="text-sm font-medium">{messageLabel}</span>
+        <span className="text-xs font-medium">{messageLabel}</span>
         <div className="flex items-center gap-2">
           <Badge variant={isEnabled ? 'default' : 'secondary'} className="text-xs rounded-md">
             {isEnabled ? 'Intercept On' : 'Enable Intercept'}

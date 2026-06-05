@@ -20,6 +20,10 @@ pub struct CrawlConfig {
     pub capture_screenshots: bool,
     #[serde(default = "default_true")]
     pub capture_rendered_html: bool,
+    pub resume_from_url: Option<String>,
+    pub human_input_fields: Option<std::collections::HashMap<String, String>>,
+    #[serde(default = "default_true")]
+    pub headless: bool,
 }
 
 fn default_true() -> bool {
@@ -75,6 +79,12 @@ pub struct AIInsight {
     pub url: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub ai_used_for_analysis: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub analysis_source: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub analysis_tool_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub analysis_tool_name: Option<String>,
     pub reviewed: bool,
     pub created_at: String,
 }
@@ -101,8 +111,8 @@ pub struct AiBrowserState {
     pub(crate) pages: Arc<Mutex<HashMap<String, Vec<CrawlPage>>>>,
     pub(crate) insights: Arc<Mutex<HashMap<String, Vec<AIInsight>>>>,
     pub(crate) logs: Arc<Mutex<HashMap<String, Vec<ActivityLog>>>>,
-    pub(crate) children: Arc<Mutex<HashMap<String, Arc<Mutex<Child>>>>>,
-    pub(crate) cancellations: Arc<Mutex<HashMap<String, Arc<AtomicBool>>>>,
+    pub(crate) children: Arc<Mutex<HashMap<String, HashMap<String, Arc<Mutex<Child>>>>>>,
+    pub(crate) cancellations: Arc<Mutex<HashMap<String, HashMap<String, Arc<AtomicBool>>>>>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -125,6 +135,9 @@ pub(crate) struct SidecarMessage {
     pub visited_at: Option<String>,
     pub ai_summary: Option<String>,
     pub ai_used_for_analysis: Option<bool>,
+    pub analysis_source: Option<String>,
+    pub analysis_tool_id: Option<String>,
+    pub analysis_tool_name: Option<String>,
     pub interesting: Option<bool>,
     pub screenshot_path: Option<String>,
     pub rendered_html_path: Option<String>,

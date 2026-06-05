@@ -1,6 +1,8 @@
 'use client';
 
-import { Pause, Play, RotateCcw, Search, Square, Target, InfoIcon } from 'lucide-react';
+import { useState } from 'react';
+
+import { ChevronDownIcon, EyeIcon, Pause, Play, RotateCcw, Search, Square, Target, InfoIcon } from 'lucide-react';
 import { ActivityLogPanel } from './components/ActivityLogPanel';
 import { AiInsightsPanel } from './components/insight-panel';
 import { CrawlOverviewPanel } from './components/overview-panel';
@@ -9,12 +11,21 @@ import { CrawlTreePanel } from './components/tree-panel';
 import { PageDetailPanel } from './components/page-detail-panel';
 import { Alert, AlertAction, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { ButtonGroup } from '@/components/ui/button-group';
 import { Input } from '@/components/ui/input';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
 import { TabbedPageLayout } from '@/components/tabs-layout/tabbed-page-layout';
 import { useAppStore } from '@/stores/app';
 import { useBrowserAutomationStore } from '@/stores/browser-automation';
 import { useBrowserAutomationPage } from './hooks/use-page';
+import { toast } from 'sonner';
 
 export function BrowserAutomationPage() {
   const browserAutomationSafetyAlertDismissed = useAppStore(
@@ -65,10 +76,46 @@ export function BrowserAutomationPage() {
   const isRunning = status === 'running';
   const isPaused = status === 'paused';
 
+  const [isStarting, setIsStarting] = useState(false);
+  const proxyStatus = useAppStore((state) => state.proxyStatus);
+  const startProxy = useAppStore((state) => state.startProxy);
+
+  const handleStartProxy = async () => {
+    setIsStarting(true);
+    try {
+      await startProxy();
+      toast.success('Proxy started');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to start proxy');
+    } finally {
+      setIsStarting(false);
+    }
+  };
+
   return (
     <>
-      {!browserAutomationSafetyAlertDismissed && (
-        <div className='p-2'>
+      <div className='p-2'>
+        {proxyStatus !== 'connected' && (
+          <Alert variant="default" className="mb-2 min-h-11 items-center shrink-0 border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-500/50 dark:bg-amber-500/10 dark:text-amber-200">
+            <AlertDescription className="flex items-center gap-2 text-amber-700 dark:text-amber-200/70">
+              <span>Start the proxy to intercept HTTP requests.</span>
+            </AlertDescription>
+            <AlertAction>
+              <Button
+                variant="outline"
+                size="xs"
+                className="h-6 border-amber-300 text-amber-800 hover:bg-amber-100 dark:border-amber-500/50 dark:text-amber-300 dark:hover:bg-amber-500/20"
+                onClick={handleStartProxy}
+                disabled={isStarting || proxyStatus === 'starting'}
+              >
+                Start Proxy
+              </Button>
+            </AlertAction>
+          </Alert>
+        )}
+
+        {!browserAutomationSafetyAlertDismissed && (
+
           <Alert variant="default" className="min-h-12 mb-0 shrink-0 border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-500/50 dark:bg-amber-500/10 dark:text-amber-200">
             <InfoIcon className='!text-amber-600 shrink-0' />
             <AlertDescription className='text-amber-600'>
@@ -84,8 +131,9 @@ export function BrowserAutomationPage() {
               </Button>
             </AlertAction>
           </Alert>
-        </div>
-      )}
+
+        )}
+      </div>
       <TabbedPageLayout
         tabs={tabs}
         activeTabId={activeTabId}
@@ -116,19 +164,41 @@ export function BrowserAutomationPage() {
                   onSetupChange={updateSetup}
                   onSave={saveConfig}
                 />
-                <Button variant="outline" size="xs" onClick={pauseCrawl} disabled={!isRunning}>
-                  <Pause className="h-4 w-4" />
-                </Button>
-                <Button variant="outline" size="xs" onClick={resumeCrawl} disabled={!isPaused}>
-                  <RotateCcw className="h-4 w-4" />
-                </Button>
-                <Button variant="outline" size="xs" onClick={stopCrawl} disabled={!isRunning && !isPaused}>
-                  <Square className="h-4 w-4" />
-                </Button>
-                <Button size="xs" onClick={startCrawl} disabled={isRunning || !setup.targetUrl.trim()}>
-                  <Play className="h-4 w-4" />
-                  Start
-                </Button>
+                <ButtonGroup>
+                  <Button variant="outline" size="xs" onClick={pauseCrawl} disabled={!isRunning} aria-label="Pause">
+                    <Pause className="h-4 w-4" />
+                  </Button>
+                  <Button variant="outline" size="xs" onClick={resumeCrawl} disabled={!isPaused} aria-label="Resume">
+                    <RotateCcw className="h-4 w-4" />
+                  </Button>
+                  <Button variant="outline" size="xs" onClick={stopCrawl} disabled={!isRunning && !isPaused} aria-label="Stop">
+                    <Square className="h-4 w-4" />
+                  </Button>
+                </ButtonGroup>
+                <ButtonGroup>
+                  <Button size="xs" onClick={() => startCrawl(true)} disabled={proxyStatus === "disconnected" || isRunning || !setup.targetUrl.trim()}>
+                    <Play className="h-4 w-4" />
+                    Start
+                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button size="xs" variant="outline" disabled={isRunning || !setup.targetUrl.trim()} aria-label="More start options">
+                        <ChevronDownIcon className="h-3 w-3" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-48">
+                      <DropdownMenuItem onClick={() => startCrawl(true)}>
+                        <Play className="h-4 w-4" />
+                        Start (Headless)
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={() => startCrawl(false)}>
+                        <EyeIcon className="h-4 w-4" />
+                        Start Visible
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </ButtonGroup>
               </div>
             </div>
           </header>
@@ -142,17 +212,19 @@ export function BrowserAutomationPage() {
                       nodes={crawlTree}
                       selectedPageId={selectedPage?.id ?? null}
                       expandedPageIds={expandedPageIds}
+                      searchQuery={search}
                     />
                   </ResizablePanel>
                   <ResizableHandle withHandle />
                   <ResizablePanel defaultSize={20} minSize={20}>
-                    <PageDetailPanel page={selectedPage} />
+                    <PageDetailPanel page={selectedPage} searchQuery={search} />
                   </ResizablePanel>
                   <ResizableHandle withHandle />
                   <ResizablePanel defaultSize={20} minSize={20}>
                     <AiInsightsPanel
                       insights={filteredInsights}
                       interestingPages={interestingPages}
+                      searchQuery={search}
                     />
                   </ResizablePanel>
                 </ResizablePanelGroup>
@@ -165,7 +237,11 @@ export function BrowserAutomationPage() {
                   </ResizablePanel>
                   <ResizableHandle withHandle />
                   <ResizablePanel defaultSize={80} minSize={22}>
-                    <ActivityLogPanel logs={filteredLogs} onSubmitHumanInput={submitHumanInput} />
+                    <ActivityLogPanel
+                      logs={filteredLogs}
+                      searchQuery={search}
+                      onSubmitHumanInput={submitHumanInput}
+                    />
                   </ResizablePanel>
                 </ResizablePanelGroup>
               </ResizablePanel>

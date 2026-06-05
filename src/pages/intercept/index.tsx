@@ -70,9 +70,9 @@ export function InterceptPage() {
         onCloseTabsToLeft={(tabId) => void closeTabsToLeft(tabId)}
         onCloseTabsToRight={(tabId) => void closeTabsToRight(tabId)}
         className="flex min-h-0 flex-1 flex-col"
-        contentClassName="flex-1 rounded-lg border bg-background min-h-0 overflow-hidden"
+        contentClassName="flex-1 rounded-lg border min-h-0 overflow-hidden"
       >
-        <div className="bg-muted h-full min-h-0">
+        <div className="h-full min-h-0">
           <ResizablePanelGroup orientation="horizontal" className="min-h-0">
             <ResizablePanel defaultSize={50} minSize={20}>
               <InterceptRequestPanel />

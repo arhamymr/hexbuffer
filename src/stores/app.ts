@@ -14,11 +14,11 @@ interface AppState {
   proxyStatus: ProxyStatus;
   proxyPort: number | null;
   proxyDefaultPort: number;
-  bruteForceSafetyAlertDismissed: boolean;
+  invokerSafetyAlertDismissed: boolean;
   browserAutomationSafetyAlertDismissed: boolean;
   setProxyStatus: (status: ProxyStatus) => void;
   setProxyDefaultPort: (port: number) => void;
-  setBruteForceSafetyAlertDismissed: (dismissed: boolean) => void;
+  setInvokerSafetyAlertDismissed: (dismissed: boolean) => void;
   setBrowserAutomationSafetyAlertDismissed: (dismissed: boolean) => void;
   startProxy: () => Promise<void>;
   stopProxy: () => Promise<void>;
@@ -31,13 +31,13 @@ export const useAppStore = create<AppState>()(
       proxyStatus: 'disconnected',
       proxyPort: null,
       proxyDefaultPort: 8888,
-      bruteForceSafetyAlertDismissed: false,
+      invokerSafetyAlertDismissed: false,
       browserAutomationSafetyAlertDismissed: false,
 
       setProxyStatus: (proxyStatus) => set({ proxyStatus }),
       setProxyDefaultPort: (proxyDefaultPort) => set({ proxyDefaultPort }),
-      setBruteForceSafetyAlertDismissed: (bruteForceSafetyAlertDismissed) =>
-        set({ bruteForceSafetyAlertDismissed }),
+      setInvokerSafetyAlertDismissed: (invokerSafetyAlertDismissed) =>
+        set({ invokerSafetyAlertDismissed }),
       setBrowserAutomationSafetyAlertDismissed: (browserAutomationSafetyAlertDismissed) =>
         set({ browserAutomationSafetyAlertDismissed }),
 
@@ -101,7 +101,7 @@ export const useAppStore = create<AppState>()(
         proxyStatus: state.proxyStatus,
         proxyPort: state.proxyPort,
         proxyDefaultPort: state.proxyDefaultPort,
-        bruteForceSafetyAlertDismissed: state.bruteForceSafetyAlertDismissed,
+        invokerSafetyAlertDismissed: state.invokerSafetyAlertDismissed,
         browserAutomationSafetyAlertDismissed: state.browserAutomationSafetyAlertDismissed,
       }),
     }

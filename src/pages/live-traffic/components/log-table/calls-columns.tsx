@@ -1,9 +1,10 @@
 'use client';
 
-import type { MouseEvent } from "react";
+import { useCallback, useState, type MouseEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowDown, ArrowUp, AlertTriangle, Send } from "lucide-react";
 import { toast } from "sonner";
+import { HighlightedText } from "@/components/highlighted-text";
 import { Empty, EmptyTitle, EmptyDescription } from "@/components/ui/empty";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { formatTimestamp, formatBytes, getExtension } from "./utils";
@@ -18,6 +19,7 @@ import { buildRawHttpRequest } from "@/lib/http-message";
 import { useRepeaterStore } from "@/stores/repeater";
 import { HistoryLoadingState } from "../history-loading-state";
 import { BrowserIcon } from "./browser-icon";
+import { Spinner } from "@/components/ui/spinner";
 
 interface SendToRepeaterButtonProps {
   call: ApiCall;
@@ -146,6 +148,7 @@ export const callsColumns: import("@tanstack/react-table").ColumnDef<ApiCall>[] 
 ];
 
 export function TrafficTable() {
+  const [isContextMenuOpen, setIsContextMenuOpen] = useState(false);
   const {
     calls,
     pagination,
@@ -154,6 +157,7 @@ export function TrafficTable() {
     newEventsCount,
     loadError,
     sortOrder,
+    searchQuery,
     hasActiveFilters,
     hasScopedTab,
     loadMore,
@@ -162,8 +166,12 @@ export function TrafficTable() {
     setSelectedCallId,
     removeCallLocally,
     selectedCallId,
-  } = useHistoryTable();
+  } = useHistoryTable({ isStreamPaused: isContextMenuOpen });
   const totalPages = Math.max(1, Math.ceil(pagination.total / pagination.perPage));
+
+  const handleContextMenuOpenChange = useCallback((open: boolean) => {
+    setIsContextMenuOpen(open);
+  }, []);
 
   if (loadError) {
     return (
@@ -228,8 +236,23 @@ export function TrafficTable() {
           </tr>
         </thead>
         <tbody>
+          {isLoading && calls.length > 0 && (
+            <tr>
+              <td colSpan={8} className="border-b bg-muted/40 px-3 py-2">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <Spinner className="size-3.5" />
+                  <span>Applying filters...</span>
+                </div>
+              </td>
+            </tr>
+          )}
           {calls.map((call) => (
-            <LogEntryContextMenu key={call.id} call={call} onDelete={removeCallLocally}>
+            <LogEntryContextMenu
+              key={call.id}
+              call={call}
+              onDelete={removeCallLocally}
+              onOpenChange={handleContextMenuOpenChange}
+            >
               <tr
                 className={'hover:bg-muted/50 font-mono transition-colors border-b cursor-pointer' + (call.id === selectedCallId ? ' hover:!bg-muted bg-muted' : '')}
                 onClick={() => setSelectedCallId(call.id)}
@@ -249,11 +272,13 @@ export function TrafficTable() {
                 <td className="text-xs truncate max-w-[250px] px-3 py-1" title={call.url}>
                   <div className="flex items-center gap-1.5">
                     <BrowserIcon userAgent={call.user_agent} />
-                    <span className="truncate">{call.host}</span>
+                    <span className="truncate">
+                      <HighlightedText text={call.host} query={searchQuery} />
+                    </span>
                   </div>
                 </td>
                 <td className="text-xs text-muted-foreground truncate max-w-[200px] px-3 py-1" title={call.url}>
-                  {call.path}
+                  <HighlightedText text={call.path} query={searchQuery} />
                 </td>
                 <td className="text-xs text-muted-foreground text-right px-3 py-1">
                   {formatBytes(call.response_body_size)}
@@ -262,7 +287,7 @@ export function TrafficTable() {
                   {formatBytes(call.request_body_size)}
                 </td>
                 <td className="text-xs text-muted-foreground px-3 py-1 truncate max-w-[150px]" title={call.response_content_type ?? undefined}>
-                  {call.response_content_type || "-"}
+                  <HighlightedText text={call.response_content_type || "-"} query={searchQuery} />
                 </td>
                 <td className="text-center px-3 py-1">
                   <SendToRepeaterButton call={call} />

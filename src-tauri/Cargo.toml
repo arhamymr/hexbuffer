@@ -6,7 +6,7 @@ authors = ["Arham"]
 edition = "2021"
 
 [build-dependencies]
-tauri-build = { version = "2", features = [] }
+tauri-build = { version = "2", features = ["try-icon] }
 
 [dependencies]
 tauri = { version = "2", features = ["protocol-asset", "macos-private-api"] }
@@ -16,6 +16,7 @@ tauri-plugin-fs = "2"
 tauri-plugin-process = "2"
 tauri-plugin-clipboard-manager = "2"
 tauri-plugin-shell = "2"
+tauri-plugin-notification = "2"
 
 [target.'cfg(any(target_os = "macos", windows, target_os = "linux"))'.dependencies]
 tauri-plugin-updater = "2"

@@ -9,6 +9,7 @@ export const statusActivity = {
   navigation: 'navigation',
   extraction: 'extraction',
   ai: 'ai',
+  human: 'human',
   policy: 'policy',
   error: 'error',
   queue: 'queue',
@@ -60,6 +61,7 @@ export function getActivityStatusColor(status: StatusActivityValue) {
   if (status === statusActivity.navigation) return 'bg-green-600';
   if (status === statusActivity.extraction) return 'bg-blue-600';
   if (status === statusActivity.ai) return 'bg-purple-600';
+  if (status === statusActivity.human) return 'bg-cyan-600';
   if (status === statusActivity.policy) return 'bg-red-600';
   if (status === statusActivity.error) return 'bg-red-600';
   if (status === statusActivity.queue) return 'bg-gray-600';
@@ -89,6 +91,14 @@ export function SeverityBadge({ severity: sev }: { severity: SeverityBadgeValue 
   return (
     <span className={`text-xs px-1 py-0.5 rounded font-mono text-white ${colorClass}`}>
       {sev}
+    </span>
+  );
+}
+
+export function InterestingBadge() {
+  return (
+    <span className="text-xs px-1 py-0.5 rounded font-mono text-white bg-yellow-600">
+      Interesting
     </span>
   );
 }

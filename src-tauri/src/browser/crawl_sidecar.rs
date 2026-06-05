@@ -120,6 +120,9 @@ pub(crate) fn apply_sidecar_message(
                 description: message.description.unwrap_or_default(),
                 url: message.url,
                 ai_used_for_analysis: message.ai_used_for_analysis,
+                analysis_source: message.analysis_source,
+                analysis_tool_id: message.analysis_tool_id,
+                analysis_tool_name: message.analysis_tool_name,
                 reviewed: false,
                 created_at: message.created_at.unwrap_or_else(now),
             };
@@ -198,7 +201,6 @@ pub(crate) fn apply_sidecar_message(
                 "aiUsedForAnalysis": message.ai_used_for_analysis,
                 "createdAt": message.created_at.unwrap_or_else(now),
             });
-            let _ = update_session(app, state, session_id, "paused", None);
             add_log(
                 app,
                 state,
@@ -206,7 +208,7 @@ pub(crate) fn apply_sidecar_message(
                     id: Uuid::new_v4().to_string(),
                     session_id: session_id.to_string(),
                     level: "warning".to_string(),
-                    r#type: "policy".to_string(),
+                    r#type: "human".to_string(),
                     message: request
                         .get("reason")
                         .and_then(|value| value.as_str())
@@ -224,19 +226,7 @@ pub(crate) fn apply_sidecar_message(
             let _ = app.emit("ai-browser:human-input-requested", request);
         }
         "session_finished" => {
-            if session_status(state, session_id)
-                .as_deref()
-                .map(is_terminal_status)
-                .unwrap_or(false)
-            {
-                return Ok(());
-            }
-            let finished_at = message.finished_at.unwrap_or_else(now);
-            if let Ok(session) =
-                update_session(app, state, session_id, "completed", Some(finished_at))
-            {
-                let _ = app.emit("ai-browser:session-finished", session);
-            }
+            let _ = message.finished_at;
         }
         "session_failed" => {
             if session_status(state, session_id)
@@ -282,6 +272,7 @@ pub(crate) fn run_sidecar_crawl(
     state: &AiBrowserState,
     config: &CrawlConfig,
     session_id: &str,
+    worker_id: &str,
     api_key: Option<&str>,
     cancel_flag: Arc<AtomicBool>,
 ) -> Result<(), String> {
@@ -303,6 +294,7 @@ pub(crate) fn run_sidecar_crawl(
         .sidecar("ai-engine")
         .map_err(|error| format!("Failed to prepare AI browser sidecar: {}", error))?
         .env("0XBUFFER_CRAWL_SESSION_ID", session_id)
+        .env("0XBUFFER_CRAWL_WORKER_ID", worker_id)
         .env("0XBUFFER_CRAWL_CONFIG_JSON", config_json)
         .env(
             "0XBUFFER_PROXY_PORT",
@@ -347,7 +339,9 @@ pub(crate) fn run_sidecar_crawl(
             .children
             .lock()
             .map_err(|_| "Failed to lock AI browser child processes".to_string())?
-            .insert(session_id.to_string(), child.clone());
+            .entry(session_id.to_string())
+            .or_default()
+            .insert(worker_id.to_string(), child.clone());
     }
     if session_status(state, session_id).as_deref() == Some("paused") {
         signal_child_process_group(&child, "-STOP")?;
@@ -401,7 +395,12 @@ pub(crate) fn run_sidecar_crawl(
         .wait()
         .map_err(|error| error.to_string())?;
     if let Ok(mut children) = state.children.lock() {
-        children.remove(session_id);
+        if let Some(session_children) = children.get_mut(session_id) {
+            session_children.remove(worker_id);
+            if session_children.is_empty() {
+                children.remove(session_id);
+            }
+        }
     }
     if status.success() {
         Ok(())

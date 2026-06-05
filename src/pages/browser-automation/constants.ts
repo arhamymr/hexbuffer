@@ -18,6 +18,7 @@ export const DEFAULT_CRAWL_SETUP: CrawlSetupConfig = {
   networkSettleMs: 2000,
   captureScreenshots: true,
   captureRenderedHtml: true,
+  headless: true,
 };
 
 export const PAGE_STATUS_LABELS: Record<CrawlPageStatus, string> = {
@@ -43,6 +44,7 @@ export const LOG_TYPES: ActivityLogType[] = [
   'navigation',
   'extraction',
   'ai',
+  'human',
   'policy',
   'error',
   'queue',

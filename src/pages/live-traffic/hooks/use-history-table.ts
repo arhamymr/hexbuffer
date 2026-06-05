@@ -95,12 +95,17 @@ export function adaptProxyRecordToApiCall(record: ProxyRecord): ApiCall {
   };
 }
 
-export function useHistoryTable() {
+interface UseHistoryTableOptions {
+  isStreamPaused?: boolean;
+}
+
+export function useHistoryTable({ isStreamPaused = false }: UseHistoryTableOptions = {}) {
   const {
     query,
     hasActiveFilters,
     refreshKey,
     sortOrder,
+    filter,
     page,
     selectedCallId,
     setPage,
@@ -117,12 +122,18 @@ export function useHistoryTable() {
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingEventRef = useRef(false);
+  const pendingPausedEventRef = useRef(false);
+  const isStreamPausedRef = useRef(isStreamPaused);
   const lastBaseQueryRef = useRef<string>('');
   const currentPageRef = useRef(page);
 
   useEffect(() => {
     currentPageRef.current = page;
   }, [page]);
+
+  useEffect(() => {
+    isStreamPausedRef.current = isStreamPaused;
+  }, [isStreamPaused]);
 
   const baseQueryKey = useMemo(
     () =>
@@ -205,13 +216,20 @@ export function useHistoryTable() {
 
     const handleEvent = () => {
       pendingEventRef.current = true;
+      if (isStreamPausedRef.current) {
+        pendingPausedEventRef.current = true;
+      }
       if (debounceTimer) clearTimeout(debounceTimer);
 
       debounceTimer = setTimeout(async () => {
         if (!pendingEventRef.current) return;
         pendingEventRef.current = false;
+        const shouldKeepTablePaused = pendingPausedEventRef.current;
+        pendingPausedEventRef.current = false;
 
-        if (currentPageRef.current === 1) {
+        if (shouldKeepTablePaused) {
+          setNewEventsCount((count) => count + 1);
+        } else if (currentPageRef.current === 1) {
           await fetchPage(1);
         } else {
           setNewEventsCount((count) => count + 1);
@@ -267,6 +285,7 @@ export function useHistoryTable() {
     newEventsCount,
     loadError,
     sortOrder,
+    searchQuery: filter.search,
     hasActiveFilters,
     hasScopedTab: Boolean(query.filter.scope && query.filter.scope.length > 0),
     loadMore,

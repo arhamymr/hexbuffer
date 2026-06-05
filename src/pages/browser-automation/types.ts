@@ -8,6 +8,7 @@ export type ActivityLogType =
   | 'navigation'
   | 'extraction'
   | 'ai'
+  | 'human'
   | 'policy'
   | 'error'
   | 'queue';
@@ -25,6 +26,9 @@ export interface CrawlSetupConfig {
   networkSettleMs?: number;
   captureScreenshots: boolean;
   captureRenderedHtml: boolean;
+  resumeFromUrl?: string;
+  humanInputFields?: Record<string, string>;
+  headless?: boolean;
 }
 
 export interface CrawlSession {
@@ -68,6 +72,9 @@ export interface AIInsight {
   description: string;
   url?: string;
   aiUsedForAnalysis?: boolean;
+  analysisSource?: 'ai' | 'manual';
+  analysisToolId?: string;
+  analysisToolName?: string;
   reviewed: boolean;
   createdAt: string;
 }

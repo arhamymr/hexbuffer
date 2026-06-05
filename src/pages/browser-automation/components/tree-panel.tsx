@@ -15,6 +15,7 @@ interface CrawlTreePanelProps {
   nodes: CrawlTreeNode[];
   selectedPageId: string | null;
   expandedPageIds: string[];
+  searchQuery?: string;
 }
 
 const statusStyles: Record<CrawlPageStatus, string> = {
@@ -69,6 +70,7 @@ export function CrawlTreePanel({
   nodes,
   selectedPageId,
   expandedPageIds,
+  searchQuery = '',
 }: CrawlTreePanelProps) {
   const selectPage = useBrowserAutomationStore((s) => s.selectPage);
   const treeNodes = nodes.map(toTreeNode);
@@ -100,6 +102,7 @@ export function CrawlTreePanel({
         }}
         emptyTitle="No pages match"
         emptyDescription="Change the URL or status filters to reveal crawl pages."
+        searchQuery={searchQuery}
       />
     </section>
   );

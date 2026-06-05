@@ -21,6 +21,7 @@ export function TreeView<TMeta = unknown>({
   emptyTitle = 'No tree entries yet',
   emptyDescription = 'Items will appear here once data is available.',
   errorTitle = 'Failed to load tree',
+  searchQuery = '',
 }: TreeViewProps<TMeta>) {
   if (isLoading) {
     return (
@@ -63,6 +64,7 @@ export function TreeView<TMeta = unknown>({
           selectedId={selectedId}
           defaultExpanded={defaultExpandedIds.includes(node.id)}
           defaultExpandedIds={defaultExpandedIds}
+          searchQuery={searchQuery}
         />
       ))}
     </div>

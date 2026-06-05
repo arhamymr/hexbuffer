@@ -73,7 +73,7 @@ interface BrowserAutomationState {
   closeTab: (id: string) => void;
   updateSetup: (patch: Partial<CrawlSetupConfig>) => void;
   saveConfig: () => void;
-  startCrawl: () => Promise<void>;
+  startCrawl: (headless?: boolean) => Promise<void>;
   pauseCrawl: () => Promise<void>;
   resumeCrawl: () => Promise<void>;
   stopCrawl: () => Promise<void>;
@@ -361,15 +361,16 @@ export const useBrowserAutomationStore = create<BrowserAutomationState>((set, ge
     }));
   },
 
-  startCrawl: async () => {
+  startCrawl: async (headless = true) => {
     const tab = getActiveTabFromState(get());
     if (!tab) return;
 
-    const setup = tab.setup;
+    const setup: CrawlSetupConfig = { ...tab.setup, headless };
     const session = makeSession(setup);
 
     updateTab(set, tab.id, (current) => ({
       ...current,
+      setup,
       session,
       pages: [],
       insights: [],
@@ -379,7 +380,7 @@ export const useBrowserAutomationStore = create<BrowserAutomationState>((set, ge
           sessionId: session.id,
           level: 'info',
           type: 'session',
-          message: `Started for ${setup.targetUrl}`,
+          message: `Started for ${setup.targetUrl}${headless ? '' : ' (visible browser)'}`,
           url: setup.targetUrl,
           createdAt: session.startedAt ?? new Date().toISOString(),
         },
@@ -527,7 +528,10 @@ export const useBrowserAutomationStore = create<BrowserAutomationState>((set, ge
   applySessionUpdated: (patch) =>
     updateTabForSession(set, get, patch.id, (tab) => {
       const session =
-        tab.session && isTerminalStatus(tab.session.status) && patch.status !== tab.session.status
+        tab.session &&
+        isTerminalStatus(tab.session.status) &&
+        patch.status !== tab.session.status &&
+        patch.status !== 'running'
           ? tab.session
           : tab.session
             ? { ...tab.session, ...patch }
@@ -536,8 +540,7 @@ export const useBrowserAutomationStore = create<BrowserAutomationState>((set, ge
       return {
         ...tab,
         session,
-        humanInputRequest:
-          session && isTerminalStatus(session.status) ? null : tab.humanInputRequest,
+        humanInputRequest: tab.humanInputRequest,
       };
     }),
 
@@ -564,19 +567,40 @@ export const useBrowserAutomationStore = create<BrowserAutomationState>((set, ge
     })),
 
   applyLogCreated: (log) =>
-    updateTabForSession(set, get, log.sessionId, (tab) => ({
-      ...tab,
-      logs: tab.logs.some((item) => item.id === log.id) ? tab.logs : [...tab.logs, log],
-    })),
+    updateTabForSession(set, get, log.sessionId, (tab) => {
+      const humanInputRequest =
+        log.humanInputRequest ?? (
+          log.type === 'human' &&
+          tab.humanInputRequest &&
+          (!log.url || !tab.humanInputRequest.url || log.url === tab.humanInputRequest.url)
+            ? tab.humanInputRequest
+            : undefined
+        );
+      const nextLog = humanInputRequest ? { ...log, humanInputRequest } : log;
+
+      return {
+        ...tab,
+        humanInputRequest: log.humanInputRequest ?? tab.humanInputRequest,
+        logs: tab.logs.some((item) => item.id === log.id) ? tab.logs : [...tab.logs, nextLog],
+      };
+    }),
 
   applyHumanInputRequested: (request) =>
     updateTabForSession(set, get, request.sessionId, (tab) => ({
       ...tab,
-      humanInputRequest:
-        tab.session && isTerminalStatus(tab.session.status) ? tab.humanInputRequest : request,
+      humanInputRequest: request,
+      logs: tab.logs.map((log) =>
+        log.type === 'human' &&
+        !log.humanInputRequest &&
+        (!log.url || !request.url || log.url === request.url)
+          ? { ...log, humanInputRequest: request }
+          : log
+      ),
     })),
 
   submitHumanInput: async (request, action, fields = {}) => {
+    const tab = get().tabs.find((item) => item.session?.id === request.sessionId);
+
     updateTabForSession(set, get, request.sessionId, (tab) => ({
       ...tab,
       humanInputRequest: null,
@@ -586,12 +610,110 @@ export const useBrowserAutomationStore = create<BrowserAutomationState>((set, ge
           : tab.session,
     }));
 
+    if (action === 'continue') {
+      if (!tab?.session) {
+        get().applyLogCreated({
+          id: `log-${Date.now()}`,
+          sessionId: request.sessionId,
+          level: 'error',
+          type: 'policy',
+          message: 'Failed to start branch crawler: session not found.',
+          url: request.url,
+          createdAt: new Date().toISOString(),
+        });
+        updateTabForSession(set, get, request.sessionId, (tab) => ({
+          ...tab,
+          humanInputRequest: request,
+        }));
+        return;
+      }
+
+      const resumeConfig: CrawlSetupConfig = {
+        ...tab.setup,
+        targetUrl: tab.setup.targetUrl,
+        resumeFromUrl: request.url ?? tab.setup.targetUrl,
+        humanInputFields: fields,
+      };
+      const resumedSession: CrawlSession = {
+        ...tab.session,
+        status: 'running',
+        startedAt: tab.session.startedAt ?? new Date().toISOString(),
+        finishedAt: undefined,
+      };
+
+      updateTab(set, tab.id, (current) => ({
+        ...current,
+        session: resumedSession,
+        logs: [
+          ...current.logs,
+          {
+            id: `log-${Date.now()}`,
+            sessionId: request.sessionId,
+            level: 'info',
+            type: 'human',
+            message: `Started branch crawler for human input at ${resumeConfig.resumeFromUrl}.`,
+            url: resumeConfig.resumeFromUrl,
+            createdAt: new Date().toISOString(),
+          },
+        ],
+        humanInputRequest: null,
+      }));
+
+      try {
+        await invoke('ai_browser_start_crawl', {
+          config: resumeConfig,
+          sessionId: request.sessionId,
+          appendExisting: true,
+        });
+        return;
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        get().applyLogCreated({
+          id: `log-${Date.now()}`,
+          sessionId: request.sessionId,
+          level: 'error',
+          type: 'policy',
+          message: `Failed to start branch crawler: ${message}`,
+          url: request.url,
+          createdAt: new Date().toISOString(),
+        });
+        updateTabForSession(set, get, request.sessionId, (tab) => ({
+          ...tab,
+          humanInputRequest: request,
+        }));
+        return;
+      }
+    }
+
+    if (action === 'stop-crawl') {
+      try {
+        await invoke('ai_browser_stop_crawl', { sessionId: request.sessionId });
+        return;
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        get().applyLogCreated({
+          id: `log-${Date.now()}`,
+          sessionId: request.sessionId,
+          level: 'error',
+          type: 'policy',
+          message: `Failed to stop crawl: ${message}`,
+          url: request.url,
+          createdAt: new Date().toISOString(),
+        });
+        updateTabForSession(set, get, request.sessionId, (tab) => ({
+          ...tab,
+          humanInputRequest: request,
+        }));
+        return;
+      }
+    }
+
     try {
       await invoke('ai_browser_submit_human_input', {
         sessionId: request.sessionId,
         requestId: request.id,
         action,
-        fields: action === 'continue' ? fields : {},
+        fields: {},
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
@@ -669,6 +791,7 @@ export const useBrowserAutomationStore = create<BrowserAutomationState>((set, ge
         description: response.content,
         url: page.url,
         aiUsedForAnalysis: true,
+        analysisSource: 'ai',
         reviewed: false,
         createdAt: new Date().toISOString(),
       });

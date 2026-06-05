@@ -65,7 +65,7 @@ export function InterceptQueuePanel() {
               <PauseCircle className="h-3.5 w-3.5" />
               Paused
             </div>
-            <div className="mt-1 text-xl font-semibold">{requests.length}</div>
+            <div className="mt-1 text-sm font-semibold">{requests.length}</div>
             <div className="text-[11px] text-muted-foreground">{activeRequests.length} in tab</div>
           </div>
           <div className="rounded-md border bg-background p-2">

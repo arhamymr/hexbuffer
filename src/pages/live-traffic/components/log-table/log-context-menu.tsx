@@ -12,8 +12,8 @@ import { Copy, Plus, Trash2, Send } from 'lucide-react';
 import { toast } from 'sonner';
 import type { ApiCall } from '@/types';
 import { deleteHistoryLog, fetchHistoryDetail } from '@/pages/live-traffic/services/history-service';
-import { createDefaultAttackConfig, findRequestPayloadPositions } from '@/pages/brute-force/types';
-import { useBruteForceStore } from '@/stores/bruto-force';
+import { createDefaultAttackConfig, findRequestPayloadPositions } from '@/pages/invoker/types';
+import { useInvokerStore } from '@/stores/invoker';
 import { useBrowserAutomationStore } from '@/stores/browser-automation';
 import { useHistoryQuery } from '@/pages/live-traffic/hooks/use-history-query';
 import { adaptProxyRecordToApiCall } from '@/pages/live-traffic/hooks/use-history-table';
@@ -28,6 +28,7 @@ interface LogEntryContextMenuProps {
   call: ApiCall;
   children: React.ReactNode;
   onDelete?: (id: string) => void;
+  onOpenChange?: (open: boolean) => void;
 }
 
 function buildAutomationTargetUrl(request: ApiCall) {
@@ -43,6 +44,7 @@ export function LogEntryContextMenu({
   call,
   children,
   onDelete,
+  onOpenChange,
 }: LogEntryContextMenuProps) {
   const navigate = useNavigate();
   const { triggerRefresh } = useHistoryQuery();
@@ -88,7 +90,7 @@ export function LogEntryContextMenu({
     toast.success(`Added ${target.name} to targets`);
   };
 
-  const handleOpenInBruteForce = async () => {
+  const handleOpenInInvoker = async () => {
     try {
       const detail = await fetchHistoryDetail(call.id);
       const request = adaptProxyRecordToApiCall(detail);
@@ -107,11 +109,11 @@ export function LogEntryContextMenu({
         positions: findRequestPayloadPositions(baseRequest),
       };
 
-      useBruteForceStore.getState().addAttackTab(config);
-      navigate('/brute-force');
+      useInvokerStore.getState().addAttackTab(config);
+      navigate('/invoker');
     } catch (error) {
-      console.error('Failed to open request in Brute Force:', error);
-      toast.error('Failed to open request in Brute Force');
+      console.error('Failed to open request in Invoker:', error);
+      toast.error('Failed to open request in Invoker');
     }
   };
 
@@ -222,7 +224,7 @@ export function LogEntryContextMenu({
   };
 
   return (
-    <ContextMenu>
+    <ContextMenu onOpenChange={onOpenChange}>
       <ContextMenuTrigger asChild>
         {children}
       </ContextMenuTrigger>
@@ -237,8 +239,8 @@ export function LogEntryContextMenu({
         <ContextMenuItem onClick={handleAddToScope} className='text-xs'>
           <Plus className="mr-2 size-3" /> Add to Target
         </ContextMenuItem>
-        <ContextMenuItem onClick={handleOpenInBruteForce} className='text-xs'>
-          <Send className="mr-2 size-3" /> Send to Brute Force
+        <ContextMenuItem onClick={handleOpenInInvoker} className='text-xs'>
+          <Send className="mr-2 size-3" /> Send to Invoker
         </ContextMenuItem>
         <ContextMenuItem onClick={handleOpenInRepeater} className='text-xs'>
           <Send className="mr-2 size-3" /> Send to Repeater

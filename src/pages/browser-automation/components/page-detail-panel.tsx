@@ -4,7 +4,8 @@ import { convertFileSrc } from '@tauri-apps/api/core';
 import { useCallback, useState } from 'react';
 import { Copy, ExternalLink, FileCode2, ImageIcon, Loader2, Maximize2, Star } from 'lucide-react';
 import { readTextFile } from '@tauri-apps/plugin-fs';
-import { Badge } from '@/components/ui/badge';
+import { InterestingBadge } from '@/components/status-badge';
+import { HighlightedText } from '@/components/highlighted-text';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -23,13 +24,24 @@ import type { CrawlPage } from '../types';
 
 interface PageDetailPanelProps {
   page: CrawlPage | null;
+  searchQuery?: string;
 }
 
-function DetailRow({ label, value }: { label: string; value: string | number | undefined }) {
+function DetailRow({
+  label,
+  value,
+  searchQuery = '',
+}: {
+  label: string;
+  value: string | number | undefined;
+  searchQuery?: string;
+}) {
   return (
     <div className="grid grid-cols-[100px_minmax(0,1fr)] gap-2 border-b py-1.5 text-xs">
       <span className="text-muted-foreground">{label}</span>
-      <span className="min-w-0 break-words">{value ?? '-'}</span>
+      <span className="break-words">
+        <HighlightedText text={String(value ?? '-')} query={searchQuery} />
+      </span>
     </div>
   );
 }
@@ -57,7 +69,7 @@ function ArtifactActions({ label, path, onView }: { label: string; path?: string
   );
 }
 
-export function PageDetailPanel({ page }: PageDetailPanelProps) {
+export function PageDetailPanel({ page, searchQuery = '' }: PageDetailPanelProps) {
   const session = useBrowserAutomationStore((s) => s.getActiveTab()?.session ?? null);
   const markPageInteresting = useBrowserAutomationStore((s) => s.markPageInteresting);
 
@@ -106,41 +118,46 @@ export function PageDetailPanel({ page }: PageDetailPanelProps) {
   }
 
   return (
-    <div className="flex h-full flex-col">
-      <div className="shrink-0 border-b px-3 py-2">
+    <div className="flex h-full flex-col overflow-hidden">
+      <div className="sticky top-0 z-10 shrink-0 border-b bg-background px-3 py-2">
         <div className="flex items-center gap-2">
-          <h3 className="min-w-0 truncate text-sm font-medium">{page.title || page.url}</h3>
+          <h3 className="truncate text-xs font-medium">
+            <HighlightedText text={page.title || page.url} query={searchQuery} />
+          </h3>
           {page.interesting && (
-            <Badge variant="outline" className="border-amber-500/30 text-amber-700 dark:text-amber-300 shrink-0">
-              Interesting
-            </Badge>
+            <div className="shrink-0">
+              <InterestingBadge />
+            </div>
           )}
         </div>
-        <p className="mt-0.5 truncate font-mono text-xs text-muted-foreground">{page.url}</p>
       </div>
 
       <ScrollArea className="min-h-0 flex-1 px-3">
         <div className="space-y-3 py-3">
           <div className="rounded-md border p-2.5">
-            <DetailRow label="URL" value={page.url} />
-            <DetailRow label="Title" value={page.title} />
-            <DetailRow label="Status" value={PAGE_STATUS_LABELS[page.status]} />
-            <DetailRow label="Depth" value={page.depth} />
-            <DetailRow label="Parent URL" value={page.parentUrl} />
-            <DetailRow label="HTTP Status" value={page.httpStatus} />
-            <DetailRow label="Links Found" value={page.linksFound} />
-            <DetailRow label="Forms Found" value={page.formsFound} />
-            <DetailRow label="Discovered At" value={new Date(page.discoveredAt).toLocaleString()} />
+            <DetailRow label="URL" value={page.url} searchQuery={searchQuery} />
+            <DetailRow label="Title" value={page.title} searchQuery={searchQuery} />
+            <DetailRow label="Status" value={PAGE_STATUS_LABELS[page.status]} searchQuery={searchQuery} />
+            <DetailRow label="Depth" value={page.depth} searchQuery={searchQuery} />
+            <DetailRow label="Parent URL" value={page.parentUrl} searchQuery={searchQuery} />
+            <DetailRow label="HTTP Status" value={page.httpStatus} searchQuery={searchQuery} />
+            <DetailRow label="Links Found" value={page.linksFound} searchQuery={searchQuery} />
+            <DetailRow label="Forms Found" value={page.formsFound} searchQuery={searchQuery} />
+            <DetailRow label="Discovered At" value={new Date(page.discoveredAt).toLocaleString()} searchQuery={searchQuery} />
             <DetailRow
               label="Visited At"
               value={page.visitedAt ? new Date(page.visitedAt).toLocaleString() : undefined}
+              searchQuery={searchQuery}
             />
           </div>
 
           <div className="rounded-md border p-2.5">
             <div className="mb-1.5 text-xs font-medium">Summary</div>
             <p className="text-xs leading-5 text-muted-foreground">
-              {page.aiSummary || 'No summary is available for this page yet.'}
+              <HighlightedText
+                text={page.aiSummary || 'No summary is available for this page yet.'}
+                query={searchQuery}
+              />
             </p>
           </div>
 

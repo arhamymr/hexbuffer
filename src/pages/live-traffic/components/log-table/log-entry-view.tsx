@@ -30,8 +30,8 @@ import { parseCookieHeader } from './cookie-display';
 import { formatBytes } from './utils';
 import { MethodBadge } from '@/components/status-badge';
 import { useRepeaterStore } from '@/stores/repeater';
-import { useBruteForceStore } from '@/stores/bruto-force';
-import { createDefaultAttackConfig, findRequestPayloadPositions } from '@/pages/brute-force/types';
+import { useInvokerStore } from '@/stores/invoker';
+import { createDefaultAttackConfig, findRequestPayloadPositions } from '@/pages/invoker/types';
 
 type DetailViewMode = 'text' | 'table';
 
@@ -89,7 +89,7 @@ export function LogEntryBurpView() {
     toast.success('Sent to Repeater');
   };
 
-  const handleSendToBruteForce = () => {
+  const handleSendToInvoker = () => {
     if (!call) return;
     const baseRequest = {
       method: call.method,
@@ -105,9 +105,9 @@ export function LogEntryBurpView() {
       base_request: baseRequest,
       positions: findRequestPayloadPositions(baseRequest),
     };
-    useBruteForceStore.getState().addAttackTab(config);
-    navigate('/brute-force');
-    toast.success('Sent to Brute Force');
+    useInvokerStore.getState().addAttackTab(config);
+    navigate('/invoker');
+    toast.success('Sent to Invoker');
   };
 
   if (!selectedCallId) {
@@ -262,8 +262,8 @@ export function LogEntryBurpView() {
                 <DropdownMenuItem onClick={handleSendToRepeater} className="text-xs">
                   <Send className="mr-2 h-4 w-4" /> Send to Repeater
                 </DropdownMenuItem>
-                {/* <DropdownMenuItem onClick={handleSendToBruteForce} className="text-xs">
-                  <Crosshair className="mr-2 h-4 w-4" /> Send to Brute Force
+                {/* <DropdownMenuItem onClick={handleSendToInvoker} className="text-xs">
+                  <Crosshair className="mr-2 h-4 w-4" /> Send to Invoker
                 </DropdownMenuItem> */}
               </DropdownMenuContent>
             </DropdownMenu>

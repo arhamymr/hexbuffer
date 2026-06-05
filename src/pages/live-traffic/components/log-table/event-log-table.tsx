@@ -1,6 +1,7 @@
 'use client';
 
 import { Clipboard } from 'lucide-react';
+import { HighlightedText } from '@/components/highlighted-text';
 import { Button } from '@/components/ui/button';
 import { Empty, EmptyDescription, EmptyTitle } from '@/components/ui/empty';
 import { ActivityStatusBadge, LevelBadge, type StatusActivityValue } from '@/components/status-badge';
@@ -22,6 +23,7 @@ interface EventLogTableProps<TLog extends EventLogRow> {
   onRowClick?: (log: TLog) => void;
   emptyTitle?: string;
   emptyDescription?: string;
+  searchQuery?: string;
 }
 
 export function EventLogTable<TLog extends EventLogRow>({
@@ -29,6 +31,7 @@ export function EventLogTable<TLog extends EventLogRow>({
   onRowClick,
   emptyTitle = 'No log entries',
   emptyDescription = 'Events will appear here once activity is available.',
+  searchQuery = '',
 }: EventLogTableProps<TLog>) {
   if (logs.length === 0) {
     return (
@@ -81,10 +84,10 @@ export function EventLogTable<TLog extends EventLogRow>({
                 <ActivityStatusBadge status={log.type} />
               </td>
               <td className="max-w-[520px] truncate px-3 py-1 text-xs" title={log.message}>
-                {log.message}
+                <HighlightedText text={log.message} query={searchQuery} />
               </td>
               <td className="max-w-[220px] truncate px-3 py-1 text-xs text-muted-foreground" title={log.url}>
-                {log.url || '-'}
+                <HighlightedText text={log.url || '-'} query={searchQuery} />
               </td>
             </tr>
           ))}

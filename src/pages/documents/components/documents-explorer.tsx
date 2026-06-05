@@ -10,11 +10,11 @@ import {
   ContextMenuTrigger,
 } from '@/components/ui/context-menu';
 import { ExternalLink, Send, Copy, Trash2, RotateCcw } from 'lucide-react';
-import { useBruteForceStore } from '@/stores/bruto-force';
+import { useInvokerStore } from '@/stores/invoker';
 import { useRepeaterStore } from '@/stores/repeater';
 import { buildHttpCurlCommand, buildRawHttpRequest } from '@/lib/http-message';
 import { copyText } from '@/lib/clipboard';
-import { createDefaultAttackConfig, findRequestPayloadPositions } from '@/pages/brute-force/types';
+import { createDefaultAttackConfig, findRequestPayloadPositions } from '@/pages/invoker/types';
 import { type ReconDocument, type SavedApiEntry } from '../types';
 import { type DocumentSectionKey } from '../constants';
 import {
@@ -72,7 +72,7 @@ export function DocumentsExplorer({
     });
   };
 
-  const handleOpenInBruteForce = (entry: SavedApiEntry) => {
+  const handleOpenInInvoker = (entry: SavedApiEntry) => {
     const baseRequest = {
       method: entry.method,
       url: entry.url,
@@ -87,9 +87,9 @@ export function DocumentsExplorer({
       base_request: baseRequest,
       positions: findRequestPayloadPositions(baseRequest),
     };
-    useBruteForceStore.getState().addAttackTab(config);
-    navigate('/brute-force');
-    toast.success('Opened in Brute Force');
+    useInvokerStore.getState().addAttackTab(config);
+    navigate('/invoker');
+    toast.success('Opened in Invoker');
   };
 
   const handleOpenInRepeater = (entry: SavedApiEntry) => {
@@ -260,8 +260,8 @@ export function DocumentsExplorer({
                           <Copy className="mr-2 size-3" /> Copy URL
                         </ContextMenuItem>
                         <ContextMenuSeparator />
-                        <ContextMenuItem onClick={() => handleOpenInBruteForce(entry)} className='text-xs'>
-                          <ExternalLink className="mr-2 h-4 w-4" /> Open in Brute Force
+                        <ContextMenuItem onClick={() => handleOpenInInvoker(entry)} className='text-xs'>
+                          <ExternalLink className="mr-2 h-4 w-4" /> Open in Invoker
                         </ContextMenuItem>
                         <ContextMenuItem onClick={() => handleOpenInRepeater(entry)} className='text-xs'>
                           <Send className="mr-2 h-4 w-4" /> Send to Repeater

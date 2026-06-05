@@ -10,7 +10,6 @@ pub use crate::browser::{
 // ── Agent browser types ──
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::io::Write;
 use std::path::PathBuf;
 use std::process::{Child, Command, Stdio};
 use std::sync::{
@@ -19,6 +18,15 @@ use std::sync::{
 };
 use tauri::{AppHandle, Emitter, State};
 use uuid::Uuid;
+
+fn active_ai_browser_worker_count(state: &AiBrowserState, session_id: &str) -> usize {
+    state
+        .children
+        .lock()
+        .ok()
+        .and_then(|children| children.get(session_id).map(|items| items.len()))
+        .unwrap_or(0)
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -533,6 +541,7 @@ pub async fn ai_browser_start_crawl(
     state: State<'_, AiBrowserState>,
     config: CrawlConfig,
     session_id: Option<String>,
+    append_existing: Option<bool>,
 ) -> Result<CrawlSession, String> {
     let proxy_port = crate::proxy::active_proxy_port().unwrap_or(0);
     if proxy_port == 0 {
@@ -542,8 +551,16 @@ pub async fn ai_browser_start_crawl(
         );
     }
 
+    let session_id = session_id.unwrap_or_else(|| format!("crawl-{}", Uuid::new_v4()));
+    let session_exists_in_memory = state
+        .sessions
+        .lock()
+        .map_err(|_| "Failed to lock AI browser sessions".to_string())?
+        .contains_key(&session_id);
+    let appending_existing_session = append_existing.unwrap_or(false) || session_exists_in_memory;
+
     let session = CrawlSession {
-        id: session_id.unwrap_or_else(|| format!("crawl-{}", Uuid::new_v4())),
+        id: session_id,
         target_url: config.target_url.clone(),
         status: "running".to_string(),
         strategy: normalize_strategy(config.strategy.clone()),
@@ -561,31 +578,40 @@ pub async fn ai_browser_start_crawl(
         sessions.insert(session.id.clone(), session.clone());
     }
     {
-        state
-            .pages
-            .lock()
-            .map_err(|_| "Failed to lock AI browser pages".to_string())?
-            .insert(session.id.clone(), Vec::new());
-        state
-            .insights
-            .lock()
-            .map_err(|_| "Failed to lock AI browser insights".to_string())?
-            .insert(session.id.clone(), Vec::new());
-        state
-            .logs
-            .lock()
-            .map_err(|_| "Failed to lock AI browser logs".to_string())?
-            .insert(session.id.clone(), Vec::new());
+        if !appending_existing_session {
+            state
+                .pages
+                .lock()
+                .map_err(|_| "Failed to lock AI browser pages".to_string())?
+                .insert(session.id.clone(), Vec::new());
+            state
+                .insights
+                .lock()
+                .map_err(|_| "Failed to lock AI browser insights".to_string())?
+                .insert(session.id.clone(), Vec::new());
+            state
+                .logs
+                .lock()
+                .map_err(|_| "Failed to lock AI browser logs".to_string())?
+                .insert(session.id.clone(), Vec::new());
+        }
     }
     let cancel_flag = Arc::new(AtomicBool::new(false));
+    let worker_id = format!("worker-{}", Uuid::new_v4());
     state
         .cancellations
         .lock()
         .map_err(|_| "Failed to lock AI browser cancellations".to_string())?
-        .insert(session.id.clone(), cancel_flag.clone());
+        .entry(session.id.clone())
+        .or_default()
+        .insert(worker_id.clone(), cancel_flag.clone());
 
     persist_session(&app, &session);
-    let _ = app.emit("ai-browser:session-started", &session);
+    if appending_existing_session {
+        let _ = app.emit("ai-browser:session-updated", &session);
+    } else {
+        let _ = app.emit("ai-browser:session-started", &session);
+    }
     add_log(
         &app,
         &state,
@@ -594,8 +620,31 @@ pub async fn ai_browser_start_crawl(
             session_id: session.id.clone(),
             level: "info".to_string(),
             r#type: "session".to_string(),
-            message: format!("Started for {}", session.target_url),
-            url: Some(session.target_url.clone()),
+            message: if appending_existing_session && config.human_input_fields.is_some() {
+                format!(
+                    "Started branch crawler for human input at {}",
+                    config
+                        .resume_from_url
+                        .as_deref()
+                        .unwrap_or(session.target_url.as_str())
+                )
+            } else if appending_existing_session {
+                format!(
+                    "Resumed crawl from {}",
+                    config
+                        .resume_from_url
+                        .as_deref()
+                        .unwrap_or(session.target_url.as_str())
+                )
+            } else {
+                format!("Started for {}", session.target_url)
+            },
+            url: Some(
+                config
+                    .resume_from_url
+                    .clone()
+                    .unwrap_or_else(|| session.target_url.clone()),
+            ),
             ai_used_for_analysis: None,
             created_at: now(),
             human_input_request: None,
@@ -605,6 +654,7 @@ pub async fn ai_browser_start_crawl(
     let app_for_task = app.clone();
     let state_for_task = state.inner().clone();
     let session_id_for_task = session.id.clone();
+    let worker_id_for_task = worker_id.clone();
     let settings = crate::ai::read_ai_settings(&app)?;
     let api_key_for_task = match crate::ai::read_optional_ai_api_key(&settings.provider) {
         Ok(api_key) => api_key,
@@ -637,6 +687,7 @@ pub async fn ai_browser_start_crawl(
             let state = state_for_task.clone();
             let config = config.clone();
             let session_id = session_id_for_task.clone();
+            let worker_id = worker_id_for_task.clone();
             let cancel_flag = cancel_flag_for_task.clone();
             tauri::async_runtime::spawn_blocking(move || {
                 run_sidecar_crawl(
@@ -644,6 +695,7 @@ pub async fn ai_browser_start_crawl(
                     &state,
                     &config,
                     &session_id,
+                    &worker_id,
                     api_key_for_task.as_deref(),
                     cancel_flag,
                 )
@@ -654,10 +706,20 @@ pub async fn ai_browser_start_crawl(
         };
 
         if let Ok(mut cancellations) = state_for_task.cancellations.lock() {
-            cancellations.remove(&session_id_for_task);
+            if let Some(session_cancellations) = cancellations.get_mut(&session_id_for_task) {
+                session_cancellations.remove(&worker_id_for_task);
+                if session_cancellations.is_empty() {
+                    cancellations.remove(&session_id_for_task);
+                }
+            }
         }
         if let Ok(mut children) = state_for_task.children.lock() {
-            children.remove(&session_id_for_task);
+            if let Some(session_children) = children.get_mut(&session_id_for_task) {
+                session_children.remove(&worker_id_for_task);
+                if session_children.is_empty() {
+                    children.remove(&session_id_for_task);
+                }
+            }
         }
 
         if let Err(error) = sidecar_result {
@@ -668,14 +730,6 @@ pub async fn ai_browser_start_crawl(
             {
                 return;
             }
-            let finished_at = now();
-            let _ = update_session(
-                &app_for_task,
-                &state_for_task,
-                &session_id_for_task,
-                "failed",
-                Some(finished_at),
-            );
             add_log(
                 &app_for_task,
                 &state_for_task,
@@ -684,17 +738,44 @@ pub async fn ai_browser_start_crawl(
                     session_id: session_id_for_task.clone(),
                     level: "error".to_string(),
                     r#type: "error".to_string(),
-                    message: format!("Sidecar crawl failed: {}", error),
+                    message: format!("Sidecar crawl worker failed: {}", error),
                     url: None,
                     ai_used_for_analysis: None,
                     created_at: now(),
                     human_input_request: None,
                 },
             );
+            if active_ai_browser_worker_count(&state_for_task, &session_id_for_task) > 0 {
+                return;
+            }
+            let finished_at = now();
+            let _ = update_session(
+                &app_for_task,
+                &state_for_task,
+                &session_id_for_task,
+                "failed",
+                Some(finished_at),
+            );
             let _ = app_for_task.emit(
                 "ai-browser:session-failed",
                 serde_json::json!({ "sessionId": session_id_for_task, "message": error }),
             );
+        } else if !session_status(&state_for_task, &session_id_for_task)
+            .as_deref()
+            .map(is_terminal_status)
+            .unwrap_or(false)
+            && active_ai_browser_worker_count(&state_for_task, &session_id_for_task) == 0
+        {
+            let finished_at = now();
+            if let Ok(session) = update_session(
+                &app_for_task,
+                &state_for_task,
+                &session_id_for_task,
+                "completed",
+                Some(finished_at),
+            ) {
+                let _ = app_for_task.emit("ai-browser:session-finished", session);
+            }
         }
     });
 
@@ -715,14 +796,16 @@ pub async fn ai_browser_pause_crawl(
         return Ok(());
     }
 
-    if let Some(child) = state
+    let children = state
         .children
         .lock()
         .map_err(|_| "Failed to lock AI browser child processes".to_string())?
         .get(&session_id)
-        .cloned()
-    {
-        signal_child_process_group(&child, "-STOP")?;
+        .cloned();
+    if let Some(children) = children {
+        for child in children.values() {
+            signal_child_process_group(child, "-STOP")?;
+        }
     }
 
     update_session(&app, &state, &session_id, "paused", None)?;
@@ -758,14 +841,16 @@ pub async fn ai_browser_resume_crawl(
         return Ok(());
     }
 
-    if let Some(child) = state
+    let children = state
         .children
         .lock()
         .map_err(|_| "Failed to lock AI browser child processes".to_string())?
         .get(&session_id)
-        .cloned()
-    {
-        signal_child_process_group(&child, "-CONT")?;
+        .cloned();
+    if let Some(children) = children {
+        for child in children.values() {
+            signal_child_process_group(child, "-CONT")?;
+        }
     }
 
     update_session(&app, &state, &session_id, "running", None)?;
@@ -796,56 +881,36 @@ pub async fn ai_browser_submit_human_input(
     action: String,
     fields: Option<HashMap<String, String>>,
 ) -> Result<(), String> {
-    if session_status(&state, &session_id)
-        .as_deref()
-        .map(is_terminal_status)
-        .unwrap_or(false)
-    {
-        return Ok(());
-    }
-
-    let child = state
-        .children
-        .lock()
-        .map_err(|_| "Failed to lock AI browser child processes".to_string())?
-        .get(&session_id)
-        .cloned()
-        .ok_or_else(|| "AI browser sidecar is not running".to_string())?;
-
-    let payload = serde_json::json!({
-        "type": "human_input_response",
-        "requestId": request_id,
-        "action": action,
-        "fields": fields.unwrap_or_default(),
-    });
-    let line = format!("{}\n", payload);
-    {
-        let mut child = child
-            .lock()
-            .map_err(|_| "Failed to lock AI browser child process".to_string())?;
-        let stdin = child
-            .stdin
-            .as_mut()
-            .ok_or_else(|| "AI browser sidecar input channel is closed".to_string())?;
-        stdin
-            .write_all(line.as_bytes())
-            .map_err(|error| format!("Failed to send human input to AI browser: {}", error))?;
-        stdin
-            .flush()
-            .map_err(|error| format!("Failed to flush human input to AI browser: {}", error))?;
-    }
+    let _ = request_id;
+    let _ = fields;
 
     if action == "stop-crawl" {
-        if let Some(cancel_flag) = state
+        if let Some(cancel_flags) = state
             .cancellations
             .lock()
             .map_err(|_| "Failed to lock AI browser cancellations".to_string())?
             .remove(&session_id)
         {
-            cancel_flag.store(true, Ordering::SeqCst);
+            for cancel_flag in cancel_flags.values() {
+                cancel_flag.store(true, Ordering::SeqCst);
+            }
+        }
+        if let Some(children) = state
+            .children
+            .lock()
+            .map_err(|_| "Failed to lock AI browser child processes".to_string())?
+            .remove(&session_id)
+        {
+            for child in children.values() {
+                kill_child_process_group(child);
+            }
         }
         update_session(&app, &state, &session_id, "stopped", Some(now()))?;
-    } else {
+    } else if !session_status(&state, &session_id)
+        .as_deref()
+        .map(is_terminal_status)
+        .unwrap_or(false)
+    {
         update_session(&app, &state, &session_id, "running", None)?;
     }
 
@@ -856,8 +921,8 @@ pub async fn ai_browser_submit_human_input(
             id: Uuid::new_v4().to_string(),
             session_id,
             level: "info".to_string(),
-            r#type: "policy".to_string(),
-            message: format!("Human selected {} for restricted workflow.", action),
+            r#type: "human".to_string(),
+            message: format!("Human selected {} for form workflow.", action),
             url: None,
             ai_used_for_analysis: None,
             created_at: now(),
@@ -873,22 +938,26 @@ pub async fn ai_browser_stop_crawl(
     state: State<'_, AiBrowserState>,
     session_id: String,
 ) -> Result<(), String> {
-    if let Some(cancel_flag) = state
+    if let Some(cancel_flags) = state
         .cancellations
         .lock()
         .map_err(|_| "Failed to lock AI browser cancellations".to_string())?
         .remove(&session_id)
     {
-        cancel_flag.store(true, Ordering::SeqCst);
+        for cancel_flag in cancel_flags.values() {
+            cancel_flag.store(true, Ordering::SeqCst);
+        }
     }
 
-    if let Some(child) = state
+    if let Some(children) = state
         .children
         .lock()
         .map_err(|_| "Failed to lock AI browser child processes".to_string())?
         .remove(&session_id)
     {
-        kill_child_process_group(&child);
+        for child in children.values() {
+            kill_child_process_group(child);
+        }
     }
 
     update_session(&app, &state, &session_id, "stopped", Some(now()))?;
@@ -916,22 +985,26 @@ pub async fn delete_ai_browser_session(
     history: State<'_, crate::HistoryBridge>,
     session_id: String,
 ) -> Result<(), String> {
-    if let Some(cancel_flag) = state
+    if let Some(cancel_flags) = state
         .cancellations
         .lock()
         .map_err(|_| "Failed to lock AI browser cancellations".to_string())?
         .remove(&session_id)
     {
-        cancel_flag.store(true, Ordering::SeqCst);
+        for cancel_flag in cancel_flags.values() {
+            cancel_flag.store(true, Ordering::SeqCst);
+        }
     }
 
-    if let Some(child) = state
+    if let Some(children) = state
         .children
         .lock()
         .map_err(|_| "Failed to lock AI browser child processes".to_string())?
         .remove(&session_id)
     {
-        kill_child_process_group(&child);
+        for child in children.values() {
+            kill_child_process_group(child);
+        }
     }
 
     state

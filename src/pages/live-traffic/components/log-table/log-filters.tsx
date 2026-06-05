@@ -1,10 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { X, Trash2, Map, Search } from 'lucide-react';
+import { X, Trash2, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Switch } from '@/components/ui/switch';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -28,9 +28,7 @@ interface LogFiltersProps {
   onClearFilters?: () => void;
   clearCalls?: () => void;
   historyMode?: HistoryMode;
-  setHistoryMode?: (mode: HistoryMode) => void;
-  sitemapVisible?: boolean;
-  setSitemapVisible?: (visible: boolean) => void;
+  setHistoryMode: (mode: HistoryMode) => void;
 }
 
 export function LogFilters({
@@ -40,15 +38,11 @@ export function LogFilters({
   clearCalls: clearCallsProp,
   historyMode = 'http',
   setHistoryMode,
-  sitemapVisible = true,
-  setSitemapVisible,
 }: LogFiltersProps) {
   const [clearDialogOpen, setClearDialogOpen] = useState(false);
   const {
     filter: storeFilter,
     setFilter: storeSetFilter,
-    toggleMethod,
-    toggleStatus,
     clearFilters: storeClearFilters,
     setSelectedCallId: storeSetSelectedCallId,
     triggerRefresh,
@@ -84,79 +78,62 @@ export function LogFilters({
           </Button>
         )}
       
-        {setHistoryMode && (
-          <div className="ml-auto flex items-center gap-2 text-sm">
-            <span className={historyMode === 'http' ? 'font-medium' : 'text-muted-foreground'}>
-              HTTP
-            </span>
-            <Switch
-              checked={historyMode === 'websocket'}
-              onCheckedChange={(checked) => setHistoryMode(checked ? 'websocket' : 'http')}
-              aria-label="Switch between HTTP and WebSocket history"
-            />
-            <span className={historyMode === 'websocket' ? 'font-medium' : 'text-muted-foreground'}>
-              WebSocket
-            </span>
-          </div>
-        )}
+        <ToggleGroup
+          type="single"
+          variant="outline"
+          size="sm"
+          value={historyMode}
+          onValueChange={(val) => val && setHistoryMode(val as HistoryMode)}
+          className="ml-auto bg-background cursor-pointer"
+        >
+          <ToggleGroupItem value="http">HTTP</ToggleGroupItem>
+          <ToggleGroupItem value="websocket">WebSocket</ToggleGroupItem>
+        </ToggleGroup>
         <TargetSelectorDialog />
           
       </div>
 
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          {historyMode === 'http' && setSitemapVisible && (
-            <Button
-              variant="outline"
-              size="xs"
-              onClick={() => setSitemapVisible(!sitemapVisible)}
-              title="Toggle Sitemap"
-              className='text-xs text-muted-foreground'
-            >
-              <Map className="h3 w-3"/>
-              {sitemapVisible ? "Sitemap hide" : "Sitemap show"}
-            </Button>
-          )}
-        </div>
-
+      <div className="flex items-center justify-end gap-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-2">
-              <span className="text-xs text-muted-foreground">Filter by:</span>
-              <div className="flex gap-1">
+              <span className="text-xs text-muted-foreground">Method:</span>
+              <ToggleGroup
+                type="multiple"
+                variant="outline"
+                size="sm"
+                value={Array.from(filter.methods)}
+                onValueChange={(values) =>
+                  setFilter({ ...filter, methods: new Set(values) })
+                }
+                className="bg-background cursor-pointer"
+              >
                 {METHOD_FILTERS.map((method) => (
-                  <button
-                    key={method}
-                    onClick={() => toggleMethod(method)}
-                    className={`text-xs px-2 py-1 cursor-pointer rounded-md border transition-colors ${
-                      filter.methods.has(method)
-                        ? 'bg-primary text-primary-foreground border-primary'
-                        : 'border-muted-foreground/30 hover:bg-muted'
-                    }`}
-                  >
+                  <ToggleGroupItem key={method} value={method}>
                     {method}
-                  </button>
+                  </ToggleGroupItem>
                 ))}
-              </div>
+              </ToggleGroup>
             </div>
 
             <div className="flex items-center gap-2">
               <span className="text-xs text-muted-foreground">Status:</span>
-              <div className="flex gap-1">
+              <ToggleGroup
+                type="multiple"
+                variant="outline"
+                size="sm"
+                value={Array.from(filter.statusCodes)}
+                onValueChange={(values) =>
+                  setFilter({ ...filter, statusCodes: new Set(values) })
+                }
+                className="text-[10px] bg-background cursor-pointer"
+              >
                 {STATUS_FILTERS.map((status) => (
-                  <button
-                    key={status.label}
-                    onClick={() => toggleStatus(status.label)}
-                    className={`text-xs px-2 py-1 rounded-md border cursor-pointer transition-colors ${
-                      filter.statusCodes.has(status.label)
-                        ? 'bg-primary text-primary-foreground border-primary'
-                        : 'border-muted-foreground/30 hover:bg-muted'
-                    }`}
-                  >
+                  <ToggleGroupItem key={status.label} value={status.label}>
                     {status.label}
-                  </button>
+                  </ToggleGroupItem>
                 ))}
-              </div>
+              </ToggleGroup>
             </div>
             <p className='text-muted-foreground'>|</p>
             <Button variant="outline" size="xs" onClick={() => setClearDialogOpen(true)} className='text-xs text-muted-foreground'>

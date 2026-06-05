@@ -3,6 +3,7 @@
 import type { MouseEvent } from 'react';
 import { useState } from 'react';
 import { ChevronDown, ChevronRight, FileText, Lock, LockOpen } from 'lucide-react';
+import { HighlightedText } from '@/components/highlighted-text';
 import { cn } from '@/lib/utils';
 import type { TreeNodeData } from './types';
 
@@ -15,6 +16,7 @@ interface TreeNodeProps<TMeta = unknown> {
   onSelectNode?: (node: TreeNodeData<TMeta>) => void;
   onSelectEndpoint?: (node: TreeNodeData<TMeta>) => void;
   onSelectHost?: (node: TreeNodeData<TMeta>) => void;
+  searchQuery?: string;
 }
 
 function isHttpsHost<TMeta>(node: TreeNodeData<TMeta>): boolean {
@@ -48,6 +50,7 @@ export function TreeNode<TMeta = unknown>({
   onSelectNode,
   onSelectEndpoint,
   onSelectHost,
+  searchQuery = '',
 }: TreeNodeProps<TMeta>) {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
   const hasChildren = node.children.length > 0;
@@ -111,7 +114,7 @@ export function TreeNode<TMeta = unknown>({
         <div className="min-w-0 flex-1">
           <div className="flex min-w-0 items-center gap-1.5">
             <span className={cn('truncate text-xs', isEndpoint && 'font-mono')}>
-              {node.label}
+              <HighlightedText text={node.label} query={searchQuery} />
             </span>
             {node.badge}
           </div>
@@ -141,6 +144,7 @@ export function TreeNode<TMeta = unknown>({
               onSelectNode={onSelectNode}
               onSelectEndpoint={onSelectEndpoint}
               onSelectHost={onSelectHost}
+              searchQuery={searchQuery}
             />
           ))}
         </div>

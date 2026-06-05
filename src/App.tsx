@@ -1,6 +1,6 @@
 import { Routes, Route } from "react-router-dom";
 import { LiveTrafficPage } from "@/pages/live-traffic";
-import { BruteForcePage } from "@/pages/brute-force";
+import { InvokerPage } from "@/pages/invoker";
 import { Settings } from "@/pages/settings";
 import { RepeaterPage } from "@/pages/repeater";
 import { InterceptPage } from "@/pages/intercept";
@@ -8,7 +8,7 @@ import { ToolsPage } from "@/pages/tools";
 import { AIToolsPage } from "@/pages/ai-tools";
 import { DocumentsPage } from "@/pages/documents";
 import { BrowserAutomationPage } from "@/pages/browser-automation";
-import { CollaboratorPage } from "@/pages/collaborator";
+import { ListenerPage } from "@/pages/listener";
 import { PacketCapturePage } from "@/pages/packet-capture";
 // import { CaInstallDialog } from "@/components/ca-install-dialog";
 
@@ -20,9 +20,9 @@ function AppRoutes() {
         <Route path="/" element={<LiveTrafficPage />} />
         <Route path="/intercept" element={<InterceptPage />} />
         <Route path="/repeater" element={<RepeaterPage />} />
-        <Route path="/brute-force" element={<BruteForcePage />} />
+        <Route path="/invoker" element={<InvokerPage />} />
         <Route path="/browser-automation" element={<BrowserAutomationPage />} />
-        <Route path="/collaborator" element={<CollaboratorPage />} />
+        <Route path="/listener" element={<ListenerPage />} />
         {/* <Route path="/packet-capture" element={<PacketCapturePage />} /> */}
         <Route path="/tools" element={<ToolsPage />} />
         <Route path="/ai-tools" element={<AIToolsPage />} />

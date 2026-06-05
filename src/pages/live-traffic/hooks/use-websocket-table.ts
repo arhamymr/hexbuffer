@@ -175,6 +175,7 @@ export function useWebSocketTable() {
     isLoadingMore,
     newEventsCount,
     loadError,
+    searchQuery: query.filter.search || '',
     hasActiveFilters: Boolean(query.filter.search || (query.filter.scope && query.filter.scope.length > 0)),
     loadMore,
     handleRefresh,

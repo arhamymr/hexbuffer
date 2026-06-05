@@ -31,4 +31,5 @@ export interface TreeViewProps<TMeta = unknown> {
   emptyTitle?: string;
   emptyDescription?: string;
   errorTitle?: string;
+  searchQuery?: string;
 }

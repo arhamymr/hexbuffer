@@ -64,6 +64,9 @@ impl Database {
         Self::ensure_column(&conn, "ai_browser_pages", "screenshot_path", "TEXT")?;
         Self::ensure_column(&conn, "ai_browser_pages", "rendered_html_path", "TEXT")?;
         Self::ensure_column(&conn, "ai_browser_insights", "ai_used_for_analysis", "INTEGER")?;
+        Self::ensure_column(&conn, "ai_browser_insights", "analysis_source", "TEXT")?;
+        Self::ensure_column(&conn, "ai_browser_insights", "analysis_tool_id", "TEXT")?;
+        Self::ensure_column(&conn, "ai_browser_insights", "analysis_tool_name", "TEXT")?;
         Self::ensure_column(&conn, "ai_browser_logs", "ai_used_for_analysis", "INTEGER")?;
         Ok(())
     }
@@ -321,22 +324,26 @@ impl Database {
 
         conn.execute(
             r#"INSERT OR REPLACE INTO ai_browser_insights (
-                id, session_id, page_id, url, severity, type, title, description, ai_used_for_analysis, reviewed, created_at
-            ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)"#,
+                id, session_id, page_id, url, severity, type, title, description, ai_used_for_analysis,
+                analysis_source, analysis_tool_id, analysis_tool_name, reviewed, created_at
+            ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14)"#,
             params![
-                insight.id,
-                insight.session_id,
-                insight.page_id,
-                insight.url,
-                insight.severity,
-                insight.r#type,
-                insight.title,
-                insight.description,
+                &insight.id,
+                &insight.session_id,
+                &insight.page_id,
+                &insight.url,
+                &insight.severity,
+                &insight.r#type,
+                &insight.title,
+                &insight.description,
                 insight
                     .ai_used_for_analysis
                     .map(|used| if used { 1i64 } else { 0i64 }),
+                &insight.analysis_source,
+                &insight.analysis_tool_id,
+                &insight.analysis_tool_name,
                 if insight.reviewed { 1i64 } else { 0i64 },
-                insight.created_at,
+                &insight.created_at,
             ],
         )?;
 
@@ -346,7 +353,8 @@ impl Database {
     pub fn list_ai_browser_insights(&self, session_id: &str) -> SqlResult<Vec<AIInsight>> {
         let conn = self.conn.lock().unwrap();
         let mut stmt = conn.prepare(
-            r#"SELECT id, session_id, page_id, severity, type, title, description, url, ai_used_for_analysis, reviewed, created_at
+            r#"SELECT id, session_id, page_id, severity, type, title, description, url, ai_used_for_analysis,
+                      analysis_source, analysis_tool_id, analysis_tool_name, reviewed, created_at
                FROM ai_browser_insights WHERE session_id = ?1 ORDER BY created_at DESC"#,
         )?;
 
@@ -362,8 +370,11 @@ impl Database {
                     description: row.get(6)?,
                     url: row.get(7)?,
                     ai_used_for_analysis: row.get::<_, Option<i64>>(8)?.map(|value| value != 0),
-                    reviewed: row.get::<_, i64>(9)? != 0,
-                    created_at: row.get(10)?,
+                    analysis_source: row.get(9)?,
+                    analysis_tool_id: row.get(10)?,
+                    analysis_tool_name: row.get(11)?,
+                    reviewed: row.get::<_, i64>(12)? != 0,
+                    created_at: row.get(13)?,
                 })
             })?
             .collect();

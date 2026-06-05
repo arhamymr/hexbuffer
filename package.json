@@ -7,7 +7,7 @@
     "dev": "vite",
     "dev:clean": "lsof -ti:1420 | xargs kill -9 2>/dev/null || true && vite",
     "build": "vite build",
-    "sidecars:build": "node scripts/build-sidecars.mjs",
+    "sidecars:build": "node sidecars/build-sidecars.mjs",
     "preview": "vite preview",
     "fix:packet-permissions": "bash scripts/fix-packet-capture-permissions.sh",
     "deploy": "bash ./scripts/deploy.sh"

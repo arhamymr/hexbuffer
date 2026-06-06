@@ -3,7 +3,7 @@ import { Asterisk } from 'lucide-react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { useAppStore } from '@/stores/app';
+import { getEffectiveProxyPort, useAppStore } from '@/stores/app';
 import { cn } from '@/lib/utils';
 
 export function ProxyButton() {
@@ -13,7 +13,7 @@ export function ProxyButton() {
   const startProxy = useAppStore((state) => state.startProxy);
   const stopProxy = useAppStore((state) => state.stopProxy);
 
-  const activeProxyPort = proxyPort ?? proxyDefaultPort;
+  const activeProxyPort = getEffectiveProxyPort({ proxyPort, proxyDefaultPort });
   const canToggle = proxyStatus === 'disconnected' || proxyStatus === 'connected';
   const isConnected = proxyStatus === 'connected';
 
@@ -37,7 +37,7 @@ export function ProxyButton() {
       try {
         await startProxy();
         const { proxyPort, proxyDefaultPort } = useAppStore.getState();
-        const activePort = proxyPort ?? proxyDefaultPort;
+        const activePort = getEffectiveProxyPort({ proxyPort, proxyDefaultPort });
         toast.success(`Proxy started on 127.0.0.1:${activePort}`);
       } catch (error) {
         toast.error(error instanceof Error ? error.message : 'Failed to start proxy');

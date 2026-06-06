@@ -3,10 +3,10 @@ import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
 import { relaunch } from '@tauri-apps/plugin-process';
 import { AlertTriangle, ArrowUp, Asterisk, CheckCircle2, Loader2, MessageSquare, Moon, RefreshCw, Settings, Sun } from 'lucide-react';
 import { toast } from 'sonner';
-import { useAppStore } from '@/stores/app';
+import { getEffectiveProxyPort, useAppStore } from '@/stores/app';
 import { useTheme } from './theme-provider';
 import { Button } from './ui/button';
-import { cn } from '@/lib/utils';
+// import { cn } from '@/lib/utils';
 import { useUpdater } from '@/hooks/use-updater';
 import { ManualUpdateCommand } from '@/pages/settings/components/manual-update-command';
 import {
@@ -62,10 +62,10 @@ export function AppFooter({ isAssistantOpen, onToggleAssistant }: AppFooterProps
     updateInstalled,
     installUpdate,
   } = useUpdater();
-  const activeProxyPort = proxyPort ?? proxyDefaultPort;
+  const activeProxyPort = getEffectiveProxyPort({ proxyPort, proxyDefaultPort });
   const isDefaultPortChanged = proxyStatus === 'connected' && proxyPort !== null && proxyPort !== proxyDefaultPort;
   const proxyTitle = isDefaultPortChanged
-    ? `Proxy connected on ${activeProxyPort}. Restart to use default port ${proxyDefaultPort}.`
+    ? `Proxy connected on ${activeProxyPort}. Restart to use configured port ${proxyDefaultPort}.`
     : `Proxy ${proxyStatusLabel[proxyStatus].toLowerCase()}`;
   const displayedUpdateVersion = updateDialogVersion ?? updateVersion;
   const updateInProgress = downloading || downloadProgress.phase === 'installing';
@@ -158,7 +158,7 @@ export function AppFooter({ isAssistantOpen, onToggleAssistant }: AppFooterProps
           />
           <span className='flex items-center'>
             Proxy: {proxyStatusLabel[proxyStatus]} | <Asterisk className='size-3' />:{activeProxyPort}
-            {isDefaultPortChanged ? ' (default port changed)' : ''}
+            {isDefaultPortChanged ? ' (configured port changed)' : ''}
           </span>
         </div>
       </div>
@@ -172,7 +172,7 @@ export function AppFooter({ isAssistantOpen, onToggleAssistant }: AppFooterProps
         >
           {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
         </Button>
-        <Button
+        {/* <Button
           variant="ghost"
           size="xs"
           className={cn('h-8 w-8 p-0', isAssistantOpen && 'bg-muted text-foreground')}
@@ -180,7 +180,7 @@ export function AppFooter({ isAssistantOpen, onToggleAssistant }: AppFooterProps
           title={isAssistantOpen ? 'Hide Chat' : 'Show Chat'}
         >
           <MessageSquare className="h-4 w-4" />
-        </Button>
+        </Button> */}
         {updateAvailable && !updateInstalled && (
           <Button
             variant="ghost"

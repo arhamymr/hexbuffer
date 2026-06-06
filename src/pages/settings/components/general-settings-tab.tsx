@@ -22,6 +22,12 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+  MAX_PROXY_PORT,
+  MIN_PROXY_PORT,
+  getEffectiveProxyPort,
+  isValidProxyPort,
+} from '@/stores/app';
 import type { SettingsPageState } from '../hooks/use-settings-page';
 import { ManualUpdateCommand } from './manual-update-command';
 
@@ -53,10 +59,16 @@ export function GeneralSettingsTab({ settings }: GeneralSettingsTabProps) {
     handleResetLocalData,
   } = settings;
   const parsedProxyPort = Number(proxyPortDraft);
-  const proxyPortIsValid =
-    Number.isInteger(parsedProxyPort) && parsedProxyPort >= 1 && parsedProxyPort <= 65535;
+  const proxyPortIsValid = isValidProxyPort(parsedProxyPort);
   const proxyPortIsChanged = proxyPortIsValid && parsedProxyPort !== proxyDefaultPort;
-  const activeProxyPort = proxyPort ?? proxyDefaultPort;
+  const proxyRuntimeDiffers =
+    proxyStatus === 'connected' && proxyPort !== null && proxyPort !== proxyDefaultPort;
+  const activeProxyPort = getEffectiveProxyPort({ proxyPort, proxyDefaultPort });
+  const currentListenerLabel =
+    proxyStatus === 'connected' && proxyPort !== null
+      ? `127.0.0.1:${proxyPort}`
+      : 'Not running';
+  const configuredListenerLabel = `127.0.0.1:${proxyDefaultPort}`;
 
   return (
     <>
@@ -70,12 +82,12 @@ export function GeneralSettingsTab({ settings }: GeneralSettingsTabProps) {
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="grid max-w-sm gap-2">
-            <Label htmlFor="default-proxy-port">Default port</Label>
+            <Label htmlFor="default-proxy-port">Listener port</Label>
             <Input
               id="default-proxy-port"
               type="number"
-              min={1}
-              max={65535}
+              min={MIN_PROXY_PORT}
+              max={MAX_PROXY_PORT}
               step={1}
               inputMode="numeric"
               value={proxyPortDraft}
@@ -83,17 +95,22 @@ export function GeneralSettingsTab({ settings }: GeneralSettingsTabProps) {
               onChange={(event) => setProxyPortDraft(event.target.value)}
             />
           </div>
-          <p className="text-sm text-muted-foreground">
-            Current listener: <span className="font-medium">127.0.0.1:{activeProxyPort}</span>
-            {proxyStatus === 'connected' && proxyPortIsChanged
-              ? `; restart the proxy to use ${parsedProxyPort}.`
-              : ''}
-          </p>
+          <div className="space-y-1 text-sm text-muted-foreground">
+            <p>
+              Current listener: <span className="font-medium">{currentListenerLabel}</span>
+            </p>
+            <p>
+              Configured listener: <span className="font-medium">{configuredListenerLabel}</span>
+              {proxyRuntimeDiffers
+                ? `; running on ${activeProxyPort} because ${proxyDefaultPort} is unavailable or the proxy has not restarted cleanly.`
+                : ''}
+            </p>
+          </div>
           <div className="flex flex-wrap gap-2">
             <Button
               size="xs"
               onClick={handleSaveProxyDefaultPort}
-              disabled={!proxyPortIsChanged}
+              disabled={!proxyPortIsChanged && !proxyRuntimeDiffers}
             >
               <SaveIcon className="mr-2 size-4" />
               Save Port

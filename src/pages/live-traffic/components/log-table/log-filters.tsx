@@ -18,7 +18,8 @@ import {
 import { METHOD_FILTERS, STATUS_FILTERS } from './utils';
 import { clearHistoryLogs } from '@/pages/live-traffic/services/history-service';
 import type { HistoryFilterState } from '@/pages/live-traffic/state/history-query-store';
-import { useHistoryQuery } from '@/pages/live-traffic/hooks/use-history-query';
+import { useHistoryQueryStore } from '@/pages/live-traffic/state/history-query-store';
+import { useShallow } from 'zustand/react/shallow';
 import type { HistoryMode } from '@/pages/live-traffic/hooks/use-http-history-page';
 import { TargetSelectorDialog } from '../target-selector';
 
@@ -42,18 +43,26 @@ export function LogFilters({
   const [clearDialogOpen, setClearDialogOpen] = useState(false);
   const {
     filter: storeFilter,
-    setFilter: storeSetFilter,
     setSearch: storeSetSearch,
     clearFilters: storeClearFilters,
-    setSelectedCallId: storeSetSelectedCallId,
     isStreamManuallyPaused,
     setStreamManuallyPaused,
     triggerRefresh,
-  } = useHistoryQuery();
+    setSelectedCallId: storeSetSelectedCallId,
+  } = useHistoryQueryStore(
+    useShallow((state) => ({
+      filter: state.filter,
+      setSearch: state.setSearch,
+      clearFilters: state.clearFilters,
+      isStreamManuallyPaused: state.isStreamManuallyPaused,
+      setStreamManuallyPaused: state.setStreamManuallyPaused,
+      triggerRefresh: state.triggerRefresh,
+      setSelectedCallId: state.setSelectedCallId,
+    }))
+  );
 
+  const setFilter = onFilterChange ?? useHistoryQueryStore.getState().setFilter;
   const filter = filterProp ?? storeFilter;
-  const setFilter = onFilterChange ?? storeSetFilter;
-  const setSearch = storeSetSearch;
   const clearFilters = onClearFilters ?? storeClearFilters;
   const clearCalls = clearCallsProp ?? (async () => {
     await clearHistoryLogs();
@@ -74,7 +83,7 @@ export function LogFilters({
         <Input
           placeholder="Search URL, host, method, body..."
           value={filter.search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => storeSetSearch(e.target.value)}
           className="pl-8 flex-1 w-full shadow-none bg-background"
         />
         </div>

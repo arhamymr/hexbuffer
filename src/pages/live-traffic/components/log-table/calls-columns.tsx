@@ -1,13 +1,20 @@
 'use client';
 
-import { useCallback, useState, type MouseEvent } from "react";
+import { useCallback, useState, useRef, memo, type MouseEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowDown, ArrowUp, AlertTriangle, Send } from "lucide-react";
 import { toast } from "sonner";
+import {
+  flexRender,
+  getCoreRowModel,
+  useReactTable,
+  type ColumnDef,
+} from "@tanstack/react-table";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import { HighlightedText } from "@/components/highlighted-text";
 import { Empty, EmptyTitle, EmptyDescription } from "@/components/ui/empty";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { formatTimestamp, formatBytes, getExtension } from "./utils";
+import { formatTimestamp, formatBytes } from "./utils";
 import { StatusBadge, MethodBadge } from "@/components/status-badge";
 import { LogEntryContextMenu } from "./log-context-menu";
 import type { ApiCall } from '@/types';
@@ -25,10 +32,10 @@ interface SendToRepeaterButtonProps {
   call: ApiCall;
 }
 
-function SendToRepeaterButton({ call }: SendToRepeaterButtonProps) {
+const SendToRepeaterButton = memo(function SendToRepeaterButton({ call }: SendToRepeaterButtonProps) {
   const navigate = useNavigate();
 
-  const handleSendToRepeater = async (event: MouseEvent<HTMLButtonElement>) => {
+  const handleSendToRepeater = useCallback(async (event: MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();
 
     try {
@@ -49,7 +56,7 @@ function SendToRepeaterButton({ call }: SendToRepeaterButtonProps) {
       console.error('Failed to send request to Repeater:', error);
       toast.error('Failed to send to Repeater');
     }
-  };
+  }, [call.id, navigate]);
 
   return (
     <Button
@@ -63,9 +70,9 @@ function SendToRepeaterButton({ call }: SendToRepeaterButtonProps) {
       <Send className="size-3 text-muted-foreground" />
     </Button>
   );
-}
+});
 
-export const callsColumns: import("@tanstack/react-table").ColumnDef<ApiCall>[] = [
+export const callsColumns: ColumnDef<ApiCall>[] = [
   {
     accessorKey: "timestamp",
     header: "Time",
@@ -79,11 +86,16 @@ export const callsColumns: import("@tanstack/react-table").ColumnDef<ApiCall>[] 
   {
     accessorKey: "method",
     header: "Method",
-    size: 70,
+    size: 100,
     cell: ({ row }) => (
       <div className="flex gap-2">
         <MethodBadge method={row.original.method} />
         <StatusBadge status={row.original.response_status} />
+        {row.original.content_decoded && (
+          <span title="Request body was decoded from gzip/br/deflate">
+            <AlertTriangle className="h-3 w-3 text-yellow-500" />
+          </span>
+        )}
       </div>
     ),
   },
@@ -91,10 +103,15 @@ export const callsColumns: import("@tanstack/react-table").ColumnDef<ApiCall>[] 
     accessorKey: "host",
     header: "Host",
     size: 180,
-    cell: ({ row }) => (
+    cell: ({ row, table }) => (
       <div className="flex items-center gap-1.5 truncate">
         <BrowserIcon userAgent={row.original.user_agent} />
-        <span className="truncate">{row.original.host}</span>
+        <span className="truncate">
+          <HighlightedText
+            text={row.original.host}
+            query={(table.options.meta as { searchQuery?: string } | undefined)?.searchQuery ?? ""}
+          />
+        </span>
       </div>
     ),
   },
@@ -102,6 +119,12 @@ export const callsColumns: import("@tanstack/react-table").ColumnDef<ApiCall>[] 
     accessorKey: "path",
     header: "Path",
     size: 200,
+    cell: ({ row, table }) => (
+      <HighlightedText
+        text={row.original.path}
+        query={(table.options.meta as { searchQuery?: string } | undefined)?.searchQuery ?? ""}
+      />
+    ),
   },
   {
     accessorKey: "response_body_size",
@@ -112,12 +135,6 @@ export const callsColumns: import("@tanstack/react-table").ColumnDef<ApiCall>[] 
         {formatBytes(row.original.response_body_size)}
       </span>
     ),
-  },
-  {
-    accessorKey: "duration_ms",
-    header: "Duration",
-    size: 80,
-    cell: () => <span className="text-xs text-muted-foreground">-</span>,
   },
   {
     accessorKey: "request_body_size",
@@ -133,21 +150,18 @@ export const callsColumns: import("@tanstack/react-table").ColumnDef<ApiCall>[] 
     accessorKey: "response_content_type",
     header: "MIME Type",
     size: 150,
-    cell: ({ row }) => (
+    cell: ({ row, table }) => (
       <span className="text-xs text-muted-foreground truncate block">
-        {row.original.response_content_type || "-"}
+        <HighlightedText
+          text={row.original.response_content_type || "-"}
+          query={(table.options.meta as { searchQuery?: string } | undefined)?.searchQuery ?? ""}
+        />
       </span>
     ),
   },
-  {
-    id: "action",
-    header: "Action",
-    size: 70,
-    cell: ({ row }) => <SendToRepeaterButton call={row.original} />,
-  },
 ];
 
-const trafficTableSkeletonWidths = ["70%", "85%", "80%", "95%", "60%", "55%", "75%", "36px"];
+const trafficTableSkeletonWidths = ["70%", "85%", "80%", "95%", "60%", "55%", "75%"];
 
 function TrafficTableSkeletonRows({ rows = 3 }: { rows?: number }) {
   return (
@@ -182,7 +196,8 @@ function TrafficTableSkeletonRows({ rows = 3 }: { rows?: number }) {
   );
 }
 
-export function TrafficTable() {
+export const TrafficTable = memo(function TrafficTable() {
+  const tableContainerRef = useRef<HTMLDivElement>(null);
   const [isContextMenuOpen, setIsContextMenuOpen] = useState(false);
   const {
     calls,
@@ -203,10 +218,30 @@ export function TrafficTable() {
     selectedCallId,
   } = useHistoryTable({ isStreamPaused: isContextMenuOpen });
   const totalPages = Math.max(1, Math.ceil(pagination.total / pagination.perPage));
+  const table = useReactTable({
+    data: calls,
+    columns: callsColumns,
+    getCoreRowModel: getCoreRowModel(),
+    getRowId: (row) => row.id,
+    meta: {
+      searchQuery,
+    },
+  });
+  const tableRows = table.getRowModel().rows;
+  const rowVirtualizer = useVirtualizer({
+    count: tableRows.length,
+    getScrollElement: () => tableContainerRef.current,
+    estimateSize: () => 32,
+    overscan: 10,
+  });
 
   const handleContextMenuOpenChange = useCallback((open: boolean) => {
     setIsContextMenuOpen(open);
   }, []);
+
+  const handleRowClick = useCallback((callId: string) => {
+    setSelectedCallId(callId);
+  }, [setSelectedCallId]);
 
   if (loadError) {
     return (
@@ -237,7 +272,7 @@ export function TrafficTable() {
   }
 
   return (
-    <div className="overflow-auto h-full flex flex-col">
+    <div className="h-full flex flex-col">
       {newEventsCount > 0 && (
         <div className="flex items-center justify-center py-1 border-b bg-muted/50">
           <Button variant="outline" size="xs" onClick={handleRefresh}>
@@ -245,86 +280,130 @@ export function TrafficTable() {
           </Button>
         </div>
       )}
-      <table className="w-full">
-        <thead className="sticky top-0 z-10 border-b bg-muted">
-          <tr>
-            <th className="text-left text-xs font-medium text-muted-foreground px-3 py-1 w-[90px]">
-              <button
-                className="flex items-center gap-1 hover:text-foreground transition-colors"
-                onClick={toggleSortOrder}
-              >
-                Time
-                {sortOrder === 'desc' ? (
-                  <ArrowDown className="h-3 w-3" />
-                ) : (
-                  <ArrowUp className="h-3 w-3" />
-                )}
-              </button>
-            </th>
-            <th className="text-left text-xs font-medium text-muted-foreground px-3 py-1 w-[70px]">Method</th>
-            <th className="text-left text-xs font-medium text-muted-foreground px-3 py-1 w-[150px]">Host</th>
-            <th className="text-left text-xs font-medium text-muted-foreground px-3 py-1 flex-1">Path</th>
-            <th className="text-right text-xs font-medium text-muted-foreground px-3 py-1 w-[70px]">Size</th>
-            <th className="text-right text-xs font-medium text-muted-foreground px-3 py-1 w-[70px]">Length</th>
-            <th className="text-left text-xs font-medium text-muted-foreground px-3 py-1 w-[150px]">MIME Type</th>
-            <th className="text-center text-xs font-medium text-muted-foreground px-3 py-1 w-[70px]">Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          {calls.map((call) => (
-            <LogEntryContextMenu
-              key={call.id}
-              call={call}
-              onDelete={removeCallLocally}
-              onOpenChange={handleContextMenuOpenChange}
-            >
-              <tr
-                className={'hover:bg-muted/50 font-mono transition-colors border-b cursor-pointer' + (call.id === selectedCallId ? ' hover:!bg-muted bg-muted' : '')}
-                onClick={() => setSelectedCallId(call.id)}
-              >
-                <td className="text-xs text-muted-foreground px-3 py-1">
-                  {formatTimestamp(call.timestamp)}
-                </td>
-                <td className="px-3 py-1 gap-2 flex">
-                  <MethodBadge method={call.method} />
-                  <StatusBadge status={call.response_status} />
-                  {call.content_decoded && (
-                    <span title="Request body was decoded from gzip/br/deflate">
-                      <AlertTriangle className="h-3 w-3 text-yellow-500" />
-                    </span>
-                  )}
-                </td>
-                <td className="text-xs truncate max-w-[250px] px-3 py-1" title={call.url}>
-                  <div className="flex items-center gap-1.5">
-                    <BrowserIcon userAgent={call.user_agent} />
-                    <span className="truncate">
-                      <HighlightedText text={call.host} query={searchQuery} />
-                    </span>
-                  </div>
-                </td>
-                <td className="text-xs text-muted-foreground truncate max-w-[200px] px-3 py-1" title={call.url}>
-                  <HighlightedText text={call.path} query={searchQuery} />
-                </td>
-                <td className="text-xs text-muted-foreground text-right px-3 py-1">
-                  {formatBytes(call.response_body_size)}
-                </td>
-                <td className="text-xs text-muted-foreground text-right px-3 py-1">
-                  {formatBytes(call.request_body_size)}
-                </td>
-                <td className="text-xs text-muted-foreground px-3 py-1 truncate max-w-[150px]" title={call.response_content_type ?? undefined}>
-                  <HighlightedText text={call.response_content_type || "-"} query={searchQuery} />
-                </td>
-                <td className="text-center px-3 py-1">
-                  <SendToRepeaterButton call={call} />
-                </td>
+      <div ref={tableContainerRef} className="flex-1 overflow-auto min-h-0">
+        <table className="grid w-full min-w-[850px]">
+          <thead className="sticky top-0 z-10 grid border-b bg-muted">
+            {table.getHeaderGroups().map((headerGroup) => (
+              <tr key={headerGroup.id} className="flex  w-full">
+                {headerGroup.headers.map((header) => {
+                  const isRightAligned =
+                    header.column.id === "response_body_size" ||
+                    header.column.id === "request_body_size";
+                  const isCentered = header.column.id === "action";
+
+                  return (
+                    <th
+                      key={header.id}
+                      className={
+                        "text-xs font-medium text-muted-foreground px-3 py-1" +
+                        (isRightAligned ? " text-right" : isCentered ? " text-center" : " text-left")
+                      }
+                      style={{
+                        width: header.column.getSize(),
+                        flex: header.column.id === "path" ? "1 1 auto" : "0 0 auto",
+                      }}
+                    >
+                      {header.isPlaceholder ? null : header.column.id === "timestamp" ? (
+                        <button
+                          className="flex items-center gap-1 hover:text-foreground transition-colors"
+                          onClick={toggleSortOrder}
+                        >
+                          Time
+                          {sortOrder === 'desc' ? (
+                            <ArrowDown className="h-3 w-3" />
+                          ) : (
+                            <ArrowUp className="h-3 w-3" />
+                          )}
+                        </button>
+                      ) : (
+                        flexRender(header.column.columnDef.header, header.getContext())
+                      )}
+                    </th>
+                  );
+                })}
               </tr>
-            </LogEntryContextMenu>
-          ))}
-          {isLoading && calls.length > 0 && <TrafficTableSkeletonRows />}
-          {isLoadingMore && <TrafficTableSkeletonRows rows={2} />}
-        </tbody>
-      </table>
-      <div className="flex items-center justify-between gap-3 px-3 py-4 border-t">
+            ))}
+          </thead>
+          <tbody
+            className="grid relative"
+            style={{
+              height: `${rowVirtualizer.getTotalSize()}px`,
+            }}
+          >
+            {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+              const row = tableRows[virtualRow.index];
+              const call = row.original;
+
+              return (
+                <LogEntryContextMenu
+                  key={row.id}
+                  call={call}
+                  onDelete={removeCallLocally}
+                  onOpenChange={handleContextMenuOpenChange}
+                >
+                  <tr
+                    className={
+                      "absolute flex items-center w-full hover:bg-muted/50 font-mono transition-colors border-b cursor-pointer" +
+                      (call.id === selectedCallId ? " hover:!bg-muted bg-muted" : "")
+                    }
+                    style={{
+                      height: `${virtualRow.size}px`,
+                      transform: `translateY(${virtualRow.start}px)`,
+                    }}
+                    onClick={() => handleRowClick(call.id)}
+                  >
+                    {row.getVisibleCells().map((cell) => {
+                      const isRightAligned =
+                        cell.column.id === "response_body_size" ||
+                        cell.column.id === "request_body_size";
+                      const isCentered = cell.column.id === "action";
+
+                      return (
+                        <td
+                          key={cell.id}
+                          className={
+                            "text-xs text-muted-foreground px-3 py-1 truncate" +
+                            (isRightAligned ? " text-right" : isCentered ? " text-center" : "")
+                          }
+                          title={
+                            cell.column.id === "host" ||
+                            cell.column.id === "path"
+                              ? call.url
+                              : cell.column.id === "response_content_type"
+                                ? call.response_content_type ?? undefined
+                                : undefined
+                          }
+                          style={{
+                            width: cell.column.getSize(),
+                            flex: cell.column.id === "path" ? "1 1 auto" : "0 0 auto",
+                          }}
+                        >
+                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                </LogEntryContextMenu>
+              );
+            })}
+          </tbody>
+        </table>
+        {isLoading && calls.length > 0 && (
+          <table className="w-full min-w-[850px]">
+            <tbody>
+              <TrafficTableSkeletonRows />
+            </tbody>
+          </table>
+        )}
+        {isLoadingMore && (
+          <table className="w-full min-w-[850px]">
+            <tbody>
+              <TrafficTableSkeletonRows rows={2} />
+            </tbody>
+          </table>
+        )}
+      </div>
+      <div className="flex items-center justify-between gap-3 p-1 border-t">
         <div className="flex items-center gap-3 text-xs text-muted-foreground">
           <span>
             Showing {calls.length} of {pagination.total} request{pagination.total === 1 ? '' : 's'}
@@ -338,10 +417,11 @@ export function TrafficTable() {
           variant="outline"
           onClick={loadMore}
           disabled={!pagination.hasMore || isLoadingMore}
+          className="text-[10px]"
         >
-          {isLoadingMore ? "Loading..." : "Load More"}
+          {isLoadingMore ? "Loading..." : "LOAD MORE"}
         </Button>
       </div>
     </div>
   );
-}
+});

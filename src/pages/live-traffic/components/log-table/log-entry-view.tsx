@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
 import { FileText, Table2, EllipsisVertical, ExternalLink, Send, Crosshair } from 'lucide-react';
@@ -52,7 +52,7 @@ export function LogEntryBurpView() {
   const [viewMode, setViewMode] = useState<DetailViewMode>('text');
   const navigate = useNavigate();
 
-  const handleOpenInNewWindow = async () => {
+  const handleOpenInNewWindow = useCallback(async () => {
     if (!call) return;
     const label = `response-detail-${call.id}`;
     try {
@@ -72,9 +72,9 @@ export function LogEntryBurpView() {
     } catch {
       window.open(`/?window=response-detail&callId=${call.id}`, '_blank');
     }
-  };
+  }, [call?.id, call?.method, call?.path, call?.url]);
 
-  const handleSendToRepeater = () => {
+  const handleSendToRepeater = useCallback(() => {
     if (!call) return;
     useRepeaterStore.getState().addRequestTab({
       raw: buildRawHttpRequest({
@@ -87,9 +87,9 @@ export function LogEntryBurpView() {
     });
     navigate('/repeater');
     toast.success('Sent to Repeater');
-  };
+  }, [call, navigate]);
 
-  const handleSendToInvoker = () => {
+  const handleSendToInvoker = useCallback(() => {
     if (!call) return;
     const baseRequest = {
       method: call.method,
@@ -108,7 +108,38 @@ export function LogEntryBurpView() {
     useInvokerStore.getState().addAttackTab(config);
     navigate('/invoker');
     toast.success('Sent to Invoker');
-  };
+  }, [call, navigate]);
+
+  const rawRequest = useMemo(() => call
+    ? buildRawHttpRequest({
+      method: call.method,
+      url: call.url,
+      headers: call.headers,
+      body: isJsonContent(call.headers, call.request_body)
+        ? formatJsonBody(call.request_body ?? '')
+        : call.request_body ?? '',
+    })
+    : '', [call]);
+  const rawResponse = useMemo(() => call?.response_status
+    ? buildRawHttpResponse({
+      status: call.response_status,
+      status_text: call.response_status_text ?? '',
+      headers: call.response_headers,
+      body: call.response_body ?? '',
+    }, { prettyJsonBody: true })
+    : '', [call]);
+
+  const statusVariant = useMemo(() =>
+    call?.response_status && call.response_status >= 200 && call.response_status < 300
+      ? 'default'
+      : call?.response_status && call.response_status >= 400
+        ? 'destructive'
+        : 'secondary', [call?.response_status]);
+  const requestHeaders = useMemo(() => buildHeadersList(call?.headers ?? {}), [call?.headers]);
+  const requestCookies = useMemo(() => parseCookieHeader(call?.headers['cookie']), [call?.headers]);
+  const requestParams = useMemo(() => buildParamsList(call?.query_params ?? {}), [call?.query_params]);
+  const responseHeaders = useMemo(() => buildHeadersList(call?.response_headers ?? {}), [call?.response_headers]);
+  const responseCookies = useMemo(() => parseCookieHeader(call?.response_headers['set-cookie']), [call?.response_headers]);
 
   if (!selectedCallId) {
     return (
@@ -146,35 +177,6 @@ export function LogEntryBurpView() {
       </Empty>
     );
   }
-
-  const rawRequest = buildRawHttpRequest({
-    method: call.method,
-    url: call.url,
-    headers: call.headers,
-    body: isJsonContent(call.headers, call.request_body)
-      ? formatJsonBody(call.request_body ?? '')
-      : call.request_body ?? '',
-  });
-  const rawResponse = call.response_status
-    ? buildRawHttpResponse({
-      status: call.response_status,
-      status_text: call.response_status_text ?? '',
-      headers: call.response_headers,
-      body: call.response_body ?? '',
-    }, { prettyJsonBody: true })
-    : '';
-
-  const statusVariant =
-    call.response_status && call.response_status >= 200 && call.response_status < 300
-      ? 'default'
-      : call.response_status && call.response_status >= 400
-        ? 'destructive'
-        : 'secondary';
-  const requestHeaders = buildHeadersList(call.headers);
-  const requestCookies = parseCookieHeader(call.headers['cookie']);
-  const requestParams = buildParamsList(call.query_params);
-  const responseHeaders = buildHeadersList(call.response_headers);
-  const responseCookies = parseCookieHeader(call.response_headers['set-cookie']);
 
   return (
     <ResizablePanelGroup orientation="horizontal" className="h-full min-h-0 bg-muted">
@@ -262,9 +264,9 @@ export function LogEntryBurpView() {
                 <DropdownMenuItem onClick={handleSendToRepeater} className="text-xs">
                   <Send className="mr-2 h-4 w-4" /> Send to Repeater
                 </DropdownMenuItem>
-                {/* <DropdownMenuItem onClick={handleSendToInvoker} className="text-xs">
+                <DropdownMenuItem onClick={handleSendToInvoker} className="text-xs">
                   <Crosshair className="mr-2 h-4 w-4" /> Send to Invoker
-                </DropdownMenuItem> */}
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>

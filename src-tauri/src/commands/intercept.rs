@@ -356,14 +356,13 @@ fn run_certutil(args: &[String]) -> Result<(), String> {
 }
 
 #[tauri::command]
-pub async fn open_intercept_browser(app: AppHandle) -> Result<(), String> {
+pub async fn open_intercept_browser(app: AppHandle, proxy_port: u16) -> Result<(), String> {
     let profile_dir = intercept_browser_profile_dir(&app)?;
     std::fs::create_dir_all(&profile_dir).map_err(|e| e.to_string())?;
     let ca_import_result = import_intercept_ca_to_chrome_profile(&app);
 
     let mut last_error = None;
-    let proxy_port =
-        crate::proxy::active_proxy_port().unwrap_or(crate::proxy::default_proxy_port());
+    let proxy_port = crate::proxy::active_proxy_port().unwrap_or(proxy_port);
     let mut args = vec![
         format!("--user-data-dir={}", profile_dir.display()),
         "--new-window".to_string(),

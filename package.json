@@ -1,7 +1,7 @@
 {
   "name": "0xbuffer",
   "private": true,
-  "version": "2026.0.4",
+  "version": "2026.0.6",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -56,6 +56,7 @@
     "@streamdown/mermaid": "^1.0.2",
     "@tailwindcss/postcss": "^4.2.4",
     "@tanstack/react-table": "^8.21.3",
+    "@tanstack/react-virtual": "^3.14.2",
     "@tauri-apps/api": "^2",
     "@tauri-apps/plugin-clipboard-manager": "~2",
     "@tauri-apps/plugin-dialog": "^2",

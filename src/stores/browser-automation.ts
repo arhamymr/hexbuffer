@@ -2,6 +2,8 @@ import { create } from 'zustand';
 import { invoke } from '@tauri-apps/api/core';
 import { DEFAULT_CRAWL_SETUP } from '@/pages/browser-automation/constants';
 import { deriveOverview, downloadJson } from '@/pages/browser-automation/lib/crawl-data';
+import { useTabsLayoutStore } from '@/stores/tabs-layout';
+import { useTargetStore } from '@/stores/target';
 import type {
   ActivityLog,
   AIInsight,
@@ -367,6 +369,11 @@ export const useBrowserAutomationStore = create<BrowserAutomationState>((set, ge
 
     const setup: CrawlSetupConfig = { ...tab.setup, headless };
     const session = makeSession(setup);
+    const target = useTargetStore.getState().addHostTarget(setup.targetUrl);
+
+    if (target) {
+      useTabsLayoutStore.getState().setActiveTabId('http-history-target-tabs', target.id);
+    }
 
     updateTab(set, tab.id, (current) => ({
       ...current,

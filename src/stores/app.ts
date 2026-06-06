@@ -11,14 +11,26 @@ interface ProxyRuntimeStatus {
   connections: number;
 }
 
-interface AppState {
+export const DEFAULT_PROXY_PORT = 8888;
+export const MIN_PROXY_PORT = 1024;
+export const MAX_PROXY_PORT = 65535;
+
+export function isValidProxyPort(port: number) {
+  return Number.isInteger(port) && port >= MIN_PROXY_PORT && port <= MAX_PROXY_PORT;
+}
+
+function getTlsPort(port: number) {
+  return port < MAX_PROXY_PORT ? port + 1 : port;
+}
+
+export interface AppState {
   proxyStatus: ProxyStatus;
   proxyPort: number | null;
   proxyDefaultPort: number;
   invokerSafetyAlertDismissed: boolean;
   browserAutomationSafetyAlertDismissed: boolean;
   setProxyStatus: (status: ProxyStatus) => void;
-  setProxyDefaultPort: (port: number) => void;
+  saveProxyDefaultPort: (port: number) => Promise<number>;
   setInvokerSafetyAlertDismissed: (dismissed: boolean) => void;
   setBrowserAutomationSafetyAlertDismissed: (dismissed: boolean) => void;
   startProxy: () => Promise<void>;
@@ -26,17 +38,41 @@ interface AppState {
   checkProxyStatus: () => Promise<void>;
 }
 
+type PersistedAppState = Pick<
+  AppState,
+  'proxyDefaultPort' | 'invokerSafetyAlertDismissed' | 'browserAutomationSafetyAlertDismissed'
+>;
+
+export function getEffectiveProxyPort(state: Pick<AppState, 'proxyPort' | 'proxyDefaultPort'>) {
+  return state.proxyPort ?? state.proxyDefaultPort;
+}
+
 export const useAppStore = create<AppState>()(
-  persist(
+  persist<AppState, [], [], PersistedAppState>(
     (set) => ({
-      proxyStatus: 'disconnected',
+      proxyStatus: 'disconnected' as ProxyStatus,
       proxyPort: null,
-      proxyDefaultPort: 8888,
+      proxyDefaultPort: DEFAULT_PROXY_PORT,
       invokerSafetyAlertDismissed: false,
       browserAutomationSafetyAlertDismissed: false,
 
       setProxyStatus: (proxyStatus) => set({ proxyStatus }),
-      setProxyDefaultPort: (proxyDefaultPort) => set({ proxyDefaultPort }),
+      saveProxyDefaultPort: async (proxyDefaultPort) => {
+        if (!isValidProxyPort(proxyDefaultPort)) {
+          throw new Error(`Proxy port must be between ${MIN_PROXY_PORT} and ${MAX_PROXY_PORT}`);
+        }
+
+        const wasConnected = useAppStore.getState().proxyStatus === 'connected';
+        set({ proxyDefaultPort });
+
+        if (!wasConnected) {
+          return proxyDefaultPort;
+        }
+
+        await useAppStore.getState().stopProxy();
+        await useAppStore.getState().startProxy();
+        return getEffectiveProxyPort(useAppStore.getState());
+      },
       setInvokerSafetyAlertDismissed: (invokerSafetyAlertDismissed) =>
         set({ invokerSafetyAlertDismissed }),
       setBrowserAutomationSafetyAlertDismissed: (browserAutomationSafetyAlertDismissed) =>
@@ -47,7 +83,12 @@ export const useAppStore = create<AppState>()(
         set({ proxyStatus: 'starting' });
         try {
           const port = useAppStore.getState().proxyDefaultPort;
-          await invoke('start_proxy', { port, tlsPort: Math.min(port + 1, 65535) });
+
+          if (!isValidProxyPort(port)) {
+            throw new Error(`Proxy port must be between ${MIN_PROXY_PORT} and ${MAX_PROXY_PORT}`);
+          }
+
+          await invoke('start_proxy', { port, tlsPort: getTlsPort(port) });
           await new Promise((resolve) => window.setTimeout(resolve, 300));
           const status = await invoke<ProxyRuntimeStatus>('get_proxy_status');
           if (!status.running || status.port === null) {
@@ -61,7 +102,7 @@ export const useAppStore = create<AppState>()(
           set({
             proxyStatus: 'connected',
             proxyPort: status.port,
-            proxyDefaultPort: port,
+            proxyDefaultPort: status.port,
           });
         } catch (error) {
           console.error('[store] Failed to start proxy:', error);
@@ -80,6 +121,9 @@ export const useAppStore = create<AppState>()(
           set({
             proxyStatus: status.running ? 'connected' : 'disconnected',
             proxyPort: status.port,
+            ...(status.running && status.port !== null
+              ? { proxyDefaultPort: status.port }
+              : {}),
           });
         } catch (error) {
           console.error('[store] Failed to stop proxy:', error);
@@ -87,6 +131,9 @@ export const useAppStore = create<AppState>()(
           set({
             proxyStatus: status.running ? 'connected' : 'disconnected',
             proxyPort: status.port,
+            ...(status.running && status.port !== null
+              ? { proxyDefaultPort: status.port }
+              : {}),
           });
           throw error;
         }
@@ -98,6 +145,9 @@ export const useAppStore = create<AppState>()(
           set({
             proxyStatus: status.running ? 'connected' : 'disconnected',
             proxyPort: status.port,
+            ...(status.running && status.port !== null
+              ? { proxyDefaultPort: status.port }
+              : {}),
           });
         } catch (error) {
           set({ proxyStatus: 'disconnected', proxyPort: null });
@@ -106,9 +156,21 @@ export const useAppStore = create<AppState>()(
     }),
     {
       name: '0xbuffer-app',
+      merge: (persisted, current): AppState => {
+        const base = current as AppState;
+        const state = persisted as Partial<AppState> | undefined;
+
+        return {
+          ...base,
+          proxyDefaultPort: state?.proxyDefaultPort ?? base.proxyDefaultPort,
+          invokerSafetyAlertDismissed:
+            state?.invokerSafetyAlertDismissed ?? base.invokerSafetyAlertDismissed,
+          browserAutomationSafetyAlertDismissed:
+            state?.browserAutomationSafetyAlertDismissed ??
+            base.browserAutomationSafetyAlertDismissed,
+        };
+      },
       partialize: (state) => ({
-        proxyStatus: state.proxyStatus,
-        proxyPort: state.proxyPort,
         proxyDefaultPort: state.proxyDefaultPort,
         invokerSafetyAlertDismissed: state.invokerSafetyAlertDismissed,
         browserAutomationSafetyAlertDismissed: state.browserAutomationSafetyAlertDismissed,

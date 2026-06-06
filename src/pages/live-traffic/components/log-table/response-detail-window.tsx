@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { fetchHistoryDetail } from '../../services/history-service';
 import { adaptProxyRecordToApiCall } from '../../hooks/use-history-table';
 import { formatJsonBody } from '@/lib/http-message';
@@ -33,19 +33,27 @@ export function ResponseDetailWindow({ callId }: ResponseDetailWindowProps) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let cancelled = false;
     const fetchCall = async () => {
       setIsLoading(true);
       setError(null);
       try {
         const detail = await fetchHistoryDetail(callId);
-        setCall(adaptProxyRecordToApiCall(detail));
+        if (!cancelled) {
+          setCall(adaptProxyRecordToApiCall(detail));
+        }
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load response details.');
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : 'Failed to load response details.');
+        }
       } finally {
-        setIsLoading(false);
+        if (!cancelled) {
+          setIsLoading(false);
+        }
       }
     };
     fetchCall();
+    return () => { cancelled = true; };
   }, [callId]);
 
   if (isLoading) {
@@ -76,15 +84,24 @@ export function ResponseDetailWindow({ callId }: ResponseDetailWindowProps) {
     );
   }
 
-  const statusVariant =
+  const statusVariant = useMemo(() =>
     call.response_status && call.response_status >= 200 && call.response_status < 300
-      ? 'default'
+      ? 'default' as const
       : call.response_status && call.response_status >= 400
-        ? 'destructive'
-        : 'secondary';
+        ? 'destructive' as const
+        : 'secondary' as const,
+    [call.response_status]
+  );
 
-  const responseHeaders = buildHeadersList(call.response_headers);
-  const responseCookies = parseCookieHeader(call.response_headers['set-cookie']);
+  const responseHeaders = useMemo(() => buildHeadersList(call.response_headers), [call.response_headers]);
+  const responseCookies = useMemo(() => parseCookieHeader(call.response_headers['set-cookie']), [call.response_headers]);
+
+  const responseBodyItem = useMemo(() => [{
+    name: 'Response Body',
+    value: isJsonContent(call.response_headers, call.response_body)
+      ? formatJsonBody(call.response_body ?? '')
+      : call.response_body ?? '',
+  }], [call.response_headers, call.response_body]);
 
   return (
     <div className="h-screen flex flex-col bg-background">
@@ -116,12 +133,7 @@ export function ResponseDetailWindow({ callId }: ResponseDetailWindowProps) {
         )}
         <InspectorSection
           title="Body"
-          items={[{
-            name: 'Response Body',
-            value: isJsonContent(call.response_headers, call.response_body)
-              ? formatJsonBody(call.response_body ?? '')
-              : call.response_body ?? '',
-          }]}
+          items={responseBodyItem}
           defaultView="text"
         />
       </div>

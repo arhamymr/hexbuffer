@@ -47,6 +47,7 @@ impl Database {
         Self::ensure_column(&conn, "ai_browser_insights", "analysis_tool_id", "TEXT")?;
         Self::ensure_column(&conn, "ai_browser_insights", "analysis_tool_name", "TEXT")?;
         Self::ensure_column(&conn, "ai_browser_logs", "ai_used_for_analysis", "INTEGER")?;
+        Self::ensure_column(&conn, "ai_browser_logs", "extra_json", "TEXT")?;
         Ok(())
     }
 

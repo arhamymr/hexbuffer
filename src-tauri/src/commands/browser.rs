@@ -647,6 +647,7 @@ pub async fn ai_browser_start_crawl(
             ),
             ai_used_for_analysis: None,
             created_at: now(),
+            extra: None,
             human_input_request: None,
         },
     );
@@ -674,6 +675,7 @@ pub async fn ai_browser_start_crawl(
                     url: Some(session.target_url.clone()),
                     ai_used_for_analysis: Some(false),
                     created_at: now(),
+                    extra: None,
                     human_input_request: None,
                 },
             );
@@ -742,6 +744,7 @@ pub async fn ai_browser_start_crawl(
                     url: None,
                     ai_used_for_analysis: None,
                     created_at: now(),
+                    extra: None,
                     human_input_request: None,
                 },
             );
@@ -821,6 +824,7 @@ pub async fn ai_browser_pause_crawl(
             url: None,
             ai_used_for_analysis: None,
             created_at: now(),
+            extra: None,
             human_input_request: None,
         },
     );
@@ -866,6 +870,7 @@ pub async fn ai_browser_resume_crawl(
             url: None,
             ai_used_for_analysis: None,
             created_at: now(),
+            extra: None,
             human_input_request: None,
         },
     );
@@ -926,6 +931,7 @@ pub async fn ai_browser_submit_human_input(
             url: None,
             ai_used_for_analysis: None,
             created_at: now(),
+            extra: None,
             human_input_request: None,
         },
     );
@@ -973,6 +979,7 @@ pub async fn ai_browser_stop_crawl(
             url: None,
             ai_used_for_analysis: None,
             created_at: now(),
+            extra: None,
             human_input_request: None,
         },
     );

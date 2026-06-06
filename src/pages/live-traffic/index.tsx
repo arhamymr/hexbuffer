@@ -1,5 +1,6 @@
 'use client';
 
+import { useCallback, useMemo } from 'react';
 import { TabbedPageLayout } from "@/components/tabs-layout/tabbed-page-layout";
 import { Card } from "@/components/ui/card";
 import { ContextMenuItem } from "@/components/ui/context-menu";
@@ -19,19 +20,27 @@ export function LiveTrafficPage() {
     sendScopeToDocuments,
   } = useHttpHistoryPage();
 
+  const renderTabContextMenuItems = useCallback((tab: { id: string }) =>
+    tab.id === 'all-scope' ? null : (
+      <ContextMenuItem onClick={() => sendScopeToDocuments(tab.id)}>
+        Send scope to Documents
+      </ContextMenuItem>
+    ),
+    [sendScopeToDocuments]
+  );
+
+  const historyView = useMemo(() =>
+    historyMode === 'http' ? <HttpHistoryView /> : <WebSocketHistoryView />,
+    [historyMode]
+  );
+
   return (
     <TabbedPageLayout
       tabs={tabs}
       activeTabId={activeTabId}
       onTabChange={setActiveTabId}
       onTabClose={removeTab}
-      renderTabContextMenuItems={(tab) =>
-        tab.id === 'all-scope' ? null : (
-          <ContextMenuItem onClick={() => sendScopeToDocuments(tab.id)}>
-            Send scope to Documents
-          </ContextMenuItem>
-        )
-      }
+      renderTabContextMenuItems={renderTabContextMenuItems}
       contentClassName="flex-1 border rounded-lg flex flex-col overflow-hidden bg-background min-h-0"
     >
       <LogFilters
@@ -39,12 +48,7 @@ export function LiveTrafficPage() {
         setHistoryMode={setHistoryMode}
       />
       <Card className="flex-1 flex flex-col overflow-hidden !py-0 rounded-none">
-        <div
-          key={historyMode}
-          className="h-full animate-in fade-in-0 slide-in-from-bottom-1 duration-200"
-        >
-          {historyMode === 'http' ? <HttpHistoryView /> : <WebSocketHistoryView />}
-        </div>
+        {historyView}
       </Card>
     </TabbedPageLayout>
   );

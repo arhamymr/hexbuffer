@@ -139,7 +139,8 @@ export function useBrowserAutomationPage() {
       !query ||
       log.message.toLowerCase().includes(query) ||
       log.url?.toLowerCase().includes(query) ||
-      log.type.toLowerCase().includes(query)
+      log.type.toLowerCase().includes(query) ||
+      (log.extra ? JSON.stringify(log.extra).toLowerCase().includes(query) : false)
     );
   }, [search, logs]);
 

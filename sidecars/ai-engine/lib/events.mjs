@@ -5,6 +5,14 @@ export function emit(message) {
 }
 
 export function log(sessionId, level, type, message, url, extra = {}) {
+  const {
+    aiUsedForAnalysis,
+    humanInputRequestId,
+    requestedFields,
+    safeActions,
+    ...debugExtra
+  } = extra || {};
+  const hasDebugExtra = Object.keys(debugExtra).length > 0;
   emit({
     type: 'log_created',
     id: randomUUID(),
@@ -14,6 +22,10 @@ export function log(sessionId, level, type, message, url, extra = {}) {
     message,
     url,
     createdAt: new Date().toISOString(),
-    ...extra,
+    aiUsedForAnalysis,
+    humanInputRequestId,
+    requestedFields,
+    safeActions,
+    ...(hasDebugExtra ? { extra: debugExtra } : {}),
   });
 }

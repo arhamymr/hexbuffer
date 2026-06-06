@@ -94,8 +94,9 @@ export function BrowserAutomationPage() {
 
   return (
     <>
-      <div className='p-2'>
-        {proxyStatus !== 'connected' && (
+
+      {proxyStatus !== 'connected' && (
+        <div className='p-2'>
           <Alert variant="default" className="mb-2 min-h-11 items-center shrink-0 border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-500/50 dark:bg-amber-500/10 dark:text-amber-200">
             <AlertDescription className="flex items-center gap-2 text-amber-700 dark:text-amber-200/70">
               <span>Start the proxy to intercept HTTP requests.</span>
@@ -112,10 +113,11 @@ export function BrowserAutomationPage() {
               </Button>
             </AlertAction>
           </Alert>
-        )}
+        </div>
+      )}
 
-        {!browserAutomationSafetyAlertDismissed && (
-
+      {!browserAutomationSafetyAlertDismissed && (
+        <div className="p-2">
           <Alert variant="default" className="min-h-12 mb-0 shrink-0 border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-500/50 dark:bg-amber-500/10 dark:text-amber-200">
             <InfoIcon className='!text-amber-600 shrink-0' />
             <AlertDescription className='text-amber-600'>
@@ -131,9 +133,9 @@ export function BrowserAutomationPage() {
               </Button>
             </AlertAction>
           </Alert>
+        </div>
+      )}
 
-        )}
-      </div>
       <TabbedPageLayout
         tabs={tabs}
         activeTabId={activeTabId}

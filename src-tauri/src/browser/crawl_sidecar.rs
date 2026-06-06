@@ -190,6 +190,7 @@ pub(crate) fn apply_sidecar_message(
                     url: message.url,
                     ai_used_for_analysis: message.ai_used_for_analysis,
                     created_at: message.created_at.unwrap_or_else(now),
+                    extra: message.extra,
                     human_input_request,
                 },
             );
@@ -207,6 +208,7 @@ pub(crate) fn apply_sidecar_message(
                     url: None,
                     ai_used_for_analysis: message.ai_used_for_analysis,
                     created_at: now(),
+                    extra: message.extra,
                     human_input_request: None,
                 },
             );
@@ -263,6 +265,7 @@ pub(crate) fn apply_sidecar_message(
                         .map(str::to_string),
                     ai_used_for_analysis: message.ai_used_for_analysis,
                     created_at: now(),
+                    extra: message.extra,
                     human_input_request: Some(request.clone()),
                 },
             );
@@ -296,6 +299,7 @@ pub(crate) fn apply_sidecar_message(
                     url: None,
                     ai_used_for_analysis: message.ai_used_for_analysis,
                     created_at: now(),
+                    extra: message.extra,
                     human_input_request: None,
                 },
             );
@@ -416,6 +420,7 @@ pub(crate) fn run_sidecar_crawl(
                                 url: None,
                                 ai_used_for_analysis: None,
                                 created_at: now(),
+                                extra: None,
                                 human_input_request: None,
                             },
                         );

@@ -45,8 +45,8 @@ export async function forwardInterceptedTab(tabId: string): Promise<void> {
   await invoke('forward_intercepted_tab', { tabId });
 }
 
-export async function openInterceptBrowser(): Promise<void> {
-  await invoke('open_intercept_browser');
+export async function openInterceptBrowser(proxyPort: number): Promise<void> {
+  await invoke('open_intercept_browser', { proxyPort });
 }
 
 export async function trustInterceptCa(): Promise<string> {

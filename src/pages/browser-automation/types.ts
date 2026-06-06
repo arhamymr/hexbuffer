@@ -13,6 +13,14 @@ export type ActivityLogType =
   | 'error'
   | 'queue';
 
+export type LogExtraValue =
+  | string
+  | number
+  | boolean
+  | null
+  | LogExtraValue[]
+  | { [key: string]: LogExtraValue };
+
 export interface CrawlSetupConfig {
   targetUrl: string;
   strategy: CrawlStrategy;
@@ -88,6 +96,7 @@ export interface ActivityLog {
   url?: string;
   aiUsedForAnalysis?: boolean;
   createdAt: string;
+  extra?: { [key: string]: LogExtraValue };
   humanInputRequest?: HumanInputRequest;
 }
 

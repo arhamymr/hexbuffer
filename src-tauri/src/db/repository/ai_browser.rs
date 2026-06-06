@@ -294,8 +294,8 @@ impl Database {
 
         conn.execute(
             r#"INSERT OR IGNORE INTO ai_browser_logs (
-                id, session_id, level, type, message, url, ai_used_for_analysis, created_at
-            ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)"#,
+                id, session_id, level, type, message, url, ai_used_for_analysis, extra_json, created_at
+            ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)"#,
             params![
                 log.id,
                 log.session_id,
@@ -305,6 +305,9 @@ impl Database {
                 log.url,
                 log.ai_used_for_analysis
                     .map(|used| if used { 1i64 } else { 0i64 }),
+                log.extra
+                    .as_ref()
+                    .and_then(|extra| serde_json::to_string(extra).ok()),
                 log.created_at,
             ],
         )?;
@@ -315,12 +318,13 @@ impl Database {
     pub fn list_ai_browser_logs(&self, session_id: &str) -> SqlResult<Vec<ActivityLog>> {
         let conn = self.conn.lock().unwrap();
         let mut stmt = conn.prepare(
-            r#"SELECT id, session_id, level, type, message, url, ai_used_for_analysis, created_at
+            r#"SELECT id, session_id, level, type, message, url, ai_used_for_analysis, extra_json, created_at
                FROM ai_browser_logs WHERE session_id = ?1 ORDER BY created_at ASC"#,
         )?;
 
         let rows = stmt
             .query_map(params![session_id], |row| {
+                let extra_json: Option<String> = row.get(7)?;
                 Ok(ActivityLog {
                     id: row.get(0)?,
                     session_id: row.get(1)?,
@@ -329,7 +333,9 @@ impl Database {
                     message: row.get(4)?,
                     url: row.get(5)?,
                     ai_used_for_analysis: row.get::<_, Option<i64>>(6)?.map(|value| value != 0),
-                    created_at: row.get(7)?,
+                    extra: extra_json
+                        .and_then(|value| serde_json::from_str::<serde_json::Value>(&value).ok()),
+                    created_at: row.get(8)?,
                     human_input_request: None,
                 })
             })?

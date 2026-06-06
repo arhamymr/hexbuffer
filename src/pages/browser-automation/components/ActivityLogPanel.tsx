@@ -9,7 +9,7 @@ import { ActivityStatusBadge, LevelBadge } from '@/components/status-badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { EventLogTable } from '@/pages/live-traffic/components/log-table/event-log-table';
 import { copyText } from '@/lib/clipboard';
-import type { ActivityLog, HumanInputRequest } from '../types';
+import type { ActivityLog, HumanInputRequest, LogExtraValue } from '../types';
 
 interface ActivityLogPanelProps {
   logs: ActivityLog[];
@@ -28,6 +28,87 @@ function DetailRow({ label, value, searchQuery = '' }: { label: string; value: s
       <span className="min-w-0 break-words font-mono text-xs">
         <HighlightedText text={value ?? '-'} query={searchQuery} />
       </span>
+    </div>
+  );
+}
+
+function isRecord(value: LogExtraValue | undefined): value is Record<string, LogExtraValue> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
+function stringifyDebugValue(value: LogExtraValue | undefined) {
+  if (value === undefined) return undefined;
+  if (value === null) return 'null';
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+  return JSON.stringify(value, null, 2);
+}
+
+const PLAYWRIGHT_DEBUG_ROWS: Array<[string, string]> = [
+  ['Action', 'action'],
+  ['Selector', 'selector'],
+  ['Field Name', 'fieldName'],
+  ['Field ID', 'fieldId'],
+  ['Field Label', 'fieldLabel'],
+  ['Placeholder', 'fieldPlaceholder'],
+  ['Field Type', 'fieldType'],
+  ['Value Provided', 'valueProvided'],
+  ['Submit Action', 'submitAction'],
+  ['Submit Selector', 'submitSelector'],
+  ['Key', 'key'],
+  ['URL Before', 'urlBefore'],
+  ['URL After', 'urlAfter'],
+  ['Status', 'status'],
+  ['Wait Until', 'waitUntil'],
+  ['Timeout', 'timeoutMs'],
+  ['Result', 'result'],
+  ['Duration', 'durationMs'],
+  ['Fields Found', 'fieldsFound'],
+  ['Fields Filled', 'fieldsFilled'],
+  ['Path', 'path'],
+  ['Error', 'error'],
+];
+
+function DebugDataSection({ extra, searchQuery = '' }: { extra: ActivityLog['extra']; searchQuery?: string }) {
+  if (!extra) return null;
+
+  const playwright = isRecord(extra.playwright) ? extra.playwright : undefined;
+  const knownRows = playwright
+    ? PLAYWRIGHT_DEBUG_ROWS
+        .map(([label, key]) => {
+          const value = stringifyDebugValue(playwright[key]);
+          if (value === undefined) return null;
+          return [label, value] as const;
+        })
+        .filter(Boolean)
+    : [];
+
+  const knownKeys = new Set(PLAYWRIGHT_DEBUG_ROWS.map(([, key]) => key));
+  const remainingPlaywright = playwright
+    ? Object.fromEntries(Object.entries(playwright).filter(([key]) => !knownKeys.has(key)))
+    : undefined;
+  const otherExtra = Object.fromEntries(Object.entries(extra).filter(([key]) => key !== 'playwright'));
+  const fallback = {
+    ...(remainingPlaywright && Object.keys(remainingPlaywright).length ? { playwright: remainingPlaywright } : {}),
+    ...otherExtra,
+  };
+  const fallbackJson = Object.keys(fallback).length ? JSON.stringify(fallback, null, 2) : '';
+
+  return (
+    <div className="rounded-md border p-3">
+      <div className="mb-2 text-sm font-medium">Debug Data</div>
+      {knownRows.length ? (
+        <div className="mb-3">
+          {knownRows.map(([label, value]) => (
+            <DetailRow key={label} label={label} value={value} searchQuery={searchQuery} />
+          ))}
+        </div>
+      ) : null}
+      {fallbackJson ? (
+        <pre className="max-h-80 overflow-auto rounded-md bg-muted p-3 font-mono text-xs leading-5 text-muted-foreground">
+          <HighlightedText text={fallbackJson} query={searchQuery} />
+        </pre>
+      ) : null}
     </div>
   );
 }
@@ -103,6 +184,8 @@ function LogDetailPane({
               <HighlightedText text={log.message} query={searchQuery} />
             </p>
           </div>
+
+          <DebugDataSection extra={log.extra} searchQuery={searchQuery} />
 
           {request ? (
             <form

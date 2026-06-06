@@ -26,7 +26,7 @@ export function HighlightedText({ text, query }: HighlightedTextProps) {
     parts.push(
       <mark
         key={`${matchIndex}-${matchEnd}`}
-        className="rounded-sm bg-yellow-300/80 px-0.5 text-foreground dark:bg-yellow-500/40"
+        className="rounded-sm break-all bg-yellow-300/40 px-0.5 text-foreground dark:bg-yellow-500/40"
       >
         {text.slice(matchIndex, matchEnd)}
       </mark>

@@ -77,9 +77,9 @@ export const LogEntryContextMenu = memo(function LogEntryContextMenu({
       if (await copyText(call.url)) toast.success('Copied URL');
       else toast.error('Failed to copy URL');
     }
-  };
+  }, [call.id, call.url]);
 
-  const handleAddToScope = async () => {
+  const handleAddToScope = useCallback(() => {
     const target = useTargetStore.getState().addHostTarget(call.host);
 
     if (!target) {

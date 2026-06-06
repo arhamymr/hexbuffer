@@ -1,145 +1,21 @@
-const NON_ACTIONABLE_FIELD_TYPES = new Set(['hidden', 'submit', 'button', 'reset', 'image']);
-const MAX_EVIDENCE_ITEMS = 5;
-
-const PATTERNS = {
-  auth: /\b(sign\s*in|log\s*in|login|logout|password|passwd|username|user\s*name|authenticate|authentication|session)\b/i,
-  admin: /\b(admin|administrator|manage|dashboard|console|control[-_\s]*panel|cpanel|wp-admin)\b/i,
-  upload: /\b(upload|avatar|attachment|document|media|file)\b/i,
-  token: /\b(otp|mfa|2fa|csrf|xsrf|nonce|token|verification|verify|code|captcha)\b/i,
-  api: /(?:\/api(?:\/|$)|graphql|graphiql|swagger|openapi|api-docs|redoc|\.json(?:\?|$)|\.well-known)/i,
-  secrets: /\b(api[-_\s]*key|access[-_\s]*token|secret|bearer|jwt|private[-_\s]*key|client[-_\s]*secret)\b/i,
-  payment: /\b(payment|checkout|billing|invoice|card\s*number|credit\s*card|cvv|cvc|stripe|paypal)\b/i,
-  riskyAction: /\b(delete|destroy|remove|reset|disable|deactivate|terminate|revoke|purge|drop)\b/i,
-};
-
-function arrayOf(value) {
-  return Array.isArray(value) ? value : [];
-}
-
-function asString(value) {
-  return typeof value === 'string' ? value : '';
-}
-
-function cleanText(value) {
-  return asString(value).replace(/\s+/g, ' ').trim();
-}
-
-function normalizeHttpStatus(value) {
-  const status = typeof value === 'number' ? value : Number.parseInt(value, 10);
-  return Number.isFinite(status) ? status : 0;
-}
-
-function normalizeExtract(extract = {}) {
-  return {
-    finalUrl: asString(extract.finalUrl),
-    title: cleanText(extract.title),
-    visibleText: cleanText(extract.visibleText),
-    httpStatus: normalizeHttpStatus(extract.httpStatus),
-    forms: arrayOf(extract.forms).map((form) => ({
-      ...form,
-      fields: arrayOf(form?.fields).filter(Boolean),
-    })),
-    links: arrayOf(extract.links).filter((link) => link?.href),
-    buttons: arrayOf(extract.buttons).filter(Boolean),
-    scripts: arrayOf(extract.scripts).filter(Boolean),
-  };
-}
-
-function fieldText(field) {
-  const safeField = field || {};
-  return cleanText([
-    safeField.name,
-    safeField.placeholder,
-    safeField.label,
-    safeField.type,
-    safeField.id,
-    safeField.autocomplete,
-    safeField.ariaLabel,
-  ].filter(Boolean).join(' '));
-}
-
-function linkText(link) {
-  const safeLink = link || {};
-  return cleanText(`${safeLink.text || ''} ${safeLink.href || ''}`);
-}
-
-function buttonText(button) {
-  const safeButton = button || {};
-  return cleanText(`${safeButton.text || ''} ${safeButton.name || ''} ${safeButton.type || ''} ${safeButton.ariaLabel || ''}`);
-}
-
-function scriptText(script) {
-  if (typeof script === 'string') return script;
-  return cleanText(`${script?.src || ''} ${script?.text || ''}`);
-}
-
-function actionableFields(extract) {
-  return extract.forms
-    .flatMap((form) => form.fields)
-    .filter((field) => {
-      const fieldType = field.type?.toLowerCase();
-      return !NON_ACTIONABLE_FIELD_TYPES.has(fieldType || '');
-    });
-}
-
-function uniqueBy(items, keyFn) {
-  const seen = new Set();
-  return items.filter((item) => {
-    const key = keyFn(item);
-    if (!key || seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
-}
-
-function sampleValues(items, getValue, limit = MAX_EVIDENCE_ITEMS) {
-  return uniqueBy(items.map(getValue).map(cleanText).filter(Boolean), (item) => item).slice(0, limit);
-}
-
-function describeSamples(samples) {
-  if (!samples.length) return '';
-  return ` Evidence: ${samples.join(', ')}.`;
-}
-
-function normalizeDefaultInsight(insight) {
-  return {
-    severity: insight.severity,
-    type: insight.type,
-    title: insight.title,
-    description: insight.description,
-    analysisSource: 'default',
-  };
-}
-
-function createInsight(insight, evidence = []) {
-  return normalizeDefaultInsight({
-    ...insight,
-    description: `${insight.description}${describeSamples(evidence)}`,
-  });
-}
-
-function countLabel(count, singular, plural = `${singular}s`) {
-  return `${count} ${count === 1 ? singular : plural}`;
-}
-
-function scorePrioritizedUrl(link) {
-  const text = linkText(link);
-  if (PATTERNS.auth.test(text) || PATTERNS.admin.test(text)) return 90;
-  if (PATTERNS.api.test(text) || PATTERNS.upload.test(text)) return 80;
-  if (PATTERNS.token.test(text) || PATTERNS.payment.test(text)) return 70;
-  if (PATTERNS.riskyAction.test(text)) return 30;
-  return 40;
-}
-
-function reasonForLink(link) {
-  const text = linkText(link);
-  if (PATTERNS.admin.test(text)) return 'Admin-like route';
-  if (PATTERNS.auth.test(text)) return 'Authentication-related route';
-  if (PATTERNS.api.test(text)) return 'API or machine-readable route';
-  if (PATTERNS.upload.test(text)) return 'Upload-related route';
-  if (PATTERNS.payment.test(text)) return 'Payment-related route';
-  return cleanText(link.text) || 'Linked page';
-}
+import { OWASP_WEB_TOP_10_2025, OWASP_API_TOP_10_2023, MAX_EVIDENCE_ITEMS, PATTERNS } from './constants.mjs';
+import {
+  normalizeExtract,
+  fieldText,
+  linkText,
+  buttonText,
+  scriptText,
+  actionableFields,
+  uniqueBy,
+  sampleValues,
+  createInsight,
+  countLabel,
+  scorePrioritizedUrl,
+  reasonForLink,
+  runOwaspCategories,
+  webOwaspEvidence,
+  apiOwaspEvidence,
+} from './helpers.mjs';
 
 export const DEFAULT_ANALYSIS_TOOLS = [
   {
@@ -277,6 +153,18 @@ export const DEFAULT_ANALYSIS_TOOLS = [
         ...sampleValues(apiScripts, scriptText),
       ].slice(0, MAX_EVIDENCE_ITEMS))];
     },
+  },
+  {
+    id: 'owasp-web-top-10',
+    name: 'OWASP Web Top 10 Mapper',
+    description: 'Maps page reconnaissance evidence to OWASP Top 10:2025 web application risk categories.',
+    run: (extract) => runOwaspCategories(OWASP_WEB_TOP_10_2025, extract, webOwaspEvidence),
+  },
+  {
+    id: 'owasp-api-top-10',
+    name: 'OWASP API Top 10 Mapper',
+    description: 'Maps API reconnaissance evidence to OWASP API Security Top 10:2023 risk categories.',
+    run: (extract) => runOwaspCategories(OWASP_API_TOP_10_2023, extract, apiOwaspEvidence),
   },
   {
     id: 'secret-exposure',

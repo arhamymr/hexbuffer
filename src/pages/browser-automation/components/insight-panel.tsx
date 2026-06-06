@@ -185,7 +185,7 @@ export function AiInsightsPanel({
                         key={page.id}
                         role="button"
                         tabIndex={0}
-                        className="max-w-full cursor-pointer rounded-md border border-amber-500/20 bg-amber-500/5 p-3 text-left transition-colors hover:bg-amber-500/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        className="max-w-full cursor-pointer rounded-md border border-amber-500/20 bg-amber-500/5 p-1 text-left transition-colors hover:bg-amber-500/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                         onClick={() => setDetailItem({ type: 'page', page })}
                         onKeyDown={(event) => handleCardKeyDown(event, { type: 'page', page })}
                       >
@@ -194,7 +194,7 @@ export function AiInsightsPanel({
                             <div className="break-words text-sm font-medium">
                               <HighlightedText text={page.title || page.url} query={searchQuery} />
                             </div>
-                            <div className="mt-0.5 break-all font-mono text-xs text-muted-foreground">
+                            <div className="mt-0.5 !break-all font-mono text-xs text-muted-foreground">
                               <HighlightedText text={page.url} query={searchQuery} />
                             </div>
                             {hasAiSummary && (

@@ -4,7 +4,7 @@ import { save } from '@tauri-apps/plugin-dialog';
 import { toast } from 'sonner';
 import { getCaCert, saveCaCert, trustInterceptCa } from '@/pages/live-traffic/api';
 import { useUpdater } from '@/hooks/use-updater';
-import { useAppStore } from '@/stores/app';
+import { DEFAULT_PROXY_PORT, MAX_PROXY_PORT, MIN_PROXY_PORT, isValidProxyPort, useAppStore } from '@/stores/app';
 import { useBrowserAutomationStore } from '@/stores/browser-automation';
 import { AI_MODEL_OPTIONS_BY_PROVIDER, AI_PROVIDER_OPTIONS } from '../constants';
 
@@ -51,12 +51,6 @@ const DEFAULT_AI_SETTINGS: AiSettings = {
   mastraAutoStart: true,
   mastraUrl: 'http://localhost:4111',
 };
-const DEFAULT_PROXY_PORT = 8888;
-
-function isValidProxyPort(port: number) {
-  return Number.isInteger(port) && port >= 1 && port <= 65535;
-}
-
 export function useSettingsPage() {
   const [downloading, setDownloading] = React.useState(false);
   const [installingCa, setInstallingCa] = React.useState(false);
@@ -74,7 +68,8 @@ export function useSettingsPage() {
   const proxyDefaultPort = useAppStore((state) => state.proxyDefaultPort);
   const proxyPort = useAppStore((state) => state.proxyPort);
   const proxyStatus = useAppStore((state) => state.proxyStatus);
-  const setProxyDefaultPort = useAppStore((state) => state.setProxyDefaultPort);
+  const saveProxyDefaultPort = useAppStore((state) => state.saveProxyDefaultPort);
+  const checkProxyStatus = useAppStore((state) => state.checkProxyStatus);
   const [proxyPortDraft, setProxyPortDraft] = React.useState(String(proxyDefaultPort));
 
   const clearBrowserAutomationArtifactPaths = useBrowserAutomationStore((state) => state.clearArtifactPaths);
@@ -162,6 +157,16 @@ export function useSettingsPage() {
   React.useEffect(() => {
     setProxyPortDraft(String(proxyDefaultPort));
   }, [proxyDefaultPort]);
+
+  React.useEffect(() => {
+    void checkProxyStatus();
+
+    const interval = window.setInterval(() => {
+      void checkProxyStatus();
+    }, 5000);
+
+    return () => window.clearInterval(interval);
+  }, [checkProxyStatus]);
 
   const handleResetLocalData = React.useCallback(async () => {
     try {
@@ -339,27 +344,39 @@ export function useSettingsPage() {
     }
   }, [aiSettings, loadAiSettings]);
 
-  const handleSaveProxyDefaultPort = React.useCallback(() => {
+  const handleSaveProxyDefaultPort = React.useCallback(async () => {
     const parsedPort = Number(proxyPortDraft);
 
     if (!isValidProxyPort(parsedPort)) {
-      toast.error('Enter a port between 1 and 65535');
+      toast.error(`Enter a port between ${MIN_PROXY_PORT} and ${MAX_PROXY_PORT}`);
       return;
     }
 
-    setProxyDefaultPort(parsedPort);
-    toast.success(
-      proxyStatus === 'connected'
-        ? `Default proxy port saved. Restart the proxy to use ${parsedPort}.`
-        : `Default proxy port saved: ${parsedPort}`
-    );
-  }, [proxyPortDraft, proxyStatus, setProxyDefaultPort]);
+    try {
+      const activePort = await saveProxyDefaultPort(parsedPort);
+      toast.success(
+        proxyStatus === 'connected'
+          ? `Proxy listener restarted on ${activePort}`
+          : `Proxy listener port saved: ${parsedPort}`
+      );
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : `Failed to save proxy port: ${error}`);
+    }
+  }, [proxyPortDraft, proxyStatus, saveProxyDefaultPort]);
 
-  const handleResetProxyDefaultPort = React.useCallback(() => {
-    setProxyDefaultPort(DEFAULT_PROXY_PORT);
-    setProxyPortDraft(String(DEFAULT_PROXY_PORT));
-    toast.success('Default proxy port reset');
-  }, [setProxyDefaultPort]);
+  const handleResetProxyDefaultPort = React.useCallback(async () => {
+    try {
+      const activePort = await saveProxyDefaultPort(DEFAULT_PROXY_PORT);
+      setProxyPortDraft(String(DEFAULT_PROXY_PORT));
+      toast.success(
+        proxyStatus === 'connected'
+          ? `Proxy listener reset and restarted on ${activePort}`
+          : 'Proxy listener port reset'
+      );
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : `Failed to reset proxy port: ${error}`);
+    }
+  }, [proxyStatus, saveProxyDefaultPort]);
 
   return {
     aiSettings,

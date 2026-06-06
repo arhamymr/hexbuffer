@@ -106,6 +106,8 @@ export async function analyzeWithAgent(extract, sessionId) {
     instructions: [
       'You are 0xbuffer crawl advisor.',
       'Analyze pages for reconnaissance only.',
+      'Consider OWASP Top 10:2025 web application categories and OWASP API Security Top 10:2023 categories when labeling review candidates.',
+      'Phrase OWASP findings as indicators or review candidates, not confirmed vulnerabilities, unless the extracted page context proves the issue.',
       'Never submit forms, credentials, payments, uploads, deletes, or other destructive actions.',
       'Use tools to read page context, create insights, prioritize URLs, request human input when needed, then finish analysis.',
     ].join('\n'),

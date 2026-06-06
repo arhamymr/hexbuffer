@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import { TextEditor } from '@/components/ui/text-editor';
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from '@/components/ui/table';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -80,7 +80,7 @@ function formatItemsAsText(items: KeyValue[]): string {
     .join('\n\n');
 }
 
-export function InspectorSection({
+export const InspectorSection = memo(function InspectorSection({
   title,
   items,
   defaultOpen = true,
@@ -157,7 +157,7 @@ export function InspectorSection({
       </AccordionItem>
     </Accordion>
   );
-}
+});
 
 export function buildHeadersList(headers: Record<string, string>): KeyValue[] {
   return buildHttpHeaderList(headers);

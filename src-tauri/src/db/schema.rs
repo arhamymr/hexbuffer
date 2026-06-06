@@ -249,6 +249,7 @@ CREATE TABLE IF NOT EXISTS ai_browser_logs (
     message TEXT NOT NULL,
     url TEXT,
     ai_used_for_analysis INTEGER,
+    extra_json TEXT,
     created_at TEXT NOT NULL,
     FOREIGN KEY(session_id) REFERENCES ai_browser_sessions(id) ON DELETE CASCADE
 );

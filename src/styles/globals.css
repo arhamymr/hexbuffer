@@ -197,6 +197,19 @@
     }
   }
 
+  @keyframes nav-blink {
+    0%, 100% {
+      color: oklch(0.962 0.059 156.161);
+    }
+    50% {
+      color: oklch(0.627 0.194 149.214);
+    }
+  }
+
+  .animate-nav-blink {
+    animation: nav-blink 0.5s ease-in-out infinite;
+  }
+
   @keyframes accordion-down {
     from {
       height: 0;

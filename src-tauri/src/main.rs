@@ -169,6 +169,9 @@ fn main() {
             zeroxbuffer::commands::collaborator::get_collaborator_interaction,
             zeroxbuffer::commands::collaborator::poll_collaborator_interactions,
             zeroxbuffer::commands::collaborator::get_collaborator_dashboard_stats,
+            zeroxbuffer::commands::license::activate_license,
+            zeroxbuffer::commands::license::verify_license,
+            zeroxbuffer::commands::license::deactivate_license,
             show_main_window
         ])
         .plugin(tauri_plugin_opener::init())

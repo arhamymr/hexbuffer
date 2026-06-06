@@ -7,6 +7,7 @@ import { GripHorizontal } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 import { useAppStore } from '@/stores/app';
+import { useNavStore } from '@/stores/nav';
 import { OpenBrowserButton } from './open-browser';
 import { ProxyButton } from './proxy-button';
 import { mainNavItems } from './constants';
@@ -23,7 +24,7 @@ export function TopNav() {
   const [canScrollRight, setCanScrollRight] = React.useState(false);
   const [isDraggingWindow, setIsDraggingWindow] = React.useState(false);
   const proxyStatus = useAppStore((state) => state.proxyStatus);
-
+  const blinkingItems = useNavStore((state) => state.blinkingItems);
 
   React.useEffect(() => {
     const nav = navRef.current;
@@ -87,6 +88,7 @@ export function TopNav() {
               {mainNavItems.map((item) => {
                 const Icon = item.icon;
                 const isActive = pathname === item.href;
+                const isBlinking = blinkingItems.has(item.href);
 
                 return (
                   <Link
@@ -102,7 +104,7 @@ export function TopNav() {
                   `}
                   >
                     <Icon className="size-3.5" />
-                    <span>{item.label}</span>
+                    <span className={isBlinking ? 'animate-nav-blink' : ''}>{item.label}</span>
                   </Link>
                 );
               })}

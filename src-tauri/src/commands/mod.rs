@@ -4,6 +4,7 @@ pub mod collaborator;
 pub mod history;
 pub mod intercept;
 pub mod intruder;
+pub mod license;
 pub mod packet_capture;
 pub mod proxy;
 pub mod repeater;

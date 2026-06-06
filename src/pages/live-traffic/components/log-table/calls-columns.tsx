@@ -20,10 +20,10 @@ import { LogEntryContextMenu } from "./log-context-menu";
 import type { ApiCall } from '@/types';
 import { useHistoryTable } from '@/pages/live-traffic/hooks/use-history-table';
 import { Button } from "@/components/ui/button";
-import { fetchHistoryDetail } from "@/pages/live-traffic/services/history-service";
-import { adaptProxyRecordToApiCall } from "@/pages/live-traffic/hooks/use-history-table";
-import { buildRawHttpRequest } from "@/lib/http-message";
-import { useRepeaterStore } from "@/stores/repeater";
+// import { fetchHistoryDetail } from "@/pages/live-traffic/services/history-service";
+// import { adaptProxyRecordToApiCall } from "@/pages/live-traffic/hooks/use-history-table";
+// import { buildRawHttpRequest } from "@/lib/http-message";
+// import { useRepeaterStore } from "@/stores/repeater";
 import { HistoryLoadingState } from "../history-loading-state";
 import { BrowserIcon } from "./browser-icon";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -31,46 +31,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 interface SendToRepeaterButtonProps {
   call: ApiCall;
 }
-
-const SendToRepeaterButton = memo(function SendToRepeaterButton({ call }: SendToRepeaterButtonProps) {
-  const navigate = useNavigate();
-
-  const handleSendToRepeater = useCallback(async (event: MouseEvent<HTMLButtonElement>) => {
-    event.stopPropagation();
-
-    try {
-      const detail = await fetchHistoryDetail(call.id);
-      const request = adaptProxyRecordToApiCall(detail);
-      useRepeaterStore.getState().addRequestTab({
-        raw: buildRawHttpRequest({
-          method: request.method,
-          url: request.url,
-          headers: request.headers,
-          body: request.request_body || '',
-        }),
-        url: request.url,
-      });
-      navigate('/repeater');
-      toast.success('Sent to Repeater');
-    } catch (error) {
-      console.error('Failed to send request to Repeater:', error);
-      toast.error('Failed to send to Repeater');
-    }
-  }, [call.id, navigate]);
-
-  return (
-    <Button
-      type="button"
-      size="xs"
-      variant="ghost"
-      className="h-6 px-2"
-      onClick={handleSendToRepeater}
-      title="Send to Repeater"
-    >
-      <Send className="size-3 text-muted-foreground" />
-    </Button>
-  );
-});
 
 export const callsColumns: ColumnDef<ApiCall>[] = [
   {

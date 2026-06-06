@@ -48,6 +48,7 @@ interface AppFooterProps {
 export function AppFooter({ isAssistantOpen, onToggleAssistant }: AppFooterProps) {
   const [updateDialogOpen, setUpdateDialogOpen] = React.useState(false);
   const [updateDialogVersion, setUpdateDialogVersion] = React.useState<string | null>(null);
+  const [updateConfirmReady, setUpdateConfirmReady] = React.useState(false);
   const proxyStatus = useAppStore((state) => state.proxyStatus);
   const proxyPort = useAppStore((state) => state.proxyPort);
   const proxyDefaultPort = useAppStore((state) => state.proxyDefaultPort);
@@ -87,14 +88,22 @@ export function AppFooter({ isAssistantOpen, onToggleAssistant }: AppFooterProps
     }
 
     setUpdateDialogOpen(open);
+    if (!open) {
+      setUpdateConfirmReady(false);
+    }
   }, [updateInProgress]);
 
   const handleOpenUpdateDialog = React.useCallback(() => {
     setUpdateDialogVersion(updateVersion);
+    setUpdateConfirmReady(false);
     setUpdateDialogOpen(true);
   }, [updateVersion]);
 
   const handleInstallUpdate = React.useCallback(async () => {
+    if (!updateConfirmReady) {
+      return;
+    }
+
     const targetVersion = displayedUpdateVersion ?? updateVersion;
     const toastId = toast.loading(`Installing v${targetVersion}...`);
     const result = await installUpdate();
@@ -129,7 +138,19 @@ export function AppFooter({ isAssistantOpen, onToggleAssistant }: AppFooterProps
         </div>
       ),
     });
-  }, [displayedUpdateVersion, downloadError, installUpdate, updateVersion]);
+  }, [displayedUpdateVersion, downloadError, installUpdate, updateConfirmReady, updateVersion]);
+
+  React.useEffect(() => {
+    if (!updateDialogOpen || updateInProgress || updateSucceeded) {
+      return;
+    }
+
+    const timeout = window.setTimeout(() => {
+      setUpdateConfirmReady(true);
+    }, 250);
+
+    return () => window.clearTimeout(timeout);
+  }, [updateDialogOpen, updateInProgress, updateSucceeded]);
 
   React.useEffect(() => {
     checkProxyStatus();
@@ -228,7 +249,11 @@ export function AppFooter({ isAssistantOpen, onToggleAssistant }: AppFooterProps
       </div>
     </footer>
     <Dialog open={updateDialogOpen} onOpenChange={handleUpdateDialogOpenChange}>
-      <DialogContent showCloseButton={!updateInProgress} className="sm:max-w-md">
+      <DialogContent
+        showCloseButton={!updateInProgress}
+        className="sm:max-w-md"
+        onOpenAutoFocus={(event) => event.preventDefault()}
+      >
         <DialogHeader>
           <DialogTitle>
             {updateSucceeded
@@ -312,7 +337,7 @@ export function AppFooter({ isAssistantOpen, onToggleAssistant }: AppFooterProps
             </Button>
           )}
           {!updateSucceeded && (
-            <Button onClick={handleInstallUpdate} disabled={updateInProgress}>
+            <Button onClick={handleInstallUpdate} disabled={updateInProgress || !updateConfirmReady}>
               {updateInProgress ? (
                 <Loader2 className="size-4 animate-spin" />
               ) : (

@@ -14,6 +14,13 @@ export function getApiKey(provider) {
   return key.trim();
 }
 
+export function isAiProviderAvailable() {
+  const provider = process.env.XBUFFER_AI_PROVIDER || 'deepseek';
+  if (!['deepseek', 'openai'].includes(provider)) return false;
+  const apiKeyEnv = getApiKeyEnvName(provider);
+  return !!process.env[apiKeyEnv]?.trim();
+}
+
 export function providerModel() {
   const provider = process.env.XBUFFER_AI_PROVIDER || 'deepseek';
   const model = process.env['0XBUFFER_AI_MODEL'] || 'deepseek-chat';

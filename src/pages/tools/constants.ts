@@ -4,6 +4,7 @@ export const TOOLS_TABS: PageTabItem[] = [
   { id: 'codec', name: 'Encoder / Decoder' },
   { id: 'hash', name: 'Hash' },
   { id: 'ports', name: 'Port Scanner' },
+  { id: 'shell', name: 'Script Analyzer' },
   // { id: 'sqli', name: 'SQL Injection' },
   // { id: 'utils', name: 'Others' },
 ];

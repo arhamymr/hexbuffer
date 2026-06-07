@@ -2,7 +2,9 @@
 
 import { useMemo, useState } from 'react';
 import type { KeyboardEvent } from 'react';
-import { CheckCircle2, ScanEye } from 'lucide-react';
+import { CheckCircle2, ScanEye, Send } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -26,6 +28,7 @@ import {
 import { cn } from '@/lib/utils';
 import { SeverityBadge } from '@/components/status-badge';
 import { useBrowserAutomationStore } from '@/stores/browser-automation';
+import { useToolsStore } from '@/stores/tools';
 import { formatTime } from '../lib/crawl-data';
 import type { AIInsight, CrawlPage, InsightSeverity } from '../types';
 
@@ -54,6 +57,7 @@ function normalizePageUrl(value?: string) {
 
 function getInsightSourceLabel(insight: AIInsight) {
   if (insight.analysisSource === 'ai') return 'AI';
+  if (insight.analysisSource === 'default') return insight.analysisToolName?.trim() || 'Heuristic';
   if (insight.analysisSource === 'manual') return insight.analysisToolName?.trim() || 'Manual';
   if (insight.aiUsedForAnalysis) return 'AI';
   return null;
@@ -95,6 +99,8 @@ export function AiInsightsPanel({
   const selectPage = useBrowserAutomationStore((s) => s.selectPage);
   const toggleInsightReviewed = useBrowserAutomationStore((s) => s.toggleInsightReviewed);
   const pages = useBrowserAutomationStore((s) => s.getActiveTab()?.pages ?? []);
+  const navigate = useNavigate();
+  const sendToScriptAnalyzer = useToolsStore((s) => s.sendToScriptAnalyzer);
 
   const visibleInsights = useMemo(() => {
     return [...insights]
@@ -125,6 +131,24 @@ export function AiInsightsPanel({
     if (!page) return;
 
     selectPage(page.id);
+    setDetailItem(null);
+  }
+
+  function handleSendToScriptAnalyzer() {
+    if (!detailItem || detailItem.type !== 'insight') return;
+    const insight = detailItem.insight;
+    const lines = [
+      `# Insight: ${insight.title}`,
+      `# Severity: ${insight.severity}`,
+      `# Type: ${insight.type}`,
+      `# Source: ${getInsightSourceLabel(insight) || 'unknown'}`,
+      insight.url ? `# URL: ${insight.url}` : '',
+      '',
+      insight.description,
+    ].filter(Boolean).join('\n');
+    sendToScriptAnalyzer(lines);
+    navigate('/tools');
+    toast.success('Sent to Script Analyzer');
     setDetailItem(null);
   }
 
@@ -191,7 +215,7 @@ export function AiInsightsPanel({
                       >
                         <div className="flex items-start justify-between gap-2">
                           <div className="flex-1">
-                            <div className="break-words text-sm font-medium">
+                            <div className="break-words text-xs font-medium">
                               <HighlightedText text={page.title || page.url} query={searchQuery} />
                             </div>
                             <div className="mt-0.5 !break-all font-mono text-xs text-muted-foreground">
@@ -339,6 +363,12 @@ export function AiInsightsPanel({
           </ScrollArea>
 
           <DialogFooter>
+            {detailItem?.type === 'insight' && (
+              <Button variant="outline" onClick={handleSendToScriptAnalyzer}>
+                <Send className="h-3.5 w-3.5" />
+                Script Analyzer
+              </Button>
+            )}
             <Button variant="outline" onClick={handleDetailOpenPage} disabled={!detailPage}>
               Open Page
             </Button>

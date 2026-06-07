@@ -12,19 +12,35 @@ import {
   type SavedApiEntry,
   type CustomSection,
 } from '@/pages/documents/types';
-import { type DocumentSectionKey } from '@/pages/documents/constants';
+import {
+  DOCUMENT_SECTION_DEFINITIONS,
+  type DocumentSectionKey,
+  type DocumentTemplateId,
+} from '@/pages/documents/constants';
 
 interface DocumentsState {
   documents: ReconDocument[];
   activeDocumentId: string;
   setActiveDocumentId: (id: string) => void;
-  addDocument: () => string;
+  addDocument: (templateId?: DocumentTemplateId) => string;
   loadFromDb: () => Promise<void>;
   updateDocument: (id: string, updater: (document: ReconDocument) => ReconDocument) => void;
   addApiEntryToActiveDocument: (entry: Omit<SavedApiEntry, 'id' | 'savedAt'>) => void;
+  addApiEntryToDocument: (documentId: string, entry: Omit<SavedApiEntry, 'id' | 'savedAt'>) => string;
+  updateApiEntry: (
+    documentId: string,
+    entryId: string,
+    updater: (entry: SavedApiEntry) => SavedApiEntry
+  ) => void;
   removeApiEntryFromDocument: (documentId: string, entryId: string) => void;
-  addCustomSection: (documentId: string, section: Omit<CustomSection, 'key'>) => void;
+  addCustomSection: (documentId: string, section: Omit<CustomSection, 'key'>) => string;
+  renameCustomSection: (
+    documentId: string,
+    sectionKey: string,
+    metadata: Pick<CustomSection, 'title' | 'description' | 'placeholder'>
+  ) => void;
   removeCustomSection: (documentId: string, sectionKey: string) => void;
+  clearBuiltInSection: (documentId: string, sectionKey: DocumentSectionKey) => void;
   removeBuiltInSection: (documentId: string, sectionKey: DocumentSectionKey) => void;
   restoreBuiltInSection: (documentId: string, sectionKey: DocumentSectionKey) => void;
   closeDocument: (id: string) => void;
@@ -44,14 +60,31 @@ function getNextDocumentIndex(documents: ReconDocument[]) {
 }
 
 function normalizeDocument(document: ReconDocument): ReconDocument {
+  const existingCustomSections = document.customSections ?? [];
+  const existingCustomSectionKeys = new Set(existingCustomSections.map((section) => section.key));
+  const migratedBuiltInSections = DOCUMENT_SECTION_DEFINITIONS.flatMap((section) => {
+    const content = document.sections?.[section.key]?.trim() ? document.sections[section.key] : '';
+
+    if (!content || existingCustomSectionKeys.has(`builtin-${section.key}`)) {
+      return [];
+    }
+
+    return [
+      {
+        key: `builtin-${section.key}`,
+        title: section.title,
+        description: section.description,
+        placeholder: section.placeholder,
+        content,
+      },
+    ];
+  });
+
   return {
     ...document,
-    sections: {
-      ...createEmptySections(),
-      ...(document.sections ?? {}),
-    },
-    removedBuiltInSections: document.removedBuiltInSections ?? [],
-    customSections: document.customSections ?? [],
+    sections: createEmptySections(),
+    removedBuiltInSections: [],
+    customSections: [...migratedBuiltInSections, ...existingCustomSections],
     apiEntries: document.apiEntries ?? [],
   };
 }
@@ -74,11 +107,11 @@ export const useDocumentsStore = create<DocumentsState>()(
       documents: [initialDocument],
       activeDocumentId: initialDocument.id,
       setActiveDocumentId: (id) => set({ activeDocumentId: id }),
-      addDocument: () => {
+      addDocument: (templateId = 'blank') => {
         let createdDocumentId = '';
 
         set((state) => {
-          const newDocument = createDocument(getNextDocumentIndex(state.documents));
+          const newDocument = createDocument(getNextDocumentIndex(state.documents), templateId);
           createdDocumentId = newDocument.id;
           saveDocument(newDocument);
 
@@ -168,6 +201,67 @@ export const useDocumentsStore = create<DocumentsState>()(
 
           return { documents };
         }),
+      addApiEntryToDocument: (documentId, entry) => {
+        let createdEntryId = '';
+
+        set((state) => {
+          let updatedDocument: ReconDocument | undefined;
+          const documents = state.documents.map((document) => {
+            if (document.id !== documentId) {
+              return document;
+            }
+
+            const savedAt = new Date().toISOString();
+            const nextEntry: SavedApiEntry = {
+              ...entry,
+              id: crypto.randomUUID(),
+              savedAt,
+            };
+            createdEntryId = nextEntry.id;
+            updatedDocument = {
+              ...document,
+              apiEntries: [nextEntry, ...document.apiEntries],
+              updatedAt: savedAt,
+            };
+
+            return updatedDocument;
+          });
+
+          if (updatedDocument) {
+            saveDocument(updatedDocument);
+          }
+
+          return { documents };
+        });
+
+        return createdEntryId;
+      },
+      updateApiEntry: (documentId, entryId, updater) =>
+        set((state) => {
+          let updatedDocument: ReconDocument | undefined;
+          const documents = state.documents.map((document) => {
+            if (document.id !== documentId) {
+              return document;
+            }
+
+            const updatedAt = new Date().toISOString();
+            updatedDocument = {
+              ...document,
+              apiEntries: document.apiEntries.map((entry) =>
+                entry.id === entryId ? updater({ ...entry, savedAt: updatedAt }) : entry
+              ),
+              updatedAt,
+            };
+
+            return updatedDocument;
+          });
+
+          if (updatedDocument) {
+            saveDocument(updatedDocument);
+          }
+
+          return { documents };
+        }),
       removeApiEntryFromDocument: (documentId, entryId) =>
         set((state) => {
           let updatedDocument: ReconDocument | undefined;
@@ -191,7 +285,9 @@ export const useDocumentsStore = create<DocumentsState>()(
 
           return { documents };
         }),
-      addCustomSection: (documentId, section) =>
+      addCustomSection: (documentId, section) => {
+        let createdSectionKey = '';
+
         set((state) => {
           let updatedDocument: ReconDocument | undefined;
           const documents = state.documents.map((document) => {
@@ -200,9 +296,38 @@ export const useDocumentsStore = create<DocumentsState>()(
             }
 
             const key = `custom-${Date.now()}`;
+            createdSectionKey = key;
             updatedDocument = {
               ...document,
               customSections: [...document.customSections, { ...section, key }],
+              updatedAt: new Date().toISOString(),
+            };
+
+            return updatedDocument;
+          });
+
+          if (updatedDocument) {
+            saveDocument(updatedDocument);
+          }
+
+          return { documents };
+        });
+
+        return createdSectionKey;
+      },
+      renameCustomSection: (documentId, sectionKey, metadata) =>
+        set((state) => {
+          let updatedDocument: ReconDocument | undefined;
+          const documents = state.documents.map((document) => {
+            if (document.id !== documentId) {
+              return document;
+            }
+
+            updatedDocument = {
+              ...document,
+              customSections: document.customSections.map((section) =>
+                section.key === sectionKey ? { ...section, ...metadata } : section
+              ),
               updatedAt: new Date().toISOString(),
             };
 
@@ -226,6 +351,32 @@ export const useDocumentsStore = create<DocumentsState>()(
             updatedDocument = {
               ...document,
               customSections: document.customSections.filter((s) => s.key !== sectionKey),
+              updatedAt: new Date().toISOString(),
+            };
+
+            return updatedDocument;
+          });
+
+          if (updatedDocument) {
+            saveDocument(updatedDocument);
+          }
+
+          return { documents };
+        }),
+      clearBuiltInSection: (documentId, sectionKey) =>
+        set((state) => {
+          let updatedDocument: ReconDocument | undefined;
+          const documents = state.documents.map((document) => {
+            if (document.id !== documentId) {
+              return document;
+            }
+
+            updatedDocument = {
+              ...document,
+              sections: {
+                ...document.sections,
+                [sectionKey]: '',
+              },
               updatedAt: new Date().toISOString(),
             };
 

@@ -1,25 +1,11 @@
 'use client'
 
-import { useState } from 'react';
-import { getCurrentWindow } from '@tauri-apps/api/window';
+import { useTitlebarButtons } from './hooks/use-titlebar-buttons';
 
 const baseClass = "flex h-3 w-3 items-center justify-center rounded-full transition-colors cursor-pointer"
 
 export function TitlebarButtons() {
-  const [toggleFullscreen, setToggleFullscreen] = useState(false)
-
-  const handleMinimize = async () => {
-    await getCurrentWindow().minimize()
-  }
-
-  const handleFullscreen = async () => {
-    setToggleFullscreen(!toggleFullscreen)
-    await getCurrentWindow().setFullscreen(!toggleFullscreen)
-  }
-
-  const handleClose = async () => {
-    await getCurrentWindow().close();
-  }
+  const { handleClose, handleFullscreen, handleMinimize } = useTitlebarButtons();
 
   return (
     <div className="flex items-center gap-2">

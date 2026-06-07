@@ -121,7 +121,7 @@ export function PageDetailPanel({ page, searchQuery = '' }: PageDetailPanelProps
     <div className="flex h-full flex-col overflow-hidden">
       <div className="sticky top-0 z-10 shrink-0 border-b bg-background px-3 py-2">
         <div className="flex items-center gap-2">
-          <h3 className="truncate text-xs font-medium">
+          <h3 className="truncate items-center flex text-xs font-medium">
             <HighlightedText text={page.title || page.url} query={searchQuery} />
           </h3>
           {page.interesting && (

@@ -4,6 +4,7 @@ import { TabsContent } from '@/components/ui/tabs';
 import { HashTool } from './components/hash';
 import { EncoderDecoderTool } from './components/encoder';
 import { PortScannerTool } from './components/port-scanner';
+import { ShellAnalyzerTool } from './components/shell-analyzer';
 // import { UtilsTool } from './components/utils';
 // import { SqlInjectionTool } from './components/sql-injection';
 import { TabbedPageLayout } from '@/components/tabs-layout/tabbed-page-layout';
@@ -23,6 +24,9 @@ export function ToolsPage() {
         </TabsContent>
         <TabsContent value="ports" className="h-full m-0">
           <PortScannerTool />
+        </TabsContent>
+        <TabsContent value="shell" className="h-full m-0">
+          <ShellAnalyzerTool />
         </TabsContent>
         {/* <TabsContent value="sqli" className="h-full m-0">
           <SqlInjectionTool />

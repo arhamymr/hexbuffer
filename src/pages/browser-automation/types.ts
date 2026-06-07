@@ -80,7 +80,7 @@ export interface AIInsight {
   description: string;
   url?: string;
   aiUsedForAnalysis?: boolean;
-  analysisSource?: 'ai' | 'manual';
+  analysisSource?: 'ai' | 'default' | 'manual';
   analysisToolId?: string;
   analysisToolName?: string;
   reviewed: boolean;

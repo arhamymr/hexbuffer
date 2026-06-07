@@ -1,4 +1,9 @@
-import { DOCUMENT_SECTION_DEFINITIONS, type DocumentSectionKey } from './constants';
+import {
+  DOCUMENT_SECTION_DEFINITIONS,
+  getDocumentTemplate,
+  type DocumentSectionKey,
+  type DocumentTemplateId,
+} from './constants';
 
 export type DocumentSections = Record<string, string>;
 
@@ -44,16 +49,37 @@ export function createEmptySections(): DocumentSections {
   }, {} as DocumentSections);
 }
 
-export function createDocument(index: number): ReconDocument {
+export function createDocument(index: number, templateId: DocumentTemplateId = 'blank'): ReconDocument {
   const now = new Date().toISOString();
+  const template = getDocumentTemplate(templateId);
+  const templateSectionFiles = Object.entries(template.sections).map(([sectionKey, content]) => {
+    const sectionDefinition = DOCUMENT_SECTION_DEFINITIONS.find(
+      (section) => section.key === sectionKey
+    );
+
+    return {
+      key: `template-${template.id}-${sectionKey}-${crypto.randomUUID()}`,
+      title: sectionDefinition?.title ?? sectionKey,
+      description: sectionDefinition?.description ?? '',
+      placeholder: sectionDefinition?.placeholder ?? '',
+      content: content ?? '',
+    };
+  });
+  const customSections = [
+    ...templateSectionFiles,
+    ...template.customSections.map((section, sectionIndex) => ({
+      ...section,
+      key: `template-${template.id}-${sectionIndex + 1}-${crypto.randomUUID()}`,
+    })),
+  ];
 
   return {
     id: crypto.randomUUID(),
     name: `Document ${index}`,
-    title: '',
+    title: template.documentTitle,
     sections: createEmptySections(),
     removedBuiltInSections: [],
-    customSections: [],
+    customSections,
     apiEntries: [],
     createdAt: now,
     updatedAt: now,

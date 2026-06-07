@@ -143,37 +143,38 @@ export function PortScannerTool() {
     <div className="flex h-full min-h-0 flex-col bg-background">
       <header className="bg-muted px-3 py-3">
         <div className="flex flex-col gap-3">
-          <div className="grid min-w-0 gap-2 lg:grid-cols-[minmax(260px,1fr)_160px_auto]">
+          <div className="flex gap-2">
             <Input
               className="bg-background"
               placeholder="Target host or CIDR (example.com, 192.168.1.0/24)"
               value={target}
               onChange={(event) => setTarget(event.target.value)}
             />
-            <div className="flex items-center gap-2">
-              <Select value={preset} onValueChange={handlePresetChange}>
-                <SelectTrigger className="bg-background">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="quick">Quick</SelectItem>
-                  <SelectItem value="web">Web</SelectItem>
-                  <SelectItem value="top100">Top 100</SelectItem>
-                  <SelectItem value="full">Full</SelectItem>
-                  <SelectItem value="custom">Custom</SelectItem>
-                </SelectContent>
-              </Select>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button type="button" variant="ghost" size="icon-sm" className="shrink-0">
-                    <Info className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent className="max-w-[360px]">
-                  {selectedPortLabel}
-                </TooltipContent>
-              </Tooltip>
-            </div>
+          </div>
+          <div className="flex gap-2">
+
+            <Select value={preset} onValueChange={handlePresetChange}>
+              <SelectTrigger className="bg-background">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="quick">Quick</SelectItem>
+                <SelectItem value="web">Web</SelectItem>
+                <SelectItem value="top100">Top 100</SelectItem>
+                <SelectItem value="full">Full</SelectItem>
+                <SelectItem value="custom">Custom</SelectItem>
+              </SelectContent>
+            </Select>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button type="button" variant="ghost" size="icon-sm" className="shrink-0">
+                  <Info className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent className="max-w-[360px]">
+                {selectedPortLabel}
+              </TooltipContent>
+            </Tooltip>
 
             <div className="flex flex-wrap items-center gap-2">
               <div className="flex items-center gap-2">
@@ -221,7 +222,7 @@ export function PortScannerTool() {
             <div className="flex-1" />
             <Button variant="outline" onClick={copyOpenPorts} disabled={!hasResults}>
               <Copy className="h-3.5 w-3.5" />
-              Open
+              Copy Open Port
             </Button>
             <Button variant="outline" onClick={() => exportResults('json')} disabled={!hasResults}>
               <Download className="h-3.5 w-3.5" />

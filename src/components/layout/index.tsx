@@ -1,13 +1,14 @@
 'use client';
 
 import * as React from 'react';
-import { AppFooter } from '@/components/footer';
+import { AppFooter } from '@/components/layout/footer';
 import { cn } from '@/lib/utils';
 import { TopNav } from './top-nav';
 import { AIAssistantPane } from './ai-chat';
+import { useAppLayout } from './hooks/use-app-layout';
 
 export function AppLayout({ children }: { children?: React.ReactNode }) {
-  const [isAssistantOpen, setIsAssistantOpen] = React.useState(false);
+  const { isAssistantOpen, toggleAssistant } = useAppLayout();
 
   return (
     <div
@@ -24,7 +25,7 @@ export function AppLayout({ children }: { children?: React.ReactNode }) {
       </main>
       <AppFooter
         isAssistantOpen={isAssistantOpen}
-        onToggleAssistant={() => setIsAssistantOpen((current) => !current)}
+        onToggleAssistant={toggleAssistant}
       />
     </div>
   );

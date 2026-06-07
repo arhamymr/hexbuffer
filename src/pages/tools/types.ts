@@ -67,3 +67,70 @@ export interface PortScanResult {
   response_time_ms?: number | null;
   error?: string | null;
 }
+
+export type ShellInsightSeverity = 'critical' | 'high' | 'medium' | 'low' | 'info';
+
+export type ShellInsightCategory =
+  | 'shebang'
+  | 'shell-options'
+  | 'network'
+  | 'filesystem'
+  | 'privilege-escalation'
+  | 'code-execution'
+  | 'temp-files'
+  | 'cleanup'
+  | 'checksum'
+  | 'archive'
+  | 'package-manager'
+  | 'environment'
+  | 'hardcoded-secret'
+  | 'hardcoded-url'
+  | 'pipe-chain'
+  | 'redirect'
+  | 'conditional'
+  | 'variable'
+  | 'function'
+  | 'heredoc'
+  | 'signal-handling'
+  | 'unsafe-pattern';
+
+export interface ShellInsight {
+  id: string;
+  severity: ShellInsightSeverity;
+  category: ShellInsightCategory;
+  title: string;
+  description: string;
+  evidence: string[];
+  lineNumbers: number[];
+}
+
+export interface ShellScriptMeta {
+  shebang: string | null;
+  totalLines: number;
+  nonEmptyLines: number;
+  commentLines: number;
+  functionCount: number;
+  variableCount: number;
+  pipeChainCount: number;
+  heredocCount: number;
+}
+
+export interface ShellAnalysisResult {
+  meta: ShellScriptMeta;
+  insights: ShellInsight[];
+  commands: ShellCommandUsage[];
+  variables: ShellVariableUsage[];
+  urls: string[];
+}
+
+export interface ShellCommandUsage {
+  command: string;
+  count: number;
+  lines: number[];
+}
+
+export interface ShellVariableUsage {
+  name: string;
+  assigned: boolean;
+  lines: number[];
+}

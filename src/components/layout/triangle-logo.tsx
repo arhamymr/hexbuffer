@@ -1,7 +1,7 @@
 import { Triangle, TriangleDashed } from "lucide-react";
 
-import { useAppStore } from "@/stores/app";
 import { cn } from "@/lib/utils";
+import { useTriangleLogo } from "./hooks/use-triangle-logo";
 
 type PulseTriangleSize = "small" | "medium" | "large";
 
@@ -27,8 +27,7 @@ type PulseTriangleProps = {
 
 export function TriangleLogo({ size = "medium", className }: PulseTriangleProps) {
   const sizeClass = triangleLogoSizes[size];
-  const proxyStatus = useAppStore((state) => state.proxyStatus);
-  const isConnected = proxyStatus === "connected";
+  const { isConnected } = useTriangleLogo();
 
   return (
     <span

@@ -7,9 +7,9 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '../ui/dialog';
-import { Progress } from '../ui/progress';
-import { Button } from '../ui/button';
+} from '../../ui/dialog';
+import { Progress } from '../../ui/progress';
+import { Button } from '../../ui/button';
 import type { useUpdater } from '@/hooks/use-updater';
 
 type UpdaterState = ReturnType<typeof useUpdater>;

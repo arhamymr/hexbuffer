@@ -9,6 +9,7 @@ import {
   playwrightExtract,
 } from './extractors.mjs';
 import { normalizeUrl, shouldBlockUrl } from './url-policy.mjs';
+import { isAiProviderAvailable } from './provider.mjs';
 
 function emitPageVisited({ pageId, sessionId, extract, analysis }) {
   emit({
@@ -93,6 +94,13 @@ export async function runCrawl() {
   const enqueued = new Set(queue.map((item) => item.url));
 
   log(sessionId, 'info', 'session', 'Browser Automation started (BFS)', config.targetUrl);
+
+  const aiEnabled = config.enableAiInsights && isAiProviderAvailable();
+  if (config.enableAiInsights && !aiEnabled) {
+    const provider = process.env.XBUFFER_AI_PROVIDER || 'deepseek';
+    const apiKeyEnv = provider === 'openai' ? 'OPENAI_API_KEY' : 'DEEPSEEK_API_KEY';
+    log(sessionId, 'warning', 'ai', `${provider === 'openai' ? 'OpenAI' : 'DeepSeek'} AI agent unavailable (${apiKeyEnv} missing). Using deterministic analysis for all pages.`, config.targetUrl);
+  }
   if (config.headless === false && !useFetchCrawler) {
     try {
       playwrightRuntime = await createPlaywrightRuntime(config);
@@ -128,9 +136,11 @@ export async function runCrawl() {
         const extract = useFetchCrawler
           ? await fetchExtract(item.url, config)
           : await playwrightExtract(item.url, config, pageId, item.humanInput, playwrightRuntime);
-        const analysis = config.enableAiInsights
-          ? await analyzeWithAgent(extract, sessionId)
-          : heuristicAnalyze(extract);
+        const baseline = heuristicAnalyze(extract);
+        let analysis = baseline;
+        if (aiEnabled && baseline.interesting) {
+          analysis = await analyzeWithAgent(extract, baseline, sessionId);
+        }
         emitPageVisited({ pageId, sessionId, extract, analysis });
         log(sessionId, 'info', 'navigation', `Visited ${extract.finalUrl}`, extract.finalUrl, {
           aiUsedForAnalysis: !!analysis.aiUsedForAnalysis,

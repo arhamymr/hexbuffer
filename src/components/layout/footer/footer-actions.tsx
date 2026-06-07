@@ -1,6 +1,6 @@
 import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
 import { ArrowUp, Loader2, Moon, Settings, Sun } from 'lucide-react';
-import { Button } from '../ui/button';
+import { Button } from '../../ui/button';
 
 interface FooterActionsProps {
   theme: string;

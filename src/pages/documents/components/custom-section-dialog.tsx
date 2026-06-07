@@ -16,12 +16,31 @@ interface CustomSectionDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onAdd: (title: string, description: string, placeholder: string) => void;
+  initialValues?: {
+    title: string;
+    description: string;
+    placeholder: string;
+  } | null;
+  mode?: 'add' | 'edit';
 }
 
-export function CustomSectionDialog({ open, onOpenChange, onAdd }: CustomSectionDialogProps) {
+export function CustomSectionDialog({
+  open,
+  onOpenChange,
+  onAdd,
+  initialValues = null,
+  mode = 'add',
+}: CustomSectionDialogProps) {
   const [title, setTitle] = React.useState('');
   const [description, setDescription] = React.useState('');
   const [placeholder, setPlaceholder] = React.useState('');
+
+  React.useEffect(() => {
+    if (!open) return;
+    setTitle(initialValues?.title ?? '');
+    setDescription(initialValues?.description ?? '');
+    setPlaceholder(initialValues?.placeholder ?? '');
+  }, [initialValues, open]);
 
   const handleAdd = () => {
     if (!title.trim()) return;
@@ -45,9 +64,11 @@ export function CustomSectionDialog({ open, onOpenChange, onAdd }: CustomSection
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Add Custom Section</DialogTitle>
+          <DialogTitle>{mode === 'edit' ? 'Rename File' : 'Add File'}</DialogTitle>
           <DialogDescription>
-            Create a new markdown section for this document.
+            {mode === 'edit'
+              ? 'Update the name and helper text for this markdown file.'
+              : 'Create a new markdown file for this document.'}
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
@@ -86,7 +107,7 @@ export function CustomSectionDialog({ open, onOpenChange, onAdd }: CustomSection
             Cancel
           </Button>
           <Button onClick={handleAdd} disabled={!title.trim()}>
-            Add Section
+            {mode === 'edit' ? 'Save File' : 'Add File'}
           </Button>
         </DialogFooter>
       </DialogContent>

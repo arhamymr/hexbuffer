@@ -4,7 +4,6 @@ import { z } from 'zod';
 import { log } from '../events.mjs';
 import { getApiKeyEnvName, providerModel } from '../provider.mjs';
 import { runRedactionWorkflow } from '../privacy/redaction.mjs';
-import { heuristicAnalyze } from './default-tools.mjs';
 
 export function restrictedGate(extract) {
   const lowerUrl = extract.finalUrl.toLowerCase();
@@ -94,8 +93,7 @@ function buildProviderPageContext(extract) {
   };
 }
 
-export async function analyzeWithAgent(extract, sessionId) {
-  const fallback = heuristicAnalyze(extract);
+export async function analyzeWithAgent(extract, baseline, sessionId) {
   const provider = process.env.XBUFFER_AI_PROVIDER || 'deepseek';
   const apiKeyEnv = getApiKeyEnvName(provider);
   const hasKey = !!process.env[apiKeyEnv]?.trim();
@@ -104,22 +102,33 @@ export async function analyzeWithAgent(extract, sessionId) {
     log(sessionId, 'warning', 'ai', `${provider === 'openai' ? 'OpenAI' : 'DeepSeek'} AI agent unavailable (${apiKeyEnv} ${hasKey ? 'set' : 'missing'}, provider=${provider}); using deterministic page analysis.`, extract.finalUrl, {
       aiUsedForAnalysis: false,
     });
-    return fallback;
+    return baseline;
   }
 
   let redactedContext;
   try {
-    const redaction = runRedactionWorkflow(buildProviderPageContext(extract));
+    const redaction = runRedactionWorkflow({
+      ...buildProviderPageContext(extract),
+      heuristicInsights: baseline.insights.map((insight) => ({
+        type: insight.type,
+        title: insight.title,
+        severity: insight.severity,
+        description: insight.description,
+        analysisToolId: insight.analysisToolId,
+      })),
+      heuristicPrioritizedUrls: baseline.prioritizedUrls.slice(0, 10),
+    });
     redactedContext = redaction.redactedValue;
-    log(sessionId, 'info', 'ai', 'Prepared redacted AI analysis context', redactedContext.url, {
+    log(sessionId, 'info', 'ai', 'Prepared redacted AI analysis context with heuristic baseline', redactedContext.url, {
       aiUsedForAnalysis: true,
       aiRedaction: redaction.report,
+      heuristicInsightCount: baseline.insights.length,
     });
   } catch (error) {
     log(sessionId, 'warning', 'ai', `AI redaction failed; using deterministic analysis: ${error.message}`, extract.finalUrl, {
       aiUsedForAnalysis: false,
     });
-    return fallback;
+    return baseline;
   }
 
   const state = {
@@ -135,6 +144,9 @@ export async function analyzeWithAgent(extract, sessionId) {
     instructions: [
       'You are 0xbuffer crawl advisor.',
       'Analyze pages for reconnaissance only.',
+      'A deterministic heuristic engine has already analyzed this page. You will receive its findings as baseline context.',
+      'Build on the heuristic findings: add deeper reasoning, surface issues regex cannot catch, refine severity, or identify subtle indicators.',
+      'Do not duplicate heuristic insights unless you can add meaningful context or correction.',
       'Consider OWASP Top 10:2025 web application categories and OWASP API Security Top 10:2023 categories when labeling review candidates.',
       'Phrase OWASP findings as indicators or review candidates, not confirmed vulnerabilities, unless the extracted page context proves the issue.',
       'Never submit forms, credentials, payments, uploads, deletes, or other destructive actions.',
@@ -151,7 +163,7 @@ export async function analyzeWithAgent(extract, sessionId) {
         },
       }),
       createInsight: tool({
-        description: 'Draft one reconnaissance insight for the current page.',
+        description: 'Draft one reconnaissance insight. Build on heuristic baseline findings with deeper analysis.',
         inputSchema: z.object({
           severity: z.enum(['info', 'low', 'medium', 'high', 'critical']),
           type: z.string(),
@@ -201,32 +213,48 @@ export async function analyzeWithAgent(extract, sessionId) {
   });
 
   try {
+    const baselineSummary = redactedContext.heuristicInsights?.length > 0
+      ? redactedContext.heuristicInsights.map((i) => `- [${i.severity}] ${i.title}: ${i.description}`).join('\n')
+      : '(no heuristic insights found)';
     await agent.generate({
       prompt: [
         'Analyze the current page using the available tools.',
         `URL: ${redactedContext.url}`,
         `Title: ${redactedContext.title}`,
         `HTTP status: ${redactedContext.httpStatus || 'unknown'}`,
+        '',
+        'Heuristic baseline findings:',
+        baselineSummary,
+        '',
+        'Build on these findings with deeper analysis. Add new insights the heuristic engine could not detect.',
       ].join('\n'),
     });
   } catch (error) {
     log(sessionId, 'warning', 'ai', `AI agent analysis unavailable; using deterministic analysis: ${error.message}`, extract.finalUrl, {
       aiUsedForAnalysis: false,
     });
-    return fallback;
+    return baseline;
   }
 
-  const finalAnalysis = state.finalAnalysis || fallback;
-  const aiInsights = state.insightDrafts.length > 0 ? state.insightDrafts : finalAnalysis.insights;
+  const heuristicInsights = baseline.insights.map((insight) => ({
+    ...insight,
+    analysisSource: 'default',
+  }));
+  const aiInsights = (state.insightDrafts.length > 0 ? state.insightDrafts : (state.finalAnalysis?.insights || []))
+    .map((insight) => ({
+      ...insight,
+      analysisSource: 'ai',
+    }));
+
+  const finalAnalysis = state.finalAnalysis || baseline;
   return {
     ...finalAnalysis,
     analysisSource: 'ai',
     aiUsedForAnalysis: true,
-    insights: aiInsights.map((insight) => ({
-      ...insight,
-      analysisSource: 'ai',
-    })),
-    prioritizedUrls: state.prioritizedUrls.length > 0 ? state.prioritizedUrls : finalAnalysis.prioritizedUrls,
+    summary: finalAnalysis.summary || baseline.summary,
+    interesting: true,
+    insights: [...heuristicInsights, ...aiInsights],
+    prioritizedUrls: state.prioritizedUrls.length > 0 ? state.prioritizedUrls : baseline.prioritizedUrls,
     humanInputRequest: state.humanInputRequest,
   };
 }

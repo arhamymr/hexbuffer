@@ -1,20 +1,9 @@
-import { DOCUMENT_SECTION_DEFINITIONS, type DocumentSectionKey } from '../constants';
 import { type SavedApiEntry, type CustomSection } from '../types';
 
-export type EditorFileId = DocumentSectionKey | `custom:${string}` | 'api' | `api:${string}`;
-
-export const EXPLORER_SECTIONS = DOCUMENT_SECTION_DEFINITIONS.map((section) => section.key);
-
-export function isDocumentSectionFile(fileId: EditorFileId): fileId is DocumentSectionKey {
-  return fileId !== 'api' && !fileId.startsWith('api:') && !fileId.startsWith('custom:');
-}
+export type EditorFileId = `custom:${string}` | 'api' | `api:${string}`;
 
 export function isCustomSectionFile(fileId: EditorFileId): fileId is `custom:${string}` {
   return fileId.startsWith('custom:');
-}
-
-export function getSectionDefinition(sectionKey: DocumentSectionKey) {
-  return DOCUMENT_SECTION_DEFINITIONS.find((section) => section.key === sectionKey);
 }
 
 export function getCustomSectionDefinition(customSections: CustomSection[], sectionKey: string) {
@@ -31,13 +20,11 @@ export function getFileLabel(fileId: EditorFileId, apiEntry: SavedApiEntry | nul
   }
 
   if (fileId.startsWith('custom:')) {
-    const custom = customSections?.find((s) => s.key === fileId);
+    const custom = customSections?.find((s) => s.key === fileId.replace('custom:', ''));
     return custom ? `${custom.title.toLowerCase()}.md` : fileId;
   }
 
-  return isDocumentSectionFile(fileId)
-    ? getSectionDefinition(fileId)?.title.toLowerCase() ?? fileId
-    : fileId;
+  return fileId;
 }
 
 export function getFileName(fileId: EditorFileId, apiEntry: SavedApiEntry | null, customSections?: CustomSection[]) {
@@ -50,14 +37,10 @@ export function getFileName(fileId: EditorFileId, apiEntry: SavedApiEntry | null
   }
 
   if (fileId.startsWith('custom:')) {
-    const custom = customSections?.find((s) => s.key === fileId);
+    const custom = customSections?.find((s) => s.key === fileId.replace('custom:', ''));
     const label = custom ? custom.title.toLowerCase().replace(/\s+/g, '-') : fileId.replace('custom:', '');
     return `${label}.md`;
   }
 
-  const label = isDocumentSectionFile(fileId)
-    ? getSectionDefinition(fileId)?.title.toLowerCase() ?? fileId
-    : fileId;
-
-  return `${label.replace(/\s+/g, '-')}.md`;
+  return fileId;
 }

@@ -1,7 +1,6 @@
 import { jsPDF } from 'jspdf';
 import { save } from '@tauri-apps/plugin-dialog';
 import { writeFile } from '@tauri-apps/plugin-fs';
-import { DOCUMENT_SECTION_DEFINITIONS, type DocumentSectionKey } from '../constants';
 import { type ReconDocument } from '../types';
 
 function escapeHtml(text: string): string {
@@ -78,47 +77,6 @@ export async function exportDocumentToPdf(document: ReconDocument): Promise<void
   yPosition += 8;
 
   doc.setTextColor(0);
-
-  const sectionsToRender = DOCUMENT_SECTION_DEFINITIONS.filter(
-    (section) => !document.removedBuiltInSections.includes(section.key as DocumentSectionKey)
-  );
-
-  for (const section of sectionsToRender) {
-    const content = document.sections[section.key as DocumentSectionKey] || '';
-
-    if (yPosition > pageHeight - 40) {
-      doc.addPage();
-      yPosition = margin;
-    }
-
-    doc.setFontSize(14);
-    doc.setFont('helvetica', 'bold');
-    doc.text(section.title, margin, yPosition);
-    yPosition += 8;
-
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'normal');
-
-    if (content.trim()) {
-      const renderedContent = renderMarkdownToText(content);
-      const contentLines = doc.splitTextToSize(renderedContent, contentWidth);
-      for (const line of contentLines) {
-        if (yPosition > pageHeight - 15) {
-          doc.addPage();
-          yPosition = margin;
-        }
-        doc.text(line, margin, yPosition);
-        yPosition += 5;
-      }
-    } else {
-      doc.setTextColor(150);
-      doc.text('No content', margin, yPosition);
-      doc.setTextColor(0);
-      yPosition += 5;
-    }
-
-    yPosition += 6;
-  }
 
   for (const customSection of document.customSections) {
     if (yPosition > pageHeight - 40) {

@@ -1,57 +1,28 @@
 'use client';
 
-import * as React from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { getCurrentWindow } from '@tauri-apps/api/window';
+import { Link } from 'react-router-dom';
 import { GripHorizontal } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
-import { useAppStore } from '@/stores/app';
-import { useNavStore } from '@/stores/nav';
 import { OpenBrowserButton } from './open-browser';
 import { ProxyButton } from './proxy-button';
 import { mainNavItems } from './constants';
 import { TitlebarButtons } from './titlebar-buttons';
-import { Separator } from '../ui/separator';
 import { TriangleLogo } from './triangle-logo';
+import { useTopNav } from './hooks/use-top-nav';
 
 export function TopNav() {
-  const location = useLocation();
-  const pathname = location.pathname;
-  const appWindow = React.useMemo(() => getCurrentWindow(), []);
-  const navRef = React.useRef<HTMLElement>(null);
-  const [canScrollLeft, setCanScrollLeft] = React.useState(false);
-  const [canScrollRight, setCanScrollRight] = React.useState(false);
-  const [isDraggingWindow, setIsDraggingWindow] = React.useState(false);
-  const proxyStatus = useAppStore((state) => state.proxyStatus);
-  const blinkingItems = useNavStore((state) => state.blinkingItems);
-
-  React.useEffect(() => {
-    const nav = navRef.current;
-
-    if (!nav) {
-      return;
-    }
-
-    const updateScrollIndicators = () => {
-      const { scrollLeft, scrollWidth, clientWidth } = nav;
-
-      setCanScrollLeft(scrollLeft > 0);
-      setCanScrollRight(scrollLeft + clientWidth < scrollWidth - 1);
-    };
-
-    updateScrollIndicators();
-
-    nav.addEventListener('scroll', updateScrollIndicators);
-
-    const resizeObserver = new ResizeObserver(updateScrollIndicators);
-    resizeObserver.observe(nav);
-
-    return () => {
-      nav.removeEventListener('scroll', updateScrollIndicators);
-      resizeObserver.disconnect();
-    };
-  }, []);
+  const {
+    blinkingItems,
+    canScrollLeft,
+    canScrollRight,
+    handleMouseDown,
+    isDraggingWindow,
+    navRef,
+    pathname,
+    proxyStatus,
+    stopDraggingWindow,
+  } = useTopNav();
 
   return (
     <header data-tauri-drag-region
@@ -59,14 +30,9 @@ export function TopNav() {
         'flex shrink-0 justify-between text-muted-foreground title-bar border-b bg-background backdrop-blur sticky top-0 z-50',
         isDraggingWindow ? 'cursor-grabbing' : 'cursor-grab',
       )}
-      onMouseDown={(event) => {
-        if (event.buttons === 1) {
-          setIsDraggingWindow(true);
-          appWindow.startDragging();
-        }
-      }}
-      onMouseUp={() => setIsDraggingWindow(false)}
-      onMouseLeave={() => setIsDraggingWindow(false)}
+      onMouseDown={handleMouseDown}
+      onMouseUp={stopDraggingWindow}
+      onMouseLeave={stopDraggingWindow}
     >
       <div className="flex w-full items-center justify-between h-8.5 px-4">
         <div className='flex min-w-0 flex-1 items-center align-center gap-4'>

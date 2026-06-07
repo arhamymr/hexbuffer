@@ -4,12 +4,12 @@ import { CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { getEffectiveProxyPort, useAppStore } from '@/stores/app';
 import { useLicenseStore } from '@/stores/license';
-import { LicenseModal } from '../license-modal';
-import { useTheme } from '../theme-provider';
-import { Button } from '../ui/button';
+import { LicenseModal } from '../../license-modal';
+import { useTheme } from '../../theme-provider';
+import { Button } from '../../ui/button';
 import { useUpdater } from '@/hooks/use-updater';
 import { ManualUpdateCommand } from '@/pages/settings/components/manual-update-command';
-import pkg from '../../../package.json';
+import pkg from '../../../../package.json';
 import { proxyStatusLabel, formatBytes } from './utils';
 import { ProxyStatusIndicator } from './proxy-status';
 import { FooterActions } from './footer-actions';
@@ -153,10 +153,27 @@ export function AppFooter({ isAssistantOpen, onToggleAssistant }: AppFooterProps
       <footer className="border-t px-4 py-1.5 flex items-center justify-between text-xs text-muted-foreground">
         <div className="flex items-center gap-4">
           <span>© 0xbuffer v{pkg.version}</span>
+          <ProxyStatusIndicator
+            proxyStatus={proxyStatus}
+            activeProxyPort={activeProxyPort}
+            isDefaultPortChanged={isDefaultPortChanged}
+            proxyTitle={proxyTitle}
+          />
+        </div>
+        <div className='flex gap-2 items-center'>
+          <FooterActions
+            theme={theme}
+            toggleTheme={toggleTheme}
+            updateAvailable={updateAvailable}
+            updateInstalled={updateInstalled}
+            updateVersion={updateVersion}
+            downloading={downloading}
+            onOpenUpdateDialog={handleOpenUpdateDialog}
+          />
           <Button
-            variant="ghost"
+            variant="outline"
             size="xs"
-            className="h-8 px-2 text-xs"
+            className="h-6 px-2 text-xs"
             onClick={() => setLicenseModalOpen(true)}
             title={licenseStatus === 'lifetime' ? 'License active' : 'Free evaluation — click to activate license'}
           >
@@ -171,22 +188,8 @@ export function AppFooter({ isAssistantOpen, onToggleAssistant }: AppFooterProps
               </>
             )}
           </Button>
-          <ProxyStatusIndicator
-            proxyStatus={proxyStatus}
-            activeProxyPort={activeProxyPort}
-            isDefaultPortChanged={isDefaultPortChanged}
-            proxyTitle={proxyTitle}
-          />
+
         </div>
-        <FooterActions
-          theme={theme}
-          toggleTheme={toggleTheme}
-          updateAvailable={updateAvailable}
-          updateInstalled={updateInstalled}
-          updateVersion={updateVersion}
-          downloading={downloading}
-          onOpenUpdateDialog={handleOpenUpdateDialog}
-        />
       </footer>
       <UpdateDialog
         open={updateDialogOpen}
@@ -204,6 +207,7 @@ export function AppFooter({ isAssistantOpen, onToggleAssistant }: AppFooterProps
         onInstall={handleInstallUpdate}
       />
       <LicenseModal open={licenseModalOpen} onOpenChange={setLicenseModalOpen} />
+
     </>
   );
 }

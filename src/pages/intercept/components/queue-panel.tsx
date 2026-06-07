@@ -1,7 +1,6 @@
 'use client';
 
 import { Flag, Loader2, PauseCircle, Play, Plus, ShieldOff, Trash2 } from 'lucide-react';
-import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import {
   ContextMenu,
@@ -13,31 +12,28 @@ import {
 import { MethodBadge } from '@/components/status-badge';
 import { cn } from '@/lib/utils';
 import { InterceptBypassPanel } from './bypass-panel';
-import { formatRequestTime, getPausedDirection, getRequestHost, getRequestPath } from '../lib';
-import { useInterceptStore } from '../state/intercept-store';
+import { formatRequestTime } from '../lib';
+import { useQueuePanel } from './hooks/use-queue-panel';
 
 export function InterceptQueuePanel() {
-  const status = useInterceptStore((state) => state.status);
-  const requests = useInterceptStore((state) => state.requests);
-  const tabs = useInterceptStore((state) => state.tabs);
-  const activeTabId = useInterceptStore((state) => state.activeTabId);
-  const selectedRequestId = useInterceptStore((state) => state.selectedRequestId);
-  const isBusy = useInterceptStore((state) => state.isBusy);
-  const isRefreshing = useInterceptStore((state) => state.isRefreshing);
-  const setSelectedRequestId = useInterceptStore((state) => state.setSelectedRequestId);
-  const forwardSelectedRequest = useInterceptStore((state) => state.forwardSelectedRequest);
-  const forwardRequestAndInterceptResponse = useInterceptStore(
-    (state) => state.forwardRequestAndInterceptResponse
-  );
-  const dropRequest = useInterceptStore((state) => state.dropRequest);
-  const refresh = useInterceptStore((state) => state.refresh);
-  const addCaptureHost = useInterceptStore((state) => state.addCaptureHost);
-  const removeCaptureHostAndForward = useInterceptStore((state) => state.removeCaptureHostAndForward);
-  const isEnabled = status?.mode === 'Enabled';
-  const activeTab = tabs.find((tab) => tab.id === activeTabId) ?? tabs[0];
-  const activeRequests = requests.filter((request) => request.tab_id === activeTabId);
-  const hasSelection = activeRequests.some((request) => request.id === selectedRequestId);
-  const [removingIds, setRemovingIds] = React.useState<Set<string>>(new Set());
+  const {
+    isEnabled,
+    activeTab,
+    activeRequests,
+    hasSelection,
+    isBusy,
+    isRefreshing,
+    selectedRequestId,
+    removingIds,
+    setSelectedRequestId,
+    getRequestMeta,
+    handleForward,
+    handleRefresh,
+    handleInterceptResponse,
+    handleDrop,
+    handleDontCapture,
+    handleAddCaptureHost,
+  } = useQueuePanel();
 
   return (
     <div className="flex h-full flex-col">
@@ -46,11 +42,11 @@ export function InterceptQueuePanel() {
           <span className="text-sm font-medium">Intercept Queue</span>
         </div>
         <div className="flex items-center gap-2">
-          <Button size="xs" onClick={forwardSelectedRequest} disabled={!hasSelection || isBusy}>
+          <Button size="xs" onClick={handleForward} disabled={!hasSelection || isBusy}>
             {isBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
             FORWARD
           </Button>
-          <Button size="xs" variant="ghost" onClick={refresh} disabled={isRefreshing}>
+          <Button size="xs" variant="ghost" onClick={handleRefresh} disabled={isRefreshing}>
             Refresh
           </Button>
         </div>
@@ -65,7 +61,7 @@ export function InterceptQueuePanel() {
               <PauseCircle className="h-3.5 w-3.5" />
               Paused
             </div>
-            <div className="mt-1 text-sm font-semibold">{requests.length}</div>
+            <div className="mt-1 text-sm font-semibold">{activeRequests.length}</div>
             <div className="text-[11px] text-muted-foreground">{activeRequests.length} in tab</div>
           </div>
           <div className="rounded-md border bg-background p-2">
@@ -91,9 +87,7 @@ export function InterceptQueuePanel() {
               {activeRequests.map((request) => {
                 const isSelected = request.id === selectedRequestId;
                 const isRemoving = removingIds.has(request.id);
-                const direction = getPausedDirection(request);
-                const host = getRequestHost(request);
-                const path = getRequestPath(request);
+                const { direction, host, path } = getRequestMeta(request);
 
                 return (
                   <ContextMenu key={request.id}>
@@ -134,7 +128,7 @@ export function InterceptQueuePanel() {
                     </ContextMenuTrigger>
                     <ContextMenuContent className="w-52">
                       <ContextMenuItem
-                        onClick={() => addCaptureHost(host)}
+                        onClick={() => handleAddCaptureHost(host)}
                       >
                         <Plus className="h-4 w-4" />
                         Capture this host
@@ -143,9 +137,7 @@ export function InterceptQueuePanel() {
                       {direction === 'request' && (
                         <>
                           <ContextMenuItem
-                            onClick={() => {
-                              forwardRequestAndInterceptResponse(request);
-                            }}
+                            onClick={() => handleInterceptResponse(request)}
                           >
                             <Flag className="h-4 w-4" />
                             Intercept response
@@ -154,10 +146,7 @@ export function InterceptQueuePanel() {
                         </>
                       )}
                       <ContextMenuItem
-                        onClick={() => {
-                          setRemovingIds((prev) => new Set([...prev, request.id]));
-                          dropRequest(request);
-                        }}
+                        onClick={() => handleDrop(request)}
                         variant="destructive"
                       >
                         <Trash2 className="h-4 w-4" />
@@ -165,10 +154,7 @@ export function InterceptQueuePanel() {
                       </ContextMenuItem>
                       <ContextMenuSeparator />
                       <ContextMenuItem
-                        onClick={() => {
-                          setRemovingIds((prev) => new Set([...prev, request.id]));
-                          removeCaptureHostAndForward(request);
-                        }}
+                        onClick={() => handleDontCapture(request)}
                       >
                         <ShieldOff className="h-4 w-4" />
                         Don't capture this host

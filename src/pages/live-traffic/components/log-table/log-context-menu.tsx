@@ -8,12 +8,13 @@ import {
   ContextMenuItem,
   ContextMenuSeparator,
 } from '@/components/ui/context-menu';
-import { Copy, Plus, Trash2, Send } from 'lucide-react';
+import { Copy, Plus, Trash2, Send, FilePlus2 } from 'lucide-react';
 import { toast } from 'sonner';
 import type { ApiCall } from '@/types';
 import { deleteHistoryLog, fetchHistoryDetail } from '@/pages/live-traffic/services/history-service';
 import { createDefaultAttackConfig, findRequestPayloadPositions } from '@/pages/invoker/types';
 import { useInvokerStore } from '@/stores/invoker';
+import { useDocumentsStore } from '@/stores/documents';
 import { useBrowserAutomationStore } from '@/stores/browser-automation';
 import { useHistoryQuery } from '@/pages/live-traffic/hooks/use-history-query';
 import { adaptProxyRecordToApiCall } from '@/pages/live-traffic/hooks/use-history-table';
@@ -192,29 +193,29 @@ export const LogEntryContextMenu = memo(function LogEntryContextMenu({
   //   }
   // };
 
-  // const handleSaveToDocuments = async () => {
-  //   try {
-  //     const detail = await fetchHistoryDetail(call.id);
-  //     const request = adaptProxyRecordToApiCall(detail);
+  const handleSaveToDocuments = async () => {
+    try {
+      const detail = await fetchHistoryDetail(call.id);
+      const request = adaptProxyRecordToApiCall(detail);
 
-  //     useDocumentsStore.getState().addApiEntryToActiveDocument({
-  //       sourceHistoryId: request.id,
-  //       method: request.method,
-  //       url: request.url,
-  //       host: request.host,
-  //       path: request.path,
-  //       headers: request.headers,
-  //       requestBody: request.request_body,
-  //       responseStatus: request.response_status,
-  //       responseContentType: request.response_content_type,
-  //       capturedAt: request.timestamp,
-  //     });
-  //     toast.success('Saved API to active document');
-  //   } catch (error) {
-  //     console.error('Failed to save API to documents:', error);
-  //     toast.error('Failed to save API to documents');
-  //   }
-  // };
+      useDocumentsStore.getState().addApiEntryToActiveDocument({
+        sourceHistoryId: request.id,
+        method: request.method,
+        url: request.url,
+        host: request.host,
+        path: request.path,
+        headers: request.headers,
+        requestBody: request.request_body,
+        responseStatus: request.response_status,
+        responseContentType: request.response_content_type,
+        capturedAt: request.timestamp,
+      });
+      toast.success('Saved API to active document');
+    } catch (error) {
+      console.error('Failed to save API to documents:', error);
+      toast.error('Failed to save API to documents');
+    }
+  };
 
   const handleDelete = useCallback(async () => {
     try {
@@ -257,9 +258,9 @@ export const LogEntryContextMenu = memo(function LogEntryContextMenu({
         {/* <ContextMenuItem onClick={handleOpenInPromptInjection} className='text-xs'>
           <Bot className="mr-2 size-4" /> Open in Prompt Injection
         </ContextMenuItem> */}
-        {/* <ContextMenuItem onClick={handleSaveToDocuments} className='text-xs'>
+        <ContextMenuItem onClick={handleSaveToDocuments} className='text-xs'>
           <FilePlus2 className="mr-2 size-4" /> Save to Documents
-        </ContextMenuItem> */}
+        </ContextMenuItem>
         <ContextMenuSeparator />
         <ContextMenuItem onClick={handleDelete} variant="destructive" className='text-xs'>
           <Trash2 className="mr-2 size-3" /> Delete

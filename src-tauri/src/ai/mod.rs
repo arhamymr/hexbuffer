@@ -26,6 +26,8 @@ pub struct AiSettings {
     pub has_api_key: bool,
     #[serde(default)]
     pub provider_key_status: BTreeMap<String, bool>,
+    #[serde(default)]
+    pub allow_third_party_ai_sharing: bool,
     pub mastra_auto_start: bool,
     pub mastra_url: String,
 }
@@ -38,6 +40,7 @@ impl Default for AiSettings {
             api_key: String::new(),
             has_api_key: false,
             provider_key_status: default_ai_key_status(),
+            allow_third_party_ai_sharing: false,
             mastra_auto_start: true,
             mastra_url: "http://localhost:4111".to_string(),
         }
@@ -177,6 +180,7 @@ pub async fn send_ai_chat_message(
     request: AiChatRequest,
 ) -> Result<AiChatResponse, String> {
     let settings = read_ai_settings(&app)?;
+    ensure_third_party_ai_sharing_allowed(&settings)?;
     let api_key = read_required_ai_api_key(&settings.provider)?;
 
     if api_key.trim().is_empty() {
@@ -191,6 +195,17 @@ pub async fn send_ai_chat_message(
     .map_err(|error| error.to_string())??;
 
     Ok(response)
+}
+
+pub(crate) fn ensure_third_party_ai_sharing_allowed(settings: &AiSettings) -> Result<(), String> {
+    if settings.allow_third_party_ai_sharing {
+        return Ok(());
+    }
+
+    Err(
+        "Third-party AI sharing is disabled. Enable it in Settings before sending prompts, chat messages, crawl context, page summaries, logs, insights, URLs, or analysis context to OpenAI or DeepSeek."
+            .to_string(),
+    )
 }
 
 fn build_ai_chat_context(history: &crate::HistoryBridge) -> Result<AiChatContext, String> {

@@ -3,6 +3,7 @@ import { z } from 'zod';
 
 import { emit } from './events.mjs';
 import { providerModel } from './provider.mjs';
+import { runRedactionWorkflow } from './privacy/redaction.mjs';
 
 function toChatMessages(messages) {
   return messages
@@ -21,6 +22,8 @@ export async function runChat() {
   emit({ type: 'chat_started', provider, model, createdAt: new Date().toISOString() });
 
   try {
+    const redactedRequest = runRedactionWorkflow(request).redactedValue;
+    const redactedContext = runRedactionWorkflow(context).redactedValue;
     const agent = new ToolLoopAgent({
       id: '0xbuffer-chat-agent',
       model: providerModel(),
@@ -35,7 +38,7 @@ export async function runChat() {
         listCrawlSessions: tool({
           description: 'List recent AI browser crawl sessions available in context.',
           inputSchema: z.object({}),
-          execute: async () => context.crawlSessions || [],
+          execute: async () => redactedContext.crawlSessions || [],
         }),
         getCrawlContext: tool({
           description: 'Read crawl pages, insights, and logs from the latest crawl context.',
@@ -43,27 +46,27 @@ export async function runChat() {
             sessionId: z.string().optional(),
           }),
           execute: async ({ sessionId }) => {
-            const targetId = sessionId || context.latestCrawl?.session?.id;
-            if (!targetId || context.latestCrawl?.session?.id !== targetId) {
+            const targetId = sessionId || redactedContext.latestCrawl?.session?.id;
+            if (!targetId || redactedContext.latestCrawl?.session?.id !== targetId) {
               return { session: null, pages: [], insights: [], logs: [] };
             }
-            return context.latestCrawl;
+            return redactedContext.latestCrawl;
           },
         }),
         getProxySummary: tool({
           description: 'Read recent HTTP proxy summary context.',
           inputSchema: z.object({}),
-          execute: async () => context.proxySummary || [],
+          execute: async () => redactedContext.proxySummary || [],
         }),
         getRecentInsights: tool({
           description: 'Read recent reconnaissance insights.',
           inputSchema: z.object({}),
-          execute: async () => context.latestCrawl?.insights || [],
+          execute: async () => redactedContext.latestCrawl?.insights || [],
         }),
       },
     });
     const result = await agent.stream({
-      messages: toChatMessages(request.messages),
+      messages: toChatMessages(redactedRequest.messages),
     });
 
     let content = '';

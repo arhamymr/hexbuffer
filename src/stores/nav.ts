@@ -17,6 +17,6 @@ export const useNavStore = create<NavState>()((set, get) => ({
       const updated = new Set(get().blinkingItems);
       updated.delete(href);
       set({ blinkingItems: updated });
-    }, 2000);
+    }, 6000);
   },
 }));

@@ -44,6 +44,39 @@ function stringifyDebugValue(value: LogExtraValue | undefined) {
   return JSON.stringify(value, null, 2);
 }
 
+function RedactionResultSection({ extra, searchQuery = '' }: { extra: ActivityLog['extra']; searchQuery?: string }) {
+  const aiRedaction = isRecord(extra?.aiRedaction) ? extra.aiRedaction : undefined;
+  if (!aiRedaction) return null;
+
+  const count = typeof aiRedaction.redactionCount === 'number' ? aiRedaction.redactionCount : 0;
+  const categories = Array.isArray(aiRedaction.categories)
+    ? aiRedaction.categories.filter((item): item is string => typeof item === 'string')
+    : [];
+  const preview = aiRedaction.redactedPreview;
+  const previewJson = preview === undefined
+    ? ''
+    : typeof preview === 'string'
+      ? preview
+      : JSON.stringify(preview, null, 2);
+
+  return (
+    <div className="rounded-md border p-3">
+      <div className="mb-2 text-sm font-medium">Redaction Result</div>
+      <DetailRow label="Redactions" value={String(count)} searchQuery={searchQuery} />
+      <DetailRow
+        label="Categories"
+        value={categories.length ? categories.join(', ') : 'No sensitive values detected'}
+        searchQuery={searchQuery}
+      />
+      {previewJson ? (
+        <pre className="mt-3 max-h-80 overflow-auto rounded-md bg-muted p-3 font-mono text-xs leading-5 text-muted-foreground">
+          <HighlightedText text={previewJson} query={searchQuery} />
+        </pre>
+      ) : null}
+    </div>
+  );
+}
+
 const PLAYWRIGHT_DEBUG_ROWS: Array<[string, string]> = [
   ['Action', 'action'],
   ['Selector', 'selector'],
@@ -80,19 +113,21 @@ function DebugDataSection({ extra, searchQuery = '' }: { extra: ActivityLog['ext
           if (value === undefined) return null;
           return [label, value] as const;
         })
-        .filter(Boolean)
+        .filter((row): row is readonly [string, string] => row !== null)
     : [];
 
   const knownKeys = new Set(PLAYWRIGHT_DEBUG_ROWS.map(([, key]) => key));
   const remainingPlaywright = playwright
     ? Object.fromEntries(Object.entries(playwright).filter(([key]) => !knownKeys.has(key)))
     : undefined;
-  const otherExtra = Object.fromEntries(Object.entries(extra).filter(([key]) => key !== 'playwright'));
+  const otherExtra = Object.fromEntries(Object.entries(extra).filter(([key]) => !['playwright', 'aiRedaction'].includes(key)));
   const fallback = {
     ...(remainingPlaywright && Object.keys(remainingPlaywright).length ? { playwright: remainingPlaywright } : {}),
     ...otherExtra,
   };
   const fallbackJson = Object.keys(fallback).length ? JSON.stringify(fallback, null, 2) : '';
+
+  if (!knownRows.length && !fallbackJson) return null;
 
   return (
     <div className="rounded-md border p-3">
@@ -186,6 +221,7 @@ function LogDetailPane({
           </div>
 
           <DebugDataSection extra={log.extra} searchQuery={searchQuery} />
+          <RedactionResultSection extra={log.extra} searchQuery={searchQuery} />
 
           {request ? (
             <form

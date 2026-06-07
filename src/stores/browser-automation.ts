@@ -4,6 +4,7 @@ import { DEFAULT_CRAWL_SETUP } from '@/pages/browser-automation/constants';
 import { deriveOverview, downloadJson } from '@/pages/browser-automation/lib/crawl-data';
 import { useTabsLayoutStore } from '@/stores/tabs-layout';
 import { useTargetStore } from '@/stores/target';
+import { useNavStore } from '@/stores/nav';
 import type {
   ActivityLog,
   AIInsight,
@@ -373,6 +374,7 @@ export const useBrowserAutomationStore = create<BrowserAutomationState>((set, ge
 
     if (target) {
       useTabsLayoutStore.getState().setActiveTabId('http-history-target-tabs', target.id);
+      useNavStore.getState().triggerNavBlink('/');
     }
 
     updateTab(set, tab.id, (current) => ({

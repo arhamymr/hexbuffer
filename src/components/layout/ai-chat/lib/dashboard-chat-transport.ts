@@ -34,6 +34,9 @@ function fallbackContent(aiSettings: DashboardAiSettings | undefined, error?: un
   if (!aiSettings?.hasApiKey) {
     return 'Add an API key in Settings to start chatting with the configured AI provider.';
   }
+  if (!aiSettings.allowThirdPartyAiSharing) {
+    return 'Enable third-party AI sharing in Settings before sending chat messages or app context to the configured AI provider.';
+  }
 
   return `I could not reach ${aiSettings.provider === 'deepseek' ? 'DeepSeek' : 'OpenAI'} right now: ${
     error instanceof Error ? error.message : String(error)
@@ -56,7 +59,7 @@ export class DashboardSettingsChatTransport implements ChatTransport<DashboardCh
         let content = '';
 
         try {
-          if (!aiSettings?.hasApiKey) {
+          if (!aiSettings?.hasApiKey || !aiSettings.allowThirdPartyAiSharing) {
             content = fallbackContent(aiSettings);
           } else {
             const response = await invoke<AiChatResponse>('send_ai_chat_message', {

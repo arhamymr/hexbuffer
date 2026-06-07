@@ -6,6 +6,7 @@ export interface DashboardAiSettings {
   provider: DashboardAiProvider;
   model: string;
   hasApiKey: boolean;
+  allowThirdPartyAiSharing: boolean;
 }
 
 export interface DashboardChatMetadata {

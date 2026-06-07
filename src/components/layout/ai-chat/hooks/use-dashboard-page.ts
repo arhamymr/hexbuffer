@@ -10,6 +10,7 @@ const DEFAULT_AI_SETTINGS: DashboardAiSettings = {
   provider: 'openai',
   model: DASHBOARD_DEFAULT_AI_MODEL,
   hasApiKey: false,
+  allowThirdPartyAiSharing: false,
 };
 
 interface PromptInputMessage {

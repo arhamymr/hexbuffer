@@ -657,20 +657,44 @@ pub async fn ai_browser_start_crawl(
     let session_id_for_task = session.id.clone();
     let worker_id_for_task = worker_id.clone();
     let settings = crate::ai::read_ai_settings(&app)?;
-    let api_key_for_task = match crate::ai::read_optional_ai_api_key(&settings.provider) {
-        Ok(api_key) => api_key,
-        Err(error) => {
+    let api_key_for_task = match crate::ai::ensure_third_party_ai_sharing_allowed(&settings) {
+        Ok(()) => match crate::ai::read_optional_ai_api_key(&settings.provider) {
+            Ok(api_key) => api_key,
+            Err(error) => {
+                add_log(
+                    &app,
+                    &state,
+                    ActivityLog {
+                        id: Uuid::new_v4().to_string(),
+                        session_id: session.id.clone(),
+                        level: "warning".to_string(),
+                        r#type: "ai".to_string(),
+                        message: format!(
+                            "Could not read the saved {} API key, so this crawl will continue without AI key injection. {}",
+                            settings.provider, error
+                        ),
+                        url: Some(session.target_url.clone()),
+                        ai_used_for_analysis: Some(false),
+                        created_at: now(),
+                        extra: None,
+                        human_input_request: None,
+                    },
+                );
+                None
+            }
+        },
+        Err(message) => {
             add_log(
                 &app,
                 &state,
                 ActivityLog {
                     id: Uuid::new_v4().to_string(),
                     session_id: session.id.clone(),
-                    level: "warning".to_string(),
-                    r#type: "settings".to_string(),
+                    level: "info".to_string(),
+                    r#type: "ai".to_string(),
                     message: format!(
-                        "Could not read the saved {} API key, so this crawl will continue without AI key injection. {}",
-                        settings.provider, error
+                        "{} This crawl will use deterministic local analysis.",
+                        message
                     ),
                     url: Some(session.target_url.clone()),
                     ai_used_for_analysis: Some(false),

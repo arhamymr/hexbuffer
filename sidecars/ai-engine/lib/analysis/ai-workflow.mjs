@@ -3,6 +3,7 @@ import { z } from 'zod';
 
 import { log } from '../events.mjs';
 import { getApiKeyEnvName, providerModel } from '../provider.mjs';
+import { runRedactionWorkflow } from '../privacy/redaction.mjs';
 import { heuristicAnalyze } from './default-tools.mjs';
 
 export function restrictedGate(extract) {
@@ -80,6 +81,19 @@ function analysisSchema() {
   });
 }
 
+function buildProviderPageContext(extract) {
+  return {
+    url: extract.finalUrl,
+    title: extract.title,
+    httpStatus: extract.httpStatus,
+    visibleText: extract.visibleText.slice(0, 5000),
+    links: extract.links.slice(0, 60),
+    forms: extract.forms,
+    buttons: extract.buttons,
+    scripts: extract.scripts,
+  };
+}
+
 export async function analyzeWithAgent(extract, sessionId) {
   const fallback = heuristicAnalyze(extract);
   const provider = process.env.XBUFFER_AI_PROVIDER || 'deepseek';
@@ -88,6 +102,21 @@ export async function analyzeWithAgent(extract, sessionId) {
 
   if (!hasKey || !['deepseek', 'openai'].includes(provider)) {
     log(sessionId, 'warning', 'ai', `${provider === 'openai' ? 'OpenAI' : 'DeepSeek'} AI agent unavailable (${apiKeyEnv} ${hasKey ? 'set' : 'missing'}, provider=${provider}); using deterministic page analysis.`, extract.finalUrl, {
+      aiUsedForAnalysis: false,
+    });
+    return fallback;
+  }
+
+  let redactedContext;
+  try {
+    const redaction = runRedactionWorkflow(buildProviderPageContext(extract));
+    redactedContext = redaction.redactedValue;
+    log(sessionId, 'info', 'ai', 'Prepared redacted AI analysis context', redactedContext.url, {
+      aiUsedForAnalysis: true,
+      aiRedaction: redaction.report,
+    });
+  } catch (error) {
+    log(sessionId, 'warning', 'ai', `AI redaction failed; using deterministic analysis: ${error.message}`, extract.finalUrl, {
       aiUsedForAnalysis: false,
     });
     return fallback;
@@ -114,20 +143,11 @@ export async function analyzeWithAgent(extract, sessionId) {
     stopWhen: stepCountIs(6),
     tools: {
       readPageContext: tool({
-        description: 'Read the extracted page context.',
+        description: 'Read the redacted extracted page context.',
         inputSchema: z.object({}),
         execute: async () => {
           state.pageContextRead = true;
-          return {
-            url: extract.finalUrl,
-            title: extract.title,
-            httpStatus: extract.httpStatus,
-            visibleText: extract.visibleText.slice(0, 5000),
-            links: extract.links.slice(0, 60),
-            forms: extract.forms,
-            buttons: extract.buttons,
-            scripts: extract.scripts,
-          };
+          return redactedContext;
         },
       }),
       createInsight: tool({
@@ -184,9 +204,9 @@ export async function analyzeWithAgent(extract, sessionId) {
     await agent.generate({
       prompt: [
         'Analyze the current page using the available tools.',
-        `URL: ${extract.finalUrl}`,
-        `Title: ${extract.title}`,
-        `HTTP status: ${extract.httpStatus || 'unknown'}`,
+        `URL: ${redactedContext.url}`,
+        `Title: ${redactedContext.title}`,
+        `HTTP status: ${redactedContext.httpStatus || 'unknown'}`,
       ].join('\n'),
     });
   } catch (error) {

@@ -1,7 +1,6 @@
 'use client';
 
 import { useCallback, memo } from 'react';
-import { useNavigate } from 'react-router-dom';
 import {
   ContextMenu,
   ContextMenuTrigger,
@@ -22,6 +21,7 @@ import { useRepeaterStore } from '@/stores/repeater';
 import { buildHttpCurlCommand, buildRawHttpRequest } from '@/lib/http-message';
 import { copyText } from '@/lib/clipboard';
 import { useTargetStore } from '@/stores/target';
+import { useNavStore } from '@/stores/nav';
 import { useInterceptStore } from '@/pages/intercept/state/intercept-store';
 
 interface LogEntryContextMenuProps {
@@ -46,7 +46,6 @@ export const LogEntryContextMenu = memo(function LogEntryContextMenu({
   onDelete,
   onOpenChange,
 }: LogEntryContextMenuProps) {
-  const navigate = useNavigate();
   const { triggerRefresh } = useHistoryQuery();
 
   const handleCopyCurlCommand = useCallback(async () => {
@@ -110,12 +109,13 @@ export const LogEntryContextMenu = memo(function LogEntryContextMenu({
       };
 
       useInvokerStore.getState().addAttackTab(config);
-      navigate('/invoker');
+      useNavStore.getState().triggerNavBlink('/invoker');
+      toast.success(`Sent ${request.method} ${request.path || request.url} to Invoker`);
     } catch (error) {
       console.error('Failed to open request in Invoker:', error);
       toast.error('Failed to open request in Invoker');
     }
-  }, [call.id, navigate]);
+  }, [call.id]);
 
   const handleOpenInRepeater = useCallback(async () => {
     try {
@@ -130,11 +130,13 @@ export const LogEntryContextMenu = memo(function LogEntryContextMenu({
         }),
         url: request.url,
       });
-      navigate('/repeater');
+      useNavStore.getState().triggerNavBlink('/repeater');
+      toast.success(`Sent ${request.method} ${request.path || request.url} to Repeater`);
     } catch (error) {
       console.error('Failed to open request in Repeater:', error);
+      toast.error('Failed to open request in Repeater');
     }
-  }, [call.id, navigate]);
+  }, [call.id]);
 
   const handleSendToIntercept = useCallback(() => {
     const host = call.host?.trim();
@@ -145,9 +147,9 @@ export const LogEntryContextMenu = memo(function LogEntryContextMenu({
     }
 
     useInterceptStore.getState().addTabForHost(host);
-    navigate('/intercept');
+    useNavStore.getState().triggerNavBlink('/intercept');
     toast.success(`Intercept tab created for ${host}`);
-  }, [call.host, navigate]);
+  }, [call.host]);
 
   const handleOpenInBrowserAutomation = useCallback(async () => {
     try {
@@ -159,12 +161,13 @@ export const LogEntryContextMenu = memo(function LogEntryContextMenu({
         { targetUrl },
         request.host || targetUrl
       );
-      navigate('/browser-automation');
+      useNavStore.getState().triggerNavBlink('/browser-automation');
+      toast.success(`Sent ${request.host || targetUrl} to Browser Automation`);
     } catch (error) {
       console.error('Failed to open target in Browser Automation:', error);
       toast.error('Failed to open target in Browser Automation');
     }
-  }, [call.id, navigate]);
+  }, [call.id]);
 
   // const handleOpenInPromptInjection = async () => {
   //   try {

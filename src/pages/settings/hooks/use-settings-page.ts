@@ -13,6 +13,7 @@ export interface AiSettings {
   model: string;
   apiKey: string;
   hasApiKey: boolean;
+  allowThirdPartyAiSharing: boolean;
   mastraAutoStart: boolean;
   mastraUrl: string;
 }
@@ -48,6 +49,7 @@ const DEFAULT_AI_SETTINGS: AiSettings = {
   model: 'gpt-4.1-mini',
   apiKey: '',
   hasApiKey: false,
+  allowThirdPartyAiSharing: false,
   mastraAutoStart: true,
   mastraUrl: 'http://localhost:4111',
 };

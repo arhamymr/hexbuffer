@@ -1,7 +1,8 @@
 import * as React from 'react';
-import { CheckIcon, EyeIcon, EyeOffIcon, SaveIcon, XIcon } from 'lucide-react';
+import { AlertTriangleIcon, CheckIcon, EyeIcon, EyeOffIcon, SaveIcon, XIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -39,6 +40,8 @@ export function AiSettingsTab({ settings }: AiSettingsTabProps) {
   const modelOptions = AI_MODEL_OPTIONS_BY_PROVIDER[aiSettings.provider] ?? [];
   const [showApiKey, setShowApiKey] = React.useState(false);
   const [apiKeyInput, setApiKeyInput] = React.useState(aiSettings.apiKey);
+  const isSavingNewApiKey = apiKeyInput.trim().length > 0;
+  const canSaveAiSettings = !isSavingNewApiKey || aiSettings.allowThirdPartyAiSharing;
 
   React.useEffect(() => {
     setApiKeyInput(aiSettings.apiKey);
@@ -134,8 +137,37 @@ export function AiSettingsTab({ settings }: AiSettingsTabProps) {
             </p>
           </div>
 
+          <label className="flex items-start gap-3 rounded-md border border-amber-500/40 bg-amber-500/10 p-3">
+            <Checkbox
+              checked={aiSettings.allowThirdPartyAiSharing}
+              onCheckedChange={(checked) => updateAiSettings({ allowThirdPartyAiSharing: checked === true })}
+              disabled={aiSettingsLoading}
+            />
+            <span className="min-w-0 space-y-1">
+              <span className="flex items-center gap-2 text-sm font-medium">
+                <AlertTriangleIcon className="size-4 text-amber-600" />
+                Allow third-party AI data sharing
+              </span>
+              <span className="block text-xs leading-relaxed text-muted-foreground">
+                Optional AI features may send selected prompts, chat messages, crawl context, page summaries,
+                logs, insights, URLs, and analysis context to {selectedProviderLabel}. Do not enable this for
+                sensitive data unless you are authorized to share it.
+              </span>
+            </span>
+          </label>
+
+          {!canSaveAiSettings && (
+            <p className="text-xs text-amber-700">
+              Enable third-party AI data sharing before saving or using an API key.
+            </p>
+          )}
+
           <div className="flex flex-wrap gap-3">
-            <Button size="xs" onClick={handleSaveAiSettings} disabled={aiSettingsLoading || aiSettingsSaving}>
+            <Button
+              size="xs"
+              onClick={handleSaveAiSettings}
+              disabled={aiSettingsLoading || aiSettingsSaving || !canSaveAiSettings}
+            >
               <SaveIcon className="mr-2 size-4" />
               {aiSettingsSaving ? 'Saving...' : 'Save AI Settings'}
             </Button>

@@ -3,6 +3,7 @@
 import { TabsContent } from '@/components/ui/tabs';
 import { HashTool } from './components/hash';
 import { EncoderDecoderTool } from './components/encoder';
+import { ComparerTool } from './components/comparer';
 import { PortScannerTool } from './components/port-scanner';
 import { ShellAnalyzerTool } from './components/shell-analyzer';
 // import { UtilsTool } from './components/utils';
@@ -21,6 +22,9 @@ export function ToolsPage() {
         </TabsContent>
         <TabsContent value="hash" className="h-full m-0">
           <HashTool />
+        </TabsContent>
+        <TabsContent value="compare" className="h-full m-0">
+          <ComparerTool />
         </TabsContent>
         <TabsContent value="ports" className="h-full m-0">
           <PortScannerTool />

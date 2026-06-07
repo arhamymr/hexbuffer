@@ -40,11 +40,12 @@ import { Suggestions, Suggestion } from '@/components/ai-elements/suggestion';
 import { useDashboardPage } from '@/components/layout/ai-chat/hooks/use-dashboard-page';
 import { AI_MODEL_OPTIONS_BY_PROVIDER } from '@/pages/settings/constants';
 import type { DashboardChatMessage } from '@/components/layout/ai-chat/types';
+import { useAiChatActions } from '@/hooks/use-ai-chat-actions';
 
 const SUGGESTION_PROMPTS = [
-  'Summarize the captured traffic',
-  'Explain how HTTPS interception works',
-  'Help me analyze this HAR data',
+  'Summarize the latest crawl results',
+  'Extract info from a URL',
+  'Write findings to my document',
 ];
 
 function getMessageText(message: DashboardChatMessage) {
@@ -107,6 +108,9 @@ export function AIAssistantPane() {
   const providerDisplay = aiSettings.provider === 'deepseek' ? 'DeepSeek' : 'OpenAI';
   const modelOptions = AI_MODEL_OPTIONS_BY_PROVIDER[aiSettings.provider] ?? [];
 
+  // Listen for AI chat actions (add scope, write documents, extract URLs) and apply them to app stores.
+  useAiChatActions();
+
   const handleModelChange = (newModel: string) => {
     setModel(newModel);
   };
@@ -132,8 +136,8 @@ export function AIAssistantPane() {
             {messages.length === 0 ? (
               <ConversationEmptyState
                 icon={<Bot className="size-8" />}
-                title="AI Chat"
-                description="Ask a question, draft notes, or work through an 0xbuffer task."
+                title="AI Analyst"
+                description="Analyze traffic, extract URL data, write findings, and manage your recon scope."
               />
             ) : (
               <>

@@ -32,8 +32,7 @@ export interface InvokerTab {
   progress: { current: number; total: number } | null;
   selectedResult: AttackResult | null;
   startError: string | null;
-  filterStatus: string;
-  filterPayload: string;
+  filterSearch: string;
   payloadDialogOpen: boolean;
   payloadDialogPositionName: string | null;
   rawRequestDialogOpen: boolean;
@@ -73,8 +72,7 @@ interface InvokerState extends InterceptBypassState {
   setBaseRequest: (base_request: AttackConfig['base_request']) => void;
   setSelectedResult: (result: AttackResult | null) => void;
   setPendingRequest: (request: AttackConfig['base_request'] | null) => void;
-  setFilterStatus: (status: string) => void;
-  setFilterPayload: (payload: string) => void;
+  setFilterSearch: (search: string) => void;
   setPayloadDialogOpen: (open: boolean, positionName?: string | null) => void;
   setRawRequestDialogOpen: (open: boolean) => void;
   setRawRequestContent: (content: string) => void;
@@ -108,8 +106,7 @@ function createAttackTab(index: number, config = createDefaultAttackConfig()): I
     progress: null,
     selectedResult: null,
     startError: null,
-    filterStatus: '',
-    filterPayload: '',
+    filterSearch: '',
     payloadDialogOpen: false,
     payloadDialogPositionName: null,
     rawRequestDialogOpen: false,
@@ -324,8 +321,7 @@ export const useInvokerStore = create<InvokerState>((set, get) => ({
   setSelectedResult: (result) => updateActiveTab(set, (tab) => ({ ...tab, selectedResult: result })),
   setPendingRequest: (request) => set({ pendingRequest: request }),
 
-  setFilterStatus: (status) => updateActiveTab(set, (tab) => ({ ...tab, filterStatus: status })),
-  setFilterPayload: (payload) => updateActiveTab(set, (tab) => ({ ...tab, filterPayload: payload })),
+  setFilterSearch: (search) => updateActiveTab(set, (tab) => ({ ...tab, filterSearch: search })),
   setPayloadDialogOpen: (open, positionName = null) =>
     updateActiveTab(set, (tab) => ({
       ...tab,

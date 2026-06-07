@@ -164,6 +164,8 @@ export function AppFooter({ isAssistantOpen, onToggleAssistant }: AppFooterProps
           <FooterActions
             theme={theme}
             toggleTheme={toggleTheme}
+            isAssistantOpen={isAssistantOpen}
+            onToggleAssistant={onToggleAssistant}
             updateAvailable={updateAvailable}
             updateInstalled={updateInstalled}
             updateVersion={updateVersion}
@@ -184,7 +186,7 @@ export function AppFooter({ isAssistantOpen, onToggleAssistant }: AppFooterProps
               </>
             ) : (
               <>
-                Free
+                Free Evaluation
               </>
             )}
           </Button>

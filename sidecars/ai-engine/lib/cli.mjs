@@ -1,4 +1,4 @@
-import { runChat } from './chat.mjs';
+import { runChat } from './chat/index.mjs';
 import { runCrawl } from './crawl.mjs';
 import { getApiKeyEnvName } from './provider.mjs';
 

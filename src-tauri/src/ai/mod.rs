@@ -8,7 +8,7 @@ use std::path::PathBuf;
 use std::process::{Child, Command, Stdio};
 use std::sync::{Mutex, OnceLock};
 use std::time::Duration;
-use tauri::{AppHandle, Manager, State};
+use tauri::{AppHandle, Emitter, Manager, State};
 use tauri_plugin_shell::ShellExt;
 
 const AI_KEYRING_SERVICE: &str = "0xbuffer.ai";
@@ -74,6 +74,18 @@ pub struct AiChatResponse {
     pub provider: String,
     pub model: String,
     pub content: String,
+    #[serde(default)]
+    pub actions: Vec<AiChatAction>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AiChatAction {
+    pub action: String,
+    pub payload: Value,
+    #[serde(default)]
+    pub result: Option<String>,
+    pub created_at: String,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -103,6 +115,12 @@ struct AiEngineChatMessage {
     delta: Option<String>,
     content: Option<String>,
     message: Option<String>,
+    #[serde(default)]
+    action: Option<String>,
+    #[serde(default)]
+    payload: Option<Value>,
+    #[serde(default)]
+    created_at: Option<String>,
 }
 
 #[derive(Default)]
@@ -261,6 +279,7 @@ fn run_ai_chat_engine(
     let mut model = settings.model.clone();
     let mut content = String::new();
     let mut failed = None;
+    let mut actions: Vec<AiChatAction> = Vec::new();
 
     for line in reader.lines() {
         let line = line.map_err(|error| error.to_string())?;
@@ -302,6 +321,18 @@ fn run_ai_chat_engine(
                         .unwrap_or_else(|| "AI chat failed".to_string()),
                 );
             }
+            "chat_action" => {
+                if let (Some(action), Some(payload)) = (message.action.clone(), message.payload.clone()) {
+                    let created_at = message.created_at.unwrap_or_default();
+                    let result = execute_chat_action(app, &action, &payload);
+                    actions.push(AiChatAction {
+                        action,
+                        payload,
+                        result: Some(result),
+                        created_at,
+                    });
+                }
+            }
             _ => {}
         }
     }
@@ -325,7 +356,33 @@ fn run_ai_chat_engine(
         provider,
         model,
         content,
+        actions,
     })
+}
+
+fn execute_chat_action(app: &AppHandle, action: &str, payload: &Value) -> String {
+    match action {
+        "add_target" => {
+            let _ = app.emit("ai-action-add-target", payload);
+            let host = payload
+                .get("host")
+                .and_then(|v| v.as_str())
+                .unwrap_or("unknown");
+            format!("Added target: {}", host)
+        }
+        "write_document" => {
+            let _ = app.emit("ai-action-write-document", payload);
+            "Document content saved".to_string()
+        }
+        "url_extracted" => {
+            let url = payload
+                .get("url")
+                .and_then(|v| v.as_str())
+                .unwrap_or("unknown");
+            format!("Extracted info from: {}", url)
+        }
+        other => format!("Unknown action: {}", other),
+    }
 }
 
 #[tauri::command]

@@ -1,10 +1,12 @@
 import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
-import { ArrowUp, Loader2, Moon, Settings, Sun } from 'lucide-react';
+import { ArrowUp, Bot, Loader2, Moon, Settings, Sun } from 'lucide-react';
 import { Button } from '../../ui/button';
 
 interface FooterActionsProps {
   theme: string;
   toggleTheme: () => void;
+  isAssistantOpen: boolean;
+  onToggleAssistant: () => void;
   updateAvailable: boolean;
   updateInstalled: boolean;
   updateVersion: string | null;
@@ -15,6 +17,8 @@ interface FooterActionsProps {
 export function FooterActions({
   theme,
   toggleTheme,
+  isAssistantOpen,
+  onToggleAssistant,
   updateAvailable,
   updateInstalled,
   updateVersion,
@@ -23,6 +27,15 @@ export function FooterActions({
 }: FooterActionsProps) {
   return (
     <div className="flex shrink-0 items-center gap-1">
+      <Button
+        variant="ghost"
+        size="xs"
+        className="h-8 w-8 p-0"
+        onClick={onToggleAssistant}
+        title={isAssistantOpen ? 'Close AI Analyst' : 'Open AI Analyst'}
+      >
+        <Bot className="h-4 w-4" />
+      </Button>
       <Button
         variant="ghost"
         size="xs"

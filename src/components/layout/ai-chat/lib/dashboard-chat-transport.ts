@@ -6,10 +6,17 @@ interface DashboardChatBody {
   aiSettings?: DashboardAiSettings;
 }
 
+interface AiChatAction {
+  action: string;
+  payload: Record<string, unknown>;
+  result: string | null;
+}
+
 interface AiChatResponse {
   provider: DashboardAiSettings['provider'];
   model: string;
   content: string;
+  actions?: AiChatAction[];
 }
 
 function getMessageText(message: DashboardChatMessage) {

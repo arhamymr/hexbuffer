@@ -12,23 +12,15 @@ export function getResultUrl(result: AttackResult) {
 
 export function filterResults(
   results: AttackResult[],
-  filters: {
-    status: string;
-    payload: string;
-  }
+  search: string
 ) {
+  if (!search) return results;
+
+  const term = search.toLowerCase();
   return results.filter((result) => {
-    if (filters.status && result.status?.toString() !== filters.status) {
-      return false;
-    }
-
-    if (filters.payload) {
-      const payloadStr = formatPayloadValues(result.payload_values);
-      if (!payloadStr.toLowerCase().includes(filters.payload.toLowerCase())) {
-        return false;
-      }
-    }
-
-    return true;
+    if (result.status?.toString().includes(term)) return true;
+    const payloadStr = formatPayloadValues(result.payload_values);
+    if (payloadStr.toLowerCase().includes(term)) return true;
+    return false;
   });
 }

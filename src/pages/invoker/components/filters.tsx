@@ -2,38 +2,26 @@
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Trash2 } from 'lucide-react';
+import { Search, Trash2 } from 'lucide-react';
 import { useInvokerFilters } from '../hooks/use-filters';
 
 export function InvokerFilters() {
   const {
-    filterStatus,
-    filterPayload,
+    filterSearch,
     resultsCount,
-    setFilterStatus,
-    setFilterPayload,
+    setFilterSearch,
     clearResults,
   } = useInvokerFilters();
 
   return (
     <div className="mb-2 flex flex-wrap items-center gap-3">
-      <div className="flex items-center gap-2">
-        <Label className="text-xs">Status:</Label>
+      <div className="relative flex-1 min-w-[200px] max-w-sm">
+        <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
         <Input
-          placeholder="Filter by status..."
-          className="h-8 text-sm"
-          value={filterStatus}
-          onChange={(event) => setFilterStatus(event.target.value)}
-        />
-      </div>
-      <div className="flex items-center gap-2">
-        <Label className="text-xs">Payload:</Label>
-        <Input
-          placeholder="Filter by payload..."
-          className="h-8 text-sm"
-          value={filterPayload}
-          onChange={(event) => setFilterPayload(event.target.value)}
+          placeholder="Search status or payload..."
+          className="h-8 pl-8 text-sm"
+          value={filterSearch}
+          onChange={(event) => setFilterSearch(event.target.value)}
         />
       </div>
       <div className="flex-1" />

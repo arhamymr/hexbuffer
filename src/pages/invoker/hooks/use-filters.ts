@@ -5,25 +5,21 @@ import { filterResults } from '../lib/utils';
 export function useInvokerFilters() {
   const activeTab = useInvokerStore((s) => s.tabs.find((t) => t.id === s.activeTabId));
   const results = activeTab?.results ?? [];
-  const filterStatus = activeTab?.filterStatus ?? '';
-  const filterPayload = activeTab?.filterPayload ?? '';
+  const filterSearch = activeTab?.filterSearch ?? '';
 
-  const setFilterStatus = useInvokerStore((s) => s.setFilterStatus);
-  const setFilterPayload = useInvokerStore((s) => s.setFilterPayload);
+  const setFilterSearch = useInvokerStore((s) => s.setFilterSearch);
   const clearResults = useInvokerStore((s) => s.clearResults);
 
   const filteredResults = React.useMemo(
-    () => filterResults(results, { status: filterStatus, payload: filterPayload }),
-    [filterPayload, filterStatus, results]
+    () => filterResults(results, filterSearch),
+    [filterSearch, results]
   );
 
   return {
-    filterStatus,
-    filterPayload,
+    filterSearch,
     resultsCount: results.length,
     filteredResults,
-    setFilterStatus,
-    setFilterPayload,
+    setFilterSearch,
     clearResults,
   };
 }

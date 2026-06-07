@@ -189,13 +189,13 @@ export function BrowserAutomationPage() {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-48">
-                      <DropdownMenuItem onClick={() => startCrawl(true)}>
-                        <Play className="h-4 w-4" />
+                      <DropdownMenuItem className='text-xs' onClick={() => startCrawl(true)}>
+                        <Play className="size-3.5" />
                         Start (Headless)
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={() => startCrawl(false)}>
-                        <EyeIcon className="h-4 w-4" />
+                      <DropdownMenuItem className='text-xs' onClick={() => startCrawl(false)}>
+                        <EyeIcon className="size-3.5" />
                         Start Visible
                       </DropdownMenuItem>
                     </DropdownMenuContent>

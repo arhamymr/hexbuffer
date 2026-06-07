@@ -1,6 +1,6 @@
 'use client';
 
-import { Flag, Loader2, PauseCircle, Play, Plus, ShieldOff, Trash2 } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Flag, Loader2, PauseCircle, Play, Plus, ShieldOff, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   ContextMenu,
@@ -96,31 +96,42 @@ export function InterceptQueuePanel() {
                         type="button"
                         onClick={() => setSelectedRequestId(request.id)}
                         className={cn(
-                          'grid w-full grid-cols-[auto_auto_minmax(0,1fr)_auto] items-start gap-2 px-3 py-2 text-left text-sm hover:bg-muted/60',
+                          'flex gap-2 p-2 items-start justify-between w-full text-sm hover:bg-muted cursor-pointer',
                           isSelected && 'bg-muted',
                           isRemoving && 'pointer-events-none animate-slide-out-right'
                         )}
                         title={`${host}${path}`}
                       >
+                        <div className='flex gap-2'>
                         <span
-                          className="mt-0.5 inline-flex h-5 w-6 items-center justify-center rounded border font-mono text-[11px] text-muted-foreground"
+                          className="mt-0.5 inline-flex size-8 bg-background items-center justify-center rounded border font-mono text-[11px] text-muted-foreground"
                           title={direction === 'response' ? 'Response' : 'Request'}
                         >
-                          {direction === 'response' ? '<-' : '->'}
+                          {direction === 'response' ? <ArrowLeft className='size-4' /> : <ArrowRight className='size-4' />}
                         </span>
-                        {direction === 'response' ? (
-                          <span className="inline-flex rounded border px-1.5 py-0.5 text-[11px] font-semibold">
-                            {request.response?.status_code ?? 'RES'}
-                          </span>
-                        ) : (
-                          <MethodBadge method={request.request.method} />
-                        )}
-                        <span className="min-w-0">
-                          <span className="block truncate text-xs font-medium">{host}</span>
-                          <span className="block truncate font-mono text-xs text-muted-foreground">
-                            {path}
-                          </span>
-                        </span>
+                        <div>
+                          <div className='block items-center'>
+                            <div className='mb-1 flex gap-2 items-cemter'>
+                              {direction === 'response' ? (
+                                <span className="inline-flex rounded border px-1.5 py-0.5 text-[11px] font-semibold">
+                                  {request.response?.status_code ?? 'RES'}
+                                </span>
+                              ) : (
+                                <MethodBadge method={request.request.method} />
+                              )}
+                              <span className="min-w-0">
+                                <span className="block truncate text-xs font-medium">{host}</span>
+                              </span>
+                            </div>
+
+                            <span className="block truncate font-mono text-xs text-muted-foreground">
+                              {path}
+                            </span>
+                          </div>
+
+
+                        </div>
+                        </div>
                         <span className="pt-1 text-[11px] text-muted-foreground">
                           {formatRequestTime(request.timestamp)}
                         </span>
@@ -129,8 +140,9 @@ export function InterceptQueuePanel() {
                     <ContextMenuContent className="w-52">
                       <ContextMenuItem
                         onClick={() => handleAddCaptureHost(host)}
+                        className='text-xs'
                       >
-                        <Plus className="h-4 w-4" />
+                        <Plus className="size-3.5" />
                         Capture this host
                       </ContextMenuItem>
                       <ContextMenuSeparator />
@@ -138,8 +150,9 @@ export function InterceptQueuePanel() {
                         <>
                           <ContextMenuItem
                             onClick={() => handleInterceptResponse(request)}
+                            className='text-xs'
                           >
-                            <Flag className="h-4 w-4" />
+                            <Flag className="size-3.5" />
                             Intercept response
                           </ContextMenuItem>
                           <ContextMenuSeparator />
@@ -148,15 +161,17 @@ export function InterceptQueuePanel() {
                       <ContextMenuItem
                         onClick={() => handleDrop(request)}
                         variant="destructive"
+                        className='text-xs'
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Trash2 className="size-3.5" />
                         Drop
                       </ContextMenuItem>
                       <ContextMenuSeparator />
                       <ContextMenuItem
                         onClick={() => handleDontCapture(request)}
+                        className='text-xs'
                       >
-                        <ShieldOff className="h-4 w-4" />
+                        <ShieldOff className="size-3.5" />
                         Don't capture this host
                       </ContextMenuItem>
                     </ContextMenuContent>

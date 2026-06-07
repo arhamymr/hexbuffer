@@ -1,6 +1,6 @@
 [package]
 name = "zeroxbuffer"
-version = "2026.0.10"
+version = "2026.0.11"
 description = "Proxy App"
 authors = ["Arham"]
 edition = "2021"

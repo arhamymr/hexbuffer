@@ -2,9 +2,9 @@
 
 import { useState } from 'react';
 
-import { ChevronDownIcon, EyeIcon, Pause, Play, RotateCcw, Search, Square, Target, InfoIcon } from 'lucide-react';
+import { ChevronDownIcon, EyeIcon, Pause, Play, RotateCcw, ScrollText, Search, Square, Target, InfoIcon } from 'lucide-react';
 import { AiInsightsPanel } from './components/insight-panel';
-import { CrawlOverviewPanel } from './components/overview-panel';
+import { ActionLogPanel } from './components/ActionLogPanel';
 import { CrawlSetupScreen } from './components/setup-screen';
 import { CrawlTreePanel } from './components/tree-panel';
 import { PageDetailPanel } from './components/page-detail-panel';
@@ -23,6 +23,7 @@ import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/componen
 import { TabbedPageLayout } from '@/components/tabs-layout/tabbed-page-layout';
 import { useAppStore } from '@/stores/app';
 import { useBrowserAutomationStore } from '@/stores/browser-automation';
+import type { ActionLogEntry } from '@/stores/browser-automation';
 import { useBrowserAutomationPage } from './hooks/use-page';
 import { toast } from 'sonner';
 
@@ -45,7 +46,6 @@ export function BrowserAutomationPage() {
     selectedPage,
     filteredInsights,
     interestingPages,
-    overview,
   } = useBrowserAutomationPage();
 
   const {
@@ -56,6 +56,7 @@ export function BrowserAutomationPage() {
     resumeCrawl,
     stopCrawl,
     setSearch,
+    clearLogs,
   } = useBrowserAutomationStore();
 
   if (!activeTab) {
@@ -67,7 +68,14 @@ export function BrowserAutomationPage() {
     session,
     expandedPageIds,
     search,
+    logs,
   } = activeTab;
+
+  const actionLogs = logs.map((l) => ({
+    timestamp: new Date(l.createdAt),
+    type: (l.type === 'session' || l.type === 'policy' || l.type === 'human' ? 'command' : l.type === 'error' ? 'error' : l.type === 'ai' ? 'ai' : 'result') as ActionLogEntry['type'],
+    message: l.message,
+  }));
 
   const status = session?.status ?? 'idle';
   const isRunning = status === 'running';
@@ -230,7 +238,10 @@ export function BrowserAutomationPage() {
               </ResizablePanel>
               <ResizableHandle withHandle />
               <ResizablePanel defaultSize={40} minSize={14}>
-                <CrawlOverviewPanel overview={overview} />
+                <ActionLogPanel
+                  actions={actionLogs}
+                  onClear={clearLogs}
+                />
               </ResizablePanel>
             </ResizablePanelGroup>
           </main>

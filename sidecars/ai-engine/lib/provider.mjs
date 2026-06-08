@@ -24,15 +24,16 @@ export function isAiProviderAvailable() {
 export function providerModel() {
   const provider = process.env.XBUFFER_AI_PROVIDER || 'deepseek';
   const model = process.env['0XBUFFER_AI_MODEL'] || 'deepseek-chat';
+  const temperature = parseFloat(process.env['0XBUFFER_AI_TEMPERATURE'] || '0.2');
 
   if (provider === 'openai') {
     getApiKey(provider);
-    return openai(model);
+    return openai(model, { temperature });
   }
 
   if (provider === 'deepseek') {
     getApiKey(provider);
-    return deepseek(model);
+    return deepseek(model, { temperature });
   }
 
   throw new Error(`Unsupported AI SDK agent provider: ${provider}`);

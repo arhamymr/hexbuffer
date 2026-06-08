@@ -1,52 +1,55 @@
 'use client';
 
+import { useEffect, useRef } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { ActivityStatusBadge, statusActivity } from '@/components/status-badge';
 import type { ActionLogEntry } from '@/stores/browser-automation';
+import type { StatusActivityValue } from '@/components/status-badge';
 
 interface ActionLogPanelProps {
   actions: ActionLogEntry[];
   onClear: () => void;
 }
 
+function mapTypeToActivity(type: ActionLogEntry['type']): StatusActivityValue {
+  switch (type) {
+    case 'command': return statusActivity.session;
+    case 'result':  return statusActivity.extraction;
+    case 'error':   return statusActivity.error;
+    case 'ai':      return statusActivity.ai;
+    default:        return statusActivity.queue;
+  }
+}
+
 export function ActionLogPanel({ actions, onClear }: ActionLogPanelProps) {
-  const getTypeColor = (type: ActionLogEntry['type']) => {
-    switch (type) {
-      case 'command':
-        return 'bg-blue-500/10 text-blue-600 border-blue-500/20';
-      case 'result':
-        return 'bg-green-500/10 text-green-600 border-green-500/20';
-      case 'error':
-        return 'bg-red-500/10 text-red-600 border-red-500/20';
-      case 'ai':
-        return 'bg-purple-500/10 text-purple-600 border-purple-500/20';
-      default:
-        return 'bg-muted';
-    }
-  };
+  const topRef = useRef<HTMLDivElement>(null);
+  const reversed = [...actions].reverse();
+
+  useEffect(() => {
+    topRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [actions]);
 
   return (
     <div className="flex-1 flex flex-col min-h-0 border-b">
-      <div className="px-3 py-2 border-b flex items-center justify-between">
+      <div className="px-2 py-1 border-b flex items-center justify-between">
         <span className="text-xs font-medium">Action Log</span>
         <Button variant="ghost" size="xs" onClick={onClear}>
           Clear
         </Button>
       </div>
       <ScrollArea className="flex-1">
-        <div className="p-2 space-y-1">
+        <div className="p-1 space-y-0">
+          <div ref={topRef} />
           {actions.length === 0 ? (
-            <div className="text-xs text-muted-foreground p-2">No actions yet.</div>
+            <div className="text-xs text-muted-foreground p-1">No actions yet.</div>
           ) : (
-            actions.map((action, index) => (
+            reversed.map((action, index) => (
               <div
                 key={index}
-                className="flex items-start gap-2 p-2 rounded text-xs"
+                className="flex items-start gap-1.5 py-1 px-2 border-b border-border text-xs"
               >
-                <Badge variant="outline" className={`text-[10px] ${getTypeColor(action.type)}`}>
-                  {action.type.toUpperCase()}
-                </Badge>
+                <ActivityStatusBadge status={mapTypeToActivity(action.type)} />
                 <span className="text-muted-foreground text-[10px]">
                   {action.timestamp.toLocaleTimeString()}
                 </span>

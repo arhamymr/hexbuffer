@@ -172,6 +172,11 @@ fn run_ai_chat_engine(
             "chat_action" => {
                 if let (Some(action), Some(payload)) = (message.action.clone(), message.payload.clone()) {
                     let created_at = message.created_at.unwrap_or_default();
+                    // Emit a single generic event so the frontend tracks this tool call.
+                    let _ = app.emit("ai-chat-action", serde_json::json!({
+                        "action": &action,
+                        "payload": &payload,
+                    }));
                     let result = execute_chat_action(app, &action, &payload);
                     actions.push(AiChatAction {
                         action,
@@ -215,17 +220,9 @@ fn temp_context_file() -> Result<PathBuf, String> {
     Ok(dir.join("ai-chat-context.json"))
 }
 
-fn execute_chat_action(app: &AppHandle, action: &str, payload: &Value) -> String {
-    // Emit a generic catch-all event so the frontend can show EVERY tool
-    // being used in real-time during the loading phase.
-    let _ = app.emit("ai-chat-action", serde_json::json!({
-        "action": action,
-        "payload": payload,
-    }));
-
+fn execute_chat_action(_app: &AppHandle, action: &str, payload: &Value) -> String {
     match action {
         "add_target" => {
-            let _ = app.emit("ai-action-add-target", payload);
             let host = payload
                 .get("host")
                 .and_then(|v| v.as_str())
@@ -233,7 +230,6 @@ fn execute_chat_action(app: &AppHandle, action: &str, payload: &Value) -> String
             format!("Added target: {}", host)
         }
         "write_document" => {
-            let _ = app.emit("ai-action-write-document", payload);
             "Document content saved".to_string()
         }
         "url_extracted" => {
@@ -257,7 +253,6 @@ fn execute_chat_action(app: &AppHandle, action: &str, payload: &Value) -> String
                 return format!("Proxy is already running on port {}", active_port);
             }
 
-            let _ = app.emit("ai-action-start-proxy", payload);
             format!("Starting proxy on port {} (HTTP) / {} (HTTPS MITM)...", port, tls_port)
         }
         "trigger_scan" => {
@@ -266,13 +261,9 @@ fn execute_chat_action(app: &AppHandle, action: &str, payload: &Value) -> String
                 .and_then(|v| v.as_str())
                 .unwrap_or("unknown");
 
-            // Always emit the scan event — the frontend will ensure the proxy is
-            // running before launching the crawl (starting it first if needed).
-            let _ = app.emit("ai-action-trigger-scan", payload);
             format!("Scan triggered for: {}", url)
         }
         "send_to_invoker" => {
-            let _ = app.emit("ai-action-send-to-invoker", payload);
             let log_id = payload
                 .get("logId")
                 .and_then(|v| v.as_str())
@@ -280,7 +271,6 @@ fn execute_chat_action(app: &AppHandle, action: &str, payload: &Value) -> String
             format!("Sent request {} to Invoker", log_id)
         }
         "send_to_repeater" => {
-            let _ = app.emit("ai-action-send-to-repeater", payload);
             let log_id = payload
                 .get("logId")
                 .and_then(|v| v.as_str())
@@ -288,7 +278,6 @@ fn execute_chat_action(app: &AppHandle, action: &str, payload: &Value) -> String
             format!("Sent request {} to Repeater", log_id)
         }
         "submit_crawl_input" => {
-            let _ = app.emit("ai-action-submit-crawl-input", payload);
             let session_id = payload
                 .get("sessionId")
                 .and_then(|v| v.as_str())
@@ -296,7 +285,6 @@ fn execute_chat_action(app: &AppHandle, action: &str, payload: &Value) -> String
             format!("Credentials submitted for session: {}", session_id)
         }
         "navigate_to" => {
-            let _ = app.emit("ai-action-navigate-to", payload);
             let path = payload
                 .get("path")
                 .and_then(|v| v.as_str())

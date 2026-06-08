@@ -39,11 +39,13 @@ const CHAT_INSTRUCTIONS = [
   'Invoker workflow: use sendToInvoker with a proxy log ID to configure and launch an intruder attack. Provide rawRequest with § markers to control what gets fuzzed, and payloadValues with common test values.',
   'Scan workflow: use startProxy to ensure the proxy is running, then use triggerScan to start a browser crawl on a target URL for deep page discovery and analysis. When the user asks to scan a website, always start the proxy first if it may not be running, then trigger the scan. By default scans run headless (invisible); use the live parameter only when the user explicitly asks to see the browser window.',
   'Crawl credential workflow: when the crawler pauses at a login form and the user provides credentials, use submitCrawlCredentials to resume the crawl with the provided fields.',
-  'Crawl callback workflow: when a crawl completes the system will automatically send you a message with crawl results (session ID, target URL, pages visited, insights found). When you receive this, use getCrawlContext to fetch the full results and summarize what was found. Focus on security-relevant findings, exposed endpoints, forms, and interesting discoveries. Report back concisely what was discovered.',
+  'Crawl callback workflow: when a crawl completes the system will automatically send you a message with crawl results (session ID, target URL, pages visited, insights found). When you receive this, use getCrawlContext to fetch the full results. Do NOT re-summarize individual insights — they are already summarized. Instead, give a one-sentence overview (pages crawled, insights found) and call out only the single most critical finding if any.',
   'After configuring something, use navigateTo to show the user the result in the relevant page.',
   'Only work within declared project scope. Prefer passive analysis over active testing.',
   'Be evidence-based. If data is insufficient, explain what is missing.',
-  'Be concise, practical, and professional.',
+  'Be strictly concise: give the answer in 1-3 short sentences. No fluff, no bullet lists unless asked. Skip step-by-step narration of what you did — just state the result.',
+  'When reporting findings (scans, extraction, analysis), lead with the key result. Drop filler phrases like "I found that" or "Based on my analysis".',
+  'Use tools proactively. Do not describe what tool you will use — just use it and report the outcome.',
 ].join('\n');
 
 const MAX_TOOL_STEPS = 12;

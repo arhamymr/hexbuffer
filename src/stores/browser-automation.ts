@@ -90,6 +90,7 @@ interface BrowserAutomationState {
   setSearch: (value: string) => void;
   clearArtifactPaths: () => void;
   analyzePageWithAi: (page: CrawlPage) => Promise<void>;
+  clearLogs: () => void;
   applySessionStarted: (session: CrawlSession) => void;
   applySessionUpdated: (session: Partial<CrawlSession>) => void;
   applyPageDiscovered: (page: CrawlPage) => void;
@@ -746,6 +747,12 @@ export const useBrowserAutomationStore = create<BrowserAutomationState>((set, ge
     updateActiveTab(set, (tab) => ({
       ...tab,
       humanInputRequest: null,
+    })),
+
+  clearLogs: () =>
+    updateActiveTab(set, (tab) => ({
+      ...tab,
+      logs: [],
     })),
 
   setSearch: (value) =>

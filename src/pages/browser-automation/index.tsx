@@ -3,7 +3,6 @@
 import { useState } from 'react';
 
 import { ChevronDownIcon, EyeIcon, Pause, Play, RotateCcw, Search, Square, Target, InfoIcon } from 'lucide-react';
-import { ActivityLogPanel } from './components/ActivityLogPanel';
 import { AiInsightsPanel } from './components/insight-panel';
 import { CrawlOverviewPanel } from './components/overview-panel';
 import { CrawlSetupScreen } from './components/setup-screen';
@@ -45,7 +44,6 @@ export function BrowserAutomationPage() {
     crawlTree,
     selectedPage,
     filteredInsights,
-    filteredLogs,
     interestingPages,
     overview,
   } = useBrowserAutomationPage();
@@ -57,7 +55,6 @@ export function BrowserAutomationPage() {
     pauseCrawl,
     resumeCrawl,
     stopCrawl,
-    submitHumanInput,
     setSearch,
   } = useBrowserAutomationStore();
 
@@ -233,19 +230,7 @@ export function BrowserAutomationPage() {
               </ResizablePanel>
               <ResizableHandle withHandle />
               <ResizablePanel defaultSize={40} minSize={14}>
-                <ResizablePanelGroup orientation="horizontal">
-                  <ResizablePanel defaultSize={20} minSize={14}>
-                    <CrawlOverviewPanel overview={overview} />
-                  </ResizablePanel>
-                  <ResizableHandle withHandle />
-                  <ResizablePanel defaultSize={80} minSize={22}>
-                    <ActivityLogPanel
-                      logs={filteredLogs}
-                      searchQuery={search}
-                      onSubmitHumanInput={submitHumanInput}
-                    />
-                  </ResizablePanel>
-                </ResizablePanelGroup>
+                <CrawlOverviewPanel overview={overview} />
               </ResizablePanel>
             </ResizablePanelGroup>
           </main>

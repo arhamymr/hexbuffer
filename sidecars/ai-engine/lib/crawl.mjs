@@ -9,6 +9,7 @@ import {
   playwrightExtract,
 } from './extractors.mjs';
 import { normalizeUrl, shouldBlockUrl } from './url-policy.mjs';
+import { withRetry } from './retry.mjs';
 import { isAiProviderAvailable } from './provider.mjs';
 
 function emitPageVisited({ pageId, sessionId, extract, analysis }) {
@@ -133,9 +134,11 @@ export async function runCrawl() {
       visited.add(item.url);
 
       try {
-        const extract = useFetchCrawler
-          ? await fetchExtract(item.url, config)
-          : await playwrightExtract(item.url, config, pageId, item.humanInput, playwrightRuntime);
+        const extract = await withRetry(async () => {
+          return useFetchCrawler
+            ? await fetchExtract(item.url, config)
+            : await playwrightExtract(item.url, config, pageId, item.humanInput, playwrightRuntime);
+        }, { maxAttempts: 2, name: `extract:${item.url}` });
         const baseline = heuristicAnalyze(extract);
         let analysis = baseline;
         if (aiEnabled && baseline.interesting) {

@@ -1,3 +1,4 @@
+import React from 'react';
 import {
   ChevronDown,
   Copy,
@@ -5,6 +6,7 @@ import {
   FileText,
   Folder,
   FolderOpen,
+  GripVertical,
   Pencil,
   Plus,
   Send,
@@ -21,6 +23,8 @@ import {
   ContextMenuSeparator,
   ContextMenuTrigger,
 } from '@/components/ui/context-menu';
+import { DragDropProvider, type DragEndEvent } from '@dnd-kit/react';
+import { useSortable, isSortable } from '@dnd-kit/react/sortable';
 import { useInvokerStore } from '@/stores/invoker';
 import { useRepeaterStore } from '@/stores/repeater';
 import { buildHttpCurlCommand, buildRawHttpRequest } from '@/lib/http-message';
@@ -41,6 +45,7 @@ interface DocumentsExplorerProps {
   onAddCustomSection: () => void;
   onRenameCustomSection: (section: CustomSection) => void;
   onRemoveCustomSection: (sectionKey: string) => void;
+  onReorderCustomSections: (fromIndex: number, toIndex: number) => void;
 }
 
 interface ReportFileRowProps {
@@ -71,6 +76,7 @@ function ReportFileRow({
             isActive && 'bg-muted text-foreground'
           )}
         >
+          <GripVertical className="h-3.5 w-3.5 shrink-0 cursor-grab text-muted-foreground/50 active:cursor-grabbing" />
           <FileText className="h-4 w-4 text-muted-foreground" />
           <span className="truncate">{section.title.toLowerCase()}.md</span>
         </button>
@@ -92,6 +98,30 @@ function ReportFileRow({
         </ContextMenuItem>
       </ContextMenuContent>
     </ContextMenu>
+  );
+}
+
+interface SortableReportFileRowProps extends ReportFileRowProps {
+  index: number;
+}
+
+function SortableReportFileRow({ index, ...props }: SortableReportFileRowProps) {
+  const { ref, isDragging } = useSortable({
+    id: props.section.key,
+    index,
+    type: 'custom-section',
+  });
+
+  return (
+    <div
+      ref={ref}
+      className={cn(
+        'relative',
+        isDragging && 'z-50 opacity-50'
+      )}
+    >
+      <ReportFileRow {...props} />
+    </div>
   );
 }
 
@@ -175,6 +205,7 @@ export function DocumentsExplorer({
   onAddCustomSection,
   onRenameCustomSection,
   onRemoveCustomSection,
+  onReorderCustomSections,
 }: DocumentsExplorerProps) {
   const navigate = useNavigate();
 
@@ -232,27 +263,42 @@ export function DocumentsExplorer({
     toast.success('Sent to Repeater');
   };
 
+  const handleDragEnd = React.useCallback(
+    (event: DragEndEvent) => {
+      const { source, target } = event.operation;
+      if (!isSortable(source) || !isSortable(target)) return;
+      const fromIndex = source.index;
+      const toIndex = target.index;
+      if (fromIndex !== toIndex) {
+        onReorderCustomSections(fromIndex, toIndex);
+      }
+    },
+    [onReorderCustomSections]
+  );
+
   return (
     <aside className="flex h-full min-h-0 flex-col border-r bg-muted/25">
       <div className="flex h-8 shrink-0 items-center px-3 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
         Explorer
       </div>
       <div className="min-h-0 flex-1 overflow-auto px-2 pb-3">
-        <div className="mt-1 space-y-0.5">
-          {activeDocument.customSections.map((section) => {
-            const isActive = activeFileId === `custom:${section.key}`;
+        <DragDropProvider onDragEnd={handleDragEnd}>
+          <div className="mt-1 space-y-0.5">
+            {activeDocument.customSections.map((section, index) => {
+              const isActive = activeFileId === `custom:${section.key}`;
 
-            return (
-              <ReportFileRow
-                key={section.key}
-                section={section}
-                isActive={isActive}
-                onOpenFile={onOpenFile}
-                onRenameCustomSection={onRenameCustomSection}
-                onRemoveCustomSection={onRemoveCustomSection}
-              />
-            );
-          })}
+              return (
+                <SortableReportFileRow
+                  key={section.key}
+                  index={index}
+                  section={section}
+                  isActive={isActive}
+                  onOpenFile={onOpenFile}
+                  onRenameCustomSection={onRenameCustomSection}
+                  onRemoveCustomSection={onRemoveCustomSection}
+                />
+              );
+            })}
 
           <button
             type="button"
@@ -343,6 +389,7 @@ export function DocumentsExplorer({
             </div>
           )}
         </div>
+        </DragDropProvider>
       </div>
     </aside>
   );

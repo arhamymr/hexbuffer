@@ -15,3 +15,40 @@ export interface DashboardChatMetadata {
 }
 
 export type DashboardChatMessage = UIMessage<DashboardChatMetadata>;
+
+export interface CrawlHumanInputRequest {
+  id: string;
+  sessionId: string;
+  pageId?: string;
+  url?: string;
+  reason: string;
+  requestedFields: string[];
+  safeActions: Array<'continue' | 'skip-branch' | 'stop-crawl'>;
+  aiUsedForAnalysis?: boolean;
+  createdAt: string;
+}
+
+export interface CrawlCompletedEvent {
+  sessionId: string;
+  targetUrl: string;
+  status: string;
+  pagesVisited: number;
+  insightsFound: number;
+  insightTitles: string[];
+  pageUrls: string[];
+}
+
+export interface ChatSession {
+  id: string;
+  title: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ChatMessageRecord {
+  id: string;
+  sessionId: string;
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+  createdAt: string;
+}

@@ -2,6 +2,7 @@ import { ToolLoopAgent, stepCountIs, tool } from 'ai';
 import { z } from 'zod';
 
 import { log } from '../events.mjs';
+import { withRetry } from '../retry.mjs';
 import { getApiKeyEnvName, providerModel } from '../provider.mjs';
 import { runRedactionWorkflow } from '../privacy/redaction.mjs';
 
@@ -131,14 +132,15 @@ export async function analyzeWithAgent(extract, baseline, sessionId) {
     return baseline;
   }
 
-  const state = {
+  let agentState = {
     pageContextRead: false,
     insightDrafts: [],
     prioritizedUrls: [],
     finalAnalysis: null,
     humanInputRequest: null,
   };
-  const agent = new ToolLoopAgent({
+
+  const createAgent = () => new ToolLoopAgent({
     id: '0xbuffer-crawl-advisor',
     model: providerModel(),
     instructions: [
@@ -158,7 +160,7 @@ export async function analyzeWithAgent(extract, baseline, sessionId) {
         description: 'Read the redacted extracted page context.',
         inputSchema: z.object({}),
         execute: async () => {
-          state.pageContextRead = true;
+          agentState.pageContextRead = true;
           return redactedContext;
         },
       }),
@@ -171,7 +173,7 @@ export async function analyzeWithAgent(extract, baseline, sessionId) {
           description: z.string(),
         }),
         execute: async (input) => {
-          state.insightDrafts.push(input);
+          agentState.insightDrafts.push(input);
           return { stored: true };
         },
       }),
@@ -185,7 +187,7 @@ export async function analyzeWithAgent(extract, baseline, sessionId) {
           })),
         }),
         execute: async ({ urls }) => {
-          state.prioritizedUrls = urls;
+          agentState.prioritizedUrls = urls;
           return { accepted: urls.length };
         },
       }),
@@ -197,7 +199,7 @@ export async function analyzeWithAgent(extract, baseline, sessionId) {
           safeActions: z.array(z.enum(['continue', 'skip-branch', 'stop-crawl'])),
         }),
         execute: async (input) => {
-          state.humanInputRequest = input;
+          agentState.humanInputRequest = input;
           return { requested: true };
         },
       }),
@@ -205,7 +207,7 @@ export async function analyzeWithAgent(extract, baseline, sessionId) {
         description: 'Return the final page analysis.',
         inputSchema: analysisSchema(),
         execute: async (input) => {
-          state.finalAnalysis = input;
+          agentState.finalAnalysis = input;
           return { finished: true };
         },
       }),
@@ -213,24 +215,34 @@ export async function analyzeWithAgent(extract, baseline, sessionId) {
   });
 
   try {
-    const baselineSummary = redactedContext.heuristicInsights?.length > 0
-      ? redactedContext.heuristicInsights.map((i) => `- [${i.severity}] ${i.title}: ${i.description}`).join('\n')
-      : '(no heuristic insights found)';
-    await agent.generate({
-      prompt: [
-        'Analyze the current page using the available tools.',
-        `URL: ${redactedContext.url}`,
-        `Title: ${redactedContext.title}`,
-        `HTTP status: ${redactedContext.httpStatus || 'unknown'}`,
-        '',
-        'Heuristic baseline findings:',
-        baselineSummary,
-        '',
-        'Build on these findings with deeper analysis. Add new insights the heuristic engine could not detect.',
-      ].join('\n'),
-    });
+    await withRetry(async () => {
+      agentState = {
+        pageContextRead: false,
+        insightDrafts: [],
+        prioritizedUrls: [],
+        finalAnalysis: null,
+        humanInputRequest: null,
+      };
+      const agent = createAgent();
+      const baselineSummary = redactedContext.heuristicInsights?.length > 0
+        ? redactedContext.heuristicInsights.map((i) => `- [${i.severity}] ${i.title}: ${i.description}`).join('\n')
+        : '(no heuristic insights found)';
+      await agent.generate({
+        prompt: [
+          'Analyze the current page using the available tools.',
+          `URL: ${redactedContext.url}`,
+          `Title: ${redactedContext.title}`,
+          `HTTP status: ${redactedContext.httpStatus || 'unknown'}`,
+          '',
+          'Heuristic baseline findings:',
+          baselineSummary,
+          '',
+          'Build on these findings with deeper analysis. Add new insights the heuristic engine could not detect.',
+        ].join('\n'),
+      });
+    }, { maxAttempts: 3, name: 'analyzeWithAgent' });
   } catch (error) {
-    log(sessionId, 'warning', 'ai', `AI agent analysis unavailable; using deterministic analysis: ${error.message}`, extract.finalUrl, {
+    log(sessionId, 'warning', 'ai', `AI agent analysis unavailable after retries; using deterministic analysis: ${error.message}`, extract.finalUrl, {
       aiUsedForAnalysis: false,
     });
     return baseline;
@@ -240,13 +252,13 @@ export async function analyzeWithAgent(extract, baseline, sessionId) {
     ...insight,
     analysisSource: 'default',
   }));
-  const aiInsights = (state.insightDrafts.length > 0 ? state.insightDrafts : (state.finalAnalysis?.insights || []))
+  const aiInsights = (agentState.insightDrafts.length > 0 ? agentState.insightDrafts : (agentState.finalAnalysis?.insights || []))
     .map((insight) => ({
       ...insight,
       analysisSource: 'ai',
     }));
 
-  const finalAnalysis = state.finalAnalysis || baseline;
+  const finalAnalysis = agentState.finalAnalysis || baseline;
   return {
     ...finalAnalysis,
     analysisSource: 'ai',
@@ -254,7 +266,7 @@ export async function analyzeWithAgent(extract, baseline, sessionId) {
     summary: finalAnalysis.summary || baseline.summary,
     interesting: true,
     insights: [...heuristicInsights, ...aiInsights],
-    prioritizedUrls: state.prioritizedUrls.length > 0 ? state.prioritizedUrls : baseline.prioritizedUrls,
-    humanInputRequest: state.humanInputRequest,
+    prioritizedUrls: agentState.prioritizedUrls.length > 0 ? agentState.prioritizedUrls : baseline.prioritizedUrls,
+    humanInputRequest: agentState.humanInputRequest,
   };
 }

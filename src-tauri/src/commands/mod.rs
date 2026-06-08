@@ -1,5 +1,6 @@
 pub mod browser;
 pub mod cert;
+pub mod chat_sessions;
 pub mod collaborator;
 pub mod history;
 pub mod intercept;

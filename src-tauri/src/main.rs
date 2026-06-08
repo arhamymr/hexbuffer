@@ -172,6 +172,12 @@ fn main() {
             zeroxbuffer::commands::license::activate_license,
             zeroxbuffer::commands::license::verify_license,
             zeroxbuffer::commands::license::deactivate_license,
+            zeroxbuffer::commands::chat_sessions::create_chat_session,
+            zeroxbuffer::commands::chat_sessions::list_chat_sessions,
+            zeroxbuffer::commands::chat_sessions::rename_chat_session,
+            zeroxbuffer::commands::chat_sessions::delete_chat_session,
+            zeroxbuffer::commands::chat_sessions::get_chat_messages,
+            zeroxbuffer::commands::chat_sessions::save_chat_messages,
             show_main_window
         ])
         .plugin(tauri_plugin_opener::init())

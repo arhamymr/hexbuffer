@@ -31,6 +31,7 @@ interface DocumentsWorkspaceProps {
   onAddCustomSection: () => void;
   onRenameCustomSection: (section: CustomSection) => void;
   onRemoveCustomSection: (sectionKey: string) => void;
+  onReorderCustomSections: (fromIndex: number, toIndex: number) => void;
   onCloseFile: (fileId: EditorFileId) => void;
   onFetchSelectedApi: () => void;
   onUpdateCustomSection: (sectionKey: string, content: string) => void;
@@ -59,6 +60,7 @@ export function DocumentsWorkspace({
   onAddCustomSection,
   onRenameCustomSection,
   onRemoveCustomSection,
+  onReorderCustomSections,
   onCloseFile,
   onFetchSelectedApi,
   onUpdateCustomSection,
@@ -79,6 +81,7 @@ export function DocumentsWorkspace({
           onAddCustomSection={onAddCustomSection}
           onRenameCustomSection={onRenameCustomSection}
           onRemoveCustomSection={onRemoveCustomSection}
+          onReorderCustomSections={onReorderCustomSections}
         />
       </ResizablePanel>
 

@@ -33,6 +33,7 @@ export function DocumentsPage() {
     renameDocument,
     updateTitle,
     removeCustomSection,
+    reorderCustomSections,
     updateCustomSection,
     deleteApiEntry,
     addApiEntry,
@@ -118,6 +119,7 @@ export function DocumentsPage() {
             onAddCustomSection={() => setIsCustomSectionDialogOpen(true)}
             onRenameCustomSection={setCustomSectionPendingRename}
             onRemoveCustomSection={removeCustomSection}
+            onReorderCustomSections={reorderCustomSections}
             onCloseFile={closeFile}
             onFetchSelectedApi={fetchSelectedApi}
             onUpdateCustomSection={updateCustomSection}

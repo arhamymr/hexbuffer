@@ -1,7 +1,7 @@
 {
   "name": "0xbuffer",
   "private": true,
-  "version": "2026.0.11",
+  "version": "2026.0.14",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -16,6 +16,7 @@
     "@ai-sdk/deepseek": "^2.0.35",
     "@ai-sdk/openai": "^3.0.67",
     "@ai-sdk/react": "^3.0.196",
+    "@dnd-kit/react": "^0.4.0",
     "@fontsource-variable/geist": "^5.2.8",
     "@hookform/resolvers": "^5.2.2",
     "@hugeicons/core-free-icons": "^4.1.1",

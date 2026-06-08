@@ -8,6 +8,18 @@ import {
   extractVisibleText,
 } from '../../extract-html.mjs';
 
+/**
+ * Strip HTML tags from a string, returning plain text content.
+ * Example: "<h1>hello</h1>" -> "hello"
+ */
+function stripHtmlTags(html) {
+  if (!html) return '';
+  return html
+    .replace(/<[^>]*>/g, '') // Remove all HTML tags
+    .replace(/\s+/g, ' ') // Collapse multiple whitespace
+    .trim();
+}
+
 export function createExtractFromUrlTool(emitAction) {
   return tool({
     description: 'Fetch a URL and extract its title, links, forms, and visible text. Use for quick passive reconnaissance on a single page.',
@@ -29,10 +41,10 @@ export function createExtractFromUrlTool(emitAction) {
           return { error: `Unsupported content type: ${contentType}`, url, status: response.status };
         }
         const html = await response.text();
-        const title = extractTitle(html);
+        const title = stripHtmlTags(extractTitle(html));
         const links = extractLinksFromHtml(html, url);
         const forms = extractFormsFromHtml(html);
-        const text = extractVisibleText(html).slice(0, 5000);
+        const text = stripHtmlTags(extractVisibleText(html)).slice(0, 5000);
         emitAction({
           action: 'url_extracted',
           payload: { url, title, linksCount: links.length, formsCount: forms.length },
@@ -41,7 +53,7 @@ export function createExtractFromUrlTool(emitAction) {
           url,
           title,
           status: response.status,
-          links: links.slice(0, 40).map((l) => ({ href: l.href, text: l.text })),
+          links: links.slice(0, 40).map((l) => ({ href: l.href, text: stripHtmlTags(l.text) })),
           totalLinks: links.length,
           forms: forms.slice(0, 10).map((f) => ({
             action: f.action,

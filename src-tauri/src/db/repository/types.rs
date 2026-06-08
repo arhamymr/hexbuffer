@@ -7,9 +7,17 @@ pub struct DocumentRecord {
     pub name: String,
     pub title: String,
     pub sections: serde_json::Value,
+    #[serde(default = "default_json_array")]
+    pub custom_sections: serde_json::Value,
+    #[serde(default = "default_json_array")]
+    pub removed_built_in_sections: serde_json::Value,
     pub api_entries: serde_json::Value,
     pub created_at: String,
     pub updated_at: String,
+}
+
+fn default_json_array() -> serde_json::Value {
+    serde_json::json!([])
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -62,6 +62,8 @@ CREATE TABLE IF NOT EXISTS documents (
     name TEXT NOT NULL,
     title TEXT NOT NULL,
     sections TEXT NOT NULL,
+    custom_sections TEXT NOT NULL DEFAULT '[]',
+    removed_built_in_sections TEXT NOT NULL DEFAULT '[]',
     api_entries TEXT NOT NULL,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
@@ -311,4 +313,25 @@ CREATE INDEX IF NOT EXISTS idx_collab_payloads_identifier ON collaborator_payloa
 CREATE INDEX IF NOT EXISTS idx_collab_interactions_payload ON collaborator_interactions(payload_id);
 CREATE INDEX IF NOT EXISTS idx_collab_interactions_type ON collaborator_interactions(interaction_type);
 CREATE INDEX IF NOT EXISTS idx_collab_interactions_ts ON collaborator_interactions(timestamp);
+"#;
+
+pub const CREATE_AI_CHAT_TABLES: &str = r#"
+CREATE TABLE IF NOT EXISTS ai_chat_sessions (
+    id TEXT PRIMARY KEY,
+    title TEXT NOT NULL DEFAULT 'New Chat',
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS ai_chat_messages (
+    id TEXT PRIMARY KEY,
+    session_id TEXT NOT NULL,
+    role TEXT NOT NULL,
+    content TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    FOREIGN KEY(session_id) REFERENCES ai_chat_sessions(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_ai_chat_messages_session ON ai_chat_messages(session_id);
+CREATE INDEX IF NOT EXISTS idx_ai_chat_messages_created ON ai_chat_messages(created_at);
 "#;

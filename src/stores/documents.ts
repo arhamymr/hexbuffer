@@ -40,6 +40,7 @@ interface DocumentsState {
     metadata: Pick<CustomSection, 'title' | 'description' | 'placeholder'>
   ) => void;
   removeCustomSection: (documentId: string, sectionKey: string) => void;
+  reorderCustomSections: (documentId: string, fromIndex: number, toIndex: number) => void;
   clearBuiltInSection: (documentId: string, sectionKey: DocumentSectionKey) => void;
   removeBuiltInSection: (documentId: string, sectionKey: DocumentSectionKey) => void;
   restoreBuiltInSection: (documentId: string, sectionKey: DocumentSectionKey) => void;
@@ -351,6 +352,33 @@ export const useDocumentsStore = create<DocumentsState>()(
             updatedDocument = {
               ...document,
               customSections: document.customSections.filter((s) => s.key !== sectionKey),
+              updatedAt: new Date().toISOString(),
+            };
+
+            return updatedDocument;
+          });
+
+          if (updatedDocument) {
+            saveDocument(updatedDocument);
+          }
+
+          return { documents };
+        }),
+      reorderCustomSections: (documentId, fromIndex, toIndex) =>
+        set((state) => {
+          let updatedDocument: ReconDocument | undefined;
+          const documents = state.documents.map((document) => {
+            if (document.id !== documentId) {
+              return document;
+            }
+
+            const sections = [...document.customSections];
+            const [moved] = sections.splice(fromIndex, 1);
+            sections.splice(toIndex, 0, moved);
+
+            updatedDocument = {
+              ...document,
+              customSections: sections,
               updatedAt: new Date().toISOString(),
             };
 

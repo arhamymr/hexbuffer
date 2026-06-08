@@ -801,7 +801,49 @@ pub async fn ai_browser_start_crawl(
                 "completed",
                 Some(finished_at),
             ) {
-                let _ = app_for_task.emit("ai-browser:session-finished", session);
+                let _ = app_for_task.emit("ai-browser:session-finished", &session);
+
+                // Build a summary for the AI chat callback
+                let insights = state_for_task
+                    .insights
+                    .lock()
+                    .ok()
+                    .and_then(|map| map.get(&session_id_for_task).cloned())
+                    .unwrap_or_default();
+                let pages = state_for_task
+                    .pages
+                    .lock()
+                    .ok()
+                    .and_then(|map| map.get(&session_id_for_task).cloned())
+                    .unwrap_or_default();
+
+                let insight_titles: Vec<String> = insights
+                    .iter()
+                    .map(|i| format!("{}: {}", i.severity, i.title))
+                    .collect();
+                let page_urls: Vec<&str> = pages
+                    .iter()
+                    .filter_map(|p| {
+                        if p.status == "visited" || p.status == "interesting" {
+                            Some(p.url.as_str())
+                        } else {
+                            None
+                        }
+                    })
+                    .collect();
+
+                let _ = app_for_task.emit(
+                    "ai-chat:crawl-completed",
+                    serde_json::json!({
+                        "sessionId": session_id_for_task,
+                        "targetUrl": config.target_url,
+                        "status": "completed",
+                        "pagesVisited": pages.len(),
+                        "insightsFound": insights.len(),
+                        "insightTitles": insight_titles,
+                        "pageUrls": page_urls,
+                    }),
+                );
             }
         }
     });

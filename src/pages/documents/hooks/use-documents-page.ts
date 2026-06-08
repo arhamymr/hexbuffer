@@ -167,6 +167,14 @@ export function useDocumentsPage() {
     [activeDocument, activeDocumentId, activeFileId]
   );
 
+  const reorderCustomSections = React.useCallback(
+    (fromIndex: number, toIndex: number) => {
+      if (!activeDocumentId) return;
+      useDocumentsStore.getState().reorderCustomSections(activeDocumentId, fromIndex, toIndex);
+    },
+    [activeDocumentId]
+  );
+
   const updateCustomSection = React.useCallback(
     (sectionKey: string, content: string) => {
       updateActiveDocument((document) => ({
@@ -484,6 +492,7 @@ export function useDocumentsPage() {
     updateSection,
     addCustomSection,
     removeCustomSection,
+    reorderCustomSections,
     updateCustomSection,
     deleteApiEntry,
     addApiEntry,

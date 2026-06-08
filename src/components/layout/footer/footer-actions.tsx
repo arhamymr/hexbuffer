@@ -1,5 +1,5 @@
 import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
-import { ArrowUp, Bot, Loader2, Moon, Settings, Sun } from 'lucide-react';
+import { ArrowUp, Bot, Bubbles, Loader2, MessageCircle, Moon, Settings, Sun } from 'lucide-react';
 import { Button } from '../../ui/button';
 
 interface FooterActionsProps {
@@ -34,7 +34,7 @@ export function FooterActions({
         onClick={onToggleAssistant}
         title={isAssistantOpen ? 'Close AI Analyst' : 'Open AI Analyst'}
       >
-        <Bot className="h-4 w-4" />
+        <MessageCircle className="size-4" />
       </Button>
       <Button
         variant="ghost"

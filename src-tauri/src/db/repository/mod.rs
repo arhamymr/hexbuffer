@@ -1,4 +1,5 @@
 pub mod ai_browser;
+pub mod chat_sessions;
 pub mod collaborator;
 pub mod documents;
 pub mod packet_capture;
@@ -34,6 +35,7 @@ impl Database {
         conn.execute_batch(crate::db::schema::CREATE_PACKET_CAPTURE_TABLES)?;
         conn.execute_batch(crate::db::schema::CREATE_AI_BROWSER_TABLES)?;
         conn.execute_batch(crate::db::schema::CREATE_COLLABORATOR_TABLES)?;
+        conn.execute_batch(crate::db::schema::CREATE_AI_CHAT_TABLES)?;
         Self::ensure_column(&conn, "ai_browser_pages", "ai_used_for_analysis", "INTEGER")?;
         Self::ensure_column(&conn, "ai_browser_pages", "screenshot_path", "TEXT")?;
         Self::ensure_column(&conn, "ai_browser_pages", "rendered_html_path", "TEXT")?;
@@ -48,6 +50,13 @@ impl Database {
         Self::ensure_column(&conn, "ai_browser_insights", "analysis_tool_name", "TEXT")?;
         Self::ensure_column(&conn, "ai_browser_logs", "ai_used_for_analysis", "INTEGER")?;
         Self::ensure_column(&conn, "ai_browser_logs", "extra_json", "TEXT")?;
+        Self::ensure_column(&conn, "documents", "custom_sections", "TEXT NOT NULL DEFAULT '[]'")?;
+        Self::ensure_column(
+            &conn,
+            "documents",
+            "removed_built_in_sections",
+            "TEXT NOT NULL DEFAULT '[]'",
+        )?;
         Ok(())
     }
 

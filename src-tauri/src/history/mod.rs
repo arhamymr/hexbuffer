@@ -1,6 +1,7 @@
 use std::path::PathBuf;
 
 use crate::{
+    ai::types::{ChatMessageRecord, ChatSessionRecord},
     collaborator::{
         CollaboratorDashboardStats, CollaboratorInteraction, CollaboratorPayload,
         CollaboratorServer,
@@ -489,6 +490,38 @@ impl HistoryBridge {
     pub fn get_collaborator_dashboard_stats(&self) -> Result<CollaboratorDashboardStats, String> {
         self.db
             .get_collaborator_dashboard_stats()
+            .map_err(|e| e.to_string())
+    }
+
+    // ── Chat Sessions ──────────────────────────────────────────────
+
+    pub fn create_chat_session(&self, title: &str) -> Result<ChatSessionRecord, String> {
+        self.db.create_chat_session(title).map_err(|e| e.to_string())
+    }
+
+    pub fn list_chat_sessions(&self) -> Result<Vec<ChatSessionRecord>, String> {
+        self.db.list_chat_sessions().map_err(|e| e.to_string())
+    }
+
+    pub fn rename_chat_session(&self, id: &str, title: &str) -> Result<(), String> {
+        self.db.rename_chat_session(id, title).map_err(|e| e.to_string())
+    }
+
+    pub fn delete_chat_session(&self, id: &str) -> Result<(), String> {
+        self.db.delete_chat_session(id).map_err(|e| e.to_string())
+    }
+
+    pub fn get_chat_messages(&self, session_id: &str) -> Result<Vec<ChatMessageRecord>, String> {
+        self.db.get_chat_messages(session_id).map_err(|e| e.to_string())
+    }
+
+    pub fn save_chat_messages(
+        &self,
+        session_id: &str,
+        messages: &[ChatMessageRecord],
+    ) -> Result<(), String> {
+        self.db
+            .replace_chat_messages(session_id, messages)
             .map_err(|e| e.to_string())
     }
 }

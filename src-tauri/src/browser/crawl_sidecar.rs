@@ -269,7 +269,8 @@ pub(crate) fn apply_sidecar_message(
                     human_input_request: Some(request.clone()),
                 },
             );
-            let _ = app.emit("ai-browser:human-input-requested", request);
+            let _ = app.emit("ai-browser:human-input-requested", &request);
+            let _ = app.emit("ai-chat:crawl-human-input-required", &request);
         }
         "session_finished" => {
             let _ = message.finished_at;

@@ -5,7 +5,7 @@ import {
   extractLinksFromHtml,
   extractTitle,
   extractVisibleText,
-} from '../../extract-html.mjs';
+} from '../../../extract-html.mjs';
 
 export function createAnalyzeTargetUrlTool(emitAction) {
   return tool({

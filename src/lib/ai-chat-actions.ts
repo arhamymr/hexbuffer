@@ -14,6 +14,9 @@ import {
 } from '@/pages/invoker/types';
 import type {
   AddTargetPayload,
+  AddTargetsPayload,
+  DeleteTargetPayload,
+  DeleteAllTargetsPayload,
   WriteDocumentPayload,
   StartProxyPayload,
   TriggerScanPayload,
@@ -34,10 +37,16 @@ export interface TrackedAction {
 }
 
 const actionLabels: Record<string, string> = {
+  add_targets: 'Added targets to scope',
   add_target: 'Added target to scope',
+  delete_target: 'Removed target from scope',
+  delete_all_targets: 'Cleared all targets',
   write_document: 'Saved findings to document',
   start_proxy: 'Starting interception proxy',
   trigger_scan: 'Launching browser crawl',
+  pause_scan: 'Pausing browser crawl',
+  resume_scan: 'Resuming browser crawl',
+  stop_scan: 'Stopping browser crawl',
   send_to_invoker: 'Setting up fuzzing attack',
   send_to_repeater: 'Sending request to Repeater',
   navigate_to: 'Navigating to page',
@@ -45,13 +54,13 @@ const actionLabels: Record<string, string> = {
   url_extracted: 'Extracting data from URL',
   analyze_target_url: 'Analyzing target URL',
   extract_from_url: 'Extracting page content',
-  extract_security_info: 'Inspecting security headers',
   list_crawl_sessions: 'Listing crawl sessions',
   get_recent_insights: 'Reading recent insights',
   get_crawl_context: 'Loading crawl context',
   get_proxy_request: 'Fetching proxy request',
   get_proxy_summary: 'Loading proxy summary',
   list_proxy_hosts: 'Listing proxy hosts',
+  request_human_selection: 'Asking for your input',
 };
 
 let trackedActions: TrackedAction[] = [];
@@ -110,6 +119,66 @@ export function useTrackedActions() {
 // ── Handlers ──
 
 const handlers: Record<string, (payload: Record<string, unknown>) => void | Promise<void>> = {
+  add_targets: (payload) => {
+    const { hosts, targetId } = payload as unknown as AddTargetsPayload;
+    console.log('[add_targets] hosts:', hosts?.length, 'targetId:', targetId);
+    if (!hosts?.length) return;
+
+    const store = useTargetStore.getState();
+    console.log('[add_targets] existing targets:', store.targets.length);
+
+    // Resolve target by name or ID
+    const resolved = targetId
+      ? store.targets.find(
+          (t) => t.name === targetId || t.id === targetId,
+        )
+      : null;
+
+    console.log('[add_targets] resolved target:', resolved?.name || 'none');
+
+    if (resolved) {
+      // Add hosts to an existing target's scope
+      const target = store.addHostsToTarget(resolved.id, hosts.map((h) => h.host));
+      console.log('[add_targets] addHostsToTarget result:', target?.scope?.length, 'scope items');
+      if (target) {
+        const namedEntry = hosts.find((h) => h.name);
+        if (namedEntry && hosts.length === 1) {
+          store.updateTarget(target.id, { name: namedEntry.name! });
+        }
+      }
+      useNavStore.getState().triggerNavBlink('/');
+    } else if (targetId) {
+      // Target doesn't exist yet — create it with the given name and all hosts in scope
+      const scope = hosts.map((h) => h.host).filter(Boolean);
+      const now = new Date().toISOString();
+      store.addTarget({
+        id: crypto.randomUUID(),
+        name: targetId,
+        description: '',
+        scope,
+        createdAt: now,
+        updatedAt: now,
+        tabActive: true,
+      });
+      console.log('[add_targets] created new target:', targetId, 'with', scope.length, 'hosts');
+      useNavStore.getState().triggerNavBlink('/');
+    } else {
+      // No targetId — create individual targets per host (legacy)
+      let added = false;
+      for (const entry of hosts) {
+        if (!entry.host) continue;
+        const target = store.addHostTarget(entry.host);
+        console.log('[add_targets] addHostTarget:', entry.host, '→', target?.id || 'duplicate');
+        if (target && entry.name) {
+          store.updateTarget(target.id, { name: entry.name });
+        }
+        if (target) added = true;
+      }
+      if (added) useNavStore.getState().triggerNavBlink('/');
+    }
+    console.log('[add_targets] done, total targets:', useTargetStore.getState().targets.length);
+  },
+
   add_target: (payload) => {
     const { host, name } = payload as unknown as AddTargetPayload;
     if (!host) return;
@@ -118,6 +187,29 @@ const handlers: Record<string, (payload: Record<string, unknown>) => void | Prom
     if (target && name) {
       useTargetStore.getState().updateTarget(target.id, { name });
     }
+    if (target) useNavStore.getState().triggerNavBlink('/');
+  },
+
+  delete_target: (payload) => {
+    const { targetId } = payload as unknown as DeleteTargetPayload;
+    if (!targetId) return;
+
+    const store = useTargetStore.getState();
+    const resolved = store.targets.find(
+      (t) => t.name === targetId || t.id === targetId,
+    );
+    if (resolved) {
+      store.removeTarget(resolved.id);
+      console.log('[delete_target] removed:', resolved.name);
+      useNavStore.getState().triggerNavBlink('/');
+    }
+  },
+
+  delete_all_targets: () => {
+    const store = useTargetStore.getState();
+    store.removeAllTargets();
+    console.log('[delete_all_targets] all targets cleared');
+    useNavStore.getState().triggerNavBlink('/');
   },
 
   write_document: (payload) => {
@@ -187,6 +279,21 @@ const handlers: Record<string, (payload: Record<string, unknown>) => void | Prom
     });
     store.startCrawl(headless ?? true);
     useNavStore.getState().triggerNavBlink('/browser-automation');
+  },
+
+  pause_scan: async () => {
+    const store = useBrowserAutomationStore.getState();
+    store.pauseCrawl();
+  },
+
+  resume_scan: async () => {
+    const store = useBrowserAutomationStore.getState();
+    store.resumeCrawl();
+  },
+
+  stop_scan: async () => {
+    const store = useBrowserAutomationStore.getState();
+    store.stopCrawl();
   },
 
   send_to_invoker: async (payload) => {
@@ -259,16 +366,19 @@ const handlers: Record<string, (payload: Record<string, unknown>) => void | Prom
 };
 
 export async function dispatchAiChatAction(action: string, payload: Record<string, unknown>) {
+  console.log('[ai-chat-action] received:', action, JSON.stringify(payload).slice(0, 200));
   const actionId = addTrackedAction(action);
   const handler = handlers[action];
   if (!handler) {
-    // No frontend handler, but still mark as completed (tool ran server-side).
+    console.warn('[ai-chat-action] no handler for:', action);
     completeTrackedAction(actionId);
   } else {
     try {
       await handler(payload);
+      console.log('[ai-chat-action] completed:', action);
       completeTrackedAction(actionId);
     } catch (error) {
+      console.error('[ai-chat-action] failed:', action, error);
       completeTrackedAction(actionId, true);
     }
   }

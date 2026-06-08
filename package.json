@@ -1,7 +1,7 @@
 {
   "name": "0xbuffer",
   "private": true,
-  "version": "2026.0.14",
+  "version": "2026.0.15",
   "type": "module",
   "scripts": {
     "dev": "vite",

@@ -1,7 +1,7 @@
 'use client';
 
 import { Link } from 'react-router-dom';
-import { GripHorizontal } from 'lucide-react';
+import { GripHorizontal, Loader2 } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 import { OpenBrowserButton } from './open-browser';
@@ -10,6 +10,7 @@ import { mainNavItems } from './constants';
 import { TitlebarButtons } from './titlebar-buttons';
 import { TriangleLogo } from './triangle-logo';
 import { useTopNav } from './hooks/use-top-nav';
+import { useBrowserAutomationStore } from '@/stores/browser-automation';
 
 export function TopNav() {
   const {
@@ -23,6 +24,9 @@ export function TopNav() {
     proxyStatus,
     stopDraggingWindow,
   } = useTopNav();
+  const isCrawlerRunning = useBrowserAutomationStore(
+    (s) => s.tabs.some((t) => t.session?.status === 'running'),
+  );
 
   return (
     <header data-tauri-drag-region
@@ -53,8 +57,11 @@ export function TopNav() {
             >
               {mainNavItems.map((item) => {
                 const Icon = item.icon;
+                const RightIcon = item.rightIcon;
                 const isActive = pathname === item.href;
                 const isBlinking = blinkingItems.has(item.href);
+                const showRightIcon =
+                  item.href === '/browser-automation' && isCrawlerRunning;
 
                 return (
                   <Link
@@ -71,6 +78,10 @@ export function TopNav() {
                   >
                     <Icon className="size-3.5" />
                     <span className={isBlinking ? 'animate-nav-blink' : ''}>{item.label}</span>
+                    {RightIcon && <RightIcon className="size-3.5" />}
+                    {showRightIcon && !RightIcon && (
+                      <Loader2 className="size-3 animate-spin text-primary" />
+                    )}
                   </Link>
                 );
               })}

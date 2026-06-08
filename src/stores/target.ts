@@ -8,7 +8,9 @@ interface TargetState {
   error: string | null;
   addTarget: (target: Target) => void;
   addHostTarget: (host: string) => Target | null;
+  addHostsToTarget: (targetId: string, hosts: string[]) => Target | null;
   removeTarget: (targetId: string) => void;
+  removeAllTargets: () => void;
   updateTarget: (targetId: string, updates: Partial<Target>) => void;
   getTarget: (targetId: string) => Target | undefined;
 
@@ -50,6 +52,27 @@ export const useTargetStore = create<TargetState>()(
       isLoading: false,
       error: null,
       addTarget: (target) => set({ targets: [...get().targets, target] }),
+      addHostsToTarget: (targetId, hosts) => {
+        const target = get().targets.find((t) => t.id === targetId);
+        if (!target) return null;
+
+        const normalizedHosts = hosts
+          .map((h) => normalizeHostScope(h))
+          .filter(Boolean);
+        if (!normalizedHosts.length) return target;
+
+        const existingSet = new Set(target.scope.map((s) => normalizeHostScope(s)).filter(Boolean));
+        const newHosts = normalizedHosts.filter((h) => !existingSet.has(h));
+        if (!newHosts.length) return target;
+
+        const updated = {
+          ...target,
+          scope: [...target.scope, ...newHosts],
+          updatedAt: new Date().toISOString(),
+        };
+        get().updateTarget(targetId, { scope: updated.scope });
+        return updated;
+      },
       addHostTarget: (host) => {
         const normalizedHost = normalizeHostScope(host);
 
@@ -81,6 +104,7 @@ export const useTargetStore = create<TargetState>()(
         return target;
       },
       removeTarget: (targetId) => set({ targets: get().targets.filter((t) => t.id !== targetId) }),
+      removeAllTargets: () => set({ targets: [] }),
       updateTarget: (targetId, updates) => {
         const targets = get().targets.map((t) =>
           t.id === targetId ? { ...t, ...updates, updatedAt: new Date().toISOString() } : t

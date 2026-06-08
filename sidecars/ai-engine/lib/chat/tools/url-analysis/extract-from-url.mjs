@@ -6,7 +6,7 @@ import {
   extractLinksFromHtml,
   extractTitle,
   extractVisibleText,
-} from '../../extract-html.mjs';
+} from '../../../extract-html.mjs';
 
 /**
  * Strip HTML tags from a string, returning plain text content.

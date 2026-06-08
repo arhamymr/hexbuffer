@@ -38,6 +38,20 @@ export interface CrawlCompletedEvent {
   pageUrls: string[];
 }
 
+export interface HumanSelectionOption {
+  label: string;
+  value: string;
+  description?: string;
+}
+
+export interface HumanSelectionRequest {
+  id: string;
+  question: string;
+  options: HumanSelectionOption[];
+  multiSelect: boolean;
+  createdAt: string;
+}
+
 export interface ChatSession {
   id: string;
   title: string;

@@ -8,7 +8,7 @@ import { usePromptInputController } from '@/components/ai-elements/prompt-input'
 import { useBrowserAutomationStore } from '@/stores/browser-automation';
 import { DASHBOARD_DEFAULT_AI_MODEL } from '../constants';
 import { DashboardSettingsChatTransport } from '../lib/dashboard-chat-transport';
-import type { ChatMessageRecord, CrawlCompletedEvent, CrawlHumanInputRequest, DashboardAiSettings, DashboardChatMessage } from '../types';
+import type { ChatMessageRecord, CrawlCompletedEvent, CrawlHumanInputRequest, DashboardAiSettings, DashboardChatMessage, HumanSelectionRequest } from '../types';
 
 const DEFAULT_AI_SETTINGS: DashboardAiSettings = {
   provider: 'openai',
@@ -134,8 +134,10 @@ export function useDashboardPage({ sessionId, setMessagesRef, onSaveMessages }: 
   const [aiSettings, setAiSettings] = useState<DashboardAiSettings>(DEFAULT_AI_SETTINGS);
   const [aiSettingsLoading, setAiSettingsLoading] = useState(true);
   const [pendingCrawlInput, setPendingCrawlInput] = useState<CrawlHumanInputRequest | null>(null);
+  const [pendingSelection, setPendingSelection] = useState<HumanSelectionRequest | null>(null);
   const aiSettingsRef = useRef(aiSettings);
   const crawlInputRef = useRef<CrawlHumanInputRequest | null>(null);
+  const selectionRef = useRef<HumanSelectionRequest | null>(null);
   const processedSessionIdsRef = useRef(new Set<string>());
   const promptController = usePromptInputController();
   const inputBeingConsumedRef = useRef(false);
@@ -148,12 +150,31 @@ export function useDashboardPage({ sessionId, setMessagesRef, onSaveMessages }: 
     crawlInputRef.current = pendingCrawlInput;
   }, [pendingCrawlInput]);
 
+  useEffect(() => {
+    selectionRef.current = pendingSelection;
+  }, [pendingSelection]);
+
   // Listen for crawl human input requests from the backend
   useEffect(() => {
     let unlisten: (() => void) | undefined;
 
     listen<CrawlHumanInputRequest>('ai-chat:crawl-human-input-required', (event) => {
       setPendingCrawlInput(event.payload);
+    }).then((fn) => {
+      unlisten = fn;
+    });
+
+    return () => {
+      unlisten?.();
+    };
+  }, []);
+
+  // Listen for human selection requests from the AI chat engine
+  useEffect(() => {
+    let unlisten: (() => void) | undefined;
+
+    listen<HumanSelectionRequest>('ai-chat:human-selection-required', (event) => {
+      setPendingSelection(event.payload);
     }).then((fn) => {
       unlisten = fn;
     });
@@ -315,6 +336,32 @@ export function useDashboardPage({ sessionId, setMessagesRef, onSaveMessages }: 
     setPendingCrawlInput(null);
   }, []);
 
+  const submitSelection = useCallback(async (selectedValues: string[]) => {
+    const request = selectionRef.current;
+    if (!request || selectedValues.length === 0) return;
+
+    setPendingSelection(null);
+
+    // Send the selection as a regular chat message so the AI can continue
+    const selectedLabels = request.options
+      .filter((o) => selectedValues.includes(o.value))
+      .map((o) => o.label);
+    const selectionText = `I choose: ${selectedLabels.join(', ')}`;
+
+    await sendMessage(
+      { text: selectionText, files: [] },
+      {
+        body: {
+          aiSettings: aiSettingsRef.current,
+        },
+      },
+    );
+  }, [sendMessage]);
+
+  const dismissSelection = useCallback(() => {
+    setPendingSelection(null);
+  }, []);
+
   const handleSubmit = useCallback(async ({ text, files }: PromptInputMessage) => {
     if (!text.trim()) {
       return;
@@ -373,5 +420,8 @@ export function useDashboardPage({ sessionId, setMessagesRef, onSaveMessages }: 
     stop,
     pendingCrawlInput,
     dismissCrawlInput,
+    pendingSelection,
+    dismissSelection,
+    submitSelection,
   };
 }

@@ -6,6 +6,7 @@ interface NavItem {
   icon: React.ComponentType<{ className?: string }>;
   href: string;
   devOnly?: boolean;
+  rightIcon?: React.ComponentType<{ className?: string }>;
 }
 
 export const allNavItems: NavItem[] = [

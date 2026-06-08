@@ -177,6 +177,18 @@ fn run_ai_chat_engine(
                         "action": &action,
                         "payload": &payload,
                     }));
+                    // For human selection requests, also emit a dedicated event so the
+                    // chat UI can show an interactive selection card.
+                    if action == "request_human_selection" {
+                        let selection = serde_json::json!({
+                            "id": format!("sel-{}", uuid::Uuid::new_v4()),
+                            "question": payload.get("question").cloned().unwrap_or_default(),
+                            "options": payload.get("options").cloned().unwrap_or(serde_json::json!([])),
+                            "multiSelect": payload.get("multiSelect").cloned().unwrap_or(serde_json::json!(false)),
+                            "createdAt": &created_at,
+                        });
+                        let _ = app.emit("ai-chat:human-selection-required", &selection);
+                    }
                     let result = execute_chat_action(app, &action, &payload);
                     actions.push(AiChatAction {
                         action,
@@ -222,12 +234,20 @@ fn temp_context_file() -> Result<PathBuf, String> {
 
 fn execute_chat_action(_app: &AppHandle, action: &str, payload: &Value) -> String {
     match action {
-        "add_target" => {
-            let host = payload
-                .get("host")
+        "add_target" | "add_targets" => {
+            let hosts = payload
+                .get("hosts")
+                .and_then(|v| v.as_array())
+                .map(|a| a.len())
+                .unwrap_or(1);
+            let target_id = payload
+                .get("targetId")
                 .and_then(|v| v.as_str())
-                .unwrap_or("unknown");
-            format!("Added target: {}", host)
+                .filter(|s| !s.is_empty());
+            match target_id {
+                Some(name) => format!("Added {} host(s) to existing target \"{}\"", hosts, name),
+                None => format!("Added {} host(s) to scope", hosts),
+            }
         }
         "write_document" => {
             "Document content saved".to_string()
@@ -290,6 +310,18 @@ fn execute_chat_action(_app: &AppHandle, action: &str, payload: &Value) -> Strin
                 .and_then(|v| v.as_str())
                 .unwrap_or("unknown");
             format!("Navigated to {}", path)
+        }
+        "request_human_selection" => {
+            let question = payload
+                .get("question")
+                .and_then(|v| v.as_str())
+                .unwrap_or("unknown");
+            let count = payload
+                .get("options")
+                .and_then(|v| v.as_array())
+                .map(|a| a.len())
+                .unwrap_or(0);
+            format!("Presented selection \"{}\" with {} options", question, count)
         }
         other => format!("Unknown action: {}", other),
     }

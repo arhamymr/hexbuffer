@@ -43,6 +43,7 @@ import { Suggestions, Suggestion } from '@/components/ai-elements/suggestion';
 import { useDashboardPage } from '@/components/layout/ai-chat/hooks/use-dashboard-page';
 import { useChatSessions } from '@/components/layout/ai-chat/hooks/use-chat-sessions';
 import { ChatSessionList } from '@/components/layout/ai-chat/components/chat-session-list';
+import { HumanSelectionCard } from '@/components/layout/ai-chat/components/human-selection-card';
 import { cn } from '@/lib/utils';
 import { AI_MODEL_OPTIONS_BY_PROVIDER } from '@/pages/settings/constants';
 import type { DashboardChatMessage } from '@/components/layout/ai-chat/types';
@@ -131,6 +132,9 @@ function AIAssistantPaneContent() {
     stop,
     pendingCrawlInput,
     dismissCrawlInput,
+    pendingSelection,
+    dismissSelection,
+    submitSelection,
   } = useDashboardPage({
     sessionId: activeSessionId,
     setMessagesRef,
@@ -302,6 +306,19 @@ function AIAssistantPaneContent() {
                   </Message>
                 ) : null}
 
+                {/* Human selection card */}
+                {pendingSelection ? (
+                  <Message from="assistant">
+                    <MessageContent>
+                      <HumanSelectionCard
+                        request={pendingSelection}
+                        onSubmit={submitSelection}
+                        onDismiss={dismissSelection}
+                      />
+                    </MessageContent>
+                  </Message>
+                ) : null}
+
                 {/* Loading shimmer while waiting for assistant response */}
                 {status === 'submitted' ? (
                   <Message from="assistant">
@@ -339,7 +356,7 @@ function AIAssistantPaneContent() {
                           </Task>
                         ) : null}
                         <div className="flex items-center gap-2 text-muted-foreground text-sm">
-                          <Shimmer duration={1}>Generating response…</Shimmer>
+                          <Shimmer duration={1}>Thinking…</Shimmer>
                         </div>
                       </div>
                     </MessageContent>
@@ -404,7 +421,9 @@ function AIAssistantPaneContent() {
                 placeholder={
                   pendingCrawlInput
                     ? `Enter ${requestedFieldLabels} to resume crawl…`
-                    : 'Message AI…'
+                    : pendingSelection
+                      ? 'Select an option above or type a message…'
+                      : 'Message AI…'
                 }
               />
             </PromptInputBody>

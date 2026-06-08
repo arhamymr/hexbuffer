@@ -6,8 +6,24 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
-import { ChevronDownIcon, SearchIcon } from "lucide-react";
-import type { ComponentProps } from "react";
+import {
+  CheckCircleIcon,
+  ChevronDownIcon,
+  CircleIcon,
+  Loader2Icon,
+  SearchIcon,
+  XCircleIcon,
+} from "lucide-react";
+import type { ComponentProps, ReactNode } from "react";
+
+export type TaskStatus = "pending" | "in_progress" | "completed" | "error";
+
+const statusIcons: Record<TaskStatus, ReactNode> = {
+  pending: <CircleIcon className="size-3.5 text-muted-foreground" />,
+  in_progress: <Loader2Icon className="size-3.5 animate-spin text-blue-500" />,
+  completed: <CheckCircleIcon className="size-3.5 text-green-500" />,
+  error: <XCircleIcon className="size-3.5 text-red-500" />,
+};
 
 export type TaskItemFileProps = ComponentProps<"div">;
 
@@ -27,39 +43,72 @@ export const TaskItemFile = ({
   </div>
 );
 
-export type TaskItemProps = ComponentProps<"div">;
+export type TaskItemProps = ComponentProps<"div"> & {
+  status?: TaskStatus;
+};
 
-export const TaskItem = ({ children, className, ...props }: TaskItemProps) => (
-  <div className={cn("text-muted-foreground text-sm", className)} {...props}>
-    {children}
+export const TaskItem = ({
+  children,
+  className,
+  status = "pending",
+  ...props
+}: TaskItemProps) => (
+  <div
+    className={cn(
+      "flex items-start gap-2 text-muted-foreground text-sm",
+      status === "completed" && "text-foreground",
+      className
+    )}
+    {...props}
+  >
+    <span className="mt-0.5 shrink-0">{statusIcons[status]}</span>
+    <span className="flex-1">{children}</span>
   </div>
 );
 
-export type TaskProps = ComponentProps<typeof Collapsible>;
+export type TaskProps = ComponentProps<typeof Collapsible> & {
+  status?: TaskStatus;
+  completed?: number;
+  total?: number;
+};
 
 export const Task = ({
   defaultOpen = true,
   className,
+  status: _status,
+  completed: _completed,
+  total: _total,
   ...props
 }: TaskProps) => (
-  <Collapsible className={cn(className)} defaultOpen={defaultOpen} {...props} />
+  <Collapsible className={cn("group", className)} defaultOpen={defaultOpen} {...props} />
 );
 
 export type TaskTriggerProps = ComponentProps<typeof CollapsibleTrigger> & {
   title: string;
+  status?: TaskStatus;
+  completed?: number;
+  total?: number;
 };
 
 export const TaskTrigger = ({
   children,
   className,
   title,
+  status = "pending",
+  completed = 0,
+  total = 0,
   ...props
 }: TaskTriggerProps) => (
   <CollapsibleTrigger asChild className={cn("group", className)} {...props}>
     {children ?? (
       <div className="flex w-full cursor-pointer items-center gap-2 text-muted-foreground text-sm transition-colors hover:text-foreground">
-        <SearchIcon className="size-4" />
-        <p className="text-sm">{title}</p>
+        {statusIcons[status]}
+        <p className="flex-1 text-sm">{title}</p>
+        {total > 0 ? (
+          <span className="text-xs tabular-nums text-muted-foreground/60">
+            {completed}/{total}
+          </span>
+        ) : null}
         <ChevronDownIcon className="size-4 transition-transform group-data-[state=open]:rotate-180" />
       </div>
     )}

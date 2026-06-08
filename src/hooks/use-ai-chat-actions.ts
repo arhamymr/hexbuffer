@@ -7,6 +7,7 @@ export function useAiChatActions() {
     const promise = listen<{ action: string; payload: Record<string, unknown> }>(
       'ai-chat-action',
       (e) => {
+        console.log('[useAiChatActions] event received:', e.payload?.action);
         dispatchAiChatAction(e.payload.action, e.payload.payload ?? {});
       },
     );

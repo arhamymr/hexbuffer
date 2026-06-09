@@ -1,8 +1,6 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::BTreeMap;
-use std::process::Child;
-use std::sync::Mutex;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -17,31 +15,19 @@ pub struct AiSettings {
     pub provider_key_status: BTreeMap<String, bool>,
     #[serde(default)]
     pub allow_third_party_ai_sharing: bool,
-    pub mastra_auto_start: bool,
-    pub mastra_url: String,
 }
 
 impl Default for AiSettings {
     fn default() -> Self {
         Self {
-            provider: "openai".to_string(),
-            model: "gpt-4.1-mini".to_string(),
+            provider: "deepseek".to_string(),
+            model: "deepseek-v4-pro".to_string(),
             api_key: String::new(),
             has_api_key: false,
             provider_key_status: default_ai_key_status(),
             allow_third_party_ai_sharing: false,
-            mastra_auto_start: true,
-            mastra_url: "http://localhost:4111".to_string(),
         }
     }
-}
-
-#[derive(Debug, Clone, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct MastraStatus {
-    pub running: bool,
-    pub pid: Option<u32>,
-    pub url: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -130,11 +116,6 @@ pub(crate) struct AiEngineChatMessage {
     pub(crate) payload: Option<Value>,
     #[serde(default)]
     pub(crate) created_at: Option<String>,
-}
-
-#[derive(Default)]
-pub struct MastraProcessState {
-    pub(crate) child: Mutex<Option<Child>>,
 }
 
 fn default_ai_key_status() -> BTreeMap<String, bool> {

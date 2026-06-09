@@ -1,12 +1,15 @@
 import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
-import { ArrowUp, Bot, Bubbles, Loader2, MessageCircle, Moon, Settings, Sun } from 'lucide-react';
+import { ArrowUp, Bot, Bubbles, Loader2, MessageCircle, Moon, Settings, Sun, TerminalSquare } from 'lucide-react';
 import { Button } from '../../ui/button';
+import { Separator } from '@/components/ui/separator';
 
 interface FooterActionsProps {
   theme: string;
   toggleTheme: () => void;
   isAssistantOpen: boolean;
   onToggleAssistant: () => void;
+  isTerminalOpen: boolean;
+  onToggleTerminal: () => void;
   updateAvailable: boolean;
   updateInstalled: boolean;
   updateVersion: string | null;
@@ -19,6 +22,8 @@ export function FooterActions({
   toggleTheme,
   isAssistantOpen,
   onToggleAssistant,
+  isTerminalOpen,
+  onToggleTerminal,
   updateAvailable,
   updateInstalled,
   updateVersion,
@@ -31,20 +36,25 @@ export function FooterActions({
         variant="ghost"
         size="xs"
         className="h-8 w-8 p-0"
+        onClick={onToggleTerminal}
+        title={isTerminalOpen ? 'Close Terminal' : 'Open Terminal'}
+      >
+        <TerminalSquare className="size-4.5" />
+      </Button>
+
+      <Button
+        variant="ghost"
+        size="xs"
+        className="h-8 w-8 p-0"
         onClick={onToggleAssistant}
         title={isAssistantOpen ? 'Close AI Analyst' : 'Open AI Analyst'}
       >
         <MessageCircle className="size-4" />
       </Button>
-      <Button
-        variant="ghost"
-        size="xs"
-        className="h-8 w-8 p-0"
-        onClick={toggleTheme}
-        title={theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
-      >
-        {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-      </Button>
+      <div className='h-6 px-1'>
+        <Separator orientation="vertical" className="h-6" />
+      </div>
+
       {updateAvailable && !updateInstalled && (
         <Button
           variant="ghost"
@@ -90,6 +100,15 @@ export function FooterActions({
         }}
       >
         <Settings className="h-4 w-4" />
+      </Button>
+      <Button
+        variant="ghost"
+        size="xs"
+        className="h-8 w-8 p-0"
+        onClick={toggleTheme}
+        title={theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
+      >
+        {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
       </Button>
     </div>
   );

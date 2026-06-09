@@ -14,14 +14,6 @@ export interface AiSettings {
   apiKey: string;
   hasApiKey: boolean;
   allowThirdPartyAiSharing: boolean;
-  mastraAutoStart: boolean;
-  mastraUrl: string;
-}
-
-export interface MastraStatus {
-  running: boolean;
-  pid?: number;
-  url: string;
 }
 
 export interface StorageInfo {
@@ -45,13 +37,11 @@ export interface ResetLocalDataResult extends ClearBrowserArtifactsResult {
 type AiKeyStatus = Record<string, boolean>;
 
 const DEFAULT_AI_SETTINGS: AiSettings = {
-  provider: 'openai',
-  model: 'gpt-4.1-mini',
+  provider: 'deepseek',
+  model: 'deepseek-v4-pro',
   apiKey: '',
   hasApiKey: false,
   allowThirdPartyAiSharing: false,
-  mastraAutoStart: true,
-  mastraUrl: 'http://localhost:4111',
 };
 export function useSettingsPage() {
   const [downloading, setDownloading] = React.useState(false);
@@ -60,11 +50,6 @@ export function useSettingsPage() {
   const [aiSettingsLoading, setAiSettingsLoading] = React.useState(true);
   const [aiSettingsSaving, setAiSettingsSaving] = React.useState(false);
   const [providerKeyStatus, setProviderKeyStatus] = React.useState<AiKeyStatus>({});
-  const [mastraStatus, setMastraStatus] = React.useState<MastraStatus>({
-    running: false,
-    url: DEFAULT_AI_SETTINGS.mastraUrl,
-  });
-  const [mastraBusy, setMastraBusy] = React.useState(false);
   const [storageInfo, setStorageInfo] = React.useState<StorageInfo | null>(null);
   const [resettingLocalData, setResettingLocalData] = React.useState(false);
   const proxyDefaultPort = useAppStore((state) => state.proxyDefaultPort);
@@ -87,15 +72,6 @@ export function useSettingsPage() {
     checkForUpdates,
     installUpdate,
   } = useUpdater();
-
-  const refreshMastraStatus = React.useCallback(async () => {
-    try {
-      const status = await invoke<MastraStatus>('get_mastra_status');
-      setMastraStatus(status);
-    } catch (error) {
-      console.error('Failed to load Mastra status:', error);
-    }
-  }, []);
 
   const refreshAiKeyStatus = React.useCallback(async () => {
     const status = await invoke<AiKeyStatus>('get_ai_key_status');
@@ -135,14 +111,13 @@ export function useSettingsPage() {
       const keyStatus = await refreshAiKeyStatus();
       const settings = await invoke<AiSettings>('get_ai_settings');
       setAiSettings({ ...settings, hasApiKey: !!keyStatus[settings.provider] });
-      await refreshMastraStatus();
     } catch (error) {
       console.error('Failed to load AI settings:', error);
       toast.error(`Failed to load AI settings: ${error}`);
     } finally {
       setAiSettingsLoading(false);
     }
-  }, [migrateLegacyAiKeys, refreshAiKeyStatus, refreshMastraStatus]);
+  }, [migrateLegacyAiKeys, refreshAiKeyStatus]);
 
   React.useEffect(() => {
     void loadAiSettings();
@@ -265,7 +240,6 @@ export function useSettingsPage() {
         settings: settingsToSave,
       });
       setAiSettings({ ...savedSettings, hasApiKey: !!nextKeyStatus[savedSettings.provider] });
-      await refreshMastraStatus();
       toast.success('AI settings saved');
     } catch (error) {
       console.error('Failed to save AI settings:', error);
@@ -273,7 +247,7 @@ export function useSettingsPage() {
     } finally {
       setAiSettingsSaving(false);
     }
-  }, [aiSettings, providerKeyStatus, refreshMastraStatus]);
+  }, [aiSettings, providerKeyStatus]);
 
   const handleClearAiApiKey = React.useCallback(async () => {
     try {
@@ -291,60 +265,6 @@ export function useSettingsPage() {
       setAiSettingsSaving(false);
     }
   }, [aiSettings.provider]);
-
-  const handleStartMastra = React.useCallback(async () => {
-    try {
-      setMastraBusy(true);
-      const status = await invoke<MastraStatus>('start_mastra');
-      setMastraStatus(status);
-      toast.success('Mastra started');
-    } catch (error) {
-      console.error('Failed to start Mastra:', error);
-      toast.error(`Failed to start Mastra: ${error}`);
-    } finally {
-      setMastraBusy(false);
-    }
-  }, []);
-
-  const handleStopMastra = React.useCallback(async () => {
-    try {
-      setMastraBusy(true);
-      const status = await invoke<MastraStatus>('stop_mastra');
-      setMastraStatus(status);
-      toast.success('Mastra stopped');
-    } catch (error) {
-      console.error('Failed to stop Mastra:', error);
-      toast.error(`Failed to stop Mastra: ${error}`);
-    } finally {
-      setMastraBusy(false);
-    }
-  }, []);
-
-  const handleToggleMastra = React.useCallback(async (enabled: boolean) => {
-    const nextSettings = { ...aiSettings, mastraAutoStart: enabled };
-
-    try {
-      setMastraBusy(true);
-      setAiSettings(nextSettings);
-
-      const savedSettings = await invoke<AiSettings>('save_ai_settings', {
-        settings: nextSettings,
-      });
-      setAiSettings(savedSettings);
-
-      const status = enabled
-        ? await invoke<MastraStatus>('start_mastra')
-        : await invoke<MastraStatus>('stop_mastra');
-      setMastraStatus(status);
-      toast.success(enabled ? 'Mastra enabled' : 'Mastra disabled');
-    } catch (error) {
-      console.error('Failed to update Mastra runtime:', error);
-      toast.error(`Failed to update Mastra runtime: ${error}`);
-      await loadAiSettings();
-    } finally {
-      setMastraBusy(false);
-    }
-  }, [aiSettings, loadAiSettings]);
 
   const handleSaveProxyDefaultPort = React.useCallback(async () => {
     const parsedPort = Number(proxyPortDraft);
@@ -400,12 +320,6 @@ export function useSettingsPage() {
     handleResetProxyDefaultPort,
     handleSaveProxyDefaultPort,
     handleSaveAiSettings,
-    handleStartMastra,
-    handleStopMastra,
-    handleToggleMastra,
-    mastraBusy,
-    mastraStatus,
-    refreshMastraStatus,
     setProxyPortDraft,
     storageInfo,
     providerKeyStatus,

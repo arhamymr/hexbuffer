@@ -10,3 +10,4 @@ pub mod packet_capture;
 pub mod proxy;
 pub mod repeater;
 pub mod storage;
+pub mod terminal;

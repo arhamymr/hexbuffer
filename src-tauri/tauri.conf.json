@@ -17,7 +17,7 @@
         "title": "0xbuffer",
         "decorations": false,
         "transparent": true,
-        "visible": false,
+        "visible": true,
         "width": 1000,
         "height": 800
       },
@@ -29,6 +29,7 @@
         "transparent": true,
         "resizable": false,
         "center": true,
+        "visible": true,
         "width": 492,
         "height": 199
       }

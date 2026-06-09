@@ -1,7 +1,6 @@
 pub mod commands;
 pub mod chat;
 pub mod keyring;
-pub mod mastra;
 pub mod providers;
 pub mod settings;
 pub mod types;
@@ -10,12 +9,11 @@ use std::collections::BTreeMap;
 use tauri::{AppHandle, State};
 
 // Type re-exports
-pub use types::{AiChatRequest, AiChatResponse, AiSettings, ChatMessageRecord, ChatSessionRecord, MastraProcessState, MastraStatus};
+pub use types::{AiChatRequest, AiChatResponse, AiSettings, ChatMessageRecord, ChatSessionRecord};
 
 // Non-command function re-exports
 pub use chat::ensure_third_party_ai_sharing_allowed;
 pub use keyring::{read_optional_ai_api_key, read_required_ai_api_key};
-pub use mastra::start_mastra_if_enabled;
 pub use providers::api_key_env_name;
 pub use settings::read_ai_settings;
 
@@ -61,28 +59,4 @@ pub async fn send_ai_chat_message(
     request: AiChatRequest,
 ) -> Result<AiChatResponse, String> {
     chat::send_ai_chat_message_impl(app, history, request).await
-}
-
-#[tauri::command]
-pub fn get_mastra_status(
-    app: AppHandle,
-    state: State<'_, MastraProcessState>,
-) -> Result<MastraStatus, String> {
-    mastra::get_mastra_status_impl(app, state)
-}
-
-#[tauri::command]
-pub fn start_mastra(
-    app: AppHandle,
-    state: State<'_, MastraProcessState>,
-) -> Result<MastraStatus, String> {
-    mastra::start_mastra_impl(app, state)
-}
-
-#[tauri::command]
-pub fn stop_mastra(
-    app: AppHandle,
-    state: State<'_, MastraProcessState>,
-) -> Result<MastraStatus, String> {
-    mastra::stop_mastra_impl(app, state)
 }

@@ -42,7 +42,7 @@ pub fn ensure_third_party_ai_sharing_allowed(settings: &AiSettings) -> Result<()
     }
 
     Err(
-        "Third-party AI sharing is disabled. Enable it in Settings before sending prompts, chat messages, crawl context, page summaries, logs, insights, URLs, or analysis context to OpenAI or DeepSeek."
+        "Third-party AI sharing is disabled. Enable it in Settings before sending prompts, chat messages, crawl context, page summaries, logs, insights, URLs, or analysis context to DeepSeek."
             .to_string(),
     )
 }

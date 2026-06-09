@@ -3,7 +3,6 @@
 
 use std::sync::Mutex;
 use tauri::Manager;
-use zeroxbuffer::ai::MastraProcessState;
 use zeroxbuffer::commands::intruder::IntruderState;
 use zeroxbuffer::commands::repeater::WsRepeaterState;
 use zeroxbuffer::{
@@ -41,7 +40,6 @@ fn main() {
             eprintln!("[main] History bridge initialized");
 
             app.manage(Mutex::new(ProxyState::new()));
-            app.manage(MastraProcessState::default());
             app.manage(IntruderState::default());
             app.manage(PortScanState::default());
             app.manage(PacketCaptureState::default());
@@ -53,10 +51,6 @@ fn main() {
             app.manage(history);
             eprintln!("[main] Building Tauri app...");
 
-            if let Err(error) = zeroxbuffer::ai::start_mastra_if_enabled(&app.handle().clone()) {
-                eprintln!("[main] Mastra auto-start skipped: {}", error);
-            }
-
             #[cfg(desktop)]
             {
                 let handle = app.handle().clone();
@@ -65,6 +59,14 @@ fn main() {
                         eprintln!("[updater] startup check failed: {e}");
                     }
                 });
+            }
+
+            // Show main window after setup
+            if let Some(main_window) = app.get_webview_window("main") {
+                main_window.show().map_err(|e| {
+                    eprintln!("[main] Failed to show main window: {}", e);
+                    tauri::Error::WindowNotFound
+                }).ok();
             }
 
             eprintln!("[main] Tauri setup complete");
@@ -123,9 +125,6 @@ fn main() {
             zeroxbuffer::ai::clear_ai_api_key,
             zeroxbuffer::ai::save_ai_settings,
             zeroxbuffer::ai::send_ai_chat_message,
-            zeroxbuffer::ai::get_mastra_status,
-            zeroxbuffer::ai::start_mastra,
-            zeroxbuffer::ai::stop_mastra,
             zeroxbuffer::commands::cert::get_ca_cert,
             zeroxbuffer::commands::cert::save_ca_cert,
             zeroxbuffer::commands::storage::get_storage_info,
@@ -178,6 +177,8 @@ fn main() {
             zeroxbuffer::commands::chat_sessions::delete_chat_session,
             zeroxbuffer::commands::chat_sessions::get_chat_messages,
             zeroxbuffer::commands::chat_sessions::save_chat_messages,
+            zeroxbuffer::commands::terminal::get_default_shell,
+            zeroxbuffer::commands::terminal::get_home_directory,
             show_main_window
         ])
         .plugin(tauri_plugin_opener::init())
@@ -186,6 +187,8 @@ fn main() {
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_shell::init())
+        .plugin(tauri_plugin_os::init())
+        .plugin(tauri_plugin_pty::init())
         .plugin(tauri_plugin_notification::init())
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
@@ -229,10 +232,12 @@ async fn check_for_updates(app: tauri::AppHandle) -> tauri_plugin_updater::Resul
 
 #[tauri::command]
 fn show_main_window(app: tauri::AppHandle) -> Result<(), String> {
+    // Close splashscreen if it exists
     if let Some(splash_window) = app.get_webview_window("splashscreen") {
         splash_window.close().map_err(|error| error.to_string())?;
     }
 
+    // Show and focus main window
     let main_window = app
         .get_webview_window("main")
         .ok_or_else(|| "main window was not found".to_string())?;

@@ -11,7 +11,7 @@ import { DashboardSettingsChatTransport } from '../lib/dashboard-chat-transport'
 import type { ChatMessageRecord, CrawlCompletedEvent, CrawlHumanInputRequest, DashboardAiSettings, DashboardChatMessage, HumanSelectionRequest } from '../types';
 
 const DEFAULT_AI_SETTINGS: DashboardAiSettings = {
-  provider: 'openai',
+  provider: 'deepseek',
   model: DASHBOARD_DEFAULT_AI_MODEL,
   hasApiKey: false,
   allowThirdPartyAiSharing: false,

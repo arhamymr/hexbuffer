@@ -1,6 +1,6 @@
 import type { UIMessage } from '@ai-sdk/react';
 
-export type DashboardAiProvider = 'openai' | 'deepseek';
+export type DashboardAiProvider = 'deepseek';
 
 export interface DashboardAiSettings {
   provider: DashboardAiProvider;

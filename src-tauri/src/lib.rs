@@ -11,9 +11,9 @@ pub mod proxy;
 pub mod sqli;
 
 pub use ai::{
-    clear_ai_api_key, get_ai_key_status, get_ai_settings, get_mastra_status, save_ai_settings,
-    send_ai_chat_message, set_ai_api_key, start_mastra, start_mastra_if_enabled, stop_mastra,
-    AiSettings, ChatMessageRecord, ChatSessionRecord, MastraProcessState, MastraStatus,
+    clear_ai_api_key, get_ai_key_status, get_ai_settings, save_ai_settings,
+    send_ai_chat_message, set_ai_api_key,
+    AiSettings, ChatMessageRecord, ChatSessionRecord,
 };
 pub use browser::{AIInsight, ActivityLog, AiBrowserState, CrawlConfig, CrawlPage, CrawlSession};
 pub use collaborator::{

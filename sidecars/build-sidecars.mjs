@@ -139,7 +139,7 @@ console.log(`[sidecars] Building sidecars for ${targetTriple} (${target})`);
 removeLegacySidecars(targetTriple);
 buildSidecar({
   name: 'ai-engine',
-  entry: 'sidecars/ai-engine/index.mjs',
+  entry: 'sidecars/index.mjs',
   target,
   targetTriple,
 });

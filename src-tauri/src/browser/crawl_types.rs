@@ -156,4 +156,25 @@ pub(crate) struct SidecarMessage {
     pub extra: Option<serde_json::Value>,
     pub created_at: Option<String>,
     pub finished_at: Option<String>,
+    // Workflow passthrough fields
+    #[serde(default, rename = "workflowId")]
+    pub workflow_id: Option<String>,
+    #[serde(default, rename = "stepId")]
+    pub step_id: Option<String>,
+    #[serde(default)]
+    pub name: Option<String>,
+    #[serde(default, rename = "durationMs")]
+    pub duration_ms: Option<f64>,
+    #[serde(default)]
+    pub error: Option<String>,
+    #[serde(default, rename = "stepIndex")]
+    pub step_index: Option<u32>,
+    #[serde(default, rename = "startedAt")]
+    pub started_at: Option<String>,
+    #[serde(default, rename = "completedAt")]
+    pub completed_at: Option<String>,
+    #[serde(default, rename = "failedAt")]
+    pub failed_at: Option<String>,
+    #[serde(default, rename = "contentLength")]
+    pub content_length: Option<usize>,
 }

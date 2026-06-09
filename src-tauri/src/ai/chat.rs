@@ -145,10 +145,16 @@ fn run_ai_chat_engine(
                 if let Some(value) = message.model {
                     model = value;
                 }
+                let _ = app.emit("ai-chat:started", serde_json::json!({
+                    "provider": &provider,
+                    "model": &model,
+                    "createdAt": message.created_at.unwrap_or_default(),
+                }));
             }
             "chat_delta" => {
-                if let Some(delta) = message.delta {
-                    content.push_str(&delta);
+                if let Some(delta) = &message.delta {
+                    content.push_str(delta);
+                    let _ = app.emit("ai-chat:delta", serde_json::json!({"delta": delta}));
                 }
             }
             "chat_finished" => {
@@ -161,13 +167,24 @@ fn run_ai_chat_engine(
                 if let Some(value) = message.content {
                     content = value;
                 }
+                let _ = app.emit("ai-chat:finished", serde_json::json!({
+                    "provider": &provider,
+                    "model": &model,
+                    "contentLength": content.len(),
+                    "createdAt": message.created_at.unwrap_or_default(),
+                }));
             }
             "chat_failed" => {
                 failed = Some(
                     message
                         .message
+                        .clone()
                         .unwrap_or_else(|| "AI chat failed".to_string()),
                 );
+                let _ = app.emit("ai-chat:failed", serde_json::json!({
+                    "error": failed.as_ref().unwrap(),
+                    "createdAt": message.created_at.unwrap_or_default(),
+                }));
             }
             "chat_action" => {
                 if let (Some(action), Some(payload)) = (message.action.clone(), message.payload.clone()) {
@@ -198,7 +215,29 @@ fn run_ai_chat_engine(
                     });
                 }
             }
-            _ => {}
+            other => {
+                // Passthrough workflow events from the sidecar — emit as ai-workflow:*
+                if let Some(workflow_suffix) = other.strip_prefix("workflow_") {
+                    let event_name = format!("ai-workflow:{}", workflow_suffix);
+                    let payload = serde_json::json!({
+                        "workflowId": message.workflow_id,
+                        "stepId": message.step_id,
+                        "name": message.name,
+                        "sessionId": message.session_id,
+                        "durationMs": message.duration_ms,
+                        "error": message.error,
+                        "stepIndex": message.step_index,
+                        "startedAt": message.started_at,
+                        "completedAt": message.completed_at,
+                        "failedAt": message.failed_at,
+                        "finishedAt": message.finished_at,
+                        "contentLength": message.content_length,
+                        "payload": message.payload,
+                        "extra": message.extra,
+                    });
+                    let _ = app.emit(&event_name, &payload);
+                }
+            }
         }
     }
 

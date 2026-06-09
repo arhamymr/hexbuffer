@@ -54,6 +54,17 @@ pub(crate) fn apply_sidecar_message(
     message: SidecarMessage,
 ) -> Result<(), String> {
     match message.message_type.as_str() {
+        "session_started" => {
+            if let (Some(id), Some(sid), Some(url)) = (&message.id, &message.session_id, &message.url) {
+                let session_info = serde_json::json!({
+                    "id": id,
+                    "sessionId": sid,
+                    "url": url,
+                    "startedAt": message.started_at.clone().unwrap_or_else(now),
+                });
+                let _ = app.emit("ai-browser:session-started", &session_info);
+            }
+        }
         "page_discovered" => {
             let page = CrawlPage {
                 id: message.id.unwrap_or_else(page_id),
@@ -273,7 +284,15 @@ pub(crate) fn apply_sidecar_message(
             let _ = app.emit("ai-chat:crawl-human-input-required", &request);
         }
         "session_finished" => {
-            let _ = message.finished_at;
+            let finished_at = message.finished_at.unwrap_or_else(now);
+            let _ = app.emit(
+                "ai-browser:session-finished",
+                serde_json::json!({
+                    "sessionId": session_id,
+                    "finishedAt": finished_at,
+                    "message": message.message,
+                }),
+            );
         }
         "session_failed" => {
             if session_status(state, session_id)
@@ -309,7 +328,27 @@ pub(crate) fn apply_sidecar_message(
                 serde_json::json!({ "message": error }),
             );
         }
-        _ => {}
+        other => {
+            // Passthrough workflow events from the sidecar — emit as ai-workflow:*
+            if let Some(workflow_suffix) = other.strip_prefix("workflow_") {
+                let event_name = format!("ai-workflow:{}", workflow_suffix);
+                let payload = serde_json::json!({
+                    "workflowId": message.workflow_id,
+                    "stepId": message.step_id,
+                    "name": message.name,
+                    "sessionId": message.session_id.or(Some(session_id.to_string())),
+                    "durationMs": message.duration_ms,
+                    "error": message.error,
+                    "stepIndex": message.step_index,
+                    "startedAt": message.started_at,
+                    "completedAt": message.completed_at,
+                    "failedAt": message.failed_at,
+                    "finishedAt": message.finished_at,
+                    "contentLength": message.content_length,
+                });
+                let _ = app.emit(&event_name, &payload);
+            }
+        }
     }
 
     Ok(())

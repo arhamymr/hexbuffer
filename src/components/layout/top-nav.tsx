@@ -11,6 +11,7 @@ import { TitlebarButtons } from './titlebar-buttons';
 import { TriangleLogo } from './triangle-logo';
 import { useTopNav } from './hooks/use-top-nav';
 import { useBrowserAutomationStore } from '@/stores/browser-automation';
+import { Separator } from '../ui/separator';
 
 export function TopNav() {
   const {
@@ -41,6 +42,10 @@ export function TopNav() {
       <div className="flex w-full items-center justify-between h-8.5 px-4">
         <div className='flex min-w-0 flex-1 items-center align-center gap-4'>
           <TitlebarButtons />
+          <div className='h-5'>
+ <Separator orientation="vertical" className="h-6" />
+         
+          </div>
           <div className="group flex items-center gap-1">
             <TriangleLogo />
             <p className={cn(
@@ -71,8 +76,8 @@ export function TopNav() {
                     flex shrink-0 items-center gap-2 whitespace-nowrap px-2 py-2 text-xs transition-colors
                     border-b-2
                     ${isActive
-                        ? 'border-green-500 text-foreground bg-muted/30'
-                        : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-t-md'
+                        ? 'border-primary text-primary bg-muted/30'
+                        : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/50 '
                       }
                   `}
                   >

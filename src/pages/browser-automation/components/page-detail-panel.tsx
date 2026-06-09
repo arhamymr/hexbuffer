@@ -214,7 +214,7 @@ export function PageDetailPanel({ page, searchQuery = '' }: PageDetailPanelProps
             <img
               src={page.screenshotPath ? convertFileSrc(page.screenshotPath) : ''}
               alt={`Screenshot of ${page.title || page.url}`}
-              className="object-contain object-top" 
+              className="bg-muted-foreground mx-auto object-contain object-top" 
             />
           </ScrollArea>
         </DialogContent>

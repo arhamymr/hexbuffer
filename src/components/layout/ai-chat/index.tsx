@@ -329,8 +329,8 @@ function AIAssistantPaneContent() {
           {messages.length === 0 && !pendingCrawlInput ? <SuggestionBar /> : null}
 
           {/* Prompt input */}
-          <div className="shrink-0 border-t p-2">
-            <PromptInput onSubmit={handleSubmit}>
+          <div className="shrink-0 border-t p-2 bg-muted">
+            <PromptInput onSubmit={handleSubmit} className='bg-background'>
               <PromptInputBody>
                 <PromptInputTextarea
                   className="min-h-12"

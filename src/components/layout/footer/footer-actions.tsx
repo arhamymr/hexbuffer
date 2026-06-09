@@ -35,7 +35,7 @@ export function FooterActions({
       <Button
         variant="ghost"
         size="xs"
-        className="h-8 w-8 p-0"
+        className={`h-8 w-8 p-0 ${isTerminalOpen ? 'text-primary' : ''}`}
         onClick={onToggleTerminal}
         title={isTerminalOpen ? 'Close Terminal' : 'Open Terminal'}
       >
@@ -45,7 +45,7 @@ export function FooterActions({
       <Button
         variant="ghost"
         size="xs"
-        className="h-8 w-8 p-0"
+        className={`h-8 w-8 p-0 ${isAssistantOpen ? 'text-primary' : ''}`}
         onClick={onToggleAssistant}
         title={isAssistantOpen ? 'Close AI Analyst' : 'Open AI Analyst'}
       >

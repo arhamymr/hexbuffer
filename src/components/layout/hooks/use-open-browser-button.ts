@@ -1,8 +1,10 @@
 import * as React from 'react';
 import { toast } from 'sonner';
 
-import { openInterceptBrowser } from '@/pages/intercept/api';
+import { openInspectorBrowser } from '@/pages/inspector/api';
+import { DEFAULT_DEBUGGING_PORT } from '@/pages/inspector/constants';
 import { getEffectiveProxyPort, useAppStore } from '@/stores/app';
+import { useNavStore } from '@/stores/nav';
 
 export function useOpenBrowserButton() {
   const [isOpeningBrowser, setIsOpeningBrowser] = React.useState(false);
@@ -45,7 +47,11 @@ export function useOpenBrowserButton() {
       await checkProxyStatus();
       const { proxyPort, proxyDefaultPort } = useAppStore.getState();
       const activeProxyPort = getEffectiveProxyPort({ proxyPort, proxyDefaultPort });
-      await openInterceptBrowser(activeProxyPort);
+
+      await openInspectorBrowser(activeProxyPort, DEFAULT_DEBUGGING_PORT);
+
+      useNavStore.getState().triggerNavBlink('/inspector');
+
       const portChangedMessage = proxyPort !== null && proxyPort !== proxyDefaultPort
         ? ` Restart the proxy to use configured port ${proxyDefaultPort}.`
         : '';

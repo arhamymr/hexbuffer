@@ -3,6 +3,7 @@ pub mod cert;
 pub mod chat_sessions;
 pub mod collaborator;
 pub mod history;
+pub mod inspector;
 pub mod intercept;
 pub mod intruder;
 pub mod license;

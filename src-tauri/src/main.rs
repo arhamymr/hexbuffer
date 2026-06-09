@@ -48,6 +48,7 @@ fn main() {
             app.manage(SqliScanState::new());
             app.manage(WsRepeaterState::default());
             app.manage(CollaboratorPollingState::default());
+            app.manage(zeroxbuffer::commands::inspector::InspectorCdpState::default());
             app.manage(history);
             eprintln!("[main] Building Tauri app...");
 
@@ -90,6 +91,9 @@ fn main() {
             zeroxbuffer::commands::intercept::remove_intercept_bypass_pattern,
             zeroxbuffer::commands::intercept::open_intercept_browser,
             zeroxbuffer::commands::intercept::trust_intercept_ca,
+            zeroxbuffer::commands::inspector::open_inspector_browser,
+            zeroxbuffer::commands::inspector::connect_inspector_cdp,
+            zeroxbuffer::commands::inspector::disconnect_inspector_cdp,
             zeroxbuffer::commands::history::clear_proxy_all,
             zeroxbuffer::commands::history::get_documents,
             zeroxbuffer::commands::history::save_document,

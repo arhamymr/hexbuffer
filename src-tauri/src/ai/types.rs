@@ -116,6 +116,33 @@ pub(crate) struct AiEngineChatMessage {
     pub(crate) payload: Option<Value>,
     #[serde(default)]
     pub(crate) created_at: Option<String>,
+    // Workflow passthrough fields
+    #[serde(default)]
+    pub(crate) workflow_id: Option<String>,
+    #[serde(default)]
+    pub(crate) step_id: Option<String>,
+    #[serde(default)]
+    pub(crate) name: Option<String>,
+    #[serde(default)]
+    pub(crate) duration_ms: Option<f64>,
+    #[serde(default)]
+    pub(crate) error: Option<String>,
+    #[serde(default)]
+    pub(crate) step_index: Option<u32>,
+    #[serde(default)]
+    pub(crate) session_id: Option<String>,
+    #[serde(default)]
+    pub(crate) started_at: Option<String>,
+    #[serde(default)]
+    pub(crate) completed_at: Option<String>,
+    #[serde(default)]
+    pub(crate) failed_at: Option<String>,
+    #[serde(default)]
+    pub(crate) finished_at: Option<String>,
+    #[serde(default)]
+    pub(crate) content_length: Option<usize>,
+    #[serde(default)]
+    pub(crate) extra: Option<Value>,
 }
 
 fn default_ai_key_status() -> BTreeMap<String, bool> {

@@ -7,10 +7,11 @@ import { InterceptPage } from "@/pages/intercept";
 import { ToolsPage } from "@/pages/tools";
 import { AIToolsPage } from "@/pages/ai-tools";
 import { DocumentsPage } from "@/pages/documents";
-import { BrowserAutomationPage } from "@/pages/browser-automation";
+import { BrowserAutomationPage } from "@/pages/browser";
 import { ListenerPage } from "@/pages/listener";
 import { DebuggerPage } from "@/pages/debugger";
 import { InspectorPage } from "@/pages/inspector";
+import { AutomationPage } from "@/pages/automation";
 // import { PacketCapturePage } from "@/pages/packet-capture";
 import { CaInstallDialog } from "@/components/ca-install-dialog";
 
@@ -31,6 +32,7 @@ function AppRoutes() {
         <Route path="/ai-tools" element={<AIToolsPage />} />
         <Route path="/documents" element={<DocumentsPage />} />
         <Route path="/inspector" element={<InspectorPage />} />
+        <Route path="/automation" element={<AutomationPage />} />
         <Route path="/settings" element={<Settings />} />
       </Routes>
     </>

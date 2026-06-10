@@ -1,6 +1,11 @@
 import { create } from 'zustand';
-import { invoke } from '@tauri-apps/api/core';
 import { listen, UnlistenFn } from '@tauri-apps/api/event';
+import { startAttack as orchStartAttack, stopAttack as orchStopAttack } from '@/triggers/invoker';
+import {
+  getInterceptBypassPatterns,
+  addInterceptBypassPattern,
+  removeInterceptBypassPattern,
+} from '@/pages/intercept/api';
 import { toast } from 'sonner';
 import type {
   AttackConfig,
@@ -347,9 +352,7 @@ export const useInvokerStore = create<InvokerState>((set, get) => ({
     cleanupTabListeners(tab.id);
 
     try {
-      const id = await invoke<string>('start_intruder_attack', {
-        config: { ...tab.config, mode: 'Sniper' },
-      });
+      const id = await orchStartAttack(tab.config);
       set((state) => ({
         tabs: state.tabs.map((currentTab) =>
           currentTab.id === tab.id
@@ -416,7 +419,7 @@ export const useInvokerStore = create<InvokerState>((set, get) => ({
     if (!tab?.attackId) return;
 
     try {
-      await invoke('stop_intruder_attack', { attackId: tab.attackId });
+      await orchStopAttack(tab.attackId);
     } catch (error) {
       console.error('Failed to stop attack:', error);
     } finally {
@@ -437,7 +440,7 @@ export const useInvokerStore = create<InvokerState>((set, get) => ({
 
   fetchBypassPatterns: async () => {
     try {
-      const patterns = await invoke<string[]>('get_intercept_bypass_patterns');
+      const patterns = await getInterceptBypassPatterns();
       set({ bypassPatterns: patterns });
     } catch (error) {
       console.error('Failed to fetch bypass patterns:', error);
@@ -446,7 +449,7 @@ export const useInvokerStore = create<InvokerState>((set, get) => ({
 
   addBypassPattern: async (pattern) => {
     try {
-      const patterns = await invoke<string[]>('add_intercept_bypass_pattern', { pattern });
+      const patterns = await addInterceptBypassPattern(pattern);
       set({ bypassPatterns: patterns });
       toast.success(`Added passthrough: ${pattern}`);
     } catch (error) {
@@ -456,7 +459,7 @@ export const useInvokerStore = create<InvokerState>((set, get) => ({
 
   removeBypassPattern: async (pattern) => {
     try {
-      const patterns = await invoke<string[]>('remove_intercept_bypass_pattern', { pattern });
+      const patterns = await removeInterceptBypassPattern(pattern);
       set({ bypassPatterns: patterns });
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Failed to remove passthrough pattern.');

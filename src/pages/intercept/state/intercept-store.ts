@@ -4,13 +4,17 @@ import { toast } from 'sonner';
 
 import { parseRawHttpRequest, parseRawHttpResponse } from '@/lib/http-message';
 import {
-  dropInterceptedRequest,
-  forwardInterceptedRequest,
-  forwardInterceptedResponse,
-  forwardInterceptedTab,
+  forwardRequest as orchForwardRequest,
+  forwardResponse as orchForwardResponse,
+  dropRequest as orchDropRequest,
+  forwardTab as orchForwardTab,
+} from '@/triggers/intercept';
+import {
+  toggleIntercept as orchToggleIntercept,
+} from '@/triggers/intercept';
+import {
   getInterceptStatus,
   getPausedRequests,
-  setInterceptEnabled,
   setInterceptScope,
 } from '../api';
 import { buildRawPausedMessage, buildRawPausedRequest, getPausedDirection, getRequestHost } from '../lib';
@@ -121,7 +125,7 @@ function syncSelectedRequest(
 
 async function forwardPausedItem(request: PausedRequest) {
   if (request.response) {
-    await forwardInterceptedResponse(request.id, {
+    await orchForwardResponse(request.id, {
       status: request.response.status_code,
       status_text: request.response.status_text,
       headers: request.response.headers,
@@ -135,7 +139,7 @@ async function forwardPausedItem(request: PausedRequest) {
   });
 
   if (parsedRequest) {
-    await forwardInterceptedRequest(request.id, parsedRequest);
+    await orchForwardRequest(request.id, parsedRequest);
   }
 }
 
@@ -212,7 +216,7 @@ export const useInterceptStore = create<InterceptState>()(
         set({ isBusy: true });
 
         try {
-          await forwardInterceptedTab(tabId);
+          await orchForwardTab(tabId);
           const remainingTabs = state.tabs.filter((tab) => tab.id !== tabId);
           const tabs = remainingTabs.length ? remainingTabs : [createInterceptTab(1)];
           const fallbackTab = tabs[Math.max(0, tabIndex - 1)] ?? tabs[0];
@@ -247,7 +251,7 @@ export const useInterceptStore = create<InterceptState>()(
 
         try {
           for (const tab of closingTabs) {
-            await forwardInterceptedTab(tab.id);
+            await orchForwardTab(tab.id);
           }
 
           const tabs = state.tabs.slice(tabIndex);
@@ -284,7 +288,7 @@ export const useInterceptStore = create<InterceptState>()(
 
         try {
           for (const tab of closingTabs) {
-            await forwardInterceptedTab(tab.id);
+            await orchForwardTab(tab.id);
           }
 
           const tabs = state.tabs.slice(0, tabIndex + 1);
@@ -415,7 +419,7 @@ export const useInterceptStore = create<InterceptState>()(
 
       toggleIntercept: async (enabled) => {
         try {
-          const nextStatus = await setInterceptEnabled(enabled);
+          const nextStatus = await orchToggleIntercept(enabled);
           await get().syncActiveScope();
           set({ status: nextStatus });
           toast.success(enabled ? 'Intercept enabled' : 'Intercept disabled');
@@ -441,7 +445,7 @@ export const useInterceptStore = create<InterceptState>()(
               throw new Error('Response is invalid.');
             }
 
-            await forwardInterceptedResponse(selectedRequest.id, parsedResponse);
+            await orchForwardResponse(selectedRequest.id, parsedResponse);
             toast.success('Response forwarded');
           } else {
             const parsedRequest = parseRawHttpRequest(rawRequest, {
@@ -452,7 +456,7 @@ export const useInterceptStore = create<InterceptState>()(
               throw new Error('Request is invalid.');
             }
 
-            await forwardInterceptedRequest(selectedRequest.id, parsedRequest);
+            await orchForwardRequest(selectedRequest.id, parsedRequest);
             toast.success('Request forwarded');
           }
 
@@ -483,7 +487,7 @@ export const useInterceptStore = create<InterceptState>()(
             throw new Error('Request is invalid.');
           }
 
-          await forwardInterceptedRequest(request.id, parsedRequest, { interceptResponse: true });
+          await orchForwardRequest(request.id, parsedRequest, true);
           toast.success('Request forwarded - response will be intercepted');
           await refresh();
         } catch (error) {
@@ -498,7 +502,7 @@ export const useInterceptStore = create<InterceptState>()(
         set({ isBusy: true });
 
         try {
-          await dropInterceptedRequest(request.id);
+          await orchDropRequest(request.id);
           toast.success(request.response ? 'Response dropped' : 'Request dropped');
           await refresh();
         } catch (error) {

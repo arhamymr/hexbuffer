@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { useLocation } from 'react-router-dom';
-import { getCurrentWindow } from '@tauri-apps/api/window';
+import { invoke } from '@tauri-apps/api/core';
 
 import { useAppStore } from '@/stores/app';
 import { useNavStore } from '@/stores/nav';
@@ -8,7 +8,6 @@ import { useNavStore } from '@/stores/nav';
 export function useTopNav() {
   const location = useLocation();
   const pathname = location.pathname;
-  const appWindow = React.useMemo(() => getCurrentWindow(), []);
   const navRef = React.useRef<HTMLElement>(null);
   const [canScrollLeft, setCanScrollLeft] = React.useState(false);
   const [canScrollRight, setCanScrollRight] = React.useState(false);
@@ -46,9 +45,11 @@ export function useTopNav() {
   const handleMouseDown = React.useCallback((event: React.MouseEvent<HTMLElement>) => {
     if (event.buttons === 1) {
       setIsDraggingWindow(true);
-      appWindow.startDragging();
+      invoke('safe_start_dragging').catch(() => {
+        // guarded by Rust catch_unwind — will not panic the process
+      });
     }
-  }, [appWindow]);
+  }, []);
 
   const stopDraggingWindow = React.useCallback(() => {
     setIsDraggingWindow(false);

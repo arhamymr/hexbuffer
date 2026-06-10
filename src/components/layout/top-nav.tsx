@@ -30,7 +30,7 @@ export function TopNav() {
   );
 
   return (
-    <header data-tauri-drag-region
+    <header
       className={cn(
         'flex shrink-0 justify-between text-muted-foreground title-bar border-b bg-background backdrop-blur sticky top-0 z-50',
         isDraggingWindow ? 'cursor-grabbing' : 'cursor-grab',
@@ -110,11 +110,11 @@ export function TopNav() {
           <ProxyButton />
           <OpenBrowserButton />
           <div
-            data-tauri-drag-region
-            className='flex h-8 w-8 shrink-0 items-center justify-center text-muted-foreground'
+            className='flex h-8 w-8 shrink-0 items-center justify-center text-muted-foreground cursor-grab'
             title="Drag window"
+            onMouseDown={handleMouseDown}
           >
-            <GripHorizontal className="size-5" data-tauri-drag-region />
+            <GripHorizontal className="size-5" />
           </div>
         </div>
       </div>

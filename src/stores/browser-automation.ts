@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { invoke } from '@tauri-apps/api/core';
-import { DEFAULT_CRAWL_SETUP } from '@/pages/browser-automation/constants';
-import { deriveOverview, downloadJson } from '@/pages/browser-automation/lib/crawl-data';
+import { DEFAULT_CRAWL_SETUP } from '@/pages/browser/constants';
+import { deriveOverview, downloadJson } from '@/pages/browser/lib/crawl-data';
 import { useTabsLayoutStore } from '@/stores/tabs-layout';
 import { useTargetStore } from '@/stores/target';
 import { useNavStore } from '@/stores/nav';
@@ -13,7 +13,7 @@ import type {
   CrawlSession,
   CrawlSetupConfig,
   HumanInputRequest,
-} from '@/pages/browser-automation/types';
+} from '@/pages/browser/types';
 
 export interface BrowserStatus {
   running: boolean;

@@ -1,4 +1,4 @@
-import { TextEditor } from '@/components/ui/text-editor';
+import { MilkdownEditor } from './milkdown-editor';
 import { type DocumentSectionKey } from '../constants';
 import { type ReconDocument } from '../types';
 
@@ -14,21 +14,12 @@ export function DocumentMarkdownEditor({
   onChange,
 }: DocumentMarkdownEditorProps) {
   return (
-    <TextEditor
-      path={`${document.id}/${sectionKey}.md`}
-      language="markdown"
-      value={document.sections[sectionKey]}
-      onChange={(value) => onChange(sectionKey, value ?? '')}
-      options={{
-        fontSize: 13,
-        lineHeight: 20,
-        fontFamily: 'Geist Mono, Menlo, Monaco, Consolas, monospace',
-        padding: { top: 16, bottom: 16 },
-        scrollBeyondLastLine: false,
-        renderLineHighlight: 'all',
-        wordWrap: 'on',
-        minimap: { enabled: true },
-      }}
-    />
+    <div className="h-full">
+      <MilkdownEditor
+        key={sectionKey}
+        value={document.sections[sectionKey]}
+        onChange={(value) => onChange(sectionKey, value)}
+      />
+    </div>
   );
 }

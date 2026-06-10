@@ -63,12 +63,21 @@ async function getShellInfo(): Promise<{ path: string; args: string[] }> {
   return result
 }
 
+/** Cached home directory — fetched once, reused for every tab spawn. */
+let homeDirCache: string | null = null
+let homeDirPromise: Promise<string> | null = null
+
 async function getHomeDirectory(): Promise<string> {
-  try {
-    return await invoke<string>('get_home_directory')
-  } catch {
-    return platform() === 'windows' ? 'C:\\' : '/tmp'
+  if (homeDirCache) return homeDirCache
+  if (!homeDirPromise) {
+    homeDirPromise = invoke<string>('get_home_directory').catch(() => {
+      return platform() === 'windows' ? 'C:\\' : '/tmp'
+    })
   }
+  const result = await homeDirPromise
+  homeDirCache = result
+  homeDirPromise = null
+  return result
 }
 
 /**
@@ -109,15 +118,15 @@ async function acquirePtyForTab(
 
   const spawnPromise = (async (): Promise<PtySession | null> => {
     try {
-      // Step 1: Shell detection (cached after first call)
-      const shellInfo = await getShellInfo()
+      // Step 1: Fetch shell info + home directory in parallel.
+      // Both are cached after first call; subsequent tabs get instant results.
+      const [shellInfo, cwd] = await Promise.all([
+        getShellInfo(),
+        getHomeDirectory(),
+      ])
       if (isDisposed()) return null
 
-      // Step 2: Home directory for initial CWD
-      const cwd = await getHomeDirectory()
-      if (isDisposed()) return null
-
-      // Step 3: Spawn the PTY process
+      // Step 2: Spawn the PTY process
       const pty = spawn(shellInfo.path, shellInfo.args, {
         cols,
         rows,

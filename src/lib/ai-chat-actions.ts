@@ -1,22 +1,23 @@
 import { useCallback, useSyncExternalStore } from 'react';
-import { useTargetStore } from '@/stores/target';
-import { useDocumentsStore } from '@/stores/documents';
-import { useBrowserAutomationStore } from '@/stores/browser-automation';
-import { useInvokerStore } from '@/stores/invoker';
-import { useRepeaterStore } from '@/stores/repeater';
-import { useNavStore } from '@/stores/nav';
-import { invoke } from '@tauri-apps/api/core';
-import { getHttpLogDetail } from '@/pages/live-traffic/api';
-import { buildRawHttpRequest } from '@/lib/http-message';
 import {
-  createDefaultAttackConfig,
-  findRequestPayloadPositions,
-} from '@/pages/invoker/types';
+  addTarget as orchAddTarget,
+  addTargets as orchAddTargets,
+  deleteTarget as orchDeleteTarget,
+  deleteAllTargets as orchDeleteAllTargets,
+  sendToInvoker as orchSendToInvoker,
+  sendToRepeater as orchSendToRepeater,
+  writeDocument as orchWriteDocument,
+} from '@/triggers';
+import {
+  triggerScan as orchTriggerScan,
+  pauseScan as orchPauseScan,
+  resumeScan as orchResumeScan,
+  stopScan as orchStopScan,
+  submitCrawlInput as orchSubmitCrawlInput,
+} from '@/triggers/browser-automation';
+import { invoke } from '@tauri-apps/api/core';
+import { useNavStore } from '@/stores/nav';
 import type {
-  AddTargetPayload,
-  AddTargetsPayload,
-  DeleteTargetPayload,
-  DeleteAllTargetsPayload,
   WriteDocumentPayload,
   StartProxyPayload,
   TriggerScanPayload,
@@ -120,128 +121,28 @@ export function useTrackedActions() {
 
 const handlers: Record<string, (payload: Record<string, unknown>) => void | Promise<void>> = {
   add_targets: (payload) => {
-    const { hosts, targetId } = payload as unknown as AddTargetsPayload;
-    console.log('[add_targets] hosts:', hosts?.length, 'targetId:', targetId);
-    if (!hosts?.length) return;
-
-    const store = useTargetStore.getState();
-    console.log('[add_targets] existing targets:', store.targets.length);
-
-    // Resolve target by name or ID
-    const resolved = targetId
-      ? store.targets.find(
-          (t) => t.name === targetId || t.id === targetId,
-        )
-      : null;
-
-    console.log('[add_targets] resolved target:', resolved?.name || 'none');
-
-    if (resolved) {
-      // Add hosts to an existing target's scope
-      const target = store.addHostsToTarget(resolved.id, hosts.map((h) => h.host));
-      console.log('[add_targets] addHostsToTarget result:', target?.scope?.length, 'scope items');
-      if (target) {
-        const namedEntry = hosts.find((h) => h.name);
-        if (namedEntry && hosts.length === 1) {
-          store.updateTarget(target.id, { name: namedEntry.name! });
-        }
-      }
-      useNavStore.getState().triggerNavBlink('/');
-    } else if (targetId) {
-      // Target doesn't exist yet — create it with the given name and all hosts in scope
-      const scope = hosts.map((h) => h.host).filter(Boolean);
-      const now = new Date().toISOString();
-      store.addTarget({
-        id: crypto.randomUUID(),
-        name: targetId,
-        description: '',
-        scope,
-        createdAt: now,
-        updatedAt: now,
-        tabActive: true,
-      });
-      console.log('[add_targets] created new target:', targetId, 'with', scope.length, 'hosts');
-      useNavStore.getState().triggerNavBlink('/');
-    } else {
-      // No targetId — create individual targets per host (legacy)
-      let added = false;
-      for (const entry of hosts) {
-        if (!entry.host) continue;
-        const target = store.addHostTarget(entry.host);
-        console.log('[add_targets] addHostTarget:', entry.host, '→', target?.id || 'duplicate');
-        if (target && entry.name) {
-          store.updateTarget(target.id, { name: entry.name });
-        }
-        if (target) added = true;
-      }
-      if (added) useNavStore.getState().triggerNavBlink('/');
-    }
-    console.log('[add_targets] done, total targets:', useTargetStore.getState().targets.length);
+    const { hosts, targetId } = payload as { hosts?: Array<{ host: string; name?: string | null }>; targetId?: string | null };
+    orchAddTargets({ hosts: hosts ?? [], targetId });
   },
 
   add_target: (payload) => {
-    const { host, name } = payload as unknown as AddTargetPayload;
-    if (!host) return;
-
-    const target = useTargetStore.getState().addHostTarget(host);
-    if (target && name) {
-      useTargetStore.getState().updateTarget(target.id, { name });
-    }
-    if (target) useNavStore.getState().triggerNavBlink('/');
+    const { host, name } = payload as { host: string; name?: string | null };
+    orchAddTarget({ host, name });
   },
 
   delete_target: (payload) => {
-    const { targetId } = payload as unknown as DeleteTargetPayload;
-    if (!targetId) return;
-
-    const store = useTargetStore.getState();
-    const resolved = store.targets.find(
-      (t) => t.name === targetId || t.id === targetId,
-    );
-    if (resolved) {
-      store.removeTarget(resolved.id);
-      console.log('[delete_target] removed:', resolved.name);
-      useNavStore.getState().triggerNavBlink('/');
-    }
+    const { targetId } = payload as { targetId: string };
+    orchDeleteTarget({ targetId });
   },
 
   delete_all_targets: () => {
-    const store = useTargetStore.getState();
-    store.removeAllTargets();
-    console.log('[delete_all_targets] all targets cleared');
-    useNavStore.getState().triggerNavBlink('/');
+    orchDeleteAllTargets();
   },
 
   write_document: (payload) => {
     const { documentId, sectionKey, title, content, mode } =
       payload as unknown as WriteDocumentPayload;
-    if (!content) return;
-
-    const docStore = useDocumentsStore.getState();
-    const targetDocId = documentId || docStore.activeDocumentId;
-    if (!targetDocId) return;
-
-    if (sectionKey) {
-      docStore.updateDocument(targetDocId, (doc) => {
-        const existing = doc.customSections.find((s) => s.key === sectionKey);
-        if (!existing) return doc;
-        const updated =
-          mode === 'replace' ? content : `${existing.content}\n\n${content}`.trim();
-        return {
-          ...doc,
-          customSections: doc.customSections.map((s) =>
-            s.key === sectionKey ? { ...s, content: updated } : s,
-          ),
-        };
-      });
-    } else {
-      docStore.addCustomSection(targetDocId, {
-        title: title || 'AI Notes',
-        description: 'Content generated by the AI Analyst',
-        placeholder: '',
-        content,
-      });
-    }
+    orchWriteDocument({ documentId, sectionKey, title, content, mode });
   },
 
   start_proxy: async (payload) => {
@@ -256,95 +157,30 @@ const handlers: Record<string, (payload: Record<string, unknown>) => void | Prom
   trigger_scan: async (payload) => {
     const { url, maxDepth, maxPages, headless } =
       payload as unknown as TriggerScanPayload;
-    if (!url) return;
-
-    // Ensure the proxy is running before launching the browser crawl.
-    // The crawl sidecar routes through the local proxy to capture traffic.
-    try {
-      const status = await invoke<{ running: boolean }>('get_proxy_status');
-      if (!status.running) {
-        await invoke('start_proxy', { port: 8888, tlsPort: 8889 });
-        // Give the proxy a moment to bind its listener.
-        await new Promise((resolve) => setTimeout(resolve, 1500));
-      }
-    } catch (error) {
-      console.error('[ai-chat-actions] Failed to ensure proxy is running:', error);
-    }
-
-    const store = useBrowserAutomationStore.getState();
-    store.updateSetup({
-      targetUrl: url,
-      maxDepth: maxDepth ?? 3,
-      maxPages: maxPages ?? 100,
-    });
-    store.startCrawl(headless ?? true);
-    useNavStore.getState().triggerNavBlink('/browser-automation');
+    await orchTriggerScan({ url, maxDepth, maxPages, headless });
   },
 
   pause_scan: async () => {
-    const store = useBrowserAutomationStore.getState();
-    store.pauseCrawl();
+    await orchPauseScan();
   },
 
   resume_scan: async () => {
-    const store = useBrowserAutomationStore.getState();
-    store.resumeCrawl();
+    await orchResumeScan();
   },
 
   stop_scan: async () => {
-    const store = useBrowserAutomationStore.getState();
-    store.stopCrawl();
+    await orchStopScan();
   },
 
   send_to_invoker: async (payload) => {
     const { logId, rawRequest, payloadValues, delayMs } =
       payload as unknown as SendToInvokerPayload;
-    if (!logId) return;
-
-    const detail = await getHttpLogDetail(logId);
-    const body = new TextDecoder().decode(new Uint8Array(detail.request.body));
-    const baseRequest = {
-      method: detail.request.method,
-      url: detail.request.uri,
-      headers: detail.request.headers,
-      body: rawRequest ?? body,
-      follow_redirects: true,
-      max_hops: 10,
-    };
-
-    const config = {
-      ...createDefaultAttackConfig(),
-      name: `${detail.request.method} ${detail.request.uri}`,
-      base_request: baseRequest,
-      positions: findRequestPayloadPositions(baseRequest),
-      ...(delayMs !== undefined ? { delay_ms: delayMs } : {}),
-    };
-
-    const invokerStore = useInvokerStore.getState();
-    invokerStore.addAttackTab(config);
-
-    if (payloadValues?.length) {
-      invokerStore.updatePayloadValues(payloadValues);
-    }
-
-    useNavStore.getState().triggerNavBlink('/invoker');
+    await orchSendToInvoker({ logId, rawRequest, payloadValues, delayMs });
   },
 
   send_to_repeater: async (payload) => {
     const { logId } = payload as unknown as SendToRepeaterPayload;
-    if (!logId) return;
-
-    const detail = await getHttpLogDetail(logId);
-    const body = new TextDecoder().decode(new Uint8Array(detail.request.body));
-    const raw = buildRawHttpRequest({
-      method: detail.request.method,
-      url: detail.request.uri,
-      headers: detail.request.headers,
-      body,
-    });
-
-    useRepeaterStore.getState().addRequestTab({ raw, url: detail.request.uri });
-    useNavStore.getState().triggerNavBlink('/repeater');
+    await orchSendToRepeater({ logId });
   },
 
   navigate_to: (payload) => {
@@ -353,15 +189,9 @@ const handlers: Record<string, (payload: Record<string, unknown>) => void | Prom
     useNavStore.getState().triggerNavBlink(path);
   },
 
-  submit_crawl_input: (payload) => {
+  submit_crawl_input: async (payload) => {
     const { sessionId, fields } = payload as unknown as SubmitCrawlInputPayload;
-    if (!sessionId || !fields) return;
-
-    const store = useBrowserAutomationStore.getState();
-    const tab = store.tabs.find((t) => t.session?.id === sessionId);
-    if (!tab?.session || !tab.humanInputRequest) return;
-
-    store.submitHumanInput(tab.humanInputRequest, 'continue', fields);
+    await orchSubmitCrawlInput({ sessionId, fields });
   },
 };
 

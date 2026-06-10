@@ -94,6 +94,10 @@ fn main() {
             zeroxbuffer::commands::inspector::open_inspector_browser,
             zeroxbuffer::commands::inspector::connect_inspector_cdp,
             zeroxbuffer::commands::inspector::disconnect_inspector_cdp,
+            zeroxbuffer::commands::inspector::get_inspector_pages,
+            zeroxbuffer::commands::inspector::get_inspector_cookies,
+            zeroxbuffer::commands::inspector::get_inspector_storage,
+            zeroxbuffer::commands::inspector::reset_inspector_browser,
             zeroxbuffer::commands::history::clear_proxy_all,
             zeroxbuffer::commands::history::get_documents,
             zeroxbuffer::commands::history::save_document,
@@ -183,7 +187,8 @@ fn main() {
             zeroxbuffer::commands::chat_sessions::save_chat_messages,
             zeroxbuffer::commands::terminal::get_default_shell,
             zeroxbuffer::commands::terminal::get_home_directory,
-            show_main_window
+            show_main_window,
+            safe_start_dragging
         ])
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
@@ -250,4 +255,15 @@ fn show_main_window(app: tauri::AppHandle) -> Result<(), String> {
     main_window.set_focus().map_err(|error| error.to_string())?;
 
     Ok(())
+}
+
+/// Safe wrapper around start_dragging that catches the nil-currentEvent panic
+/// in tao 0.35.2 on macOS (tao/src/platform_impl/macos/window.rs:936).
+#[tauri::command]
+fn safe_start_dragging(window: tauri::Window) -> Result<(), String> {
+    std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        window.start_dragging()
+    }))
+    .map_err(|_| "drag failed".to_string())?
+    .map_err(|e| e.to_string())
 }

@@ -69,6 +69,8 @@ pub struct InspectorConsoleLog {
 
 #[derive(Debug, Deserialize)]
 struct CdpTarget {
+    #[serde(default)]
+    id: Option<String>,
     #[serde(rename = "type")]
     target_type: String,
     #[serde(rename = "webSocketDebuggerUrl")]
@@ -122,7 +124,7 @@ pub struct InspectorNetworkEntry {
     pub start_time: f64,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct InspectorCookie {
     pub name: String,
@@ -145,12 +147,14 @@ pub struct InspectorStorageEntry {
 
 pub struct InspectorCdpState {
     cancel_token: Arc<Mutex<Option<tokio::sync::watch::Sender<bool>>>>,
+    browser_pid: Arc<Mutex<Option<u32>>>,
 }
 
 impl Default for InspectorCdpState {
     fn default() -> Self {
         Self {
             cancel_token: Arc::new(Mutex::new(None)),
+            browser_pid: Arc::new(Mutex::new(None)),
         }
     }
 }
@@ -158,6 +162,7 @@ impl Default for InspectorCdpState {
 #[tauri::command]
 pub async fn open_inspector_browser(
     app: AppHandle,
+    state: tauri::State<'_, InspectorCdpState>,
     proxy_port: u16,
     debugging_port: u16,
     profile_path: Option<String>,
@@ -192,7 +197,11 @@ pub async fn open_inspector_browser(
         }
 
         match Command::new(&candidate).args(&args).spawn() {
-            Ok(_) => return Ok(profile_dir.display().to_string()),
+            Ok(child) => {
+                let mut pid_lock = state.browser_pid.lock().await;
+                *pid_lock = Some(child.id());
+                return Ok(profile_dir.display().to_string());
+            }
             Err(error) => last_error = Some(error.to_string()),
         }
     }
@@ -285,7 +294,7 @@ async fn run_cdp_loop(
     let app_pages = app.clone();
     let json_url_pages = json_url.clone();
     let client_pages = client.clone();
-    let mut cancel_pages = cancel_rx.clone();
+    let cancel_pages = cancel_rx.clone();
     let pages_handle = tauri::async_runtime::spawn(async move {
         loop {
             tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
@@ -333,9 +342,283 @@ async fn run_cdp_loop(
         let _ = handle.await;
     }
 
+    pages_handle.abort();
+
     let _ = app.emit("inspector:connected", false);
 
     Ok(())
+}
+
+async fn send_cdp_command(
+    ws_url: &str,
+    method: &str,
+    params: Option<serde_json::Value>,
+) -> Result<serde_json::Value, String> {
+    use futures_util::SinkExt;
+    use tokio_tungstenite::connect_async;
+    use tokio_tungstenite::tungstenite::Message;
+
+    let (ws_stream, _) = connect_async(ws_url)
+        .await
+        .map_err(|e| format!("WebSocket connection failed: {e}"))?;
+
+    let (mut write, mut read) = ws_stream.split();
+
+    let cmd = serde_json::to_string(&CdpRequest {
+        id: 3,
+        method: method.to_string(),
+        params,
+    })
+    .map_err(|e| e.to_string())?;
+
+    write
+        .send(Message::Text(cmd.into()))
+        .await
+        .map_err(|e| e.to_string())?;
+
+    // Read response
+    use futures_util::StreamExt;
+    while let Some(msg) = read.next().await {
+        if let Ok(Message::Text(text)) = msg {
+            if let Ok(resp) = serde_json::from_str::<CdpResponse>(&text) {
+                if resp.result.is_some() || resp.id == Some(3) {
+                    return Ok(resp.result.unwrap_or_default());
+                }
+            }
+        }
+    }
+
+    Err("No response from CDP".to_string())
+}
+
+#[tauri::command]
+pub async fn get_inspector_pages(
+    debugging_port: u16,
+) -> Result<Vec<InspectorPageInfo>, String> {
+    let json_url = format!("http://127.0.0.1:{debugging_port}/json");
+    let client = reqwest::Client::new();
+    let targets: Vec<CdpTarget> = client
+        .get(&json_url)
+        .send()
+        .await
+        .map_err(|e| format!("Failed to connect: {e}"))?
+        .json()
+        .await
+        .map_err(|e| format!("Failed to parse: {e}"))?;
+
+    Ok(targets
+        .iter()
+        .filter(|t| t.target_type == "page")
+        .map(|t| InspectorPageInfo {
+            id: t.web_socket_debugger_url.clone(),
+            url: t.url.clone().unwrap_or_default(),
+            title: t.title.clone().unwrap_or_else(|| {
+                t.url.clone().unwrap_or_else(|| "about:blank".to_string())
+            }),
+        })
+        .collect())
+}
+
+#[tauri::command]
+pub async fn get_inspector_cookies(
+    debugging_port: u16,
+    page_id: Option<String>,
+) -> Result<Vec<InspectorCookie>, String> {
+    let json_url = format!("http://127.0.0.1:{debugging_port}/json");
+    let client = reqwest::Client::new();
+    let targets: Vec<CdpTarget> = client
+        .get(&json_url)
+        .send()
+        .await
+        .map_err(|e| format!("Failed to connect: {e}"))?
+        .json()
+        .await
+        .map_err(|e| format!("Failed to parse: {e}"))?;
+
+    let page = if let Some(ref id) = page_id {
+        targets
+            .iter()
+            .find(|t| t.target_type == "page" && t.id.as_deref() == Some(id.as_str()))
+            .ok_or("Page target not found")?
+    } else {
+        targets
+            .iter()
+            .find(|t| t.target_type == "page")
+            .ok_or("No page target found")?
+    };
+
+    let page_url = page.url.as_deref().unwrap_or("");
+    let params = serde_json::json!({
+        "urls": [page_url]
+    });
+
+    let result = send_cdp_command(
+        &page.web_socket_debugger_url,
+        "Network.getCookies",
+        Some(params),
+    )
+    .await?;
+
+    let cookies: Vec<InspectorCookie> =
+        serde_json::from_value(result["cookies"].clone()).unwrap_or_default();
+
+    Ok(cookies)
+}
+
+#[tauri::command]
+pub async fn get_inspector_storage(
+    debugging_port: u16,
+    page_id: Option<String>,
+) -> Result<Vec<InspectorStorageEntry>, String> {
+    let json_url = format!("http://127.0.0.1:{debugging_port}/json");
+    let client = reqwest::Client::new();
+    let targets: Vec<CdpTarget> = client
+        .get(&json_url)
+        .send()
+        .await
+        .map_err(|e| format!("Failed to connect: {e}"))?
+        .json()
+        .await
+        .map_err(|e| format!("Failed to parse: {e}"))?;
+
+    let page = if let Some(ref id) = page_id {
+        targets
+            .iter()
+            .find(|t| t.target_type == "page" && t.id.as_deref() == Some(id.as_str()))
+            .ok_or("Page target not found")?
+    } else {
+        targets
+            .iter()
+            .find(|t| t.target_type == "page")
+            .ok_or("No page target found")?
+    };
+
+    let expr = "JSON.stringify({localStorage: Object.entries(localStorage).reduce((acc,[k,v]) => ({...acc,[k]:v}),{}), sessionStorage: Object.entries(sessionStorage).reduce((acc,[k,v]) => ({...acc,[k]:v}),{})})";
+    let params = serde_json::json!({
+        "expression": expr,
+        "returnByValue": true
+    });
+
+    let result = send_cdp_command(
+        &page.web_socket_debugger_url,
+        "Runtime.evaluate",
+        Some(params),
+    )
+    .await?;
+
+    let json_str = result["result"]["value"]
+        .as_str()
+        .unwrap_or("{}");
+    let parsed: serde_json::Value =
+        serde_json::from_str(json_str).unwrap_or_default();
+
+    let mut entries = Vec::new();
+    for storage_type in &["localStorage", "sessionStorage"] {
+        if let Some(obj) = parsed[storage_type].as_object() {
+            for (key, val) in obj {
+                entries.push(InspectorStorageEntry {
+                    key: key.clone(),
+                    value: val.as_str().unwrap_or("").to_string(),
+                });
+            }
+        }
+    }
+
+    Ok(entries)
+}
+
+#[tauri::command]
+pub async fn reset_inspector_browser(
+    app: AppHandle,
+    state: tauri::State<'_, InspectorCdpState>,
+    debugging_port: u16,
+    proxy_port: u16,
+    profile_path: Option<String>,
+) -> Result<String, String> {
+    // Kill the browser process we spawned
+    {
+        let mut pid_lock = state.browser_pid.lock().await;
+        if let Some(pid) = pid_lock.take() {
+            // Try SIGTERM first
+            let _ = std::process::Command::new("kill").arg(pid.to_string()).status();
+            std::thread::sleep(std::time::Duration::from_millis(300));
+            let _ = std::process::Command::new("kill").arg("-9").arg(pid.to_string()).status();
+        }
+    }
+
+    // Fallback: kill any remaining processes on the debugging port
+    #[cfg(target_os = "macos")]
+    {
+        if let Ok(out) = std::process::Command::new("lsof")
+            .args(["-ti", &format!(":{debugging_port}")])
+            .output()
+        {
+            let pids = String::from_utf8_lossy(&out.stdout);
+            for pid_str in pids.trim().lines() {
+                let pid = pid_str.trim();
+                if pid.is_empty() || !pid.chars().all(|c| c.is_ascii_digit()) {
+                    continue;
+                }
+                let _ = std::process::Command::new("kill").arg(pid).status();
+                std::thread::sleep(std::time::Duration::from_millis(200));
+                let _ = std::process::Command::new("kill").arg("-9").arg(pid).status();
+            }
+        }
+    }
+
+    #[cfg(target_os = "windows")]
+    {
+        let kill_cmd = format!(
+            "for /f \"tokens=5\" %a in ('netstat -ano ^| findstr :{debugging_port}') do taskkill /F /PID %a"
+        );
+        let _ = std::process::Command::new("cmd")
+            .args(["/C", &kill_cmd])
+            .status();
+    }
+
+    #[cfg(target_os = "linux")]
+    {
+        let _ = std::process::Command::new("fuser")
+            .args(["-k", &format!("{debugging_port}/tcp")])
+            .status();
+    }
+
+    // Wait for port to free up
+    tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;
+
+    // Relaunch browser (use profile_path as provided, default to isolated profile)
+    let profile_dir = if let Some(ref path) = profile_path {
+        PathBuf::from(path)
+    } else {
+        inspector_browser_profile_dir(&app)?
+    };
+
+    let mut args = vec![
+        format!("--user-data-dir={}", profile_dir.display()),
+        "--new-window".to_string(),
+        "--no-first-run".to_string(),
+        "--no-default-browser-check".to_string(),
+        format!("--remote-debugging-port={debugging_port}"),
+        format!("--proxy-server=127.0.0.1:{proxy_port}"),
+        "about:blank".to_string(),
+    ];
+
+    #[cfg(target_os = "macos")]
+    args.push("--use-mock-keychain".to_string());
+
+    for candidate in inspector_browser_candidates() {
+        if candidate.components().count() > 1 && !candidate.exists() {
+            continue;
+        }
+        match Command::new(&candidate).args(&args).spawn() {
+            Ok(_) => return Ok(profile_dir.display().to_string()),
+            Err(e) => {
+                eprintln!("[inspector/reset] Failed to launch {}: {e}", candidate.display());
+            }
+        }
+    }
+
+    Err("Failed to relaunch browser".to_string())
 }
 
 async fn attach_to_page_cdp(
@@ -353,7 +636,7 @@ async fn attach_to_page_cdp(
 
     let (mut write, mut read) = ws_stream.split();
 
-    let mut messages_to_send: Vec<String> = vec![
+    let messages_to_send: Vec<String> = vec![
         serde_json::to_string(&CdpRequest {
             id: 1,
             method: "Runtime.enable".to_string(),

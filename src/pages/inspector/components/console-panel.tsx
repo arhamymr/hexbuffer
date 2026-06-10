@@ -1,12 +1,13 @@
 'use client';
 
 import { useMemo } from 'react';
-import { Trash2, Search } from 'lucide-react';
+import { Trash2, Search, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ButtonGroup } from '@/components/ui/button-group';
 import { useInspectorStore } from '@/stores/inspector';
 import { CONSOLE_FILTERS, CONSOLE_LEVEL_COLORS } from '../constants';
+import { exportConsoleLogs } from '../lib/export';
 import type { InspectorConsoleLog } from '../types';
 
 function formatTime(timestamp: number): string {
@@ -37,9 +38,20 @@ export function ConsolePanel({ selectedLogId, onSelectLog }: ConsolePanelProps) 
   const search = useInspectorStore((state) => state.search);
   const setSearch = useInspectorStore((state) => state.setSearch);
   const clearLogs = useInspectorStore((state) => state.clearLogs);
+  const pages = useInspectorStore((state) => state.pages);
+  const selectedPageId = useInspectorStore((state) => state.selectedPageId);
+
+  const selectedPage = useMemo(
+    () => (selectedPageId ? pages.find((p) => p.id === selectedPageId) ?? null : null),
+    [pages, selectedPageId]
+  );
 
   const filteredLogs = useMemo(() => {
     let result = filter === 'all' ? logs : logs.filter((l) => l.level === filter);
+
+    if (selectedPage?.url) {
+      result = result.filter((l) => l.url.startsWith(selectedPage.url));
+    }
 
     if (search.trim()) {
       const query = search.trim().toLowerCase();
@@ -52,7 +64,7 @@ export function ConsolePanel({ selectedLogId, onSelectLog }: ConsolePanelProps) 
     }
 
     return result;
-  }, [logs, filter, search]);
+  }, [logs, filter, search, selectedPage]);
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -84,11 +96,21 @@ export function ConsolePanel({ selectedLogId, onSelectLog }: ConsolePanelProps) 
         <Button
           variant="outline"
           size="xs"
-          className="h-7 ml-auto"
+          className="h-7"
           onClick={clearLogs}
           aria-label="Clear console"
         >
           <Trash2 className="size-3.5" />
+        </Button>
+        <Button
+          variant="outline"
+          size="xs"
+          className="h-7"
+          onClick={() => exportConsoleLogs(logs, 'json')}
+          aria-label="Export JSON"
+        >
+          <Download className="size-3.5 mr-1" />
+          Export
         </Button>
       </header>
 

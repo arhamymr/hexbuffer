@@ -23,7 +23,7 @@ import {
   ContextMenuSeparator,
   ContextMenuTrigger,
 } from '@/components/ui/context-menu';
-import { DragDropProvider, type DragEndEvent } from '@dnd-kit/react';
+import { DragDropProvider, DragOverlay, type DragEndEvent } from '@dnd-kit/react';
 import { useSortable, isSortable } from '@dnd-kit/react/sortable';
 import { useInvokerStore } from '@/stores/invoker';
 import { useRepeaterStore } from '@/stores/repeater';
@@ -51,6 +51,7 @@ interface DocumentsExplorerProps {
 interface ReportFileRowProps {
   section: CustomSection;
   isActive: boolean;
+  isDragging?: boolean;
   onOpenFile: (fileId: EditorFileId) => void;
   onRenameCustomSection: (section: CustomSection) => void;
   onRemoveCustomSection: (sectionKey: string) => void;
@@ -59,6 +60,7 @@ interface ReportFileRowProps {
 function ReportFileRow({
   section,
   isActive,
+  isDragging,
   onOpenFile,
   onRenameCustomSection,
   onRemoveCustomSection,
@@ -70,7 +72,11 @@ function ReportFileRow({
       <ContextMenuTrigger asChild>
         <button
           type="button"
-          onClick={() => onOpenFile(fileId)}
+          onClick={() => {
+            if (!isDragging) {
+              onOpenFile(fileId);
+            }
+          }}
           className={cn(
             'flex h-7 w-full items-center gap-2 rounded px-2 text-left text-xs hover:bg-muted',
             isActive && 'bg-muted text-foreground'
@@ -120,7 +126,7 @@ function SortableReportFileRow({ index, ...props }: SortableReportFileRowProps) 
         isDragging && 'z-50 opacity-50'
       )}
     >
-      <ReportFileRow {...props} />
+      <ReportFileRow {...props} isDragging={isDragging} />
     </div>
   );
 }
@@ -389,6 +395,20 @@ export function DocumentsExplorer({
             </div>
           )}
         </div>
+          <DragOverlay className="rounded border bg-popover shadow-lg">
+            {(source) => {
+              const section = activeDocument.customSections.find(
+                (s) => s.key === source.id
+              );
+              return (
+                <div className="flex h-7 items-center gap-2 px-2 text-xs">
+                  <GripVertical className="h-3.5 w-3.5 shrink-0 text-muted-foreground/50" />
+                  <FileText className="h-4 w-4 text-muted-foreground" />
+                  <span className="truncate">{section?.title.toLowerCase() ?? String(source.id)}.md</span>
+                </div>
+              );
+            }}
+          </DragOverlay>
         </DragDropProvider>
       </div>
     </aside>

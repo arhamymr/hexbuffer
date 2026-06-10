@@ -374,9 +374,9 @@ export const CATEGORY_BORDER: Record<NodeCategory, string> = {
 };
 
 export const CATEGORY_BG: Record<NodeCategory, string> = {
-  trigger: 'bg-blue-500/10',
-  condition: 'bg-amber-500/10',
-  action: 'bg-emerald-500/10',
+  trigger: 'bg-background',
+  condition: 'bg-background',
+  action: 'bg-background',
 };
 
 export const CATEGORY_ICON_BG: Record<NodeCategory, string> = {
@@ -392,9 +392,9 @@ export const CATEGORY_ICON_TEXT: Record<NodeCategory, string> = {
 };
 
 export const CATEGORY_HANDLE: Record<NodeCategory, string> = {
-  trigger: '!border-blue-500 hover:!bg-blue-500',
-  condition: '!border-amber-500 hover:!bg-amber-500',
-  action: '!border-emerald-500 hover:!bg-emerald-500',
+  trigger: '!bg-blue-500 !border-background hover:!bg-blue-600',
+  condition: '!bg-amber-500 !border-background hover:!bg-amber-600',
+  action: '!bg-emerald-500 !border-background hover:!bg-emerald-600',
 };
 
 export const DEFAULT_WORKFLOW_NAME = 'Untitled Workflow';

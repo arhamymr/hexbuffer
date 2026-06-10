@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { useAutomationStore } from '@/stores/automation';
 import { Save, Play, Trash2, Pencil, Check, X, Loader2 } from 'lucide-react';
 
-export function WorkflowToolbar() {
+export function WorkflowToolbar({ persistRef }: { persistRef?: React.MutableRefObject<(() => void) | null> }) {
   const activeWorkflowId = useAutomationStore((s) => s.activeWorkflowId);
   const workflow = useAutomationStore((s) =>
     s.workflows.find((w) => w.id === s.activeWorkflowId) ?? null
@@ -42,8 +42,9 @@ export function WorkflowToolbar() {
 
   const handleRun = React.useCallback(() => {
     if (!workflow) return;
+    persistRef?.current?.();
     runWorkflow(workflow.id);
-  }, [workflow, runWorkflow]);
+  }, [workflow, runWorkflow, persistRef]);
 
   if (!workflow) {
     return (

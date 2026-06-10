@@ -14,13 +14,15 @@ import { InspectorPage } from "@/pages/inspector";
 import { AutomationPage } from "@/pages/automation";
 // import { PacketCapturePage } from "@/pages/packet-capture";
 import { CaInstallDialog } from "@/components/ca-install-dialog";
+import { AssistantPage } from "@/pages/assistant";
 
 function AppRoutes() {
   return (
     <>
       <CaInstallDialog />
       <Routes>
-        <Route path="/" element={<LiveTrafficPage />} />
+        <Route path="/" element={<AssistantPage />} />
+        <Route path="/live-traffic" element={<LiveTrafficPage />} />
         <Route path="/intercept" element={<InterceptPage />} />
         <Route path="/repeater" element={<RepeaterPage />} />
         <Route path="/invoker" element={<InvokerPage />} />

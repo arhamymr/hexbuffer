@@ -1,7 +1,7 @@
 'use client';
 
 import { Link } from 'react-router-dom';
-import { GripHorizontal, Loader2 } from 'lucide-react';
+import { CircleStop, GripHorizontal, Loader2, Pause } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 import { OpenBrowserButton } from './open-browser';
@@ -25,9 +25,15 @@ export function TopNav() {
     proxyStatus,
     stopDraggingWindow,
   } = useTopNav();
-  const isCrawlerRunning = useBrowserAutomationStore(
-    (s) => s.tabs.some((t) => t.session?.status === 'running'),
-  );
+  const crawlerStatus = useBrowserAutomationStore((s) => {
+    for (const t of s.tabs) {
+      const st = t.session?.status;
+      if (st === 'running') return 'running';
+      if (st === 'paused') return 'paused';
+      if (st === 'stopped') return 'stopped';
+    }
+    return null;
+  });
 
   return (
     <header
@@ -43,17 +49,16 @@ export function TopNav() {
         <div className='flex min-w-0 flex-1 items-center align-center gap-4'>
           <TitlebarButtons />
           <div className='h-5'>
- <Separator orientation="vertical" className="h-6" />
-         
+            <Separator orientation="vertical" className="h-6" />
           </div>
-          <div className="group flex items-center gap-1">
+          <Link to="/" className="group flex items-center gap-1 no-underline">
             <TriangleLogo />
             <p className={cn(
               proxyStatus === "connected" ? "text-primary" : "text-muted-foreground",
               "max-w-0 overflow-hidden whitespace-nowrap text-sm font-mono opacity-0 transition-all duration-200 no-underline group-hover:max-w-20 group-hover:opacity-100")}>
               0xbuffer
             </p>
-          </div>
+          </Link>
 
           <div className="relative min-w-0 flex-1">
             <nav
@@ -65,8 +70,18 @@ export function TopNav() {
                 const RightIcon = item.rightIcon;
                 const isActive = pathname === item.href;
                 const isBlinking = blinkingItems.has(item.href);
-                const showRightIcon =
-                  item.href === '/browser-automation' && isCrawlerRunning;
+                const showStatusIcon =
+                  item.href === '/browser-automation' && crawlerStatus !== null;
+
+                const StatusIcon =
+                  crawlerStatus === 'paused' ? Pause :
+                    crawlerStatus === 'stopped' ? CircleStop :
+                      Loader2;
+
+                const statusIconClass =
+                  crawlerStatus === 'running' ? 'size-3 animate-spin text-primary' :
+                    crawlerStatus === 'paused' ? 'size-3 text-amber-500' :
+                      'size-3 text-muted-foreground';
 
                 return (
                   <Link
@@ -84,8 +99,8 @@ export function TopNav() {
                     <Icon className="size-3.5" />
                     <span className={isBlinking ? 'animate-nav-blink' : ''}>{item.label}</span>
                     {RightIcon && <RightIcon className="size-3.5" />}
-                    {showRightIcon && !RightIcon && (
-                      <Loader2 className="size-3 animate-spin text-primary" />
+                    {showStatusIcon && !RightIcon && (
+                      <StatusIcon className={statusIconClass} />
                     )}
                   </Link>
                 );

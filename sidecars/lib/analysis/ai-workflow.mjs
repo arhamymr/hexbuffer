@@ -94,6 +94,40 @@ function buildProviderPageContext(extract) {
   };
 }
 
+function validateDefinitionOfDone(agentState, sessionId, url) {
+  const issues = [];
+
+  if (!agentState.pageContextRead) {
+    issues.push('agent did not read page context');
+  }
+
+  const hasFinalInsights = agentState.finalAnalysis?.insights?.length > 0;
+  const hasDraftInsights = agentState.insightDrafts.length > 0;
+  const hasFinalSummary = !!agentState.finalAnalysis?.summary?.trim();
+
+  if (!agentState.finalAnalysis && !hasDraftInsights) {
+    issues.push('agent produced no analysis — no final analysis and no insight drafts');
+  }
+
+  if (agentState.finalAnalysis && !hasFinalInsights && !hasFinalSummary) {
+    issues.push('agent finished analysis but produced no insights and no summary');
+  }
+
+  if (issues.length > 0) {
+    log(sessionId, 'warning', 'ai', `AI analysis Definition of Done not met: ${issues.join('; ')}`, url, {
+      aiUsedForAnalysis: true,
+      layer: 'verification-feedback',
+      dodIssues: issues,
+      pageContextRead: agentState.pageContextRead,
+      draftInsightCount: agentState.insightDrafts.length,
+      finalInsightCount: agentState.finalAnalysis?.insights?.length || 0,
+      hasFinalSummary,
+    });
+  }
+
+  return issues;
+}
+
 export async function analyzeWithAgent(extract, baseline, sessionId) {
   const provider = process.env.XBUFFER_AI_PROVIDER || 'deepseek';
   const apiKeyEnv = getApiKeyEnvName(provider);
@@ -246,9 +280,12 @@ export async function analyzeWithAgent(extract, baseline, sessionId) {
   } catch (error) {
     log(sessionId, 'warning', 'ai', `AI agent analysis unavailable after retries; using deterministic analysis: ${error.message}`, extract.finalUrl, {
       aiUsedForAnalysis: false,
+      layer: 'verification-feedback',
     });
     return baseline;
   }
+
+  const dodIssues = validateDefinitionOfDone(agentState, sessionId, extract.finalUrl);
 
   const heuristicInsights = baseline.insights.map((insight) => ({
     ...insight,
@@ -261,10 +298,14 @@ export async function analyzeWithAgent(extract, baseline, sessionId) {
     }));
 
   const finalAnalysis = agentState.finalAnalysis || baseline;
+  const aiActuallyContributed = agentState.insightDrafts.length > 0
+    || (agentState.finalAnalysis && agentState.finalAnalysis !== baseline);
+  const aiUsedForAnalysis = aiActuallyContributed && dodIssues.length === 0;
+
   return {
     ...finalAnalysis,
-    analysisSource: 'ai',
-    aiUsedForAnalysis: true,
+    analysisSource: aiUsedForAnalysis ? 'ai' : 'default',
+    aiUsedForAnalysis,
     summary: finalAnalysis.summary || baseline.summary,
     interesting: true,
     insights: [...heuristicInsights, ...aiInsights],

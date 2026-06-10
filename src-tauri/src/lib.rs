@@ -26,7 +26,7 @@ pub use commands::browser::{
     browser_fill, browser_navigate, browser_open, browser_press, browser_screenshot,
     browser_snapshot, browser_type, delete_ai_browser_session, get_ai_browser_session,
     get_browser_status, list_ai_browser_insights, list_ai_browser_logs, list_ai_browser_pages,
-    list_recent_ai_browser_sessions, BrowserProcessState,
+    list_recent_ai_browser_sessions, stop_all_active_crawls, has_any_active_crawl, BrowserProcessState,
 };
 pub use commands::packet_capture::{
     configure_capture_network, get_packet_capture_status, get_packets_paginated,

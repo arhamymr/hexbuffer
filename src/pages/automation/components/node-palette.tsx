@@ -15,7 +15,6 @@ import {
   Webhook,
   Bell,
   Terminal,
-  GripVertical,
   ScanLine,
   Plug,
   Shield,
@@ -41,7 +40,6 @@ import {
   AccordionTrigger,
   AccordionContent,
 } from '@/components/ui/accordion';
-import { useDnD } from './dnd-context';
 import {
   NODE_TYPE_REGISTRY,
   NODE_CATEGORY_GROUPS,
@@ -84,24 +82,18 @@ const iconMap: Record<string, typeof Play> = {
   Square,
 };
 
-export function NodePalette() {
-  const { setType, addNodeAtCenter } = useDnD();
-  const [search, setSearch] = React.useState('');
+interface NodePaletteProps {
+  onAddNodeAtCenter?: (nodeType: AutomationNodeType) => void;
+}
 
-  const handleDragStart = React.useCallback(
-    (event: React.DragEvent, nodeType: AutomationNodeType) => {
-      setType(nodeType);
-      event.dataTransfer.setData('text/plain', nodeType);
-      event.dataTransfer.effectAllowed = 'move';
-    },
-    [setType]
-  );
+export function NodePalette({ onAddNodeAtCenter }: NodePaletteProps) {
+  const [search, setSearch] = React.useState('');
 
   const handleClick = React.useCallback(
     (nodeType: AutomationNodeType) => {
-      addNodeAtCenter?.(nodeType);
+      onAddNodeAtCenter?.(nodeType);
     },
-    [addNodeAtCenter]
+    [onAddNodeAtCenter]
   );
 
   const query = search.toLowerCase().trim();
@@ -194,11 +186,9 @@ export function NodePalette() {
                         return (
                           <div
                             key={def.type}
-                            draggable
-                            onDragStart={(e) => handleDragStart(e, def.type)}
                             onClick={() => handleClick(def.type)}
                             className={cn(
-                              'flex w-full cursor-grab items-center gap-2 rounded-lg border px-2.5 py-2 transition-colors active:cursor-grabbing',
+                              'flex w-full cursor-pointer items-center gap-2 rounded-lg border px-1.5 py-1 transition-colors',
                               'hover:bg-accent hover:border-accent-foreground/20',
                               'active:scale-[0.98]',
                             )}
@@ -212,12 +202,11 @@ export function NodePalette() {
                               <Icon className={cn('size-3', CATEGORY_ICON_TEXT[def.category])} />
                             </div>
                             <div className="min-w-0 flex-1">
-                              <p className="truncate text-[11px] font-medium">{def.label}</p>
-                              <p className="truncate text-[9px] leading-tight text-muted-foreground">
+                              <p className="text-[9px] font-medium">{def.label}</p>
+                              <p className="text-[9px] leading-tight text-muted-foreground">
                                 {def.description}
                               </p>
                             </div>
-                            <GripVertical className="size-3 shrink-0 text-muted-foreground/40" />
                           </div>
                         );
                       })}

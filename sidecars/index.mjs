@@ -1,13 +1,179 @@
 #!/usr/bin/env node
 
+/**
+ * 0xBuffer AI Engine Sidecar — Harness Contract
+ *
+ * Spawned by the Tauri app. Reads configuration from environment variables
+ * and communicates results via JSON lines on stdout.
+ *
+ * ## Modes
+ * - `crawl` (default): Browser automation BFS crawl with AI analysis
+ * - `chat`: Interactive AI chat agent
+ * - `validate`: Dry-run that checks all prerequisites without executing
+ *
+ * ## Definition of Done
+ * - crawl: Emits `session_finished` after queue exhausted or maxPages reached
+ * - chat: Emits `session_finished` when chat loop exits
+ * - validate: Exits 0 if all checks pass, non-zero with diagnostics otherwise
+ *
+ * ## Required Environment Variables
+ * - 0XBUFFER_AI_ENGINE_MODE: 'crawl' | 'chat' | 'validate'
+ * - 0XBUFFER_CRAWL_SESSION_ID (crawl mode): Session identifier
+ * - 0XBUFFER_CRAWL_CONFIG_JSON (crawl mode): JSON crawl configuration
+ * - XBUFFER_AI_PROVIDER: 'deepseek' | 'openai'
+ * - OPENAI_API_KEY or DEEPSEEK_API_KEY: depending on provider
+ *
+ * ## Failure Attribution Layers
+ * 1. task-specification: Missing or malformed env vars / config
+ * 2. execution-environment: Missing deps, wrong Node version
+ * 3. context-provision: Missing API keys when AI is needed
+ * 4. verification-feedback: Runtime errors during crawl/chat
+ */
+
 import { runCli } from './lib/cli.mjs';
 import { emit } from './lib/events.mjs';
 
 export { runCli };
 
+// ---------------------------------------------------------------------------
+// Pre-flight validation (Harness Layers 1–3)
+// ---------------------------------------------------------------------------
+
+const VALID_MODES = ['crawl', 'chat', 'validate'];
+
+function runPreflight() {
+  const mode = process.env['0XBUFFER_AI_ENGINE_MODE'] || 'crawl';
+  const checks = [];
+
+  // ── Layer 1: Task Specification ──────────────────────────────────────
+
+  if (!VALID_MODES.includes(mode)) {
+    checks.push({
+      layer: 'task-specification',
+      message: `Invalid mode "${mode}". Must be one of: ${VALID_MODES.join(', ')}`,
+      fix: 'Set 0XBUFFER_AI_ENGINE_MODE to a valid value',
+    });
+  }
+
+  if (mode === 'crawl') {
+    const sessionId = process.env['0XBUFFER_CRAWL_SESSION_ID'];
+    if (!sessionId) {
+      checks.push({
+        layer: 'task-specification',
+        message: 'Missing required env var: 0XBUFFER_CRAWL_SESSION_ID',
+        fix: 'Ensure the Tauri backend sets 0XBUFFER_CRAWL_SESSION_ID before spawning',
+      });
+    }
+
+    const rawConfig = process.env['0XBUFFER_CRAWL_CONFIG_JSON'] || '{}';
+    try {
+      const config = JSON.parse(rawConfig);
+      if (!config.targetUrl) {
+        checks.push({
+          layer: 'task-specification',
+          message: '0XBUFFER_CRAWL_CONFIG_JSON missing required field: targetUrl',
+          fix: 'Include targetUrl in the crawl config JSON',
+        });
+      }
+    } catch {
+      checks.push({
+        layer: 'task-specification',
+        message: '0XBUFFER_CRAWL_CONFIG_JSON is not valid JSON',
+        fix: 'Ensure the config is serialized as valid JSON before spawning the sidecar',
+      });
+    }
+  }
+
+  // ── Layer 2: Execution Environment ───────────────────────────────────
+
+  const nodeMajor = Number.parseInt(process.versions.node.split('.')[0], 10);
+  if (nodeMajor < 20) {
+    checks.push({
+      layer: 'execution-environment',
+      message: `Node.js v${process.versions.node} is too old. Minimum: v20.x`,
+      fix: 'Upgrade Node.js to v20 or later',
+    });
+  }
+
+  // ── Layer 3: Context Provision (API keys) ────────────────────────────
+
+  const provider = process.env.XBUFFER_AI_PROVIDER || 'deepseek';
+  if (!['deepseek', 'openai'].includes(provider)) {
+    checks.push({
+      layer: 'context-provision',
+      message: `Unknown AI provider "${provider}". Supported: deepseek, openai`,
+      fix: 'Set XBUFFER_AI_PROVIDER to deepseek or openai',
+    });
+  } else {
+    const apiKeyEnv = provider === 'openai' ? 'OPENAI_API_KEY' : 'DEEPSEEK_API_KEY';
+    if (!process.env[apiKeyEnv]?.trim()) {
+      checks.push({
+        layer: 'context-provision',
+        message: `AI provider "${provider}" selected but ${apiKeyEnv} is not set`,
+        fix: `Set ${apiKeyEnv} in the environment, or set enableAiInsights: false to skip AI`,
+      });
+    }
+  }
+
+  return { mode, checks };
+}
+
+// ---------------------------------------------------------------------------
+// Main entry point
+// ---------------------------------------------------------------------------
+
 if (import.meta.url === `file://${process.argv[1]}`) {
+  const isValidateMode =
+    process.argv.includes('--validate') ||
+    process.env['0XBUFFER_AI_ENGINE_MODE'] === 'validate';
+
+  const { mode, checks } = runPreflight();
+  const failures = checks;
+
+  // ── Validate mode: dry-run, report all issues, exit ──────────────────
+
+  if (isValidateMode) {
+    if (failures.length === 0) {
+      process.stderr.write(`[ai-engine] validate: all checks passed (mode=${mode})\n`);
+      process.exit(0);
+    }
+    process.stderr.write(`[ai-engine] validate: ${failures.length} failure(s):\n`);
+    for (const f of failures) {
+      process.stderr.write(`  [${f.layer}] ${f.message}\n    → fix: ${f.fix}\n`);
+    }
+    process.exit(1);
+  }
+
+  // ── Normal mode: warn on non-fatal issues, bail on fatal ones ───────
+
+  if (failures.length > 0) {
+    process.stderr.write(`[ai-engine] preflight: ${failures.length} warning(s):\n`);
+    for (const f of failures) {
+      process.stderr.write(`  [${f.layer}] ${f.message}\n`);
+    }
+
+    const fatal = failures.filter((f) => f.layer === 'task-specification');
+    if (fatal.length > 0) {
+      for (const f of fatal) {
+        emit({
+          type: 'session_failed',
+          message: `[${f.layer}] ${f.message}`,
+          layer: f.layer,
+          fix: f.fix,
+          createdAt: new Date().toISOString(),
+        });
+      }
+      process.exit(1);
+    }
+  }
+
   runCli().catch((error) => {
-    emit({ type: 'session_failed', message: error.message, createdAt: new Date().toISOString() });
+    emit({
+      type: 'session_failed',
+      message: error.message,
+      layer: 'verification-feedback',
+      createdAt: new Date().toISOString(),
+    });
     process.exitCode = 1;
   });
 }

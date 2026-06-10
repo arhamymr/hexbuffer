@@ -1052,6 +1052,80 @@ pub async fn ai_browser_stop_crawl(
     Ok(())
 }
 
+/// Check whether any crawl session is currently running or paused.
+pub fn has_any_active_crawl(state: &AiBrowserState) -> bool {
+    state
+        .sessions
+        .lock()
+        .ok()
+        .map(|sessions| {
+            sessions
+                .values()
+                .any(|s| s.status == "running" || s.status == "paused")
+        })
+        .unwrap_or(false)
+}
+
+/// Stop every crawl session that is currently running or paused.
+/// Called when the app is about to close while crawls are still active.
+pub fn stop_all_active_crawls(app: &AppHandle, state: &AiBrowserState) {
+    let active_sessions: Vec<String> = state
+        .sessions
+        .lock()
+        .ok()
+        .map(|sessions| {
+            sessions
+                .values()
+                .filter(|s| s.status == "running" || s.status == "paused")
+                .map(|s| s.id.clone())
+                .collect()
+        })
+        .unwrap_or_default();
+
+    for session_id in &active_sessions {
+        if let Some(cancel_flags) = state
+            .cancellations
+            .lock()
+            .ok()
+            .and_then(|mut c| c.remove(session_id))
+        {
+            for flag in cancel_flags.values() {
+                flag.store(true, Ordering::SeqCst);
+            }
+        }
+
+        if let Some(children) = state
+            .children
+            .lock()
+            .ok()
+            .and_then(|mut c| c.remove(session_id))
+        {
+            for child in children.values() {
+                kill_child_process_group(child);
+            }
+        }
+
+        let _ = update_session(app, state, session_id, "stopped", Some(now()));
+
+        let _ = add_log(
+            app,
+            state,
+            ActivityLog {
+                id: uuid::Uuid::new_v4().to_string(),
+                session_id: session_id.clone(),
+                level: "warning".to_string(),
+                r#type: "session".to_string(),
+                message: "Crawl stopped because the app was closed.".to_string(),
+                url: None,
+                ai_used_for_analysis: None,
+                created_at: now(),
+                extra: None,
+                human_input_request: None,
+            },
+        );
+    }
+}
+
 #[tauri::command]
 pub async fn delete_ai_browser_session(
     state: State<'_, AiBrowserState>,

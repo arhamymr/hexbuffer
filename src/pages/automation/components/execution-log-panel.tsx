@@ -12,7 +12,6 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAutomationStore, type ExecutionLog } from '@/stores/automation';
 
 const levelIcons: Record<ExecutionLog['level'], typeof Info> = {
@@ -93,46 +92,44 @@ export function ExecutionLogPanel() {
 
       {/* Log content */}
       {!collapsed && (
-        <ScrollArea className="flex-1">
-          <div ref={scrollRef} className="h-full overflow-y-auto">
-            {logs.length === 0 ? (
-              <div className="flex h-full items-center justify-center py-4">
-                <p className="text-[11px] text-muted-foreground">
-                  {isRunning ? 'Running...' : 'Run a workflow to see execution logs'}
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-0.5 py-1 font-mono text-[11px]">
-                {logs.map((log) => {
-                  const Icon = levelIcons[log.level];
-                  return (
-                    <div
-                      key={log.id}
-                      className={cn(
-                        'flex items-start gap-2 px-3 py-0.5',
-                        'hover:bg-muted/50',
-                        log.level === 'error' && 'bg-red-500/5'
-                      )}
-                    >
-                      <Icon className={cn('size-3 shrink-0 mt-0.5', levelStyles[log.level])} />
-                      <span className="shrink-0 text-muted-foreground/60">
-                        {formatTime(log.timestamp)}
+        <div ref={scrollRef} className="flex-1 min-h-0 overflow-auto">
+          {logs.length === 0 ? (
+            <div className="flex items-center justify-center py-4">
+              <p className="text-[11px] text-muted-foreground">
+                {isRunning ? 'Running...' : 'Run a workflow to see execution logs'}
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-0.5 py-1 font-mono text-[11px]">
+              {logs.map((log) => {
+                const Icon = levelIcons[log.level];
+                return (
+                  <div
+                    key={log.id}
+                    className={cn(
+                      'flex items-start gap-2 px-3 py-0.5',
+                      'hover:bg-muted/50',
+                      log.level === 'error' && 'bg-red-500/5'
+                    )}
+                  >
+                    <Icon className={cn('size-3 shrink-0 mt-0.5', levelStyles[log.level])} />
+                    <span className="shrink-0 text-muted-foreground/60">
+                      {formatTime(log.timestamp)}
+                    </span>
+                    <span className={levelStyles[log.level]}>
+                      {log.message}
+                    </span>
+                    {log.nodeLabel && (
+                      <span className="ml-auto shrink-0 rounded bg-muted px-1.5 py-0 text-[10px] text-muted-foreground">
+                        {log.nodeLabel}
                       </span>
-                      <span className={levelStyles[log.level]}>
-                        {log.message}
-                      </span>
-                      {log.nodeLabel && (
-                        <span className="ml-auto shrink-0 rounded bg-muted px-1.5 py-0 text-[10px] text-muted-foreground">
-                          {log.nodeLabel}
-                        </span>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        </ScrollArea>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
       )}
     </div>
   );

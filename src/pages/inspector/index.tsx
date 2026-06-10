@@ -1,6 +1,5 @@
 'use client';
 
-import { useCallback, useMemo, useState } from 'react';
 import { Plug, Unplug, Loader2, Circle, RotateCw, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -15,96 +14,26 @@ import { PagesSidebar } from './components/pages-sidebar';
 import { NetworkPanel } from './components/network-panel';
 import { NetworkDetail } from './components/network-detail';
 import { StoragePanel } from './components/storage-panel';
-import { useInspectorStore } from '@/stores/inspector';
-import { useAppStore, getEffectiveProxyPort } from '@/stores/app';
-import {
-  connectInspectorCdp,
-  disconnectInspectorCdp,
-  resetInspectorBrowser,
-} from './api';
-import { DEFAULT_DEBUGGING_PORT } from './constants';
-import type { InspectorConsoleLog } from './types';
-import { toast } from 'sonner';
-
-const TABS = [
-  { id: 'console', label: 'Console' },
-  { id: 'network', label: 'Network' },
-  { id: 'storage', label: 'Storage' },
-] as const;
+import { TABS } from './constants';
 
 export function InspectorPage() {
-  useInspectorPage();
-
-  const [isConnecting, setIsConnecting] = useState(false);
-  const [isResetting, setIsResetting] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
-
-  const isConnected = useInspectorStore((state) => state.isConnected);
-  const setConnected = useInspectorStore((state) => state.setConnected);
-  const logs = useInspectorStore((state) => state.logs);
-  const selectedLogId = useInspectorStore((state) => state.selectedLogId);
-  const setSelectedLogId = useInspectorStore((state) => state.setSelectedLogId);
-  const activeTab = useInspectorStore((state) => state.activeTab);
-  const setActiveTab = useInspectorStore((state) => state.setActiveTab);
-  const networkEntries = useInspectorStore((state) => state.networkEntries);
-  const selectedNetworkId = useInspectorStore((state) => state.selectedNetworkId);
-  const proxyPort = useAppStore((state) => state.proxyPort);
-  const proxyDefaultPort = useAppStore((state) => state.proxyDefaultPort);
-  const activeProxyPort = getEffectiveProxyPort({ proxyPort, proxyDefaultPort });
-
-  const handleConnect = useCallback(async () => {
-    setIsConnecting(true);
-    try {
-      await connectInspectorCdp(DEFAULT_DEBUGGING_PORT);
-      toast.success('Connected to browser DevTools');
-    } catch (error) {
-      const msg = error instanceof Error ? error.message : 'Failed to connect';
-      toast.error(msg);
-    } finally {
-      setIsConnecting(false);
-    }
-  }, []);
-
-  const handleDisconnect = useCallback(async () => {
-    try {
-      await disconnectInspectorCdp();
-      setConnected(false);
-      toast.success('Disconnected from browser');
-    } catch (error) {
-      const msg = error instanceof Error ? error.message : 'Failed to disconnect';
-      toast.error(msg);
-    }
-  }, [setConnected]);
-
-  const handleReset = useCallback(async () => {
-    setIsResetting(true);
-    try {
-      await disconnectInspectorCdp();
-      setConnected(false);
-      await resetInspectorBrowser(DEFAULT_DEBUGGING_PORT, activeProxyPort);
-      await connectInspectorCdp(DEFAULT_DEBUGGING_PORT);
-      toast.success('Browser reset');
-    } catch (error) {
-      const msg = error instanceof Error ? error.message : 'Failed to reset browser';
-      toast.error(msg);
-    } finally {
-      setIsResetting(false);
-    }
-  }, [setConnected, activeProxyPort]);
-
-  const selectedLog = useMemo(
-    () => logs.find((l) => l.id === selectedLogId) ?? null,
-    [logs, selectedLogId]
-  );
-
-  const selectedNetwork = useMemo(
-    () => networkEntries.find((e) => e.id === selectedNetworkId) ?? null,
-    [networkEntries, selectedNetworkId]
-  );
-
-  const handleSelectLog = useCallback((log: InspectorConsoleLog) => {
-    setSelectedLogId(log.id);
-  }, [setSelectedLogId]);
+  const {
+    isConnected,
+    isConnecting,
+    isResetting,
+    sidebarOpen,
+    setSidebarOpen,
+    activeTab,
+    setActiveTab,
+    activeProxyPort,
+    selectedLogId,
+    selectedLog,
+    selectedNetwork,
+    handleSelectLog,
+    handleConnect,
+    handleDisconnect,
+    handleReset,
+  } = useInspectorPage();
 
   return (
     <div className="flex h-full min-h-0 flex-col">

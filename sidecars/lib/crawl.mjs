@@ -76,7 +76,12 @@ export async function runCrawl() {
   const sessionId = process.env['0XBUFFER_CRAWL_SESSION_ID'];
   const config = JSON.parse(process.env['0XBUFFER_CRAWL_CONFIG_JSON'] || '{}');
   if (!sessionId || !config.targetUrl) {
-    throw new Error('Missing 0XBUFFER_CRAWL_SESSION_ID or 0XBUFFER_CRAWL_CONFIG_JSON.targetUrl');
+    log(sessionId || 'unknown', 'error', 'error',
+      `[task-specification] Missing required config: ${!sessionId ? '0XBUFFER_CRAWL_SESSION_ID' : ''}${!sessionId && !config.targetUrl ? ', ' : ''}${!config.targetUrl ? 'targetUrl' : ''}`,
+      config.targetUrl || 'unknown',
+      { layer: 'task-specification', fix: 'Ensure the Tauri backend sets both env vars before spawning the sidecar' }
+    );
+    throw new Error(`[task-specification] Missing ${!sessionId ? '0XBUFFER_CRAWL_SESSION_ID' : ''}${!sessionId && !config.targetUrl ? ' and ' : ''}${!config.targetUrl ? '0XBUFFER_CRAWL_CONFIG_JSON.targetUrl' : ''}`);
   }
 
   let playwrightRuntime;
@@ -107,7 +112,10 @@ export async function runCrawl() {
       playwrightRuntime = await createPlaywrightRuntime(config);
       log(sessionId, 'info', 'session', 'Browser Automation started in visible browser mode', config.targetUrl);
     } catch (error) {
-      log(sessionId, 'error', 'error', error.message, config.targetUrl);
+      log(sessionId, 'error', 'error', `[execution-environment] Failed to create Playwright runtime: ${error.message}`, config.targetUrl, {
+        layer: 'execution-environment',
+        fix: 'Ensure Playwright browsers are installed (npx playwright install chromium)',
+      });
       throw error;
     }
   }
@@ -138,7 +146,7 @@ export async function runCrawl() {
           return useFetchCrawler
             ? await fetchExtract(item.url, config)
             : await playwrightExtract(item.url, config, pageId, item.humanInput, playwrightRuntime);
-        }, { maxAttempts: 2, name: `extract:${item.url}` });
+        }, { maxAttempts: 1, name: `extract:${item.url}` });
         const baseline = heuristicAnalyze(extract);
         let analysis = baseline;
         if (aiEnabled && baseline.interesting) {

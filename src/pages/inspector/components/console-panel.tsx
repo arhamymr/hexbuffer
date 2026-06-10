@@ -6,7 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ButtonGroup } from '@/components/ui/button-group';
 import { useInspectorStore } from '@/stores/inspector';
-import { CONSOLE_FILTERS, CONSOLE_LEVEL_COLORS } from '../constants';
+import { CONSOLE_FILTERS } from '../constants';
+import { ConsoleLevelBadge } from '@/components/status-badge';
 import { exportConsoleLogs } from '../lib/export';
 import type { InspectorConsoleLog } from '../types';
 
@@ -152,9 +153,7 @@ export function ConsolePanel({ selectedLogId, onSelectLog }: ConsolePanelProps) 
                     {formatTime(log.timestamp)}
                   </td>
                   <td className="px-3 py-1">
-                    <span className={CONSOLE_LEVEL_COLORS[log.level] ?? 'text-foreground'}>
-                      {log.level === 'pageerror' ? 'error' : log.level}
-                    </span>
+                    <ConsoleLevelBadge level={log.level} />
                   </td>
                   <td
                     className="px-3 py-1 text-muted-foreground truncate max-w-[200px]"

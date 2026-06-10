@@ -38,7 +38,7 @@ export function NodeConfigPanel({ node, onClose, onUpdate }: NodeConfigPanelProp
   };
 
   return (
-    <div className="flex h-full w-full flex-col border-l bg-background">
+    <div className="flex h-full w-full flex-col bg-background">
       {/* Header */}
       <div className="flex shrink-0 items-center gap-2 border-b px-3 py-2">
         <span className="text-xs font-semibold">Node Properties</span>

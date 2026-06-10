@@ -1,8 +1,9 @@
 'use client';
 
 import { Handle, Position, type NodeProps } from '@xyflow/react';
-import { SquareFunction } from 'lucide-react';
+import { SquareFunction, GripVertical } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useAutomationStore } from '@/stores/automation';
 import {
   CATEGORY_BORDER,
   CATEGORY_BG,
@@ -26,21 +27,26 @@ export function ConditionNode({ id, data, selected }: NodeProps) {
   const nodeData = data as unknown as AutomationNodeData;
   const config = nodeData.config as ConditionConfig;
   const glyph = operatorGlyphs[config?.operator] ?? '?';
+  const executingNodeId = useAutomationStore((s) => s.executingNodeId);
+  const isExecuting = executingNodeId === id;
 
   return (
     <div
       className={cn(
-        'group relative min-w-[180px] rounded-xl border-2 shadow-sm transition-shadow',
+        'group relative min-w-[180px] rounded-md border-2 shadow-sm transition-shadow',
         CATEGORY_BORDER.condition,
         CATEGORY_BG.condition,
         selected && 'ring-2 ring-ring ring-offset-2',
+        isExecuting && 'animate-pulse ring-2 ring-amber-400 ring-offset-2 shadow-lg shadow-amber-500/20',
       )}
     >
       <NodeDeleteButton nodeId={id} selected={selected} />
       <Handle
         type="target"
         position={Position.Top}
-        className={cn('!size-3 !border-2 !bg-background transition-colors', CATEGORY_HANDLE.condition)}
+        isConnectable
+        style={{ width: 12, height: 12, borderWidth: 2, top: -6 }}
+        className={cn('transition-colors', CATEGORY_HANDLE.condition)}
       />
 
       <div className="flex items-center gap-2 px-3 py-2.5">
@@ -51,6 +57,7 @@ export function ConditionNode({ id, data, selected }: NodeProps) {
           <p className="truncate text-xs font-semibold">{nodeData.label}</p>
           <p className="truncate text-[10px] text-muted-foreground">Condition</p>
         </div>
+        <GripVertical className="size-3.5 shrink-0 text-muted-foreground/30 opacity-0 group-hover:opacity-100 transition-opacity" />
       </div>
 
       {config && (
@@ -70,15 +77,17 @@ export function ConditionNode({ id, data, selected }: NodeProps) {
         type="source"
         position={Position.Bottom}
         id="true"
-        className="!size-3 !border-2 !bg-background !border-emerald-500 hover:!bg-emerald-500 transition-colors"
-        style={{ left: '35%' }}
+        isConnectable
+        style={{ width: 12, height: 12, borderWidth: 2, left: '35%', bottom: -6 }}
+        className="!bg-emerald-500 !border-background hover:!bg-emerald-600 transition-colors"
       />
       <Handle
         type="source"
         position={Position.Bottom}
         id="false"
-        className="!size-3 !border-2 !bg-background !border-red-500 hover:!bg-red-500 transition-colors"
-        style={{ left: '65%' }}
+        isConnectable
+        style={{ width: 12, height: 12, borderWidth: 2, left: '65%', bottom: -6 }}
+        className="!bg-red-500 !border-background hover:!bg-red-600 transition-colors"
       />
     </div>
   );

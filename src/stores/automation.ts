@@ -25,6 +25,7 @@ interface AutomationState {
   selectedRunId: string | null;
   selectedRunSteps: WorkflowRunStep[];
   isRunning: boolean;
+  executingNodeId: string | null;
   executionLogs: ExecutionLog[];
 
   createWorkflow: () => string;
@@ -51,6 +52,7 @@ export const useAutomationStore = create<AutomationState>()(persist(
       selectedRunId: null,
       selectedRunSteps: [],
       isRunning: false,
+      executingNodeId: null,
       executionLogs: [],
 
       createWorkflow: () => {
@@ -183,7 +185,7 @@ export const useAutomationStore = create<AutomationState>()(persist(
 
         if (nodes.length === 0) {
           addLog('warning', 'Workflow has no nodes');
-          set({ isRunning: false });
+          set({ isRunning: false, executingNodeId: null });
           return;
         }
 
@@ -231,7 +233,7 @@ export const useAutomationStore = create<AutomationState>()(persist(
         }
 
         addLog('success', `Workflow completed: ${visited.size}/${nodes.length} nodes executed`);
-        set({ isRunning: false });
+        set({ isRunning: false, executingNodeId: null });
       },
 
       selectRun: (runId) => {

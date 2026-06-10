@@ -1,13 +1,13 @@
 'use client';
 
 import { useMemo } from 'react';
-import { AlertTriangle, CircleDot, FileCheck2, ShieldBan, Loader } from 'lucide-react';
+import { AlertTriangle, CircleDot, CircleStop, FileCheck2, ShieldBan, Loader } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { TreeView, type TreeNodeData } from '@/components/tree-view';
 import { cn } from '@/lib/utils';
 import { useBrowserAutomationStore } from '@/stores/browser-automation';
 import { PAGE_STATUS_LABELS } from '../constants';
-import type { CrawlPageStatus, CrawlTreeNode } from '../types';
+import type { CrawlPageStatus, CrawlStatus, CrawlTreeNode } from '../types';
 
 type CrawlTreeMeta = { pageId: string };
 
@@ -16,6 +16,7 @@ interface CrawlTreePanelProps {
   selectedPageId: string | null;
   expandedPageIds: string[];
   searchQuery?: string;
+  crawlStatus?: CrawlStatus;
 }
 
 const statusStyles: Record<CrawlPageStatus, string> = {
@@ -46,17 +47,22 @@ function formatCrawlTreeUrl(url: string) {
   return url.replace(/^https?:\/\//i, '');
 }
 
-function toTreeNode(node: CrawlTreeNode): TreeNodeData<CrawlTreeMeta> {
-  const Icon = statusIcon[node.status];
+function toTreeNode(node: CrawlTreeNode, crawlStopped: boolean): TreeNodeData<CrawlTreeMeta> {
+  const showStopped = crawlStopped && node.status === 'queued';
+  const Icon = showStopped ? CircleStop : statusIcon[node.status];
 
   return {
     id: node.id,
     type: 'crawl-page',
     label: formatCrawlTreeUrl(node.url),
     status: node.status,
-    children: node.children.map(toTreeNode),
+    children: node.children.map((child) => toTreeNode(child, crawlStopped)),
     icon: Icon,
-    iconClassName: cn(statusIconClassName[node.status], node.status === 'current' && 'animate-pulse'),
+    iconClassName: cn(
+      statusIconClassName[node.status],
+      node.status === 'current' && 'animate-pulse',
+      showStopped && 'text-muted-foreground',
+    ),
     badge: (
       <Badge variant="outline" className={cn('h-4 px-1 text-[10px] capitalize', statusStyles[node.status])}>
         {PAGE_STATUS_LABELS[node.status]}
@@ -71,9 +77,11 @@ export function CrawlTreePanel({
   selectedPageId,
   expandedPageIds,
   searchQuery = '',
+  crawlStatus,
 }: CrawlTreePanelProps) {
   const selectPage = useBrowserAutomationStore((s) => s.selectPage);
-  const treeNodes = nodes.map(toTreeNode);
+  const crawlStopped = crawlStatus === 'stopped';
+  const treeNodes = nodes.map((node) => toTreeNode(node, crawlStopped));
 
   const allPageIds = useMemo(() => {
     function collect(node: CrawlTreeNode): string[] {

@@ -4,9 +4,9 @@
   "version": "2026.0.15",
   "identifier": "com.0xbuffer",
   "build": {
-    "beforeDevCommand": "pnpm dev:clean",
+    "beforeDevCommand": "pnpm sidecars:build && pnpm dev:clean",
     "devUrl": "http://localhost:1420",
-    "beforeBuildCommand": "pnpm build",
+    "beforeBuildCommand": "pnpm sidecars:build && pnpm build",
     "frontendDist": "../dist"
   },
   "app": {

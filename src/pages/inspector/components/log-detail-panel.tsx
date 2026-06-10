@@ -2,7 +2,7 @@
 
 import { Copy, AlertTriangle, Info, AlertCircle, Bug, Terminal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { CONSOLE_LEVEL_COLORS } from '../constants';
+import { ConsoleLevelBadge } from '@/components/status-badge';
 import type { InspectorConsoleLog } from '../types';
 import { toast } from 'sonner';
 
@@ -32,7 +32,6 @@ export function LogDetailPanel({ log }: LogDetailPanelProps) {
   }
 
   const LevelIcon = levelIcons[log.level] ?? Terminal;
-  const levelColor = CONSOLE_LEVEL_COLORS[log.level] ?? 'text-foreground';
 
   const handleCopy = () => {
     navigator.clipboard.writeText(log.text).then(
@@ -44,10 +43,8 @@ export function LogDetailPanel({ log }: LogDetailPanelProps) {
   return (
     <div className="flex h-full min-h-0 flex-col">
       <header className="flex items-center gap-2 border-b bg-muted px-3 py-2">
-        <LevelIcon className={`size-4 shrink-0 ${levelColor}`} />
-        <span className={`text-xs font-semibold ${levelColor}`}>
-          {log.level === 'pageerror' ? 'Page Error' : log.level}
-        </span>
+        <LevelIcon className="size-4 shrink-0 text-foreground" />
+        <ConsoleLevelBadge level={log.level} />
         <Button
           variant="outline"
           size="xs"

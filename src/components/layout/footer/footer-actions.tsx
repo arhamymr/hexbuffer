@@ -1,13 +1,12 @@
+import { useLocation, useNavigate } from 'react-router-dom';
 import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
-import { ArrowUp, Bot, Bubbles, Loader2, MessageCircle, Moon, Settings, Sun, TerminalSquare } from 'lucide-react';
+import { ArrowUp, Loader2, MessageSquare, Moon, Settings, Sun, TerminalSquare } from 'lucide-react';
 import { Button } from '../../ui/button';
 import { Separator } from '@/components/ui/separator';
 
 interface FooterActionsProps {
   theme: string;
   toggleTheme: () => void;
-  isAssistantOpen: boolean;
-  onToggleAssistant: () => void;
   isTerminalOpen: boolean;
   onToggleTerminal: () => void;
   updateAvailable: boolean;
@@ -20,8 +19,6 @@ interface FooterActionsProps {
 export function FooterActions({
   theme,
   toggleTheme,
-  isAssistantOpen,
-  onToggleAssistant,
   isTerminalOpen,
   onToggleTerminal,
   updateAvailable,
@@ -30,6 +27,10 @@ export function FooterActions({
   downloading,
   onOpenUpdateDialog,
 }: FooterActionsProps) {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const isLandingPage = location.pathname === '/';
+
   return (
     <div className="flex shrink-0 items-center gap-1">
       <Button
@@ -41,20 +42,20 @@ export function FooterActions({
       >
         <TerminalSquare className="size-4.5" />
       </Button>
-
-      <Button
+       <Button
         variant="ghost"
         size="xs"
-        className={`h-8 w-8 p-0 ${isAssistantOpen ? 'text-primary' : ''}`}
-        onClick={onToggleAssistant}
-        title={isAssistantOpen ? 'Close AI Analyst' : 'Open AI Analyst'}
+        className={`h-8 w-8 p-0 ${isLandingPage ? 'text-primary' : ''}`}
+        onClick={() => navigate('/')}
+        title="AI Assistant"
       >
-        <MessageCircle className="size-4" />
+        <MessageSquare className="size-4" />
       </Button>
+
       <div className='h-6 px-1'>
         <Separator orientation="vertical" className="h-6" />
       </div>
-
+     
       {updateAvailable && !updateInstalled && (
         <Button
           variant="ghost"

@@ -1,7 +1,6 @@
 use bytes::Bytes;
 use tauri::{Emitter, Manager};
 
-use super::super::logger;
 use super::super::state::ProxyRecord;
 use super::super::websocket;
 use super::body_decoder::decode_http_body;
@@ -72,7 +71,6 @@ pub fn save_and_emit(ctx: &Ctx, app_handle: &tauri::AppHandle) {
         );
     }
 
-    logger::log_request_body(&txn);
 }
 
 pub fn handle_response_body(

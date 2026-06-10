@@ -1,7 +1,6 @@
 pub mod https;
 pub mod intercept;
 pub mod lifecycle;
-pub mod logger;
 pub mod state;
 pub mod utils;
 pub mod websocket;

@@ -1,3 +1,5 @@
+import { CONSOLE_LEVEL_COLORS } from '@/pages/inspector/constants';
+
 export const levelBadge = {
   info: 'info',
   warning: 'warning',
@@ -99,6 +101,18 @@ export function InterestingBadge() {
   return (
     <span className="text-[10px] px-1 py-0.5 rounded font-mono text-white bg-yellow-600">
       Interesting
+    </span>
+  );
+}
+
+export type ConsoleLevelValue = 'log' | 'info' | 'warning' | 'error' | 'debug' | 'pageerror';
+
+export function ConsoleLevelBadge({ level }: { level: ConsoleLevelValue }) {
+  const colorClass = CONSOLE_LEVEL_COLORS[level] ?? 'bg-gray-600';
+  const label = level === 'pageerror' ? 'error' : level;
+  return (
+    <span className={`text-[10px] px-1 py-0.5 rounded font-mono text-white ${colorClass}`}>
+      {label}
     </span>
   );
 }

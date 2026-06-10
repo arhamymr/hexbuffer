@@ -12,8 +12,10 @@ import {
   Radio,
   Activity,
   Network,
+  GripVertical,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useAutomationStore } from '@/stores/automation';
 import {
   CATEGORY_BORDER,
   CATEGORY_BG,
@@ -42,14 +44,17 @@ export function TriggerNode({ id, data, selected }: NodeProps) {
   const Icon = iconMap[nodeData.iconName] || Play;
   const config = nodeData.config as TriggerConfig;
   const isManual = config?.triggerType === 'trigger:manual';
+  const executingNodeId = useAutomationStore((s) => s.executingNodeId);
+  const isExecuting = executingNodeId === id;
 
   return (
     <div
       className={cn(
-        'group relative min-w-[180px] rounded-xl border-2 shadow-sm transition-shadow',
+        'group relative min-w-[180px] rounded-md border-2 shadow-sm transition-shadow',
         CATEGORY_BORDER.trigger,
         CATEGORY_BG.trigger,
         selected && 'ring-2 ring-ring ring-offset-2',
+        isExecuting && 'animate-pulse ring-2 ring-blue-400 ring-offset-2 shadow-lg shadow-blue-500/20',
       )}
     >
       <NodeDeleteButton nodeId={id} selected={selected} />
@@ -61,6 +66,7 @@ export function TriggerNode({ id, data, selected }: NodeProps) {
           <p className="truncate text-xs font-semibold">{nodeData.label}</p>
           <p className="truncate text-[10px] text-muted-foreground">Trigger</p>
         </div>
+        <GripVertical className="size-3.5 shrink-0 text-muted-foreground/30 opacity-0 group-hover:opacity-100 transition-opacity" />
       </div>
 
       {isManual && (
@@ -75,7 +81,9 @@ export function TriggerNode({ id, data, selected }: NodeProps) {
       <Handle
         type="source"
         position={Position.Bottom}
-        className={cn('!size-3 !border-2 !bg-background transition-colors', CATEGORY_HANDLE.trigger)}
+        isConnectable
+        style={{ width: 12, height: 12, borderWidth: 2, bottom: -6 }}
+        className={cn('transition-colors', CATEGORY_HANDLE.trigger)}
       />
     </div>
   );

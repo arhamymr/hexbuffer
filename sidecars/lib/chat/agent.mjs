@@ -81,6 +81,22 @@ export async function runChat() {
   const context = await readContextFile();
   const provider = process.env.XBUFFER_AI_PROVIDER || 'deepseek';
   const model = process.env['0XBUFFER_AI_MODEL'] || 'deepseek-chat';
+
+  const messages = toChatMessages(request.messages || []);
+  if (messages.length === 0) {
+    emit({
+      type: 'chat_failed',
+      provider,
+      model,
+      message: '[task-specification] No valid user messages found in chat request',
+      layer: 'task-specification',
+      fix: 'Ensure 0XBUFFER_AI_CHAT_REQUEST_JSON contains at least one user or system message',
+      createdAt: new Date().toISOString(),
+    });
+    process.exitCode = 1;
+    return;
+  }
+
   emit({ type: 'chat_started', provider, model, createdAt: new Date().toISOString() });
 
   const redactedRequest = runRedactionWorkflow(request).redactedValue;
@@ -126,7 +142,7 @@ export async function runChat() {
       return await withRetry(async () => {
         const agent = createChatAgent();
         const result = await agent.stream({
-          messages: toChatMessages(redactedRequest.messages),
+          messages,
         });
         let content = '';
         for await (const delta of result.textStream) {
@@ -151,6 +167,7 @@ export async function runChat() {
       provider,
       model,
       message: error.message,
+      layer: 'verification-feedback',
       createdAt: new Date().toISOString(),
     });
     wf.fail(error.message);

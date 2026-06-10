@@ -104,10 +104,16 @@ export function useChatSessions({ setMessagesRef }: UseChatSessionsOptions) {
         setSessions((prev) => {
           const next = prev.filter((s) => s.id !== sessionId);
 
-          // If we deleted the active session, switch to another
-          if (sessionId === activeSessionIdRef.current && next.length > 0) {
-            // Switch asynchronously
-            setTimeout(() => switchSession(next[0].id), 0);
+          // If we deleted the active session, switch to another or clear
+          if (sessionId === activeSessionIdRef.current) {
+            if (next.length > 0) {
+              // Switch asynchronously
+              setTimeout(() => switchSession(next[0].id), 0);
+            } else {
+              // No sessions left — clear the view
+              setActiveSessionId(null);
+              setMessagesRef.current?.([]);
+            }
           }
 
           return next;

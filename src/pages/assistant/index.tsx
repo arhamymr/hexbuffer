@@ -1,7 +1,6 @@
 import { Bot, CheckCircleIcon, ChevronDownIcon, CircleIcon, Loader2Icon, PanelLeftClose, PanelLeftOpen, ShieldAlert, Triangle, X, XCircleIcon } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { AgentHeader } from '@/components/ai-elements/agent';
 import {
   Conversation,
   ConversationContent,
@@ -41,11 +40,11 @@ import {
   TaskTrigger,
   TaskContent,
 } from '@/components/ai-elements/task';
-import { ChatSessionList } from '@/components/layout/ai-chat/components/chat-session-list';
-import { HumanSelectionCard } from '@/components/layout/ai-chat/components/human-selection-card';
-import { SuggestionBar } from '@/components/layout/ai-chat/components/suggestion-bar';
-import { useAiChatPane } from '@/components/layout/ai-chat/hooks/use-ai-chat-pane';
-import { getMessageText, getReasoningParts, hasContent, providerLabel } from '@/components/layout/ai-chat/lib/message-utils';
+import { ChatSessionList } from './components/chat-session-list';
+import { HumanSelectionCard } from './components/human-selection-card';
+import { SuggestionBar } from './components/suggestion-bar';
+import { useAiChatPane } from './hooks/use-ai-chat-pane';
+import { getMessageText, getReasoningParts, hasContent, providerLabel } from './lib/message-utils';
 import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
 
@@ -101,15 +100,6 @@ function AIAssistantPaneContent() {
               <span className="absolute right-0.5 top-0.5 h-2 w-2 rounded-full bg-green-500 ring-1 ring-background" />
             )}
           </Button>
-
-          <div className='ml-3 h-6'>
-            <Separator orientation="vertical"/>
-          </div>
-
-          <AgentHeader
-            name={aiSettingsLoading ? 'Loading…' : "Chat"}
-            model={aiSettingsLoading ? undefined : model}
-          />
         </div>
       </div>
 
@@ -117,7 +107,7 @@ function AIAssistantPaneContent() {
       <div className="flex flex-1 min-h-0 overflow-hidden">
         {/* Session sidebar */}
         {!sidebarCollapsed && (
-          <div className="w-44 shrink-0">
+          <div className="w-70 shrink-0">
             <ChatSessionList
               sessions={sessions}
               activeSessionId={activeSessionId}
@@ -129,9 +119,9 @@ function AIAssistantPaneContent() {
         )}
 
         {/* Conversation */}
-        <div className="flex flex-1 flex-col min-w-0 border-l">
+        <div className="flex flex-1 flex-col min-w-0">
           <Conversation>
-            <ConversationContent>
+            <ConversationContent className="flex-1  max-w-xl mx-auto">
               {messages.length === 0 && !pendingCrawlInput ? (
                 <ConversationEmptyState
                   icon={<Triangle className="size-8" />}
@@ -330,7 +320,7 @@ function AIAssistantPaneContent() {
 
           {/* Prompt input */}
           <div className="shrink-0 border-t p-2 bg-muted">
-            <PromptInput onSubmit={handleSubmit} className='bg-background'>
+            <PromptInput onSubmit={handleSubmit} className='bg-background overflow-hidden max-w-xl mx-auto '>
               <PromptInputBody>
                 <PromptInputTextarea
                   className="min-h-12"
@@ -381,5 +371,13 @@ export function AIAssistantPane() {
     <PromptInputProvider>
       <AIAssistantPaneContent />
     </PromptInputProvider>
+  );
+}
+
+export function AssistantPage() {
+  return (
+    <div className="h-full overflow-hidden">
+      <AIAssistantPane />
+    </div>
   );
 }

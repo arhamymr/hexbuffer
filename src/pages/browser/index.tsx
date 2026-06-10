@@ -220,6 +220,7 @@ export function BrowserAutomationPage() {
                       selectedPageId={selectedPage?.id ?? null}
                       expandedPageIds={expandedPageIds}
                       searchQuery={search}
+                      crawlStatus={status}
                     />
                   </ResizablePanel>
                   <ResizableHandle withHandle />

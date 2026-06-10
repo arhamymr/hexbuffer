@@ -1,6 +1,6 @@
 const DEFAULTS = {
   maxAttempts: 3,
-  initialDelayMs: 500,
+  initialDelayMs: 200,
   backoffMultiplier: 2,
   maxDelayMs: 10000,
 };

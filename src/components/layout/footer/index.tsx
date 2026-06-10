@@ -16,13 +16,11 @@ import { FooterActions } from './footer-actions';
 import { UpdateDialog } from './update-dialog';
 
 interface AppFooterProps {
-  isAssistantOpen: boolean;
-  onToggleAssistant: () => void;
   isTerminalOpen: boolean;
   onToggleTerminal: () => void;
 }
 
-export function AppFooter({ isAssistantOpen, onToggleAssistant, isTerminalOpen, onToggleTerminal }: AppFooterProps) {
+export function AppFooter({ isTerminalOpen, onToggleTerminal }: AppFooterProps) {
   const [updateDialogOpen, setUpdateDialogOpen] = React.useState(false);
   const [updateDialogVersion, setUpdateDialogVersion] = React.useState<string | null>(null);
   const [updateConfirmReady, setUpdateConfirmReady] = React.useState(false);
@@ -166,8 +164,6 @@ export function AppFooter({ isAssistantOpen, onToggleAssistant, isTerminalOpen, 
           <FooterActions
             theme={theme}
             toggleTheme={toggleTheme}
-            isAssistantOpen={isAssistantOpen}
-            onToggleAssistant={onToggleAssistant}
             isTerminalOpen={isTerminalOpen}
             onToggleTerminal={onToggleTerminal}
             updateAvailable={updateAvailable}

@@ -110,8 +110,8 @@ export function InterceptQueuePanel() {
                           {direction === 'response' ? <ArrowLeft className='size-4' /> : <ArrowRight className='size-4' />}
                         </span>
                         <div>
-                          <div className='block items-center'>
-                            <div className='mb-1 flex gap-2 items-cemter'>
+                          <div className='flex flex-col items-start gap-1'>
+                            <div className='mb-1 flex gap-2'>
                               {direction === 'response' ? (
                                 <span className="inline-flex rounded border px-1.5 py-0.5 text-[11px] font-semibold">
                                   {request.response?.status_code ?? 'RES'}

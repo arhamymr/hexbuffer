@@ -1,6 +1,12 @@
-import type { ConsoleFilterLevel } from './types';
+import type { ConsoleFilterLevel, InspectorTab } from './types';
 
 export const DEFAULT_DEBUGGING_PORT = 9222;
+
+export const TABS: ReadonlyArray<{ id: InspectorTab; label: string }> = [
+  { id: 'console', label: 'Console' },
+  { id: 'network', label: 'Network' },
+  { id: 'storage', label: 'Storage' },
+] as const;
 
 export const CONSOLE_FILTERS: { value: ConsoleFilterLevel; label: string }[] = [
   { value: 'all', label: 'All' },
@@ -12,10 +18,10 @@ export const CONSOLE_FILTERS: { value: ConsoleFilterLevel; label: string }[] = [
 ];
 
 export const CONSOLE_LEVEL_COLORS: Record<string, string> = {
-  log: 'text-blue-600 dark:text-blue-400',
-  info: 'text-sky-600 dark:text-sky-400',
-  warning: 'text-amber-600 dark:text-amber-400',
-  error: 'text-red-600 dark:text-red-400',
-  debug: 'text-violet-600 dark:text-violet-400',
-  pageerror: 'text-rose-600 dark:text-rose-400',
+  log: 'bg-blue-600',
+  info: 'bg-sky-600',
+  warning: 'bg-amber-600',
+  error: 'bg-red-600',
+  debug: 'bg-violet-600',
+  pageerror: 'bg-rose-600',
 };

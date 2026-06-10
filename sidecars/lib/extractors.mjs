@@ -616,13 +616,15 @@ export async function playwrightExtract(url, config, pageId, humanInput, runtime
       durationMs: durationSince(gotoStartedAt),
     });
 
-    const settleMs = config.networkSettleMs || 2000;
+    const settleMs = config.networkSettleMs ?? 2000;
     const settleStartedAt = nowMs();
-    await page.waitForTimeout(settleMs);
+    if (settleMs > 0) {
+      await page.waitForTimeout(settleMs);
+    }
     playwrightLog('info', 'navigation', 'Waited for network settle', page.url(), {
       action: 'wait',
       timeoutMs: settleMs,
-      result: 'completed',
+      result: settleMs > 0 ? 'completed' : 'skipped',
       durationMs: durationSince(settleStartedAt),
     });
 
@@ -639,7 +641,9 @@ export async function playwrightExtract(url, config, pageId, humanInput, runtime
         throw error;
       }
       const inputSettleStartedAt = nowMs();
-      await page.waitForTimeout(settleMs);
+      if (settleMs > 0) {
+        await page.waitForTimeout(settleMs);
+      }
       playwrightLog('info', 'navigation', 'Waited after Playwright input', page.url(), {
         action: 'wait',
         timeoutMs: settleMs,

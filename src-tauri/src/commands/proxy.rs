@@ -18,27 +18,8 @@ pub async fn start_proxy(app: AppHandle, port: u16, tls_port: u16) -> Result<Str
         return Ok(format!("Proxy already running on port {}", active_port));
     }
 
-    use std::io::Write;
-    let mut file = std::fs::OpenOptions::new()
-        .create(true)
-        .append(true)
-        .open("/tmp/0xbuffer.log")
-        .map_err(|e| e.to_string())?;
-    writeln!(
-        file,
-        "start_proxy called: port={}, tls_port={}",
-        port, tls_port
-    )
-    .map_err(|e| e.to_string())?;
-
     let handle = app.clone();
     std::thread::spawn(move || {
-        let mut file = std::fs::OpenOptions::new()
-            .create(true)
-            .append(true)
-            .open("/tmp/0xbuffer.log")
-            .unwrap();
-        writeln!(file, "thread spawned, calling run()").unwrap();
         crate::proxy::run(
             crate::proxy::ProxyConfig {
                 port,
@@ -47,7 +28,6 @@ pub async fn start_proxy(app: AppHandle, port: u16, tls_port: u16) -> Result<Str
             },
             handle,
         );
-        writeln!(file, "run() returned").unwrap();
     });
     Ok(format!(
         "Proxy starting on port {} (HTTP) and {} (HTTPS MITM)",

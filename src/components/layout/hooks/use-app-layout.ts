@@ -5,25 +5,8 @@ import type { PanelImperativeHandle } from 'react-resizable-panels';
 const TERMINAL_OPEN_MIN_PCT = 22;
 
 export function useAppLayout() {
-  const [isAssistantOpen, setIsAssistantOpen] = React.useState(false);
   const [isTerminalOpen, setIsTerminalOpen] = React.useState(false);
-  const assistantPanelRef = React.useRef<PanelImperativeHandle>(null);
   const terminalPanelRef = React.useRef<PanelImperativeHandle>(null);
-
-  const toggleAssistant = React.useCallback(() => {
-    setIsAssistantOpen((current) => {
-      const next = !current;
-      const panel = assistantPanelRef.current;
-      if (panel) {
-        if (next) {
-          panel.expand();
-        } else {
-          panel.collapse();
-        }
-      }
-      return next;
-    });
-  }, []);
 
   const toggleTerminal = React.useCallback(() => {
     setIsTerminalOpen((current) => {
@@ -50,9 +33,6 @@ export function useAppLayout() {
   }, [isTerminalOpen]);
 
   return {
-    isAssistantOpen,
-    toggleAssistant,
-    assistantPanelRef,
     isTerminalOpen,
     toggleTerminal,
     terminalPanelRef,

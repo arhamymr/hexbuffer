@@ -1,3 +1,4 @@
+import { useMemo, memo } from 'react'
 import { PanelBottomClose, Plus, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -16,7 +17,7 @@ interface TerminalTabBarProps {
   isDark: boolean
 }
 
-export function TerminalTabBar({
+export const TerminalTabBar = memo(function TerminalTabBar({
   tabs,
   activeTabId,
   onSelect,
@@ -25,12 +26,12 @@ export function TerminalTabBar({
   onClosePanel,
   isDark,
 }: TerminalTabBarProps) {
-  const bgBase = isDark ? 'bg-[#0d1117]' : 'bg-[#f6f8fa]'
-  const textBase = isDark ? 'text-[#c9d1d9]' : 'text-[#1f2328]'
-  const textMuted = isDark ? 'text-[#6e7681]' : 'text-[#6e7781]'
-  const activeBg = isDark ? 'bg-[#161b22]' : 'bg-[#ffffff]'
-  const hoverBg = isDark ? 'hover:bg-[#161b22]/60' : 'hover:bg-[#ffffff]/60'
-  const borderColor = isDark ? 'border-[#21262d]' : 'border-[#d0d7de]'
+  const bgBase = useMemo(() => isDark ? 'bg-[#0d1117]' : 'bg-[#f6f8fa]', [isDark])
+  const textBase = useMemo(() => isDark ? 'text-[#c9d1d9]' : 'text-[#1f2328]', [isDark])
+  const textMuted = useMemo(() => isDark ? 'text-[#6e7681]' : 'text-[#6e7781]', [isDark])
+  const activeBg = useMemo(() => isDark ? 'bg-[#161b22]' : 'bg-[#ffffff]', [isDark])
+  const hoverBg = useMemo(() => isDark ? 'hover:bg-[#161b22]/60' : 'hover:bg-[#ffffff]/60', [isDark])
+  const borderColor = useMemo(() => isDark ? 'border-[#21262d]' : 'border-[#d0d7de]', [isDark])
 
   return (
     <div
@@ -101,4 +102,4 @@ export function TerminalTabBar({
       </div>
     </div>
   )
-}
+})

@@ -4,8 +4,9 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAutomationStore } from '@/stores/automation';
-import { AlertTriangle, Trash2, Pencil, Check, X, Loader2 } from 'lucide-react';
+import { AlertTriangle, Trash2, Pencil, Check, X, Loader2, OctagonX } from 'lucide-react';
 import { getWorkflowReadiness } from '../lib/workflow-readiness';
+import { isWorkflowProcessing } from '../lib/workflow-runtime';
 
 export function WorkflowToolbar() {
   const activeWorkflowId = useAutomationStore((s) => s.activeWorkflowId);
@@ -14,10 +15,11 @@ export function WorkflowToolbar() {
   );
   const setWorkflowName = useAutomationStore((s) => s.setWorkflowName);
   const deleteWorkflow = useAutomationStore((s) => s.deleteWorkflow);
-  const isRunning = useAutomationStore((s) => s.isRunning);
-  const activeRunWorkflowId = useAutomationStore((s) => s.activeRunWorkflowId);
+  const abortWorkflow = useAutomationStore((s) => s.abortWorkflow);
+  const runningWorkflowIds = useAutomationStore((s) => s.runningWorkflowIds);
+  const nodeRuntimeById = useAutomationStore((s) => s.nodeRuntimeById);
   const readiness = React.useMemo(() => getWorkflowReadiness(workflow), [workflow]);
-  const isThisWorkflowRunning = isRunning && activeRunWorkflowId === workflow?.id;
+  const isThisWorkflowRunning = isWorkflowProcessing(workflow?.id, runningWorkflowIds, nodeRuntimeById);
 
   const [editing, setEditing] = React.useState(false);
   const [editName, setEditName] = React.useState('');
@@ -42,6 +44,11 @@ export function WorkflowToolbar() {
     if (!workflow) return;
     deleteWorkflow(workflow.id);
   }, [workflow, deleteWorkflow]);
+
+  const handleAbort = React.useCallback(() => {
+    if (!workflow) return;
+    abortWorkflow(workflow.id, 'stopped by user');
+  }, [workflow, abortWorkflow]);
 
   if (!workflow) {
     return (
@@ -101,6 +108,18 @@ export function WorkflowToolbar() {
             <div className="size-1.5 rounded-full bg-emerald-500/70" />
             <span>Ready</span>
           </div>
+        )}
+        {isThisWorkflowRunning && (
+          <Button
+            variant="outline"
+            size="xs"
+            className="h-7 border-amber-500/30 text-amber-600 hover:text-amber-700 dark:text-amber-300"
+            onClick={handleAbort}
+            title="Abort this workflow run"
+          >
+            <OctagonX className="mr-1 size-3.5" />
+            Abort
+          </Button>
         )}
         <Button
           variant="ghost"

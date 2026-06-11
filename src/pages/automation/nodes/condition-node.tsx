@@ -11,7 +11,9 @@ import {
   CATEGORY_ICON_TEXT,
   CATEGORY_HANDLE,
 } from '../constants';
+import { getAutomationNodeCapability } from '../lib/node-capabilities';
 import { getAutomationNodeWarning } from '../lib/node-warnings';
+import { NodeCapabilityBadge } from './node-capability-badge';
 import { NodeDeleteButton } from './node-delete-button';
 import { NodeRuntimeStatus, useNodeRuntimeStatus } from './node-runtime-status';
 import type { AutomationNodeData, ConditionConfig } from '../types';
@@ -32,6 +34,7 @@ function ConditionNodeComponent({ id, data, selected }: NodeProps) {
   const runtime = useNodeRuntimeStatus(id);
   const isExecuting = runtime?.status === 'running';
   const warning = getAutomationNodeWarning(nodeData, runtime);
+  const capability = getAutomationNodeCapability(nodeData);
 
   return (
     <div
@@ -66,6 +69,9 @@ function ConditionNodeComponent({ id, data, selected }: NodeProps) {
             aria-label={warning}
             title={warning}
           />
+        )}
+        {!capability.supported && capability.reason && (
+          <NodeCapabilityBadge reason={capability.reason} />
         )}
         <GripVertical className="size-3.5 shrink-0 text-muted-foreground/30 opacity-0 group-hover:opacity-100 transition-opacity" />
       </div>

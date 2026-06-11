@@ -18,6 +18,7 @@ import {
   useAutomationStore,
   type ExecutionLog,
 } from '@/stores/automation';
+import { isWorkflowProcessing } from '../lib/workflow-runtime';
 
 const levelIcons: Record<ExecutionLog['level'], typeof Info> = {
   info: Info,
@@ -49,8 +50,8 @@ function formatTime(iso: string): string {
 
 export function ExecutionLogPanel({ workflowId, onHide }: ExecutionLogPanelProps) {
   const allLogs = useAutomationStore((s) => s.executionLogs);
-  const isRunning = useAutomationStore((s) => s.isRunning);
-  const activeRunWorkflowId = useAutomationStore((s) => s.activeRunWorkflowId);
+  const runningWorkflowIds = useAutomationStore((s) => s.runningWorkflowIds);
+  const nodeRuntimeById = useAutomationStore((s) => s.nodeRuntimeById);
   const clearLogs = useAutomationStore((s) => s.clearLogs);
   const pruneExecutionLogs = useAutomationStore((s) => s.pruneExecutionLogs);
   const scrollRef = React.useRef<HTMLDivElement>(null);
@@ -66,7 +67,7 @@ export function ExecutionLogPanel({ workflowId, onHide }: ExecutionLogPanelProps
     [allLogs, workflowId]
   );
   const visibleLogs = React.useMemo(() => [...logs].reverse(), [logs]);
-  const isWorkflowRunning = Boolean(workflowId && isRunning && activeRunWorkflowId === workflowId);
+  const isWorkflowRunning = isWorkflowProcessing(workflowId, runningWorkflowIds, nodeRuntimeById);
 
   React.useEffect(() => {
     pruneExecutionLogs();

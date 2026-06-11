@@ -257,10 +257,13 @@ fn main() {
                             if let Some(state) = window_clone
                                 .try_state::<zeroxbuffer::AiBrowserState>()
                             {
-                                zeroxbuffer::stop_all_active_crawls(
-                                    window_clone.app_handle(),
-                                    state.inner(),
-                                );
+                                if zeroxbuffer::has_any_active_crawl(state.inner()) {
+                                    zeroxbuffer::stop_all_active_crawls(
+                                        window_clone.app_handle(),
+                                        state.inner(),
+                                    );
+                                    std::thread::sleep(std::time::Duration::from_millis(300));
+                                }
                             }
                             let _ = window_clone.destroy();
                         }

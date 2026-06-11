@@ -6,7 +6,11 @@ import {
   useEdgesState,
   useReactFlow,
   addEdge,
+  applyNodeChanges,
+  applyEdgeChanges,
   type Connection,
+  type NodeChange,
+  type EdgeChange,
 } from '@xyflow/react';
 import type { Node } from '@xyflow/react';
 import { useAutomationStore } from '@/stores/automation';
@@ -88,13 +92,14 @@ export function useWorkflowCanvas(
   const workflow = useAutomationStore((s) =>
     s.workflows.find((w) => w.id === s.activeWorkflowId) ?? null
   );
-  const saveWorkflow = useAutomationStore((s) => s.saveWorkflow);
+  const saveWorkflowById = useAutomationStore((s) => s.saveWorkflowById);
   const runWorkflow = useAutomationStore((s) => s.runWorkflow);
+  const workflowIdRef = React.useRef(activeWorkflowId);
 
-  const [nodes, setNodes, onNodesChange] = useNodesState(
+  const [nodes, setNodes] = useNodesState(
     (workflow?.nodes ?? []) as unknown as Node[]
   );
-  const [edges, setEdges, onEdgesChange] = useEdgesState(
+  const [edges, setEdges] = useEdgesState(
     normalizeAutomationEdges(workflow?.edges ?? [])
   );
   const nodesRef = React.useRef(nodes);
@@ -102,16 +107,19 @@ export function useWorkflowCanvas(
   const edgesRef = React.useRef(edges);
   edgesRef.current = edges;
 
-  const persist = React.useCallback(() => {
-    saveWorkflow(nodes, edges);
-  }, [nodes, edges, saveWorkflow]);
+  const persist = React.useCallback((nextNodes = nodesRef.current, nextEdges = edgesRef.current) => {
+    const workflowId = workflowIdRef.current;
+    if (!workflowId) return;
+    saveWorkflowById(workflowId, nextNodes, nextEdges);
+  }, [saveWorkflowById]);
 
   // Run handler for manual trigger node
   const onRun = React.useCallback(() => {
-    if (!activeWorkflowId) return;
-    saveWorkflow(nodes, edges);
-    runWorkflow(activeWorkflowId);
-  }, [activeWorkflowId, nodes, edges, saveWorkflow, runWorkflow]);
+    const workflowId = workflowIdRef.current;
+    if (!workflowId) return;
+    persist();
+    runWorkflow(workflowId);
+  }, [persist, runWorkflow]);
 
   // Auto-persist when switching tabs (component unmounts via key change).
   // Use a ref so the cleanup always calls the latest persist without
@@ -185,11 +193,11 @@ export function useWorkflowCanvas(
           if (n.id !== nodeId) return n;
           return { ...n, data: data as unknown as Record<string, unknown> };
         });
-        saveWorkflow(nextNodes, edgesRef.current);
+        persist(nextNodes, edgesRef.current);
         return nextNodes;
       });
     },
-    [saveWorkflow, setNodes]
+    [persist, setNodes]
   );
 
   const addNodeFromMenu = React.useCallback(
@@ -217,10 +225,14 @@ export function useWorkflowCanvas(
         },
       };
 
-      setNodes((nds) => [...nds, newNode as unknown as Node]);
+      setNodes((nds) => {
+        const nextNodes = [...nds, newNode as unknown as Node];
+        persist(nextNodes, edgesRef.current);
+        return nextNodes;
+      });
       setContextMenu(null);
     },
-    [setNodes]
+    [persist, setNodes]
   );
 
   // Register addNodeAtCenter so palette can trigger it
@@ -256,12 +268,16 @@ export function useWorkflowCanvas(
           iconName: def.iconName,
         },
       };
-      setNodes((nds) => [...nds, newNode as unknown as Node]);
+      setNodes((nds) => {
+        const nextNodes = [...nds, newNode as unknown as Node];
+        persist(nextNodes, edgesRef.current);
+        return nextNodes;
+      });
     };
     return () => {
       if (addNodeRef) addNodeRef.current = null;
     };
-  }, [addNodeRef, screenToFlowPosition, setNodes]);
+  }, [addNodeRef, persist, screenToFlowPosition, setNodes]);
 
   // Register persist so toolbar can save before running
   React.useEffect(() => {
@@ -285,9 +301,35 @@ export function useWorkflowCanvas(
 
   const onConnect = React.useCallback(
     (connection: Connection) => {
-      setEdges((eds) => addEdge(buildAutomationEdgeFromConnection(connection), eds));
+      setEdges((eds) => {
+        const nextEdges = addEdge(buildAutomationEdgeFromConnection(connection), eds);
+        persist(nodesRef.current, nextEdges);
+        return nextEdges;
+      });
     },
-    [setEdges]
+    [persist, setEdges]
+  );
+
+  const onNodesChange = React.useCallback(
+    (changes: NodeChange[]) => {
+      setNodes((nds) => {
+        const nextNodes = applyNodeChanges(changes, nds);
+        persist(nextNodes, edgesRef.current);
+        return nextNodes;
+      });
+    },
+    [persist, setNodes]
+  );
+
+  const onEdgesChange = React.useCallback(
+    (changes: EdgeChange[]) => {
+      setEdges((eds) => {
+        const nextEdges = applyEdgeChanges(changes, eds);
+        persist(nodesRef.current, nextEdges);
+        return nextEdges;
+      });
+    },
+    [persist, setEdges]
   );
 
   return {

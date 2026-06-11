@@ -3,6 +3,7 @@ import { useAutomationStore } from '@/stores/automation';
 import { startLiveTrafficWatcher, stopLiveTrafficWatcher } from '@/triggers/live-traffic';
 import type { PageTabItem } from '@/components/tabs-layout/types';
 import { getWorkflowReadiness } from '../lib/workflow-readiness';
+import { isWorkflowProcessing } from '../lib/workflow-runtime';
 
 export function useAutomationPage() {
   const workflows = useAutomationStore((s) => s.workflows);
@@ -12,8 +13,8 @@ export function useAutomationPage() {
   const renameWorkflow = useAutomationStore((s) => s.renameWorkflow);
   const deleteWorkflow = useAutomationStore((s) => s.deleteWorkflow);
   const deleteWorkflows = useAutomationStore((s) => s.deleteWorkflows);
-  const isRunning = useAutomationStore((s) => s.isRunning);
-  const activeRunWorkflowId = useAutomationStore((s) => s.activeRunWorkflowId);
+  const runningWorkflowIds = useAutomationStore((s) => s.runningWorkflowIds);
+  const nodeRuntimeById = useAutomationStore((s) => s.nodeRuntimeById);
 
   const [templatesOpen, setTemplatesOpen] = React.useState(false);
 
@@ -42,14 +43,14 @@ export function useAutomationPage() {
           id: wf.id,
           name: wf.name,
           status:
-            isRunning && activeRunWorkflowId === wf.id
-              ? { kind: 'running' as const, label: 'Workflow is running' }
+            isWorkflowProcessing(wf.id, runningWorkflowIds, nodeRuntimeById)
+              ? { kind: 'running' as const, label: 'Workflow is processing' }
               : !readiness.ready
                 ? { kind: 'needs-action' as const, label: readiness.reason ?? 'Workflow needs action' }
                 : { kind: 'ready' as const, label: 'Workflow is ready' },
         };
       }),
-    [workflows, isRunning, activeRunWorkflowId]
+    [workflows, runningWorkflowIds, nodeRuntimeById]
   );
 
   const handleCloseTabsToLeft = React.useCallback(
@@ -81,7 +82,7 @@ export function useAutomationPage() {
     onTabAdd: () => setTemplatesOpen(true),
     onCloseTabsToLeft: handleCloseTabsToLeft,
     onCloseTabsToRight: handleCloseTabsToRight,
-    isRunning,
+    isRunning: workflows.some((wf) => isWorkflowProcessing(wf.id, runningWorkflowIds, nodeRuntimeById)),
     templatesOpen,
     onTemplatesOpenChange: setTemplatesOpen,
   };

@@ -14,7 +14,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useAutomationStore, type LiveTrafficHostInsight } from '@/stores/automation';
+import {
+  useAutomationStore,
+  type LiveTrafficHostInsight,
+  type LiveTrafficQueueStats,
+} from '@/stores/automation';
 import { NODE_TYPE_REGISTRY } from '../../constants';
 import { getLiveTrafficSetupWarning } from '../../lib/node-warnings';
 import type { TriggerConfig } from '../../types';
@@ -134,10 +138,10 @@ export function TriggerConfigForm({ config, onChange, onRun }: TriggerConfigForm
                 className="min-h-20 resize-none text-xs"
                 value={config.host ?? ''}
                 onChange={(e) => onChange({ host: e.target.value })}
-                placeholder={'api.example.com\n0xbuffer.com\n*.target.local'}
+                placeholder={'example.com\nhttps://app.example.com\napi.example.com:443\n*.target.local'}
               />
               <p className="text-[10px] text-muted-foreground">
-                Match any host listed here. Separate hosts with new lines, commas, semicolons, or spaces.
+                Enter hostnames, full URLs, optional ports, or wildcard domains. Separate with new lines, commas, semicolons, or spaces.
               </p>
             </div>
 
@@ -187,6 +191,7 @@ interface LiveTrafficHostListProps {
   items: LiveTrafficHostInsight[];
   clearTitle: string;
   onClear: () => void;
+  stats?: LiveTrafficQueueStats;
 }
 
 function LiveTrafficHostList({
@@ -195,6 +200,7 @@ function LiveTrafficHostList({
   items,
   clearTitle,
   onClear,
+  stats,
 }: LiveTrafficHostListProps) {
   const noun = title === 'Captured hosts' ? 'captured request' : 'matched request';
 
@@ -207,7 +213,8 @@ function LiveTrafficHostList({
             {title}
           </p>
           <p className="text-[10px] text-muted-foreground">
-            {items.length} {noun}{items.length === 1 ? '' : 's'}
+            {stats ? stats.pending : items.length} {noun}{(stats ? stats.pending : items.length) === 1 ? '' : 's'}
+            {stats && ` / cap ${stats.cap}`}
           </p>
         </div>
         {items.length > 0 && (
@@ -222,6 +229,16 @@ function LiveTrafficHostList({
           </Button>
         )}
       </div>
+
+      {stats && stats.dropped > 0 && (
+        <Alert className="border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-200">
+          <AlertTriangle className="size-4" />
+          <AlertTitle className="text-xs">Live traffic queue is dropping requests</AlertTitle>
+          <AlertDescription className="text-xs text-amber-700/80 dark:text-amber-200/80">
+            Dropped {stats.dropped} oldest pending request{stats.dropped === 1 ? '' : 's'} for this trigger.
+          </AlertDescription>
+        </Alert>
+      )}
 
       {items.length === 0 ? (
         <div className="rounded-md border border-dashed px-3 py-4 text-center">
@@ -262,6 +279,7 @@ function LiveTrafficHostList({
 
 export function LiveTrafficQueuePanel({ nodeId }: { nodeId: string }) {
   const allQueuedHosts = useAutomationStore((s) => s.liveTrafficHostInsights);
+  const stats = useAutomationStore((s) => s.liveTrafficQueueStatsByTriggerId[nodeId]);
   const queuedHosts = React.useMemo(
     () => allQueuedHosts.filter((item) => item.triggerNodeId === nodeId).slice(-50).reverse(),
     [allQueuedHosts, nodeId]
@@ -275,6 +293,7 @@ export function LiveTrafficQueuePanel({ nodeId }: { nodeId: string }) {
       items={queuedHosts}
       clearTitle="Clear queued requests"
       onClear={() => clearLiveTrafficHostInsights(nodeId)}
+      stats={stats}
     />
   );
 }

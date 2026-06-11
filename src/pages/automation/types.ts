@@ -56,6 +56,10 @@ export type NodeCategory = 'trigger' | 'condition' | 'action';
 export interface TriggerConfig {
   triggerType: TriggerType;
   schedule?: string;
+  host?: string;
+  method?: string;
+  operator?: 'equals' | 'contains' | 'regex';
+  value?: string;
 }
 
 export interface ConditionConfig {

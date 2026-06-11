@@ -269,6 +269,60 @@ function AddToDocumentForm({ params, updateParam }: ActionParams) {
   );
 }
 
+function AddToReportForm({ params, updateParam }: ActionParams) {
+  return (
+    <>
+      <div className="space-y-1.5">
+        <Label className="text-[11px]">Document ID (optional)</Label>
+        <Input
+          className="h-7 text-xs"
+          value={params.documentId ?? ''}
+          onChange={(e) => updateParam('documentId', e.target.value)}
+          placeholder="Leave blank to use active document"
+        />
+      </div>
+      <div className="space-y-1.5">
+        <Label className="text-[11px]">Section key</Label>
+        <Input
+          className="h-7 text-xs"
+          value={params.section ?? ''}
+          onChange={(e) => updateParam('section', e.target.value)}
+          placeholder="e.g. potentialVulnerabilities"
+        />
+      </div>
+      <div className="space-y-1.5">
+        <Label className="text-[11px]">Title</Label>
+        <Input
+          className="h-7 text-xs"
+          value={params.title ?? 'Workflow Report'}
+          onChange={(e) => updateParam('title', e.target.value)}
+          placeholder="Section title (if new)"
+        />
+      </div>
+      <div className="space-y-1.5">
+        <Label className="text-[11px]">Content</Label>
+        <Input
+          className="h-7 text-xs"
+          value={params.content ?? ''}
+          onChange={(e) => updateParam('content', e.target.value)}
+          placeholder="Content to append"
+        />
+      </div>
+      <div className="space-y-1.5">
+        <Label className="text-[11px]">Mode</Label>
+        <Select value={params.mode ?? 'append'} onValueChange={(v) => updateParam('mode', v)}>
+          <SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            {['append', 'replace'].map((m) => (
+              <SelectItem key={m} value={m} className="text-xs capitalize">{m}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+    </>
+  );
+}
+
 /* ── Action type → component map ── */
 
 const ACTION_CONFIG_MAP: Record<string, React.FC<ActionParams>> = {
@@ -284,6 +338,7 @@ const ACTION_CONFIG_MAP: Record<string, React.FC<ActionParams>> = {
   'action:export-json': ExportJsonForm,
   'action:create-document': CreateDocumentForm,
   'action:add-to-document': AddToDocumentForm,
+  'action:add-to-report': AddToReportForm,
 };
 
 /* ─── Main ActionConfigForm ── */

@@ -9,10 +9,15 @@ import {
   Info,
   Trash2,
   ChevronDown,
+  PanelBottomClose,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { useAutomationStore, type ExecutionLog } from '@/stores/automation';
+import {
+  AUTOMATION_LOG_LIMIT,
+  useAutomationStore,
+  type ExecutionLog,
+} from '@/stores/automation';
 
 const levelIcons: Record<ExecutionLog['level'], typeof Info> = {
   info: Info,
@@ -28,6 +33,11 @@ const levelStyles: Record<ExecutionLog['level'], string> = {
   warning: 'text-amber-500',
 };
 
+interface ExecutionLogPanelProps {
+  workflowId: string | null;
+  onHide: () => void;
+}
+
 function formatTime(iso: string): string {
   const date = new Date(iso);
   const h = date.getHours().toString().padStart(2, '0');
@@ -37,17 +47,35 @@ function formatTime(iso: string): string {
   return `${h}:${m}:${s}.${ms}`;
 }
 
-export function ExecutionLogPanel() {
-  const logs = useAutomationStore((s) => s.executionLogs);
+export function ExecutionLogPanel({ workflowId, onHide }: ExecutionLogPanelProps) {
+  const allLogs = useAutomationStore((s) => s.executionLogs);
   const isRunning = useAutomationStore((s) => s.isRunning);
+  const activeRunWorkflowId = useAutomationStore((s) => s.activeRunWorkflowId);
   const clearLogs = useAutomationStore((s) => s.clearLogs);
+  const pruneExecutionLogs = useAutomationStore((s) => s.pruneExecutionLogs);
   const scrollRef = React.useRef<HTMLDivElement>(null);
   const [collapsed, setCollapsed] = React.useState(false);
+  const logs = React.useMemo(
+    () => {
+      if (!workflowId) return [];
+      const workflowLogs = allLogs.filter((log) => log.workflowId === workflowId);
+      return workflowLogs.length > AUTOMATION_LOG_LIMIT
+        ? workflowLogs.slice(-AUTOMATION_LOG_LIMIT)
+        : workflowLogs;
+    },
+    [allLogs, workflowId]
+  );
+  const visibleLogs = React.useMemo(() => [...logs].reverse(), [logs]);
+  const isWorkflowRunning = Boolean(workflowId && isRunning && activeRunWorkflowId === workflowId);
 
-  // Auto-scroll to bottom when new logs appear
+  React.useEffect(() => {
+    pruneExecutionLogs();
+  }, [pruneExecutionLogs]);
+
+  // Newest entries render first, so keep the viewport pinned to the top.
   React.useEffect(() => {
     if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+      scrollRef.current.scrollTop = 0;
     }
   }, [logs.length]);
 
@@ -65,29 +93,38 @@ export function ExecutionLogPanel() {
               collapsed && '-rotate-90'
             )}
           />
-          {isRunning ? (
+          {isWorkflowRunning ? (
             <Play className="size-3 text-primary animate-pulse" />
           ) : (
             <Play className="size-3 text-muted-foreground" />
           )}
           <span>Execution Log</span>
-          {logs.length > 0 && (
-            <span className="ml-1 text-[10px] text-muted-foreground">
-              ({logs.length})
-            </span>
-          )}
+          <span className="ml-1 text-[10px] text-muted-foreground">
+            ({logs.length})
+          </span>
         </button>
-        {logs.length > 0 && (
+        <div className="flex items-center gap-1">
+          {logs.length > 0 && (
+            <Button
+              variant="ghost"
+              size="xs"
+              className="h-5 w-5 p-0"
+              onClick={() => clearLogs(workflowId ?? undefined)}
+              title="Clear this workflow log"
+            >
+              <Trash2 className="size-3" />
+            </Button>
+          )}
           <Button
             variant="ghost"
             size="xs"
             className="h-5 w-5 p-0"
-            onClick={clearLogs}
-            title="Clear logs"
+            onClick={onHide}
+            title="Hide execution log"
           >
-            <Trash2 className="size-3" />
+            <PanelBottomClose className="size-3" />
           </Button>
-        )}
+        </div>
       </div>
 
       {/* Log content */}
@@ -96,12 +133,12 @@ export function ExecutionLogPanel() {
           {logs.length === 0 ? (
             <div className="flex items-center justify-center py-4">
               <p className="text-[11px] text-muted-foreground">
-                {isRunning ? 'Running...' : 'Run a workflow to see execution logs'}
+                {isWorkflowRunning ? 'Running...' : 'Run this workflow to see execution logs'}
               </p>
             </div>
           ) : (
             <div className="space-y-0.5 py-1 font-mono text-[11px]">
-              {logs.map((log) => {
+              {visibleLogs.map((log) => {
                 const Icon = levelIcons[log.level];
                 return (
                   <div

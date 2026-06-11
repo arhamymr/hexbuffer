@@ -215,6 +215,23 @@
     animation: nav-blink 1.5s linear infinite;
   }
 
+  .automation-flow .react-flow__edge-path {
+    stroke: hsl(var(--primary));
+    stroke-width: 3;
+    opacity: 1;
+  }
+
+  .automation-flow .react-flow__edge.selected .react-flow__edge-path,
+  .automation-flow .react-flow__edge:focus .react-flow__edge-path {
+    stroke: hsl(var(--primary));
+    stroke-width: 4;
+  }
+
+  .automation-flow .react-flow__connection-path {
+    stroke: hsl(var(--primary));
+    stroke-width: 3;
+  }
+
   @keyframes accordion-down {
     from {
       height: 0;

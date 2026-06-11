@@ -1,9 +1,9 @@
 'use client';
 
+import React from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
-import { SquareFunction, GripVertical } from 'lucide-react';
+import { AlertTriangle, SquareFunction, GripVertical } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useAutomationStore } from '@/stores/automation';
 import {
   CATEGORY_BORDER,
   CATEGORY_BG,
@@ -11,7 +11,9 @@ import {
   CATEGORY_ICON_TEXT,
   CATEGORY_HANDLE,
 } from '../constants';
+import { getAutomationNodeWarning } from '../lib/node-warnings';
 import { NodeDeleteButton } from './node-delete-button';
+import { NodeRuntimeStatus, useNodeRuntimeStatus } from './node-runtime-status';
 import type { AutomationNodeData, ConditionConfig } from '../types';
 
 const operatorGlyphs: Record<string, string> = {
@@ -23,12 +25,13 @@ const operatorGlyphs: Record<string, string> = {
   regex: '\u2248',
 };
 
-export function ConditionNode({ id, data, selected }: NodeProps) {
+function ConditionNodeComponent({ id, data, selected }: NodeProps) {
   const nodeData = data as unknown as AutomationNodeData;
   const config = nodeData.config as ConditionConfig;
   const glyph = operatorGlyphs[config?.operator] ?? '?';
-  const executingNodeId = useAutomationStore((s) => s.executingNodeId);
-  const isExecuting = executingNodeId === id;
+  const runtime = useNodeRuntimeStatus(id);
+  const isExecuting = runtime?.status === 'running';
+  const warning = getAutomationNodeWarning(nodeData, runtime);
 
   return (
     <div
@@ -57,6 +60,13 @@ export function ConditionNode({ id, data, selected }: NodeProps) {
           <p className="truncate text-xs font-semibold">{nodeData.label}</p>
           <p className="truncate text-[10px] text-muted-foreground">Condition</p>
         </div>
+        {warning && (
+          <AlertTriangle
+            className="size-3.5 shrink-0 text-amber-500"
+            aria-label={warning}
+            title={warning}
+          />
+        )}
         <GripVertical className="size-3.5 shrink-0 text-muted-foreground/30 opacity-0 group-hover:opacity-100 transition-opacity" />
       </div>
 
@@ -72,6 +82,8 @@ export function ConditionNode({ id, data, selected }: NodeProps) {
           </div>
         </div>
       )}
+
+      <NodeRuntimeStatus runtime={runtime} accentClassName="border-amber-500/20" />
 
       <Handle
         type="source"
@@ -92,3 +104,5 @@ export function ConditionNode({ id, data, selected }: NodeProps) {
     </div>
   );
 }
+
+export const ConditionNode = React.memo(ConditionNodeComponent);

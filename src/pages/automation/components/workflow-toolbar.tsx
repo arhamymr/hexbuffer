@@ -4,17 +4,20 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAutomationStore } from '@/stores/automation';
-import { Save, Play, Trash2, Pencil, Check, X, Loader2 } from 'lucide-react';
+import { AlertTriangle, Trash2, Pencil, Check, X, Loader2 } from 'lucide-react';
+import { getWorkflowReadiness } from '../lib/workflow-readiness';
 
-export function WorkflowToolbar({ persistRef }: { persistRef?: React.MutableRefObject<(() => void) | null> }) {
+export function WorkflowToolbar() {
   const activeWorkflowId = useAutomationStore((s) => s.activeWorkflowId);
   const workflow = useAutomationStore((s) =>
     s.workflows.find((w) => w.id === s.activeWorkflowId) ?? null
   );
-  const isRunning = useAutomationStore((s) => s.isRunning);
   const setWorkflowName = useAutomationStore((s) => s.setWorkflowName);
   const deleteWorkflow = useAutomationStore((s) => s.deleteWorkflow);
-  const runWorkflow = useAutomationStore((s) => s.runWorkflow);
+  const isRunning = useAutomationStore((s) => s.isRunning);
+  const activeRunWorkflowId = useAutomationStore((s) => s.activeRunWorkflowId);
+  const readiness = React.useMemo(() => getWorkflowReadiness(workflow), [workflow]);
+  const isThisWorkflowRunning = isRunning && activeRunWorkflowId === workflow?.id;
 
   const [editing, setEditing] = React.useState(false);
   const [editName, setEditName] = React.useState('');
@@ -39,12 +42,6 @@ export function WorkflowToolbar({ persistRef }: { persistRef?: React.MutableRefO
     if (!workflow) return;
     deleteWorkflow(workflow.id);
   }, [workflow, deleteWorkflow]);
-
-  const handleRun = React.useCallback(() => {
-    if (!workflow) return;
-    persistRef?.current?.();
-    runWorkflow(workflow.id);
-  }, [workflow, runWorkflow, persistRef]);
 
   if (!workflow) {
     return (
@@ -86,16 +83,25 @@ export function WorkflowToolbar({ persistRef }: { persistRef?: React.MutableRefO
         </div>
       )}
 
-      <div className="ml-auto flex items-center gap-1.5">
-        <Button variant="outline" size="xs" className="h-7" onClick={handleRun} disabled={isRunning}>
-          {isRunning ? (
-            <Loader2 className="size-3.5 mr-1 animate-spin" />
-          ) : (
-            <Play className="size-3.5 mr-1" />
-          )}
-          {isRunning ? 'Running...' : 'Run'}
-        </Button>
-
+      <div className="ml-auto flex items-center gap-2">
+        {isThisWorkflowRunning ? (
+          <div className="flex items-center gap-1.5 text-[10px]">
+            <Loader2 className="size-3 animate-spin text-emerald-400" />
+            <span className="text-emerald-400 font-medium">Running</span>
+          </div>
+        ) : !readiness.ready ? (
+          <div className="flex min-w-0 items-center gap-1.5 text-[10px]" title={readiness.reason ?? undefined}>
+            <AlertTriangle className="size-3 shrink-0 text-amber-500" />
+            <span className="max-w-56 truncate font-medium text-amber-500">
+              {readiness.reason ?? 'Needs action'}
+            </span>
+          </div>
+        ) : (
+          <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+            <div className="size-1.5 rounded-full bg-emerald-500/70" />
+            <span>Ready</span>
+          </div>
+        )}
         <Button
           variant="ghost"
           size="xs"

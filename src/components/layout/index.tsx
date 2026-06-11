@@ -45,23 +45,27 @@ export function AppLayout({ children }: { children?: React.ReactNode }) {
               {children}
             </section>
           </ResizablePanel>
-          {isTerminalOpen && <ResizableHandle withHandle />}
-          <ResizablePanel
-            panelRef={terminalPanelRef}
-            defaultSize={TERMINAL_PANEL_DEFAULT_SIZE}
-            minSize={TERMINAL_PANEL_MIN_SIZE}
-            collapsedSize={TERMINAL_PANEL_COLLAPSED_SIZE}
-            collapsible
-            onResize={(size) => {
-              if (size.asPercentage <= TERMINAL_PANEL_COLLAPSED_SIZE && isTerminalOpen) toggleTerminal();
-            }}
-          >
-            <React.Suspense fallback={null}>
-              <div className="h-full">
-                <TerminalPanel onClosePanel={toggleTerminal} />
-              </div>
-            </React.Suspense>
-          </ResizablePanel>
+          {isTerminalOpen && (
+            <>
+              <ResizableHandle withHandle />
+              <ResizablePanel
+                panelRef={terminalPanelRef}
+                defaultSize={TERMINAL_PANEL_DEFAULT_SIZE}
+                minSize={TERMINAL_PANEL_MIN_SIZE}
+                collapsedSize={TERMINAL_PANEL_COLLAPSED_SIZE}
+                collapsible
+                onResize={(size) => {
+                  if (size.asPercentage <= TERMINAL_PANEL_COLLAPSED_SIZE && isTerminalOpen) toggleTerminal();
+                }}
+              >
+                <React.Suspense fallback={null}>
+                  <div className="h-full">
+                    <TerminalPanel onClosePanel={toggleTerminal} />
+                  </div>
+                </React.Suspense>
+              </ResizablePanel>
+            </>
+          )}
         </ResizablePanelGroup>
       </main>
       <AppFooter

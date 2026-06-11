@@ -13,15 +13,22 @@ import type {
   ActionConfig,
 } from '../types';
 import { NODE_TYPE_REGISTRY } from '../constants';
-import { TriggerConfigForm, ConditionConfigForm, ActionConfigForm } from '../nodes/nodes-config';
+import {
+  TriggerConfigForm,
+  LiveTrafficQueuePanel,
+  LiveTrafficCapturedHostsPanel,
+  ConditionConfigForm,
+  ActionConfigForm,
+} from '../nodes/nodes-config';
 
 interface NodeConfigPanelProps {
   node: Node<AutomationNodeData> | null;
   onClose: () => void;
   onUpdate: (nodeId: string, data: AutomationNodeData) => void;
+  onRun?: () => void;
 }
 
-export function NodeConfigPanel({ node, onClose, onUpdate }: NodeConfigPanelProps) {
+export function NodeConfigPanel({ node, onClose, onUpdate, onRun }: NodeConfigPanelProps) {
   if (!node) return null;
 
   const { data } = node;
@@ -29,6 +36,9 @@ export function NodeConfigPanel({ node, onClose, onUpdate }: NodeConfigPanelProp
   if (!def) return null;
 
   const category = def.category;
+  const triggerConfig = data.config as TriggerConfig;
+  const isLiveTrafficTrigger =
+    category === 'trigger' && triggerConfig.triggerType === 'trigger:live-traffic-captured';
 
   const updateConfig = (patch: Partial<TriggerConfig & ConditionConfig & ActionConfig>) => {
     onUpdate(node.id, {
@@ -67,6 +77,16 @@ export function NodeConfigPanel({ node, onClose, onUpdate }: NodeConfigPanelProp
           <TabsTrigger value="config" className="text-[11px] h-6">
             Config
           </TabsTrigger>
+          {isLiveTrafficTrigger && (
+            <TabsTrigger value="queue" className="text-[11px] h-6">
+              Queue
+            </TabsTrigger>
+          )}
+          {isLiveTrafficTrigger && (
+            <TabsTrigger value="captured" className="text-[11px] h-6">
+              Captured
+            </TabsTrigger>
+          )}
           <TabsTrigger value="properties" className="text-[11px] h-6">
             Properties
           </TabsTrigger>
@@ -76,7 +96,11 @@ export function NodeConfigPanel({ node, onClose, onUpdate }: NodeConfigPanelProp
           <ScrollArea className="h-full">
             <div className="px-4 py-3 space-y-4">
               {category === 'trigger' && (
-                <TriggerConfigForm config={data.config as TriggerConfig} onChange={updateConfig} />
+                <TriggerConfigForm
+                  config={triggerConfig}
+                  onChange={updateConfig}
+                  onRun={onRun}
+                />
               )}
               {category === 'condition' && (
                 <ConditionConfigForm config={data.config as ConditionConfig} onChange={updateConfig} />
@@ -87,6 +111,26 @@ export function NodeConfigPanel({ node, onClose, onUpdate }: NodeConfigPanelProp
             </div>
           </ScrollArea>
         </TabsContent>
+
+        {isLiveTrafficTrigger && (
+          <TabsContent value="queue" className="flex-1 min-h-0 mt-0 data-[state=inactive]:hidden">
+            <ScrollArea className="h-full">
+              <div className="px-4 py-3">
+                <LiveTrafficQueuePanel nodeId={node.id} />
+              </div>
+            </ScrollArea>
+          </TabsContent>
+        )}
+
+        {isLiveTrafficTrigger && (
+          <TabsContent value="captured" className="flex-1 min-h-0 mt-0 data-[state=inactive]:hidden">
+            <ScrollArea className="h-full">
+              <div className="px-4 py-3">
+                <LiveTrafficCapturedHostsPanel nodeId={node.id} />
+              </div>
+            </ScrollArea>
+          </TabsContent>
+        )}
 
         <TabsContent value="properties" className="flex-1 min-h-0 mt-0 data-[state=inactive]:hidden">
           <ScrollArea className="h-full">

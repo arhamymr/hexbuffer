@@ -104,15 +104,24 @@ pub(crate) fn signal_child_process_group(
         .map_err(|_| "Failed to lock AI browser child process".to_string())?
         .id();
     let target = format!("-{}", pid);
-    let status = Command::new("kill")
+    let output = Command::new("kill")
         .arg(signal)
-        .arg(target)
-        .status()
+        .arg(&target)
+        .stdout(std::process::Stdio::null())
+        .stderr(std::process::Stdio::piped())
+        .output()
         .map_err(|error| format!("Failed to signal AI browser sidecar: {}", error))?;
 
-    if status.success() {
+    if output.status.success() {
         Ok(())
     } else {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        eprintln!(
+            "[ai-browser] kill {} {}: {}",
+            signal,
+            target,
+            stderr.trim()
+        );
         Err(format!(
             "Failed to signal AI browser sidecar with {}",
             signal

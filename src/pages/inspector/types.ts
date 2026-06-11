@@ -44,3 +44,5 @@ export interface InspectorStorageEntry {
 }
 
 export type InspectorTab = 'console' | 'network' | 'storage';
+
+export type InspectorTopTab = 'browser' | 'inspector';

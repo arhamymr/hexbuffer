@@ -2,9 +2,11 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use std::sync::Mutex;
+use std::sync::Arc;
 use tauri::Manager;
 use zeroxbuffer::commands::intruder::IntruderState;
 use zeroxbuffer::commands::repeater::WsRepeaterState;
+use zeroxbuffer::commands::browser_panel::BrowserTabManager;
 use zeroxbuffer::{
     AiBrowserState, BrowserProcessState, CollaboratorPollingState, HistoryBridge,
     PacketCaptureState, PortScanState, ProxyState, SqliScanState,
@@ -49,6 +51,7 @@ fn main() {
             app.manage(WsRepeaterState::default());
             app.manage(CollaboratorPollingState::default());
             app.manage(zeroxbuffer::commands::inspector::InspectorCdpState::default());
+            app.manage(Arc::new(BrowserTabManager::new(app.handle().clone())));
             app.manage(history);
             eprintln!("[main] Building Tauri app...");
 
@@ -187,6 +190,27 @@ fn main() {
             zeroxbuffer::commands::chat_sessions::save_chat_messages,
             zeroxbuffer::commands::terminal::get_default_shell,
             zeroxbuffer::commands::terminal::get_home_directory,
+            // Browser panel (embedded webview)
+            zeroxbuffer::commands::browser_panel::browser_tab_create,
+            zeroxbuffer::commands::browser_panel::browser_tab_navigate,
+            zeroxbuffer::commands::browser_panel::browser_tab_resize,
+            zeroxbuffer::commands::browser_panel::browser_tab_show,
+            zeroxbuffer::commands::browser_panel::browser_tab_hide,
+            zeroxbuffer::commands::browser_panel::browser_tab_destroy,
+            zeroxbuffer::commands::browser_panel::browser_tab_go_back,
+            zeroxbuffer::commands::browser_panel::browser_tab_go_forward,
+            zeroxbuffer::commands::browser_panel::browser_tab_reload,
+            zeroxbuffer::commands::browser_panel::browser_tab_open_devtools,
+            zeroxbuffer::commands::browser_panel::browser_tab_inject_annotation,
+            zeroxbuffer::commands::browser_panel::browser_tab_remove_annotation_overlay,
+            zeroxbuffer::commands::browser_panel::browser_tab_inject_annotation_markers,
+            zeroxbuffer::commands::browser_panel::browser_tab_update_annotation_marker_selection,
+            zeroxbuffer::commands::browser_panel::browser_tab_report_url,
+            zeroxbuffer::commands::browser_panel::browser_tab_report_loaded,
+            zeroxbuffer::commands::browser_panel::browser_tab_report_title,
+            zeroxbuffer::commands::browser_panel::browser_tab_report_region_captured,
+            zeroxbuffer::commands::browser_panel::browser_tab_report_element_captured,
+            zeroxbuffer::commands::browser_panel::browser_tab_report_annotation_marker_clicked,
             show_main_window,
             safe_start_dragging
         ])

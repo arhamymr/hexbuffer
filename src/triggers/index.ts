@@ -3,12 +3,18 @@ export {
   addTargets,
   deleteTarget,
   deleteAllTargets,
+  matchesFilter,
+  matchesLiveTrafficTrigger,
+  getLiveTrafficWorkflows,
+  startLiveTrafficWatcher,
+  stopLiveTrafficWatcher,
 } from './live-traffic';
 
 export type {
   AddTargetParams,
   AddTargetsParams,
   DeleteTargetParams,
+  LiveTrafficFilterMatch,
 } from './live-traffic';
 
 export {

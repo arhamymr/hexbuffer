@@ -12,10 +12,11 @@ import { WorkflowCanvas } from './components/workflow-canvas';
 import { WorkflowToolbar } from './components/workflow-toolbar';
 import { NodePalette } from './components/node-palette';
 import { ExecutionLogPanel } from './components/execution-log-panel';
+import { TemplatesDialog } from './components/templates-dialog';
 import { useAutomationPage } from './hooks/use-automation-page';
 import type { AutomationNodeType } from './types';
 import { Button } from '@/components/ui/button';
-import { PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { PanelBottomOpen, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export function AutomationPage() {
@@ -28,9 +29,12 @@ export function AutomationPage() {
     onTabAdd,
     onCloseTabsToLeft,
     onCloseTabsToRight,
+    templatesOpen,
+    onTemplatesOpenChange,
   } = useAutomationPage();
 
   const [showPalette, setShowPalette] = React.useState(true);
+  const [showExecutionLog, setShowExecutionLog] = React.useState(true);
 
   const addNodeAtCenterRef = React.useRef<((nodeType: AutomationNodeType) => void) | null>(null);
   const persistRef = React.useRef<(() => void) | null>(null);
@@ -88,24 +92,48 @@ export function AutomationPage() {
                         <PanelLeftOpen className="size-3.5" />
                       )}
                     </Button>
-                    <WorkflowToolbar persistRef={persistRef} />
+                    {!showExecutionLog && (
+                      <Button
+                        variant="ghost"
+                        size="xs"
+                        className={cn(
+                          'absolute bottom-2 left-2 z-20 h-7 w-7 rounded-md p-0',
+                          'bg-background/80 backdrop-blur-sm border',
+                          'hover:bg-accent'
+                        )}
+                        onClick={() => setShowExecutionLog(true)}
+                        title="Show execution log"
+                      >
+                        <PanelBottomOpen className="size-3.5" />
+                      </Button>
+                    )}
+                    <WorkflowToolbar />
                     <div className="flex-1 min-h-0">
                       <WorkflowCanvas key={activeWorkflowId} addNodeRef={addNodeAtCenterRef} persistRef={persistRef} />
                     </div>
                   </div>
                 </ResizablePanel>
 
-                <ResizableHandle withHandle />
+                {showExecutionLog && (
+                  <>
+                    <ResizableHandle withHandle />
 
-                <ResizablePanel defaultSize={25} minSize={10}>
-                  <div className="h-full min-h-0">
-                    <ExecutionLogPanel />
-                  </div>
-                </ResizablePanel>
+                    <ResizablePanel defaultSize={25} minSize={10}>
+                      <div className="h-full min-h-0">
+                        <ExecutionLogPanel
+                          workflowId={activeWorkflowId || null}
+                          onHide={() => setShowExecutionLog(false)}
+                        />
+                      </div>
+                    </ResizablePanel>
+                  </>
+                )}
               </ResizablePanelGroup>
             </ResizablePanel>
           </ResizablePanelGroup>
         </TabbedPageLayout>
+
+        <TemplatesDialog open={templatesOpen} onOpenChange={onTemplatesOpenChange} />
     </ReactFlowProvider>
   );
 }

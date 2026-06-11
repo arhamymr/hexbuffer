@@ -1,6 +1,8 @@
 import React from 'react';
 import { useAutomationStore } from '@/stores/automation';
+import { startLiveTrafficWatcher, stopLiveTrafficWatcher } from '@/triggers/live-traffic';
 import type { PageTabItem } from '@/components/tabs-layout/types';
+import { getWorkflowReadiness } from '../lib/workflow-readiness';
 
 export function useAutomationPage() {
   const workflows = useAutomationStore((s) => s.workflows);
@@ -10,6 +12,10 @@ export function useAutomationPage() {
   const renameWorkflow = useAutomationStore((s) => s.renameWorkflow);
   const deleteWorkflow = useAutomationStore((s) => s.deleteWorkflow);
   const deleteWorkflows = useAutomationStore((s) => s.deleteWorkflows);
+  const isRunning = useAutomationStore((s) => s.isRunning);
+  const activeRunWorkflowId = useAutomationStore((s) => s.activeRunWorkflowId);
+
+  const [templatesOpen, setTemplatesOpen] = React.useState(false);
 
   // Auto-create first workflow if none exist; also ensure activeWorkflowId is valid
   React.useEffect(() => {
@@ -20,13 +26,30 @@ export function useAutomationPage() {
     }
   }, [workflows, activeWorkflowId, createWorkflow, setActiveWorkflowId]);
 
+  // Subscribe to proxy-record events so trigger:live-traffic-captured workflows fire automatically
+  React.useEffect(() => {
+    startLiveTrafficWatcher();
+    return () => {
+      stopLiveTrafficWatcher();
+    };
+  }, []);
+
   const tabs: PageTabItem[] = React.useMemo(
     () =>
-      workflows.map((wf) => ({
-        id: wf.id,
-        name: wf.name,
-      })),
-    [workflows]
+      workflows.map((wf) => {
+        const readiness = getWorkflowReadiness(wf);
+        return {
+          id: wf.id,
+          name: wf.name,
+          status:
+            isRunning && activeRunWorkflowId === wf.id
+              ? { kind: 'running' as const, label: 'Workflow is running' }
+              : !readiness.ready
+                ? { kind: 'needs-action' as const, label: readiness.reason ?? 'Workflow needs action' }
+                : { kind: 'ready' as const, label: 'Workflow is ready' },
+        };
+      }),
+    [workflows, isRunning, activeRunWorkflowId]
   );
 
   const handleCloseTabsToLeft = React.useCallback(
@@ -55,9 +78,11 @@ export function useAutomationPage() {
     onTabChange: setActiveWorkflowId,
     onTabRename: renameWorkflow,
     onTabClose: deleteWorkflow,
-    onTabAdd: createWorkflow,
+    onTabAdd: () => setTemplatesOpen(true),
     onCloseTabsToLeft: handleCloseTabsToLeft,
     onCloseTabsToRight: handleCloseTabsToRight,
-    isRunning: useAutomationStore((s) => s.isRunning),
+    isRunning,
+    templatesOpen,
+    onTemplatesOpenChange: setTemplatesOpen,
   };
 }

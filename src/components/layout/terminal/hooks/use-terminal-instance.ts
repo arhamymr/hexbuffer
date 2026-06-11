@@ -5,7 +5,7 @@ import { WebglAddon } from '@xterm/addon-webgl'
 import { Terminal } from '@xterm/xterm'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { spawn } from 'tauri-pty'
-import { getTerminalOptions, getTerminalTheme } from '@/components/terminal/terminal-config'
+import { getTerminalOptions, getTerminalTheme } from '@/components/layout/terminal/terminal-config'
 import { useTheme } from '@/components/theme-provider'
 import type { ShellInfo } from '@/lib/tauri-types'
 import { useTerminalRenderer } from '@/stores/app-settings-store'
@@ -29,6 +29,8 @@ const PTY_RESIZE_DEBOUNCE_MS = 256
 /** Minimum container dimensions to fit — prevents grid collapse on restore */
 const MIN_FIT_WIDTH = 40
 const MIN_FIT_HEIGHT = 40
+/** Chunk only delayed/background output; live PTY output should stay immediate. */
+const DORMANT_FLUSH_CHUNK_BYTES = 128 * 1024
 
 interface PtySession {
   pty: ReturnType<typeof spawn>
@@ -219,6 +221,8 @@ export function useTerminalInstance({ tabId, active }: UseTerminalInstanceOption
   const ptyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const lastContainerWidthRef = useRef(0)
   const lastContainerHeightRef = useRef(0)
+  const lastColsRef = useRef(0)
+  const lastRowsRef = useRef(0)
   const activeRef = useRef(active)
   activeRef.current = active
 
@@ -227,6 +231,36 @@ export function useTerminalInstance({ tabId, active }: UseTerminalInstanceOption
   const hasActivatedRef = useRef(false)
 
   const isDisposed = useCallback(() => disposedRef.current, [])
+
+  const writeLiveOutput = useCallback((data: Uint8Array): void => {
+    if (!data || data.length === 0 || disposedRef.current) return
+    termRef.current?.write(data)
+  }, [])
+
+  const flushDormantOutput = useCallback((data: Uint8Array): void => {
+    if (!data || data.length === 0 || disposedRef.current) return
+
+    const term = termRef.current
+    if (!term || data.length <= DORMANT_FLUSH_CHUNK_BYTES) {
+      term?.write(data)
+      return
+    }
+
+    let offset = 0
+    const writeNextChunk = (): void => {
+      if (disposedRef.current || !termRef.current) return
+
+      const nextOffset = Math.min(offset + DORMANT_FLUSH_CHUNK_BYTES, data.length)
+      termRef.current.write(data.subarray(offset, nextOffset), () => {
+        offset = nextOffset
+        if (offset < data.length) {
+          requestAnimationFrame(writeNextChunk)
+        }
+      })
+    }
+
+    writeNextChunk()
+  }, [])
 
   /**
    * Perform fit() with dimension caching and guards.
@@ -283,6 +317,17 @@ export function useTerminalInstance({ tabId, active }: UseTerminalInstanceOption
   const performFitRef = useRef(performFit)
   performFitRef.current = performFit
 
+  const resizePty = useCallback((cols: number, rows: number): void => {
+    if (cols === lastColsRef.current && rows === lastRowsRef.current) return
+
+    const ptySession = ptySessions.get(tabIdRef.current)
+    if (!ptySession || ptySession.exited) return
+
+    lastColsRef.current = cols
+    lastRowsRef.current = rows
+    ptySession.pty.resize(cols, rows)
+  }, [])
+
   /**
    * Debounced fit + PTY resize handler (called from ResizeObserver).
    */
@@ -301,19 +346,19 @@ export function useTerminalInstance({ tabId, active }: UseTerminalInstanceOption
       // Stage 2: PTY resize debounce (256ms)
       const term = termRef.current
       if (!term) return
+      const cols = term.cols
+      const rows = term.rows
+
+      if (cols === lastColsRef.current && rows === lastRowsRef.current) return
 
       if (ptyTimerRef.current) clearTimeout(ptyTimerRef.current)
 
       ptyTimerRef.current = setTimeout(() => {
         ptyTimerRef.current = null
-        const ptySession = ptySessions.get(tabIdRef.current)
-        if (ptySession && !ptySession.exited) {
-          const dims = fitAddonRef.current?.proposeDimensions()
-          if (dims) ptySession.pty.resize(dims.cols, dims.rows)
-        }
+        resizePty(cols, rows)
       }, PTY_RESIZE_DEBOUNCE_MS)
     }, FIT_DEBOUNCE_MS)
-  }, [])
+  }, [resizePty])
 
   const handleResizeRef = useRef(handleResize)
   handleResizeRef.current = handleResize
@@ -328,14 +373,11 @@ export function useTerminalInstance({ tabId, active }: UseTerminalInstanceOption
     }
 
     const didFit = performFitRef.current(true)
-    if (didFit) {
-      const ptySession = ptySessions.get(tabIdRef.current)
-      if (ptySession && !ptySession.exited) {
-        const dims = fitAddonRef.current?.proposeDimensions()
-        if (dims) ptySession.pty.resize(dims.cols, dims.rows)
-      }
+    const terminal = termRef.current
+    if (didFit && terminal) {
+      resizePty(terminal.cols, terminal.rows)
     }
-  }, [])
+  }, [resizePty])
 
   const initTerminal = useCallback(async () => {
     if (!containerRef.current) return
@@ -393,7 +435,7 @@ export function useTerminalInstance({ tabId, active }: UseTerminalInstanceOption
       const { cols, rows } = fitAddon.proposeDimensions() ?? { cols: 80, rows: 24 }
 
       const writeToTerm = activeRef.current
-        ? (data: Uint8Array) => { if (!disposedRef.current) term.write(data) }
+        ? (data: Uint8Array) => { writeLiveOutput(data) }
         : (data: Uint8Array) => { dormantRing.push(currentTabId, data) }
 
       const session = await acquirePtyForTab(
@@ -433,7 +475,7 @@ export function useTerminalInstance({ tabId, active }: UseTerminalInstanceOption
       if (activeRef.current) {
         const dormantData = dormantRing.drain(currentTabId)
         if (dormantData) {
-          term.write(dormantData)
+          flushDormantOutput(dormantData)
         }
       }
 
@@ -456,7 +498,7 @@ export function useTerminalInstance({ tabId, active }: UseTerminalInstanceOption
         console.error('[TauriTerminal]', msg)
       }
     }
-  }, [isDisposed])
+  }, [isDisposed, writeLiveOutput, flushDormantOutput])
 
   // ── Activation / visibility lifecycle (single coherent effect) ─────────────
   // When `active` becomes true for the first time: create Terminal + PTY.
@@ -491,13 +533,13 @@ export function useTerminalInstance({ tabId, active }: UseTerminalInstanceOption
     try { session.onDataDisposable.dispose() } catch { /* ignore */ }
     session.onDataDisposable = session.pty.onData((data: Uint8Array) => {
       if (!disposedRef.current && termRef.current) {
-        termRef.current.write(data)
+        writeLiveOutput(data)
       }
     })
 
     const dormantData = dormantRing.drain(tabId)
     if (dormantData && termRef.current) {
-      termRef.current.write(dormantData)
+      flushDormantOutput(dormantData)
     }
 
     // Double-RAF to ensure DOM is fully rendered before fitting
@@ -507,7 +549,7 @@ export function useTerminalInstance({ tabId, active }: UseTerminalInstanceOption
         try { termRef.current?.focus() } catch { /* ignore */ }
       })
     })
-  }, [active, tabId, initTerminal, forceFit])
+  }, [active, tabId, initTerminal, forceFit, writeLiveOutput, flushDormantOutput])
 
   // Update xterm theme when app theme changes
   useEffect(() => {

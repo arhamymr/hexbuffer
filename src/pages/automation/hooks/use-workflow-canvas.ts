@@ -6,7 +6,6 @@ import {
   useEdgesState,
   useReactFlow,
   addEdge,
-  MarkerType,
   type Connection,
 } from '@xyflow/react';
 import type { Node } from '@xyflow/react';
@@ -15,6 +14,11 @@ import { TriggerNode } from '../nodes/trigger-node';
 import { ConditionNode } from '../nodes/condition-node';
 import { ActionNode } from '../nodes/action-node';
 import { NODE_TYPE_REGISTRY, makeNodeId } from '../constants';
+import {
+  automationDefaultEdgeOptions,
+  buildAutomationEdgeFromConnection,
+  normalizeAutomationEdges,
+} from '../lib/edges';
 import type {
   AutomationNodeType,
   AutomationNodeData,
@@ -68,22 +72,6 @@ const nodeTypes = {
   'action:script-analyze': ActionNode,
 };
 
-const defaultEdgeOptions = {
-  type: 'smoothstep' as const,
-  animated: true,
-  style: {
-    stroke: 'hsl(var(--primary))',
-    strokeWidth: 3,
-  },
-  interactionWidth: 20,
-  markerEnd: {
-    type: MarkerType.ArrowClosed,
-    color: 'hsl(var(--primary))',
-    width: 20,
-    height: 20,
-  },
-};
-
 const connectionLineStyle: React.CSSProperties = {
   stroke: 'hsl(var(--primary))',
   strokeWidth: 3,
@@ -101,15 +89,40 @@ export function useWorkflowCanvas(
     s.workflows.find((w) => w.id === s.activeWorkflowId) ?? null
   );
   const saveWorkflow = useAutomationStore((s) => s.saveWorkflow);
+  const runWorkflow = useAutomationStore((s) => s.runWorkflow);
 
   const [nodes, setNodes, onNodesChange] = useNodesState(
     (workflow?.nodes ?? []) as unknown as Node[]
   );
-  const [edges, setEdges, onEdgesChange] = useEdgesState(workflow?.edges ?? []);
+  const [edges, setEdges, onEdgesChange] = useEdgesState(
+    normalizeAutomationEdges(workflow?.edges ?? [])
+  );
+  const nodesRef = React.useRef(nodes);
+  nodesRef.current = nodes;
+  const edgesRef = React.useRef(edges);
+  edgesRef.current = edges;
 
   const persist = React.useCallback(() => {
     saveWorkflow(nodes, edges);
   }, [nodes, edges, saveWorkflow]);
+
+  // Run handler for manual trigger node
+  const onRun = React.useCallback(() => {
+    if (!activeWorkflowId) return;
+    saveWorkflow(nodes, edges);
+    runWorkflow(activeWorkflowId);
+  }, [activeWorkflowId, nodes, edges, saveWorkflow, runWorkflow]);
+
+  // Auto-persist when switching tabs (component unmounts via key change).
+  // Use a ref so the cleanup always calls the latest persist without
+  // re-registering the effect on every state update.
+  const persistRefForCleanup = React.useRef(persist);
+  persistRefForCleanup.current = persist;
+  React.useEffect(() => {
+    return () => {
+      persistRefForCleanup.current();
+    };
+  }, []);
 
   // Context menu state
   const [contextMenu, setContextMenu] = React.useState<{
@@ -130,13 +143,19 @@ export function useWorkflowCanvas(
   const onPaneContextMenu = React.useCallback(
     (event: React.MouseEvent | MouseEvent) => {
       event.preventDefault();
+      const rect = reactFlowWrapper.current?.getBoundingClientRect();
+      if (!rect) return;
       const flowPos = screenToFlowPosition({
         x: event.clientX,
         y: event.clientY,
       });
+      const menuWidth = 224;
+      const menuHeight = 360;
+      const relativeX = event.clientX - rect.left;
+      const relativeY = event.clientY - rect.top;
       setContextMenu({
-        x: event.clientX,
-        y: event.clientY,
+        x: Math.min(Math.max(relativeX, 8), Math.max(rect.width - menuWidth - 8, 8)),
+        y: Math.min(Math.max(relativeY, 8), Math.max(rect.height - menuHeight - 8, 8)),
         flowX: flowPos.x,
         flowY: flowPos.y,
       });
@@ -161,20 +180,28 @@ export function useWorkflowCanvas(
 
   const updateNodeData = React.useCallback(
     (nodeId: string, data: AutomationNodeData) => {
-      setNodes((nds) =>
-        nds.map((n) => {
+      setNodes((nds) => {
+        const nextNodes = nds.map((n) => {
           if (n.id !== nodeId) return n;
           return { ...n, data: data as unknown as Record<string, unknown> };
-        })
-      );
+        });
+        saveWorkflow(nextNodes, edgesRef.current);
+        return nextNodes;
+      });
     },
-    [setNodes]
+    [saveWorkflow, setNodes]
   );
 
   const addNodeFromMenu = React.useCallback(
     (nodeType: AutomationNodeType, flowX: number, flowY: number) => {
       const def = NODE_TYPE_REGISTRY[nodeType];
       if (!def) return;
+
+      // Enforce single trigger per workflow
+      if (nodeType.startsWith('trigger:')) {
+        const existingTrigger = nodesRef.current.some((n) => (n.type as string)?.startsWith('trigger:'));
+        if (existingTrigger) return;
+      }
 
       const id = makeNodeId(nodeType);
       const newNode: AutomationNode = {
@@ -202,6 +229,13 @@ export function useWorkflowCanvas(
     addNodeRef.current = (nodeType: AutomationNodeType) => {
       const def = NODE_TYPE_REGISTRY[nodeType];
       if (!def) return;
+
+      // Enforce single trigger per workflow
+      if (nodeType.startsWith('trigger:')) {
+        const existingTrigger = nodesRef.current.some((n) => (n.type as string)?.startsWith('trigger:'));
+        if (existingTrigger) return;
+      }
+
       const wrapper = reactFlowWrapper.current;
       if (!wrapper) return;
       const rect = wrapper.getBoundingClientRect();
@@ -251,7 +285,7 @@ export function useWorkflowCanvas(
 
   const onConnect = React.useCallback(
     (connection: Connection) => {
-      setEdges((eds) => addEdge({ ...connection, ...defaultEdgeOptions }, eds));
+      setEdges((eds) => addEdge(buildAutomationEdgeFromConnection(connection), eds));
     },
     [setEdges]
   );
@@ -278,9 +312,10 @@ export function useWorkflowCanvas(
     onPaneClick,
     updateNodeData,
     addNodeFromMenu,
+    onRun,
     // config
     nodeTypes,
-    defaultEdgeOptions,
+    defaultEdgeOptions: automationDefaultEdgeOptions,
     connectionLineStyle,
   };
 }

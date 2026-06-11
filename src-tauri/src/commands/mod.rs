@@ -1,4 +1,5 @@
 pub mod browser;
+pub mod browser_panel;
 pub mod cert;
 pub mod chat_sessions;
 pub mod collaborator;

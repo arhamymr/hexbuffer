@@ -41,6 +41,7 @@ export function WorkflowCanvas({ addNodeRef, persistRef }: WorkflowCanvasProps) 
   return (
     <div ref={canvas.reactFlowWrapper} className="h-full w-full relative">
       <ReactFlow
+        className="automation-flow"
         nodes={canvas.nodes}
         edges={canvas.edges}
         onNodesChange={canvas.onNodesChange}
@@ -52,6 +53,7 @@ export function WorkflowCanvas({ addNodeRef, persistRef }: WorkflowCanvasProps) 
         nodeTypes={canvas.nodeTypes}
         defaultEdgeOptions={canvas.defaultEdgeOptions}
         connectionLineStyle={canvas.connectionLineStyle}
+        onlyRenderVisibleElements
         fitView
         snapToGrid
         snapGrid={[16, 16]}
@@ -86,6 +88,7 @@ export function WorkflowCanvas({ addNodeRef, persistRef }: WorkflowCanvasProps) 
           node={canvas.selectedNode}
           onClose={() => canvas.setSelectedNodeId(null)}
           onUpdate={canvas.updateNodeData}
+          onRun={canvas.onRun}
         />
       </div>
 

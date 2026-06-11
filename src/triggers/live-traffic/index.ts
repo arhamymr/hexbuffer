@@ -10,3 +10,13 @@ export type {
   AddTargetsParams,
   DeleteTargetParams,
 } from './targets';
+
+export {
+  matchesFilter,
+  matchesLiveTrafficTrigger,
+  getLiveTrafficWorkflows,
+  startLiveTrafficWatcher,
+  stopLiveTrafficWatcher,
+} from './captured';
+
+export type { LiveTrafficFilterMatch } from './captured';

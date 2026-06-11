@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, type MouseEvent, type ReactNode } from 'react';
-import { Plus, X } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Loader2, Plus, X } from 'lucide-react';
 import {
   ContextMenu,
   ContextMenuContent,
@@ -61,6 +61,14 @@ export function PageTabBar({
 
   const renderTab = useCallback((tab: PageTabItem) => {
     const canClose = !tab.disabled && Boolean(onTabClose) && tab.closable !== false;
+    const StatusIcon =
+      tab.status?.kind === 'running'
+        ? Loader2
+        : tab.status?.kind === 'needs-action'
+          ? AlertTriangle
+          : tab.status?.kind === 'ready'
+            ? CheckCircle2
+            : null;
 
     return (
       <div
@@ -101,8 +109,21 @@ export function PageTabBar({
             )}
             onClick={() => !tab.disabled && onTabChange(tab.id)}
             disabled={tab.disabled}
+            title={tab.status?.label}
           >
-            <span className="block whitespace-nowrap text-xs">{tab.name}</span>
+            <span className="flex items-center gap-1.5 whitespace-nowrap text-xs">
+              {StatusIcon && (
+                <StatusIcon
+                  className={cn(
+                    'size-3 shrink-0',
+                    tab.status?.kind === 'running' && 'animate-spin text-primary',
+                    tab.status?.kind === 'needs-action' && 'text-amber-500',
+                    tab.status?.kind === 'ready' && 'text-emerald-500/70'
+                  )}
+                />
+              )}
+              <span>{tab.name}</span>
+            </span>
           </button>
         )}
         {canClose && editingTabId !== tab.id && (

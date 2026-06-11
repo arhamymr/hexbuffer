@@ -105,7 +105,12 @@ export const NODE_TYPE_REGISTRY: Record<AutomationNodeType, NodeTypeDef> = {
     category: 'trigger',
     iconName: 'Activity',
     description: 'Fires when live traffic captures a new request',
-    defaultConfig: { triggerType: 'trigger:live-traffic-captured' },
+    defaultConfig: {
+      triggerType: 'trigger:live-traffic-captured',
+      host: '',
+      operator: 'contains',
+      value: '',
+    },
   },
 
   // ─── Conditions ─────────────────────────────────────────────────────────────
@@ -237,7 +242,15 @@ export const NODE_TYPE_REGISTRY: Record<AutomationNodeType, NodeTypeDef> = {
     category: 'action',
     iconName: 'FileText',
     description: 'Add findings to a document report',
-    defaultConfig: { actionType: 'action:add-to-report', params: {} },
+    defaultConfig: {
+      actionType: 'action:add-to-report',
+      params: {
+        section: '',
+        title: 'Workflow Report',
+        content: '',
+        mode: 'append',
+      },
+    },
   },
   'action:send-webhook': {
     type: 'action:send-webhook',

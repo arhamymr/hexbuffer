@@ -36,6 +36,7 @@ const formSchema = z.object({
   networkSettleMs: z.coerce.number({ message: 'Must be a number.' }).int().min(0, 'Cannot be negative.').max(30000, 'Maximum is 30,000 ms.'),
   captureScreenshots: z.boolean(),
   captureRenderedHtml: z.boolean(),
+  enableAiInsights: z.boolean(),
   excludePaths: z.string().refine((val) => {
     if (!val.trim()) return true;
     const segments = val.split(',').map((s) => s.trim()).filter(Boolean);
@@ -55,6 +56,7 @@ function toFormDefaults(setup: CrawlSetupConfig): FormValues {
     networkSettleMs: setup.networkSettleMs ?? 2000,
     captureScreenshots: setup.captureScreenshots ?? true,
     captureRenderedHtml: setup.captureRenderedHtml ?? true,
+    enableAiInsights: setup.enableAiInsights ?? true,
     excludePaths: setup.excludePaths,
   };
 }
@@ -105,6 +107,7 @@ export function CrawlSetupScreen({
 
   const captureScreenshots = watch('captureScreenshots');
   const captureRenderedHtml = watch('captureRenderedHtml');
+  const enableAiInsights = watch('enableAiInsights');
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -201,6 +204,18 @@ export function CrawlSetupScreen({
             <div className="rounded-md border p-3">
               <div className="mb-3 text-sm font-medium">Page Artifacts</div>
               <div className="space-y-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="space-y-1">
+                    <Label htmlFor="enable-ai-insights">AI analysis</Label>
+                    <p className="text-xs text-muted-foreground">Run AI-powered reconnaissance analysis during the crawl.</p>
+                  </div>
+                  <Switch
+                    id="enable-ai-insights"
+                    checked={enableAiInsights}
+                    disabled={disabled}
+                    onCheckedChange={(checked) => setValue('enableAiInsights', checked, { shouldDirty: true, shouldValidate: true })}
+                  />
+                </div>
                 <div className="flex items-center justify-between gap-3">
                   <div className="space-y-1">
                     <Label htmlFor="capture-screenshots">Capture screenshots</Label>

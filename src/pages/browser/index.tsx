@@ -9,6 +9,7 @@ import { CrawlSetupScreen } from './components/setup-screen';
 import { CrawlTreePanel } from './components/tree-panel';
 import { PageDetailPanel } from './components/page-detail-panel';
 import { Alert, AlertAction, AlertDescription } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -26,6 +27,27 @@ import { useBrowserAutomationStore } from '@/stores/browser-automation';
 import type { ActionLogEntry } from '@/stores/browser-automation';
 import { useBrowserAutomationPage } from './hooks/use-page';
 import { toast } from 'sonner';
+import type { CrawlStatus } from './types';
+
+const crawlStatusStyles: Record<CrawlStatus, string> = {
+  idle: 'border-muted-foreground/25 text-muted-foreground',
+  running: 'border-emerald-500/25 text-emerald-700 dark:text-emerald-300',
+  paused: 'border-amber-500/25 text-amber-700 dark:text-amber-300',
+  completed: 'border-sky-500/25 text-sky-700 dark:text-sky-300',
+  failed: 'border-red-500/25 text-red-700 dark:text-red-300',
+  stopped: 'border-muted-foreground/25 text-muted-foreground',
+};
+
+function CrawlStatusBadge({ status }: { status: CrawlStatus }) {
+  return (
+    <Badge
+      variant="outline"
+      className={`h-7 px-2 text-xs capitalize ${crawlStatusStyles[status]}`}
+    >
+      {status}
+    </Badge>
+  );
+}
 
 export function BrowserAutomationPage() {
   const browserAutomationSafetyAlertDismissed = useAppStore(
@@ -171,6 +193,7 @@ export function BrowserAutomationPage() {
                   onSetupChange={updateSetup}
                   onSave={saveConfig}
                 />
+                <CrawlStatusBadge status={status} />
                 <ButtonGroup>
                   <Button variant="outline" size="xs" onClick={pauseCrawl} disabled={!isRunning} aria-label="Pause">
                     <Pause className="h-4 w-4" />

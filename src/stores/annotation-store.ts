@@ -8,6 +8,7 @@ export type OutputLevel = 'compact' | 'standard' | 'detailed';
 const MAX_TEXT_CONTENT_LENGTH = 2000;
 const MAX_SELECTOR_LENGTH = 500;
 const MAX_ATTRIBUTE_VALUE_LENGTH = 500;
+const MAX_STYLE_VALUE_LENGTH = 500;
 const ATTRIBUTE_ALLOWLIST = new Set([
   'id',
   'class',
@@ -39,6 +40,7 @@ export interface ElementGeometry {
   selector: string;
   selectorConfidence: 'unique-id' | 'unique-class' | 'fallback';
   attributes: Record<string, string>;
+  computedStyles: Record<string, string>;
   textContent: string;
   textTruncated: boolean;
   boundingBox: {
@@ -133,6 +135,15 @@ function sanitizeElementGeometry(geometry: ElementGeometry): ElementGeometry {
         return [key, sanitizedValue];
       })
   );
+  const sanitizedComputedStyles = Object.fromEntries(
+    Object.entries(geometry.computedStyles ?? {}).map(([key, value]) => {
+      const sanitizedValue = truncateWithEllipsis(
+        sanitizeCapturedString(String(value ?? '')),
+        MAX_STYLE_VALUE_LENGTH
+      ).value;
+      return [sanitizeCapturedString(key), sanitizedValue];
+    })
+  );
 
   const textResult = truncateWithEllipsis(
     sanitizeCapturedString(geometry.textContent),
@@ -144,6 +155,7 @@ function sanitizeElementGeometry(geometry: ElementGeometry): ElementGeometry {
     tagName: sanitizedTagName,
     selector: sanitizedSelector,
     attributes: sanitizedAttributes,
+    computedStyles: sanitizedComputedStyles,
     textContent: textResult.value,
     textTruncated: geometry.textTruncated || textResult.truncated,
     boundingBox: {

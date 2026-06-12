@@ -34,11 +34,25 @@ interface BrowserPanelProps {
 
 const DEFAULT_URL = 'https://www.google.com';
 const ANNOTATION_UNAVAILABLE_MESSAGE =
-  'Annotation mode is not available on this page due to security policies';
+  'Element grabber is not available on this page due to security policies';
+const ANNOTATION_INJECTION_RETRY_COUNT = 4;
+const ANNOTATION_INJECTION_RETRY_DELAY_MS = 250;
+
+function isTransientAnnotationInjectionError(error: string): boolean {
+  const normalizedError = error.toLowerCase();
+  return (
+    normalizedError.includes('body not ready') ||
+    normalizedError.includes('document.body') ||
+    normalizedError.includes('bootstrap probe failed')
+  );
+}
+
+function wait(ms: number): Promise<void> {
+  return new Promise((resolve) => window.setTimeout(resolve, ms));
+}
 
 export function BrowserPanel({ browserTabId, isVisible }: BrowserPanelProps) {
   const url = useBrowserSessionStore((state) => state.tabs.get(browserTabId)?.url || DEFAULT_URL);
-  const tabTitle = useBrowserSessionStore((state) => state.tabs.get(browserTabId)?.title ?? '');
   const loading = useBrowserSessionStore((state) => state.tabs.get(browserTabId)?.loading ?? false);
   const annotationMode = useBrowserSessionStore(
     (state) => state.tabs.get(browserTabId)?.annotationMode ?? false
@@ -56,27 +70,7 @@ export function BrowserPanel({ browserTabId, isVisible }: BrowserPanelProps) {
       return state.getAnnotationsForUrl(url);
     })
   );
-
-  const handleAddNote = useCallback(() => {
-    if (!url) return;
-    const normalizedUrl = normalizeUrl(url);
-    const viewportWidth = typeof window !== 'undefined' ? window.innerWidth : 1920;
-    const viewportHeight = typeof window !== 'undefined' ? window.innerHeight : 1080;
-
-    useAnnotationStore.getState().addAnnotation({
-      browserTabId,
-      url,
-      normalizedUrl,
-      pageTitle: tabTitle || '',
-      type: 'note',
-      geometry: { type: 'point', x: 0, y: 0 },
-      intent: 'question',
-      severity: 'suggestion',
-      description: '',
-      viewportWidth,
-      viewportHeight,
-    });
-  }, [browserTabId, url, tabTitle]);
+  const grabbedElements = annotations.filter((annotation) => annotation.geometry.type === 'element');
 
   const handleOpenExport = useCallback(() => {
     if (exportOpen) return;
@@ -107,18 +101,12 @@ export function BrowserPanel({ browserTabId, isVisible }: BrowserPanelProps) {
     useBrowserSessionStore.getState().setAnnotationMode(browserTabId, false);
   }, [browserTabId]);
 
-  const handleChangeAnnotationSubMode = useCallback(
-    (mode: AnnotationSubMode) => {
-      useBrowserSessionStore.getState().setAnnotationSubMode(browserTabId, mode);
-    },
-    [browserTabId]
-  );
-
   const { containerRef } = useBrowserWebview(browserTabId, isVisible, url);
   const injectedModeRef = useRef<AnnotationSubMode | null>(null);
   const desiredModeRef = useRef<AnnotationSubMode | null>(null);
   const reconcileChainRef = useRef<Promise<void>>(Promise.resolve());
   const [annotationOverlayAvailable, setAnnotationOverlayAvailable] = useState(true);
+  const [annotationOverlayError, setAnnotationOverlayError] = useState<string | null>(null);
 
   useAnnotationCapture(browserTabId);
   useAnnotationMarkers(browserTabId, isVisible, normalizeUrl(url));
@@ -157,14 +145,29 @@ export function BrowserPanel({ browserTabId, isVisible }: BrowserPanelProps) {
           continue;
         }
 
-        const result = await browserTabInjectAnnotation(browserTabId, desired);
+        let result = await browserTabInjectAnnotation(browserTabId, desired);
+        for (
+          let attempt = 0;
+          !result.success &&
+          isTransientAnnotationInjectionError(result.error) &&
+          attempt < ANNOTATION_INJECTION_RETRY_COUNT;
+          attempt += 1
+        ) {
+          await wait(ANNOTATION_INJECTION_RETRY_DELAY_MS);
+          if (desiredModeRef.current !== desired) return;
+          result = await browserTabInjectAnnotation(browserTabId, desired);
+        }
+
         if (result.success) {
           injectedModeRef.current = desired;
           setAnnotationOverlayAvailable(true);
+          setAnnotationOverlayError(null);
         } else {
+          console.error('[BrowserPanel] annotation injection failed:', result.error);
           injectedModeRef.current = null;
           setAnnotationOverlayAvailable(false);
-          toast.error(ANNOTATION_UNAVAILABLE_MESSAGE);
+          setAnnotationOverlayError(result.error);
+          toast.error(`${ANNOTATION_UNAVAILABLE_MESSAGE}: ${result.error}`);
           desiredModeRef.current = null;
           if (tornDownForSwitch && tornDownForSwitch !== desired) {
             useBrowserSessionStore.getState().setAnnotationSubMode(
@@ -234,11 +237,9 @@ export function BrowserPanel({ browserTabId, isVisible }: BrowserPanelProps) {
         {annotationMode && (
           <AnnotationPanel
             url={url}
-            annotationSubMode={annotationSubMode}
             annotationOverlayAvailable={annotationOverlayAvailable}
+            annotationOverlayError={annotationOverlayError}
             onExitAnnotationMode={handleExitAnnotationMode}
-            onChangeAnnotationSubMode={handleChangeAnnotationSubMode}
-            onAddNote={handleAddNote}
             onExport={handleOpenExport}
           />
         )}
@@ -246,7 +247,7 @@ export function BrowserPanel({ browserTabId, isVisible }: BrowserPanelProps) {
       <AnnotationExportModal
         open={exportOpen}
         onOpenChange={handleCloseExport}
-        annotations={annotations}
+        annotations={grabbedElements}
       />
     </div>
   );

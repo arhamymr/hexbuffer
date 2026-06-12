@@ -1,7 +1,9 @@
 'use client';
 
+import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { CircleStop, GripHorizontal, Loader2, Pause } from 'lucide-react';
+import { GripHorizontal, Loader2, Pause } from 'lucide-react';
+import { listen } from '@tauri-apps/api/event';
 
 import { cn } from '@/lib/utils';
 import { OpenBrowserButton } from './open-browser';
@@ -10,8 +12,12 @@ import { mainNavItems } from './constants';
 import { TitlebarButtons } from './titlebar-buttons';
 import { TriangleLogo } from './triangle-logo';
 import { useTopNav } from './hooks/use-top-nav';
+import { useAutomationStore } from '@/stores/automation';
 import { useBrowserAutomationStore } from '@/stores/browser-automation';
 import { Separator } from '../ui/separator';
+import type { CrawlSession } from '@/pages/browser/types';
+
+type CrawlSessionEventPayload = Partial<CrawlSession> & { sessionId?: string };
 
 export function TopNav() {
   const {
@@ -30,10 +36,53 @@ export function TopNav() {
       const st = t.session?.status;
       if (st === 'running') return 'running';
       if (st === 'paused') return 'paused';
-      if (st === 'stopped') return 'stopped';
     }
     return null;
   });
+  const isAutomationRunning = useAutomationStore((s) =>
+    s.runningWorkflowIds.length > 0 ||
+    Object.values(s.nodeRuntimeById).some((runtime) => runtime.status === 'running')
+  );
+  const applySessionStarted = useBrowserAutomationStore((s) => s.applySessionStarted);
+  const applySessionUpdated = useBrowserAutomationStore((s) => s.applySessionUpdated);
+
+  useEffect(() => {
+    const unlisteners: Array<() => void> = [];
+    let mounted = true;
+
+    async function wireBrowserSessionEvents() {
+      try {
+        unlisteners.push(await listen<CrawlSession>('ai-browser:session-started', (event) => {
+          applySessionStarted(event.payload);
+        }));
+        unlisteners.push(await listen<CrawlSessionEventPayload>('ai-browser:session-updated', (event) => {
+          applySessionUpdated(event.payload);
+        }));
+        unlisteners.push(await listen<CrawlSessionEventPayload>('ai-browser:session-finished', (event) => {
+          applySessionUpdated({ ...event.payload, status: 'completed' });
+        }));
+        unlisteners.push(await listen<{ message?: string; sessionId?: string }>('ai-browser:session-failed', (event) => {
+          applySessionUpdated({
+            id: event.payload?.sessionId,
+            sessionId: event.payload?.sessionId,
+            status: 'failed',
+            finishedAt: new Date().toISOString(),
+          });
+        }));
+      } catch (error) {
+        if (mounted) {
+          console.warn('[top nav] Browser session event listeners are unavailable in this runtime.', error);
+        }
+      }
+    }
+
+    wireBrowserSessionEvents();
+
+    return () => {
+      mounted = false;
+      unlisteners.forEach((unlisten) => unlisten());
+    };
+  }, [applySessionStarted, applySessionUpdated]);
 
   return (
     <header
@@ -70,16 +119,20 @@ export function TopNav() {
                 const RightIcon = item.rightIcon;
                 const isActive = pathname === item.href;
                 const isBlinking = blinkingItems.has(item.href);
-                const showStatusIcon =
+                const showAutomationStatusIcon =
+                  item.href === '/automation' && isAutomationRunning;
+                const showBrowserStatusIcon =
                   item.href === '/browser-automation' && crawlerStatus !== null;
+                const showStatusIcon = showAutomationStatusIcon || showBrowserStatusIcon;
 
                 const StatusIcon =
-                  crawlerStatus === 'paused' ? Pause :
-                    crawlerStatus === 'stopped' ? CircleStop :
+                  showAutomationStatusIcon ? Loader2 :
+                    crawlerStatus === 'paused' ? Pause :
                       Loader2;
 
                 const statusIconClass =
-                  crawlerStatus === 'running' ? 'size-3 animate-spin text-primary' :
+                  showAutomationStatusIcon ? 'size-3 animate-spin text-primary' :
+                    crawlerStatus === 'running' ? 'size-3 animate-spin text-primary' :
                     crawlerStatus === 'paused' ? 'size-3 text-amber-500' :
                       'size-3 text-muted-foreground';
 

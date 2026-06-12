@@ -11,16 +11,12 @@ interface NavItem {
 
 export const allNavItems: NavItem[] = [
   { label: 'Live Traffic', icon: ArrowUpDown, href: '/live-traffic' },
-  // { label: 'Packets', icon: Network, href: '/packet-capture', devOnly: true },
+  { label: 'Automation', icon: Workflow, href: '/automation' },
+  { label: 'Browser', icon: Globe, href: '/browser-automation'},
   { label: 'Intercept', icon: PauseCircle, href: '/intercept' },
   { label: 'Invoker', icon: Crosshair, href: '/invoker' },
   { label: 'Repeater', icon: RefreshCw, href: '/repeater' },
-  { label: 'Browser', icon: Globe, href: '/browser-automation'},
-  { label: 'Inspector', icon: Search, href: '/inspector'},
-  // { label: 'Listener', icon: Radio, href: '/listener' },
   { label: 'Documents', icon: FileText, href: '/documents'},
-  { label: 'Automation', icon: Workflow, href: '/automation' },
-  // { label: 'AI Tools', icon: Bot, href: '/ai-tools', devOnly: true },
   { label: 'Tools', icon: Box, href: '/tools' },
   { label: 'Debugger', icon: Bug, href: '/debugger', devOnly: true },
 ];

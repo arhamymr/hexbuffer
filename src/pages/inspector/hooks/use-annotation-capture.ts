@@ -60,6 +60,7 @@ export function useAnnotationCapture(browserTabId: string) {
           selector: payload.selector,
           selectorConfidence: payload.selectorConfidence,
           attributes: payload.attributes,
+          computedStyles: payload.computedStyles,
           textContent: payload.textContent,
           textTruncated: payload.textTruncated,
           boundingBox: {

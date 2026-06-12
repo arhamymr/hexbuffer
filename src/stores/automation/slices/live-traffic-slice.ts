@@ -1,6 +1,11 @@
-import { capLiveTrafficHostInsights } from '../constants';
+import {
+  DEFAULT_AUTOMATION_SETTINGS,
+  capLiveTrafficHostInsights,
+  normalizeAutomationSettings,
+} from '../constants';
 import type {
   AutomationState,
+  AutomationRuntimeSettings,
   LiveTrafficHostInsight,
   LiveTrafficQueueStats,
   NewLiveTrafficHostInsight,
@@ -10,6 +15,7 @@ export interface LiveTrafficSlice {
   liveTrafficHostInsights: LiveTrafficHostInsight[];
   liveTrafficCapturedHosts: LiveTrafficHostInsight[];
   liveTrafficQueueStatsByTriggerId: Record<string, LiveTrafficQueueStats>;
+  automationSettings: AutomationRuntimeSettings;
 
   appendLiveTrafficHostInsight: (insight: NewLiveTrafficHostInsight) => void;
   appendLiveTrafficCapturedHost: (insight: NewLiveTrafficHostInsight) => void;
@@ -18,6 +24,8 @@ export interface LiveTrafficSlice {
   incrementLiveTrafficDropped: (triggerNodeId: string, cap: number) => void;
   clearLiveTrafficHostInsights: (triggerNodeId?: string) => void;
   clearLiveTrafficCapturedHosts: (triggerNodeId?: string) => void;
+  updateAutomationSettings: (settings: Partial<AutomationRuntimeSettings>) => void;
+  resetAutomationSettings: () => void;
 }
 
 export const createLiveTrafficSlice = (
@@ -27,6 +35,7 @@ export const createLiveTrafficSlice = (
   liveTrafficHostInsights: [],
   liveTrafficCapturedHosts: [],
   liveTrafficQueueStatsByTriggerId: {},
+  automationSettings: DEFAULT_AUTOMATION_SETTINGS,
 
   appendLiveTrafficHostInsight: (insight) => {
     const matchedAt = insight.matchedAt ?? new Date().toISOString();
@@ -95,4 +104,15 @@ export const createLiveTrafficSlice = (
       ? state.liveTrafficCapturedHosts.filter((item) => item.triggerNodeId !== triggerNodeId)
       : [],
   })),
+
+  updateAutomationSettings: (settings) => set((state) => ({
+    automationSettings: normalizeAutomationSettings({
+      ...state.automationSettings,
+      ...settings,
+    }),
+  })),
+
+  resetAutomationSettings: () => set({
+    automationSettings: DEFAULT_AUTOMATION_SETTINGS,
+  }),
 });

@@ -1,7 +1,58 @@
-import type { ExecutionLog, LiveTrafficHostInsight } from './types';
+import type { AutomationRuntimeSettings, ExecutionLog, LiveTrafficHostInsight } from './types';
 
 export const AUTOMATION_LOG_LIMIT = 500;
 export const LIVE_TRAFFIC_HOST_INSIGHT_LIMIT = 200;
+
+export const DEFAULT_AUTOMATION_SETTINGS: AutomationRuntimeSettings = {
+  liveTrafficConcurrency: 1,
+  filteredTriggerQueueCap: 100,
+  catchAllTriggerQueueCap: 25,
+  recentMatchDedupeTtlMs: 2000,
+};
+
+export const AUTOMATION_SETTINGS_LIMITS = {
+  liveTrafficConcurrency: { min: 1, max: 8 },
+  filteredTriggerQueueCap: { min: 1, max: 1000 },
+  catchAllTriggerQueueCap: { min: 1, max: 250 },
+  recentMatchDedupeTtlMs: { min: 0, max: 10000 },
+};
+
+function clampNumber(value: unknown, min: number, max: number, fallback: number): number {
+  const numericValue = typeof value === 'number' ? value : Number(value);
+  if (!Number.isFinite(numericValue)) return fallback;
+  return Math.min(max, Math.max(min, Math.round(numericValue)));
+}
+
+export function normalizeAutomationSettings(
+  settings: Partial<AutomationRuntimeSettings> | null | undefined
+): AutomationRuntimeSettings {
+  return {
+    liveTrafficConcurrency: clampNumber(
+      settings?.liveTrafficConcurrency,
+      AUTOMATION_SETTINGS_LIMITS.liveTrafficConcurrency.min,
+      AUTOMATION_SETTINGS_LIMITS.liveTrafficConcurrency.max,
+      DEFAULT_AUTOMATION_SETTINGS.liveTrafficConcurrency
+    ),
+    filteredTriggerQueueCap: clampNumber(
+      settings?.filteredTriggerQueueCap,
+      AUTOMATION_SETTINGS_LIMITS.filteredTriggerQueueCap.min,
+      AUTOMATION_SETTINGS_LIMITS.filteredTriggerQueueCap.max,
+      DEFAULT_AUTOMATION_SETTINGS.filteredTriggerQueueCap
+    ),
+    catchAllTriggerQueueCap: clampNumber(
+      settings?.catchAllTriggerQueueCap,
+      AUTOMATION_SETTINGS_LIMITS.catchAllTriggerQueueCap.min,
+      AUTOMATION_SETTINGS_LIMITS.catchAllTriggerQueueCap.max,
+      DEFAULT_AUTOMATION_SETTINGS.catchAllTriggerQueueCap
+    ),
+    recentMatchDedupeTtlMs: clampNumber(
+      settings?.recentMatchDedupeTtlMs,
+      AUTOMATION_SETTINGS_LIMITS.recentMatchDedupeTtlMs.min,
+      AUTOMATION_SETTINGS_LIMITS.recentMatchDedupeTtlMs.max,
+      DEFAULT_AUTOMATION_SETTINGS.recentMatchDedupeTtlMs
+    ),
+  };
+}
 
 export function capExecutionLogs(logs: ExecutionLog[]): ExecutionLog[] {
   const buckets = new Map<string, ExecutionLog[]>();

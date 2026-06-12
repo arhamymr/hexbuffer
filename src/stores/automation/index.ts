@@ -6,7 +6,7 @@ import { createExecutionSlice } from './slices/execution-slice';
 import { createLogsSlice } from './slices/logs-slice';
 import { createRuntimeSlice } from './slices/runtime-slice';
 import { createLiveTrafficSlice } from './slices/live-traffic-slice';
-import { capExecutionLogs } from './constants';
+import { DEFAULT_AUTOMATION_SETTINGS, capExecutionLogs, normalizeAutomationSettings } from './constants';
 
 export const useAutomationStore = create<AutomationState>()(
   persist(
@@ -22,6 +22,7 @@ export const useAutomationStore = create<AutomationState>()(
       partialize: (state) => ({
         workflows: state.workflows,
         activeWorkflowId: state.activeWorkflowId,
+        automationSettings: state.automationSettings,
       }),
       merge: (persistedState, currentState) => {
         const typedState = persistedState as Partial<AutomationState> | undefined;
@@ -37,6 +38,9 @@ export const useAutomationStore = create<AutomationState>()(
           ...typedState,
           workflows: persistedWorkflows,
           activeWorkflowId: validActiveId,
+          automationSettings: normalizeAutomationSettings(
+            typedState?.automationSettings ?? DEFAULT_AUTOMATION_SETTINGS
+          ),
           executionLogs: capExecutionLogs(currentState.executionLogs),
           nodeRuntimeById: {},
           liveTrafficHostInsights: [],
@@ -60,6 +64,7 @@ export type {
   NodeRuntimeState,
   LiveTrafficHostInsight,
   LiveTrafficQueueStats,
+  AutomationRuntimeSettings,
   WorkflowContext,
   AutomationState,
 } from './types';

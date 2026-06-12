@@ -1,6 +1,7 @@
 import React from 'react';
 import { useAutomationStore } from '@/stores/automation';
 import { startLiveTrafficWatcher, stopLiveTrafficWatcher } from '@/triggers/live-traffic';
+import { startPageCrawledWatcher, stopPageCrawledWatcher } from '@/triggers/browser-automation';
 import type { PageTabItem } from '@/components/tabs-layout/types';
 import { getWorkflowReadiness } from '../lib/workflow-readiness';
 import { isWorkflowProcessing } from '../lib/workflow-runtime';
@@ -32,6 +33,14 @@ export function useAutomationPage() {
     startLiveTrafficWatcher();
     return () => {
       stopLiveTrafficWatcher();
+    };
+  }, []);
+
+  // Subscribe to page-updated events so trigger:browser-page-crawled workflows fire automatically
+  React.useEffect(() => {
+    startPageCrawledWatcher();
+    return () => {
+      stopPageCrawledWatcher();
     };
   }, []);
 

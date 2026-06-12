@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { AlertTriangle, Clock, Globe, Filter, Play, Trash2 } from 'lucide-react';
+import { Info, AlertTriangle, Clock, Globe, Filter, Play, Trash2, Network, Radio, ScanLine } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -37,6 +37,142 @@ const OPERATOR_OPTIONS: { value: NonNullable<TriggerConfig['operator']>; label: 
 
 const METHOD_OPTIONS = ['ANY', 'GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'];
 
+const SEVERITY_OPTIONS = ['info', 'low', 'medium', 'high', 'critical'];
+const DIRECTION_OPTIONS: { value: string; label: string }[] = [
+  { value: 'sent', label: 'Sent' },
+  { value: 'received', label: 'Received' },
+];
+
+/* ── Reusable filter widgets ── */
+
+function HttpMethodFilter({
+  value,
+  onChange,
+}: {
+  value: string | undefined;
+  onChange: (v: string | undefined) => void;
+}) {
+  return (
+    <div className="space-y-1.5">
+      <Label className="text-[11px]">Method</Label>
+      <Select
+        value={value?.trim() ? value.toUpperCase() : 'ANY'}
+        onValueChange={(v) => onChange(v === 'ANY' ? undefined : v)}
+      >
+        <SelectTrigger className="h-7 text-xs">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {METHOD_OPTIONS.map((method) => (
+            <SelectItem key={method} value={method} className="text-xs">
+              {method}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+  );
+}
+
+function HostWhitelistFilter({
+  value,
+  onChange,
+}: {
+  value: string | undefined;
+  onChange: (v: string) => void;
+}) {
+  return (
+    <div className="space-y-1.5">
+      <Label className="text-[11px]">
+        <Globe className="size-3 inline mr-1" />
+        Host whitelist
+      </Label>
+      <Textarea
+        className="min-h-20 resize-none text-xs"
+        value={value ?? ''}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={'example.com\nhttps://app.example.com\napi.example.com:443\n*.target.local'}
+      />
+      <p className="text-[10px] text-muted-foreground">
+        Enter hostnames, full URLs, optional ports, or wildcard domains.
+      </p>
+    </div>
+  );
+}
+
+function UrlPatternFilter({
+  operator,
+  value,
+  onOperatorChange,
+  onValueChange,
+}: {
+  operator: string | undefined;
+  value: string | undefined;
+  onOperatorChange: (v: string) => void;
+  onValueChange: (v: string) => void;
+}) {
+  return (
+    <>
+      <div className="space-y-1.5">
+        <Label className="text-[11px]">Operator</Label>
+        <Select value={operator ?? 'contains'} onValueChange={onOperatorChange}>
+          <SelectTrigger className="h-7 text-xs">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {OPERATOR_OPTIONS.map((op) => (
+              <SelectItem key={op.value} value={op.value} className="text-xs">
+                {op.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="space-y-1.5">
+        <Label className="text-[11px]">Value</Label>
+        <Input
+          className="h-7 text-xs"
+          value={value ?? ''}
+          onChange={(e) => onValueChange(e.target.value)}
+          placeholder="e.g. /api/login (blank = match all)"
+        />
+      </div>
+    </>
+  );
+}
+
+function TriggerInfoPanel({
+  icon: Icon,
+  description,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  description: string;
+}) {
+  return (
+    <div className="flex items-start gap-2 rounded-md border bg-muted/30 px-3 py-2.5">
+      <Info className="size-3.5 shrink-0 mt-0.5 text-muted-foreground" />
+      <div className="min-w-0">
+        <p className="text-[11px] text-muted-foreground">{description}</p>
+      </div>
+    </div>
+  );
+}
+
+/* ── Help text per trigger ── */
+
+const TRIGGER_HELP: Partial<Record<TriggerConfig['triggerType'], string>> = {
+  'trigger:intercept-request':
+    'Fires when a request is intercepted by the proxy and matches the filters above. Leave all filters blank to intercept every request.',
+  'trigger:browser-page-crawled':
+    'Fires when a browser page finishes crawling and the URL matches the filter above. Leave blank to match all pages.',
+  'trigger:port-scan-result':
+    'Fires when a port scan discovers open ports matching the filter. Specify ports as comma-separated numbers (e.g. 80, 443, 8080).',
+  'trigger:websocket-message':
+    'Fires when a WebSocket message matching the filters is sent or received.',
+  'trigger:scan-completed':
+    'Fires when a full browser crawl finishes. Use this to chain post-crawl actions like AI analysis or report generation.',
+};
+
 function formatTime(iso: string): string {
   const date = new Date(iso);
   const h = date.getHours().toString().padStart(2, '0');
@@ -46,17 +182,28 @@ function formatTime(iso: string): string {
 }
 
 export function TriggerConfigForm({ config, onChange, onRun }: TriggerConfigFormProps) {
-  const isScheduled = config.triggerType === 'trigger:scheduled';
-  const isManual = config.triggerType === 'trigger:manual';
-  const isLiveTraffic = config.triggerType === 'trigger:live-traffic-captured';
+  const tt = config.triggerType;
+  const isScheduled = tt === 'trigger:scheduled';
+  const isManual = tt === 'trigger:manual';
+  const isLiveTraffic = tt === 'trigger:live-traffic-captured';
   const liveTrafficWarning = isLiveTraffic ? getLiveTrafficSetupWarning(config) : null;
+
+  // HTTP-based trigger that shares method/host/URL-pattern filters
+  const isHttpRequest = tt === 'trigger:intercept-request';
+
+  const helpText = TRIGGER_HELP[tt];
+
+  const isPageCrawled = tt === 'trigger:browser-page-crawled';
+  const isPortScanResult = tt === 'trigger:port-scan-result';
+  const isWebSocketMessage = tt === 'trigger:websocket-message';
+  const isInfoOnly = tt === 'trigger:scan-completed';
 
   return (
     <div className="space-y-4">
       <div className="space-y-1.5">
         <Label className="text-[11px]">Trigger type</Label>
         <p className="text-xs text-muted-foreground">
-          {NODE_TYPE_REGISTRY[config.triggerType]?.label ?? config.triggerType}
+          {NODE_TYPE_REGISTRY[tt]?.label ?? tt}
         </p>
       </div>
 
@@ -179,6 +326,130 @@ export function TriggerConfigForm({ config, onChange, onRun }: TriggerConfigForm
             Fires automatically when the proxy captures a request matching the filters above.
             Leave all filters blank to match every request.
           </p>
+        </>
+      )}
+
+      {/* ── HTTP Request triggers (intercept-request) ── */}
+      {isHttpRequest && (
+        <>
+          <div className="border-t pt-3 space-y-3">
+            <p className="text-[11px] font-medium text-muted-foreground">
+              <Filter className="size-3 inline mr-1" />
+              Request filter
+            </p>
+            <HttpMethodFilter
+              value={config.method}
+              onChange={(v) => onChange({ method: v })}
+            />
+            <HostWhitelistFilter
+              value={config.host}
+              onChange={(v) => onChange({ host: v })}
+            />
+            <UrlPatternFilter
+              operator={config.operator}
+              value={config.value}
+              onOperatorChange={(v) => onChange({ operator: v as TriggerConfig['operator'] })}
+              onValueChange={(v) => onChange({ value: v })}
+            />
+          </div>
+          {helpText && <p className="text-xs text-muted-foreground">{helpText}</p>}
+        </>
+      )}
+
+      {/* ── Page Crawled trigger ── */}
+      {isPageCrawled && (
+        <>
+          <div className="border-t pt-3 space-y-3">
+            <p className="text-[11px] font-medium text-muted-foreground">
+              <Filter className="size-3 inline mr-1" />
+              Page filter
+            </p>
+            <HostWhitelistFilter
+              value={config.host}
+              onChange={(v) => onChange({ host: v })}
+            />
+            <UrlPatternFilter
+              operator={config.operator}
+              value={config.value}
+              onOperatorChange={(v) => onChange({ operator: v as TriggerConfig['operator'] })}
+              onValueChange={(v) => onChange({ value: v })}
+            />
+          </div>
+          {helpText && <p className="text-xs text-muted-foreground">{helpText}</p>}
+        </>
+      )}
+
+      {/* ── Port Scan Result trigger ── */}
+      {isPortScanResult && (
+        <>
+          <div className="border-t pt-3 space-y-3">
+            <p className="text-[11px] font-medium text-muted-foreground">
+              <Network className="size-3 inline mr-1" />
+              Port filter
+            </p>
+            <div className="space-y-1.5">
+              <Label className="text-[11px]">Port(s)</Label>
+              <Input
+                className="h-7 text-xs"
+                value={config.port ?? ''}
+                onChange={(e) => onChange({ port: e.target.value })}
+                placeholder="e.g. 80, 443, 8080 (blank = all ports)"
+              />
+            </div>
+            <HostWhitelistFilter
+              value={config.host}
+              onChange={(v) => onChange({ host: v })}
+            />
+          </div>
+          {helpText && <p className="text-xs text-muted-foreground">{helpText}</p>}
+        </>
+      )}
+
+      {/* ── WebSocket Message trigger ── */}
+      {isWebSocketMessage && (
+        <>
+          <div className="border-t pt-3 space-y-3">
+            <p className="text-[11px] font-medium text-muted-foreground">
+              <Radio className="size-3 inline mr-1" />
+              Message filter
+            </p>
+            <div className="space-y-1.5">
+              <Label className="text-[11px]">Direction</Label>
+              <Select
+                value={config.direction ?? ''}
+                onValueChange={(v) => onChange({ direction: v as TriggerConfig['direction'] })}
+              >
+                <SelectTrigger className="h-7 text-xs">
+                  <SelectValue placeholder="Both directions" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="" className="text-xs">Both</SelectItem>
+                  {DIRECTION_OPTIONS.map((d) => (
+                    <SelectItem key={d.value} value={d.value} className="text-xs">
+                      {d.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <UrlPatternFilter
+              operator={config.operator}
+              value={config.value}
+              onOperatorChange={(v) => onChange({ operator: v as TriggerConfig['operator'] })}
+              onValueChange={(v) => onChange({ value: v })}
+            />
+          </div>
+          {helpText && <p className="text-xs text-muted-foreground">{helpText}</p>}
+        </>
+      )}
+
+      {/* ── Info-only triggers (scan-completed) ── */}
+      {isInfoOnly && (
+        <>
+          <TriggerInfoPanel
+            icon={ScanLine}
+            description={helpText ?? NODE_TYPE_REGISTRY[tt]?.description ?? ''}
+          />
         </>
       )}
     </div>

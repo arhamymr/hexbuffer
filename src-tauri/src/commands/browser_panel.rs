@@ -846,6 +846,7 @@ pub async fn browser_tab_report_element_captured(
     selector: String,
     selector_confidence: String,
     attributes: serde_json::Value,
+    computed_styles: serde_json::Value,
     text_content: String,
     text_truncated: bool,
     x: f64,
@@ -859,6 +860,9 @@ pub async fn browser_tab_report_element_captured(
 
     let attributes = attributes.as_object().cloned().ok_or_else(|| {
         "Browser tab report element captured rejected: attributes must be an object".to_string()
+    })?;
+    let computed_styles = computed_styles.as_object().cloned().ok_or_else(|| {
+        "Browser tab report element captured rejected: computedStyles must be an object".to_string()
     })?;
 
     app_handle
@@ -874,6 +878,7 @@ pub async fn browser_tab_report_element_captured(
                 "selector": selector,
                 "selectorConfidence": selector_confidence,
                 "attributes": attributes,
+                "computedStyles": computed_styles,
                 "textContent": text_content,
                 "textTruncated": text_truncated,
                 "boundingBox": {

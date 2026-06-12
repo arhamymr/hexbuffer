@@ -12,6 +12,8 @@ export interface ExecutionLog {
   message: string;
   nodeId?: string;
   nodeLabel?: string;
+  inputData?: unknown;
+  outputData?: unknown;
 }
 
 export type NodeRuntimeStatus = 'running' | 'success' | 'error' | 'skipped';
@@ -41,6 +43,13 @@ export interface LiveTrafficQueueStats {
   dropped: number;
   lastDroppedAt?: string;
   cap: number;
+}
+
+export interface AutomationRuntimeSettings {
+  liveTrafficConcurrency: number;
+  filteredTriggerQueueCap: number;
+  catchAllTriggerQueueCap: number;
+  recentMatchDedupeTtlMs: number;
 }
 
 /** Data passed from a trigger to downstream action/condition nodes. */
@@ -76,6 +85,7 @@ export interface AutomationState {
   liveTrafficHostInsights: LiveTrafficHostInsight[];
   liveTrafficCapturedHosts: LiveTrafficHostInsight[];
   liveTrafficQueueStatsByTriggerId: Record<string, LiveTrafficQueueStats>;
+  automationSettings: AutomationRuntimeSettings;
 
   createWorkflow: () => string;
   createWorkflowFromTemplate: (templateId: string) => string;
@@ -109,4 +119,6 @@ export interface AutomationState {
   clearLiveTrafficHostInsights: (triggerNodeId?: string) => void;
   clearLiveTrafficCapturedHosts: (triggerNodeId?: string) => void;
   clearLogs: (workflowId?: string) => void;
+  updateAutomationSettings: (settings: Partial<AutomationRuntimeSettings>) => void;
+  resetAutomationSettings: () => void;
 }

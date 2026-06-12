@@ -5,16 +5,21 @@ import { Handle, Position, type NodeProps } from '@xyflow/react';
 import { AlertTriangle, SquareFunction, GripVertical } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+} from '@/components/ui/tooltip';
+import {
   CATEGORY_BORDER,
   CATEGORY_BG,
   CATEGORY_ICON_BG,
   CATEGORY_ICON_TEXT,
   CATEGORY_HANDLE,
+  NODE_TYPE_REGISTRY,
 } from '../constants';
 import { getAutomationNodeCapability } from '../lib/node-capabilities';
 import { getAutomationNodeWarning } from '../lib/node-warnings';
 import { NodeCapabilityBadge } from './node-capability-badge';
-import { NodeDeleteButton } from './node-delete-button';
 import { NodeRuntimeStatus, useNodeRuntimeStatus } from './node-runtime-status';
 import type { AutomationNodeData, ConditionConfig } from '../types';
 
@@ -36,17 +41,21 @@ function ConditionNodeComponent({ id, data, selected }: NodeProps) {
   const warning = getAutomationNodeWarning(nodeData, runtime);
   const capability = getAutomationNodeCapability(nodeData);
 
+  const nodeTypeDef = NODE_TYPE_REGISTRY[nodeData.nodeType];
+  const description = nodeTypeDef?.description;
+
   return (
-    <div
-      className={cn(
-        'group relative min-w-[180px] rounded-md border-2 shadow-sm transition-shadow',
-        CATEGORY_BORDER.condition,
-        CATEGORY_BG.condition,
-        selected && 'ring-2 ring-ring ring-offset-2',
-        isExecuting && 'animate-pulse ring-2 ring-amber-400 ring-offset-2 shadow-lg shadow-amber-500/20',
-      )}
-    >
-      <NodeDeleteButton nodeId={id} selected={selected} />
+    <Tooltip delayDuration={600}>
+      <TooltipTrigger asChild>
+        <div
+          className={cn(
+            'group relative min-w-[180px] rounded-md border-2 shadow-sm transition-shadow',
+            CATEGORY_BORDER.condition,
+            CATEGORY_BG.condition,
+            selected && 'ring-2 ring-ring ring-offset-2 ring-offset-background',
+            isExecuting && 'animate-pulse ring-2 ring-amber-400 ring-offset-2 shadow-lg shadow-amber-500/20',
+          )}
+        >
       <Handle
         type="target"
         position={Position.Top}
@@ -67,7 +76,6 @@ function ConditionNodeComponent({ id, data, selected }: NodeProps) {
           <AlertTriangle
             className="size-3.5 shrink-0 text-amber-500"
             aria-label={warning}
-            title={warning}
           />
         )}
         {!capability.supported && capability.reason && (
@@ -91,6 +99,12 @@ function ConditionNodeComponent({ id, data, selected }: NodeProps) {
 
       <NodeRuntimeStatus runtime={runtime} accentClassName="border-amber-500/20" />
 
+      {/* True / False output labels */}
+      <div className="flex items-center justify-between border-t border-amber-500/20 px-3 py-1">
+        <span className="text-[9px] font-medium text-emerald-500">True</span>
+        <span className="text-[9px] font-medium text-red-500">False</span>
+      </div>
+
       <Handle
         type="source"
         position={Position.Bottom}
@@ -107,7 +121,15 @@ function ConditionNodeComponent({ id, data, selected }: NodeProps) {
         style={{ width: 12, height: 12, borderWidth: 2, left: '65%', bottom: -6 }}
         className="!bg-red-500 !border-background hover:!bg-red-600 transition-colors"
       />
-    </div>
+        </div>
+      </TooltipTrigger>
+      {description && (
+        <TooltipContent side="right" sideOffset={12} className="max-w-52">
+          <p className="font-medium">{nodeData.label}</p>
+          <p className="text-[11px] opacity-80">{description}</p>
+        </TooltipContent>
+      )}
+    </Tooltip>
   );
 }
 

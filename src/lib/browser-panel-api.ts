@@ -44,6 +44,7 @@ export interface ElementCapturedPayload {
   selector: string;
   selectorConfidence: 'unique-id' | 'unique-class' | 'fallback';
   attributes: Record<string, string>;
+  computedStyles: Record<string, string>;
   textContent: string;
   textTruncated: boolean;
   boundingBox: {

@@ -9,6 +9,7 @@ import {
   Info,
   Trash2,
   ChevronDown,
+  ChevronRight,
   PanelBottomClose,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -56,6 +57,7 @@ export function ExecutionLogPanel({ workflowId, onHide }: ExecutionLogPanelProps
   const pruneExecutionLogs = useAutomationStore((s) => s.pruneExecutionLogs);
   const scrollRef = React.useRef<HTMLDivElement>(null);
   const [collapsed, setCollapsed] = React.useState(false);
+  const [expandedLogIds, setExpandedLogIds] = React.useState<Set<string>>(new Set());
   const logs = React.useMemo(
     () => {
       if (!workflowId) return [];
@@ -68,6 +70,19 @@ export function ExecutionLogPanel({ workflowId, onHide }: ExecutionLogPanelProps
   );
   const visibleLogs = React.useMemo(() => [...logs].reverse(), [logs]);
   const isWorkflowRunning = isWorkflowProcessing(workflowId, runningWorkflowIds, nodeRuntimeById);
+  const toggleExpand = (logId: string) => {
+    setExpandedLogIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(logId)) {
+        next.delete(logId);
+      } else {
+        next.add(logId);
+      }
+      return next;
+    });
+  };
+
+  const hasData = (log: ExecutionLog) => log.inputData != null || log.outputData != null;
 
   React.useEffect(() => {
     pruneExecutionLogs();
@@ -141,28 +156,66 @@ export function ExecutionLogPanel({ workflowId, onHide }: ExecutionLogPanelProps
             <div className="space-y-0.5 py-1 font-mono text-[11px]">
               {visibleLogs.map((log) => {
                 const Icon = levelIcons[log.level];
+                const isExpanded = expandedLogIds.has(log.id);
+                const canExpand = hasData(log);
                 return (
-                  <div
-                    key={log.id}
-                    className={cn(
-                      'flex items-start gap-2 px-3 py-0.5',
-                      'hover:bg-muted/50',
-                      log.level === 'error' && 'bg-red-500/5'
-                    )}
-                  >
-                    <Icon className={cn('size-3 shrink-0 mt-0.5', levelStyles[log.level])} />
-                    <span className="shrink-0 text-muted-foreground/60">
-                      {formatTime(log.timestamp)}
-                    </span>
-                    <span className={levelStyles[log.level]}>
-                      {log.message}
-                    </span>
-                    {log.nodeLabel && (
-                      <span className="ml-auto shrink-0 rounded bg-muted px-1.5 py-0 text-[10px] text-muted-foreground">
-                        {log.nodeLabel}
+                  <React.Fragment key={log.id}>
+                    <div
+                      className={cn(
+                        'flex items-start gap-2 px-3 py-0.5 group',
+                        'hover:bg-muted/50',
+                        log.level === 'error' && 'bg-red-500/5'
+                      )}
+                    >
+                      {canExpand ? (
+                        <button
+                          onClick={() => toggleExpand(log.id)}
+                          className="shrink-0 mt-0.5 hover:text-foreground text-muted-foreground"
+                          aria-label={isExpanded ? 'Collapse data' : 'Expand data'}
+                        >
+                          {isExpanded ? (
+                            <ChevronDown className="size-3" />
+                          ) : (
+                            <ChevronRight className="size-3" />
+                          )}
+                        </button>
+                      ) : (
+                        <Icon className={cn('size-3 shrink-0 mt-0.5', levelStyles[log.level])} />
+                      )}
+                      <span className="shrink-0 text-muted-foreground/60">
+                        {formatTime(log.timestamp)}
                       </span>
+                      <span className={canExpand ? levelStyles[log.level] : levelStyles[log.level]}>
+                        {log.message}
+                      </span>
+                      {log.nodeLabel && (
+                        <span className="ml-auto shrink-0 rounded bg-muted px-1.5 py-0 text-[10px] text-muted-foreground">
+                          {log.nodeLabel}
+                        </span>
+                      )}
+                    </div>
+                    {/* Expanded data view */}
+                    {isExpanded && canExpand && (
+                      <div className="mx-3 mb-1 rounded border bg-muted/30 px-3 py-2 font-mono text-[10px]">
+                        {log.inputData != null && (
+                          <div className="mb-1.5">
+                            <span className="font-semibold text-muted-foreground uppercase tracking-wider">Input:</span>
+                            <pre className="mt-0.5 whitespace-pre-wrap break-all text-muted-foreground">
+                              {JSON.stringify(log.inputData, null, 2)}
+                            </pre>
+                          </div>
+                        )}
+                        {log.outputData != null && (
+                          <div>
+                            <span className="font-semibold text-muted-foreground uppercase tracking-wider">Output:</span>
+                            <pre className="mt-0.5 whitespace-pre-wrap break-all text-muted-foreground">
+                              {JSON.stringify(log.outputData, null, 2)}
+                            </pre>
+                          </div>
+                        )}
+                      </div>
                     )}
-                  </div>
+                  </React.Fragment>
                 );
               })}
             </div>

@@ -1,8 +1,12 @@
 'use client';
 
-import React from 'react';
-import { X } from 'lucide-react';
+import { X, Trash2, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import {
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+} from '@/components/ui/tooltip';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { type Node } from '@xyflow/react';
@@ -25,10 +29,11 @@ interface NodeConfigPanelProps {
   node: Node<AutomationNodeData> | null;
   onClose: () => void;
   onUpdate: (nodeId: string, data: AutomationNodeData) => void;
+  onDelete?: (nodeId: string) => void;
   onRun?: () => void;
 }
 
-export function NodeConfigPanel({ node, onClose, onUpdate, onRun }: NodeConfigPanelProps) {
+export function NodeConfigPanel({ node, onClose, onUpdate, onDelete, onRun }: NodeConfigPanelProps) {
   if (!node) return null;
 
   const { data } = node;
@@ -50,22 +55,47 @@ export function NodeConfigPanel({ node, onClose, onUpdate, onRun }: NodeConfigPa
   return (
     <div className="flex h-full w-full flex-col bg-background">
       {/* Header */}
-      <div className="flex shrink-0 items-center gap-2 border-b px-3 py-2">
+      <div className="flex shrink-0 items-center gap-1 border-b px-3 py-2">
         <span className="text-xs font-semibold">Node Properties</span>
-        <Button
-          variant="ghost"
-          size="xs"
-          className="ml-auto h-6 w-6 p-0"
-          onClick={onClose}
-          aria-label="Close"
-        >
-          <X className="size-3.5" />
-        </Button>
+        <div className="ml-auto flex items-center gap-0.5">
+          {onDelete && (
+            <Button
+              variant="ghost"
+              size="xs"
+              className="h-6 w-6 p-0 text-red-500 hover:text-red-600 hover:bg-red-500/10"
+              onClick={() => onDelete(node.id)}
+              aria-label="Delete node"
+            >
+              <Trash2 className="size-3.5" />
+            </Button>
+          )}
+          <Button
+            variant="ghost"
+            size="xs"
+            className="h-6 w-6 p-0"
+            onClick={onClose}
+            aria-label="Close"
+          >
+            <X className="size-3.5" />
+          </Button>
+        </div>
       </div>
 
       {/* Node info bar */}
       <div className="shrink-0 border-b px-4 py-2">
-        <p className="text-sm font-medium">{def.label}</p>
+        <div className="flex items-center gap-1.5">
+          <p className="text-sm font-medium">{def.label}</p>
+          {def.description && (
+            <Tooltip delayDuration={300}>
+              <TooltipTrigger asChild>
+                <Info className="size-3.5 text-muted-foreground/60 cursor-help" />
+              </TooltipTrigger>
+              <TooltipContent side="bottom" sideOffset={6} className="max-w-52">
+                <p className="text-[11px]">{def.description}</p>
+              </TooltipContent>
+            </Tooltip>
+          )}
+        </div>
         <p className="text-[10px] text-muted-foreground uppercase tracking-wider">
           {category}
         </p>

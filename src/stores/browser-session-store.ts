@@ -42,7 +42,7 @@ export const useBrowserSessionStore = create<BrowserSessionState>((set, get) => 
       canGoBack: false,
       canGoForward: false,
       annotationMode: false,
-      annotationSubMode: 'draw',
+      annotationSubMode: 'select',
     };
     set((state) => {
       const next = new Map(state.tabs);

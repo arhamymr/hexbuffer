@@ -164,11 +164,6 @@ interface LiveTrafficQueueJob {
   record: ProxyRecord;
 }
 
-const GLOBAL_LIVE_TRAFFIC_CONCURRENCY = 1;
-const FILTERED_TRIGGER_QUEUE_CAP = 100;
-const CATCH_ALL_TRIGGER_QUEUE_CAP = 25;
-const RECENT_MATCH_TTL_MS = 2_000;
-
 let activeLiveTrafficJobs = 0;
 const liveTrafficQueue: LiveTrafficQueueJob[] = [];
 const recentMatchedRequests = new Map<string, number>();
@@ -181,7 +176,10 @@ function isCatchAllTrigger(config: TriggerConfig): boolean {
 }
 
 function queueCapForTrigger(config: TriggerConfig): number {
-  return isCatchAllTrigger(config) ? CATCH_ALL_TRIGGER_QUEUE_CAP : FILTERED_TRIGGER_QUEUE_CAP;
+  const settings = useAutomationStore.getState().automationSettings;
+  return isCatchAllTrigger(config)
+    ? settings.catchAllTriggerQueueCap
+    : settings.filteredTriggerQueueCap;
 }
 
 function makeMatchKey(record: ProxyRecord, triggerNodeId: string, host: string, path: string): string {
@@ -196,15 +194,20 @@ function makeMatchKey(record: ProxyRecord, triggerNodeId: string, host: string, 
 }
 
 function wasRecentlyMatched(matchKey: string): boolean {
+  const ttl = useAutomationStore.getState().automationSettings.recentMatchDedupeTtlMs;
+  if (ttl <= 0) {
+    return false;
+  }
+
   const now = Date.now();
   for (const [key, matchedAt] of recentMatchedRequests) {
-    if (now - matchedAt > RECENT_MATCH_TTL_MS) {
+    if (now - matchedAt > ttl) {
       recentMatchedRequests.delete(key);
     }
   }
 
   const previous = recentMatchedRequests.get(matchKey);
-  if (previous && now - previous <= RECENT_MATCH_TTL_MS) {
+  if (previous && now - previous <= ttl) {
     return true;
   }
 
@@ -264,8 +267,9 @@ function dropOldestPendingJob(triggerNodeId: string, cap: number): void {
 }
 
 function scheduleLiveTrafficQueue(): void {
+  const concurrency = useAutomationStore.getState().automationSettings.liveTrafficConcurrency;
   while (
-    activeLiveTrafficJobs < GLOBAL_LIVE_TRAFFIC_CONCURRENCY &&
+    activeLiveTrafficJobs < concurrency &&
     liveTrafficQueue.length > 0
   ) {
     const job = liveTrafficQueue.shift();
@@ -335,6 +339,12 @@ export async function startLiveTrafficWatcher(): Promise<void> {
           .map(([workflowId]) => workflowId)
       );
       removeQueuedJobsForWorkflowIds(abortedIds);
+
+      if (
+        state.automationSettings.liveTrafficConcurrency !== previousState.automationSettings.liveTrafficConcurrency
+      ) {
+        scheduleLiveTrafficQueue();
+      }
     });
   }
 

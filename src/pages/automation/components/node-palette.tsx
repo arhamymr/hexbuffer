@@ -30,6 +30,7 @@ import {
   Square,
   Search,
 } from 'lucide-react';
+import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
@@ -84,16 +85,28 @@ const iconMap: Record<string, typeof Play> = {
 
 interface NodePaletteProps {
   onAddNodeAtCenter?: (nodeType: AutomationNodeType) => void;
+  hasTriggerNode?: boolean;
+  onRemoveTrigger?: () => void;
 }
 
-export function NodePalette({ onAddNodeAtCenter }: NodePaletteProps) {
+export function NodePalette({ onAddNodeAtCenter, hasTriggerNode, onRemoveTrigger }: NodePaletteProps) {
   const [search, setSearch] = React.useState('');
 
   const handleClick = React.useCallback(
     (nodeType: AutomationNodeType) => {
+      if (nodeType.startsWith('trigger:') && hasTriggerNode) {
+        toast.error('Trigger already exists', {
+          description: 'A workflow can only have one trigger. Remove the existing one first.',
+          action: {
+            label: 'Remove',
+            onClick: () => onRemoveTrigger?.(),
+          },
+        });
+        return;
+      }
       onAddNodeAtCenter?.(nodeType);
     },
-    [onAddNodeAtCenter]
+    [onAddNodeAtCenter, hasTriggerNode, onRemoveTrigger]
   );
 
   const query = search.toLowerCase().trim();
@@ -183,14 +196,17 @@ export function NodePalette({ onAddNodeAtCenter }: NodePaletteProps) {
                     <div className="w-full space-y-0.5">
                       {group.nodes.map((def) => {
                         const Icon = iconMap[def.iconName] || Play;
+                        const isTrigger = def.category === 'trigger';
+                        const disabled = isTrigger && hasTriggerNode;
                         return (
                           <div
                             key={def.type}
                             onClick={() => handleClick(def.type)}
                             className={cn(
                               'flex w-full cursor-pointer items-center gap-2 rounded-lg border px-1.5 py-1 transition-colors',
-                              'hover:bg-accent hover:border-accent-foreground/20',
-                              'active:scale-[0.98]',
+                              disabled
+                                ? 'opacity-40 cursor-not-allowed'
+                                : 'hover:bg-accent hover:border-accent-foreground/20 active:scale-[0.98]',
                             )}
                           >
                             <div

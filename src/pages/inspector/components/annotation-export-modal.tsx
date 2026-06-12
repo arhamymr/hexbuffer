@@ -53,7 +53,7 @@ export function AnnotationExportModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl w-full">
         <DialogHeader>
-          <DialogTitle>Export Annotations</DialogTitle>
+          <DialogTitle>Export Grabbed Elements</DialogTitle>
         </DialogHeader>
 
         <Tabs

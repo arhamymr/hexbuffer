@@ -25,6 +25,16 @@ function formatElementBoundingBox(geometry: ElementGeometry): string {
   return `x=${Math.round(geometry.boundingBox.x)}, y=${Math.round(geometry.boundingBox.y)}, w=${Math.round(geometry.boundingBox.width)}, h=${Math.round(geometry.boundingBox.height)}`;
 }
 
+function formatStylePreview(geometry: ElementGeometry): string {
+  const styles = geometry.computedStyles ?? {};
+  const previewKeys = ['display', 'position', 'color', 'background-color', 'font-size'];
+  const entries = previewKeys
+    .map((key) => [key, styles[key]] as const)
+    .filter(([, value]) => Boolean(value));
+  if (entries.length === 0) return '(no computed styles)';
+  return entries.map(([key, value]) => `${key}: ${value}`).join('; ');
+}
+
 export function exportAnnotationsToMarkdown(annotations: Annotation[], level: OutputLevel): string {
   if (annotations.length === 0) return 'No annotations.';
 
@@ -60,6 +70,7 @@ export function exportAnnotationsToMarkdown(annotations: Annotation[], level: Ou
       } else if (a.type === 'element' && a.geometry.type === 'element') {
         lines.push(`   Element: ${formatElementCompact(a.geometry)}`);
         lines.push(`   Text: ${formatElementTextPreview(a.geometry)}`);
+        lines.push(`   Styles: ${escapeMarkdown(formatStylePreview(a.geometry))}`);
       }
       lines.push('');
     });
@@ -78,6 +89,7 @@ export function exportAnnotationsToMarkdown(annotations: Annotation[], level: Ou
         lines.push(`- **Selector Confidence:** ${a.geometry.selectorConfidence}`);
         lines.push(`- **Text Preview:** ${formatElementTextPreview(a.geometry)}`);
         lines.push(`- **Bounding Box:** ${formatElementBoundingBox(a.geometry)}`);
+        lines.push(`- **Style Preview:** ${escapeMarkdown(formatStylePreview(a.geometry))}`);
         lines.push('');
         lines.push('| Attribute | Value |');
         lines.push('| --- | --- |');
@@ -86,6 +98,17 @@ export function exportAnnotationsToMarkdown(annotations: Annotation[], level: Ou
           lines.push('| (none) | |');
         } else {
           entries.forEach(([key, value]) => {
+            lines.push(`| ${escapeMarkdown(key)} | ${escapeMarkdown(value)} |`);
+          });
+        }
+        lines.push('');
+        lines.push('| Computed Style | Value |');
+        lines.push('| --- | --- |');
+        const styleEntries = Object.entries(a.geometry.computedStyles ?? {});
+        if (styleEntries.length === 0) {
+          lines.push('| (none) | |');
+        } else {
+          styleEntries.forEach(([key, value]) => {
             lines.push(`| ${escapeMarkdown(key)} | ${escapeMarkdown(value)} |`);
           });
         }

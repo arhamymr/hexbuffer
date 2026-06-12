@@ -2,20 +2,21 @@ import { MarkerType, type Connection } from '@xyflow/react';
 import type { AutomationEdge } from '../types';
 
 export const AUTOMATION_EDGE_STYLE = {
-  stroke: 'hsl(var(--primary))',
-  strokeWidth: 3,
+  stroke: 'var(--primary)',
+  strokeWidth: 1,
 };
 
 export const AUTOMATION_MARKER_END = {
   type: MarkerType.ArrowClosed,
-  color: 'hsl(var(--primary))',
+  color: 'var(--primary)',
   width: 20,
   height: 20,
 };
 
 export const automationDefaultEdgeOptions = {
-  type: 'smoothstep' as const,
+  type: 'deletable' as const,
   animated: true,
+  selectable: true,
   style: AUTOMATION_EDGE_STYLE,
   interactionWidth: 20,
   markerEnd: AUTOMATION_MARKER_END,
@@ -26,8 +27,8 @@ export function buildAutomationEdge(edge: Partial<AutomationEdge> & Pick<Automat
     ...automationDefaultEdgeOptions,
     ...edge,
     style: {
-      ...AUTOMATION_EDGE_STYLE,
       ...(edge.style ?? {}),
+      ...AUTOMATION_EDGE_STYLE,
     },
     markerEnd: {
       ...AUTOMATION_MARKER_END,
@@ -44,6 +45,27 @@ export function buildAutomationEdgeFromConnection(connection: Connection): Autom
   });
 }
 
+export function keepOneAutomationEdgePerHandle(edges: AutomationEdge[] = []): AutomationEdge[] {
+  const usedSourceHandles = new Set<string>();
+  const usedTargetHandles = new Set<string>();
+  const nextEdges: AutomationEdge[] = [];
+
+  for (const edge of edges) {
+    const sourceKey = `${edge.source}:${edge.sourceHandle ?? 'default'}`;
+    const targetKey = `${edge.target}:${edge.targetHandle ?? 'default'}`;
+
+    if (usedSourceHandles.has(sourceKey) || usedTargetHandles.has(targetKey)) {
+      continue;
+    }
+
+    usedSourceHandles.add(sourceKey);
+    usedTargetHandles.add(targetKey);
+    nextEdges.push(edge);
+  }
+
+  return nextEdges;
+}
+
 export function normalizeAutomationEdges(edges: AutomationEdge[] = []): AutomationEdge[] {
-  return edges.map((edge) => buildAutomationEdge(edge));
+  return keepOneAutomationEdgePerHandle(edges.map((edge) => buildAutomationEdge(edge)));
 }

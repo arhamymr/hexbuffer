@@ -15,6 +15,8 @@ import type {
   HumanInputRequest,
 } from '@/pages/browser/types';
 
+type CrawlSessionPatch = Partial<CrawlSession> & { sessionId?: string };
+
 export interface BrowserStatus {
   running: boolean;
   url: string | null;
@@ -92,7 +94,7 @@ interface BrowserAutomationState {
   analyzePageWithAi: (page: CrawlPage) => Promise<void>;
   clearLogs: () => void;
   applySessionStarted: (session: CrawlSession) => void;
-  applySessionUpdated: (session: Partial<CrawlSession>) => void;
+  applySessionUpdated: (session: CrawlSessionPatch) => void;
   applyPageDiscovered: (page: CrawlPage) => void;
   applyPageUpdated: (page: Partial<CrawlPage> & { id: string }) => void;
   applyInsightCreated: (insight: AIInsight) => void;
@@ -343,6 +345,7 @@ export const useBrowserAutomationStore = create<BrowserAutomationState>((set, ge
       `Timeout: ${s.timeoutMs}ms`,
       `Settle: ${s.networkSettleMs ?? 2000}ms`,
       s.excludePaths.trim() ? `Exclude: ${s.excludePaths}` : null,
+      s.enableAiInsights ? 'AI analysis: on' : 'AI analysis: off',
       s.captureScreenshots ? 'Screenshots: on' : 'Screenshots: off',
       s.captureRenderedHtml ? 'Rendered HTML: on' : 'Rendered HTML: off',
     ].filter(Boolean).join(', ');
@@ -536,15 +539,16 @@ export const useBrowserAutomationStore = create<BrowserAutomationState>((set, ge
     })),
 
   applySessionUpdated: (patch) =>
-    updateTabForSession(set, get, patch.id, (tab) => {
+    updateTabForSession(set, get, patch.id ?? patch.sessionId, (tab) => {
+      const { sessionId: _sessionId, ...sessionPatch } = patch;
       const session =
         tab.session &&
         isTerminalStatus(tab.session.status) &&
-        patch.status !== tab.session.status &&
-        patch.status !== 'running'
+        sessionPatch.status !== tab.session.status &&
+        sessionPatch.status !== 'running'
           ? tab.session
           : tab.session
-            ? { ...tab.session, ...patch }
+            ? { ...tab.session, ...sessionPatch }
             : null;
 
       return {

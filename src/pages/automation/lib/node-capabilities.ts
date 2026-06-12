@@ -8,6 +8,7 @@ export interface AutomationNodeCapability {
 const WIRED_TRIGGER_TYPES = new Set<AutomationNodeType>([
   'trigger:manual',
   'trigger:live-traffic-captured',
+  'trigger:browser-page-crawled',
 ]);
 
 const WIRED_ACTION_TYPES = new Set<AutomationNodeType>([

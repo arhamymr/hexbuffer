@@ -1,4 +1,4 @@
-import { ArrowLeft, ArrowRight, Bug, Globe, Loader2, Pencil, RotateCcw } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Bug, Crosshair, Globe, Loader2, RotateCcw } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import {
@@ -51,7 +51,11 @@ export function BrowserControls({ browserTabId }: BrowserControlsProps) {
 
   const handleToggleAnnotationMode = useCallback(() => {
     const currentMode = tabAnnotationMode;
-    useBrowserSessionStore.getState().setAnnotationMode(browserTabId, !currentMode);
+    const store = useBrowserSessionStore.getState();
+    if (!currentMode) {
+      store.setAnnotationSubMode(browserTabId, 'select');
+    }
+    store.setAnnotationMode(browserTabId, !currentMode);
   }, [browserTabId, tabAnnotationMode]);
 
   return (
@@ -118,13 +122,13 @@ export function BrowserControls({ browserTabId }: BrowserControlsProps) {
                   ? 'bg-primary text-primary-foreground hover:bg-primary/90 ring-2 ring-primary/30 shadow-sm shadow-primary/20'
                   : 'hover:bg-secondary text-muted-foreground hover:text-foreground'
               )}
-              aria-label={tabAnnotationMode ? 'Disable annotation mode' : 'Enable annotation mode'}
+              aria-label={tabAnnotationMode ? 'Disable element grabber' : 'Enable element grabber'}
             >
-              <Pencil size={14} />
+              <Crosshair size={14} />
             </button>
           </TooltipTrigger>
           <TooltipContent side="bottom">
-            {tabAnnotationMode ? 'Disable annotation mode' : 'Enable annotation mode'}
+            {tabAnnotationMode ? 'Disable element grabber' : 'Enable element grabber'}
           </TooltipContent>
         </Tooltip>
       </div>

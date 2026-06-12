@@ -1,9 +1,6 @@
 import type { Node, Edge } from '@xyflow/react';
 
 export type TriggerType =
-  | 'trigger:new-request'
-  | 'trigger:new-response'
-  | 'trigger:finding-created'
   | 'trigger:scan-completed'
   | 'trigger:scheduled'
   | 'trigger:manual'
@@ -11,7 +8,6 @@ export type TriggerType =
   | 'trigger:intercept-request'
   | 'trigger:websocket-message'
   | 'trigger:port-scan-result'
-  | 'trigger:inspector-connected'
   | 'trigger:live-traffic-captured';
 
 export type ConditionType =
@@ -60,6 +56,9 @@ export interface TriggerConfig {
   method?: string;
   operator?: 'equals' | 'contains' | 'regex';
   value?: string;
+  severity?: string;
+  port?: string;
+  direction?: 'sent' | 'received';
 }
 
 export interface ConditionConfig {

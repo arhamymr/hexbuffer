@@ -21,6 +21,7 @@ interface TemplateNode {
 interface TemplateEdge {
   sourceIndex: number;
   targetIndex: number;
+  sourceHandle?: string;
 }
 
 function buildFromTemplate(
@@ -47,6 +48,7 @@ function buildFromTemplate(
       id: crypto.randomUUID(),
       source: nodes[te.sourceIndex].id,
       target: nodes[te.targetIndex].id,
+      sourceHandle: te.sourceHandle,
     })
   );
 
@@ -79,68 +81,8 @@ export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
     ],
     edges: [
       { sourceIndex: 0, targetIndex: 1 },
-      { sourceIndex: 1, targetIndex: 2 },
-      { sourceIndex: 1, targetIndex: 3 },
-    ],
-  },
-  {
-    id: 'api-request-analyzer',
-    name: 'API Request Analyzer',
-    description: 'Auto-analyze POST requests with AI and export results as JSON',
-    icon: 'FileCode',
-    category: 'monitoring',
-    nodes: [
-      { type: 'trigger:new-request', position: { x: 100, y: 150 } },
-      {
-        type: 'condition:method',
-        position: { x: 380, y: 150 },
-        configOverrides: { operator: 'equals', value: 'POST' } as Partial<NodeConfig>,
-      },
-      { type: 'action:ai-analyze', position: { x: 660, y: 80 } },
-      {
-        type: 'action:export-json',
-        position: { x: 660, y: 240 },
-        configOverrides: { params: { filename: 'api-analysis' } } as Partial<NodeConfig>,
-      },
-    ],
-    edges: [
-      { sourceIndex: 0, targetIndex: 1 },
-      { sourceIndex: 1, targetIndex: 2 },
-      { sourceIndex: 1, targetIndex: 3 },
-    ],
-  },
-
-  // ── Security ───────────────────────────────────────────────────────────────
-  {
-    id: 'auto-triage-findings',
-    name: 'Auto-Triage Findings',
-    description: 'Automatically classify high-severity findings with AI confidence filtering',
-    icon: 'Shield',
-    category: 'security',
-    nodes: [
-      { type: 'trigger:finding-created', position: { x: 100, y: 180 } },
-      {
-        type: 'condition:severity',
-        position: { x: 380, y: 100 },
-        configOverrides: { operator: 'equals', value: 'high' } as Partial<NodeConfig>,
-      },
-      {
-        type: 'condition:ai-confidence',
-        position: { x: 380, y: 260 },
-        configOverrides: { operator: 'gt', value: '80' } as Partial<NodeConfig>,
-      },
-      {
-        type: 'action:create-finding',
-        position: { x: 660, y: 80 },
-        configOverrides: { params: { severity: 'critical' } } as Partial<NodeConfig>,
-      },
-      { type: 'action:add-to-report', position: { x: 660, y: 240 } },
-    ],
-    edges: [
-      { sourceIndex: 0, targetIndex: 1 },
-      { sourceIndex: 0, targetIndex: 2 },
-      { sourceIndex: 1, targetIndex: 3 },
-      { sourceIndex: 2, targetIndex: 4 },
+      { sourceIndex: 1, targetIndex: 2, sourceHandle: 'true' },
+      { sourceIndex: 1, targetIndex: 3, sourceHandle: 'false' },
     ],
   },
   {
@@ -213,7 +155,6 @@ export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
     ],
   },
 
-  // ── General ────────────────────────────────────────────────────────────────
   {
     id: 'intercept-review',
     name: 'Smart Intercept Review',
@@ -232,40 +173,8 @@ export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
     ],
     edges: [
       { sourceIndex: 0, targetIndex: 1 },
-      { sourceIndex: 1, targetIndex: 2 },
-      { sourceIndex: 1, targetIndex: 3 },
-    ],
-  },
-  {
-    id: 'response-triage',
-    name: 'Response Content Triage',
-    description: 'Filter JSON responses over 512 bytes and add findings to a document',
-    icon: 'Filter',
-    category: 'general',
-    nodes: [
-      { type: 'trigger:new-response', position: { x: 100, y: 150 } },
-      {
-        type: 'condition:content-type',
-        position: { x: 380, y: 100 },
-        configOverrides: { operator: 'contains', value: 'application/json' } as Partial<NodeConfig>,
-      },
-      {
-        type: 'condition:response-size',
-        position: { x: 380, y: 260 },
-        configOverrides: { operator: 'gt', value: '512' } as Partial<NodeConfig>,
-      },
-      { type: 'action:ai-analyze', position: { x: 660, y: 80 } },
-      {
-        type: 'action:add-to-document',
-        position: { x: 660, y: 240 },
-        configOverrides: { params: { section: 'potentialVulnerabilities' } } as Partial<NodeConfig>,
-      },
-    ],
-    edges: [
-      { sourceIndex: 0, targetIndex: 1 },
-      { sourceIndex: 0, targetIndex: 2 },
-      { sourceIndex: 1, targetIndex: 3 },
-      { sourceIndex: 2, targetIndex: 4 },
+      { sourceIndex: 1, targetIndex: 2, sourceHandle: 'true' },
+      { sourceIndex: 1, targetIndex: 3, sourceHandle: 'false' },
     ],
   },
 ];

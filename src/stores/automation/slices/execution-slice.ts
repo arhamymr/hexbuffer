@@ -84,7 +84,9 @@ export const createExecutionSlice = (
       message: string,
       nodeId?: string,
       nodeLabel?: string,
-      runtimeStatus?: NodeRuntimeStatus
+      runtimeStatus?: NodeRuntimeStatus,
+      inputData?: unknown,
+      outputData?: unknown
     ) => {
       get().appendExecutionLog(
         {
@@ -93,6 +95,8 @@ export const createExecutionSlice = (
           message,
           nodeId,
           nodeLabel,
+          inputData,
+          outputData,
         },
         runtimeStatus
       );
@@ -236,7 +240,7 @@ export const createExecutionSlice = (
                 aborted = true;
                 break;
               }
-              addLog('success', context?.data ? `Report updated (with context)` : `Report updated`, nodeId, label, 'success');
+              addLog('success', context?.data ? `Report updated (with context)` : `Report updated`, nodeId, label, 'success', undefined, { section: p.section, title: resolvedTitle, mode: p.mode || 'append' });
             } catch (err) {
               const message = `Failed: ${err instanceof Error ? err.message : 'unknown'}`;
               addLog('error', message, nodeId, label, 'error');
@@ -245,9 +249,12 @@ export const createExecutionSlice = (
           }
         } else if (node.type?.startsWith('trigger:')) {
           // Trigger node — log the incoming context data
+          const triggerInputData = context?.data ?? null;
           if (context?.data) {
             const host = context.data.host;
-            addLog('info', `Trigger host: ${typeof host === 'string' && host ? host : '(unknown)'}`, nodeId, label);
+            addLog('info', `Trigger host: ${typeof host === 'string' && host ? host : '(unknown)'}`, nodeId, label, 'running', triggerInputData);
+          } else {
+            addLog('info', `Trigger activated`, nodeId, label, 'running');
           }
           if (isAborted()) {
             aborted = true;

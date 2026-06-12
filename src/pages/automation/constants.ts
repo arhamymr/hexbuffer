@@ -11,30 +11,6 @@ export interface NodeTypeDef {
 
 export const NODE_TYPE_REGISTRY: Record<AutomationNodeType, NodeTypeDef> = {
   // ─── Triggers ──────────────────────────────────────────────────────────────
-  'trigger:new-request': {
-    type: 'trigger:new-request',
-    label: 'New Request',
-    category: 'trigger',
-    iconName: 'Globe',
-    description: 'Fires when a new HTTP request is captured',
-    defaultConfig: { triggerType: 'trigger:new-request' },
-  },
-  'trigger:new-response': {
-    type: 'trigger:new-response',
-    label: 'New Response',
-    category: 'trigger',
-    iconName: 'Globe',
-    description: 'Fires when a new HTTP response is received',
-    defaultConfig: { triggerType: 'trigger:new-response' },
-  },
-  'trigger:finding-created': {
-    type: 'trigger:finding-created',
-    label: 'Finding Created',
-    category: 'trigger',
-    iconName: 'Bug',
-    description: 'Fires when a vulnerability finding is created',
-    defaultConfig: { triggerType: 'trigger:finding-created' },
-  },
   'trigger:scan-completed': {
     type: 'trigger:scan-completed',
     label: 'Scan Completed',
@@ -64,8 +40,8 @@ export const NODE_TYPE_REGISTRY: Record<AutomationNodeType, NodeTypeDef> = {
     label: 'Page Crawled',
     category: 'trigger',
     iconName: 'ScanLine',
-    description: 'Fires when a browser page finishes crawling',
-    defaultConfig: { triggerType: 'trigger:browser-page-crawled' },
+    description: 'Fires for each page captured during a browser crawl',
+    defaultConfig: { triggerType: 'trigger:browser-page-crawled', host: '', operator: 'contains', value: '' },
   },
   'trigger:intercept-request': {
     type: 'trigger:intercept-request',
@@ -73,7 +49,7 @@ export const NODE_TYPE_REGISTRY: Record<AutomationNodeType, NodeTypeDef> = {
     category: 'trigger',
     iconName: 'Shield',
     description: 'Fires when a request is intercepted by the proxy',
-    defaultConfig: { triggerType: 'trigger:intercept-request' },
+    defaultConfig: { triggerType: 'trigger:intercept-request', method: undefined, host: '', operator: 'contains', value: '' },
   },
   'trigger:websocket-message': {
     type: 'trigger:websocket-message',
@@ -81,7 +57,7 @@ export const NODE_TYPE_REGISTRY: Record<AutomationNodeType, NodeTypeDef> = {
     category: 'trigger',
     iconName: 'Radio',
     description: 'Fires when a WebSocket message is sent or received',
-    defaultConfig: { triggerType: 'trigger:websocket-message' },
+    defaultConfig: { triggerType: 'trigger:websocket-message', direction: undefined, operator: 'contains', value: '' },
   },
   'trigger:port-scan-result': {
     type: 'trigger:port-scan-result',
@@ -89,15 +65,7 @@ export const NODE_TYPE_REGISTRY: Record<AutomationNodeType, NodeTypeDef> = {
     category: 'trigger',
     iconName: 'Network',
     description: 'Fires when a port scan discovers an open port',
-    defaultConfig: { triggerType: 'trigger:port-scan-result' },
-  },
-  'trigger:inspector-connected': {
-    type: 'trigger:inspector-connected',
-    label: 'Inspector Connected',
-    category: 'trigger',
-    iconName: 'Plug',
-    description: 'Fires when a CDP session connects to a browser',
-    defaultConfig: { triggerType: 'trigger:inspector-connected' },
+    defaultConfig: { triggerType: 'trigger:port-scan-result', port: '' },
   },
   'trigger:live-traffic-captured': {
     type: 'trigger:live-traffic-captured',

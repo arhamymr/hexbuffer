@@ -215,23 +215,6 @@
     animation: nav-blink 1.5s linear infinite;
   }
 
-  .automation-flow .react-flow__edge-path {
-    stroke: hsl(var(--primary));
-    stroke-width: 3;
-    opacity: 1;
-  }
-
-  .automation-flow .react-flow__edge.selected .react-flow__edge-path,
-  .automation-flow .react-flow__edge:focus .react-flow__edge-path {
-    stroke: hsl(var(--primary));
-    stroke-width: 4;
-  }
-
-  .automation-flow .react-flow__connection-path {
-    stroke: hsl(var(--primary));
-    stroke-width: 3;
-  }
-
   @keyframes accordion-down {
     from {
       height: 0;
@@ -321,6 +304,31 @@
 }
 
 /* ---break---  */
+
+/* ===== Automation Flow — unlayered to beat ReactFlow defaults ===== */
+.automation-flow {
+  --xy-connectionline-stroke: #00c950;
+  --xy-minimap-background-color: var(--background);
+  --xy-minimap-mask-background-color: color-mix(in oklch, var(--muted) 60%, transparent);
+  --xy-minimap-node-background-color: var(--muted);
+}
+
+.automation-flow .react-flow__edge-path {
+  stroke: var(--primary);
+  stroke-width: 1;
+  opacity: 1;
+}
+
+.automation-flow .react-flow__edge.selected .react-flow__edge-path,
+.automation-flow .react-flow__edge:focus .react-flow__edge-path {
+  stroke: var(--primary);
+  stroke-width: 2;
+}
+
+.automation-flow .react-flow__connection-path {
+  stroke: #00c950;
+  stroke-width: 3;
+}
 
 @layer base {
   * {

@@ -17,10 +17,12 @@ import { useAutomationStore } from '@/stores/automation';
 import { TriggerNode } from '../nodes/trigger-node';
 import { ConditionNode } from '../nodes/condition-node';
 import { ActionNode } from '../nodes/action-node';
+import { DeletableEdge } from '../components/deletable-edge';
 import { NODE_TYPE_REGISTRY, makeNodeId } from '../constants';
 import {
   automationDefaultEdgeOptions,
   buildAutomationEdgeFromConnection,
+  keepOneAutomationEdgePerHandle,
   normalizeAutomationEdges,
 } from '../lib/edges';
 import type {
@@ -31,9 +33,6 @@ import type {
 } from '../types';
 
 const nodeTypes = {
-  'trigger:new-request': TriggerNode,
-  'trigger:new-response': TriggerNode,
-  'trigger:finding-created': TriggerNode,
   'trigger:scan-completed': TriggerNode,
   'trigger:scheduled': TriggerNode,
   'trigger:manual': TriggerNode,
@@ -41,7 +40,6 @@ const nodeTypes = {
   'trigger:intercept-request': TriggerNode,
   'trigger:websocket-message': TriggerNode,
   'trigger:port-scan-result': TriggerNode,
-  'trigger:inspector-connected': TriggerNode,
   'trigger:live-traffic-captured': TriggerNode,
   'condition:status-code': ConditionNode,
   'condition:url-contains': ConditionNode,
@@ -76,8 +74,12 @@ const nodeTypes = {
   'action:script-analyze': ActionNode,
 };
 
+const edgeTypes = {
+  deletable: DeletableEdge,
+};
+
 const connectionLineStyle: React.CSSProperties = {
-  stroke: 'hsl(var(--primary))',
+  stroke: '#00c950',
   strokeWidth: 3,
 };
 
@@ -140,6 +142,14 @@ export function useWorkflowCanvas(
     flowY: number;
   } | null>(null);
 
+  // Node context menu state
+  const [nodeContextMenu, setNodeContextMenu] = React.useState<{
+    x: number;
+    y: number;
+    nodeId: string;
+    nodeLabel: string;
+  } | null>(null);
+
   // Selected node for config panel
   const [selectedNodeId, setSelectedNodeId] = React.useState<string | null>(null);
 
@@ -173,6 +183,26 @@ export function useWorkflowCanvas(
 
   const closeContextMenu = React.useCallback(() => {
     setContextMenu(null);
+  }, []);
+
+  const onNodeContextMenu = React.useCallback(
+    (event: React.MouseEvent, node: Node) => {
+      event.preventDefault();
+      const rect = reactFlowWrapper.current?.getBoundingClientRect();
+      if (!rect) return;
+      const nodeData = node.data as unknown as { label?: string };
+      setNodeContextMenu({
+        x: event.clientX - rect.left,
+        y: event.clientY - rect.top,
+        nodeId: node.id,
+        nodeLabel: nodeData.label ?? node.type ?? 'Node',
+      });
+    },
+    []
+  );
+
+  const closeNodeContextMenu = React.useCallback(() => {
+    setNodeContextMenu(null);
   }, []);
 
   const onNodeClick = React.useCallback(
@@ -302,6 +332,15 @@ export function useWorkflowCanvas(
   const onConnect = React.useCallback(
     (connection: Connection) => {
       setEdges((eds) => {
+        const sourceHandle = connection.sourceHandle ?? null;
+        const targetHandle = connection.targetHandle ?? null;
+        const connectionExistsOnHandle = eds.some(
+          (edge) =>
+            (edge.source === connection.source && (edge.sourceHandle ?? null) === sourceHandle) ||
+            (edge.target === connection.target && (edge.targetHandle ?? null) === targetHandle)
+        );
+        if (connectionExistsOnHandle) return eds;
+
         const nextEdges = addEdge(buildAutomationEdgeFromConnection(connection), eds);
         persist(nodesRef.current, nextEdges);
         return nextEdges;
@@ -309,6 +348,47 @@ export function useWorkflowCanvas(
     },
     [persist, setEdges]
   );
+
+  const isValidConnection = React.useCallback((connection: Connection) => {
+    if (!connection.source || !connection.target) return false;
+    if (connection.source === connection.target) return false;
+
+    const sourceHandle = connection.sourceHandle ?? null;
+    const targetHandle = connection.targetHandle ?? null;
+    return !edgesRef.current.some(
+      (edge) =>
+        (edge.source === connection.source && (edge.sourceHandle ?? null) === sourceHandle) ||
+        (edge.target === connection.target && (edge.targetHandle ?? null) === targetHandle)
+    );
+  }, []);
+
+  const deleteEdge = React.useCallback((edgeId: string) => {
+    setEdges((eds) => {
+      const nextEdges = eds.filter((edge) => edge.id !== edgeId);
+      persist(nodesRef.current, nextEdges);
+      return nextEdges;
+    });
+  }, [persist, setEdges]);
+
+  const onEdgeDoubleClick = React.useCallback(
+    (event: React.MouseEvent, edge: { id: string }) => {
+      event.preventDefault();
+      event.stopPropagation();
+      deleteEdge(edge.id);
+    },
+    [deleteEdge]
+  );
+
+  React.useEffect(() => {
+    const handleDeleteEdge = (event: Event) => {
+      const edgeId = (event as CustomEvent<{ edgeId?: string }>).detail?.edgeId;
+      if (!edgeId) return;
+      deleteEdge(edgeId);
+    };
+
+    window.addEventListener('automation-delete-edge', handleDeleteEdge);
+    return () => window.removeEventListener('automation-delete-edge', handleDeleteEdge);
+  }, [deleteEdge]);
 
   const onNodesChange = React.useCallback(
     (changes: NodeChange[]) => {
@@ -324,13 +404,38 @@ export function useWorkflowCanvas(
   const onEdgesChange = React.useCallback(
     (changes: EdgeChange[]) => {
       setEdges((eds) => {
-        const nextEdges = applyEdgeChanges(changes, eds);
+        const nextEdges = keepOneAutomationEdgePerHandle(applyEdgeChanges(changes, eds));
         persist(nodesRef.current, nextEdges);
         return nextEdges;
       });
     },
     [persist, setEdges]
   );
+
+  const hasTriggerNode = React.useMemo(
+    () => nodes.some((n) => (n.type as string)?.startsWith('trigger:')),
+    [nodes]
+  );
+
+  const removeTriggerNode = React.useCallback(() => {
+    const triggerNode = nodesRef.current.find((n) => (n.type as string)?.startsWith('trigger:'));
+    if (!triggerNode) return;
+    const triggerId = triggerNode.id;
+    const nextNodes = nodesRef.current.filter((n) => n.id !== triggerId);
+    const nextEdges = edgesRef.current.filter((e) => e.source !== triggerId && e.target !== triggerId);
+    setNodes(nextNodes);
+    setEdges(nextEdges);
+    persist(nextNodes, nextEdges);
+  }, [persist, setNodes, setEdges]);
+
+  const deleteNode = React.useCallback((nodeId: string) => {
+    const nextNodes = nodesRef.current.filter((n) => n.id !== nodeId);
+    const nextEdges = edgesRef.current.filter((e) => e.source !== nodeId && e.target !== nodeId);
+    setNodes(nextNodes);
+    setEdges(nextEdges);
+    persist(nextNodes, nextEdges);
+    setSelectedNodeId(null);
+  }, [persist, setNodes, setEdges]);
 
   return {
     // core state
@@ -340,23 +445,33 @@ export function useWorkflowCanvas(
     edges,
     onNodesChange,
     onEdgesChange,
+    hasTriggerNode,
+    removeTriggerNode,
     // context menu
     contextMenu,
     closeContextMenu,
+    // node context menu
+    nodeContextMenu,
+    closeNodeContextMenu,
+    onNodeContextMenu,
     // selected node
     selectedNodeId,
     selectedNode,
     setSelectedNodeId,
     // callbacks
     onConnect,
+    isValidConnection,
+    onEdgeDoubleClick,
     onPaneContextMenu,
     onNodeClick,
     onPaneClick,
     updateNodeData,
     addNodeFromMenu,
+    deleteNode,
     onRun,
     // config
     nodeTypes,
+    edgeTypes,
     defaultEdgeOptions: automationDefaultEdgeOptions,
     connectionLineStyle,
   };

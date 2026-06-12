@@ -18,6 +18,8 @@ interface BrowserBounds {
   height: number;
 }
 
+const BOUNDS_EPSILON = 0.5;
+
 function getElementBounds(el: HTMLElement): BrowserBounds {
   const rect = el.getBoundingClientRect();
   return {
@@ -28,6 +30,16 @@ function getElementBounds(el: HTMLElement): BrowserBounds {
   };
 }
 
+function boundsEqual(a: BrowserBounds | null, b: BrowserBounds): boolean {
+  if (!a) return false;
+  return (
+    Math.abs(a.x - b.x) < BOUNDS_EPSILON &&
+    Math.abs(a.y - b.y) < BOUNDS_EPSILON &&
+    Math.abs(a.width - b.width) < BOUNDS_EPSILON &&
+    Math.abs(a.height - b.height) < BOUNDS_EPSILON
+  );
+}
+
 export function useBrowserWebview(browserTabId: string, isVisible: boolean, url: string) {
   const containerRef = useRef<HTMLDivElement>(null);
   const createdRef = useRef(false);
@@ -36,6 +48,10 @@ export function useBrowserWebview(browserTabId: string, isVisible: boolean, url:
   const urlRef = useRef(url);
   const visibilityRef = useRef(isVisible);
   const loadingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastBoundsRef = useRef<BrowserBounds | null>(null);
+  const resizeFrameRef = useRef(0);
+  const resizeInFlightRef = useRef(false);
+  const resizePendingRef = useRef(false);
 
   const clearLoadingTimeout = useCallback(() => {
     if (loadingTimeoutRef.current) {
@@ -52,10 +68,15 @@ export function useBrowserWebview(browserTabId: string, isVisible: boolean, url:
     }, 6000);
   }, [browserTabId, clearLoadingTimeout]);
 
-  const updateBounds = useCallback(() => {
+  const updateBoundsNow = useCallback(() => {
     const el = containerRef.current;
-    if (!el || !createdRef.current) return;
+    if (!el || !createdRef.current || !visibilityRef.current) return;
+
     const bounds = getElementBounds(el);
+    if (boundsEqual(lastBoundsRef.current, bounds)) return;
+
+    lastBoundsRef.current = bounds;
+    resizeInFlightRef.current = true;
     browserTabResize(browserTabId, bounds)
       .then((result) => {
         if (!result.success) {
@@ -64,8 +85,36 @@ export function useBrowserWebview(browserTabId: string, isVisible: boolean, url:
       })
       .catch((err) => {
         console.error('[BrowserWebview] resize error:', err);
+      })
+      .finally(() => {
+        resizeInFlightRef.current = false;
+        if (resizePendingRef.current) {
+          resizePendingRef.current = false;
+          if (resizeFrameRef.current) {
+            cancelAnimationFrame(resizeFrameRef.current);
+          }
+          resizeFrameRef.current = requestAnimationFrame(() => {
+            resizeFrameRef.current = 0;
+            updateBoundsNow();
+          });
+        }
       });
   }, [browserTabId]);
+
+  const scheduleBoundsUpdate = useCallback(() => {
+    if (!createdRef.current || !visibilityRef.current) return;
+
+    if (resizeInFlightRef.current) {
+      resizePendingRef.current = true;
+      return;
+    }
+
+    if (resizeFrameRef.current) return;
+    resizeFrameRef.current = requestAnimationFrame(() => {
+      resizeFrameRef.current = 0;
+      updateBoundsNow();
+    });
+  }, [updateBoundsNow]);
 
   // Create / destroy webview lifecycle
   useEffect(() => {
@@ -87,22 +136,24 @@ export function useBrowserWebview(browserTabId: string, isVisible: boolean, url:
     const bounds = getElementBounds(el);
     browserTabCreate(browserTabId, urlRef.current, bounds)
       .then((result) => {
-        if (!mountedRef.current || mountToken !== mountTokenRef.current) {
-          // Only destroy if THIS invocation created a webview
-          if (thisInvocationCreated) {
-            browserTabDestroy(browserTabId).catch(console.error);
-          }
-          return;
-        }
         if (result.success) {
           thisInvocationCreated = true;
+
+          if (!mountedRef.current || mountToken !== mountTokenRef.current) {
+            browserTabDestroy(browserTabId).catch(console.error);
+            return;
+          }
+
           createdRef.current = true;
+          lastBoundsRef.current = bounds;
           if (visibilityRef.current) {
+            scheduleBoundsUpdate();
             browserTabShow(browserTabId).catch(console.error);
           } else {
             browserTabHide(browserTabId).catch(console.error);
           }
         } else {
+          if (!mountedRef.current || mountToken !== mountTokenRef.current) return;
           console.error('[BrowserWebview] create failed:', result.error);
           clearLoadingTimeout();
           useBrowserSessionStore.getState().setLoading(browserTabId, false);
@@ -121,21 +172,35 @@ export function useBrowserWebview(browserTabId: string, isVisible: boolean, url:
       if (thisInvocationCreated) {
         browserTabDestroy(browserTabId).catch(console.error);
       }
+      if (resizeFrameRef.current) {
+        cancelAnimationFrame(resizeFrameRef.current);
+        resizeFrameRef.current = 0;
+      }
+      resizePendingRef.current = false;
+      lastBoundsRef.current = null;
       createdRef.current = false;
     };
-  }, [browserTabId, clearLoadingTimeout, armLoadingTimeout]);
+  }, [browserTabId, clearLoadingTimeout, armLoadingTimeout, scheduleBoundsUpdate]);
 
   // Show / hide on visibility change
   useEffect(() => {
     visibilityRef.current = isVisible;
     if (!createdRef.current) return;
     if (isVisible) {
-      updateBounds();
-      browserTabShow(browserTabId).catch(console.error);
+      lastBoundsRef.current = null;
+      scheduleBoundsUpdate();
+      browserTabShow(browserTabId)
+        .then(() => scheduleBoundsUpdate())
+        .catch(console.error);
     } else {
+      if (resizeFrameRef.current) {
+        cancelAnimationFrame(resizeFrameRef.current);
+        resizeFrameRef.current = 0;
+      }
+      resizePendingRef.current = false;
       browserTabHide(browserTabId).catch(console.error);
     }
-  }, [isVisible, browserTabId, updateBounds]);
+  }, [isVisible, browserTabId, scheduleBoundsUpdate]);
 
   // Navigate when url prop changes externally
   useEffect(() => {
@@ -159,20 +224,29 @@ export function useBrowserWebview(browserTabId: string, isVisible: boolean, url:
       });
   }, [url, browserTabId, clearLoadingTimeout, armLoadingTimeout]);
 
-  // Resize observer
+  // Bounds sync. ResizeObserver does not fire for position-only movement, so also
+  // listen for window resize and capture-phase scroll events from app containers.
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
 
     const ro = new ResizeObserver(() => {
-      updateBounds();
+      scheduleBoundsUpdate();
     });
     ro.observe(el);
+    window.addEventListener('resize', scheduleBoundsUpdate);
+    window.addEventListener('scroll', scheduleBoundsUpdate, true);
 
     return () => {
       ro.disconnect();
+      window.removeEventListener('resize', scheduleBoundsUpdate);
+      window.removeEventListener('scroll', scheduleBoundsUpdate, true);
+      if (resizeFrameRef.current) {
+        cancelAnimationFrame(resizeFrameRef.current);
+        resizeFrameRef.current = 0;
+      }
     };
-  }, [updateBounds]);
+  }, [scheduleBoundsUpdate]);
 
   // Listen for URL sync and loaded events from webview poller
   useEffect(() => {

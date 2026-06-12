@@ -13,6 +13,7 @@ import { cn } from '@/lib/utils';
 import type { AutomationNodeType } from '../types';
 import { useWorkflowCanvas } from '../hooks/use-workflow-canvas';
 import { CanvasContextMenu } from './canvas-context-menu';
+import { NodeContextMenu } from './node-context-menu';
 import { NodeConfigPanel } from './node-config-panel';
 
 interface WorkflowCanvasProps {
@@ -47,10 +48,14 @@ export function WorkflowCanvas({ addNodeRef, persistRef }: WorkflowCanvasProps) 
         onNodesChange={canvas.onNodesChange}
         onEdgesChange={canvas.onEdgesChange}
         onConnect={canvas.onConnect}
+        isValidConnection={canvas.isValidConnection}
+        onEdgeDoubleClick={canvas.onEdgeDoubleClick}
         onPaneContextMenu={canvas.onPaneContextMenu}
+        onNodeContextMenu={canvas.onNodeContextMenu}
         onNodeClick={canvas.onNodeClick}
         onPaneClick={canvas.onPaneClick}
         nodeTypes={canvas.nodeTypes}
+        edgeTypes={canvas.edgeTypes}
         defaultEdgeOptions={canvas.defaultEdgeOptions}
         connectionLineStyle={canvas.connectionLineStyle}
         onlyRenderVisibleElements
@@ -88,6 +93,7 @@ export function WorkflowCanvas({ addNodeRef, persistRef }: WorkflowCanvasProps) 
           node={canvas.selectedNode}
           onClose={() => canvas.setSelectedNodeId(null)}
           onUpdate={canvas.updateNodeData}
+          onDelete={canvas.deleteNode}
           onRun={canvas.onRun}
         />
       </div>
@@ -104,6 +110,15 @@ export function WorkflowCanvas({ addNodeRef, persistRef }: WorkflowCanvasProps) 
         state={canvas.contextMenu}
         onClose={canvas.closeContextMenu}
         onAddNode={canvas.addNodeFromMenu}
+        hasTriggerNode={canvas.hasTriggerNode}
+        onRemoveTrigger={canvas.removeTriggerNode}
+      />
+
+      <NodeContextMenu
+        state={canvas.nodeContextMenu}
+        onClose={canvas.closeNodeContextMenu}
+        onDelete={canvas.deleteNode}
+        onProperties={(nodeId) => canvas.setSelectedNodeId(nodeId)}
       />
     </div>
   );

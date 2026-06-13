@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowUpDown, Box, Bug, Code2, FileText, Globe, PauseCircle, RotateCw, LoaderPinwheel, Atom, Hexagon, FlaskConical } from 'lucide-react';
+import { ArrowUpDown, Box, Bug, Code2, FileText, Globe, PauseCircle, RotateCw, LoaderPinwheel, Atom, Hexagon, FlaskConical, Binary } from 'lucide-react';
 
 interface NavItem {
   label: string;
@@ -14,7 +14,7 @@ export const allNavItems: NavItem[] = [
   { label: 'Workflow', icon: LoaderPinwheel, href: '/automation', devOnly: true },
   { label: 'Browser', icon: Globe, href: '/browser-automation'},
   { label: 'Intercept', icon: PauseCircle, href: '/intercept' },
-  { label: 'Playground', icon: Code2, href: '/playground' },
+  { label: 'Code', icon: Binary, href: '/playground', devOnly: true },
   { label: 'Invoker', icon: Hexagon, href: '/invoker' },
   { label: 'Repeater', icon: RotateCw, href: '/repeater' },
   { label: 'Threats', icon: Atom, href: '/threats', devOnly: true},

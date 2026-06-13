@@ -219,6 +219,7 @@ fn main() {
             zeroxbuffer::commands::playground::check_compilers,
             zeroxbuffer::commands::playground::get_system_info,
             zeroxbuffer::commands::playground::create_project,
+            zeroxbuffer::commands::playground::list_projects,
             zeroxbuffer::commands::playground::list_project_files,
             zeroxbuffer::commands::playground::read_project_file,
             zeroxbuffer::commands::playground::write_project_file,

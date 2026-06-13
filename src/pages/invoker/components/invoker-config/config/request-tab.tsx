@@ -7,6 +7,7 @@ import type { EditorView } from '@codemirror/view';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { ButtonGroup } from '@/components/ui/button-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
   Dialog,
@@ -280,30 +281,32 @@ export function RequestTab() {
             <Badge variant={config.positions.length > 0 ? 'default' : 'secondary'}>
               {config.positions.length} marked
             </Badge>
-            <Button
-              type="button"
-              variant="outline"
-              size="xs"
-              onClick={handleAutoMark}
-              disabled={isRunning || autoMarkLoading}
-            >
-              {autoMarkLoading ? (
-                <Loader2 className="mr-1 h-4 w-4 animate-spin" />
-              ) : (
-                <Sparkles className="mr-1 h-4 w-4" />
-              )}
-              Auto mark
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="xs"
-              onClick={markRawRequestTarget}
-              disabled={isRunning}
-            >
-              <Target className="mr-1 h-4 w-4" />
-              Mark Target
-            </Button>
+            <ButtonGroup>
+              <Button
+                type="button"
+                variant="outline"
+                size="xs"
+                onClick={handleAutoMark}
+                disabled={isRunning || autoMarkLoading}
+              >
+                {autoMarkLoading ? (
+                  <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+                ) : (
+                  <Sparkles className="mr-1 h-4 w-4" />
+                )}
+                Auto mark
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="xs"
+                onClick={markRawRequestTarget}
+                disabled={isRunning}
+              >
+                <Target className="mr-1 h-4 w-4" />
+                Mark Target
+              </Button>
+            </ButtonGroup>
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button type="button" variant="ghost" size="icon-sm" className="shrink-0">

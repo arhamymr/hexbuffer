@@ -29,6 +29,7 @@ import {
   isValidProxyPort,
 } from '@/stores/app';
 import type { SettingsPageState } from '../hooks/use-settings-page';
+import { NavSettingsCard } from './nav-settings-card';
 import { ManualUpdateCommand } from './manual-update-command';
 
 interface GeneralSettingsTabProps {
@@ -227,6 +228,8 @@ export function GeneralSettingsTab({ settings }: GeneralSettingsTabProps) {
           </div>
         </CardContent>
       </Card>
+
+      <NavSettingsCard />
     </>
   );
 }

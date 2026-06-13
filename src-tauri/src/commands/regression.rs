@@ -4,8 +4,12 @@ use std::{
     thread,
 };
 
+#[cfg(unix)]
+use std::os::unix::process::CommandExt;
+
 use serde_json::Value;
-use tauri::{AppHandle, Emitter};
+use tauri::{AppHandle, Emitter, Manager};
+use tauri_plugin_shell::ShellExt;
 use uuid::Uuid;
 
 use crate::db::repository::Database;
@@ -45,18 +49,17 @@ pub async fn run_regression_test(
     let artifact_dir = app
         .path()
         .app_data_dir()
-        .map_err(|e| e.to_string())?
+        .map_err(|e: tauri::Error| e.to_string())?
         .join("regression-artifacts");
     std::fs::create_dir_all(&artifact_dir).map_err(|e| e.to_string())?;
 
     // Read AI settings for provider/model
     let settings = crate::ai::read_ai_settings(&app).unwrap_or_default();
 
-    let mut sidecar_command = app
+    let sidecar_command = app
         .shell()
         .sidecar("ai-engine")
-        .map_err(|e| format!("Failed to prepare sidecar: {}", e))?;
-    let mut command: Command = sidecar_command
+        .map_err(|e| format!("Failed to prepare sidecar: {}", e))?
         .env("0XBUFFER_AI_ENGINE_MODE", "regression")
         .env("0XBUFFER_REGRESSION_CONFIG_JSON", &config_json)
         .env("0XBUFFER_REGRESSION_SESSION_ID", &run_id)
@@ -68,17 +71,19 @@ pub async fn run_regression_test(
         )
         .env("XBUFFER_AI_PROVIDER", &settings.provider)
         .env("0XBUFFER_AI_MODEL", &settings.model)
-        .env("0XBUFFER_AI_ARTIFACT_DIR", artifact_dir.to_string_lossy().to_string())
+        .env("0XBUFFER_AI_ARTIFACT_DIR", artifact_dir.to_string_lossy().to_string());
+
+    let mut command: Command = sidecar_command.into();
+    command
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .into();
+        .stderr(Stdio::piped());
 
     // Inject API key if available
-    if let Ok(api_key) = crate::ai::read_api_key(&settings.provider) {
+    if let Ok(Some(api_key)) = crate::ai::read_optional_ai_api_key(&settings.provider) {
         if !api_key.trim().is_empty() {
             if let Ok(env_name) = crate::ai::api_key_env_name(&settings.provider) {
-                command.env(&env_name, api_key.trim());
+                command.env(env_name, api_key.trim());
             }
         }
     }
@@ -102,7 +107,7 @@ pub async fn run_regression_test(
     thread::spawn(move || {
         let reader = BufReader::new(stdout);
         for line in reader.lines() {
-            let line = match line {
+            let line: String = match line {
                 Ok(l) => l,
                 Err(_) => break,
             };
@@ -323,7 +328,7 @@ pub async fn list_regression_runs(
                 "testCaseId": r.test_case_id,
                 "status": r.status,
                 "stepResults": serde_json::from_str::<Value>(&r.step_results_json).unwrap_or_default(),
-                "aiVerdict": r.ai_verdict.and_then(|v| serde_json::from_str(&v).ok()),
+                "aiVerdict": r.ai_verdict.and_then(|v| serde_json::from_str::<Value>(&v).ok()),
                 "startedAt": r.started_at,
                 "finishedAt": r.finished_at,
                 "error": r.error,

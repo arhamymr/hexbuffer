@@ -1,191 +1,281 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
+import { nanoid } from 'nanoid';
 import type {
   PlaygroundProject,
+  PlaygroundTab,
   FileTreeNode,
   OpenTab,
   SystemInfo,
   CommandOutput,
   PlaygroundLanguage,
-} from '@/pages/playground/types';
-import * as api from '@/pages/playground/api';
+  ProjectSummary,
+} from '@/pages/code/types';
+import * as api from '@/pages/code/api';
 
-interface BuildHistoryEntry {
+// ---------------------------------------------------------------------------
+// Per-tab session (runtime state for each open project tab)
+// ---------------------------------------------------------------------------
+
+export interface BuildHistoryEntry {
   timestamp: number;
   command: string;
   output: CommandOutput;
 }
 
-interface PlaygroundState {
-  // Project
-  project: PlaygroundProject | null;
-  projectDir: string | null;
+export interface TabSession {
+  fileTree: FileTreeNode[];
+  isLoadingFileTree: boolean;
+  openEditorTabs: OpenTab[];
+  activeEditorPath: string | null;
+  buildOutput: CommandOutput | null;
+  isBuilding: boolean;
+  buildHistory: BuildHistoryEntry[];
+}
 
-  // System info (compiler detection)
+function createEmptySession(): TabSession {
+  return {
+    fileTree: [],
+    isLoadingFileTree: false,
+    openEditorTabs: [],
+    activeEditorPath: null,
+    buildOutput: null,
+    isBuilding: false,
+    buildHistory: [],
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Store
+// ---------------------------------------------------------------------------
+
+interface PlaygroundState {
+  // Tabs
+  tabs: PlaygroundTab[];
+  activeTabId: string | null;
+
+  // Per-tab runtime sessions (not persisted)
+  sessions: Record<string, TabSession>;
+
+  // Shared / global state
   systemInfo: SystemInfo | null;
   isLoadingSystemInfo: boolean;
   systemInfoError: string | null;
 
-  // File tree
-  fileTree: FileTreeNode[];
-  isLoadingFileTree: boolean;
+  // Existing projects list (shown on landing tab)
+  existingProjects: ProjectSummary[];
+  isLoadingProjects: boolean;
 
-  // Open tabs
-  openTabs: OpenTab[];
-  activeTabPath: string | null;
+  // Actions — tabs
+  addProjectTab: (project: PlaygroundProject) => string;
+  closeTab: (tabId: string) => void;
+  setActiveTab: (tabId: string) => void;
 
-  // Build
-  buildOutput: CommandOutput | null;
-  isBuilding: boolean;
-  buildHistory: BuildHistoryEntry[];
+  // Actions — sessions
+  setSession: (tabId: string, updater: (s: TabSession) => TabSession) => void;
+  setSessionFileTree: (tabId: string, tree: FileTreeNode[]) => void;
+  setSessionOpenEditorTabs: (tabId: string, tabs: OpenTab[]) => void;
+  setSessionActiveEditorPath: (tabId: string, path: string | null) => void;
+  setSessionBuildOutput: (tabId: string, output: CommandOutput | null) => void;
+  setSessionIsBuilding: (tabId: string, v: boolean) => void;
+  addSessionBuildHistory: (tabId: string, entry: BuildHistoryEntry) => void;
+  clearSessionBuildHistory: (tabId: string) => void;
 
-  // Actions
+  // Actions — global
   loadSystemInfo: () => Promise<void>;
-  createProject: (name: string, language: PlaygroundLanguage) => Promise<void>;
-  setProjectDir: (dir: string) => void;
-  refreshFileTree: () => Promise<void>;
-  openFile: (filePath: string) => Promise<void>;
-  closeTab: (filePath: string) => void;
-  setActiveTab: (filePath: string) => void;
-  markTabDirty: (filePath: string, dirty: boolean) => void;
-  markTabClean: (filePath: string) => void;
-  setBuildOutput: (output: CommandOutput | null) => void;
-  setIsBuilding: (v: boolean) => void;
-  addBuildHistory: (entry: BuildHistoryEntry) => void;
-  clearBuildHistory: () => void;
-  resetProject: () => void;
+  loadExistingProjects: () => Promise<void>;
 }
 
-const initialState = {
-  project: null,
-  projectDir: null,
-  systemInfo: null,
-  isLoadingSystemInfo: false,
-  systemInfoError: null,
-  fileTree: [],
-  isLoadingFileTree: false,
-  openTabs: [],
-  activeTabPath: null,
-  buildOutput: null,
-  isBuilding: false,
-  buildHistory: [],
-};
+const LANDING_TAB_ID = '__playground_landing__';
 
-export const usePlaygroundStore = create<PlaygroundState>()((set, get) => ({
-  ...initialState,
-
-  loadSystemInfo: async () => {
-    set({ isLoadingSystemInfo: true, systemInfoError: null });
-    try {
-      const info = await api.getSystemInfo();
-      set({ systemInfo: info, isLoadingSystemInfo: false });
-    } catch (err) {
-      set({
-        isLoadingSystemInfo: false,
-        systemInfoError: err instanceof Error ? err.message : String(err),
-      });
-    }
-  },
-
-  createProject: async (name, language) => {
-    const dir = get().projectDir;
-    const parent = dir ?? (await defaultProjectDir());
-    const project = await api.createProject(name, language, parent);
-    set({ project, projectDir: parent });
-    // Refresh file tree immediately
-    const files = await api.listProjectFiles(project.path);
-    // Open main file
-    const mainFile = language === 'rust' ? 'src/main.rs' : language === 'c' ? 'main.c' : 'main.cpp';
-    const mainPath = mainFile;
-    const lang = language === 'rust' ? 'rust' : language === 'c' ? 'c' : 'cpp';
-    set({
-      fileTree: files,
-      openTabs: [{ path: mainPath, name: mainFile.split('/').pop()!, language: lang, isDirty: false }],
-      activeTabPath: mainPath,
-    });
-  },
-
-  setProjectDir: (dir) => set({ projectDir: dir }),
-
-  refreshFileTree: async () => {
-    const { project } = get();
-    if (!project) return;
-    set({ isLoadingFileTree: true });
-    try {
-      const files = await api.listProjectFiles(project.path);
-      set({ fileTree: files, isLoadingFileTree: false });
-    } catch {
-      set({ isLoadingFileTree: false });
-    }
-  },
-
-  openFile: async (filePath) => {
-    const { project, openTabs } = get();
-    if (!project) return;
-
-    const existing = openTabs.find((t) => t.path === filePath);
-    if (existing) {
-      set({ activeTabPath: filePath });
-      return;
-    }
-
-    const { getLanguageFromPath } = await import('@/pages/playground/types');
-    const name = filePath.split('/').pop()!;
-    const language = getLanguageFromPath(filePath);
-
-    set({
-      openTabs: [...openTabs, { path: filePath, name, language, isDirty: false }],
-      activeTabPath: filePath,
-    });
-  },
-
-  closeTab: (filePath) => {
-    const { openTabs, activeTabPath } = get();
-    const remaining = openTabs.filter((t) => t.path !== filePath);
-    const newActive =
-      activeTabPath === filePath
-        ? remaining.length > 0
-          ? remaining[remaining.length - 1].path
-          : null
-        : activeTabPath;
-    set({ openTabs: remaining, activeTabPath: newActive });
-  },
-
-  setActiveTab: (filePath) => set({ activeTabPath: filePath }),
-
-  markTabDirty: (filePath, dirty) => {
-    set({
-      openTabs: get().openTabs.map((t) =>
-        t.path === filePath ? { ...t, isDirty: dirty } : t,
-      ),
-    });
-  },
-
-  markTabClean: (filePath) => {
-    set({
-      openTabs: get().openTabs.map((t) =>
-        t.path === filePath ? { ...t, isDirty: false } : t,
-      ),
-    });
-  },
-
-  setBuildOutput: (output) => set({ buildOutput: output }),
-  setIsBuilding: (v) => set({ isBuilding: v }),
-
-  addBuildHistory: (entry) => {
-    set({ buildHistory: [...get().buildHistory, entry] });
-  },
-
-  clearBuildHistory: () => set({ buildHistory: [], buildOutput: null }),
-
-  resetProject: () => set({ ...initialState }),
-}));
-
-async function defaultProjectDir(): Promise<string> {
-  try {
-    const { invoke } = await import('@tauri-apps/api/core');
-    return await invoke<string>('get_home_directory');
-  } catch {
-    // Fallback for browser dev
-    return '/tmp';
-  }
+function createLandingTab(): PlaygroundTab {
+  return { id: LANDING_TAB_ID, name: 'Get Started', project: null };
 }
+
+export const usePlaygroundStore = create<PlaygroundState>()(
+  persist(
+    (set, get) => ({
+      tabs: [createLandingTab()],
+      activeTabId: LANDING_TAB_ID,
+      sessions: { [LANDING_TAB_ID]: createEmptySession() },
+
+      systemInfo: null,
+      isLoadingSystemInfo: false,
+      systemInfoError: null,
+
+      existingProjects: [],
+      isLoadingProjects: false,
+
+      // ── Tab management ──
+
+      addProjectTab: (project) => {
+        const id = nanoid(8);
+        const tab: PlaygroundTab = { id, name: project.name, project };
+        const session = createEmptySession();
+        set((s) => ({
+          tabs: [...s.tabs, tab],
+          activeTabId: id,
+          sessions: { ...s.sessions, [id]: session },
+        }));
+        return id;
+      },
+
+      closeTab: (tabId) => {
+        const { tabs, activeTabId } = get();
+        if (tabId === LANDING_TAB_ID) return; // can't close landing
+
+        const remaining = tabs.filter((t) => t.id !== tabId);
+        let newActive = activeTabId;
+        if (activeTabId === tabId || !remaining.some((t) => t.id === activeTabId)) {
+          newActive = remaining.length > 0 ? remaining[remaining.length - 1].id : LANDING_TAB_ID;
+        }
+
+        const { [tabId]: _, ...restSessions } = get().sessions;
+        set({ tabs: remaining, activeTabId: newActive, sessions: restSessions });
+      },
+
+      setActiveTab: (tabId) => set({ activeTabId: tabId }),
+
+      // ── Session mutations ──
+
+      setSession: (tabId, updater) => {
+        set((s) => ({
+          sessions: {
+            ...s.sessions,
+            [tabId]: updater(s.sessions[tabId] ?? createEmptySession()),
+          },
+        }));
+      },
+
+      setSessionFileTree: (tabId, tree) => {
+        set((s) => ({
+          sessions: {
+            ...s.sessions,
+            [tabId]: { ...(s.sessions[tabId] ?? createEmptySession()), fileTree: tree },
+          },
+        }));
+      },
+
+      setSessionOpenEditorTabs: (tabId, openEditorTabs) => {
+        set((s) => ({
+          sessions: {
+            ...s.sessions,
+            [tabId]: { ...(s.sessions[tabId] ?? createEmptySession()), openEditorTabs },
+          },
+        }));
+      },
+
+      setSessionActiveEditorPath: (tabId, path) => {
+        set((s) => ({
+          sessions: {
+            ...s.sessions,
+            [tabId]: { ...(s.sessions[tabId] ?? createEmptySession()), activeEditorPath: path },
+          },
+        }));
+      },
+
+      setSessionBuildOutput: (tabId, output) => {
+        set((s) => ({
+          sessions: {
+            ...s.sessions,
+            [tabId]: { ...(s.sessions[tabId] ?? createEmptySession()), buildOutput: output },
+          },
+        }));
+      },
+
+      setSessionIsBuilding: (tabId, v) => {
+        set((s) => ({
+          sessions: {
+            ...s.sessions,
+            [tabId]: { ...(s.sessions[tabId] ?? createEmptySession()), isBuilding: v },
+          },
+        }));
+      },
+
+      addSessionBuildHistory: (tabId, entry) => {
+        set((s) => {
+          const session = s.sessions[tabId] ?? createEmptySession();
+          return {
+            sessions: {
+              ...s.sessions,
+              [tabId]: {
+                ...session,
+                buildHistory: [...session.buildHistory, entry],
+              },
+            },
+          };
+        });
+      },
+
+      clearSessionBuildHistory: (tabId) => {
+        set((s) => ({
+          sessions: {
+            ...s.sessions,
+            [tabId]: {
+              ...(s.sessions[tabId] ?? createEmptySession()),
+              buildHistory: [],
+              buildOutput: null,
+            },
+          },
+        }));
+      },
+
+      // ── Global actions ──
+
+      loadSystemInfo: async () => {
+        set({ isLoadingSystemInfo: true, systemInfoError: null });
+        try {
+          const info = await api.getSystemInfo();
+          set({ systemInfo: info, isLoadingSystemInfo: false });
+        } catch (err) {
+          set({
+            isLoadingSystemInfo: false,
+            systemInfoError: err instanceof Error ? err.message : String(err),
+          });
+        }
+      },
+
+      loadExistingProjects: async () => {
+        set({ isLoadingProjects: true });
+        try {
+          const info = await api.getSystemInfo();
+          const projects = await api.listProjects(info.homeDir);
+          set({ existingProjects: projects, isLoadingProjects: false });
+        } catch {
+          set({ isLoadingProjects: false });
+        }
+      },
+    }),
+    {
+      name: '0xbuffer-playground',
+      partialize: (state) => ({
+        tabs: state.tabs,
+        activeTabId: state.activeTabId,
+      }),
+      merge: (persisted, current) => {
+        const p = (persisted ?? {}) as Partial<PlaygroundState>;
+        // Always ensure landing tab exists
+        const tabs = p.tabs?.length ? p.tabs : [createLandingTab()];
+        const hasLanding = tabs.some((t) => t.id === LANDING_TAB_ID);
+        if (!hasLanding) tabs.unshift(createLandingTab());
+
+        const activeTabId = tabs.some((t) => t.id === p.activeTabId)
+          ? p.activeTabId!
+          : tabs[0].id;
+
+        // Rebuild sessions for each tab
+        const sessions: Record<string, TabSession> = {};
+        for (const tab of tabs) {
+          sessions[tab.id] = createEmptySession();
+        }
+
+        return {
+          ...(current as PlaygroundState),
+          tabs,
+          activeTabId,
+          sessions,
+        };
+      },
+    },
+  ),
+);

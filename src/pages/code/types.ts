@@ -41,6 +41,20 @@ export interface PlaygroundProject {
   language: PlaygroundLanguage;
 }
 
+/** A tab in the Playground page tab bar. */
+export interface PlaygroundTab {
+  id: string;
+  name: string;
+  project: PlaygroundProject | null; // null = landing / "get started" tab
+}
+
+export interface ProjectSummary {
+  name: string;
+  path: string;
+  language: string;
+  lastModified: string;
+}
+
 export interface FileContent {
   path: string;
   content: string;

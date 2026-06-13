@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import React, { useMemo, useImperativeHandle } from 'react'
 import { PanelBottomClose } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useTerminalInstance } from '@/components/layout/terminal/hooks/use-terminal-instance'
@@ -9,17 +9,53 @@ import '@xterm/xterm/css/xterm.css'
 const NOOP = () => {}
 
 // ─────────────────────────────────────────────────────────────────────────────
+// TerminalPanelHandle — imperative API exposed to parent components
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface TerminalPanelHandle {
+  write(data: string): void
+  writeln(data: string): void
+  clear(): void
+  focus(): void
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // TerminalPanel
 //
 // Renders a single terminal instance with a minimal toolbar. The Terminal +
 // PTY are created on mount and disposed on unmount.
+//
+// Exposes an imperative handle (ref) so parents can programmatically write
+// text to the terminal without going through the PTY.
 // ─────────────────────────────────────────────────────────────────────────────
 
-export function TerminalPanel({ onClosePanel }: { onClosePanel?: () => void }): React.JSX.Element {
-  const { containerRef, status, errorMsg, bgColor } = useTerminalInstance()
+export const TerminalPanel = React.forwardRef<
+  TerminalPanelHandle,
+  { onClosePanel?: () => void }
+>(function TerminalPanel({ onClosePanel }, ref) {
+  const { containerRef, termRef, status, errorMsg, bgColor } = useTerminalInstance()
   const handleClosePanel = useMemo(() => onClosePanel ?? NOOP, [onClosePanel])
   const { theme } = useTheme()
   const isDark = theme === 'dark'
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      write(data: string) {
+        termRef.current?.write(data)
+      },
+      writeln(data: string) {
+        termRef.current?.writeln(data)
+      },
+      clear() {
+        termRef.current?.clear()
+      },
+      focus() {
+        termRef.current?.focus()
+      },
+    }),
+    [],
+  )
 
   const toolbarBg = isDark ? 'bg-[#0d1117]' : 'bg-[#f6f8fa]'
   const toolbarBorder = isDark ? 'border-[#21262d]' : 'border-[#d0d7de]'
@@ -72,4 +108,4 @@ export function TerminalPanel({ onClosePanel }: { onClosePanel?: () => void }): 
       </div>
     </div>
   )
-}
+})

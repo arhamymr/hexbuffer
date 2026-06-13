@@ -5,6 +5,7 @@ import type {
   FileContent,
   CommandOutput,
   PlaygroundProject,
+  ProjectSummary,
 } from './types';
 
 function toErrorMessage(error: unknown, prefix: string): string {
@@ -25,6 +26,14 @@ export async function createProject(
   return invoke<PlaygroundProject>('create_project', {
     projectName: name,
     language,
+    parentDir,
+  });
+}
+
+export async function listProjects(
+  parentDir: string,
+): Promise<ProjectSummary[]> {
+  return invoke<ProjectSummary[]>('list_projects', {
     parentDir,
   });
 }

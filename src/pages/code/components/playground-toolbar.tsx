@@ -1,6 +1,7 @@
-import { Hammer, Play, FilePlus, RefreshCw, FolderX, Loader2 } from 'lucide-react';
+import { Hammer, Play, FilePlus, RefreshCw, FolderX, Loader2, PanelBottomOpen, PanelBottomClose } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { useGlobalTerminalStore } from '@/stores/global-terminal';
 import type { PlaygroundProject } from '../types';
 
 interface PlaygroundToolbarProps {
@@ -24,6 +25,11 @@ export function PlaygroundToolbar({
 }: PlaygroundToolbarProps) {
   const languageLabel =
     project.language === 'rust' ? 'Rust' : project.language === 'cpp' ? 'C++' : 'C';
+
+  const isTerminalOpen = useGlobalTerminalStore((s) => s.isOpen);
+  const setIsOpen = useGlobalTerminalStore((s) => s.setIsOpen);
+
+  const handleToggleTerminal = () => setIsOpen(!isTerminalOpen);
 
   return (
     <div className="flex shrink-0 items-center gap-1.5 border-b bg-card px-3 py-1.5">
@@ -93,6 +99,26 @@ export function PlaygroundToolbar({
       </Tooltip>
 
       <div className="flex-1" />
+
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7"
+            onClick={handleToggleTerminal}
+          >
+            {isTerminalOpen ? (
+              <PanelBottomClose className="h-3.5 w-3.5" />
+            ) : (
+              <PanelBottomOpen className="h-3.5 w-3.5" />
+            )}
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent side="bottom">
+          {isTerminalOpen ? 'Hide Terminal' : 'Show Terminal'}
+        </TooltipContent>
+      </Tooltip>
 
       <Tooltip>
         <TooltipTrigger asChild>

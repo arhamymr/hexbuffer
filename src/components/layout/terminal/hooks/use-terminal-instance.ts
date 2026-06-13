@@ -71,6 +71,7 @@ type TerminalStatus = 'loading' | 'ready' | 'exited' | 'error'
 
 interface UseTerminalInstanceReturn {
   containerRef: React.RefObject<HTMLDivElement | null>
+  termRef: React.RefObject<Terminal | null>
   status: TerminalStatus
   errorMsg: string
   bgColor: string
@@ -354,5 +355,5 @@ export function useTerminalInstance(): UseTerminalInstanceReturn {
 
   const bgColor = useMemo(() => isDark ? 'bg-[#0d1117]' : 'bg-[#f6f8fa]', [isDark])
 
-  return { containerRef, status, errorMsg, bgColor }
+  return { containerRef, termRef, status, errorMsg, bgColor }
 }

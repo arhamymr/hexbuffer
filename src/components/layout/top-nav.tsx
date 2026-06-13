@@ -1,6 +1,7 @@
 'use client';
 
-import { Link } from 'react-router-dom';
+import * as React from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { GripHorizontal, Loader2, Pause } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
@@ -13,6 +14,7 @@ import { useTopNav } from './hooks/use-top-nav';
 import { useBrowserSessionEvents } from './hooks/use-browser-session-events';
 import { useAutomationStore } from '@/stores/automation';
 import { useBrowserAutomationStore } from '@/stores/browser-automation';
+import { useAppSettingsStore } from '@/stores/app-settings-store';
 import { Separator } from '../ui/separator';
 
 type CrawlStatusKey = 'automation-running' | 'browser-running' | 'browser-paused';
@@ -48,6 +50,19 @@ export function TopNav() {
     proxyStatus,
     stopDraggingWindow,
   } = useTopNav();
+  const navigate = useNavigate();
+  const hiddenNavItems = useAppSettingsStore((s) => s.hiddenNavItems);
+  const visibleNavItems = React.useMemo(
+    () => mainNavItems.filter((item) => !hiddenNavItems.includes(item.href)),
+    [hiddenNavItems],
+  );
+
+  React.useEffect(() => {
+    if (hiddenNavItems.includes(pathname)) {
+      navigate('/');
+    }
+  }, [hiddenNavItems, pathname, navigate]);
+
   const crawlerStatus = useBrowserAutomationStore((s) => {
     for (const t of s.tabs) {
       if (t.session?.status === 'running') return 'running';
@@ -92,9 +107,9 @@ export function TopNav() {
           <div className="relative min-w-0 flex-1">
             <nav
               ref={navRef}
-              className="flex min-w-0 flex-1 items-center gap-0.5 overflow-x-auto overflow-y-hidden"
+              className="scrollbar-hide flex min-w-0 flex-1 items-center gap-0.5 overflow-x-auto overflow-y-hidden"
             >
-              {mainNavItems.map((item) => {
+              {visibleNavItems.map((item) => {
                 const Icon = item.icon;
                 const RightIcon = item.rightIcon;
                 const isActive = pathname === item.href;

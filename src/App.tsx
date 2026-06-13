@@ -13,7 +13,7 @@ import { DebuggerPage } from "@/pages/debugger";
 import { AutomationPage } from "@/pages/automation";
 import { ThreatsPage } from "@/pages/threats";
 import { RegressionPage } from "@/pages/regression";
-import { PlaygroundPage } from "@/pages/playground";
+import { PlaygroundPage } from "@/pages/code";
 import { CaInstallDialog } from "@/components/ca-install-dialog";
 import { AssistantPage } from "@/pages/assistant";
 import { startLiveTrafficWatcher, stopLiveTrafficWatcher } from "@/triggers/live-traffic";

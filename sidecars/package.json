@@ -2,6 +2,7 @@
   "name": "0xbuffer-ai-engine-sidecar",
   "private": true,
   "type": "module",
+  "main": "./index.mjs",
   "bin": "./index.mjs",
   "dependencies": {
     "@ai-sdk/deepseek": "^2.0.35",

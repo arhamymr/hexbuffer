@@ -57,6 +57,15 @@ pub struct PlaygroundProject {
     pub language: String,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ProjectSummary {
+    pub name: String,
+    pub path: String,
+    pub language: String,
+    pub last_modified: String,
+}
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -439,4 +448,76 @@ pub fn run_build_command(
         exit_code: output.status.code().unwrap_or(-1),
         success: output.status.success(),
     })
+}
+
+/// Detect the language of a project directory by inspecting its contents.
+fn detect_project_language(project_path: &Path) -> String {
+    if project_path.join("Cargo.toml").exists() {
+        return "rust".to_string();
+    }
+    if project_path.join("main.cpp").exists() || project_path.join("main.cc").exists() {
+        return "cpp".to_string();
+    }
+    if project_path.join("main.c").exists() {
+        return "c".to_string();
+    }
+    "unknown".to_string()
+}
+
+#[tauri::command]
+pub fn list_projects(parent_dir: String) -> Result<Vec<ProjectSummary>, String> {
+    let parent = Path::new(&parent_dir);
+    if !parent.exists() || !parent.is_dir() {
+        return Ok(vec![]);
+    }
+
+    let mut projects: Vec<ProjectSummary> = Vec::new();
+
+    let entries = std::fs::read_dir(parent)
+        .map_err(|e| format!("Failed to read directory: {}", e))?;
+
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if !path.is_dir() {
+            continue;
+        }
+
+        let name = path
+            .file_name()
+            .map(|n| n.to_string_lossy().to_string())
+            .unwrap_or_default();
+
+        // Skip hidden directories
+        if name.starts_with('.') {
+            continue;
+        }
+
+        let language = detect_project_language(&path);
+        if language == "unknown" {
+            continue;
+        }
+
+        let last_modified = path
+            .metadata()
+            .ok()
+            .and_then(|m| m.modified().ok())
+            .map(|t| {
+                chrono::DateTime::<chrono::Local>::from(t)
+                    .format("%Y-%m-%d %H:%M")
+                    .to_string()
+            })
+            .unwrap_or_default();
+
+        projects.push(ProjectSummary {
+            name,
+            path: path.to_string_lossy().to_string(),
+            language,
+            last_modified,
+        });
+    }
+
+    // Sort: most recently modified first
+    projects.sort_by(|a, b| b.last_modified.cmp(&a.last_modified));
+
+    Ok(projects)
 }

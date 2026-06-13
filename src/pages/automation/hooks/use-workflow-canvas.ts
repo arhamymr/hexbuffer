@@ -85,9 +85,18 @@ const connectionLineStyle: React.CSSProperties = {
   strokeWidth: 3,
 };
 
+export interface WorkflowCanvasBridge {
+  updateNodeData: (nodeId: string, data: AutomationNodeData) => void;
+  deleteNode: (nodeId: string) => void;
+  onRun: () => void;
+  clearSelection: () => void;
+}
+
 export function useWorkflowCanvas(
   addNodeRef?: React.MutableRefObject<((nodeType: AutomationNodeType) => void) | null>,
-  persistRef?: React.MutableRefObject<(() => void) | null>
+  persistRef?: React.MutableRefObject<(() => void) | null>,
+  onSelectedNodeChange?: (node: Node<AutomationNodeData> | null) => void,
+  bridgeRef?: React.MutableRefObject<WorkflowCanvasBridge | null>,
 ) {
   const reactFlowWrapper = React.useRef<HTMLDivElement>(null);
   const { screenToFlowPosition } = useReactFlow();
@@ -347,6 +356,13 @@ export function useWorkflowCanvas(
     };
   }, [persistRef, persist]);
 
+  // Bridge selected node changes to parent (for external config panel)
+  const onSelectedNodeChangeRef = React.useRef(onSelectedNodeChange);
+  onSelectedNodeChangeRef.current = onSelectedNodeChange;
+  React.useEffect(() => {
+    onSelectedNodeChangeRef.current?.(selectedNode);
+  }, [selectedNode]);
+
   React.useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 's') {
@@ -465,6 +481,20 @@ export function useWorkflowCanvas(
     persist(nextNodes, nextEdges);
     setSelectedNodeId(null);
   }, [persist, setNodes, setEdges]);
+
+  // Expose canvas operations to parent via bridge ref
+  React.useEffect(() => {
+    if (!bridgeRef) return;
+    bridgeRef.current = {
+      updateNodeData,
+      deleteNode,
+      onRun,
+      clearSelection: () => setSelectedNodeId(null),
+    };
+    return () => {
+      bridgeRef.current = null;
+    };
+  }, [bridgeRef, updateNodeData, deleteNode, onRun]);
 
   return {
     // core state

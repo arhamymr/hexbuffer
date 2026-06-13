@@ -250,7 +250,8 @@ impl HttpHandler for AppHandler {
                 proxy_state_handle
                     .lock()
                     .unwrap()
-                    .add_paused_request(paused_req);
+                    .add_paused_request(paused_req.clone());
+                crate::automation::ingest_intercept_paused_request(&self.app_handle, &paused_req);
 
                 loop {
                     tokio::time::sleep(Duration::from_millis(100)).await;
@@ -458,7 +459,8 @@ impl HttpHandler for AppHandler {
                 proxy_state_handle
                     .lock()
                     .unwrap()
-                    .add_paused_request(paused_req);
+                    .add_paused_request(paused_req.clone());
+                crate::automation::ingest_intercept_paused_request(&self.app_handle, &paused_req);
 
                 loop {
                     tokio::time::sleep(Duration::from_millis(100)).await;

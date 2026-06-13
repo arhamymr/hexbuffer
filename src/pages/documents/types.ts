@@ -6,7 +6,7 @@ import {
 } from './constants';
 
 export type DocumentSections = Record<string, string>;
-export type MarkdownEditorMode = 'markdown' | 'code' | 'preview';
+export type MarkdownEditorMode = 'markdown' | 'code';
 
 export interface CustomSection {
   key: string;

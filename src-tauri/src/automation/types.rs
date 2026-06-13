@@ -10,6 +10,8 @@ use super::events::ExecutionLogEvent;
 
 pub(crate) const LIVE_TRAFFIC_TRIGGER_TYPE: &str = "trigger:live-traffic-captured";
 pub(crate) const SCHEDULED_TRIGGER_TYPE: &str = "trigger:scheduled";
+pub(crate) const PORT_SCAN_RESULT_TRIGGER_TYPE: &str = "trigger:port-scan-result";
+pub(crate) const INTERCEPT_REQUEST_TRIGGER_TYPE: &str = "trigger:intercept-request";
 pub(crate) const AUTOMATION_LOG_LIMIT: usize = 500;
 pub(crate) const LIVE_TRAFFIC_HOST_INSIGHT_LIMIT: usize = 200;
 pub(crate) const LIVE_TRAFFIC_UI_TELEMETRY_BATCH_LIMIT: usize = 20;

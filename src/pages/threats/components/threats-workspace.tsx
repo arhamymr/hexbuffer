@@ -1,5 +1,4 @@
 import * as React from 'react';
-import Editor from '@monaco-editor/react';
 import {
   Background,
   Controls,
@@ -29,6 +28,7 @@ import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { TextEditor } from '@/components/ui/text-editor';
 import { cn } from '@/lib/utils';
 import type {
   BinarySymbol,
@@ -338,14 +338,12 @@ function DecompilerView({ rows }: { rows: GhidraDecompiledFunction[] }) {
       <div className="flex min-h-0 flex-col">
         <PanelHeader title={selected?.name ?? 'Decompiled Code'} />
         <div className="min-h-0 flex-1">
-          <Editor
+          <TextEditor
             height="100%"
             language="c"
-            theme="vs-dark"
             value={selected?.code ?? ''}
             options={{
               readOnly: true,
-              minimap: { enabled: false },
               fontSize: 12,
               wordWrap: 'on',
               scrollBeyondLastLine: false,

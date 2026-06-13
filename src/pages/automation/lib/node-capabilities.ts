@@ -157,8 +157,8 @@ const NODE_PROFILE_MAP: Record<AutomationNodeType, NodeProfile> = {
   'trigger:intercept-request': {
     type: 'trigger:intercept-request',
     category: 'trigger',
-    wired: false,
-    reason: 'This trigger has setup UI, but no real event source is wired yet.',
+    wired: true,
+    reason: null,
     sourceHandleIds: [],
     sourceHandleLabels: {},
     targetHandleRequired: false,
@@ -195,8 +195,8 @@ const NODE_PROFILE_MAP: Record<AutomationNodeType, NodeProfile> = {
   'trigger:port-scan-result': {
     type: 'trigger:port-scan-result',
     category: 'trigger',
-    wired: false,
-    reason: 'This trigger has setup UI, but no real event source is wired yet.',
+    wired: true,
+    reason: null,
     sourceHandleIds: [],
     sourceHandleLabels: {},
     targetHandleRequired: false,

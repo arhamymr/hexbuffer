@@ -13,8 +13,9 @@ use std::sync::{
 use targets::{expand_targets, normalize_scan_ports};
 use tauri::{AppHandle, Emitter, State};
 use tokio::sync::Semaphore;
-use types::{PortScanProgress, PortScanRequest, PortScanResult};
+use types::{PortScanProgress, PortScanRequest};
 
+pub use types::PortScanResult;
 pub use state::PortScanState;
 
 #[tauri::command]
@@ -85,6 +86,7 @@ pub async fn scan_ports(
                 if result.state == "cancelled" {
                     return;
                 }
+                crate::automation::ingest_port_scan_result(&app, &scan_id, &result);
 
                 let current = completed.fetch_add(1, Ordering::Relaxed) + 1;
                 if let Ok(mut results) = results.lock() {

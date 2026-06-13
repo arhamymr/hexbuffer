@@ -7,13 +7,16 @@ import {
   ResizablePanelGroup,
 } from '@/components/ui/resizable';
 import { ReactFlowProvider } from '@xyflow/react';
+import type { Node } from '@xyflow/react';
 import { TabbedPageLayout } from '@/components/tabs-layout/tabbed-page-layout';
 import { WorkflowCanvas } from './components/workflow-canvas';
 import { WorkflowToolbar } from './components/workflow-toolbar';
 import { ExecutionLogPanel } from './components/execution-log-panel';
+import { NodeConfigPanel } from './components/node-config-panel';
 import { TemplatesDialog } from './components/templates-dialog';
 import { useAutomationPage } from './hooks/use-automation-page';
-import type { AutomationNodeType } from './types';
+import type { AutomationNodeType, AutomationNodeData } from './types';
+import type { WorkflowCanvasBridge } from './hooks/use-workflow-canvas';
 import { Button } from '@/components/ui/button';
 import { PanelBottomOpen } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -36,6 +39,32 @@ export function AutomationPage() {
 
   const addNodeAtCenterRef = React.useRef<((nodeType: AutomationNodeType) => void) | null>(null);
   const persistRef = React.useRef<(() => void) | null>(null);
+  const bridgeRef = React.useRef<WorkflowCanvasBridge | null>(null);
+
+  const [selectedNode, setSelectedNode] = React.useState<Node<AutomationNodeData> | null>(null);
+
+  const onSelectedNodeChange = React.useCallback(
+    (node: Node<AutomationNodeData> | null) => setSelectedNode(node),
+    [],
+  );
+
+  const handleNodeUpdate = React.useCallback(
+    (nodeId: string, data: AutomationNodeData) => {
+      bridgeRef.current?.updateNodeData(nodeId, data);
+    },
+    [],
+  );
+
+  const handleNodeDelete = React.useCallback(
+    (nodeId: string) => {
+      bridgeRef.current?.deleteNode(nodeId);
+    },
+    [],
+  );
+
+  const handleRun = React.useCallback(() => {
+    bridgeRef.current?.onRun();
+  }, []);
 
   return (
     <ReactFlowProvider>
@@ -76,7 +105,13 @@ export function AutomationPage() {
                     )}
                     <WorkflowToolbar />
                     <div className="flex-1 min-h-0">
-                      <WorkflowCanvas key={activeWorkflowId} addNodeRef={addNodeAtCenterRef} persistRef={persistRef} />
+                      <WorkflowCanvas
+                        key={activeWorkflowId}
+                        addNodeRef={addNodeAtCenterRef}
+                        persistRef={persistRef}
+                        onSelectedNodeChange={onSelectedNodeChange}
+                        bridgeRef={bridgeRef}
+                      />
                     </div>
                   </div>
                 </ResizablePanel>
@@ -97,6 +132,21 @@ export function AutomationPage() {
                 )}
               </ResizablePanelGroup>
             </ResizablePanel>
+
+            {selectedNode && (
+              <>
+                <ResizableHandle withHandle />
+                <ResizablePanel defaultSize={25} minSize={15} maxSize={45}>
+                  <NodeConfigPanel
+                    node={selectedNode}
+                    onClose={() => bridgeRef.current?.clearSelection()}
+                    onUpdate={handleNodeUpdate}
+                    onDelete={handleNodeDelete}
+                    onRun={handleRun}
+                  />
+                </ResizablePanel>
+              </>
+            )}
           </ResizablePanelGroup>
         </TabbedPageLayout>
 

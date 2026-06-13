@@ -364,7 +364,12 @@
   /* Webkit browsers (Chrome, Safari, Edge) */
   ::-webkit-scrollbar {
     width: 12px;
-    height: 12px;
+    height: 0;
+  }
+
+  ::-webkit-scrollbar:horizontal {
+    height: 0;
+    display: none;
   }
 
   ::-webkit-scrollbar-track {

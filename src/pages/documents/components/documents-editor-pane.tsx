@@ -13,7 +13,6 @@ import { ApiFolderEditor } from './api-folder-editor';
 import { CustomSectionCodeEditor } from './custom-section-code-editor';
 import { CustomSectionEditor } from './custom-section-editor';
 import { EditorTabStrip } from './editor-tab-strip';
-import { MarkdownPreview } from './markdown-preview';
 import { type EditorFileId } from '../lib/editor-files';
 
 interface DocumentsEditorPaneProps {
@@ -91,9 +90,7 @@ export function DocumentsEditorPane({
 
       {activeCustomSection ? (
         <div className="min-h-0 flex-1">
-          {markdownMode === 'preview' ? (
-            <MarkdownPreview section={activeCustomSection} />
-          ) : markdownMode === 'code' ? (
+          {markdownMode === 'code' ? (
             <CustomSectionCodeEditor
               section={activeCustomSection}
               documentId={activeDocument.id}

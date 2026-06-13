@@ -144,3 +144,33 @@ export function MethodBadge({ method }: { method: string }) {
     </span>
   );
 }
+
+export const crawlStatus = {
+  idle: 'idle',
+  running: 'running',
+  paused: 'paused',
+  completed: 'completed',
+  failed: 'failed',
+  stopped: 'stopped',
+} as const;
+
+export type CrawlStatusValue = (typeof crawlStatus)[keyof typeof crawlStatus];
+
+export function getCrawlStatusColor(status: CrawlStatusValue) {
+  if (status === crawlStatus.running) return 'bg-emerald-600';
+  if (status === crawlStatus.paused) return 'bg-amber-600';
+  if (status === crawlStatus.completed) return 'bg-sky-600';
+  if (status === crawlStatus.failed) return 'bg-red-600';
+  if (status === crawlStatus.stopped) return 'bg-gray-500';
+  if (status === crawlStatus.idle) return 'bg-gray-500';
+  return 'bg-gray-500';
+}
+
+export function CrawlStatusBadge({ status }: { status: CrawlStatusValue }) {
+  const colorClass = getCrawlStatusColor(status);
+  return (
+    <span className={`text-[10px] px-1 py-0.5 rounded font-mono text-white ${colorClass}`}>
+      {status}
+    </span>
+  );
+}

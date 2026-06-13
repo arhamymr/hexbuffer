@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { Info, Target } from 'lucide-react';
+import type { EditorView } from '@codemirror/view';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -25,7 +26,7 @@ export function RequestTab() {
   const [rawRequestDraft, setRawRequestDraft] = React.useState(() =>
     config ? buildRawRequest(config.base_request) : ''
   );
-  const rawRequestEditorRef = React.useRef<any>(null);
+  const rawRequestEditorRef = React.useRef<EditorView | null>(null);
   const editRef = React.useRef(false);
 
   React.useEffect(() => {
@@ -54,23 +55,18 @@ export function RequestTab() {
   };
 
   const markRawRequestTarget = () => {
-    const editor = rawRequestEditorRef.current;
-    const model = editor?.getModel?.();
-    const selection = editor?.getSelection?.();
-    if (!editor || !model || !selection) {
-      return;
-    }
+    const view = rawRequestEditorRef.current;
+    if (!view) return;
 
-    const selectedText = model.getValueInRange(selection);
-    editor.executeEdits('mark-invoker-target', [
-      {
-        range: selection,
-        text: `§${selectedText}§`,
-        forceMoveMarkers: true,
-      },
-    ]);
-    editor.focus();
-    updateRawRequest(editor.getValue());
+    const { from, to } = view.state.selection.main;
+    if (from === to) return; // no selection
+
+    const selectedText = view.state.sliceDoc(from, to);
+    view.dispatch({
+      changes: { from, to, insert: `§${selectedText}§` },
+    });
+    view.focus();
+    updateRawRequest(view.state.doc.toString());
   };
 
   return (

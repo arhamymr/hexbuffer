@@ -29,7 +29,7 @@ export default defineConfig({
         manualChunks(id) {
           if (id.includes("node_modules")) {
             if (id.includes("recharts")) return "vendor-recharts";
-            if (id.includes("monaco-editor") || id.includes("@monaco-editor")) return "vendor-monaco";
+            if (id.includes("@codemirror") || id.includes("codemirror") || id.includes("@lezer")) return "vendor-codemirror";
             if (id.includes("jspdf")) return "vendor-jspdf";
             if (id.includes("html2canvas")) return "vendor-html2canvas";
             if (id.includes("@tauri-apps")) return "vendor-tauri";

@@ -11,15 +11,17 @@ import {
 import '@xyflow/react/dist/style.css';
 import { cn } from '@/lib/utils';
 import { Kbd } from '@/components/ui/kbd';
-import type { AutomationNodeType } from '../types';
-import { useWorkflowCanvas } from '../hooks/use-workflow-canvas';
+import type { AutomationNodeType, AutomationNodeData } from '../types';
+import type { Node } from '@xyflow/react';
+import { useWorkflowCanvas, type WorkflowCanvasBridge } from '../hooks/use-workflow-canvas';
 import { CanvasContextMenu } from './canvas-context-menu';
 import { NodeContextMenu } from './node-context-menu';
-import { NodeConfigPanel } from './node-config-panel';
 
 interface WorkflowCanvasProps {
   addNodeRef?: React.MutableRefObject<((nodeType: AutomationNodeType) => void) | null>;
   persistRef?: React.MutableRefObject<(() => void) | null>;
+  onSelectedNodeChange?: (node: Node<AutomationNodeData> | null) => void;
+  bridgeRef?: React.MutableRefObject<WorkflowCanvasBridge | null>;
 }
 
 function EmptyState() {
@@ -56,8 +58,8 @@ function CanvasCommandHelp() {
   );
 }
 
-export function WorkflowCanvas({ addNodeRef, persistRef }: WorkflowCanvasProps) {
-  const canvas = useWorkflowCanvas(addNodeRef, persistRef);
+export function WorkflowCanvas({ addNodeRef, persistRef, onSelectedNodeChange, bridgeRef }: WorkflowCanvasProps) {
+  const canvas = useWorkflowCanvas(addNodeRef, persistRef, onSelectedNodeChange, bridgeRef);
   const [spacePressed, setSpacePressed] = React.useState(false);
 
   React.useEffect(() => {
@@ -144,30 +146,6 @@ export function WorkflowCanvas({ addNodeRef, persistRef }: WorkflowCanvasProps) 
       </ReactFlow>
 
       <CanvasCommandHelp />
-
-      {/* Floating node config panel */}
-      <div
-        className={cn(
-          'absolute right-0 top-0 z-50 h-full w-80 border-l bg-background shadow-lg transition-transform duration-200',
-          canvas.selectedNodeId ? 'translate-x-0' : 'translate-x-full'
-        )}
-      >
-        <NodeConfigPanel
-          node={canvas.selectedNode}
-          onClose={() => canvas.setSelectedNodeId(null)}
-          onUpdate={canvas.updateNodeData}
-          onDelete={canvas.deleteNode}
-          onRun={canvas.onRun}
-        />
-      </div>
-
-      {/* Backdrop when panel is open */}
-      {canvas.selectedNodeId && (
-        <div
-          className="absolute inset-0 z-40"
-          onClick={() => canvas.setSelectedNodeId(null)}
-        />
-      )}
 
       <CanvasContextMenu
         state={canvas.contextMenu}

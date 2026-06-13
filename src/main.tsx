@@ -10,6 +10,8 @@ import { Settings } from "@/pages/settings";
 import { ResponseDetailWindow } from "@/pages/live-traffic/components/log-table/response-detail-window";
 import { suppressResizeObserverLoopErrors } from "@/lib/resize-observer-errors";
 import AppRoutes from "./app";
+import "@fontsource-variable/geist";
+import "@fontsource-variable/geist-mono";
 import "@/styles/globals.css";
 
 suppressResizeObserverLoopErrors();

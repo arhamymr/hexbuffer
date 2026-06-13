@@ -76,7 +76,7 @@ export function DocumentsToolbar({
             type="single"
             value={markdownMode}
             onValueChange={(value) => {
-              if (value === 'markdown' || value === 'code' || value === 'preview') {
+              if (value === 'markdown' || value === 'code') {
                 onMarkdownModeChange(value);
               }
             }}
@@ -87,9 +87,6 @@ export function DocumentsToolbar({
             </ToggleGroupItem>
             <ToggleGroupItem value="code" size="sm" className="ext-[11px]">
               Code
-            </ToggleGroupItem>
-            <ToggleGroupItem value="preview" size="sm" className="text-[11px]">
-              Preview
             </ToggleGroupItem>
           </ToggleGroup>
         </div>

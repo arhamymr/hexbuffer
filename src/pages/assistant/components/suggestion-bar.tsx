@@ -6,7 +6,7 @@ export function SuggestionBar() {
   const controller = usePromptInputController();
 
   return (
-    <div className="px-3 pb-2">
+    <div className="relative pb-2 max-w-xl mx-auto">
       <Suggestions>
         {SUGGESTION_PROMPTS.map((s) => (
           <Suggestion
@@ -16,6 +16,8 @@ export function SuggestionBar() {
           />
         ))}
       </Suggestions>
+      <div className="pointer-events-none absolute right-0 top-0 bottom-2 w-8 bg-gradient-to-l from-background to-transparent" />
+      <div className="pointer-events-none absolute left-0 top-0 bottom-2 w-8 bg-gradient-to-r from-background to-transparent" />
     </div>
   );
 }

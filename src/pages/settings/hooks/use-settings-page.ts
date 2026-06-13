@@ -1,12 +1,21 @@
 import * as React from 'react';
 import { invoke } from '@tauri-apps/api/core';
-import { save } from '@tauri-apps/plugin-dialog';
+import { open, save } from '@tauri-apps/plugin-dialog';
 import { toast } from 'sonner';
 import { getCaCert, saveCaCert, trustInterceptCa } from '@/pages/live-traffic/api';
 import { useUpdater } from '@/hooks/use-updater';
 import { DEFAULT_PROXY_PORT, MAX_PROXY_PORT, MIN_PROXY_PORT, isValidProxyPort, useAppStore } from '@/stores/app';
 import { useBrowserAutomationStore } from '@/stores/browser-automation';
-import { AI_MODEL_OPTIONS_BY_PROVIDER, AI_PROVIDER_OPTIONS } from '../constants';
+import {
+  deleteYaraRulePack,
+  getThreatsSettings,
+  importYaraRulePack,
+  saveThreatsSettings,
+  updateYaraRulePack,
+  validateGhidraHeadless,
+} from '@/pages/threats/api';
+import type { GhidraValidationResult, ThreatSettings } from '@/pages/threats/types';
+import { AI_MODEL_OPTIONS_BY_PROVIDER } from '../constants';
 
 export interface AiSettings {
   provider: string;
@@ -43,6 +52,9 @@ const DEFAULT_AI_SETTINGS: AiSettings = {
   hasApiKey: false,
   allowThirdPartyAiSharing: false,
 };
+
+const LEGACY_AI_KEY_MIGRATION_ATTEMPTED_KEY = '0xbuffer-ai-keys-migration-attempted';
+
 export function useSettingsPage() {
   const [downloading, setDownloading] = React.useState(false);
   const [installingCa, setInstallingCa] = React.useState(false);
@@ -52,6 +64,9 @@ export function useSettingsPage() {
   const [providerKeyStatus, setProviderKeyStatus] = React.useState<AiKeyStatus>({});
   const [storageInfo, setStorageInfo] = React.useState<StorageInfo | null>(null);
   const [resettingLocalData, setResettingLocalData] = React.useState(false);
+  const [threatSettings, setThreatSettings] = React.useState<ThreatSettings>({ yaraRulePacks: [] });
+  const [threatSettingsSaving, setThreatSettingsSaving] = React.useState(false);
+  const [ghidraValidation, setGhidraValidation] = React.useState<GhidraValidationResult | null>(null);
   const proxyDefaultPort = useAppStore((state) => state.proxyDefaultPort);
   const proxyPort = useAppStore((state) => state.proxyPort);
   const proxyStatus = useAppStore((state) => state.proxyStatus);
@@ -80,8 +95,13 @@ export function useSettingsPage() {
   }, []);
 
   const migrateLegacyAiKeys = React.useCallback(async () => {
+    if (window.localStorage.getItem(LEGACY_AI_KEY_MIGRATION_ATTEMPTED_KEY) === 'true') {
+      return;
+    }
+
     const legacyValue = window.localStorage.getItem('0xbuffer-ai-keys');
     if (!legacyValue) {
+      window.localStorage.setItem(LEGACY_AI_KEY_MIGRATION_ATTEMPTED_KEY, 'true');
       return;
     }
 
@@ -95,10 +115,12 @@ export function useSettingsPage() {
       }
 
       window.localStorage.removeItem('0xbuffer-ai-keys');
+      window.localStorage.setItem(LEGACY_AI_KEY_MIGRATION_ATTEMPTED_KEY, 'true');
       if (entries.length > 0) {
         toast.success('Migrated saved AI API keys to the OS credential store');
       }
     } catch (error) {
+      window.localStorage.setItem(LEGACY_AI_KEY_MIGRATION_ATTEMPTED_KEY, 'true');
       console.error('Failed to migrate legacy AI API keys:', error);
       toast.error(`Failed to migrate saved AI API keys: ${error}`);
     }
@@ -128,6 +150,14 @@ export function useSettingsPage() {
       .then(setStorageInfo)
       .catch((error) => {
         console.error('Failed to load storage info:', error);
+      });
+  }, []);
+
+  React.useEffect(() => {
+    getThreatsSettings()
+      .then((settings) => setThreatSettings({ ...settings, yaraRulePacks: settings.yaraRulePacks ?? [] }))
+      .catch((error) => {
+        console.error('Failed to load Threats settings:', error);
       });
   }, []);
 
@@ -286,6 +316,93 @@ export function useSettingsPage() {
     }
   }, [proxyPortDraft, proxyStatus, saveProxyDefaultPort]);
 
+  const updateThreatSettings = React.useCallback((updates: Partial<ThreatSettings>) => {
+    setThreatSettings((current) => ({ ...current, ...updates }));
+    setGhidraValidation(null);
+  }, []);
+
+  const handleImportYaraRulePack = React.useCallback(async () => {
+    try {
+      const filePath = await open({
+        title: 'Import YARA Rule Pack',
+        multiple: false,
+        filters: [
+          {
+            name: 'YARA Rules',
+            extensions: ['yar', 'yara', 'txt'],
+          },
+        ],
+      });
+
+      if (!filePath || Array.isArray(filePath)) {
+        return;
+      }
+
+      const saved = await importYaraRulePack(filePath);
+      setThreatSettings({ ...saved, yaraRulePacks: saved.yaraRulePacks ?? [] });
+      toast.success('YARA rule pack imported');
+    } catch (error) {
+      console.error('Failed to import YARA rule pack:', error);
+      toast.error(`Failed to import YARA rule pack: ${error}`);
+    }
+  }, []);
+
+  const handleToggleYaraRulePack = React.useCallback(async (id: string, enabled: boolean) => {
+    try {
+      const saved = await updateYaraRulePack(id, enabled);
+      setThreatSettings({ ...saved, yaraRulePacks: saved.yaraRulePacks ?? [] });
+    } catch (error) {
+      console.error('Failed to update YARA rule pack:', error);
+      toast.error(`Failed to update YARA rule pack: ${error}`);
+    }
+  }, []);
+
+  const handleDeleteYaraRulePack = React.useCallback(async (id: string) => {
+    try {
+      const saved = await deleteYaraRulePack(id);
+      setThreatSettings({ ...saved, yaraRulePacks: saved.yaraRulePacks ?? [] });
+      toast.success('YARA rule pack deleted');
+    } catch (error) {
+      console.error('Failed to delete YARA rule pack:', error);
+      toast.error(`Failed to delete YARA rule pack: ${error}`);
+    }
+  }, []);
+
+  const handleSaveThreatSettings = React.useCallback(async () => {
+    try {
+      setThreatSettingsSaving(true);
+      const saved = await saveThreatsSettings(threatSettings);
+      setThreatSettings(saved);
+      toast.success('Threats settings saved');
+    } catch (error) {
+      console.error('Failed to save Threats settings:', error);
+      toast.error(`Failed to save Threats settings: ${error}`);
+    } finally {
+      setThreatSettingsSaving(false);
+    }
+  }, [threatSettings]);
+
+  const handleValidateGhidra = React.useCallback(async () => {
+    const path = threatSettings.ghidraHeadlessPath?.trim();
+    if (!path) {
+      toast.error('Enter an analyzeHeadless path first');
+      return;
+    }
+
+    try {
+      const result = await validateGhidraHeadless(path);
+      setGhidraValidation(result);
+      if (result.valid) {
+        toast.success(result.message);
+      } else {
+        toast.error(result.message);
+      }
+    } catch (error) {
+      console.error('Failed to validate Ghidra:', error);
+      toast.error(`Failed to validate Ghidra: ${error}`);
+    }
+  }, [threatSettings.ghidraHeadlessPath]);
+
   const handleResetProxyDefaultPort = React.useCallback(async () => {
     try {
       const activePort = await saveProxyDefaultPort(DEFAULT_PROXY_PORT);
@@ -315,16 +432,25 @@ export function useSettingsPage() {
     installingCa,
     handleDownloadCert,
     handleInstallMacCert,
+    handleImportYaraRulePack,
     handleClearAiApiKey,
+    handleDeleteYaraRulePack,
     handleResetLocalData,
     handleResetProxyDefaultPort,
     handleSaveProxyDefaultPort,
+    handleSaveThreatSettings,
     handleSaveAiSettings,
+    handleToggleYaraRulePack,
+    handleValidateGhidra,
     setProxyPortDraft,
     storageInfo,
+    threatSettings,
+    threatSettingsSaving,
+    ghidraValidation,
     providerKeyStatus,
     updateAiProvider,
     updateAiSettings,
+    updateThreatSettings,
     updateAvailable,
     updateChecking,
     updateDownloading,

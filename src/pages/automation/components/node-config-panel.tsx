@@ -2,6 +2,7 @@
 
 import { X, Trash2, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useAutomationStore } from '@/stores/automation';
 import {
   Tooltip,
   TooltipTrigger,
@@ -19,11 +20,11 @@ import type {
 import { NODE_TYPE_REGISTRY } from '../constants';
 import {
   TriggerConfigForm,
-  LiveTrafficQueuePanel,
-  LiveTrafficCapturedHostsPanel,
+  LiveTrafficPanel,
   ConditionConfigForm,
   ActionConfigForm,
 } from '../nodes/nodes-config';
+import { NodeDataFlow } from './node-data-flow';
 
 interface NodeConfigPanelProps {
   node: Node<AutomationNodeData> | null;
@@ -34,6 +35,8 @@ interface NodeConfigPanelProps {
 }
 
 export function NodeConfigPanel({ node, onClose, onUpdate, onDelete, onRun }: NodeConfigPanelProps) {
+  const runtime = useAutomationStore((s) => (node ? s.nodeRuntimeById[node.id] ?? null : null));
+
   if (!node) return null;
 
   const { data } = node;
@@ -108,17 +111,15 @@ export function NodeConfigPanel({ node, onClose, onUpdate, onDelete, onRun }: No
             Config
           </TabsTrigger>
           {isLiveTrafficTrigger && (
-            <TabsTrigger value="queue" className="text-[11px] h-6">
-              Queue
-            </TabsTrigger>
-          )}
-          {isLiveTrafficTrigger && (
-            <TabsTrigger value="captured" className="text-[11px] h-6">
-              Captured
+            <TabsTrigger value="traffic" className="text-[11px] h-6">
+              Traffic
             </TabsTrigger>
           )}
           <TabsTrigger value="properties" className="text-[11px] h-6">
             Properties
+          </TabsTrigger>
+          <TabsTrigger value="data-flow" className="text-[11px] h-6">
+            Data Flow
           </TabsTrigger>
         </TabsList>
 
@@ -133,7 +134,11 @@ export function NodeConfigPanel({ node, onClose, onUpdate, onDelete, onRun }: No
                 />
               )}
               {category === 'condition' && (
-                <ConditionConfigForm config={data.config as ConditionConfig} onChange={updateConfig} />
+                <ConditionConfigForm
+                  config={data.config as ConditionConfig}
+                  inputData={runtime?.inputData}
+                  onChange={updateConfig}
+                />
               )}
               {category === 'action' && (
                 <ActionConfigForm config={data.config as ActionConfig} type={data.nodeType} onChange={updateConfig} />
@@ -143,20 +148,10 @@ export function NodeConfigPanel({ node, onClose, onUpdate, onDelete, onRun }: No
         </TabsContent>
 
         {isLiveTrafficTrigger && (
-          <TabsContent value="queue" className="flex-1 min-h-0 mt-0 data-[state=inactive]:hidden">
+          <TabsContent value="traffic" className="flex-1 min-h-0 mt-0 data-[state=inactive]:hidden">
             <ScrollArea className="h-full">
               <div className="px-4 py-3">
-                <LiveTrafficQueuePanel nodeId={node.id} />
-              </div>
-            </ScrollArea>
-          </TabsContent>
-        )}
-
-        {isLiveTrafficTrigger && (
-          <TabsContent value="captured" className="flex-1 min-h-0 mt-0 data-[state=inactive]:hidden">
-            <ScrollArea className="h-full">
-              <div className="px-4 py-3">
-                <LiveTrafficCapturedHostsPanel nodeId={node.id} />
+                <LiveTrafficPanel nodeId={node.id} />
               </div>
             </ScrollArea>
           </TabsContent>
@@ -183,6 +178,14 @@ export function NodeConfigPanel({ node, onClose, onUpdate, onDelete, onRun }: No
                   x: {Math.round(node.position.x)}, y: {Math.round(node.position.y)}
                 </p>
               </div>
+            </div>
+          </ScrollArea>
+        </TabsContent>
+
+        <TabsContent value="data-flow" className="flex-1 min-h-0 mt-0 data-[state=inactive]:hidden">
+          <ScrollArea className="h-full">
+            <div className="px-4 py-3">
+              <NodeDataFlow nodeType={data.nodeType} runtime={runtime} />
             </div>
           </ScrollArea>
         </TabsContent>

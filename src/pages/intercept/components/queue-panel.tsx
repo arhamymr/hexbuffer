@@ -22,13 +22,11 @@ export function InterceptQueuePanel() {
     activeRequests,
     hasSelection,
     isBusy,
-    isRefreshing,
     selectedRequestId,
     removingIds,
     setSelectedRequestId,
     getRequestMeta,
     handleForward,
-    handleRefresh,
     handleInterceptResponse,
     handleDrop,
     handleDontCapture,
@@ -39,15 +37,12 @@ export function InterceptQueuePanel() {
     <div className="flex h-full flex-col">
       <div className="bg-muted flex h-10 items-center justify-between border-b px-3 py-2">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium">Intercept Queue</span>
+          <span className="text-xs font-medium">Intercept Queue</span>
         </div>
         <div className="flex items-center gap-2">
           <Button size="xs" onClick={handleForward} disabled={!hasSelection || isBusy}>
             {isBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
-            FORWARD
-          </Button>
-          <Button size="xs" variant="ghost" onClick={handleRefresh} disabled={isRefreshing}>
-            Refresh
+            Forward
           </Button>
         </div>
       </div>

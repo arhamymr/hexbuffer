@@ -70,7 +70,9 @@ pub(crate) fn write_ai_key_status(
     Ok(settings.provider_key_status)
 }
 
-pub(crate) fn normalized_ai_key_status(mut status: BTreeMap<String, bool>) -> BTreeMap<String, bool> {
+pub(crate) fn normalized_ai_key_status(
+    mut status: BTreeMap<String, bool>,
+) -> BTreeMap<String, bool> {
     for provider in AI_PROVIDERS {
         status.entry(provider.to_string()).or_insert(false);
     }

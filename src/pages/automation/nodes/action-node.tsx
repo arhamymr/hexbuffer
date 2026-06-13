@@ -41,6 +41,7 @@ import {
 import { getAutomationNodeCapability } from '../lib/node-capabilities';
 import { getAutomationNodeWarning } from '../lib/node-warnings';
 import { NodeCapabilityBadge } from './node-capability-badge';
+import { NodeCardMenu } from './node-card-menu';
 import { NodeRuntimeStatus, useNodeRuntimeStatus } from './node-runtime-status';
 import type { AutomationNodeData } from '../types';
 
@@ -85,7 +86,7 @@ function ActionNodeComponent({ id, data, selected }: NodeProps) {
             CATEGORY_BORDER.action,
             CATEGORY_BG.action,
             selected && 'ring-2 ring-ring ring-offset-2 ring-offset-background',
-            isExecuting && 'animate-pulse ring-2 ring-emerald-400 ring-offset-2 shadow-lg shadow-emerald-500/20',
+            isExecuting && 'border-red-500 animate-pulse ring-2 ring-red-500 ring-offset-2 shadow-lg shadow-red-500/25',
           )}
         >
       <Handle
@@ -113,6 +114,7 @@ function ActionNodeComponent({ id, data, selected }: NodeProps) {
         {!capability.supported && capability.reason && (
           <NodeCapabilityBadge reason={capability.reason} />
         )}
+        <NodeCardMenu nodeId={id} nodeLabel={nodeData.label} />
         <GripVertical className="size-3.5 shrink-0 text-muted-foreground/30 opacity-0 group-hover:opacity-100 transition-opacity" />
       </div>
 

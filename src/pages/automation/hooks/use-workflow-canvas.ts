@@ -17,6 +17,7 @@ import { useAutomationStore } from '@/stores/automation';
 import { TriggerNode } from '../nodes/trigger-node';
 import { ConditionNode } from '../nodes/condition-node';
 import { ActionNode } from '../nodes/action-node';
+import { addOpenNodeContextMenuListener } from '../nodes/node-card-menu';
 import { DeletableEdge } from '../components/deletable-edge';
 import { NODE_TYPE_REGISTRY, makeNodeId } from '../constants';
 import {
@@ -25,6 +26,7 @@ import {
   keepOneAutomationEdgePerHandle,
   normalizeAutomationEdges,
 } from '../lib/edges';
+import { deleteConnectedWires } from '../lib/node-capabilities';
 import type {
   AutomationNodeType,
   AutomationNodeData,
@@ -120,7 +122,18 @@ export function useWorkflowCanvas(
     const workflowId = workflowIdRef.current;
     if (!workflowId) return;
     persist();
-    runWorkflow(workflowId);
+    const manualTrigger = nodesRef.current.find((node) => {
+      const data = node.data as Partial<AutomationNodeData> | undefined;
+      return node.type === 'trigger:manual' || data?.nodeType === 'trigger:manual';
+    });
+    runWorkflow(workflowId, {
+      triggerType: 'trigger:manual',
+      triggerNodeId: manualTrigger?.id,
+      data: {
+        triggeredAt: new Date().toISOString(),
+        source: 'manual',
+      },
+    });
   }, [persist, runWorkflow]);
 
   // Auto-persist when switching tabs (component unmounts via key change).
@@ -201,16 +214,32 @@ export function useWorkflowCanvas(
     []
   );
 
+  React.useEffect(() => {
+    return addOpenNodeContextMenuListener(({ nodeId, nodeLabel, clientX, clientY }) => {
+      const rect = reactFlowWrapper.current?.getBoundingClientRect();
+      if (!rect) return;
+      const menuWidth = 176;
+      const menuHeight = 96;
+      const relativeX = clientX - rect.left;
+      const relativeY = clientY - rect.top;
+      setContextMenu(null);
+      setNodeContextMenu({
+        x: Math.min(Math.max(relativeX, 8), Math.max(rect.width - menuWidth - 8, 8)),
+        y: Math.min(Math.max(relativeY, 8), Math.max(rect.height - menuHeight - 8, 8)),
+        nodeId,
+        nodeLabel,
+      });
+    });
+  }, []);
+
   const closeNodeContextMenu = React.useCallback(() => {
     setNodeContextMenu(null);
   }, []);
 
-  const onNodeClick = React.useCallback(
-    (_event: React.MouseEvent, node: Node) => {
-      setSelectedNodeId(node.id);
-    },
-    []
-  );
+  const onNodeClick = React.useCallback(() => {
+    setContextMenu(null);
+    setNodeContextMenu(null);
+  }, []);
 
   const onPaneClick = React.useCallback(() => {
     setSelectedNodeId(null);
@@ -422,7 +451,7 @@ export function useWorkflowCanvas(
     if (!triggerNode) return;
     const triggerId = triggerNode.id;
     const nextNodes = nodesRef.current.filter((n) => n.id !== triggerId);
-    const nextEdges = edgesRef.current.filter((e) => e.source !== triggerId && e.target !== triggerId);
+    const nextEdges = deleteConnectedWires(triggerId, edgesRef.current);
     setNodes(nextNodes);
     setEdges(nextEdges);
     persist(nextNodes, nextEdges);
@@ -430,7 +459,7 @@ export function useWorkflowCanvas(
 
   const deleteNode = React.useCallback((nodeId: string) => {
     const nextNodes = nodesRef.current.filter((n) => n.id !== nodeId);
-    const nextEdges = edgesRef.current.filter((e) => e.source !== nodeId && e.target !== nodeId);
+    const nextEdges = deleteConnectedWires(nodeId, edgesRef.current);
     setNodes(nextNodes);
     setEdges(nextEdges);
     persist(nextNodes, nextEdges);

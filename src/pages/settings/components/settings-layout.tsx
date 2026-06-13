@@ -5,6 +5,7 @@ import { AiSettingsTab } from './ai-settings-tab';
 import { AutomationSettingsTab } from './automation-settings-tab';
 import { CaCertificateSettingsTab } from './ca-certificate-settings-tab';
 import { GeneralSettingsTab } from './general-settings-tab';
+import { ThreatsSettingsTab } from './threats-settings-tab';
 
 interface SettingsLayoutProps {
   settings: SettingsPageState;
@@ -33,6 +34,9 @@ export function SettingsLayout({ settings }: SettingsLayoutProps) {
             <TabsTrigger value="automation">
               Automation
             </TabsTrigger>
+            <TabsTrigger value="threats">
+              Threats
+            </TabsTrigger>
             <TabsTrigger value="about">
               About
             </TabsTrigger>
@@ -53,6 +57,10 @@ export function SettingsLayout({ settings }: SettingsLayoutProps) {
 
         <TabsContent value="automation" className="flex-1 overflow-auto px-6 py-4 space-y-4">
           <AutomationSettingsTab />
+        </TabsContent>
+
+        <TabsContent value="threats" className="flex-1 overflow-auto px-6 py-4 space-y-4">
+          <ThreatsSettingsTab settings={settings} />
         </TabsContent>
 
         <TabsContent value="ca-cert" className="flex-1 overflow-auto px-6 py-4 space-y-4">

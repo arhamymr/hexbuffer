@@ -1,13 +1,17 @@
 import type { AutomationRuntimeSettings, ExecutionLog, LiveTrafficHostInsight } from './types';
 
 export const AUTOMATION_LOG_LIMIT = 500;
+export const AUTOMATION_LOG_UI_LIMIT = 50;
 export const LIVE_TRAFFIC_HOST_INSIGHT_LIMIT = 200;
+export const LIVE_TRAFFIC_QUEUED_HOST_UI_LIMIT = 30;
+export const LIVE_TRAFFIC_CAPTURED_HOST_UI_LIMIT = 60;
 
 export const DEFAULT_AUTOMATION_SETTINGS: AutomationRuntimeSettings = {
   liveTrafficConcurrency: 1,
   filteredTriggerQueueCap: 100,
   catchAllTriggerQueueCap: 25,
   recentMatchDedupeTtlMs: 2000,
+  allowRunScriptActions: false,
 };
 
 export const AUTOMATION_SETTINGS_LIMITS = {
@@ -51,6 +55,7 @@ export function normalizeAutomationSettings(
       AUTOMATION_SETTINGS_LIMITS.recentMatchDedupeTtlMs.max,
       DEFAULT_AUTOMATION_SETTINGS.recentMatchDedupeTtlMs
     ),
+    allowRunScriptActions: Boolean(settings?.allowRunScriptActions),
   };
 }
 
@@ -71,10 +76,25 @@ export function capExecutionLogs(logs: ExecutionLog[]): ExecutionLog[] {
     .sort((a, b) => a.timestamp.localeCompare(b.timestamp));
 }
 
-export function capLiveTrafficHostInsights(insights: LiveTrafficHostInsight[]): LiveTrafficHostInsight[] {
-  return insights.length > LIVE_TRAFFIC_HOST_INSIGHT_LIMIT
-    ? insights.slice(-LIVE_TRAFFIC_HOST_INSIGHT_LIMIT)
-    : insights;
+export function capLiveTrafficHostInsights(
+  insights: LiveTrafficHostInsight[],
+  perTriggerLimit = LIVE_TRAFFIC_HOST_INSIGHT_LIMIT
+): LiveTrafficHostInsight[] {
+  const buckets = new Map<string, LiveTrafficHostInsight[]>();
+  for (const insight of insights) {
+    const existing = buckets.get(insight.triggerNodeId) ?? [];
+    existing.push(insight);
+    buckets.set(insight.triggerNodeId, existing);
+  }
+
+  return Array.from(buckets.values())
+    .flatMap((triggerInsights) =>
+      triggerInsights.length > perTriggerLimit
+        ? triggerInsights.slice(-perTriggerLimit)
+        : triggerInsights
+    )
+    .slice(-LIVE_TRAFFIC_HOST_INSIGHT_LIMIT)
+    .sort((a, b) => a.matchedAt.localeCompare(b.matchedAt));
 }
 
 export function addRunningWorkflowId(ids: string[], workflowId: string): string[] {

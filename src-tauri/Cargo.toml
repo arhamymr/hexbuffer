@@ -55,8 +55,13 @@ base64 = "0.22"
 regex = "1"
 sha1 = "0.10"
 sha2 = "0.10"
+md-5 = "0.10"
 rand = "0.8"
 hostname = "0.4"
+goblin = "0.9"
+object = "0.36"
+wait-timeout = "0.2"
+yara-x = { version = "1.17", default-features = false }
 
 [dev-dependencies]
 proptest = "1.5"

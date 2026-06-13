@@ -8,8 +8,11 @@ import { AppLayout } from "@/components/layout";
 import { Toaster } from "@/components/ui/sonner";
 import { Settings } from "@/pages/settings";
 import { ResponseDetailWindow } from "@/pages/live-traffic/components/log-table/response-detail-window";
+import { suppressResizeObserverLoopErrors } from "@/lib/resize-observer-errors";
 import AppRoutes from "./app";
 import "@/styles/globals.css";
+
+suppressResizeObserverLoopErrors();
 
 function isSettingsWindow(): boolean {
   try {

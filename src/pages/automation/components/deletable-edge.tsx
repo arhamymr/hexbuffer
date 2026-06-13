@@ -19,7 +19,6 @@ export function DeletableEdge({
   targetPosition,
   markerEnd,
   style,
-  selected,
 }: EdgeProps) {
   const [edgePath, labelX, labelY] = getSmoothStepPath({
     sourceX,
@@ -42,11 +41,10 @@ export function DeletableEdge({
       <EdgeLabelRenderer>
         <button
           type="button"
-          className="nodrag nopan absolute flex size-5 items-center justify-center rounded-full border border-destructive/30 bg-background text-destructive shadow-sm transition hover:border-destructive hover:bg-destructive hover:text-destructive-foreground"
+          className="nodrag nopan absolute z-10 flex size-5 items-center justify-center rounded-full border border-destructive/40 bg-background text-destructive shadow hover:border-destructive hover:bg-destructive hover:text-destructive-foreground"
           style={{
             transform: `translate(-50%, -50%) translate(${labelX}px, ${labelY}px)`,
             pointerEvents: 'all',
-            opacity: selected ? 1 : 0.82,
           }}
           title="Delete wire"
           aria-label="Delete wire"

@@ -63,6 +63,7 @@ export interface TriggerConfig {
 
 export interface ConditionConfig {
   conditionType: ConditionType;
+  dataPath?: string;
   operator: 'equals' | 'not_equals' | 'contains' | 'gt' | 'lt' | 'regex';
   value: string;
 }

@@ -34,6 +34,17 @@ function getDefaultFileId(document: ReconDocument | null | undefined): EditorFil
   return firstSection ? `custom:${firstSection.key}` : 'api';
 }
 
+const MAX_CUSTOM_SECTION_HISTORY = 100;
+
+interface CustomSectionHistory {
+  past: string[];
+  future: string[];
+}
+
+function getEmptySectionHistory(): CustomSectionHistory {
+  return { past: [], future: [] };
+}
+
 export function useDocumentsPage() {
   const {
     documents,
@@ -71,6 +82,9 @@ export function useDocumentsPage() {
   const [isTemplateDialogOpen, setIsTemplateDialogOpen] = React.useState(false);
   const [apiEditError, setApiEditError] = React.useState<string | null>(null);
   const [exporting, setExporting] = React.useState(false);
+  const [customSectionHistory, setCustomSectionHistory] = React.useState<
+    Record<string, CustomSectionHistory>
+  >({});
 
   React.useEffect(() => {
     const firstEntryId = activeDocument?.apiEntries[0]?.id ?? null;
@@ -133,6 +147,33 @@ export function useDocumentsPage() {
     [updateActiveDocument]
   );
 
+  const applyCustomSectionContent = React.useCallback(
+    (sectionKey: string, content: string) => {
+      updateActiveDocument((document) => {
+        let didUpdate = false;
+        const customSections = document.customSections.map((section) => {
+          if (section.key !== sectionKey || section.content === content) {
+            return section;
+          }
+
+          didUpdate = true;
+          return { ...section, content };
+        });
+
+        if (!didUpdate) {
+          return document;
+        }
+
+        return {
+          ...document,
+          customSections,
+          updatedAt: new Date().toISOString(),
+        };
+      });
+    },
+    [updateActiveDocument]
+  );
+
   const addCustomSection = React.useCallback(
     (title: string, description: string, placeholder: string) => {
       if (!activeDocumentId) return '';
@@ -163,6 +204,10 @@ export function useDocumentsPage() {
       if (activeFileId === `custom:${sectionKey}`) {
         setActiveFileId(fallbackFileId);
       }
+      setCustomSectionHistory((historyBySection) => {
+        const { [sectionKey]: _removedHistory, ...nextHistoryBySection } = historyBySection;
+        return nextHistoryBySection;
+      });
     },
     [activeDocument, activeDocumentId, activeFileId]
   );
@@ -177,13 +222,46 @@ export function useDocumentsPage() {
 
   const updateCustomSection = React.useCallback(
     (sectionKey: string, content: string) => {
-      updateActiveDocument((document) => ({
-        ...document,
-        customSections: document.customSections.map((s) =>
-          s.key === sectionKey ? { ...s, content } : s
-        ),
-        updatedAt: new Date().toISOString(),
-      }));
+      let previousContent: string | null = null;
+
+      updateActiveDocument((document) => {
+        let didUpdate = false;
+        const customSections = document.customSections.map((section) => {
+          if (section.key !== sectionKey || section.content === content) {
+            return section;
+          }
+
+          didUpdate = true;
+          previousContent = section.content;
+          return { ...section, content };
+        });
+
+        if (!didUpdate) {
+          return document;
+        }
+
+        return {
+          ...document,
+          customSections,
+          updatedAt: new Date().toISOString(),
+        };
+      });
+
+      if (previousContent !== null) {
+        const previousContentForHistory = previousContent;
+        setCustomSectionHistory((historyBySection) => {
+          const sectionHistory = historyBySection[sectionKey] ?? getEmptySectionHistory();
+          return {
+            ...historyBySection,
+            [sectionKey]: {
+              past: [...sectionHistory.past, previousContentForHistory].slice(
+                -MAX_CUSTOM_SECTION_HISTORY
+              ),
+              future: [],
+            },
+          };
+        });
+      }
     },
     [updateActiveDocument]
   );
@@ -463,6 +541,52 @@ export function useDocumentsPage() {
         activeFileId.replace('custom:', '')
       ) ?? null
     : null;
+  const activeCustomSectionHistory = activeCustomSection
+    ? customSectionHistory[activeCustomSection.key] ?? getEmptySectionHistory()
+    : getEmptySectionHistory();
+  const canUndoCustomSection = activeCustomSectionHistory.past.length > 0;
+  const canRedoCustomSection = activeCustomSectionHistory.future.length > 0;
+  const undoCustomSectionChange = React.useCallback(() => {
+    if (!activeCustomSection) {
+      return;
+    }
+
+    const previousContent =
+      activeCustomSectionHistory.past[activeCustomSectionHistory.past.length - 1];
+    if (previousContent === undefined) {
+      return;
+    }
+
+    setCustomSectionHistory((historyBySection) => ({
+      ...historyBySection,
+      [activeCustomSection.key]: {
+        past: activeCustomSectionHistory.past.slice(0, -1),
+        future: [activeCustomSection.content, ...activeCustomSectionHistory.future],
+      },
+    }));
+    applyCustomSectionContent(activeCustomSection.key, previousContent);
+  }, [activeCustomSection, activeCustomSectionHistory, applyCustomSectionContent]);
+  const redoCustomSectionChange = React.useCallback(() => {
+    if (!activeCustomSection) {
+      return;
+    }
+
+    const nextContent = activeCustomSectionHistory.future[0];
+    if (nextContent === undefined) {
+      return;
+    }
+
+    setCustomSectionHistory((historyBySection) => ({
+      ...historyBySection,
+      [activeCustomSection.key]: {
+        past: [...activeCustomSectionHistory.past, activeCustomSection.content].slice(
+          -MAX_CUSTOM_SECTION_HISTORY
+        ),
+        future: activeCustomSectionHistory.future.slice(1),
+      },
+    }));
+    applyCustomSectionContent(activeCustomSection.key, nextContent);
+  }, [activeCustomSection, activeCustomSectionHistory, applyCustomSectionContent]);
   const activeLabel = getFileLabel(
     activeFileId,
     activeApiEntry,
@@ -494,6 +618,10 @@ export function useDocumentsPage() {
     removeCustomSection,
     reorderCustomSections,
     updateCustomSection,
+    undoCustomSectionChange,
+    redoCustomSectionChange,
+    canUndoCustomSection,
+    canRedoCustomSection,
     deleteApiEntry,
     addApiEntry,
     updateApiEntryRaw,

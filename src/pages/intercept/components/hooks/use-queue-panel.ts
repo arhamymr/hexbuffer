@@ -10,14 +10,12 @@ export function useQueuePanel() {
   const activeTabId = useInterceptStore((state) => state.activeTabId);
   const selectedRequestId = useInterceptStore((state) => state.selectedRequestId);
   const isBusy = useInterceptStore((state) => state.isBusy);
-  const isRefreshing = useInterceptStore((state) => state.isRefreshing);
   const setSelectedRequestId = useInterceptStore((state) => state.setSelectedRequestId);
   const forwardSelectedRequest = useInterceptStore((state) => state.forwardSelectedRequest);
   const forwardRequestAndInterceptResponse = useInterceptStore(
     (state) => state.forwardRequestAndInterceptResponse
   );
   const dropRequest = useInterceptStore((state) => state.dropRequest);
-  const refresh = useInterceptStore((state) => state.refresh);
   const addCaptureHost = useInterceptStore((state) => state.addCaptureHost);
   const removeCaptureHostAndForward = useInterceptStore((state) => state.removeCaptureHostAndForward);
 
@@ -39,10 +37,6 @@ export function useQueuePanel() {
   const handleForward = React.useCallback(() => {
     void forwardSelectedRequest();
   }, [forwardSelectedRequest]);
-
-  const handleRefresh = React.useCallback(() => {
-    void refresh();
-  }, [refresh]);
 
   const handleInterceptResponse = React.useCallback(
     (request: PausedRequest) => {
@@ -80,13 +74,11 @@ export function useQueuePanel() {
     activeRequests,
     hasSelection,
     isBusy,
-    isRefreshing,
     selectedRequestId,
     removingIds,
     setSelectedRequestId,
     getRequestMeta,
     handleForward,
-    handleRefresh,
     handleInterceptResponse,
     handleDrop,
     handleDontCapture,

@@ -313,6 +313,18 @@
   --xy-minimap-node-background-color: var(--muted);
 }
 
+.automation-flow .react-flow__pane {
+  cursor: default;
+}
+
+.automation-flow-pan-mode .automation-flow .react-flow__pane {
+  cursor: grab;
+}
+
+.automation-flow-pan-mode .automation-flow .react-flow__pane:active {
+  cursor: grabbing;
+}
+
 .automation-flow .react-flow__edge-path {
   stroke: var(--primary);
   stroke-width: 1;

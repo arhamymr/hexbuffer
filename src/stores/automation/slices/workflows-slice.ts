@@ -110,6 +110,9 @@ export const createWorkflowsSlice = (
       const nodeRuntimeById = Object.fromEntries(
         Object.entries(state.nodeRuntimeById).filter(([, runtime]) => runtime.workflowId !== id)
       );
+      const workflowRuntimeById = Object.fromEntries(
+        Object.entries(state.workflowRuntimeById).filter(([workflowId]) => workflowId !== id)
+      );
       const liveTrafficQueueStatsByTriggerId = Object.fromEntries(
         Object.entries(state.liveTrafficQueueStatsByTriggerId).filter(
           ([triggerNodeId]) => !deletedNodeIds.has(triggerNodeId)
@@ -129,8 +132,22 @@ export const createWorkflowsSlice = (
             ? null
             : state.executingNodeId,
         nodeRuntimeById,
+        workflowRuntimeById,
+        executionLogsByWorkflowId: Object.fromEntries(
+          Object.entries(state.executionLogsByWorkflowId).filter(([workflowId]) => workflowId !== id)
+        ),
         liveTrafficHostInsights: state.liveTrafficHostInsights.filter((item) => item.workflowId !== id),
         liveTrafficCapturedHosts: state.liveTrafficCapturedHosts.filter((item) => item.workflowId !== id),
+        liveTrafficPreviewByTriggerId: Object.fromEntries(
+          Object.entries(state.liveTrafficPreviewByTriggerId).filter(
+            ([triggerNodeId]) => !deletedNodeIds.has(triggerNodeId)
+          )
+        ),
+        liveTrafficCapturedPreviewByTriggerId: Object.fromEntries(
+          Object.entries(state.liveTrafficCapturedPreviewByTriggerId).filter(
+            ([triggerNodeId]) => !deletedNodeIds.has(triggerNodeId)
+          )
+        ),
         liveTrafficQueueStatsByTriggerId,
         isDirty: false,
       };
@@ -155,6 +172,9 @@ export const createWorkflowsSlice = (
       const nodeRuntimeById = Object.fromEntries(
         Object.entries(state.nodeRuntimeById).filter(([, runtime]) => !idSet.has(runtime.workflowId))
       );
+      const workflowRuntimeById = Object.fromEntries(
+        Object.entries(state.workflowRuntimeById).filter(([workflowId]) => !idSet.has(workflowId))
+      );
       const liveTrafficQueueStatsByTriggerId = Object.fromEntries(
         Object.entries(state.liveTrafficQueueStatsByTriggerId).filter(
           ([triggerNodeId]) => !deletedNodeIds.has(triggerNodeId)
@@ -174,8 +194,22 @@ export const createWorkflowsSlice = (
             ? null
             : state.executingNodeId,
         nodeRuntimeById,
+        workflowRuntimeById,
+        executionLogsByWorkflowId: Object.fromEntries(
+          Object.entries(state.executionLogsByWorkflowId).filter(([workflowId]) => !idSet.has(workflowId))
+        ),
         liveTrafficHostInsights: state.liveTrafficHostInsights.filter((item) => !idSet.has(item.workflowId)),
         liveTrafficCapturedHosts: state.liveTrafficCapturedHosts.filter((item) => !idSet.has(item.workflowId)),
+        liveTrafficPreviewByTriggerId: Object.fromEntries(
+          Object.entries(state.liveTrafficPreviewByTriggerId).filter(
+            ([triggerNodeId]) => !deletedNodeIds.has(triggerNodeId)
+          )
+        ),
+        liveTrafficCapturedPreviewByTriggerId: Object.fromEntries(
+          Object.entries(state.liveTrafficCapturedPreviewByTriggerId).filter(
+            ([triggerNodeId]) => !deletedNodeIds.has(triggerNodeId)
+          )
+        ),
         liveTrafficQueueStatsByTriggerId,
         isDirty: false,
       };

@@ -38,7 +38,10 @@ pub(crate) fn clear_ai_api_key_impl(
     write_ai_key_status(&app, provider, false)
 }
 
-pub(crate) fn save_ai_settings_impl(app: AppHandle, settings: AiSettings) -> Result<AiSettings, String> {
+pub(crate) fn save_ai_settings_impl(
+    app: AppHandle,
+    settings: AiSettings,
+) -> Result<AiSettings, String> {
     let mut settings = settings;
     // API keys are managed by the OS credential store.
     settings.api_key.clear();

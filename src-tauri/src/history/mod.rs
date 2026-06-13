@@ -13,6 +13,7 @@ use crate::{
         ProxyFilter, ProxyRecord, WebSocketConnectionRecord, WebSocketFilter,
         WebSocketMessageRecord,
     },
+    threats::types::{ThreatAnalysisResult, ThreatAnalysisRun, ThreatArtifacts, ThreatSample},
 };
 use serde::{Deserialize, Serialize};
 
@@ -150,6 +151,80 @@ impl HistoryBridge {
         self.db
             .insert_packet_capture(capture)
             .map_err(|e| e.to_string())
+    }
+
+    pub fn upsert_threat_sample(&self, sample: &ThreatSample) -> Result<(), String> {
+        self.db
+            .upsert_threat_sample(sample)
+            .map_err(|e| e.to_string())
+    }
+
+    pub fn list_threat_samples(&self) -> Result<Vec<ThreatSample>, String> {
+        self.db.list_threat_samples().map_err(|e| e.to_string())
+    }
+
+    pub fn get_threat_sample(&self, sample_id: &str) -> Result<Option<ThreatSample>, String> {
+        self.db
+            .get_threat_sample(sample_id)
+            .map_err(|e| e.to_string())
+    }
+
+    pub fn delete_threat_sample(&self, sample_id: &str) -> Result<usize, String> {
+        self.db
+            .delete_threat_sample(sample_id)
+            .map_err(|e| e.to_string())
+    }
+
+    pub fn insert_threat_analysis_run(&self, run: &ThreatAnalysisRun) -> Result<(), String> {
+        self.db
+            .insert_threat_analysis_run(run)
+            .map_err(|e| e.to_string())
+    }
+
+    pub fn update_threat_analysis_run(&self, run: &ThreatAnalysisRun) -> Result<(), String> {
+        self.db
+            .update_threat_analysis_run(run)
+            .map_err(|e| e.to_string())
+    }
+
+    pub fn upsert_threat_artifacts(
+        &self,
+        sample_id: &str,
+        artifacts: &ThreatArtifacts,
+        updated_at: &str,
+    ) -> Result<(), String> {
+        self.db
+            .upsert_threat_artifacts(sample_id, artifacts, updated_at)
+            .map_err(|e| e.to_string())
+    }
+
+    pub fn get_threat_analysis(
+        &self,
+        sample_id: &str,
+    ) -> Result<Option<ThreatAnalysisResult>, String> {
+        let Some(sample) = self
+            .db
+            .get_threat_sample(sample_id)
+            .map_err(|e| e.to_string())?
+        else {
+            return Ok(None);
+        };
+
+        let latest_run = self
+            .db
+            .get_latest_threat_analysis_run(sample_id)
+            .map_err(|e| e.to_string())?;
+        let artifacts = self
+            .db
+            .get_threat_artifacts(sample_id)
+            .map_err(|e| e.to_string())?
+            .unwrap_or_default();
+
+        Ok(Some(ThreatAnalysisResult {
+            sample,
+            latest_run,
+            artifacts,
+        }))
     }
 
     pub fn finish_packet_capture(&self, capture_id: &str, ended_at: &str) -> Result<(), String> {
@@ -496,7 +571,9 @@ impl HistoryBridge {
     // ── Chat Sessions ──────────────────────────────────────────────
 
     pub fn create_chat_session(&self, title: &str) -> Result<ChatSessionRecord, String> {
-        self.db.create_chat_session(title).map_err(|e| e.to_string())
+        self.db
+            .create_chat_session(title)
+            .map_err(|e| e.to_string())
     }
 
     pub fn list_chat_sessions(&self) -> Result<Vec<ChatSessionRecord>, String> {
@@ -504,7 +581,9 @@ impl HistoryBridge {
     }
 
     pub fn rename_chat_session(&self, id: &str, title: &str) -> Result<(), String> {
-        self.db.rename_chat_session(id, title).map_err(|e| e.to_string())
+        self.db
+            .rename_chat_session(id, title)
+            .map_err(|e| e.to_string())
     }
 
     pub fn delete_chat_session(&self, id: &str) -> Result<(), String> {
@@ -512,7 +591,9 @@ impl HistoryBridge {
     }
 
     pub fn get_chat_messages(&self, session_id: &str) -> Result<Vec<ChatMessageRecord>, String> {
-        self.db.get_chat_messages(session_id).map_err(|e| e.to_string())
+        self.db
+            .get_chat_messages(session_id)
+            .map_err(|e| e.to_string())
     }
 
     pub fn save_chat_messages(

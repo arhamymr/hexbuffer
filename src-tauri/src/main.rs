@@ -1,12 +1,13 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use std::sync::Mutex;
 use std::sync::Arc;
+use std::sync::Mutex;
 use tauri::Manager;
+use zeroxbuffer::commands::browser_panel::BrowserTabManager;
 use zeroxbuffer::commands::intruder::IntruderState;
 use zeroxbuffer::commands::repeater::WsRepeaterState;
-use zeroxbuffer::commands::browser_panel::BrowserTabManager;
+use zeroxbuffer::commands::threats::ThreatAnalysisState;
 use zeroxbuffer::{
     AiBrowserState, BrowserProcessState, CollaboratorPollingState, HistoryBridge,
     PacketCaptureState, PortScanState, ProxyState, SqliScanState,
@@ -49,7 +50,9 @@ fn main() {
             app.manage(AiBrowserState::default());
             app.manage(SqliScanState::new());
             app.manage(WsRepeaterState::default());
+            app.manage(ThreatAnalysisState::default());
             app.manage(CollaboratorPollingState::default());
+            app.manage(zeroxbuffer::automation::AutomationRuntimeState::default());
             app.manage(zeroxbuffer::commands::inspector::InspectorCdpState::default());
             app.manage(Arc::new(BrowserTabManager::new(app.handle().clone())));
             app.manage(history);
@@ -80,6 +83,15 @@ fn main() {
             zeroxbuffer::commands::proxy::start_proxy,
             zeroxbuffer::commands::proxy::stop_proxy,
             zeroxbuffer::commands::proxy::get_proxy_status,
+            zeroxbuffer::automation::automation_sync_workflows,
+            zeroxbuffer::automation::automation_update_settings,
+            zeroxbuffer::automation::automation_run_workflow,
+            zeroxbuffer::automation::automation_abort_workflow,
+            zeroxbuffer::automation::automation_pause_workflow,
+            zeroxbuffer::automation::automation_resume_workflow,
+            zeroxbuffer::automation::automation_clear_logs,
+            zeroxbuffer::automation::automation_clear_host_insights,
+            zeroxbuffer::automation::automation_ack_host_insight_batch,
             zeroxbuffer::commands::intercept::get_intercept_status,
             zeroxbuffer::commands::intercept::set_intercept_enabled,
             zeroxbuffer::commands::intercept::set_intercept_scope,
@@ -190,6 +202,18 @@ fn main() {
             zeroxbuffer::commands::chat_sessions::save_chat_messages,
             zeroxbuffer::commands::terminal::get_default_shell,
             zeroxbuffer::commands::terminal::get_home_directory,
+            zeroxbuffer::commands::threats::get_threats_settings,
+            zeroxbuffer::commands::threats::save_threats_settings,
+            zeroxbuffer::commands::threats::validate_ghidra_headless,
+            zeroxbuffer::commands::threats::import_yara_rule_pack,
+            zeroxbuffer::commands::threats::update_yara_rule_pack,
+            zeroxbuffer::commands::threats::delete_yara_rule_pack,
+            zeroxbuffer::commands::threats::import_threat_sample,
+            zeroxbuffer::commands::threats::start_threat_analysis,
+            zeroxbuffer::commands::threats::get_threat_analysis,
+            zeroxbuffer::commands::threats::list_threat_samples,
+            zeroxbuffer::commands::threats::delete_threat_sample,
+            zeroxbuffer::commands::threats::cancel_threat_analysis,
             // Browser panel (embedded webview)
             zeroxbuffer::commands::browser_panel::browser_tab_create,
             zeroxbuffer::commands::browser_panel::browser_tab_navigate,
@@ -332,9 +356,7 @@ fn show_main_window(app: tauri::AppHandle) -> Result<(), String> {
 /// in tao 0.35.2 on macOS (tao/src/platform_impl/macos/window.rs:936).
 #[tauri::command]
 fn safe_start_dragging(window: tauri::Window) -> Result<(), String> {
-    std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-        window.start_dragging()
-    }))
-    .map_err(|_| "drag failed".to_string())?
-    .map_err(|e| e.to_string())
+    std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| window.start_dragging()))
+        .map_err(|_| "drag failed".to_string())?
+        .map_err(|e| e.to_string())
 }

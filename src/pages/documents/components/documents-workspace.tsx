@@ -3,7 +3,12 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
 } from '@/components/ui/resizable';
-import { type ReconDocument, type CustomSection, type SavedApiEntry } from '../types';
+import {
+  type CustomSection,
+  type MarkdownEditorMode,
+  type ReconDocument,
+  type SavedApiEntry,
+} from '../types';
 import { type RepeaterResponse } from '@/pages/repeater/types';
 import { DocumentsEditorPane } from './documents-editor-pane';
 import { DocumentsExplorer } from './documents-explorer';
@@ -22,7 +27,7 @@ interface DocumentsWorkspaceProps {
   isFetchingApi: boolean;
   apiFetchError: string | null;
   apiEditError: string | null;
-  markdownMode: 'edit' | 'preview';
+  markdownMode: MarkdownEditorMode;
   onApiFolderOpenChange: (isOpen: boolean) => void;
   onOpenFile: (fileId: EditorFileId) => void;
   onOpenApiEntry: (entryId: string) => void;

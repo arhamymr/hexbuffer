@@ -86,8 +86,8 @@ fn run_ai_chat_engine(
     // Write context to a temp file so the sidecar reads it via env var
     // instead of stdin, avoiding broken-pipe races when the sidecar
     // crashes during startup.
-    let context_file = temp_context_file()
-        .map_err(|e| format!("Failed to create context temp file: {}", e))?;
+    let context_file =
+        temp_context_file().map_err(|e| format!("Failed to create context temp file: {}", e))?;
     std::fs::write(&context_file, &context_json)
         .map_err(|e| format!("Failed to write context temp file: {}", e))?;
 
@@ -108,9 +108,7 @@ fn run_ai_chat_engine(
         .env("0XBUFFER_AI_MODEL", settings.model.trim())
         .env(api_key_env_name(&settings.provider)?, api_key.trim());
     let mut command: Command = sidecar_command.into();
-    command
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped());
+    command.stdout(Stdio::piped()).stderr(Stdio::piped());
 
     let output = command
         .spawn()
@@ -145,11 +143,14 @@ fn run_ai_chat_engine(
                 if let Some(value) = message.model {
                     model = value;
                 }
-                let _ = app.emit("ai-chat:started", serde_json::json!({
-                    "provider": &provider,
-                    "model": &model,
-                    "createdAt": message.created_at.unwrap_or_default(),
-                }));
+                let _ = app.emit(
+                    "ai-chat:started",
+                    serde_json::json!({
+                        "provider": &provider,
+                        "model": &model,
+                        "createdAt": message.created_at.unwrap_or_default(),
+                    }),
+                );
             }
             "chat_delta" => {
                 if let Some(delta) = &message.delta {
@@ -167,12 +168,15 @@ fn run_ai_chat_engine(
                 if let Some(value) = message.content {
                     content = value;
                 }
-                let _ = app.emit("ai-chat:finished", serde_json::json!({
-                    "provider": &provider,
-                    "model": &model,
-                    "contentLength": content.len(),
-                    "createdAt": message.created_at.unwrap_or_default(),
-                }));
+                let _ = app.emit(
+                    "ai-chat:finished",
+                    serde_json::json!({
+                        "provider": &provider,
+                        "model": &model,
+                        "contentLength": content.len(),
+                        "createdAt": message.created_at.unwrap_or_default(),
+                    }),
+                );
             }
             "chat_failed" => {
                 failed = Some(
@@ -181,19 +185,27 @@ fn run_ai_chat_engine(
                         .clone()
                         .unwrap_or_else(|| "AI chat failed".to_string()),
                 );
-                let _ = app.emit("ai-chat:failed", serde_json::json!({
-                    "error": failed.as_ref().unwrap(),
-                    "createdAt": message.created_at.unwrap_or_default(),
-                }));
+                let _ = app.emit(
+                    "ai-chat:failed",
+                    serde_json::json!({
+                        "error": failed.as_ref().unwrap(),
+                        "createdAt": message.created_at.unwrap_or_default(),
+                    }),
+                );
             }
             "chat_action" => {
-                if let (Some(action), Some(payload)) = (message.action.clone(), message.payload.clone()) {
+                if let (Some(action), Some(payload)) =
+                    (message.action.clone(), message.payload.clone())
+                {
                     let created_at = message.created_at.unwrap_or_default();
                     // Emit a single generic event so the frontend tracks this tool call.
-                    let _ = app.emit("ai-chat-action", serde_json::json!({
-                        "action": &action,
-                        "payload": &payload,
-                    }));
+                    let _ = app.emit(
+                        "ai-chat-action",
+                        serde_json::json!({
+                            "action": &action,
+                            "payload": &payload,
+                        }),
+                    );
                     // For human selection requests, also emit a dedicated event so the
                     // chat UI can show an interactive selection card.
                     if action == "request_human_selection" {
@@ -288,9 +300,7 @@ fn execute_chat_action(_app: &AppHandle, action: &str, payload: &Value) -> Strin
                 None => format!("Added {} host(s) to scope", hosts),
             }
         }
-        "write_document" => {
-            "Document content saved".to_string()
-        }
+        "write_document" => "Document content saved".to_string(),
         "url_extracted" => {
             let url = payload
                 .get("url")
@@ -299,10 +309,7 @@ fn execute_chat_action(_app: &AppHandle, action: &str, payload: &Value) -> Strin
             format!("Extracted info from: {}", url)
         }
         "start_proxy" => {
-            let port = payload
-                .get("port")
-                .and_then(|v| v.as_u64())
-                .unwrap_or(8888) as u16;
+            let port = payload.get("port").and_then(|v| v.as_u64()).unwrap_or(8888) as u16;
             let tls_port = payload
                 .get("tlsPort")
                 .and_then(|v| v.as_u64())
@@ -312,7 +319,10 @@ fn execute_chat_action(_app: &AppHandle, action: &str, payload: &Value) -> Strin
                 return format!("Proxy is already running on port {}", active_port);
             }
 
-            format!("Starting proxy on port {} (HTTP) / {} (HTTPS MITM)...", port, tls_port)
+            format!(
+                "Starting proxy on port {} (HTTP) / {} (HTTPS MITM)...",
+                port, tls_port
+            )
         }
         "trigger_scan" => {
             let url = payload
@@ -360,7 +370,10 @@ fn execute_chat_action(_app: &AppHandle, action: &str, payload: &Value) -> Strin
                 .and_then(|v| v.as_array())
                 .map(|a| a.len())
                 .unwrap_or(0);
-            format!("Presented selection \"{}\" with {} options", question, count)
+            format!(
+                "Presented selection \"{}\" with {} options",
+                question, count
+            )
         }
         other => format!("Unknown action: {}", other),
     }

@@ -101,6 +101,14 @@ function installedChromeExecutable() {
   }) || executableInPath('google-chrome') || executableInPath('google-chrome-stable') || executableInPath('chromium') || executableInPath('chromium-browser');
 }
 
+function chromeLaunchArgs() {
+  if (process.platform !== 'darwin') {
+    return [];
+  }
+
+  return ['--use-mock-keychain'];
+}
+
 export async function fetchExtract(url, config) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), config.timeoutMs || 30000);
@@ -264,6 +272,7 @@ export async function createPlaywrightRuntime(config) {
   const browser = await chromium.launch({
     headless: config.headless !== false,
     executablePath,
+    args: chromeLaunchArgs(),
   });
 
   try {

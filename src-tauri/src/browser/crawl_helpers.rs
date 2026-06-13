@@ -116,12 +116,7 @@ pub(crate) fn signal_child_process_group(
         Ok(())
     } else {
         let stderr = String::from_utf8_lossy(&output.stderr);
-        eprintln!(
-            "[ai-browser] kill {} {}: {}",
-            signal,
-            target,
-            stderr.trim()
-        );
+        eprintln!("[ai-browser] kill {} {}: {}", signal, target, stderr.trim());
         Err(format!(
             "Failed to signal AI browser sidecar with {}",
             signal

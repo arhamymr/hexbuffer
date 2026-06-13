@@ -33,17 +33,8 @@ pub(crate) fn set_ai_api_key(provider: &str, api_key: &str) -> Result<String, St
     keyring_entry(provider)?
         .set_password(api_key)
         .map_err(keyring_error)?;
-    let saved_key = keyring_entry(provider)?
-        .get_password()
-        .map_err(|error| {
-            format!(
-                "{} The key was written, but the app could not read it back. Unlock Keychain Access, delete the stale 0xbuffer.ai {} item if needed, then save the key again.",
-                keyring_error(error),
-                provider
-            )
-        })?;
-    cache_ai_api_key(provider, Some(saved_key.clone()))?;
-    Ok(saved_key)
+    cache_ai_api_key(provider, Some(api_key.to_string()))?;
+    Ok(api_key.to_string())
 }
 
 pub(crate) fn clear_ai_api_key(provider: &str) -> Result<(), String> {

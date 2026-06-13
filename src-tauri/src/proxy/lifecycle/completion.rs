@@ -62,6 +62,8 @@ pub fn save_and_emit(ctx: &Ctx, app_handle: &tauri::AppHandle) {
 
     websocket::save_and_emit_connection(ctx, app_handle);
 
+    crate::automation::ingest_proxy_record(app_handle, &txn);
+
     if let Err(e) = app_handle.emit("proxy-record", &txn) {
         println!("[completion] failed to emit event: {}", e);
     } else {
@@ -70,7 +72,6 @@ pub fn save_and_emit(ctx: &Ctx, app_handle: &tauri::AppHandle) {
             ctx.transaction_id
         );
     }
-
 }
 
 pub fn handle_response_body(

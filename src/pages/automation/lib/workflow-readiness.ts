@@ -29,6 +29,9 @@ function getNodeIssue(node: AutomationNode): string | null {
     if (triggerConfig.triggerType === 'trigger:scheduled' && isBlank(triggerConfig.schedule)) {
       return 'Scheduled trigger needs a cron schedule';
     }
+    if (triggerConfig.triggerType === 'trigger:live-traffic-captured' && isBlank(triggerConfig.host)) {
+      return 'Live Traffic Captured needs at least one host';
+    }
     return null;
   }
 
@@ -44,6 +47,13 @@ function getNodeIssue(node: AutomationNode): string | null {
     const actionConfig = config as ActionConfig;
     const params = actionConfig.params ?? {};
     switch (actionConfig.actionType) {
+      case 'action:send-to-repeater':
+        return isBlank(params.tabName) ? 'Send to Repeater action needs a tab name' : null;
+      case 'action:ai-analyze':
+        return isBlank(params.prompt) ? 'AI Analyze action needs a prompt' : null;
+      case 'action:create-finding':
+        if (isBlank(params.title)) return 'Create Finding action needs a title';
+        return isBlank(params.description) ? 'Create Finding action needs a description' : null;
       case 'action:send-webhook':
         return isBlank(params.url) ? 'Webhook action needs a URL' : null;
       case 'action:show-notification':
@@ -52,12 +62,21 @@ function getNodeIssue(node: AutomationNode): string | null {
         return isBlank(params.command) ? 'Run Script action needs a command' : null;
       case 'action:start-crawl':
         return isBlank(params.url) ? 'Start Crawl action needs a target URL' : null;
+      case 'action:stop-crawl':
+        return isBlank(params.crawlId) ? 'Stop Crawl action needs a crawl ID' : null;
       case 'action:port-scan':
         return isBlank(params.target) ? 'Port Scan action needs a target host' : null;
+      case 'action:export-json':
+        return isBlank(params.filename) ? 'Export JSON action needs a filename' : null;
+      case 'action:create-document':
+        return isBlank(params.title) ? 'Create Document action needs a title' : null;
       case 'action:add-to-report':
         return isBlank(params.content) ? 'Add to Report action needs content' : null;
       case 'action:add-to-document':
-        return isBlank(params.section) ? 'Add to Document action needs a section' : null;
+        if (isBlank(params.section)) return 'Add to Document action needs a section';
+        return isBlank(params.content) ? 'Add to Document action needs content' : null;
+      case 'action:connect-cdp':
+        return isBlank(params.targetUrl) ? 'Connect Inspector action needs a target URL' : null;
       default:
         return null;
     }

@@ -88,7 +88,7 @@ export const NODE_TYPE_REGISTRY: Record<AutomationNodeType, NodeTypeDef> = {
     category: 'condition',
     iconName: 'Filter',
     description: 'Check if HTTP status code matches a value',
-    defaultConfig: { conditionType: 'condition:status-code', operator: 'equals', value: '500' },
+    defaultConfig: { conditionType: 'condition:status-code', dataPath: 'statusCode', operator: 'equals', value: '500' },
   },
   'condition:url-contains': {
     type: 'condition:url-contains',
@@ -96,7 +96,7 @@ export const NODE_TYPE_REGISTRY: Record<AutomationNodeType, NodeTypeDef> = {
     category: 'condition',
     iconName: 'Filter',
     description: 'Check if the URL contains a keyword',
-    defaultConfig: { conditionType: 'condition:url-contains', operator: 'contains', value: '/api' },
+    defaultConfig: { conditionType: 'condition:url-contains', dataPath: 'url', operator: 'contains', value: '/api' },
   },
   'condition:body-contains': {
     type: 'condition:body-contains',
@@ -104,7 +104,7 @@ export const NODE_TYPE_REGISTRY: Record<AutomationNodeType, NodeTypeDef> = {
     category: 'condition',
     iconName: 'Filter',
     description: 'Check if response body contains text',
-    defaultConfig: { conditionType: 'condition:body-contains', operator: 'contains', value: '' },
+    defaultConfig: { conditionType: 'condition:body-contains', dataPath: 'body', operator: 'contains', value: '' },
   },
   'condition:header-exists': {
     type: 'condition:header-exists',
@@ -112,7 +112,7 @@ export const NODE_TYPE_REGISTRY: Record<AutomationNodeType, NodeTypeDef> = {
     category: 'condition',
     iconName: 'Filter',
     description: 'Check if a specific header is present',
-    defaultConfig: { conditionType: 'condition:header-exists', operator: 'equals', value: 'X-API-Key' },
+    defaultConfig: { conditionType: 'condition:header-exists', dataPath: 'headers', operator: 'equals', value: 'X-API-Key' },
   },
   'condition:severity': {
     type: 'condition:severity',
@@ -120,7 +120,7 @@ export const NODE_TYPE_REGISTRY: Record<AutomationNodeType, NodeTypeDef> = {
     category: 'condition',
     iconName: 'Filter',
     description: 'Check if finding severity matches',
-    defaultConfig: { conditionType: 'condition:severity', operator: 'equals', value: 'high' },
+    defaultConfig: { conditionType: 'condition:severity', dataPath: 'severity', operator: 'equals', value: 'high' },
   },
   'condition:ai-confidence': {
     type: 'condition:ai-confidence',
@@ -128,7 +128,7 @@ export const NODE_TYPE_REGISTRY: Record<AutomationNodeType, NodeTypeDef> = {
     category: 'condition',
     iconName: 'Filter',
     description: 'Check if AI confidence is above threshold',
-    defaultConfig: { conditionType: 'condition:ai-confidence', operator: 'gt', value: '80' },
+    defaultConfig: { conditionType: 'condition:ai-confidence', dataPath: 'confidence', operator: 'gt', value: '80' },
   },
   'condition:method': {
     type: 'condition:method',
@@ -136,7 +136,7 @@ export const NODE_TYPE_REGISTRY: Record<AutomationNodeType, NodeTypeDef> = {
     category: 'condition',
     iconName: 'Filter',
     description: 'Check if the HTTP method matches (GET, POST, PUT, etc.)',
-    defaultConfig: { conditionType: 'condition:method', operator: 'equals', value: 'GET' },
+    defaultConfig: { conditionType: 'condition:method', dataPath: 'method', operator: 'equals', value: 'GET' },
   },
   'condition:content-type': {
     type: 'condition:content-type',
@@ -144,7 +144,7 @@ export const NODE_TYPE_REGISTRY: Record<AutomationNodeType, NodeTypeDef> = {
     category: 'condition',
     iconName: 'Filter',
     description: 'Check if Content-Type header matches',
-    defaultConfig: { conditionType: 'condition:content-type', operator: 'contains', value: 'application/json' },
+    defaultConfig: { conditionType: 'condition:content-type', dataPath: 'headers.content-type', operator: 'contains', value: 'application/json' },
   },
   'condition:response-size': {
     type: 'condition:response-size',
@@ -152,7 +152,7 @@ export const NODE_TYPE_REGISTRY: Record<AutomationNodeType, NodeTypeDef> = {
     category: 'condition',
     iconName: 'Filter',
     description: 'Check if response body size exceeds threshold (bytes)',
-    defaultConfig: { conditionType: 'condition:response-size', operator: 'gt', value: '1024' },
+    defaultConfig: { conditionType: 'condition:response-size', dataPath: 'body', operator: 'gt', value: '1024' },
   },
   'condition:crawl-status': {
     type: 'condition:crawl-status',
@@ -160,7 +160,7 @@ export const NODE_TYPE_REGISTRY: Record<AutomationNodeType, NodeTypeDef> = {
     category: 'condition',
     iconName: 'Filter',
     description: 'Check crawl page status (queued, visited, error, blocked)',
-    defaultConfig: { conditionType: 'condition:crawl-status', operator: 'equals', value: 'error' },
+    defaultConfig: { conditionType: 'condition:crawl-status', dataPath: 'status', operator: 'equals', value: 'error' },
   },
   'condition:grep-match': {
     type: 'condition:grep-match',
@@ -168,7 +168,7 @@ export const NODE_TYPE_REGISTRY: Record<AutomationNodeType, NodeTypeDef> = {
     category: 'condition',
     iconName: 'Filter',
     description: 'Check if a grep pattern matches the response',
-    defaultConfig: { conditionType: 'condition:grep-match', operator: 'regex', value: '' },
+    defaultConfig: { conditionType: 'condition:grep-match', dataPath: 'body', operator: 'regex', value: '' },
   },
   'condition:port-open': {
     type: 'condition:port-open',
@@ -176,7 +176,7 @@ export const NODE_TYPE_REGISTRY: Record<AutomationNodeType, NodeTypeDef> = {
     category: 'condition',
     iconName: 'Filter',
     description: 'Check if a specific port was found open in scan results',
-    defaultConfig: { conditionType: 'condition:port-open', operator: 'equals', value: '443' },
+    defaultConfig: { conditionType: 'condition:port-open', dataPath: 'ports', operator: 'equals', value: '443' },
   },
 
   // ─── Actions ────────────────────────────────────────────────────────────────
@@ -186,7 +186,7 @@ export const NODE_TYPE_REGISTRY: Record<AutomationNodeType, NodeTypeDef> = {
     category: 'action',
     iconName: 'RefreshCw',
     description: 'Send the request to the Repeater tool',
-    defaultConfig: { actionType: 'action:send-to-repeater', params: {} },
+    defaultConfig: { actionType: 'action:send-to-repeater', params: { tabName: 'Automation replay', source: 'request', open: 'true' } },
   },
   'action:ai-analyze': {
     type: 'action:ai-analyze',
@@ -194,7 +194,7 @@ export const NODE_TYPE_REGISTRY: Record<AutomationNodeType, NodeTypeDef> = {
     category: 'action',
     iconName: 'Sparkles',
     description: 'Run AI analysis on the request/response',
-    defaultConfig: { actionType: 'action:ai-analyze', params: {} },
+    defaultConfig: { actionType: 'action:ai-analyze', params: { prompt: '', profile: 'security', includeRequest: 'true', includeResponse: 'true' } },
   },
   'action:create-finding': {
     type: 'action:create-finding',
@@ -202,7 +202,7 @@ export const NODE_TYPE_REGISTRY: Record<AutomationNodeType, NodeTypeDef> = {
     category: 'action',
     iconName: 'Bug',
     description: 'Create a vulnerability finding',
-    defaultConfig: { actionType: 'action:create-finding', params: { severity: 'medium' } },
+    defaultConfig: { actionType: 'action:create-finding', params: { title: '', severity: 'medium', description: '', evidenceSource: 'payload' } },
   },
   'action:add-to-report': {
     type: 'action:add-to-report',
@@ -226,7 +226,7 @@ export const NODE_TYPE_REGISTRY: Record<AutomationNodeType, NodeTypeDef> = {
     category: 'action',
     iconName: 'Webhook',
     description: 'Send data to an external webhook URL',
-    defaultConfig: { actionType: 'action:send-webhook', params: { url: '', method: 'POST' } },
+    defaultConfig: { actionType: 'action:send-webhook', params: { url: '', method: 'POST', headers: '', bodyTemplate: '' } },
   },
   'action:show-notification': {
     type: 'action:show-notification',
@@ -234,7 +234,7 @@ export const NODE_TYPE_REGISTRY: Record<AutomationNodeType, NodeTypeDef> = {
     category: 'action',
     iconName: 'Bell',
     description: 'Show a desktop notification',
-    defaultConfig: { actionType: 'action:show-notification', params: { title: 'Workflow Alert', body: '' } },
+    defaultConfig: { actionType: 'action:show-notification', params: { title: 'Workflow Alert', body: '', level: 'info' } },
   },
   'action:run-script': {
     type: 'action:run-script',
@@ -242,7 +242,7 @@ export const NODE_TYPE_REGISTRY: Record<AutomationNodeType, NodeTypeDef> = {
     category: 'action',
     iconName: 'Terminal',
     description: 'Execute a custom shell script',
-    defaultConfig: { actionType: 'action:run-script', params: { command: '' } },
+    defaultConfig: { actionType: 'action:run-script', params: { command: '', workingDirectory: '', timeoutSeconds: '30' } },
   },
   'action:start-crawl': {
     type: 'action:start-crawl',
@@ -250,7 +250,7 @@ export const NODE_TYPE_REGISTRY: Record<AutomationNodeType, NodeTypeDef> = {
     category: 'action',
     iconName: 'ScanLine',
     description: 'Start a browser crawl against the target URL',
-    defaultConfig: { actionType: 'action:start-crawl', params: { url: '', maxDepth: '3' } },
+    defaultConfig: { actionType: 'action:start-crawl', params: { url: '', maxDepth: '3', scope: 'same-host' } },
   },
   'action:stop-crawl': {
     type: 'action:stop-crawl',
@@ -258,7 +258,7 @@ export const NODE_TYPE_REGISTRY: Record<AutomationNodeType, NodeTypeDef> = {
     category: 'action',
     iconName: 'Square',
     description: 'Stop the currently running browser crawl',
-    defaultConfig: { actionType: 'action:stop-crawl', params: {} },
+    defaultConfig: { actionType: 'action:stop-crawl', params: { crawlId: '{{crawlId}}', scope: 'current' } },
   },
   'action:send-to-intercept': {
     type: 'action:send-to-intercept',
@@ -266,7 +266,7 @@ export const NODE_TYPE_REGISTRY: Record<AutomationNodeType, NodeTypeDef> = {
     category: 'action',
     iconName: 'Shield',
     description: 'Send a request to the intercept queue',
-    defaultConfig: { actionType: 'action:send-to-intercept', params: {} },
+    defaultConfig: { actionType: 'action:send-to-intercept', params: { source: 'request', queueMode: 'front', pause: 'true' } },
   },
   'action:start-invoker': {
     type: 'action:start-invoker',
@@ -274,7 +274,7 @@ export const NODE_TYPE_REGISTRY: Record<AutomationNodeType, NodeTypeDef> = {
     category: 'action',
     iconName: 'Zap',
     description: 'Launch an Invoker attack against a target',
-    defaultConfig: { actionType: 'action:start-invoker', params: { mode: 'sniper' } },
+    defaultConfig: { actionType: 'action:start-invoker', params: { mode: 'sniper', target: '', wordlist: '' } },
   },
   'action:port-scan': {
     type: 'action:port-scan',
@@ -282,7 +282,7 @@ export const NODE_TYPE_REGISTRY: Record<AutomationNodeType, NodeTypeDef> = {
     category: 'action',
     iconName: 'Network',
     description: 'Run a port scan against a target host',
-    defaultConfig: { actionType: 'action:port-scan', params: { target: '', preset: 'web' } },
+    defaultConfig: { actionType: 'action:port-scan', params: { target: '', preset: 'web', ports: '' } },
   },
   'action:encode-decode': {
     type: 'action:encode-decode',
@@ -290,7 +290,7 @@ export const NODE_TYPE_REGISTRY: Record<AutomationNodeType, NodeTypeDef> = {
     category: 'action',
     iconName: 'Code',
     description: 'Encode or decode data (URL, Base64, Hex)',
-    defaultConfig: { actionType: 'action:encode-decode', params: { mode: 'encode', codec: 'url' } },
+    defaultConfig: { actionType: 'action:encode-decode', params: { mode: 'encode', codec: 'url', sourceField: 'body' } },
   },
   'action:hash-data': {
     type: 'action:hash-data',
@@ -298,7 +298,7 @@ export const NODE_TYPE_REGISTRY: Record<AutomationNodeType, NodeTypeDef> = {
     category: 'action',
     iconName: 'Hash',
     description: 'Hash input data (MD5, SHA-256, SHA-512, etc.)',
-    defaultConfig: { actionType: 'action:hash-data', params: { algorithm: 'sha256' } },
+    defaultConfig: { actionType: 'action:hash-data', params: { algorithm: 'sha256', sourceField: 'body' } },
   },
   'action:export-json': {
     type: 'action:export-json',
@@ -306,7 +306,7 @@ export const NODE_TYPE_REGISTRY: Record<AutomationNodeType, NodeTypeDef> = {
     category: 'action',
     iconName: 'Download',
     description: 'Export workflow data as a JSON file',
-    defaultConfig: { actionType: 'action:export-json', params: { filename: '' } },
+    defaultConfig: { actionType: 'action:export-json', params: { filename: '', format: 'pretty', source: 'payload' } },
   },
   'action:create-document': {
     type: 'action:create-document',
@@ -314,7 +314,7 @@ export const NODE_TYPE_REGISTRY: Record<AutomationNodeType, NodeTypeDef> = {
     category: 'action',
     iconName: 'FilePlus',
     description: 'Create a new document from a template',
-    defaultConfig: { actionType: 'action:create-document', params: { template: 'blank' } },
+    defaultConfig: { actionType: 'action:create-document', params: { title: 'Automation Document', template: 'blank' } },
   },
   'action:add-to-document': {
     type: 'action:add-to-document',
@@ -322,7 +322,7 @@ export const NODE_TYPE_REGISTRY: Record<AutomationNodeType, NodeTypeDef> = {
     category: 'action',
     iconName: 'FileText',
     description: 'Append data to an existing document section',
-    defaultConfig: { actionType: 'action:add-to-document', params: { section: '' } },
+    defaultConfig: { actionType: 'action:add-to-document', params: { documentId: '', section: '', content: '' } },
   },
   'action:connect-cdp': {
     type: 'action:connect-cdp',
@@ -330,7 +330,7 @@ export const NODE_TYPE_REGISTRY: Record<AutomationNodeType, NodeTypeDef> = {
     category: 'action',
     iconName: 'Plug',
     description: 'Start a CDP session to inspect a browser tab',
-    defaultConfig: { actionType: 'action:connect-cdp', params: {} },
+    defaultConfig: { actionType: 'action:connect-cdp', params: { targetUrl: '{{url}}', targetMode: 'active-tab', openInspector: 'true' } },
   },
   'action:script-analyze': {
     type: 'action:script-analyze',
@@ -338,7 +338,7 @@ export const NODE_TYPE_REGISTRY: Record<AutomationNodeType, NodeTypeDef> = {
     category: 'action',
     iconName: 'FileCode',
     description: 'Analyze a shell script for security insights',
-    defaultConfig: { actionType: 'action:script-analyze', params: {} },
+    defaultConfig: { actionType: 'action:script-analyze', params: { sourceField: 'body', includeInline: 'true', includeExternal: 'true' } },
   },
 };
 

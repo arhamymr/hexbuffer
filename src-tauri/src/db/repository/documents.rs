@@ -21,9 +21,8 @@ impl Database {
         let sections = serde_json::to_string(&document.sections).unwrap_or_else(|_| "{}".into());
         let custom_sections =
             serde_json::to_string(&document.custom_sections).unwrap_or_else(|_| "[]".into());
-        let removed_built_in_sections =
-            serde_json::to_string(&document.removed_built_in_sections)
-                .unwrap_or_else(|_| "[]".into());
+        let removed_built_in_sections = serde_json::to_string(&document.removed_built_in_sections)
+            .unwrap_or_else(|_| "[]".into());
         let api_entries =
             serde_json::to_string(&document.api_entries).unwrap_or_else(|_| "[]".into());
 

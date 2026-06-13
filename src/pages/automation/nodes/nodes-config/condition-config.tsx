@@ -11,7 +11,9 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { NODE_TYPE_REGISTRY } from '../../constants';
-import type { ConditionConfig } from '../../types';
+import { defaultDataPathForCondition } from '../../lib/condition-evaluator';
+import { getNodeDataSchema } from '../../lib/node-capabilities';
+import type { ConditionConfig, ConditionType } from '../../types';
 
 export const OPERATOR_LABELS: Record<string, string> = {
   equals: 'Equals',
@@ -21,6 +23,37 @@ export const OPERATOR_LABELS: Record<string, string> = {
   lt: 'Less than',
   regex: 'Regex',
 };
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function collectJsonPaths(value: unknown, prefix = '', depth = 0): string[] {
+  if (!isRecord(value) || depth > 3) return [];
+
+  return Object.keys(value).flatMap((key) => {
+    const path = prefix ? `${prefix}.${key}` : key;
+    return [path, ...collectJsonPaths(value[key], path, depth + 1)];
+  });
+}
+
+function uniquePaths(paths: string[]): string[] {
+  return Array.from(new Set(paths.filter((path) => path.trim().length > 0)));
+}
+
+function getSuggestedDataPaths(
+  type: ConditionType,
+  inputData: unknown
+): { value: string; label: string }[] {
+  const schemaPaths = getNodeDataSchema(type)?.input.map((field) => field.key) ?? [];
+  const runtimePaths = collectJsonPaths(inputData);
+
+  return uniquePaths([
+    defaultDataPathForCondition(type),
+    ...schemaPaths,
+    ...runtimePaths,
+  ]).map((path) => ({ value: path, label: path }));
+}
 
 export function placeholderForCondition(type: ConditionConfig['conditionType']): string {
   switch (type) {
@@ -43,10 +76,13 @@ export function placeholderForCondition(type: ConditionConfig['conditionType']):
 interface ConditionConfigFormProps {
   config: ConditionConfig;
   onChange: (patch: Partial<ConditionConfig>) => void;
+  inputData?: unknown;
 }
 
-export function ConditionConfigForm({ config, onChange }: ConditionConfigFormProps) {
+export function ConditionConfigForm({ config, onChange, inputData }: ConditionConfigFormProps) {
   const showValue = config.conditionType !== 'condition:header-exists';
+  const dataPath = config.dataPath ?? defaultDataPathForCondition(config.conditionType);
+  const dataPathOptions = getSuggestedDataPaths(config.conditionType, inputData);
 
   return (
     <div className="space-y-4">
@@ -55,6 +91,31 @@ export function ConditionConfigForm({ config, onChange }: ConditionConfigFormPro
         <p className="text-xs text-muted-foreground">
           {NODE_TYPE_REGISTRY[config.conditionType]?.label ?? config.conditionType}
         </p>
+      </div>
+
+      <div className="space-y-1.5">
+        <Label className="text-[11px]">Data key</Label>
+        <Select
+          value={dataPathOptions.some((option) => option.value === dataPath) ? dataPath : undefined}
+          onValueChange={(v) => onChange({ dataPath: v })}
+        >
+          <SelectTrigger className="h-7 text-xs">
+            <SelectValue placeholder="Select JSON key" />
+          </SelectTrigger>
+          <SelectContent>
+            {dataPathOptions.map((option) => (
+              <SelectItem key={option.value} value={option.value} className="text-xs font-mono">
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Input
+          className="h-7 font-mono text-xs"
+          value={dataPath}
+          onChange={(e) => onChange({ dataPath: e.target.value })}
+          placeholder="e.g. response.headers.content-type"
+        />
       </div>
 
       <div className="space-y-1.5">

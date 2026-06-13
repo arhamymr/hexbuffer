@@ -1,7 +1,5 @@
 import React from 'react';
 import { useAutomationStore } from '@/stores/automation';
-import { startLiveTrafficWatcher, stopLiveTrafficWatcher } from '@/triggers/live-traffic';
-import { startPageCrawledWatcher, stopPageCrawledWatcher } from '@/triggers/browser-automation';
 import type { PageTabItem } from '@/components/tabs-layout/types';
 import { getWorkflowReadiness } from '../lib/workflow-readiness';
 import { isWorkflowProcessing } from '../lib/workflow-runtime';
@@ -14,8 +12,7 @@ export function useAutomationPage() {
   const renameWorkflow = useAutomationStore((s) => s.renameWorkflow);
   const deleteWorkflow = useAutomationStore((s) => s.deleteWorkflow);
   const deleteWorkflows = useAutomationStore((s) => s.deleteWorkflows);
-  const runningWorkflowIds = useAutomationStore((s) => s.runningWorkflowIds);
-  const nodeRuntimeById = useAutomationStore((s) => s.nodeRuntimeById);
+  const workflowRuntimeById = useAutomationStore((s) => s.workflowRuntimeById);
 
   const [templatesOpen, setTemplatesOpen] = React.useState(false);
 
@@ -28,22 +25,6 @@ export function useAutomationPage() {
     }
   }, [workflows, activeWorkflowId, createWorkflow, setActiveWorkflowId]);
 
-  // Subscribe to proxy-record events so trigger:live-traffic-captured workflows fire automatically
-  React.useEffect(() => {
-    startLiveTrafficWatcher();
-    return () => {
-      stopLiveTrafficWatcher();
-    };
-  }, []);
-
-  // Subscribe to page-updated events so trigger:browser-page-crawled workflows fire automatically
-  React.useEffect(() => {
-    startPageCrawledWatcher();
-    return () => {
-      stopPageCrawledWatcher();
-    };
-  }, []);
-
   const tabs: PageTabItem[] = React.useMemo(
     () =>
       workflows.map((wf) => {
@@ -52,14 +33,14 @@ export function useAutomationPage() {
           id: wf.id,
           name: wf.name,
           status:
-            isWorkflowProcessing(wf.id, runningWorkflowIds, nodeRuntimeById)
+            isWorkflowProcessing(wf.id, workflowRuntimeById)
               ? { kind: 'running' as const, label: 'Workflow is processing' }
               : !readiness.ready
                 ? { kind: 'needs-action' as const, label: readiness.reason ?? 'Workflow needs action' }
                 : { kind: 'ready' as const, label: 'Workflow is ready' },
         };
       }),
-    [workflows, runningWorkflowIds, nodeRuntimeById]
+    [workflows, workflowRuntimeById]
   );
 
   const handleCloseTabsToLeft = React.useCallback(
@@ -91,7 +72,7 @@ export function useAutomationPage() {
     onTabAdd: () => setTemplatesOpen(true),
     onCloseTabsToLeft: handleCloseTabsToLeft,
     onCloseTabsToRight: handleCloseTabsToRight,
-    isRunning: workflows.some((wf) => isWorkflowProcessing(wf.id, runningWorkflowIds, nodeRuntimeById)),
+    isRunning: workflows.some((wf) => isWorkflowProcessing(wf.id, workflowRuntimeById)),
     templatesOpen,
     onTemplatesOpenChange: setTemplatesOpen,
   };

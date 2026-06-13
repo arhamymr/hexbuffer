@@ -1,10 +1,16 @@
 import { Loader2, Play } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { type ReconDocument, type CustomSection, type SavedApiEntry } from '../types';
+import {
+  type CustomSection,
+  type MarkdownEditorMode,
+  type ReconDocument,
+  type SavedApiEntry,
+} from '../types';
 import { type RepeaterResponse } from '@/pages/repeater/types';
 import { ApiEntryEditor } from './api-entry-editor';
 import { ApiFolderEditor } from './api-folder-editor';
+import { CustomSectionCodeEditor } from './custom-section-code-editor';
 import { CustomSectionEditor } from './custom-section-editor';
 import { EditorTabStrip } from './editor-tab-strip';
 import { MarkdownPreview } from './markdown-preview';
@@ -22,7 +28,7 @@ interface DocumentsEditorPaneProps {
   isFetchingApi: boolean;
   apiFetchError: string | null;
   apiEditError: string | null;
-  markdownMode: 'edit' | 'preview';
+  markdownMode: MarkdownEditorMode;
   onOpenFile: (fileId: EditorFileId) => void;
   onCloseFile: (fileId: EditorFileId) => void;
   onFetchSelectedApi: () => void;
@@ -87,6 +93,12 @@ export function DocumentsEditorPane({
         <div className="min-h-0 flex-1">
           {markdownMode === 'preview' ? (
             <MarkdownPreview section={activeCustomSection} />
+          ) : markdownMode === 'code' ? (
+            <CustomSectionCodeEditor
+              section={activeCustomSection}
+              documentId={activeDocument.id}
+              onChange={(content) => onUpdateCustomSection(activeCustomSection.key, content)}
+            />
           ) : (
             <CustomSectionEditor
               section={activeCustomSection}

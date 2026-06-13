@@ -4,6 +4,7 @@ pub mod collaborator;
 pub mod documents;
 pub mod packet_capture;
 pub mod proxy_logs;
+pub mod threats;
 pub mod types;
 pub mod websocket;
 
@@ -33,6 +34,7 @@ impl Database {
         conn.execute_batch(crate::db::schema::CREATE_WEBSOCKET_TABLES)?;
         conn.execute_batch(crate::db::schema::CREATE_DOCUMENTS_TABLE)?;
         conn.execute_batch(crate::db::schema::CREATE_PACKET_CAPTURE_TABLES)?;
+        conn.execute_batch(crate::db::schema::CREATE_THREAT_TABLES)?;
         conn.execute_batch(crate::db::schema::CREATE_AI_BROWSER_TABLES)?;
         conn.execute_batch(crate::db::schema::CREATE_COLLABORATOR_TABLES)?;
         conn.execute_batch(crate::db::schema::CREATE_AI_CHAT_TABLES)?;
@@ -50,7 +52,12 @@ impl Database {
         Self::ensure_column(&conn, "ai_browser_insights", "analysis_tool_name", "TEXT")?;
         Self::ensure_column(&conn, "ai_browser_logs", "ai_used_for_analysis", "INTEGER")?;
         Self::ensure_column(&conn, "ai_browser_logs", "extra_json", "TEXT")?;
-        Self::ensure_column(&conn, "documents", "custom_sections", "TEXT NOT NULL DEFAULT '[]'")?;
+        Self::ensure_column(
+            &conn,
+            "documents",
+            "custom_sections",
+            "TEXT NOT NULL DEFAULT '[]'",
+        )?;
         Self::ensure_column(
             &conn,
             "documents",

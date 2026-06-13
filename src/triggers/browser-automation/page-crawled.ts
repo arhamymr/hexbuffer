@@ -4,10 +4,12 @@ import type { CrawlPage } from '@/pages/browser/types';
 import type { TriggerConfig, WorkflowDef } from '@/pages/automation/types';
 import { parseHostWhitelist } from '@/triggers/live-traffic/captured';
 
+const PAGE_CRAWLED_TRIGGER_TYPE = 'trigger:browser-page-crawled';
+
 /* ── Filter matching ── */
 
 function matchesPageCrawledTrigger(page: CrawlPage, config: TriggerConfig): boolean {
-  if (config.triggerType !== 'trigger:browser-page-crawled') return false;
+  if (config.triggerType !== PAGE_CRAWLED_TRIGGER_TYPE) return false;
 
   // Host whitelist filter
   const whitelistedHosts = parseHostWhitelist(config.host);
@@ -57,7 +59,7 @@ function matchesPageCrawledTrigger(page: CrawlPage, config: TriggerConfig): bool
 
 /* ── Context builder ── */
 
-function buildPageCrawledContext(page: CrawlPage): WorkflowContext {
+function buildPageCrawledContext(page: CrawlPage, triggerNodeId?: string): WorkflowContext {
   let host: string;
   try {
     host = new URL(page.url).hostname;
@@ -66,7 +68,8 @@ function buildPageCrawledContext(page: CrawlPage): WorkflowContext {
   }
 
   return {
-    triggerType: 'browser-page-crawled',
+    triggerType: PAGE_CRAWLED_TRIGGER_TYPE,
+    triggerNodeId,
     data: {
       pageId: page.id,
       sessionId: page.sessionId,
@@ -89,8 +92,8 @@ function buildPageCrawledContext(page: CrawlPage): WorkflowContext {
 function getPageCrawledWorkflows(workflows: WorkflowDef[]): WorkflowDef[] {
   return workflows.filter((w) => {
     if (!w.enabled) return false;
-    const nodes = (w.nodes ?? []) as Array<{ type?: string }>;
-    return nodes.some((n) => n.type === 'trigger:browser-page-crawled');
+    const nodes = (w.nodes ?? []) as Array<{ type?: string; data?: { nodeType?: string } }>;
+    return nodes.some((n) => n.type === PAGE_CRAWLED_TRIGGER_TYPE || n.data?.nodeType === PAGE_CRAWLED_TRIGGER_TYPE);
   });
 }
 
@@ -101,6 +104,7 @@ let watcherGeneration = 0;
 let startPromise: Promise<void> | null = null;
 
 export function startPageCrawledWatcher(): Promise<void> | null {
+  if (unlistenPageCrawled) return null;
   if (startPromise) return startPromise;
   const generation = ++watcherGeneration;
 
@@ -117,8 +121,8 @@ export function startPageCrawledWatcher(): Promise<void> | null {
       const triggerNode = (workflow.nodes as Array<{
         type?: string;
         id?: string;
-        data?: { config?: TriggerConfig; label?: string };
-      }>).find((n) => n.type === 'trigger:browser-page-crawled');
+        data?: { nodeType?: string; config?: TriggerConfig; label?: string };
+      }>).find((n) => n.type === PAGE_CRAWLED_TRIGGER_TYPE || n.data?.nodeType === PAGE_CRAWLED_TRIGGER_TYPE);
 
       if (!triggerNode) continue;
       const config = triggerNode.data?.config as TriggerConfig | undefined;
@@ -126,8 +130,38 @@ export function startPageCrawledWatcher(): Promise<void> | null {
 
       if (!matchesPageCrawledTrigger(page, config)) continue;
 
-      const context = buildPageCrawledContext(page);
-      store.runWorkflow(workflow.id, context);
+      const context = buildPageCrawledContext(page, triggerNode.id);
+      if (triggerNode.id) {
+        store.appendExecutionLog({
+          workflowId: workflow.id,
+          level: 'info',
+          message: `Received crawled page: ${triggerNode.data?.label ?? 'Page Crawled'}`,
+          nodeId: triggerNode.id,
+          nodeLabel: triggerNode.data?.label ?? 'Page Crawled',
+          inputData: context.data,
+          outputData: context.data,
+        });
+      }
+      void store.runWorkflow(workflow.id, context).catch((error) => {
+        const message = error instanceof Error ? error.message : String(error || 'Workflow failed');
+        if (triggerNode.id) {
+          store.setNodeRuntimeStatus(triggerNode.id, {
+            workflowId: workflow.id,
+            status: 'error',
+            message,
+            inputData: context.data,
+            outputData: context.data,
+          });
+        }
+        store.appendExecutionLog({
+          workflowId: workflow.id,
+          level: 'error',
+          message,
+          nodeId: triggerNode.id,
+          nodeLabel: triggerNode.data?.label ?? 'Page Crawled',
+          inputData: context.data,
+        });
+      });
     }
   })
     .then((nextUnlisten) => {

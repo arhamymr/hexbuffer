@@ -1,7 +1,5 @@
 import type { ITerminalOptions, ITheme } from '@xterm/xterm'
 
-export const RESIZE_DEBOUNCE_MS = 50
-
 const darkTheme: ITheme = {
   background: '#0d1117',
   foreground: '#c9d1d9',

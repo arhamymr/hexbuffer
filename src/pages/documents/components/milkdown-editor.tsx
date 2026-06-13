@@ -17,6 +17,7 @@ function MilkdownEditorInner({ value, onChange }: MilkdownEditorProps) {
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
   const initializedRef = useRef(false);
+  const currentMarkdownRef = useRef(value);
 
   const { get } = useEditor((root) => {
     const crepe = new Crepe({
@@ -41,6 +42,7 @@ function MilkdownEditorInner({ value, onChange }: MilkdownEditorProps) {
     try {
       const listenerValue = editor.ctx.get(listenerCtx);
       listenerValue.markdownUpdated((_ctx, markdown) => {
+        currentMarkdownRef.current = markdown;
         onChangeRef.current(markdown);
       });
     } catch {
@@ -49,6 +51,20 @@ function MilkdownEditorInner({ value, onChange }: MilkdownEditorProps) {
     }
 
     initializedRef.current = true;
+  }, [loading, get, value]);
+
+  useEffect(() => {
+    if (loading || !initializedRef.current || value === currentMarkdownRef.current) {
+      return;
+    }
+
+    const editor = get();
+    if (!editor) {
+      return;
+    }
+
+    currentMarkdownRef.current = value;
+    editor.action(replaceAll(value));
   }, [loading, get, value]);
 
   return (

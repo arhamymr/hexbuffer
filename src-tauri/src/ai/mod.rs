@@ -1,5 +1,5 @@
-pub mod commands;
 pub mod chat;
+pub mod commands;
 pub mod keyring;
 pub mod providers;
 pub mod settings;

@@ -17,6 +17,8 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useAutomationStore } from '@/stores/automation';
+import { Button } from '@/components/ui/button';
 import {
   Tooltip,
   TooltipTrigger,
@@ -33,6 +35,7 @@ import {
 import { getAutomationNodeCapability } from '../lib/node-capabilities';
 import { getAutomationNodeWarning } from '../lib/node-warnings';
 import { NodeCapabilityBadge } from './node-capability-badge';
+import { NodeCardMenu } from './node-card-menu';
 import { NodeRuntimeStatus, useNodeRuntimeStatus } from './node-runtime-status';
 import type { AutomationNodeData, TriggerConfig } from '../types';
 
@@ -54,10 +57,31 @@ function TriggerNodeComponent({ id, data, selected }: NodeProps) {
   const Icon = iconMap[nodeData.iconName] || Play;
   const config = nodeData.config as TriggerConfig;
   const isManual = config?.triggerType === 'trigger:manual';
+  const isLiveTraffic = config?.triggerType === 'trigger:live-traffic-captured';
+  const liveTrafficNeedsHost = isLiveTraffic && !config.host?.trim();
   const runtime = useNodeRuntimeStatus(id);
   const isExecuting = runtime?.status === 'running';
   const warning = getAutomationNodeWarning(nodeData, runtime);
   const capability = getAutomationNodeCapability(nodeData);
+  const activeWorkflowId = useAutomationStore((state) => state.activeWorkflowId);
+  const runWorkflow = useAutomationStore((state) => state.runWorkflow);
+  const isWorkflowListening = useAutomationStore((state) => {
+    const workflow = state.workflows.find((item) => item.id === state.activeWorkflowId);
+    return workflow?.enabled ?? true;
+  });
+  const handleManualRun = React.useCallback((event: React.MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (!activeWorkflowId || isExecuting) return;
+    void runWorkflow(activeWorkflowId, {
+      triggerType: 'trigger:manual',
+      triggerNodeId: id,
+      data: {
+        triggeredAt: new Date().toISOString(),
+        source: 'manual-node',
+      },
+    });
+  }, [activeWorkflowId, id, isExecuting, runWorkflow]);
 
   const nodeTypeDef = NODE_TYPE_REGISTRY[nodeData.nodeType];
   const description = nodeTypeDef?.description;
@@ -71,9 +95,23 @@ function TriggerNodeComponent({ id, data, selected }: NodeProps) {
             CATEGORY_BORDER.trigger,
             CATEGORY_BG.trigger,
             selected && 'ring-2 ring-ring ring-offset-2 ring-offset-background',
-            isExecuting && 'animate-pulse ring-2 ring-blue-400 ring-offset-2 shadow-lg shadow-blue-500/20',
+            liveTrafficNeedsHost && 'border-amber-500 shadow-amber-500/20',
+            isExecuting && 'border-red-500 animate-pulse ring-2 ring-red-500 ring-offset-2 shadow-lg shadow-red-500/25',
           )}
         >
+      {liveTrafficNeedsHost && (
+        <div className="rounded-t-[5px] border-b border-amber-500/40 bg-amber-500/15 px-3 py-2 text-amber-700 dark:text-amber-200">
+          <div className="flex items-start gap-2">
+            <AlertTriangle className="mt-0.5 size-5 shrink-0" />
+            <div className="min-w-0">
+              <p className="text-[11px] font-bold uppercase leading-none">Host required</p>
+              <p className="mt-1 text-[10px] leading-tight">
+                Add at least one host before this trigger <br/> can capture traffic.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="flex items-center gap-2 px-3 py-2.5">
         <div className={cn('flex size-7 items-center justify-center rounded-lg', CATEGORY_ICON_BG.trigger)}>
           <Icon className={cn('size-3.5', CATEGORY_ICON_TEXT.trigger)} />
@@ -84,13 +122,15 @@ function TriggerNodeComponent({ id, data, selected }: NodeProps) {
         </div>
         {warning && (
           <AlertTriangle
-            className="size-3.5 shrink-0 text-amber-500"
+            className={cn('shrink-0 text-amber-500', liveTrafficNeedsHost ? 'size-5' : 'size-3.5')}
             aria-label={warning}
+            title={warning}
           />
         )}
         {!capability.supported && capability.reason && (
           <NodeCapabilityBadge reason={capability.reason} />
         )}
+        <NodeCardMenu nodeId={id} nodeLabel={nodeData.label} />
         <GripVertical className="size-3.5 shrink-0 text-muted-foreground/30 opacity-0 group-hover:opacity-100 transition-opacity" />
       </div>
 
@@ -98,16 +138,49 @@ function TriggerNodeComponent({ id, data, selected }: NodeProps) {
         <div className="border-t border-blue-500/20 px-3 py-1.5">
           <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
             <div className="size-1.5 rounded-full bg-emerald-500" />
-            Click to run
+            <span className="flex-1">Manual trigger</span>
+            <Button
+              type="button"
+              size="xs"
+              variant="outline"
+              className="nodrag nopan h-6 px-2 text-[10px]"
+              disabled={isExecuting}
+              onPointerDown={(event) => event.stopPropagation()}
+              onClick={handleManualRun}
+              title={isExecuting ? 'Workflow is processing' : 'Run workflow'}
+            >
+              <Play className="mr-1 size-3" />
+              Run
+            </Button>
           </div>
         </div>
       )}
 
-      {config?.triggerType === 'trigger:live-traffic-captured' && (
-        <div className="border-t border-cyan-500/20 bg-cyan-500/[0.03] px-3 py-1.5">
+      {isLiveTraffic && (
+        <div
+          className={cn(
+            'border-t px-3 py-1.5',
+            liveTrafficNeedsHost
+              ? 'border-amber-500/30 bg-amber-500/[0.06]'
+              : isWorkflowListening
+              ? 'border-cyan-500/20 bg-cyan-500/[0.03]'
+              : 'border-amber-500/20 bg-amber-500/[0.04]'
+          )}
+        >
           <div className="flex items-center gap-1.5 text-[10px]">
-            <div className="size-1.5 rounded-full bg-cyan-400 animate-pulse shadow-[0_0_4px_theme(colors.cyan.400)]" />
-            <span className="text-cyan-400 font-medium">Listening</span>
+            <div
+              className={cn(
+                'size-1.5 rounded-full',
+                liveTrafficNeedsHost
+                  ? 'bg-amber-500'
+                  : isWorkflowListening
+                  ? 'animate-pulse bg-cyan-400 shadow-[0_0_4px_theme(colors.cyan.400)]'
+                  : 'bg-amber-500'
+              )}
+            />
+            <span className={cn('font-medium', liveTrafficNeedsHost ? 'text-amber-500' : isWorkflowListening ? 'text-cyan-400' : 'text-amber-500')}>
+              {liveTrafficNeedsHost ? 'Host required' : isWorkflowListening ? 'Listening' : 'Listening paused'}
+            </span>
             {[
               config.method && `Method: ${config.method}`,
               config.host && `Host: ${config.host}`,
@@ -126,10 +199,26 @@ function TriggerNodeComponent({ id, data, selected }: NodeProps) {
       )}
 
       {config?.triggerType === 'trigger:browser-page-crawled' && (
-        <div className="border-t border-blue-500/20 bg-blue-500/[0.03] px-3 py-1.5">
+        <div
+          className={cn(
+            'border-t px-3 py-1.5',
+            isWorkflowListening
+              ? 'border-blue-500/20 bg-blue-500/[0.03]'
+              : 'border-amber-500/20 bg-amber-500/[0.04]'
+          )}
+        >
           <div className="flex items-center gap-1.5 text-[10px]">
-            <div className="size-1.5 rounded-full bg-blue-400 animate-pulse shadow-[0_0_4px_theme(colors.blue.400)]" />
-            <span className="text-blue-400 font-medium">Listening for pages</span>
+            <div
+              className={cn(
+                'size-1.5 rounded-full',
+                isWorkflowListening
+                  ? 'animate-pulse bg-blue-400 shadow-[0_0_4px_theme(colors.blue.400)]'
+                  : 'bg-amber-500'
+              )}
+            />
+            <span className={cn('font-medium', isWorkflowListening ? 'text-blue-400' : 'text-amber-500')}>
+              {isWorkflowListening ? 'Listening for pages' : 'Listening paused'}
+            </span>
             {[
               config.host && `Host: ${config.host}`,
               config.value && `${config.operator ?? 'contains'} "${config.value}"`,

@@ -10,7 +10,8 @@ pub struct ShellInfo {
 pub fn get_default_shell() -> Result<ShellInfo, String> {
     #[cfg(target_os = "windows")]
     {
-        let comspec = std::env::var("COMSPEC").unwrap_or_else(|_| "C:\\Windows\\System32\\cmd.exe".to_string());
+        let comspec = std::env::var("COMSPEC")
+            .unwrap_or_else(|_| "C:\\Windows\\System32\\cmd.exe".to_string());
         return Ok(ShellInfo {
             path: comspec,
             args: vec![],
@@ -26,9 +27,9 @@ pub fn get_default_shell() -> Result<ShellInfo, String> {
             .unwrap_or("sh");
 
         let args = match shell_name {
-            "bash" => vec!["--login".to_string()],
-            "zsh" => vec!["--login".to_string()],
-            "fish" => vec!["--login".to_string()],
+            "bash" => vec!["-i".to_string()],
+            "zsh" => vec!["-i".to_string()],
+            "fish" => vec!["-i".to_string()],
             _ => vec![],
         };
 

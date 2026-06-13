@@ -6,6 +6,8 @@ import { EncoderDecoderTool } from './components/encoder';
 import { ComparerTool } from './components/comparer';
 import { PortScannerTool } from './components/port-scanner';
 import { ShellAnalyzerTool } from './components/shell-analyzer';
+import { JwtTool } from './components/jwt';
+import { XssGeneratorTool } from './components/xss-generator';
 // import { UtilsTool } from './components/utils';
 // import { SqlInjectionTool } from './components/sql-injection';
 import { TabbedPageLayout } from '@/components/tabs-layout/tabbed-page-layout';
@@ -31,6 +33,12 @@ export function ToolsPage() {
         </TabsContent>
         <TabsContent value="shell" className="h-full m-0">
           <ShellAnalyzerTool />
+        </TabsContent>
+        <TabsContent value="jwt" className="h-full m-0">
+          <JwtTool />
+        </TabsContent>
+        <TabsContent value="xss" className="h-full m-0">
+          <XssGeneratorTool />
         </TabsContent>
         {/* <TabsContent value="sqli" className="h-full m-0">
           <SqlInjectionTool />

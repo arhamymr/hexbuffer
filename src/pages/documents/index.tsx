@@ -17,9 +17,10 @@ import { DocumentTemplateDialog } from './components/document-template-dialog';
 import { DocumentsToolbar } from './components/documents-toolbar';
 import { DocumentsWorkspace } from './components/documents-workspace';
 import { useDocumentsPage } from './hooks/use-documents-page';
+import { type MarkdownEditorMode } from './types';
 
 export function DocumentsPage() {
-  const [markdownMode, setMarkdownMode] = React.useState<'edit' | 'preview'>('edit');
+  const [markdownMode, setMarkdownMode] = React.useState<MarkdownEditorMode>('markdown');
   const {
     tabs,
     activeDocumentId,
@@ -35,6 +36,10 @@ export function DocumentsPage() {
     removeCustomSection,
     reorderCustomSections,
     updateCustomSection,
+    undoCustomSectionChange,
+    redoCustomSectionChange,
+    canUndoCustomSection,
+    canRedoCustomSection,
     deleteApiEntry,
     addApiEntry,
     updateApiEntryRaw,
@@ -92,9 +97,13 @@ export function DocumentsPage() {
             exporting={exporting}
             canPreviewMarkdown={isCustomSectionFile}
             markdownMode={markdownMode}
+            canUndoMarkdown={isCustomSectionFile && canUndoCustomSection}
+            canRedoMarkdown={isCustomSectionFile && canRedoCustomSection}
             onNewDocument={openTemplateDialog}
             onExportPdf={handleExportPdf}
             onMarkdownModeChange={setMarkdownMode}
+            onUndoMarkdown={undoCustomSectionChange}
+            onRedoMarkdown={redoCustomSectionChange}
             onTitleChange={updateTitle}
           />
           <DocumentsWorkspace

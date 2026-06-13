@@ -55,7 +55,9 @@ pub(crate) fn apply_sidecar_message(
 ) -> Result<(), String> {
     match message.message_type.as_str() {
         "session_started" => {
-            if let (Some(id), Some(sid), Some(url)) = (&message.id, &message.session_id, &message.url) {
+            if let (Some(id), Some(sid), Some(url)) =
+                (&message.id, &message.session_id, &message.url)
+            {
                 let session_info = serde_json::json!({
                     "id": id,
                     "sessionId": sid,

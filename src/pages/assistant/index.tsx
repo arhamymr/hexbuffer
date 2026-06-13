@@ -47,7 +47,7 @@ import { useAiChatPane } from './hooks/use-ai-chat-pane';
 import { getMessageText, getReasoningParts, hasContent, providerLabel } from './lib/message-utils';
 import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
-
+import { TriangleLogo } from '@/components/layout/triangle-logo';
 function AIAssistantPaneContent() {
   const {
     aiSettings,
@@ -121,13 +121,16 @@ function AIAssistantPaneContent() {
         {/* Conversation */}
         <div className="flex flex-1 flex-col min-w-0">
           <Conversation>
-            <ConversationContent className="flex-1  max-w-xl mx-auto">
+            <ConversationContent className="flex-1 h-full max-w-xl mx-auto">
               {messages.length === 0 && !pendingCrawlInput ? (
-                <ConversationEmptyState
-                  icon={<Triangle className="size-8" />}
-                  title="AI Assistant"
-                  description="Analyze traffic, extract URL data, write findings, and manage your recon scope."
-                />
+                <div className='flex-1'>
+                  <ConversationEmptyState
+                    icon={<TriangleLogo size='large' />}
+                    title="AI Assistant"
+                    description="Analyze traffic, extract URL data, write findings, and manage your recon scope."
+                  />
+                </div>
+
               ) : (
                 <>
                   {messages.map((message) => {

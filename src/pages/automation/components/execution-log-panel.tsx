@@ -15,11 +15,9 @@ import {
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import {
-  AUTOMATION_LOG_LIMIT,
   useAutomationStore,
   type ExecutionLog,
 } from '@/stores/automation';
-import { isWorkflowProcessing } from '../lib/workflow-runtime';
 
 const levelIcons: Record<ExecutionLog['level'], typeof Info> = {
   info: Info,
@@ -35,6 +33,8 @@ const levelStyles: Record<ExecutionLog['level'], string> = {
   warning: 'text-amber-500',
 };
 
+const EMPTY_EXECUTION_LOGS: ExecutionLog[] = [];
+
 interface ExecutionLogPanelProps {
   workflowId: string | null;
   onHide: () => void;
@@ -49,27 +49,29 @@ function formatTime(iso: string): string {
   return `${h}:${m}:${s}.${ms}`;
 }
 
+function JsonLogData({ data }: { data: unknown }) {
+  const json = React.useMemo(() => JSON.stringify(data, null, 2), [data]);
+  return <>{json}</>;
+}
+
+function dedupeById<T extends { id: string }>(items: T[]): T[] {
+  return Array.from(new Map(items.map((item) => [item.id, item])).values());
+}
+
 export function ExecutionLogPanel({ workflowId, onHide }: ExecutionLogPanelProps) {
-  const allLogs = useAutomationStore((s) => s.executionLogs);
-  const runningWorkflowIds = useAutomationStore((s) => s.runningWorkflowIds);
-  const nodeRuntimeById = useAutomationStore((s) => s.nodeRuntimeById);
+  const logs = useAutomationStore((s) =>
+    workflowId ? s.executionLogsByWorkflowId[workflowId] ?? EMPTY_EXECUTION_LOGS : EMPTY_EXECUTION_LOGS
+  );
+  const workflowRuntime = useAutomationStore((s) =>
+    workflowId ? s.workflowRuntimeById[workflowId] ?? null : null
+  );
   const clearLogs = useAutomationStore((s) => s.clearLogs);
   const pruneExecutionLogs = useAutomationStore((s) => s.pruneExecutionLogs);
   const scrollRef = React.useRef<HTMLDivElement>(null);
   const [collapsed, setCollapsed] = React.useState(false);
   const [expandedLogIds, setExpandedLogIds] = React.useState<Set<string>>(new Set());
-  const logs = React.useMemo(
-    () => {
-      if (!workflowId) return [];
-      const workflowLogs = allLogs.filter((log) => log.workflowId === workflowId);
-      return workflowLogs.length > AUTOMATION_LOG_LIMIT
-        ? workflowLogs.slice(-AUTOMATION_LOG_LIMIT)
-        : workflowLogs;
-    },
-    [allLogs, workflowId]
-  );
-  const visibleLogs = React.useMemo(() => [...logs].reverse(), [logs]);
-  const isWorkflowRunning = isWorkflowProcessing(workflowId, runningWorkflowIds, nodeRuntimeById);
+  const visibleLogs = React.useMemo(() => dedupeById(logs).reverse(), [logs]);
+  const isWorkflowRunning = Boolean(workflowRuntime?.processing);
   const toggleExpand = (logId: string) => {
     setExpandedLogIds((prev) => {
       const next = new Set(prev);
@@ -201,7 +203,7 @@ export function ExecutionLogPanel({ workflowId, onHide }: ExecutionLogPanelProps
                           <div className="mb-1.5">
                             <span className="font-semibold text-muted-foreground uppercase tracking-wider">Input:</span>
                             <pre className="mt-0.5 whitespace-pre-wrap break-all text-muted-foreground">
-                              {JSON.stringify(log.inputData, null, 2)}
+                              <JsonLogData data={log.inputData} />
                             </pre>
                           </div>
                         )}
@@ -209,7 +211,7 @@ export function ExecutionLogPanel({ workflowId, onHide }: ExecutionLogPanelProps
                           <div>
                             <span className="font-semibold text-muted-foreground uppercase tracking-wider">Output:</span>
                             <pre className="mt-0.5 whitespace-pre-wrap break-all text-muted-foreground">
-                              {JSON.stringify(log.outputData, null, 2)}
+                              <JsonLogData data={log.outputData} />
                             </pre>
                           </div>
                         )}

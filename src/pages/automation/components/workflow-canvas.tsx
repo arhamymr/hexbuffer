@@ -10,6 +10,7 @@ import {
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { cn } from '@/lib/utils';
+import { Kbd } from '@/components/ui/kbd';
 import type { AutomationNodeType } from '../types';
 import { useWorkflowCanvas } from '../hooks/use-workflow-canvas';
 import { CanvasContextMenu } from './canvas-context-menu';
@@ -32,15 +33,72 @@ function EmptyState() {
   );
 }
 
+function CanvasCommandHelp() {
+  return (
+    <div className="pointer-events-none absolute bottom-1 left-12 z-30 flex max-w-[calc(100%-1.5rem)] flex-wrap items-center gap-2 rounded-md bg-background/90 px-2.5 py-1.5 text-[10px] text-muted-foreground backdrop-blur">
+      <span className="flex items-center gap-1.5">
+        <Kbd>Space</Kbd>
+        Pan
+      </span>
+      <span className="flex items-center gap-1.5">
+        <Kbd>Drag</Kbd>
+        Select
+      </span>
+      <span className="flex items-center gap-1.5">
+        <Kbd>Del</Kbd>
+        Delete
+      </span>
+      <span className="flex items-center gap-1.5">
+        <Kbd>Right click</Kbd>
+        Menu
+      </span>
+    </div>
+  );
+}
+
 export function WorkflowCanvas({ addNodeRef, persistRef }: WorkflowCanvasProps) {
   const canvas = useWorkflowCanvas(addNodeRef, persistRef);
+  const [spacePressed, setSpacePressed] = React.useState(false);
+
+  React.useEffect(() => {
+    const isEditableTarget = (target: EventTarget | null) => {
+      if (!(target instanceof HTMLElement)) return false;
+      return Boolean(target.closest('input, textarea, select, [contenteditable="true"]'));
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.code !== 'Space' || event.repeat || isEditableTarget(event.target)) return;
+      event.preventDefault();
+      setSpacePressed(true);
+    };
+
+    const handleKeyUp = (event: KeyboardEvent) => {
+      if (event.code !== 'Space') return;
+      event.preventDefault();
+      setSpacePressed(false);
+    };
+
+    const handleBlur = () => setSpacePressed(false);
+
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+    window.addEventListener('blur', handleBlur);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+      window.removeEventListener('blur', handleBlur);
+    };
+  }, []);
 
   if (!canvas.activeWorkflowId) {
     return <EmptyState />;
   }
 
   return (
-    <div ref={canvas.reactFlowWrapper} className="h-full w-full relative">
+    <div
+      ref={canvas.reactFlowWrapper}
+      className={cn('h-full w-full relative', spacePressed && 'automation-flow-pan-mode')}
+    >
       <ReactFlow
         className="automation-flow"
         nodes={canvas.nodes}
@@ -58,6 +116,9 @@ export function WorkflowCanvas({ addNodeRef, persistRef }: WorkflowCanvasProps) 
         edgeTypes={canvas.edgeTypes}
         defaultEdgeOptions={canvas.defaultEdgeOptions}
         connectionLineStyle={canvas.connectionLineStyle}
+        panOnDrag={spacePressed}
+        selectionOnDrag={!spacePressed}
+        panOnScroll
         onlyRenderVisibleElements
         fitView
         snapToGrid
@@ -81,6 +142,8 @@ export function WorkflowCanvas({ addNodeRef, persistRef }: WorkflowCanvasProps) 
           zoomable
         />
       </ReactFlow>
+
+      <CanvasCommandHelp />
 
       {/* Floating node config panel */}
       <div

@@ -20,6 +20,7 @@ import {
 import { getAutomationNodeCapability } from '../lib/node-capabilities';
 import { getAutomationNodeWarning } from '../lib/node-warnings';
 import { NodeCapabilityBadge } from './node-capability-badge';
+import { NodeCardMenu } from './node-card-menu';
 import { NodeRuntimeStatus, useNodeRuntimeStatus } from './node-runtime-status';
 import type { AutomationNodeData, ConditionConfig } from '../types';
 
@@ -36,6 +37,7 @@ function ConditionNodeComponent({ id, data, selected }: NodeProps) {
   const nodeData = data as unknown as AutomationNodeData;
   const config = nodeData.config as ConditionConfig;
   const glyph = operatorGlyphs[config?.operator] ?? '?';
+  const dataPath = config?.dataPath;
   const runtime = useNodeRuntimeStatus(id);
   const isExecuting = runtime?.status === 'running';
   const warning = getAutomationNodeWarning(nodeData, runtime);
@@ -53,7 +55,7 @@ function ConditionNodeComponent({ id, data, selected }: NodeProps) {
             CATEGORY_BORDER.condition,
             CATEGORY_BG.condition,
             selected && 'ring-2 ring-ring ring-offset-2 ring-offset-background',
-            isExecuting && 'animate-pulse ring-2 ring-amber-400 ring-offset-2 shadow-lg shadow-amber-500/20',
+            isExecuting && 'border-red-500 animate-pulse ring-2 ring-red-500 ring-offset-2 shadow-lg shadow-red-500/25',
           )}
         >
       <Handle
@@ -81,6 +83,7 @@ function ConditionNodeComponent({ id, data, selected }: NodeProps) {
         {!capability.supported && capability.reason && (
           <NodeCapabilityBadge reason={capability.reason} />
         )}
+        <NodeCardMenu nodeId={id} nodeLabel={nodeData.label} />
         <GripVertical className="size-3.5 shrink-0 text-muted-foreground/30 opacity-0 group-hover:opacity-100 transition-opacity" />
       </div>
 
@@ -91,7 +94,7 @@ function ConditionNodeComponent({ id, data, selected }: NodeProps) {
               {glyph}
             </code>
             <span className="truncate text-[10px] text-muted-foreground">
-              {config.value || '(not set)'}
+              {dataPath ? `${dataPath} ${glyph} ${config.value || '(not set)'}` : config.value || '(not set)'}
             </span>
           </div>
         </div>

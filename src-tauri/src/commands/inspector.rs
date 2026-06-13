@@ -35,7 +35,8 @@ fn inspector_browser_candidates() -> Vec<PathBuf> {
             candidates.push(PathBuf::from(local_app_data).join("Chromium/Application/chrome.exe"));
         }
         if let Some(program_files) = std::env::var_os("PROGRAMFILES") {
-            candidates.push(PathBuf::from(program_files).join("Google/Chrome/Application/chrome.exe"));
+            candidates
+                .push(PathBuf::from(program_files).join("Google/Chrome/Application/chrome.exe"));
             candidates.push(PathBuf::from(program_files).join("Chromium/Application/chrome.exe"));
         }
         if let Some(program_files_x86) = std::env::var_os("PROGRAMFILES(X86)") {
@@ -392,9 +393,7 @@ async fn send_cdp_command(
 }
 
 #[tauri::command]
-pub async fn get_inspector_pages(
-    debugging_port: u16,
-) -> Result<Vec<InspectorPageInfo>, String> {
+pub async fn get_inspector_pages(debugging_port: u16) -> Result<Vec<InspectorPageInfo>, String> {
     let json_url = format!("http://127.0.0.1:{debugging_port}/json");
     let client = reqwest::Client::new();
     let targets: Vec<CdpTarget> = client
@@ -412,9 +411,10 @@ pub async fn get_inspector_pages(
         .map(|t| InspectorPageInfo {
             id: t.web_socket_debugger_url.clone(),
             url: t.url.clone().unwrap_or_default(),
-            title: t.title.clone().unwrap_or_else(|| {
-                t.url.clone().unwrap_or_else(|| "about:blank".to_string())
-            }),
+            title: t
+                .title
+                .clone()
+                .unwrap_or_else(|| t.url.clone().unwrap_or_else(|| "about:blank".to_string())),
         })
         .collect())
 }
@@ -506,11 +506,8 @@ pub async fn get_inspector_storage(
     )
     .await?;
 
-    let json_str = result["result"]["value"]
-        .as_str()
-        .unwrap_or("{}");
-    let parsed: serde_json::Value =
-        serde_json::from_str(json_str).unwrap_or_default();
+    let json_str = result["result"]["value"].as_str().unwrap_or("{}");
+    let parsed: serde_json::Value = serde_json::from_str(json_str).unwrap_or_default();
 
     let mut entries = Vec::new();
     for storage_type in &["localStorage", "sessionStorage"] {
@@ -540,9 +537,14 @@ pub async fn reset_inspector_browser(
         let mut pid_lock = state.browser_pid.lock().await;
         if let Some(pid) = pid_lock.take() {
             // Try SIGTERM first
-            let _ = std::process::Command::new("kill").arg(pid.to_string()).status();
+            let _ = std::process::Command::new("kill")
+                .arg(pid.to_string())
+                .status();
             std::thread::sleep(std::time::Duration::from_millis(300));
-            let _ = std::process::Command::new("kill").arg("-9").arg(pid.to_string()).status();
+            let _ = std::process::Command::new("kill")
+                .arg("-9")
+                .arg(pid.to_string())
+                .status();
         }
     }
 
@@ -561,7 +563,10 @@ pub async fn reset_inspector_browser(
                 }
                 let _ = std::process::Command::new("kill").arg(pid).status();
                 std::thread::sleep(std::time::Duration::from_millis(200));
-                let _ = std::process::Command::new("kill").arg("-9").arg(pid).status();
+                let _ = std::process::Command::new("kill")
+                    .arg("-9")
+                    .arg(pid)
+                    .status();
             }
         }
     }
@@ -613,7 +618,10 @@ pub async fn reset_inspector_browser(
         match Command::new(&candidate).args(&args).spawn() {
             Ok(_) => return Ok(profile_dir.display().to_string()),
             Err(e) => {
-                eprintln!("[inspector/reset] Failed to launch {}: {e}", candidate.display());
+                eprintln!(
+                    "[inspector/reset] Failed to launch {}: {e}",
+                    candidate.display()
+                );
             }
         }
     }

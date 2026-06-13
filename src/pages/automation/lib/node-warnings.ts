@@ -4,7 +4,7 @@ import type { AutomationNodeData, TriggerConfig } from '../types';
 export function getLiveTrafficSetupWarning(config: TriggerConfig): string | null {
   if (config.triggerType !== 'trigger:live-traffic-captured') return null;
   if (config.host?.trim()) return null;
-  return 'Live traffic is unfiltered. Set a host filter so this trigger only listens to relevant traffic.';
+  return 'Live Traffic Captured requires at least one host before it can listen or run.';
 }
 
 export function getAutomationNodeWarning(

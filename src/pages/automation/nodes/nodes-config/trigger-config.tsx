@@ -42,6 +42,7 @@ const DIRECTION_OPTIONS: { value: string; label: string }[] = [
   { value: 'sent', label: 'Sent' },
   { value: 'received', label: 'Received' },
 ];
+const EMPTY_LIVE_TRAFFIC_INSIGHTS: LiveTrafficHostInsight[] = [];
 
 /* ── Reusable filter widgets ── */
 
@@ -248,11 +249,11 @@ export function TriggerConfigForm({ config, onChange, onRun }: TriggerConfigForm
             </p>
 
             {liveTrafficWarning && (
-              <Alert className="border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-200">
-                <AlertTriangle className="size-4" />
-                <AlertTitle className="text-xs">Live traffic is unfiltered</AlertTitle>
-                <AlertDescription className="text-xs text-amber-700/80 dark:text-amber-200/80">
-                  {liveTrafficWarning} Capturing every host can make workflows noisy and use more resources.
+              <Alert className="border-amber-500/60 bg-amber-500/15 py-3 text-amber-800 shadow-sm shadow-amber-500/10 dark:text-amber-100">
+                <AlertTriangle className="size-5" />
+                <AlertTitle className="text-sm font-semibold">Host whitelist required</AlertTitle>
+                <AlertDescription className="text-xs text-amber-800/85 dark:text-amber-100/85">
+                  {liveTrafficWarning} Add a specific host to keep capture strict and prevent unrelated traffic from entering the queue.
                 </AlertDescription>
               </Alert>
             )}
@@ -279,16 +280,16 @@ export function TriggerConfigForm({ config, onChange, onRun }: TriggerConfigForm
             <div className="space-y-1.5">
               <Label className="text-[11px]">
                 <Globe className="size-3 inline mr-1" />
-                Host whitelist
+                Host whitelist <span className="text-amber-500">*</span>
               </Label>
               <Textarea
                 className="min-h-20 resize-none text-xs"
                 value={config.host ?? ''}
                 onChange={(e) => onChange({ host: e.target.value })}
-                placeholder={'example.com\nhttps://app.example.com\napi.example.com:443\n*.target.local'}
+                placeholder={'0xbuffer.com\nmycarrier.telkom.co.id\nhttps://app.example.com\napi.example.com:443\n*.target.local'}
               />
               <p className="text-[10px] text-muted-foreground">
-                Enter hostnames, full URLs, optional ports, or wildcard domains. Separate with new lines, commas, semicolons, or spaces.
+                Required. Enter hostnames, full URLs, optional ports, or wildcard domains. Separate with new lines, commas, semicolons, or spaces.
               </p>
             </div>
 
@@ -324,7 +325,7 @@ export function TriggerConfigForm({ config, onChange, onRun }: TriggerConfigForm
 
           <p className="text-xs text-muted-foreground">
             Fires automatically when the proxy captures a request matching the filters above.
-            Leave all filters blank to match every request.
+            At least one host is required before this trigger can run.
           </p>
         </>
       )}
@@ -465,6 +466,10 @@ interface LiveTrafficHostListProps {
   stats?: LiveTrafficQueueStats;
 }
 
+function dedupeById<T extends { id: string }>(items: T[]): T[] {
+  return Array.from(new Map(items.map((item) => [item.id, item])).values());
+}
+
 function LiveTrafficHostList({
   title,
   emptyText,
@@ -518,10 +523,10 @@ function LiveTrafficHostList({
           </p>
         </div>
       ) : (
-        <div className="space-y-1">
-          {items.map((item) => (
+        <div className="max-h-72 space-y-1 overflow-y-auto pr-1">
+          {items.map((item, index) => (
             <div
-              key={item.id}
+              key={`${title}-${item.id}-${index}`}
               className="rounded-md border bg-muted/30 px-2 py-1.5"
               title={`${item.method} ${item.host}${item.path}`}
             >
@@ -549,12 +554,11 @@ function LiveTrafficHostList({
 }
 
 export function LiveTrafficQueuePanel({ nodeId }: { nodeId: string }) {
-  const allQueuedHosts = useAutomationStore((s) => s.liveTrafficHostInsights);
-  const stats = useAutomationStore((s) => s.liveTrafficQueueStatsByTriggerId[nodeId]);
-  const queuedHosts = React.useMemo(
-    () => allQueuedHosts.filter((item) => item.triggerNodeId === nodeId).slice(-50).reverse(),
-    [allQueuedHosts, nodeId]
+  const queuedPreview = useAutomationStore(
+    (s) => s.liveTrafficPreviewByTriggerId[nodeId] ?? EMPTY_LIVE_TRAFFIC_INSIGHTS
   );
+  const stats = useAutomationStore((s) => s.liveTrafficQueueStatsByTriggerId[nodeId]);
+  const queuedHosts = React.useMemo(() => dedupeById(queuedPreview).reverse(), [queuedPreview]);
   const clearLiveTrafficHostInsights = useAutomationStore((s) => s.clearLiveTrafficHostInsights);
 
   return (
@@ -570,11 +574,10 @@ export function LiveTrafficQueuePanel({ nodeId }: { nodeId: string }) {
 }
 
 export function LiveTrafficCapturedHostsPanel({ nodeId }: { nodeId: string }) {
-  const allCapturedHosts = useAutomationStore((s) => s.liveTrafficCapturedHosts);
-  const capturedHosts = React.useMemo(
-    () => allCapturedHosts.filter((item) => item.triggerNodeId === nodeId).slice(-100).reverse(),
-    [allCapturedHosts, nodeId]
+  const capturedPreview = useAutomationStore(
+    (s) => s.liveTrafficCapturedPreviewByTriggerId[nodeId] ?? EMPTY_LIVE_TRAFFIC_INSIGHTS
   );
+  const capturedHosts = React.useMemo(() => dedupeById(capturedPreview).reverse(), [capturedPreview]);
   const clearLiveTrafficCapturedHosts = useAutomationStore((s) => s.clearLiveTrafficCapturedHosts);
 
   return (
@@ -585,5 +588,14 @@ export function LiveTrafficCapturedHostsPanel({ nodeId }: { nodeId: string }) {
       clearTitle="Clear captured hosts"
       onClear={() => clearLiveTrafficCapturedHosts(nodeId)}
     />
+  );
+}
+
+export function LiveTrafficPanel({ nodeId }: { nodeId: string }) {
+  return (
+    <div className="space-y-5">
+      <LiveTrafficQueuePanel nodeId={nodeId} />
+      <LiveTrafficCapturedHostsPanel nodeId={nodeId} />
+    </div>
   );
 }

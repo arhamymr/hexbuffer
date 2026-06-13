@@ -1,4 +1,5 @@
 pub mod ai;
+pub mod automation;
 pub mod browser;
 pub mod collaborator;
 pub mod commands;
@@ -9,11 +10,11 @@ pub mod packet_capture;
 pub mod port_scanner;
 pub mod proxy;
 pub mod sqli;
+pub mod threats;
 
 pub use ai::{
-    clear_ai_api_key, get_ai_key_status, get_ai_settings, save_ai_settings,
-    send_ai_chat_message, set_ai_api_key,
-    AiSettings, ChatMessageRecord, ChatSessionRecord,
+    clear_ai_api_key, get_ai_key_status, get_ai_settings, save_ai_settings, send_ai_chat_message,
+    set_ai_api_key, AiSettings, ChatMessageRecord, ChatSessionRecord,
 };
 pub use browser::{AIInsight, ActivityLog, AiBrowserState, CrawlConfig, CrawlPage, CrawlSession};
 pub use collaborator::{
@@ -25,8 +26,9 @@ pub use commands::browser::{
     ai_browser_submit_human_input, browser_batch, browser_click, browser_close, browser_execute,
     browser_fill, browser_navigate, browser_open, browser_press, browser_screenshot,
     browser_snapshot, browser_type, delete_ai_browser_session, get_ai_browser_session,
-    get_browser_status, list_ai_browser_insights, list_ai_browser_logs, list_ai_browser_pages,
-    list_recent_ai_browser_sessions, stop_all_active_crawls, has_any_active_crawl, BrowserProcessState,
+    get_browser_status, has_any_active_crawl, list_ai_browser_insights, list_ai_browser_logs,
+    list_ai_browser_pages, list_recent_ai_browser_sessions, stop_all_active_crawls,
+    BrowserProcessState,
 };
 pub use commands::packet_capture::{
     configure_capture_network, get_packet_capture_status, get_packets_paginated,
@@ -56,4 +58,9 @@ pub use sqli::types::SqliScanState;
 pub use sqli::{
     start_sqli_scan, stop_sqli_scan, SqliParam, SqliParamLocation, SqliRiskLevel, SqliScanResult,
     SqliSeverity, SqliTechnique, SqliVulnerability,
+};
+pub use threats::types::{
+    GhidraCallGraph, GhidraDecompiledFunction, GhidraFunction, GhidraValidationResult,
+    ThreatAnalysisOptions, ThreatAnalysisResult, ThreatAnalysisRun, ThreatArtifacts, ThreatSample,
+    ThreatSettings,
 };

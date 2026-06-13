@@ -4,22 +4,29 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAutomationStore } from '@/stores/automation';
-import { AlertTriangle, Trash2, Pencil, Check, X, Loader2, OctagonX } from 'lucide-react';
+import { AlertTriangle, Trash2, Pencil, Check, X, Loader2, OctagonX, Pause, Play, PauseCircle } from 'lucide-react';
 import { getWorkflowReadiness } from '../lib/workflow-readiness';
-import { isWorkflowProcessing } from '../lib/workflow-runtime';
 
 export function WorkflowToolbar() {
-  const activeWorkflowId = useAutomationStore((s) => s.activeWorkflowId);
   const workflow = useAutomationStore((s) =>
     s.workflows.find((w) => w.id === s.activeWorkflowId) ?? null
   );
   const setWorkflowName = useAutomationStore((s) => s.setWorkflowName);
   const deleteWorkflow = useAutomationStore((s) => s.deleteWorkflow);
   const abortWorkflow = useAutomationStore((s) => s.abortWorkflow);
-  const runningWorkflowIds = useAutomationStore((s) => s.runningWorkflowIds);
-  const nodeRuntimeById = useAutomationStore((s) => s.nodeRuntimeById);
+  const toggleWorkflowEnabled = useAutomationStore((s) => s.toggleWorkflowEnabled);
+  const activeWorkflowRuntime = useAutomationStore((s) =>
+    s.activeWorkflowId ? s.workflowRuntimeById[s.activeWorkflowId] ?? null : null
+  );
   const readiness = React.useMemo(() => getWorkflowReadiness(workflow), [workflow]);
-  const isThisWorkflowRunning = isWorkflowProcessing(workflow?.id, runningWorkflowIds, nodeRuntimeById);
+  const isThisWorkflowRunning = Boolean(workflow?.id && activeWorkflowRuntime?.processing);
+  const hasLiveTrafficTrigger = React.useMemo(
+    () => Boolean(workflow?.nodes.some((node) =>
+      node.type === 'trigger:live-traffic-captured' ||
+      node.type === 'trigger:browser-page-crawled'
+    )),
+    [workflow]
+  );
 
   const [editing, setEditing] = React.useState(false);
   const [editName, setEditName] = React.useState('');
@@ -49,6 +56,11 @@ export function WorkflowToolbar() {
     if (!workflow) return;
     abortWorkflow(workflow.id, 'stopped by user');
   }, [workflow, abortWorkflow]);
+
+  const handleToggleListening = React.useCallback(() => {
+    if (!workflow) return;
+    toggleWorkflowEnabled(workflow.id);
+  }, [workflow, toggleWorkflowEnabled]);
 
   if (!workflow) {
     return (
@@ -91,7 +103,12 @@ export function WorkflowToolbar() {
       )}
 
       <div className="ml-auto flex items-center gap-2">
-        {isThisWorkflowRunning ? (
+        {hasLiveTrafficTrigger && !workflow.enabled ? (
+          <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+            <PauseCircle className="size-3 text-amber-500" />
+            <span className="font-medium text-amber-500">Listening Paused</span>
+          </div>
+        ) : isThisWorkflowRunning ? (
           <div className="flex items-center gap-1.5 text-[10px]">
             <Loader2 className="size-3 animate-spin text-emerald-400" />
             <span className="text-emerald-400 font-medium">Running</span>
@@ -119,6 +136,22 @@ export function WorkflowToolbar() {
           >
             <OctagonX className="mr-1 size-3.5" />
             Abort
+          </Button>
+        )}
+        {hasLiveTrafficTrigger && (
+          <Button
+            variant="outline"
+            size="xs"
+            className="h-7"
+            onClick={handleToggleListening}
+            title={workflow.enabled ? 'Pause live-traffic listening' : 'Start live-traffic listening'}
+          >
+            {workflow.enabled ? (
+              <Pause className="mr-1 size-3.5" />
+            ) : (
+              <Play className="mr-1 size-3.5" />
+            )}
+            {workflow.enabled ? 'Pause Listening' : 'Start Listening'}
           </Button>
         )}
         <Button

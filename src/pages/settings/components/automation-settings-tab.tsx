@@ -1,6 +1,7 @@
 import { RotateCcwIcon, WorkflowIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAutomationStore } from '@/stores/automation';
@@ -66,7 +67,8 @@ export function AutomationSettingsTab() {
     automationSettings.liveTrafficConcurrency === DEFAULT_AUTOMATION_SETTINGS.liveTrafficConcurrency &&
     automationSettings.filteredTriggerQueueCap === DEFAULT_AUTOMATION_SETTINGS.filteredTriggerQueueCap &&
     automationSettings.catchAllTriggerQueueCap === DEFAULT_AUTOMATION_SETTINGS.catchAllTriggerQueueCap &&
-    automationSettings.recentMatchDedupeTtlMs === DEFAULT_AUTOMATION_SETTINGS.recentMatchDedupeTtlMs;
+    automationSettings.recentMatchDedupeTtlMs === DEFAULT_AUTOMATION_SETTINGS.recentMatchDedupeTtlMs &&
+    automationSettings.allowRunScriptActions === DEFAULT_AUTOMATION_SETTINGS.allowRunScriptActions;
 
   return (
     <Card>
@@ -108,6 +110,21 @@ export function AutomationSettingsTab() {
           value={automationSettings.recentMatchDedupeTtlMs}
           onChange={updateNumberSetting}
         />
+        <div className="flex items-start gap-3 rounded-md border border-amber-200 bg-amber-50/60 p-3 dark:border-amber-500/30 dark:bg-amber-500/10">
+          <Checkbox
+            id="allowRunScriptActions"
+            checked={automationSettings.allowRunScriptActions}
+            onCheckedChange={(checked) => {
+              updateAutomationSettings({ allowRunScriptActions: checked === true });
+            }}
+          />
+          <div className="space-y-1">
+            <Label htmlFor="allowRunScriptActions">Allow local run-script actions</Label>
+            <p className="text-sm text-muted-foreground">
+              Enables automation workflows to execute local commands from action nodes. Keep this disabled unless you trust the workflow.
+            </p>
+          </div>
+        </div>
         <div className="flex flex-wrap items-center gap-2 border-t pt-4">
           <Button
             size="xs"

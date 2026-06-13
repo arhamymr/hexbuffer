@@ -1,34 +1,31 @@
+import { invoke } from '@tauri-apps/api/core';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
-import { useAutomationStore, type WorkflowContext } from '@/stores/automation';
+import { buildRawHttpRequest } from '@/lib/http-message';
+import { useNavStore } from '@/stores/nav';
+import { useRepeaterStore } from '@/stores/repeater';
+import { useInvokerStore } from '@/stores/invoker';
+import { useAutomationStore, type ExecutionLog, type LiveTrafficHostInsight, type NodeRuntimeState } from '@/stores/automation';
+import { useInterceptStore } from '@/pages/intercept/state/intercept-store';
+import {
+  createDefaultAttackConfig,
+  findRequestPayloadPositions,
+  syncPositionPayloads,
+  type AttackConfig,
+  type PayloadConfig,
+} from '@/pages/invoker/types';
 import type { ProxyRecord } from '@/types';
 import type { TriggerConfig, WorkflowDef } from '@/pages/automation/types';
 
-/* ── Helpers ── */
+const LIVE_TRAFFIC_TRIGGER_TYPE = 'trigger:live-traffic-captured';
 
-function buildContext(record: ProxyRecord): WorkflowContext {
-  const host = getRecordUrlParts(record).host;
-  const decodeBody = (body: number[] | undefined) => {
-    if (!body?.length) return '';
-    try { return new TextDecoder().decode(new Uint8Array(body)); } catch { return ''; }
-  };
-  return {
-    triggerType: 'live-traffic-captured',
-    data: {
-      id: record.id,
-      timestamp: record.timestamp,
-      url: record.request.uri,
-      method: record.request.method,
-      host,
-      status: record.response?.status_code,
-      statusText: record.response?.status_text,
-      requestBody: decodeBody(record.request.body),
-      responseBody: decodeBody(record.response?.body),
-      clientAddr: record.client_addr,
-      serverAddr: record.server_addr,
-      httpVersion: record.request.http_version,
-      responseHttpVersion: record.response?.http_version,
-    },
-  };
+declare global {
+  interface Window {
+    __TAURI_INTERNALS__?: unknown;
+  }
+}
+
+function isTauriAvailable() {
+  return typeof window !== 'undefined' && Boolean(window.__TAURI_INTERNALS__);
 }
 
 export interface LiveTrafficFilterMatch {
@@ -118,15 +115,15 @@ export function matchesFilter(record: ProxyRecord, filter: LiveTrafficFilterMatc
       case 'equals':
         if (loweredUrl !== loweredValue) return false;
         break;
-      case 'contains':
-        if (!loweredUrl.includes(loweredValue)) return false;
-        break;
       case 'regex':
         try {
           if (!new RegExp(value, 'i').test(record.request.uri)) return false;
         } catch {
           return false;
         }
+        break;
+      default:
+        if (!loweredUrl.includes(loweredValue)) return false;
         break;
     }
   }
@@ -138,7 +135,8 @@ export function matchesLiveTrafficTrigger(
   record: ProxyRecord,
   config: TriggerConfig,
 ): boolean {
-  if (config.triggerType !== 'trigger:live-traffic-captured') return false;
+  if (config.triggerType !== LIVE_TRAFFIC_TRIGGER_TYPE) return false;
+  if (parseHostWhitelist(config.host).length === 0) return false;
   return matchesFilter(record, {
     host: config.host,
     method: config.method,
@@ -150,282 +148,398 @@ export function matchesLiveTrafficTrigger(
 export function getLiveTrafficWorkflows(workflows: WorkflowDef[]): WorkflowDef[] {
   return workflows.filter((w) => {
     if (!w.enabled) return false;
-    const nodes = (w.nodes ?? []) as Array<{ type?: string }>;
-    return nodes.some((n) => n.type === 'trigger:live-traffic-captured');
+    const nodes = (w.nodes ?? []) as Array<{ type?: string; data?: { nodeType?: string } }>;
+    return nodes.some((n) => n.type === LIVE_TRAFFIC_TRIGGER_TYPE || n.data?.nodeType === LIVE_TRAFFIC_TRIGGER_TYPE);
   });
 }
 
-interface LiveTrafficQueueJob {
-  id: string;
-  workflowId: string;
+interface NodeRuntimeEvent extends Omit<NodeRuntimeState, 'updatedAt'> {
+  nodeId: string;
+  updatedAt: string;
+}
+
+interface WorkflowRuntimeEvent {
+  runningWorkflowIds: string[];
+  activeRunWorkflowId?: string | null;
+  executingNodeId?: string | null;
+}
+
+interface QueueStatsEvent {
   triggerNodeId: string;
-  triggerNodeLabel: string;
+  pending: number;
+  dropped: number;
+  lastDroppedAt?: string;
   cap: number;
-  record: ProxyRecord;
 }
 
-let activeLiveTrafficJobs = 0;
-const liveTrafficQueue: LiveTrafficQueueJob[] = [];
-const recentMatchedRequests = new Map<string, number>();
-
-function isCatchAllTrigger(config: TriggerConfig): boolean {
-  const hasHost = parseHostWhitelist(config.host).length > 0;
-  const hasMethod = Boolean(config.method?.trim() && config.method.toUpperCase() !== 'ANY');
-  const hasValue = Boolean(config.value?.trim());
-  return !hasHost && !hasMethod && !hasValue;
+interface AutomationUiBatchEvent {
+  batchId: string;
+  hostInsights: LiveTrafficHostInsight[];
+  capturedHosts: LiveTrafficHostInsight[];
+  removeHostInsightIds: string[];
+  logs: ExecutionLog[];
+  nodeRuntimes: NodeRuntimeEvent[];
+  workflowRuntimes: WorkflowRuntimeEvent[];
+  workflowRuntimeClearIds: string[];
+  queueStats: QueueStatsEvent[];
 }
 
-function queueCapForTrigger(config: TriggerConfig): number {
-  const settings = useAutomationStore.getState().automationSettings;
-  return isCatchAllTrigger(config)
-    ? settings.catchAllTriggerQueueCap
-    : settings.filteredTriggerQueueCap;
+interface AutomationActionUiEvent {
+  actionId: string;
+  workflowId: string;
+  nodeId: string;
+  actionType: string;
+  params: Record<string, unknown>;
+  inputData: unknown;
 }
 
-function makeMatchKey(record: ProxyRecord, triggerNodeId: string, host: string, path: string): string {
-  return [
-    triggerNodeId,
-    record.id,
-    record.request.method,
-    record.response?.status_code ?? '',
-    host,
-    path,
-  ].join('|');
+function asRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : {};
 }
 
-function wasRecentlyMatched(matchKey: string): boolean {
-  const ttl = useAutomationStore.getState().automationSettings.recentMatchDedupeTtlMs;
-  if (ttl <= 0) {
-    return false;
+function stringField(source: Record<string, unknown>, keys: string[], fallback = ''): string {
+  for (const key of keys) {
+    const value = source[key];
+    if (typeof value === 'string' && value.trim()) return value;
+    if (typeof value === 'number') return String(value);
+  }
+  return fallback;
+}
+
+function booleanParam(params: Record<string, unknown>, key: string, fallback: boolean): boolean {
+  const value = params[key];
+  if (typeof value === 'boolean') return value;
+  if (typeof value === 'string') {
+    if (value.toLowerCase() === 'true') return true;
+    if (value.toLowerCase() === 'false') return false;
+  }
+  return fallback;
+}
+
+function headersFromInput(input: Record<string, unknown>): Record<string, string> {
+  const headerCandidate = input.headers ?? input.requestHeaders;
+  if (!headerCandidate || typeof headerCandidate !== 'object' || Array.isArray(headerCandidate)) {
+    return {};
+  }
+  return Object.fromEntries(
+    Object.entries(headerCandidate as Record<string, unknown>)
+      .filter(([, value]) => typeof value === 'string' || typeof value === 'number')
+      .map(([key, value]) => [key, String(value)])
+  );
+}
+
+function requestFromAutomationInput(input: unknown) {
+  const record = asRecord(input);
+  const url = stringField(record, ['url', 'requestUrl', 'uri'], 'https://example.com/');
+  return {
+    method: stringField(record, ['method'], 'GET').toUpperCase(),
+    url,
+    headers: headersFromInput(record),
+    body: stringField(record, ['requestBody', 'body'], ''),
+  };
+}
+
+function resolveSimpleTemplate(template: string, input: Record<string, unknown>): string {
+  return template.replace(/\{\{([A-Za-z0-9_.-]+)\}\}/g, (match, path: string) => {
+    const value = path.split('.').reduce<unknown>((current, segment) => {
+      if (!current || typeof current !== 'object' || Array.isArray(current)) return undefined;
+      return (current as Record<string, unknown>)[segment];
+    }, input);
+    if (typeof value === 'string' || typeof value === 'number') return String(value);
+    return match;
+  });
+}
+
+function markFirstOccurrence(value: string, needle: string): string {
+  if (!needle.trim() || value.includes('§')) return value;
+  const index = value.indexOf(needle);
+  if (index < 0) return value;
+  return `${value.slice(0, index)}§${value.slice(index, index + needle.length)}§${value.slice(index + needle.length)}`;
+}
+
+function payloadConfigFromWordlist(wordlist: string): PayloadConfig {
+  const trimmed = wordlist.trim();
+  if (!trimmed) {
+    return {
+      payload_type: 'SimpleList',
+      values: [],
+      processing: [],
+    };
+  }
+  if (trimmed.includes('/') || trimmed.includes('\\')) {
+    return {
+      payload_type: 'RuntimeFile',
+      values: [],
+      file_path: trimmed,
+      processing: [],
+    };
+  }
+  return {
+    payload_type: 'SimpleList',
+    values: trimmed.split(/[\n,]+/).map((value) => value.trim()).filter(Boolean),
+    processing: [],
+  };
+}
+
+function buildInvokerConfig(payload: AutomationActionUiEvent): AttackConfig {
+  const params = asRecord(payload.params);
+  const inputRecord = asRecord(payload.inputData);
+  const request = requestFromAutomationInput(payload.inputData);
+  const target = resolveSimpleTemplate(stringField(params, ['target'], ''), inputRecord);
+  const baseRequest = {
+    ...request,
+    url: markFirstOccurrence(request.url, target),
+    body: markFirstOccurrence(request.body, target),
+    follow_redirects: true,
+    max_hops: 10,
+  };
+  const positions = findRequestPayloadPositions(baseRequest);
+  const payloadConfig = payloadConfigFromWordlist(resolveSimpleTemplate(stringField(params, ['wordlist'], ''), inputRecord));
+
+  return {
+    ...createDefaultAttackConfig(),
+    name: `Automation ${request.method} ${request.url}`,
+    base_request: baseRequest,
+    positions,
+    payload_config: payloadConfig,
+    position_payloads: syncPositionPayloads(positions, {}, payloadConfig),
+  };
+}
+
+function handleAutomationActionUi(payload: AutomationActionUiEvent): void {
+  const params = asRecord(payload.params);
+  const request = requestFromAutomationInput(payload.inputData);
+
+  if (payload.actionType === 'action:send-to-repeater') {
+    const tabId = useRepeaterStore.getState().addRequestTab({
+      raw: buildRawHttpRequest(request),
+      url: request.url,
+    });
+    const tabName = stringField(params, ['tabName'], '');
+    if (tabName) {
+      useRepeaterStore.getState().renameTab(tabId, tabName);
+    }
+    if (booleanParam(params, 'open', true)) {
+      useNavStore.getState().triggerNavBlink('/repeater');
+    }
+    return;
   }
 
-  const now = Date.now();
-  for (const [key, matchedAt] of recentMatchedRequests) {
-    if (now - matchedAt > ttl) {
-      recentMatchedRequests.delete(key);
+  if (payload.actionType === 'action:send-to-intercept') {
+    const host = parseUrl(request.url).host || stringField(asRecord(payload.inputData), ['host'], '');
+    const interceptStore = useInterceptStore.getState();
+    const tabId = interceptStore.addTabForHost(host);
+    if (tabId) {
+      interceptStore.setRawRequest(buildRawHttpRequest(request));
+    }
+    if (booleanParam(params, 'pause', true)) {
+      void interceptStore.toggleIntercept(true).catch((error) => {
+        console.error('Failed to enable intercept from automation action:', error);
+      });
+    }
+    useNavStore.getState().triggerNavBlink('/intercept');
+    return;
+  }
+
+  if (payload.actionType === 'action:start-invoker') {
+    const invokerStore = useInvokerStore.getState();
+    const config = buildInvokerConfig(payload);
+    invokerStore.addAttackTab(config);
+    useNavStore.getState().triggerNavBlink('/invoker');
+
+    const hasPositions = config.positions.length > 0;
+    const hasPayloads =
+      config.payload_config.payload_type === 'NumberRange' ||
+      config.payload_config.values.length > 0 ||
+      Boolean(config.payload_config.file_path);
+    if (hasPositions && hasPayloads) {
+      void useInvokerStore.getState().startAttack();
     }
   }
-
-  const previous = recentMatchedRequests.get(matchKey);
-  if (previous && now - previous <= ttl) {
-    return true;
-  }
-
-  recentMatchedRequests.set(matchKey, now);
-  return false;
 }
 
-function pendingCountForTrigger(triggerNodeId: string): number {
-  return liveTrafficQueue.filter((job) => job.triggerNodeId === triggerNodeId).length;
-}
-
-function updateQueueStats(triggerNodeId: string, cap: number): void {
+async function syncAutomationRuntime(): Promise<void> {
+  if (!isTauriAvailable()) return;
   const store = useAutomationStore.getState();
-  const current = store.liveTrafficQueueStatsByTriggerId[triggerNodeId];
-  store.setLiveTrafficQueueStats(triggerNodeId, {
-    pending: pendingCountForTrigger(triggerNodeId),
-    dropped: current?.dropped ?? 0,
-    lastDroppedAt: current?.lastDroppedAt,
-    cap,
+  await invoke('automation_sync_workflows', {
+    workflows: store.workflows,
+    settings: store.automationSettings,
   });
 }
 
-function removeQueuedJobsForWorkflowIds(workflowIds: Set<string>): void {
-  if (workflowIds.size === 0 || liveTrafficQueue.length === 0) return;
+let unlisteners: UnlistenFn[] = [];
+let unsubscribeAutomationSync: (() => void) | null = null;
+let syncTimer: ReturnType<typeof window.setTimeout> | null = null;
+let lastSyncSignature = '';
+let hostInsightFlushTimer: ReturnType<typeof window.setTimeout> | null = null;
+let queuedHostInsightsBuffer: LiveTrafficHostInsight[] = [];
+let capturedHostInsightsBuffer: LiveTrafficHostInsight[] = [];
+let hostInsightRemoveBuffer: string[] = [];
+let queueStatsBuffer = new Map<string, QueueStatsEvent>();
+let hostInsightAckBuffer: string[] = [];
+let executionLogBuffer: ExecutionLog[] = [];
+let nodeRuntimeBuffer: NodeRuntimeEvent[] = [];
+let workflowRuntimeBuffer: WorkflowRuntimeEvent[] = [];
+let workflowRuntimeClearBuffer: string[] = [];
 
-  const removedJobs: LiveTrafficQueueJob[] = [];
-  for (let index = liveTrafficQueue.length - 1; index >= 0; index -= 1) {
-    const job = liveTrafficQueue[index];
-    if (!workflowIds.has(job.workflowId)) continue;
-    removedJobs.push(job);
-    liveTrafficQueue.splice(index, 1);
-  }
-
-  if (removedJobs.length === 0) return;
-
-  const store = useAutomationStore.getState();
-  const affectedTriggers = new Map<string, number>();
-  for (const job of removedJobs) {
-    store.removeLiveTrafficHostInsight(job.id);
-    affectedTriggers.set(job.triggerNodeId, job.cap);
-  }
-
-  for (const [triggerNodeId, cap] of affectedTriggers) {
-    updateQueueStats(triggerNodeId, cap);
-  }
+function scheduleAutomationSync(): void {
+  if (!isTauriAvailable()) return;
+  if (syncTimer) window.clearTimeout(syncTimer);
+  syncTimer = window.setTimeout(() => {
+    syncTimer = null;
+    const store = useAutomationStore.getState();
+    const signature = JSON.stringify({
+      workflows: store.workflows,
+      automationSettings: store.automationSettings,
+    });
+    if (signature === lastSyncSignature) return;
+    lastSyncSignature = signature;
+    void syncAutomationRuntime().catch((error) => {
+      console.error('Failed to sync automation runtime:', error);
+    });
+  }, 100);
 }
 
-function dropOldestPendingJob(triggerNodeId: string, cap: number): void {
-  const index = liveTrafficQueue.findIndex((job) => job.triggerNodeId === triggerNodeId);
-  if (index < 0) return;
+function scheduleHostInsightFlush(): void {
+  if (hostInsightFlushTimer) return;
+  hostInsightFlushTimer = window.setTimeout(() => {
+    hostInsightFlushTimer = null;
+    const queued = queuedHostInsightsBuffer;
+    const captured = capturedHostInsightsBuffer;
+    const removed = hostInsightRemoveBuffer;
+    const logs = executionLogBuffer;
+    const nodeRuntimes = nodeRuntimeBuffer;
+    const workflowRuntimes = workflowRuntimeBuffer;
+    const workflowRuntimeClearIds = workflowRuntimeClearBuffer;
+    queuedHostInsightsBuffer = [];
+    capturedHostInsightsBuffer = [];
+    hostInsightRemoveBuffer = [];
+    executionLogBuffer = [];
+    nodeRuntimeBuffer = [];
+    workflowRuntimeBuffer = [];
+    workflowRuntimeClearBuffer = [];
 
-  const [dropped] = liveTrafficQueue.splice(index, 1);
-  const store = useAutomationStore.getState();
-  store.removeLiveTrafficHostInsight(dropped.id);
-  store.incrementLiveTrafficDropped(triggerNodeId, cap);
-  updateQueueStats(triggerNodeId, cap);
-}
-
-function scheduleLiveTrafficQueue(): void {
-  const concurrency = useAutomationStore.getState().automationSettings.liveTrafficConcurrency;
-  while (
-    activeLiveTrafficJobs < concurrency &&
-    liveTrafficQueue.length > 0
-  ) {
-    const job = liveTrafficQueue.shift();
-    if (!job) return;
+    const queueStats = Array.from(queueStatsBuffer.values());
+    const ackBatchIds = hostInsightAckBuffer;
+    queueStatsBuffer = new Map();
+    hostInsightAckBuffer = [];
 
     const store = useAutomationStore.getState();
-    if (!store.workflows.some((workflow) => workflow.id === job.workflowId)) {
-      store.removeLiveTrafficHostInsight(job.id);
-      updateQueueStats(job.triggerNodeId, job.cap);
-      continue;
+    if (queued.length > 0) store.appendLiveTrafficHostInsights(queued);
+    if (captured.length > 0) store.appendLiveTrafficCapturedHosts(captured);
+    if (removed.length > 0) store.removeLiveTrafficHostInsights(removed);
+    if (logs.length > 0) store.appendExecutionLogs(logs);
+    if (nodeRuntimes.length > 0) {
+      store.setNodeRuntimeStatuses(
+        nodeRuntimes.map(({ nodeId, ...runtime }) => ({ nodeId, runtime }))
+      );
     }
-
-    activeLiveTrafficJobs += 1;
-    store.removeLiveTrafficHostInsight(job.id);
-    updateQueueStats(job.triggerNodeId, job.cap);
-
-    store
-      .runWorkflow(job.workflowId, buildContext(job.record))
-      .finally(() => {
-        activeLiveTrafficJobs = Math.max(0, activeLiveTrafficJobs - 1);
-        updateQueueStats(job.triggerNodeId, job.cap);
-        scheduleLiveTrafficQueue();
+    for (const workflowId of workflowRuntimeClearIds) {
+      store.clearWorkflowRuntimeStatus(workflowId);
+    }
+    const latestWorkflowRuntime = workflowRuntimes.at(-1);
+    if (latestWorkflowRuntime) {
+      store.setWorkflowRuntimeSnapshot(latestWorkflowRuntime);
+    }
+    if (queueStats.length > 0) {
+      useAutomationStore.setState((state) => {
+        const liveTrafficQueueStatsByTriggerId = {
+          ...state.liveTrafficQueueStatsByTriggerId,
+        };
+        for (const { triggerNodeId, ...stats } of queueStats) {
+          liveTrafficQueueStatsByTriggerId[triggerNodeId] = stats;
+        }
+        return { liveTrafficQueueStatsByTriggerId };
       });
-  }
+    }
+    for (const batchId of ackBatchIds) {
+      void invoke('automation_ack_host_insight_batch', { batchId }).catch((error) => {
+        console.error('Failed to ack automation host insight batch:', error);
+      });
+    }
+  }, 100);
 }
-
-function enqueueLiveTrafficJob(job: LiveTrafficQueueJob): void {
-  if (pendingCountForTrigger(job.triggerNodeId) >= job.cap) {
-    dropOldestPendingJob(job.triggerNodeId, job.cap);
-  }
-
-  liveTrafficQueue.push(job);
-  updateQueueStats(job.triggerNodeId, job.cap);
-  scheduleLiveTrafficQueue();
-}
-
-/* ── Event bridge ── */
-
-let unlisten: UnlistenFn | null = null;
-let unsubscribeWorkflowCleanup: (() => void) | null = null;
-let startPromise: Promise<void> | null = null;
-let watcherGeneration = 0;
 
 export async function startLiveTrafficWatcher(): Promise<void> {
-  if (unlisten || startPromise) return startPromise ?? undefined;
+  if (unlisteners.length > 0 || !isTauriAvailable()) {
+    scheduleAutomationSync();
+    return;
+  }
 
-  const generation = ++watcherGeneration;
+  const [
+    unlistenUiBatch,
+    unlistenQueueStats,
+    unlistenActionUi,
+  ] = await Promise.all([
+    listen<AutomationUiBatchEvent>('automation:ui-batch', (event) => {
+      queuedHostInsightsBuffer.push(...event.payload.hostInsights);
+      capturedHostInsightsBuffer.push(...event.payload.capturedHosts);
+      hostInsightRemoveBuffer.push(...event.payload.removeHostInsightIds);
+      executionLogBuffer.push(...event.payload.logs);
+      nodeRuntimeBuffer.push(...event.payload.nodeRuntimes);
+      workflowRuntimeBuffer.push(...event.payload.workflowRuntimes);
+      workflowRuntimeClearBuffer.push(...event.payload.workflowRuntimeClearIds);
+      for (const stats of event.payload.queueStats) {
+        queueStatsBuffer.set(stats.triggerNodeId, stats);
+      }
+      hostInsightAckBuffer.push(event.payload.batchId);
+      scheduleHostInsightFlush();
+    }),
+    listen<QueueStatsEvent>('automation:queue-stats', (event) => {
+      queueStatsBuffer.set(event.payload.triggerNodeId, event.payload);
+      scheduleHostInsightFlush();
+    }),
+    listen<AutomationActionUiEvent>('automation:action-ui', (event) => {
+      handleAutomationActionUi(event.payload);
+    }),
+  ]);
 
-  if (!unsubscribeWorkflowCleanup) {
-    unsubscribeWorkflowCleanup = useAutomationStore.subscribe((state, previousState) => {
-      const currentIds = new Set(state.workflows.map((workflow) => workflow.id));
-      const deletedIds = new Set(
-        previousState.workflows
-          .map((workflow) => workflow.id)
-          .filter((workflowId) => !currentIds.has(workflowId))
-      );
-      removeQueuedJobsForWorkflowIds(deletedIds);
+  unlisteners = [
+    unlistenUiBatch,
+    unlistenQueueStats,
+    unlistenActionUi,
+  ];
 
-      const abortedIds = new Set(
-        Object.entries(state.workflowAbortQueueRevisionById)
-          .filter(([workflowId, revision]) => {
-            if (revision === (previousState.workflowAbortQueueRevisionById[workflowId] ?? 0)) {
-              return false;
-            }
-            return currentIds.has(workflowId);
-          })
-          .map(([workflowId]) => workflowId)
-      );
-      removeQueuedJobsForWorkflowIds(abortedIds);
-
+  if (!unsubscribeAutomationSync) {
+    unsubscribeAutomationSync = useAutomationStore.subscribe((state, previousState) => {
       if (
-        state.automationSettings.liveTrafficConcurrency !== previousState.automationSettings.liveTrafficConcurrency
+        state.workflows !== previousState.workflows ||
+        state.automationSettings !== previousState.automationSettings
       ) {
-        scheduleLiveTrafficQueue();
+        scheduleAutomationSync();
       }
     });
   }
 
-  startPromise = listen<ProxyRecord>('proxy-record', (event) => {
-    const record = event.payload;
-    const store = useAutomationStore.getState();
-
-    const candidateWorkflows = getLiveTrafficWorkflows(store.workflows);
-    const parsedUrl = getRecordUrlParts(record);
-
-    for (const workflow of candidateWorkflows) {
-      const nodes = (workflow.nodes ?? []) as Array<{
-        id: string;
-        type?: string;
-        data?: { label?: string; config?: TriggerConfig };
-      }>;
-
-      const triggerNode = nodes.find(
-        (n) =>
-          n.type === 'trigger:live-traffic-captured' &&
-          n.data?.config?.triggerType === 'trigger:live-traffic-captured'
-      );
-
-      if (!triggerNode?.data?.config) continue;
-
-      if (matchesLiveTrafficTrigger(record, triggerNode.data.config)) {
-        const matchKey = makeMatchKey(record, triggerNode.id, parsedUrl.host, parsedUrl.path);
-        if (wasRecentlyMatched(matchKey)) continue;
-
-        const insightId = crypto.randomUUID();
-        const cap = queueCapForTrigger(triggerNode.data.config);
-        const insight = {
-          id: insightId,
-          workflowId: workflow.id,
-          workflowName: workflow.name,
-          triggerNodeId: triggerNode.id,
-          triggerNodeLabel: triggerNode.data.label ?? 'Live Traffic Captured',
-          host: parsedUrl.host,
-          method: record.request.method,
-          status: record.response?.status_code,
-          path: parsedUrl.path,
-        };
-        store.appendLiveTrafficHostInsight(insight);
-        store.appendLiveTrafficCapturedHost(insight);
-        enqueueLiveTrafficJob({
-          id: insightId,
-          workflowId: workflow.id,
-          triggerNodeId: triggerNode.id,
-          triggerNodeLabel: triggerNode.data.label ?? 'Live Traffic Captured',
-          cap,
-          record,
-        });
-      }
-    }
-  }).then((nextUnlisten) => {
-    if (generation !== watcherGeneration) {
-      nextUnlisten();
-      return;
-    }
-    unlisten = nextUnlisten;
-  }).finally(() => {
-    if (generation === watcherGeneration) {
-      startPromise = null;
-    }
-  });
-
-  return startPromise;
+  scheduleAutomationSync();
 }
 
 export function stopLiveTrafficWatcher(): void {
-  watcherGeneration += 1;
-  if (unlisten) {
+  for (const unlisten of unlisteners) {
     unlisten();
-    unlisten = null;
   }
-  startPromise = null;
-  if (unsubscribeWorkflowCleanup) {
-    unsubscribeWorkflowCleanup();
-    unsubscribeWorkflowCleanup = null;
+  unlisteners = [];
+  if (unsubscribeAutomationSync) {
+    unsubscribeAutomationSync();
+    unsubscribeAutomationSync = null;
   }
-  liveTrafficQueue.length = 0;
-  recentMatchedRequests.clear();
-  activeLiveTrafficJobs = 0;
+  if (syncTimer) {
+    window.clearTimeout(syncTimer);
+    syncTimer = null;
+  }
+  if (hostInsightFlushTimer) {
+    window.clearTimeout(hostInsightFlushTimer);
+    hostInsightFlushTimer = null;
+  }
+  queuedHostInsightsBuffer = [];
+  capturedHostInsightsBuffer = [];
+  hostInsightRemoveBuffer = [];
+  queueStatsBuffer = new Map();
+  hostInsightAckBuffer = [];
+  executionLogBuffer = [];
+  nodeRuntimeBuffer = [];
+  workflowRuntimeBuffer = [];
+  workflowRuntimeClearBuffer = [];
 }

@@ -571,7 +571,7 @@ impl WebSocketHandler for AppHandler {
 
         let uri_str = uri.to_string();
         let empty_headers = HashMap::new();
-        let (host, path, _) = websocket::parse_websocket_target(&uri_str, &empty_headers);
+        let (host, path, url) = websocket::parse_websocket_target(&uri_str, &empty_headers);
         let key = format!("{}|{}|{}", client_addr, host, path);
 
         let connection_id = self.ws_connections.lock().unwrap().get(&key).copied();
@@ -597,6 +597,14 @@ impl WebSocketHandler for AppHandler {
             if let Err(e) = self.app_handle.emit("websocket-message", &message_record) {
                 eprintln!("[websocket] failed to emit message event: {}", e);
             }
+
+            crate::automation::ingest_websocket_message(
+                &self.app_handle,
+                &message_record,
+                &host,
+                &path,
+                &url,
+            );
 
             if matches!(&msg, Message::Close(_)) {
                 self.ws_connections.lock().unwrap().remove(&key);

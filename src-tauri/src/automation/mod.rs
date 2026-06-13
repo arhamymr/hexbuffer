@@ -4,10 +4,13 @@ mod events;
 mod execution;
 mod intercept;
 mod live_traffic;
+mod page_crawled;
 mod port_scan;
+mod scan_completed;
 mod scheduled;
 mod state;
 mod types;
+mod websocket;
 
 use std::collections::HashSet;
 
@@ -23,11 +26,14 @@ use types::normalize_settings;
 
 // ── Public API re-exports ─────────────────────────────────────────────────
 
-pub use live_traffic::ingest_proxy_record;
 pub use intercept::ingest_intercept_paused_request;
+pub use live_traffic::ingest_proxy_record;
+pub use page_crawled::ingest_crawled_page;
 pub use port_scan::ingest_port_scan_result;
+pub use scan_completed::ingest_scan_completed;
 pub use state::AutomationRuntimeState;
 pub use types::{AutomationRuntimeSettings, AutomationWorkflow, WorkflowContext};
+pub use websocket::ingest_websocket_message;
 
 // ── Tauri commands (must live here for generate_handler! macro) ───────────
 

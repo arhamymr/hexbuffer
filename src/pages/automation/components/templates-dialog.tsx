@@ -12,7 +12,28 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { useAutomationStore } from '@/stores/automation';
 import { WORKFLOW_TEMPLATES, type WorkflowTemplate } from '../templates';
-import { Plus } from 'lucide-react';
+import {
+  Activity,
+  Bell,
+  Bug,
+  Clock,
+  Code,
+  Download,
+  FileCode,
+  FileText,
+  Filter,
+  Globe,
+  Hash,
+  Network,
+  Plus,
+  Radio,
+  ScanLine,
+  Search,
+  Shield,
+  Sparkles,
+  type LucideIcon,
+  Zap,
+} from 'lucide-react';
 
 const CATEGORY_LABELS: Record<WorkflowTemplate['category'], string> = {
   monitoring: 'Monitoring',
@@ -23,14 +44,25 @@ const CATEGORY_LABELS: Record<WorkflowTemplate['category'], string> = {
 
 const CATEGORY_ORDER: WorkflowTemplate['category'][] = ['monitoring', 'security', 'crawl', 'general'];
 
-const TEMPLATE_EMOJI: Record<string, string> = {
-  Zap: '⚡',
-  Shield: '🛡',
-  Clock: '⏰',
-  Search: '🔍',
-  Radio: '📡',
-  FileCode: '📄',
-  Filter: '🔽',
+const TEMPLATE_ICONS: Record<string, LucideIcon> = {
+  Activity,
+  Bell,
+  Bug,
+  Clock,
+  Code,
+  Download,
+  FileCode,
+  FileText,
+  Filter,
+  Globe,
+  Hash,
+  Network,
+  Radio,
+  ScanLine,
+  Search,
+  Shield,
+  Sparkles,
+  Zap,
 };
 
 interface TemplatesDialogProps {
@@ -97,31 +129,33 @@ export function TemplatesDialog({ open, onOpenChange }: TemplatesDialogProps) {
                 {group.label}
               </h3>
               <div className="grid gap-2">
-                {group.templates.map((template) => (
-                  <button
-                    key={template.id}
-                    onClick={() => handleTemplate(template.id)}
-                    className={cn(
-                      'flex items-start gap-3 rounded-lg border p-3',
-                      'text-left transition-colors hover:bg-accent hover:border-primary/50'
-                    )}
-                  >
-                    <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                      <span className="text-lg leading-none">
-                        {TEMPLATE_EMOJI[template.icon] ?? template.icon}
-                      </span>
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium">{template.name}</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        {template.description}
-                      </p>
-                      <p className="text-[10px] text-muted-foreground/60 mt-1">
-                        {template.nodes.length} nodes · {template.edges.length} connections
-                      </p>
-                    </div>
-                  </button>
-                ))}
+                {group.templates.map((template) => {
+                  const Icon = TEMPLATE_ICONS[template.icon] ?? Zap;
+
+                  return (
+                    <button
+                      key={template.id}
+                      onClick={() => handleTemplate(template.id)}
+                      className={cn(
+                        'flex items-start gap-3 rounded-lg border p-3',
+                        'text-left transition-colors hover:bg-accent hover:border-primary/50'
+                      )}
+                    >
+                      <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                        <Icon className="size-4" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium">{template.name}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {template.description}
+                        </p>
+                        <p className="text-[10px] text-muted-foreground/60 mt-1">
+                          {template.nodes.length} nodes · {template.edges.length} connections
+                        </p>
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           ))}

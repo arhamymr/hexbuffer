@@ -136,7 +136,12 @@ fn request_url_parts(paused_request: &PausedRequest) -> UrlParts {
     } else {
         let host = header_value(&paused_request.request.headers, "host")
             .unwrap_or_else(|| paused_request.server_addr.clone());
-        url::Url::parse(&format!("https://{}{}", host, if uri.starts_with('/') { uri } else { "/" })).ok()
+        url::Url::parse(&format!(
+            "https://{}{}",
+            host,
+            if uri.starts_with('/') { uri } else { "/" }
+        ))
+        .ok()
     };
 
     if let Some(parsed) = parsed {
@@ -179,7 +184,9 @@ fn matches_url_filter(full_url: &str, path: &str, operator: &str, value: &str) -
     }
     let haystacks = [full_url, path];
     match operator {
-        "equals" => haystacks.iter().any(|haystack| haystack.eq_ignore_ascii_case(value)),
+        "equals" => haystacks
+            .iter()
+            .any(|haystack| haystack.eq_ignore_ascii_case(value)),
         "regex" => Regex::new(value)
             .map(|regex| haystacks.iter().any(|haystack| regex.is_match(haystack)))
             .unwrap_or(false),

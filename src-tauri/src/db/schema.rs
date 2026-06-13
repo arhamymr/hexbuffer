@@ -391,3 +391,32 @@ CREATE TABLE IF NOT EXISTS ai_chat_messages (
 CREATE INDEX IF NOT EXISTS idx_ai_chat_messages_session ON ai_chat_messages(session_id);
 CREATE INDEX IF NOT EXISTS idx_ai_chat_messages_created ON ai_chat_messages(created_at);
 "#;
+
+pub const CREATE_REGRESSION_TABLES: &str = r#"
+CREATE TABLE IF NOT EXISTS regression_test_cases (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    description TEXT NOT NULL DEFAULT '',
+    target_url TEXT NOT NULL,
+    steps_json TEXT NOT NULL,
+    enabled INTEGER NOT NULL DEFAULT 1,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS regression_runs (
+    id TEXT PRIMARY KEY,
+    test_case_id TEXT NOT NULL,
+    status TEXT NOT NULL,
+    step_results_json TEXT NOT NULL DEFAULT '[]',
+    ai_verdict TEXT,
+    started_at TEXT,
+    finished_at TEXT,
+    error TEXT,
+    created_at TEXT NOT NULL,
+    FOREIGN KEY(test_case_id) REFERENCES regression_test_cases(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_regression_runs_test_case ON regression_runs(test_case_id);
+CREATE INDEX IF NOT EXISTS idx_regression_runs_created ON regression_runs(created_at);
+"#;

@@ -203,13 +203,25 @@ mod tests {
             "port": "80, 443, 8000-8002",
         });
 
-        assert!(matches_port_scan_trigger(&result("api.example.com", 8001, "open"), &config));
-        assert!(!matches_port_scan_trigger(&result("other.test", 8001, "open"), &config));
-        assert!(!matches_port_scan_trigger(&result("api.example.com", 9000, "open"), &config));
+        assert!(matches_port_scan_trigger(
+            &result("api.example.com", 8001, "open"),
+            &config
+        ));
+        assert!(!matches_port_scan_trigger(
+            &result("other.test", 8001, "open"),
+            &config
+        ));
+        assert!(!matches_port_scan_trigger(
+            &result("api.example.com", 9000, "open"),
+            &config
+        ));
     }
 
     #[test]
     fn parses_port_ranges() {
-        assert_eq!(parse_port_filter("80,443,8000-8002").unwrap(), vec![80, 443, 8000, 8001, 8002]);
+        assert_eq!(
+            parse_port_filter("80,443,8000-8002").unwrap(),
+            vec![80, 443, 8000, 8001, 8002]
+        );
     }
 }

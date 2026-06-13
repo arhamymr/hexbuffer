@@ -342,12 +342,7 @@ function DecompilerView({ rows }: { rows: GhidraDecompiledFunction[] }) {
             height="100%"
             language="c"
             value={selected?.code ?? ''}
-            options={{
-              readOnly: true,
-              fontSize: 12,
-              wordWrap: 'on',
-              scrollBeyondLastLine: false,
-            }}
+            options={{ readOnly: true }}
           />
         </div>
       </div>

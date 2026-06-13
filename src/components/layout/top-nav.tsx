@@ -1,9 +1,7 @@
 'use client';
 
-import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { GripHorizontal, Loader2, Pause } from 'lucide-react';
-import { listen } from '@tauri-apps/api/event';
 
 import { cn } from '@/lib/utils';
 import { OpenBrowserButton } from './open-browser';
@@ -12,12 +10,31 @@ import { mainNavItems } from './constants';
 import { TitlebarButtons } from './titlebar-buttons';
 import { TriangleLogo } from './triangle-logo';
 import { useTopNav } from './hooks/use-top-nav';
+import { useBrowserSessionEvents } from './hooks/use-browser-session-events';
 import { useAutomationStore } from '@/stores/automation';
 import { useBrowserAutomationStore } from '@/stores/browser-automation';
 import { Separator } from '../ui/separator';
-import type { CrawlSession } from '@/pages/browser/types';
 
-type CrawlSessionEventPayload = Partial<CrawlSession> & { sessionId?: string };
+type CrawlStatusKey = 'automation-running' | 'browser-running' | 'browser-paused';
+
+const STATUS_CONFIG: Record<CrawlStatusKey, { icon: typeof Loader2; className: string }> = {
+  'automation-running': { icon: Loader2, className: 'size-3 animate-spin text-primary' },
+  'browser-running': { icon: Loader2, className: 'size-3 animate-spin text-primary' },
+  'browser-paused': { icon: Pause, className: 'size-3 text-amber-500' },
+};
+
+function resolveNavStatus(
+  href: string,
+  isAutomationRunning: boolean,
+  crawlerStatus: 'running' | 'paused' | null,
+): CrawlStatusKey | null {
+  if (href === '/automation' && isAutomationRunning) return 'automation-running';
+  if (href === '/browser-automation') {
+    if (crawlerStatus === 'running') return 'browser-running';
+    if (crawlerStatus === 'paused') return 'browser-paused';
+  }
+  return null;
+}
 
 export function TopNav() {
   const {
@@ -33,9 +50,8 @@ export function TopNav() {
   } = useTopNav();
   const crawlerStatus = useBrowserAutomationStore((s) => {
     for (const t of s.tabs) {
-      const st = t.session?.status;
-      if (st === 'running') return 'running';
-      if (st === 'paused') return 'paused';
+      if (t.session?.status === 'running') return 'running';
+      if (t.session?.status === 'paused') return 'paused';
     }
     return null;
   });
@@ -46,43 +62,7 @@ export function TopNav() {
   const applySessionStarted = useBrowserAutomationStore((s) => s.applySessionStarted);
   const applySessionUpdated = useBrowserAutomationStore((s) => s.applySessionUpdated);
 
-  useEffect(() => {
-    const unlisteners: Array<() => void> = [];
-    let mounted = true;
-
-    async function wireBrowserSessionEvents() {
-      try {
-        unlisteners.push(await listen<CrawlSession>('ai-browser:session-started', (event) => {
-          applySessionStarted(event.payload);
-        }));
-        unlisteners.push(await listen<CrawlSessionEventPayload>('ai-browser:session-updated', (event) => {
-          applySessionUpdated(event.payload);
-        }));
-        unlisteners.push(await listen<CrawlSessionEventPayload>('ai-browser:session-finished', (event) => {
-          applySessionUpdated({ ...event.payload, status: 'completed' });
-        }));
-        unlisteners.push(await listen<{ message?: string; sessionId?: string }>('ai-browser:session-failed', (event) => {
-          applySessionUpdated({
-            id: event.payload?.sessionId,
-            sessionId: event.payload?.sessionId,
-            status: 'failed',
-            finishedAt: new Date().toISOString(),
-          });
-        }));
-      } catch (error) {
-        if (mounted) {
-          console.warn('[top nav] Browser session event listeners are unavailable in this runtime.', error);
-        }
-      }
-    }
-
-    wireBrowserSessionEvents();
-
-    return () => {
-      mounted = false;
-      unlisteners.forEach((unlisten) => unlisten());
-    };
-  }, [applySessionStarted, applySessionUpdated]);
+  useBrowserSessionEvents(applySessionStarted, applySessionUpdated);
 
   return (
     <header
@@ -119,22 +99,11 @@ export function TopNav() {
                 const RightIcon = item.rightIcon;
                 const isActive = pathname === item.href;
                 const isBlinking = blinkingItems.has(item.href);
-                const showAutomationStatusIcon =
-                  item.href === '/automation' && isAutomationRunning;
-                const showBrowserStatusIcon =
-                  item.href === '/browser-automation' && crawlerStatus !== null;
-                const showStatusIcon = showAutomationStatusIcon || showBrowserStatusIcon;
 
-                const StatusIcon =
-                  showAutomationStatusIcon ? Loader2 :
-                    crawlerStatus === 'paused' ? Pause :
-                      Loader2;
-
-                const statusIconClass =
-                  showAutomationStatusIcon ? 'size-3 animate-spin text-primary' :
-                    crawlerStatus === 'running' ? 'size-3 animate-spin text-primary' :
-                    crawlerStatus === 'paused' ? 'size-3 text-amber-500' :
-                      'size-3 text-muted-foreground';
+                const navStatus = resolveNavStatus(item.href, isAutomationRunning, crawlerStatus);
+                const StatusIconComp = navStatus ? STATUS_CONFIG[navStatus].icon : null;
+                const statusCls = navStatus ? STATUS_CONFIG[navStatus].className : '';
+                const showStatusIcon = StatusIconComp && !RightIcon;
 
                 return (
                   <Link
@@ -152,9 +121,7 @@ export function TopNav() {
                     <Icon className="size-3.5" />
                     <span className={isBlinking ? 'animate-nav-blink' : ''}>{item.label}</span>
                     {RightIcon && <RightIcon className="size-3.5" />}
-                    {showStatusIcon && !RightIcon && (
-                      <StatusIcon className={statusIconClass} />
-                    )}
+                    {showStatusIcon && <StatusIconComp className={statusCls} />}
                   </Link>
                 );
               })}

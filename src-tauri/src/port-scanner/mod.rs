@@ -15,8 +15,8 @@ use tauri::{AppHandle, Emitter, State};
 use tokio::sync::Semaphore;
 use types::{PortScanProgress, PortScanRequest};
 
-pub use types::PortScanResult;
 pub use state::PortScanState;
+pub use types::PortScanResult;
 
 #[tauri::command]
 pub async fn scan_ports(

@@ -81,10 +81,17 @@ export function AutomationPage() {
           contentClassName="flex-1 m-2 border rounded-lg overflow-hidden bg-background min-h-0"
         >
           <ResizablePanelGroup
+            id="automation-workspace-panels"
             orientation="horizontal"
             className="h-full min-h-0"
           >
-            <ResizablePanel defaultSize={100} minSize={30}>
+            <ResizablePanel
+              id="automation-canvas-panel"
+              order={1}
+              defaultSize={selectedNode ? 60 : 100}
+              minSize="420px"
+              className="min-w-0"
+            >
               <ResizablePanelGroup orientation="vertical" className="h-full min-h-0">
                 <ResizablePanel defaultSize={75} minSize={30}>
                   <div className="relative flex h-full min-h-0 flex-col">
@@ -136,7 +143,14 @@ export function AutomationPage() {
             {selectedNode && (
               <>
                 <ResizableHandle withHandle />
-                <ResizablePanel defaultSize={25} minSize={15} maxSize={45}>
+                <ResizablePanel
+                  id="automation-node-config-panel"
+                  order={2}
+                  defaultSize="460px"
+                  minSize="380px"
+                  maxSize="760px"
+                  className="min-w-0"
+                >
                   <NodeConfigPanel
                     node={selectedNode}
                     onClose={() => bridgeRef.current?.clearSelection()}

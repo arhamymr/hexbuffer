@@ -102,10 +102,7 @@ export function RepeaterResponsePanel({
           <TextEditor
             language="javascript"
             value={buildRawHttpResponse(response, { prettyJsonBody: true })}
-            options={{
-              readOnly: false,
-              scrollBeyondLastLine: false,
-            }}
+            options={{ readOnly: false }}
           />
         </div>
       </div>

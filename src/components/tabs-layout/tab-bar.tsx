@@ -73,7 +73,7 @@ export function PageTabBar({
     return (
       <div
         className={cn(
-          'flex min-w-max shrink-0 items-center gap-1 rounded-t-md border text-sm transition-colors px-1 -mb-0.5',
+          'flex min-w-max shrink-0 items-center gap-1 rounded-t-md border text-xs transition-colors px-1 -mb-0.5',
           tab.disabled
             ? 'text-muted-foreground/60'
             : 'hover:bg-muted',
@@ -104,7 +104,7 @@ export function PageTabBar({
           <button
             type="button"
             className={cn(
-              'min-w-max px-2 py-2',
+              'min-w-max px-1.5 py-1',
               tab.disabled ? 'cursor-not-allowed' : 'cursor-pointer'
             )}
             onClick={() => !tab.disabled && onTabChange(tab.id)}
@@ -144,7 +144,7 @@ export function PageTabBar({
     <div className="relative">
       <div
         ref={scrollContainerRef}
-        className="flex items-center gap-1 overflow-x-auto bg-muted/30"
+        className="flex items-center gap-1 overflow-x-auto bg-muted/30 [&::-webkit-scrollbar]:hidden [scrollbar-width:none]"
       >
         <div className="flex min-w-full w-max items-center gap-1 px-2 pt-2">
           {tabs.map((tab) => {
@@ -208,11 +208,11 @@ export function PageTabBar({
           {onTabAdd && (
             <button
               type="button"
-              className="mb-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-t-md border text-muted-foreground hover:bg-muted hover:text-foreground"
+              className="mb-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-t-md border text-muted-foreground hover:bg-muted hover:text-foreground"
               onClick={onTabAdd}
               aria-label="Add tab"
             >
-              <Plus className="h-4 w-4" />
+              <Plus className="h-3.5 w-3.5" />
             </button>
           )}
         </div>

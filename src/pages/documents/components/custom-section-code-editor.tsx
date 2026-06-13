@@ -7,15 +7,6 @@ interface CustomSectionCodeEditorProps {
   onChange: (content: string) => void;
 }
 
-const markdownCodeEditorOptions = {
-  fontSize: 13,
-  lineHeight: 20,
-  fontFamily: 'Geist Mono, Menlo, Monaco, Consolas, monospace',
-  padding: { top: 16, bottom: 16 },
-  scrollBeyondLastLine: false,
-  minimap: { enabled: true },
-} as const;
-
 export function CustomSectionCodeEditor({
   documentId,
   section,
@@ -27,7 +18,6 @@ export function CustomSectionCodeEditor({
       language="markdown"
       value={section.content}
       onChange={(value) => onChange(value ?? '')}
-      options={markdownCodeEditorOptions}
     />
   );
 }

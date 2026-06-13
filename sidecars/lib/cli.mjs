@@ -1,5 +1,7 @@
 import { runChat } from './chat/agent.mjs';
 import { runCrawl } from './crawl.mjs';
+import { runInvokerAutoMark } from './invoker/auto-mark.mjs';
+import { runRegression } from './regression.mjs';
 import { getApiKeyEnvName } from './ai/provider.mjs';
 
 export async function runCli() {
@@ -15,6 +17,14 @@ export async function runCli() {
 
   if (mode === 'chat') {
     await runChat();
+    return;
+  }
+  if (mode === 'invoker-auto-mark') {
+    await runInvokerAutoMark();
+    return;
+  }
+  if (mode === 'regression') {
+    await runRegression();
     return;
   }
   await runCrawl();

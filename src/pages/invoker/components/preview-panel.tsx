@@ -120,10 +120,7 @@ export function InvokerPreviewPane() {
                 <TextEditor
                   language="javascript"
                   value={buildRawAttackResponse(selectedResult)}
-                  options={{
-                    readOnly: true,
-                    scrollBeyondLastLine: false,
-                  }}
+                  options={{ readOnly: true }}
                 />
               </div>
             </div>

@@ -4,6 +4,7 @@ pub mod collaborator;
 pub mod documents;
 pub mod packet_capture;
 pub mod proxy_logs;
+pub mod regression;
 pub mod threats;
 pub mod types;
 pub mod websocket;
@@ -38,6 +39,7 @@ impl Database {
         conn.execute_batch(crate::db::schema::CREATE_AI_BROWSER_TABLES)?;
         conn.execute_batch(crate::db::schema::CREATE_COLLABORATOR_TABLES)?;
         conn.execute_batch(crate::db::schema::CREATE_AI_CHAT_TABLES)?;
+        conn.execute_batch(crate::db::schema::CREATE_REGRESSION_TABLES)?;
         Self::ensure_column(&conn, "ai_browser_pages", "ai_used_for_analysis", "INTEGER")?;
         Self::ensure_column(&conn, "ai_browser_pages", "screenshot_path", "TEXT")?;
         Self::ensure_column(&conn, "ai_browser_pages", "rendered_html_path", "TEXT")?;

@@ -25,24 +25,6 @@ function formatSavedTime(value: string) {
   return new Date(value).toLocaleString();
 }
 
-const requestEditorOptions = {
-  fontSize: 13,
-  lineHeight: 20,
-  fontFamily: 'Geist Mono, Menlo, Monaco, Consolas, monospace',
-  padding: { top: 16, bottom: 16 },
-  scrollBeyondLastLine: false,
-  minimap: { enabled: true },
-} as const;
-
-const responseEditorOptions = {
-  readOnly: true,
-  fontSize: 13,
-  lineHeight: 20,
-  fontFamily: 'Geist Mono, Menlo, Monaco, Consolas, monospace',
-  padding: { top: 16, bottom: 16 },
-  scrollBeyondLastLine: false,
-  minimap: { enabled: true },
-} as const;
 
 export function ApiEntryEditor({
   document,
@@ -93,7 +75,7 @@ export function ApiEntryEditor({
                 setRawRequest(nextValue);
                 onChangeRawRequest(entry.id, nextValue);
               }}
-              options={requestEditorOptions}
+              options={{}}
             />
           </div>
         </div>
@@ -125,21 +107,21 @@ export function ApiEntryEditor({
                 path={`${document.id}/api/${entry.id}.error.txt`}
                 language="plaintext"
                 value={error}
-                options={responseEditorOptions}
+                options={{ readOnly: true }}
               />
             ) : response ? (
               <TextEditor
                 path={`${document.id}/api/${entry.id}.response.http`}
                 language="html"
                 value={buildRawHttpResponse(response)}
-                options={responseEditorOptions}
+                options={{ readOnly: true }}
               />
             ) : (
               <TextEditor
                 path={`${document.id}/api/${entry.id}.response.txt`}
                 language="plaintext"
                 value="Fetch this saved API to view a fresh response."
-                options={responseEditorOptions}
+                options={{ readOnly: true }}
               />
             )}
           </div>

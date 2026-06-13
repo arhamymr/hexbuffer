@@ -32,6 +32,9 @@ function getNodeIssue(node: AutomationNode): string | null {
     if (triggerConfig.triggerType === 'trigger:live-traffic-captured' && isBlank(triggerConfig.host)) {
       return 'Live Traffic Captured needs at least one host';
     }
+    if (triggerConfig.triggerType === 'trigger:websocket-message' && isBlank(triggerConfig.host)) {
+      return 'WebSocket Message needs at least one host';
+    }
     return null;
   }
 

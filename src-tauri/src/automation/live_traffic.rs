@@ -141,6 +141,8 @@ pub fn ingest_proxy_record(app: &AppHandle, record: &ProxyRecord) {
                     workflow_id: workflow.id.clone(),
                     trigger_node_id: trigger_node.id.clone(),
                     trigger_node_label: trigger_label,
+                    received_log_label: "Received live traffic".to_string(),
+                    received_runtime_label: "Received".to_string(),
                     cap,
                     context,
                 },
@@ -229,7 +231,10 @@ pub(crate) fn schedule_live_traffic_queue(app: AppHandle) {
                         &app_for_task,
                         &job_for_task.workflow_id,
                         "info",
-                        &format!("Received live traffic: {}", job_for_task.trigger_node_label),
+                        &format!(
+                            "{}: {}",
+                            job_for_task.received_log_label, job_for_task.trigger_node_label
+                        ),
                         Some(&job_for_task.trigger_node_id),
                         Some(&job_for_task.trigger_node_label),
                         Some(job_for_task.context.data.clone()),
@@ -240,7 +245,10 @@ pub(crate) fn schedule_live_traffic_queue(app: AppHandle) {
                         &job_for_task.workflow_id,
                         &job_for_task.trigger_node_id,
                         "running",
-                        &format!("Received: {}", job_for_task.trigger_node_label),
+                        &format!(
+                            "{}: {}",
+                            job_for_task.received_runtime_label, job_for_task.trigger_node_label
+                        ),
                         Some(job_for_task.context.data.clone()),
                         Some(job_for_task.context.data.clone()),
                     );
@@ -419,9 +427,10 @@ fn matches_live_traffic_trigger(
     }
 
     let lowered_host = parts.host.to_lowercase();
-    if !whitelisted_hosts.iter().any(|allowed| {
-        lowered_host == *allowed || lowered_host.ends_with(&format!(".{}", allowed))
-    }) {
+    if !whitelisted_hosts
+        .iter()
+        .any(|allowed| lowered_host == *allowed || lowered_host.ends_with(&format!(".{}", allowed)))
+    {
         return false;
     }
 

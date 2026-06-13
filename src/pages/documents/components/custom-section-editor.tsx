@@ -12,6 +12,17 @@ import {
   tablePlugin,
   codeBlockPlugin,
   toolbarPlugin,
+  UndoRedo,
+  BoldItalicUnderlineToggles,
+  BlockTypeSelect,
+  CreateLink,
+  InsertImage,
+  InsertTable,
+  InsertCodeBlock,
+  InsertThematicBreak,
+  ListsToggle,
+  CodeToggle,
+  Separator,
   type MDXEditorMethods,
 } from '@mdxeditor/editor';
 import '@mdxeditor/editor/style.css';
@@ -64,7 +75,26 @@ export function CustomSectionEditor({ section, onChange }: CustomSectionEditorPr
         imagePlugin(),
         tablePlugin(),
         codeBlockPlugin(),
-        toolbarPlugin(),
+        toolbarPlugin({
+          toolbarContents: () => (
+            <>
+              <UndoRedo />
+              <Separator />
+              <BlockTypeSelect />
+              <Separator />
+              <BoldItalicUnderlineToggles />
+              <CodeToggle />
+              <Separator />
+              <CreateLink />
+              <InsertImage />
+              <InsertTable />
+              <InsertCodeBlock />
+              <InsertThematicBreak />
+              <Separator />
+              <ListsToggle />
+            </>
+          ),
+        }),
       ]}
       contentEditableClassName="prose prose-sm max-w-none mx-auto px-8 py-6"
     />

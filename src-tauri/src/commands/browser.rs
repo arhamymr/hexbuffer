@@ -832,6 +832,13 @@ pub async fn ai_browser_start_crawl(
                     })
                     .collect();
 
+                crate::automation::ingest_scan_completed(
+                    &app_for_task,
+                    &session,
+                    &pages,
+                    &insights,
+                );
+
                 let _ = app_for_task.emit(
                     "ai-chat:crawl-completed",
                     serde_json::json!({

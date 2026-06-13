@@ -145,6 +145,7 @@ pub(crate) fn apply_sidecar_message(
             upsert_page_memory(state, page.clone());
             persist_page(app, &page);
             let _ = app.emit("ai-browser:page-updated", &page);
+            crate::automation::ingest_crawled_page(app, &page);
         }
         "insight_created" => {
             let insight = AIInsight {

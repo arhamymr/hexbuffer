@@ -12,6 +12,9 @@ pub(crate) const LIVE_TRAFFIC_TRIGGER_TYPE: &str = "trigger:live-traffic-capture
 pub(crate) const SCHEDULED_TRIGGER_TYPE: &str = "trigger:scheduled";
 pub(crate) const PORT_SCAN_RESULT_TRIGGER_TYPE: &str = "trigger:port-scan-result";
 pub(crate) const INTERCEPT_REQUEST_TRIGGER_TYPE: &str = "trigger:intercept-request";
+pub(crate) const WEBSOCKET_MESSAGE_TRIGGER_TYPE: &str = "trigger:websocket-message";
+pub(crate) const BROWSER_PAGE_CRAWLED_TRIGGER_TYPE: &str = "trigger:browser-page-crawled";
+pub(crate) const SCAN_COMPLETED_TRIGGER_TYPE: &str = "trigger:scan-completed";
 pub(crate) const AUTOMATION_LOG_LIMIT: usize = 500;
 pub(crate) const LIVE_TRAFFIC_HOST_INSIGHT_LIMIT: usize = 200;
 pub(crate) const LIVE_TRAFFIC_UI_TELEMETRY_BATCH_LIMIT: usize = 20;
@@ -234,6 +237,8 @@ pub(crate) struct QueueJob {
     pub workflow_id: String,
     pub trigger_node_id: String,
     pub trigger_node_label: String,
+    pub received_log_label: String,
+    pub received_runtime_label: String,
     pub cap: usize,
     pub context: WorkflowContext,
 }

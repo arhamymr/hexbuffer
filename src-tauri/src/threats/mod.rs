@@ -3,6 +3,7 @@ pub mod static_analysis;
 pub mod types;
 
 use std::fs;
+use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 
@@ -14,15 +15,13 @@ pub use types::*;
 use crate::HistoryBridge;
 
 use self::ghidra::run_ghidra_headless;
-use self::static_analysis::{analyze_static, hash_file};
+use self::static_analysis::{analyze_static, extract_strings, hash_file, scan_yara};
 
 pub fn import_sample(
     app_data_dir: &Path,
     source_path: &Path,
     history: &HistoryBridge,
 ) -> Result<ThreatSample, String> {
-    let bytes = fs::read(source_path).map_err(|error| error.to_string())?;
-    let hashes = hash_file(&bytes);
     let sample_id = Uuid::new_v4().to_string();
     let file_name = source_path
         .file_name()
@@ -34,9 +33,20 @@ pub fn import_sample(
         .join("samples")
         .join(&sample_id);
     fs::create_dir_all(&sample_dir).map_err(|error| error.to_string())?;
-    let stored_path = sample_dir.join("sample");
-    fs::write(&stored_path, &bytes).map_err(|error| error.to_string())?;
 
+    let (bytes, stored_path) = if source_path.is_dir() {
+        let archive_bytes = create_tar_gz(source_path)?;
+        let stored = sample_dir.join("sample.tar.gz");
+        fs::write(&stored, &archive_bytes).map_err(|error| error.to_string())?;
+        (archive_bytes, stored)
+    } else {
+        let bytes = fs::read(source_path).map_err(|error| error.to_string())?;
+        let stored = sample_dir.join("sample");
+        fs::write(&stored, &bytes).map_err(|error| error.to_string())?;
+        (bytes, stored)
+    };
+
+    let hashes = hash_file(&bytes);
     let now = Utc::now().to_rfc3339();
     let sample = ThreatSample {
         id: sample_id,
@@ -50,6 +60,92 @@ pub fn import_sample(
     };
     history.upsert_threat_sample(&sample)?;
     Ok(sample)
+}
+
+fn create_tar_gz(source_dir: &Path) -> Result<Vec<u8>, String> {
+    let tar_bytes = {
+        let mut archive = tar::Builder::new(Vec::new());
+        archive.follow_symlinks(false);
+        archive
+            .append_dir_all(".", source_dir)
+            .map_err(|e| format!("Failed to build tar archive: {e}"))?;
+        archive
+            .into_inner()
+            .map_err(|e| format!("Failed to finalize tar archive: {e}"))?
+    };
+    let mut gz = flate2::write::GzEncoder::new(Vec::new(), flate2::Compression::default());
+    gz.write_all(&tar_bytes)
+        .map_err(|e| format!("Failed to compress archive: {e}"))?;
+    gz.finish()
+        .map_err(|e| format!("Failed to finalize gzip: {e}"))
+}
+
+fn is_archive_path(path: &Path) -> bool {
+    path.file_name()
+        .and_then(|n| n.to_str())
+        .map_or(false, |name| name.ends_with(".tar.gz"))
+}
+
+fn extract_tar_gz(archive_path: &Path, dest: &Path) -> Result<(), String> {
+    fs::create_dir_all(dest).map_err(|e| e.to_string())?;
+    let file = fs::File::open(archive_path).map_err(|e| e.to_string())?;
+    let gz = flate2::read::GzDecoder::new(file);
+    let mut archive = tar::Archive::new(gz);
+    archive
+        .unpack(dest)
+        .map_err(|e| format!("Failed to extract archive: {e}"))
+}
+
+fn find_main_binary(dir: &Path) -> Option<PathBuf> {
+    // macOS .app bundle: Contents/MacOS/*
+    let macos_dir = dir.join("Contents").join("MacOS");
+    if macos_dir.is_dir() {
+        if let Ok(entries) = std::fs::read_dir(&macos_dir) {
+            for entry in entries.flatten() {
+                let p = entry.path();
+                if p.is_file() {
+                    return Some(p);
+                }
+            }
+        }
+    }
+
+    // Fallback: walk directory tree for first regular file
+    fn walk(dir: &Path) -> Option<PathBuf> {
+        if let Ok(entries) = std::fs::read_dir(dir) {
+            for entry in entries.flatten() {
+                let p = entry.path();
+                if p.is_file() {
+                    return Some(p);
+                }
+                if p.is_dir() {
+                    if let Some(found) = walk(&p) {
+                        return Some(found);
+                    }
+                }
+            }
+        }
+        None
+    }
+    walk(dir)
+}
+
+fn collect_all_file_bytes(dir: &Path) -> Result<Vec<u8>, String> {
+    let mut all = Vec::new();
+    fn walk(dir: &Path, all: &mut Vec<u8>) -> Result<(), String> {
+        for entry in std::fs::read_dir(dir).map_err(|e| e.to_string())?.flatten() {
+            let p = entry.path();
+            if p.is_file() {
+                let bytes = std::fs::read(&p).map_err(|e| e.to_string())?;
+                all.extend_from_slice(&bytes);
+            } else if p.is_dir() {
+                walk(&p, all)?;
+            }
+        }
+        Ok(())
+    }
+    walk(dir, &mut all)?;
+    Ok(all)
 }
 
 pub fn run_analysis(
@@ -174,7 +270,32 @@ fn run_analysis_inner(
 
     on_log("Reading imported sample");
     let sample_path = PathBuf::from(&sample.stored_path);
-    let bytes = fs::read(&sample_path).map_err(|error| error.to_string())?;
+
+    let (bytes, ghidra_import_path) = if is_archive_path(&sample_path) {
+        let contents_dir = sample_path
+            .parent()
+            .ok_or_else(|| "Invalid stored sample path".to_string())?
+            .join("contents");
+        if !contents_dir.exists() {
+            on_log("Extracting archived sample for analysis");
+            extract_tar_gz(&sample_path, &contents_dir)?;
+        }
+        let binary_path = find_main_binary(&contents_dir).ok_or_else(|| {
+            format!("No executable binary found in archive. Import the binary directly instead.")
+        })?;
+        on_log(&format!(
+            "Found binary: {}",
+            binary_path
+                .file_name()
+                .unwrap_or_default()
+                .to_string_lossy()
+        ));
+        let binary_bytes = fs::read(&binary_path).map_err(|error| error.to_string())?;
+        (binary_bytes, contents_dir)
+    } else {
+        let bytes = fs::read(&sample_path).map_err(|error| error.to_string())?;
+        (bytes, sample_path.clone())
+    };
     let mut yara_rule_sources = options
         .enabled_yara_rule_paths
         .iter()
@@ -202,6 +323,15 @@ fn run_analysis_inner(
 
     on_log("Running static analysis");
     let mut artifacts = analyze_static(&bytes, &yara_rule_sources)?;
+    // For archives: augment strings and YARA by scanning all files in the bundle
+    if is_archive_path(&sample_path) {
+        on_log("Scanning all files in bundle for strings and YARA");
+        let contents_dir = sample_path.parent().unwrap().join("contents");
+        let all_bytes = collect_all_file_bytes(&contents_dir)?;
+        artifacts.strings.extend(extract_strings(&all_bytes, 4));
+        artifacts.yara = scan_yara(&all_bytes, &yara_rule_sources)?;
+    }
+
     let artifact_dir = app_data_dir
         .join("threats")
         .join("artifacts")
@@ -224,7 +354,7 @@ fn run_analysis_inner(
         let project_root = app_data_dir.join("threats").join("ghidra-projects");
         let ghidra_result = run_ghidra_headless(
             Path::new(&ghidra_path),
-            &sample_path,
+            &ghidra_import_path,
             &sample.id,
             &project_root,
             &scripts_dir,

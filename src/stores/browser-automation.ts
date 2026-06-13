@@ -240,9 +240,13 @@ function updateTabForSession(
   updater: (tab: BrowserAutomationTab) => BrowserAutomationTab
 ) {
   const state = get();
-  const tab = sessionId
+  let tab = sessionId
     ? state.tabs.find((item) => item.session?.id === sessionId)
-    : getActiveTabFromState(state);
+    : undefined;
+
+  if (!tab) {
+    tab = getActiveTabFromState(state);
+  }
 
   if (!tab) return;
   updateTab(set, tab.id, updater);
@@ -542,10 +546,7 @@ export const useBrowserAutomationStore = create<BrowserAutomationState>((set, ge
     updateTabForSession(set, get, patch.id ?? patch.sessionId, (tab) => {
       const { sessionId: _sessionId, ...sessionPatch } = patch;
       const session =
-        tab.session &&
-        isTerminalStatus(tab.session.status) &&
-        sessionPatch.status !== tab.session.status &&
-        sessionPatch.status !== 'running'
+        tab.session && isTerminalStatus(tab.session.status)
           ? tab.session
           : tab.session
             ? { ...tab.session, ...sessionPatch }

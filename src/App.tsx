@@ -12,6 +12,8 @@ import { ListenerPage } from "@/pages/listener";
 import { DebuggerPage } from "@/pages/debugger";
 import { AutomationPage } from "@/pages/automation";
 import { ThreatsPage } from "@/pages/threats";
+import { RegressionPage } from "@/pages/regression";
+import { PlaygroundPage } from "@/pages/playground";
 import { CaInstallDialog } from "@/components/ca-install-dialog";
 import { AssistantPage } from "@/pages/assistant";
 import { startLiveTrafficWatcher, stopLiveTrafficWatcher } from "@/triggers/live-traffic";
@@ -50,6 +52,8 @@ function AppRoutes() {
         <Route path="/automation" element={<AutomationPage />} />
         <Route path="/threats" element={<ThreatsPage />} />
         <Route path="/settings" element={<Settings />} />
+        <Route path="/regression" element={<RegressionPage />} />
+        <Route path="/playground" element={<PlaygroundPage />} />
       </Routes>
     </>
   );

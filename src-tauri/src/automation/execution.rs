@@ -12,16 +12,14 @@ use super::events::{
     append_log, clear_workflow_runtime, flush_ui_telemetry_batch, is_workflow_run_cancelled,
     log_abort_and_finish_run, mark_workflow_run_finished, mark_workflow_running, set_node_runtime,
 };
-use super::types::{node_effective_type, node_label, AutomationNode, AutomationWorkflow, WorkflowContext};
+use super::types::{
+    node_effective_type, node_label, AutomationNode, AutomationWorkflow, WorkflowContext,
+};
 
 const NODE_TRAVEL_DELAY: Duration = Duration::from_millis(300);
 const NODE_TRAVEL_ABORT_POLL: Duration = Duration::from_millis(100);
 
-async fn wait_for_node_travel(
-    app: &AppHandle,
-    workflow_id: &str,
-    run_token: &str,
-) -> bool {
+async fn wait_for_node_travel(app: &AppHandle, workflow_id: &str, run_token: &str) -> bool {
     let mut remaining = NODE_TRAVEL_DELAY;
     while !remaining.is_zero() {
         let sleep_for = remaining.min(NODE_TRAVEL_ABORT_POLL);
@@ -233,11 +231,6 @@ pub(crate) async fn run_workflow_task(
             } else {
                 "warning"
             };
-            let status = if result.match_value {
-                "success"
-            } else {
-                "skipped"
-            };
             append_log(
                 &app,
                 &workflow.id,
@@ -252,7 +245,7 @@ pub(crate) async fn run_workflow_task(
                 &app,
                 &workflow.id,
                 &node_id,
-                status,
+                "success",
                 &result.message,
                 Some(input_data.clone()),
                 Some(output_data.clone()),

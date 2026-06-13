@@ -41,9 +41,6 @@ export function RepeaterRequestPanel({
             language="javascript"
             value={rawRequest}
             onChange={(value) => onRawRequestChange(value ?? '')}
-            options={{
-              scrollBeyondLastLine: false,
-            }}
           />
         </div>
       </div>

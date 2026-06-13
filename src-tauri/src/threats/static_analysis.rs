@@ -323,7 +323,7 @@ fn dedupe_symbols(symbols: Vec<BinarySymbol>) -> Vec<BinarySymbol> {
         .collect()
 }
 
-fn scan_yara(
+pub fn scan_yara(
     bytes: &[u8],
     yara_rule_sources: &[(String, String)],
 ) -> Result<Vec<YaraMatch>, String> {

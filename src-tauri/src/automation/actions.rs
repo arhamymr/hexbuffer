@@ -1,7 +1,4 @@
-use std::{
-    fs,
-    time::Duration,
-};
+use std::{fs, time::Duration};
 
 use base64::{engine::general_purpose, Engine};
 use chrono::Utc;
@@ -38,15 +35,33 @@ pub(crate) async fn execute_runtime_action(
 
     match action_type {
         "action:add-to-report" => Some(execute_add_to_report(app, node, input_data)),
-        "action:send-to-repeater" => Some(execute_ui_action(app, workflow_id, node, input_data, action_type)),
+        "action:send-to-repeater" => Some(execute_ui_action(
+            app,
+            workflow_id,
+            node,
+            input_data,
+            action_type,
+        )),
         "action:create-finding" => Some(execute_create_finding(app, node, input_data)),
         "action:send-webhook" => Some(execute_send_webhook(node, input_data).await),
         "action:show-notification" => Some(execute_show_notification(app, node, input_data)),
         "action:run-script" => Some(execute_run_script(app, node, input_data).await),
         "action:start-crawl" => Some(execute_start_crawl(app, node, input_data).await),
         "action:stop-crawl" => Some(execute_stop_crawl(app, node, input_data).await),
-        "action:send-to-intercept" => Some(execute_ui_action(app, workflow_id, node, input_data, action_type)),
-        "action:start-invoker" => Some(execute_ui_action(app, workflow_id, node, input_data, action_type)),
+        "action:send-to-intercept" => Some(execute_ui_action(
+            app,
+            workflow_id,
+            node,
+            input_data,
+            action_type,
+        )),
+        "action:start-invoker" => Some(execute_ui_action(
+            app,
+            workflow_id,
+            node,
+            input_data,
+            action_type,
+        )),
         "action:port-scan" => Some(execute_port_scan(node, input_data).await),
         "action:encode-decode" => Some(execute_encode_decode(node, input_data)),
         "action:hash-data" => Some(execute_hash_data(node, input_data)),
@@ -265,7 +280,10 @@ fn execute_create_document(
         return Err("Document storage is unavailable".to_string());
     };
     let params = action_params(node);
-    let title = resolve_template(&param_string(&params, "title", "Automation Document"), input_data);
+    let title = resolve_template(
+        &param_string(&params, "title", "Automation Document"),
+        input_data,
+    );
     let template = param_string(&params, "template", "blank");
     let now = Utc::now().to_rfc3339();
     let document = DocumentRecord {
@@ -339,7 +357,10 @@ fn execute_create_finding(
     input_data: &Value,
 ) -> Result<Value, String> {
     let params = action_params(node);
-    let title = resolve_template(&param_string(&params, "title", "Automation Finding"), input_data);
+    let title = resolve_template(
+        &param_string(&params, "title", "Automation Finding"),
+        input_data,
+    );
     if title.trim().is_empty() {
         return Err("Finding title is required".to_string());
     }
@@ -353,7 +374,11 @@ fn execute_create_finding(
         title,
         severity,
         finding_id,
-        if description.trim().is_empty() { "(no description)" } else { description.as_str() },
+        if description.trim().is_empty() {
+            "(no description)"
+        } else {
+            description.as_str()
+        },
         truncate_preview(&evidence, 8192),
     );
 
@@ -387,12 +412,18 @@ fn execute_show_notification(
     input_data: &Value,
 ) -> Result<Value, String> {
     let params = action_params(node);
-    let title = resolve_template(param_string(&params, "title", "Workflow Alert").as_str(), input_data);
+    let title = resolve_template(
+        param_string(&params, "title", "Workflow Alert").as_str(),
+        input_data,
+    );
     let body = resolve_template(param_string(&params, "body", "").as_str(), input_data);
-    app
-        .notification()
+    app.notification()
         .builder()
-        .title(if title.trim().is_empty() { "Workflow Alert" } else { title.as_str() })
+        .title(if title.trim().is_empty() {
+            "Workflow Alert"
+        } else {
+            title.as_str()
+        })
         .body(body.clone())
         .show()
         .map_err(|error| error.to_string())?;
@@ -414,7 +445,10 @@ async fn execute_run_script(
     input_data: &Value,
 ) -> Result<Value, String> {
     if !run_script_actions_allowed(app) {
-        return Err("Run-script actions are disabled. Enable them in Automation Settings first.".to_string());
+        return Err(
+            "Run-script actions are disabled. Enable them in Automation Settings first."
+                .to_string(),
+        );
     }
 
     let params = action_params(node);
@@ -440,19 +474,17 @@ async fn execute_run_script(
         command_builder
     };
 
-    let working_directory = resolve_template(&param_string(&params, "workingDirectory", ""), input_data);
+    let working_directory =
+        resolve_template(&param_string(&params, "workingDirectory", ""), input_data);
     if !working_directory.trim().is_empty() {
         child_command.current_dir(working_directory.trim());
     }
     child_command.kill_on_drop(true);
 
-    let output = tokio::time::timeout(
-        Duration::from_secs(timeout_seconds),
-        child_command.output(),
-    )
-    .await
-    .map_err(|_| format!("Command timed out after {} seconds", timeout_seconds))?
-    .map_err(|error| error.to_string())?;
+    let output = tokio::time::timeout(Duration::from_secs(timeout_seconds), child_command.output())
+        .await
+        .map_err(|_| format!("Command timed out after {} seconds", timeout_seconds))?
+        .map_err(|error| error.to_string())?;
 
     let stdout = String::from_utf8_lossy(&output.stdout).to_string();
     let stderr = String::from_utf8_lossy(&output.stderr).to_string();
@@ -563,7 +595,10 @@ async fn execute_port_scan(node: &AutomationNode, input_data: &Value) -> Result<
         input_data,
     );
     let host = normalize_scan_host(&target)?;
-    let ports = parse_port_scan_ports(&param_string(&params, "ports", ""), &param_string(&params, "preset", "web"))?;
+    let ports = parse_port_scan_ports(
+        &param_string(&params, "ports", ""),
+        &param_string(&params, "preset", "web"),
+    )?;
     let timeout_ms = 800_u64;
     let mut results = Vec::with_capacity(ports.len());
     for port in ports {
@@ -614,7 +649,10 @@ async fn execute_ai_analyze(
     }
     if include_response {
         content.push_str("Response/body:\n");
-        content.push_str(&truncate_preview(&resolve_source_value(input_data, "body"), 8192));
+        content.push_str(&truncate_preview(
+            &resolve_source_value(input_data, "body"),
+            8192,
+        ));
         content.push('\n');
     }
 
@@ -699,9 +737,9 @@ fn upsert_document_section(
         .as_array()
         .cloned()
         .unwrap_or_default();
-    let existing_index = sections.iter().position(|section| {
-        section.get("key").and_then(Value::as_str) == Some(section_key)
-    });
+    let existing_index = sections
+        .iter()
+        .position(|section| section.get("key").and_then(Value::as_str) == Some(section_key));
     if let Some(index) = existing_index {
         let existing_content = sections[index]
             .get("content")
@@ -829,8 +867,7 @@ fn execute_export_json(
 }
 
 fn action_params(node: &AutomationNode) -> Value {
-    node
-        .data
+    node.data
         .config
         .get("params")
         .cloned()
@@ -857,7 +894,13 @@ fn param_bool(params: &Value, key: &str, fallback: bool) -> bool {
 
 fn run_script_actions_allowed(app: &AppHandle) -> bool {
     app.try_state::<AutomationRuntimeState>()
-        .and_then(|state| state.0.lock().ok().map(|inner| inner.settings.allow_run_script_actions))
+        .and_then(|state| {
+            state
+                .0
+                .lock()
+                .ok()
+                .map(|inner| inner.settings.allow_run_script_actions)
+        })
         .unwrap_or(false)
 }
 
@@ -926,7 +969,9 @@ fn parse_port_scan_ports(raw_ports: &str, preset: &str) -> Result<Vec<u16>, Stri
     let source = if raw_ports.trim().is_empty() {
         match preset {
             "full" => "1-1024",
-            "top100" => "21,22,23,25,53,80,110,111,135,139,143,443,445,993,995,1723,3306,3389,5900,8080",
+            "top100" => {
+                "21,22,23,25,53,80,110,111,135,139,143,443,445,993,995,1723,3306,3389,5900,8080"
+            }
             _ => "80,443,8080,8443",
         }
     } else {
@@ -934,10 +979,20 @@ fn parse_port_scan_ports(raw_ports: &str, preset: &str) -> Result<Vec<u16>, Stri
     };
 
     let mut ports = Vec::new();
-    for token in source.split([',', ' ', '\n', '\t']).map(str::trim).filter(|token| !token.is_empty()) {
+    for token in source
+        .split([',', ' ', '\n', '\t'])
+        .map(str::trim)
+        .filter(|token| !token.is_empty())
+    {
         if let Some((start, end)) = token.split_once('-') {
-            let start = start.trim().parse::<u16>().map_err(|_| format!("Invalid port range: {}", token))?;
-            let end = end.trim().parse::<u16>().map_err(|_| format!("Invalid port range: {}", token))?;
+            let start = start
+                .trim()
+                .parse::<u16>()
+                .map_err(|_| format!("Invalid port range: {}", token))?;
+            let end = end
+                .trim()
+                .parse::<u16>()
+                .map_err(|_| format!("Invalid port range: {}", token))?;
             if start > end {
                 return Err(format!("Invalid port range: {}", token));
             }
@@ -945,7 +1000,11 @@ fn parse_port_scan_ports(raw_ports: &str, preset: &str) -> Result<Vec<u16>, Stri
                 ports.push(port);
             }
         } else {
-            ports.push(token.parse::<u16>().map_err(|_| format!("Invalid port: {}", token))?);
+            ports.push(
+                token
+                    .parse::<u16>()
+                    .map_err(|_| format!("Invalid port: {}", token))?,
+            );
         }
     }
     ports.sort_unstable();
@@ -961,7 +1020,12 @@ fn parse_port_scan_ports(raw_ports: &str, preset: &str) -> Result<Vec<u16>, Stri
 
 async fn scan_port_once(host: &str, port: u16, timeout_ms: u64) -> Value {
     let started_at = std::time::Instant::now();
-    match tokio::time::timeout(Duration::from_millis(timeout_ms), TcpStream::connect((host, port))).await {
+    match tokio::time::timeout(
+        Duration::from_millis(timeout_ms),
+        TcpStream::connect((host, port)),
+    )
+    .await
+    {
         Ok(Ok(_stream)) => json!({
             "host": host,
             "port": port,
@@ -993,8 +1057,14 @@ fn extract_scripts(source: &str, include_inline: bool, include_external: bool) -
     let mut scripts = Vec::new();
 
     for captures in script_regex.captures_iter(source) {
-        let attrs = captures.get(1).map(|value| value.as_str()).unwrap_or_default();
-        let body = captures.get(2).map(|value| value.as_str()).unwrap_or_default();
+        let attrs = captures
+            .get(1)
+            .map(|value| value.as_str())
+            .unwrap_or_default();
+        let body = captures
+            .get(2)
+            .map(|value| value.as_str())
+            .unwrap_or_default();
         let src = src_regex
             .as_ref()
             .and_then(|regex| regex.captures(attrs))
@@ -1186,8 +1256,14 @@ mod tests {
 
     #[test]
     fn parses_port_presets_and_ranges() {
-        assert_eq!(parse_port_scan_ports("80,443,8000-8002", "web").unwrap(), vec![80, 443, 8000, 8001, 8002]);
-        assert_eq!(parse_port_scan_ports("", "web").unwrap(), vec![80, 443, 8080, 8443]);
+        assert_eq!(
+            parse_port_scan_ports("80,443,8000-8002", "web").unwrap(),
+            vec![80, 443, 8000, 8001, 8002]
+        );
+        assert_eq!(
+            parse_port_scan_ports("", "web").unwrap(),
+            vec![80, 443, 8080, 8443]
+        );
     }
 
     #[test]
@@ -1199,7 +1275,13 @@ mod tests {
         );
 
         assert_eq!(scripts.len(), 2);
-        assert_eq!(scripts[0].get("type").and_then(Value::as_str), Some("external"));
-        assert_eq!(scripts[1].get("type").and_then(Value::as_str), Some("inline"));
+        assert_eq!(
+            scripts[0].get("type").and_then(Value::as_str),
+            Some("external")
+        );
+        assert_eq!(
+            scripts[1].get("type").and_then(Value::as_str),
+            Some("inline")
+        );
     }
 }

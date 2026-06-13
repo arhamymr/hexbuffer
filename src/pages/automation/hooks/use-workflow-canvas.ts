@@ -14,12 +14,8 @@ import {
 } from '@xyflow/react';
 import type { Node } from '@xyflow/react';
 import { useAutomationStore } from '@/stores/automation';
-import { TriggerNode } from '../nodes/trigger-node';
-import { ConditionNode } from '../nodes/condition-node';
-import { ActionNode } from '../nodes/action-node';
 import { addOpenNodeContextMenuListener } from '../nodes/node-card-menu';
-import { DeletableEdge } from '../components/deletable-edge';
-import { NODE_TYPE_REGISTRY, makeNodeId } from '../constants';
+import { connectionLineStyle, edgeTypes, nodeTypes } from '../lib/canvas-definitions';
 import {
   automationDefaultEdgeOptions,
   buildAutomationEdgeFromConnection,
@@ -27,63 +23,11 @@ import {
   normalizeAutomationEdges,
 } from '../lib/edges';
 import { deleteConnectedWires } from '../lib/node-capabilities';
+import { createAutomationNode, hasTriggerNode as hasAnyTriggerNode } from '../lib/node-factory';
 import type {
   AutomationNodeType,
   AutomationNodeData,
-  AutomationNode,
-  NodeConfig,
 } from '../types';
-
-const nodeTypes = {
-  'trigger:scan-completed': TriggerNode,
-  'trigger:scheduled': TriggerNode,
-  'trigger:manual': TriggerNode,
-  'trigger:browser-page-crawled': TriggerNode,
-  'trigger:intercept-request': TriggerNode,
-  'trigger:websocket-message': TriggerNode,
-  'trigger:port-scan-result': TriggerNode,
-  'trigger:live-traffic-captured': TriggerNode,
-  'condition:status-code': ConditionNode,
-  'condition:url-contains': ConditionNode,
-  'condition:body-contains': ConditionNode,
-  'condition:header-exists': ConditionNode,
-  'condition:severity': ConditionNode,
-  'condition:ai-confidence': ConditionNode,
-  'condition:method': ConditionNode,
-  'condition:content-type': ConditionNode,
-  'condition:response-size': ConditionNode,
-  'condition:crawl-status': ConditionNode,
-  'condition:grep-match': ConditionNode,
-  'condition:port-open': ConditionNode,
-  'action:send-to-repeater': ActionNode,
-  'action:ai-analyze': ActionNode,
-  'action:create-finding': ActionNode,
-  'action:add-to-report': ActionNode,
-  'action:send-webhook': ActionNode,
-  'action:show-notification': ActionNode,
-  'action:run-script': ActionNode,
-  'action:start-crawl': ActionNode,
-  'action:stop-crawl': ActionNode,
-  'action:send-to-intercept': ActionNode,
-  'action:start-invoker': ActionNode,
-  'action:port-scan': ActionNode,
-  'action:encode-decode': ActionNode,
-  'action:hash-data': ActionNode,
-  'action:export-json': ActionNode,
-  'action:create-document': ActionNode,
-  'action:add-to-document': ActionNode,
-  'action:connect-cdp': ActionNode,
-  'action:script-analyze': ActionNode,
-};
-
-const edgeTypes = {
-  deletable: DeletableEdge,
-};
-
-const connectionLineStyle: React.CSSProperties = {
-  stroke: '#00c950',
-  strokeWidth: 3,
-};
 
 export interface WorkflowCanvasBridge {
   updateNodeData: (nodeId: string, data: AutomationNodeData) => void;
@@ -270,28 +214,13 @@ export function useWorkflowCanvas(
 
   const addNodeFromMenu = React.useCallback(
     (nodeType: AutomationNodeType, flowX: number, flowY: number) => {
-      const def = NODE_TYPE_REGISTRY[nodeType];
-      if (!def) return;
-
       // Enforce single trigger per workflow
       if (nodeType.startsWith('trigger:')) {
-        const existingTrigger = nodesRef.current.some((n) => (n.type as string)?.startsWith('trigger:'));
-        if (existingTrigger) return;
+        if (hasAnyTriggerNode(nodesRef.current)) return;
       }
 
-      const id = makeNodeId(nodeType);
-      const newNode: AutomationNode = {
-        id,
-        type: nodeType,
-        position: { x: flowX, y: flowY },
-        data: {
-          label: def.label,
-          nodeType,
-          category: def.category,
-          config: def.defaultConfig as NodeConfig,
-          iconName: def.iconName,
-        },
-      };
+      const newNode = createAutomationNode(nodeType, { x: flowX, y: flowY });
+      if (!newNode) return;
 
       setNodes((nds) => {
         const nextNodes = [...nds, newNode as unknown as Node];
@@ -307,13 +236,9 @@ export function useWorkflowCanvas(
   React.useEffect(() => {
     if (!addNodeRef) return;
     addNodeRef.current = (nodeType: AutomationNodeType) => {
-      const def = NODE_TYPE_REGISTRY[nodeType];
-      if (!def) return;
-
       // Enforce single trigger per workflow
       if (nodeType.startsWith('trigger:')) {
-        const existingTrigger = nodesRef.current.some((n) => (n.type as string)?.startsWith('trigger:'));
-        if (existingTrigger) return;
+        if (hasAnyTriggerNode(nodesRef.current)) return;
       }
 
       const wrapper = reactFlowWrapper.current;
@@ -323,19 +248,8 @@ export function useWorkflowCanvas(
         x: rect.left + rect.width / 2,
         y: rect.top + rect.height / 2,
       });
-      const id = makeNodeId(nodeType);
-      const newNode: AutomationNode = {
-        id,
-        type: nodeType,
-        position,
-        data: {
-          label: def.label,
-          nodeType,
-          category: def.category,
-          config: def.defaultConfig as NodeConfig,
-          iconName: def.iconName,
-        },
-      };
+      const newNode = createAutomationNode(nodeType, position);
+      if (!newNode) return;
       setNodes((nds) => {
         const nextNodes = [...nds, newNode as unknown as Node];
         persist(nextNodes, edgesRef.current);
@@ -458,7 +372,7 @@ export function useWorkflowCanvas(
   );
 
   const hasTriggerNode = React.useMemo(
-    () => nodes.some((n) => (n.type as string)?.startsWith('trigger:')),
+    () => hasAnyTriggerNode(nodes),
     [nodes]
   );
 

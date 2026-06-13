@@ -53,6 +53,34 @@ pub struct AiChatResponse {
     pub actions: Vec<AiChatAction>,
 }
 
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct InvokerMarkerSuggestionRequest {
+    pub raw_request: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct InvokerMarkerSuggestion {
+    pub id: String,
+    pub start: usize,
+    pub end: usize,
+    pub value: String,
+    pub category: String,
+    pub location: String,
+    pub confidence: f64,
+    pub reason: String,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct InvokerMarkerSuggestionResponse {
+    pub provider: String,
+    pub model: String,
+    pub suggestions: Vec<InvokerMarkerSuggestion>,
+    pub candidate_count: usize,
+}
+
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AiChatAction {
@@ -143,6 +171,20 @@ pub(crate) struct AiEngineChatMessage {
     pub(crate) content_length: Option<usize>,
     #[serde(default)]
     pub(crate) extra: Option<Value>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct AiEngineInvokerAutoMarkMessage {
+    #[serde(rename = "type")]
+    pub(crate) message_type: String,
+    pub(crate) provider: Option<String>,
+    pub(crate) model: Option<String>,
+    #[serde(default)]
+    pub(crate) suggestions: Vec<InvokerMarkerSuggestion>,
+    #[serde(default)]
+    pub(crate) candidate_count: usize,
+    pub(crate) message: Option<String>,
 }
 
 fn default_ai_key_status() -> BTreeMap<String, bool> {

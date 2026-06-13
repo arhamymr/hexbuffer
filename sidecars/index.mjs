@@ -9,6 +9,8 @@
  * ## Modes
  * - `crawl` (default): Browser automation BFS crawl with AI analysis
  * - `chat`: Interactive AI chat agent
+ * - `invoker-auto-mark`: AI-assisted Invoker marker suggestion
+ * - `regression`: Browser-based regression test runner with Playwright + AI verification
  * - `validate`: Dry-run that checks all prerequisites without executing
  *
  * ## Definition of Done
@@ -17,7 +19,7 @@
  * - validate: Exits 0 if all checks pass, non-zero with diagnostics otherwise
  *
  * ## Required Environment Variables
- * - 0XBUFFER_AI_ENGINE_MODE: 'crawl' | 'chat' | 'validate'
+ * - 0XBUFFER_AI_ENGINE_MODE: 'crawl' | 'chat' | 'invoker-auto-mark' | 'regression' | 'validate'
  * - 0XBUFFER_CRAWL_SESSION_ID (crawl mode): Session identifier
  * - 0XBUFFER_CRAWL_CONFIG_JSON (crawl mode): JSON crawl configuration
  * - XBUFFER_AI_PROVIDER: 'deepseek' | 'openai'
@@ -39,7 +41,7 @@ export { runCli };
 // Pre-flight validation (Harness Layers 1–3)
 // ---------------------------------------------------------------------------
 
-const VALID_MODES = ['crawl', 'chat', 'validate'];
+const VALID_MODES = ['crawl', 'chat', 'invoker-auto-mark', 'validate', 'regression'];
 
 function runPreflight() {
   const mode = process.env['0XBUFFER_AI_ENGINE_MODE'] || 'crawl';
@@ -82,6 +84,49 @@ function runPreflight() {
         fix: 'Ensure the config is serialized as valid JSON before spawning the sidecar',
       });
     }
+  }
+
+  if (mode === 'regression') {
+    const rawConfig = process.env['0XBUFFER_REGRESSION_CONFIG_JSON'];
+    if (!rawConfig) {
+      checks.push({
+        layer: 'task-specification',
+        message: 'Missing required env var: 0XBUFFER_REGRESSION_CONFIG_JSON',
+        fix: 'Ensure the Tauri backend sets 0XBUFFER_REGRESSION_CONFIG_JSON before spawning',
+      });
+    } else {
+      try {
+        const config = JSON.parse(rawConfig);
+        if (!config.targetUrl) {
+          checks.push({
+            layer: 'task-specification',
+            message: '0XBUFFER_REGRESSION_CONFIG_JSON missing required field: targetUrl',
+            fix: 'Include targetUrl in the regression config JSON',
+          });
+        }
+        if (!config.steps || config.steps.length === 0) {
+          checks.push({
+            layer: 'task-specification',
+            message: '0XBUFFER_REGRESSION_CONFIG_JSON requires at least one step',
+            fix: 'Include a non-empty steps array in the regression config JSON',
+          });
+        }
+      } catch {
+        checks.push({
+          layer: 'task-specification',
+          message: '0XBUFFER_REGRESSION_CONFIG_JSON is not valid JSON',
+          fix: 'Ensure the config is serialized as valid JSON before spawning the sidecar',
+        });
+      }
+    }
+  }
+
+  if (mode === 'invoker-auto-mark' && !process.env['0XBUFFER_INVOKER_RAW_REQUEST']?.trim()) {
+    checks.push({
+      layer: 'task-specification',
+      message: 'Missing required env var: 0XBUFFER_INVOKER_RAW_REQUEST',
+      fix: 'Ensure the Tauri backend passes the raw HTTP request before spawning',
+    });
   }
 
   // ── Layer 2: Execution Environment ───────────────────────────────────

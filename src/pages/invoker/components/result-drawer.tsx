@@ -98,10 +98,7 @@ export function InvokerResultDrawer() {
                     ? buildModifiedRequest(config, selectedResult)
                     : 'Select a result to preview the modified request.'
                 }
-                options={{
-                  readOnly: true,
-                  scrollBeyondLastLine: false,
-                }}
+                options={{ readOnly: true }}
               />
             </div>
           </div>
@@ -123,10 +120,7 @@ export function InvokerResultDrawer() {
                     ? buildRawAttackResponse(selectedResult)
                     : 'Select a result to preview the response.'
                 }
-                options={{
-                  readOnly: true,
-                  scrollBeyondLastLine: false,
-                }}
+                options={{ readOnly: true }}
               />
             </div>
           </div>

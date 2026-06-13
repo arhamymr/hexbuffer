@@ -11,15 +11,21 @@ pub(crate) struct ConditionEvaluation {
 
 pub(crate) fn evaluate_condition(config: &Value, input_data: &Value) -> ConditionEvaluation {
     let condition_type = config_string(config, "conditionType");
-    let data_path = config_string(config, "dataPath");
-    let data_path = if data_path.trim().is_empty() {
-        default_data_path_for_condition(&condition_type).to_string()
+    let configured_data_path = config_string(config, "dataPath");
+    let use_fallbacks = configured_data_path.trim().is_empty();
+    let data_path = if use_fallbacks {
+        default_data_paths_for_condition(&condition_type)
+            .first()
+            .copied()
+            .unwrap_or_default()
+            .to_string()
     } else {
-        data_path
+        configured_data_path
     };
     let operator = config_string(config, "operator");
     let expected = config_string(config, "value");
-    let actual = resolve_json_path(input_data, &data_path);
+    let (actual_data_path, actual) =
+        resolve_condition_actual(input_data, &condition_type, &data_path, use_fallbacks);
     let normalized_actual = if condition_type == "condition:response-size" {
         normalize_response_size_actual(actual)
     } else {
@@ -49,10 +55,24 @@ pub(crate) fn evaluate_condition(config: &Value, input_data: &Value) -> Conditio
     };
     if let Value::Object(map) = &mut output {
         map.insert("match".to_string(), Value::Bool(match_value));
+        map.insert("conditionMatch".to_string(), Value::Bool(match_value));
+        map.insert(
+            "conditionDataPath".to_string(),
+            Value::String(actual_data_path.clone()),
+        );
+        map.insert("conditionActual".to_string(), normalized_actual.clone());
+        map.insert(
+            "conditionOperator".to_string(),
+            Value::String(operator.clone()),
+        );
+        map.insert(
+            "conditionExpected".to_string(),
+            Value::String(expected.clone()),
+        );
         map.insert(
             "condition".to_string(),
             json!({
-                "dataPath": data_path,
+                "dataPath": actual_data_path,
                 "actual": normalized_actual,
                 "operator": operator,
                 "expected": expected,
@@ -64,7 +84,7 @@ pub(crate) fn evaluate_condition(config: &Value, input_data: &Value) -> Conditio
         match_value,
         message: format!(
             "{} {} {}: {}",
-            data_path,
+            actual_data_path,
             operator,
             if expected.is_empty() {
                 "(blank)"
@@ -77,22 +97,58 @@ pub(crate) fn evaluate_condition(config: &Value, input_data: &Value) -> Conditio
     }
 }
 
-fn default_data_path_for_condition(condition_type: &str) -> &'static str {
+fn default_data_paths_for_condition(condition_type: &str) -> &'static [&'static str] {
     match condition_type {
-        "condition:status-code" => "statusCode",
-        "condition:url-contains" => "url",
-        "condition:body-contains" => "body",
-        "condition:header-exists" => "headers",
-        "condition:severity" => "severity",
-        "condition:ai-confidence" => "confidence",
-        "condition:method" => "method",
-        "condition:content-type" => "headers.content-type",
-        "condition:response-size" => "body",
-        "condition:crawl-status" => "status",
-        "condition:grep-match" => "body",
-        "condition:port-open" => "ports",
-        _ => "",
+        "condition:status-code" => &["statusCode", "status"],
+        "condition:url-contains" => &["url", "path"],
+        "condition:body-contains" => &["body", "responseBody", "requestBody", "message"],
+        "condition:header-exists" => &["headers", "requestHeaders", "responseHeaders"],
+        "condition:severity" => &["severity", "action.severity"],
+        "condition:ai-confidence" => &["confidence", "action.confidence"],
+        "condition:method" => &["method"],
+        "condition:content-type" => &[
+            "headers.content-type",
+            "headers.Content-Type",
+            "responseHeaders.content-type",
+            "requestHeaders.content-type",
+        ],
+        "condition:response-size" => &["body", "responseBody", "requestBody", "message"],
+        "condition:crawl-status" => &["status"],
+        "condition:grep-match" => &["body", "responseBody", "requestBody", "message"],
+        "condition:port-open" => &["ports", "port"],
+        _ => &[""],
     }
+}
+
+fn resolve_condition_actual(
+    input_data: &Value,
+    condition_type: &str,
+    data_path: &str,
+    use_fallbacks: bool,
+) -> (String, Value) {
+    let actual = resolve_json_path(input_data, data_path);
+    if !use_fallbacks || !is_empty_value(&actual) {
+        return (data_path.to_string(), actual);
+    }
+
+    for fallback_path in default_data_paths_for_condition(condition_type)
+        .iter()
+        .copied()
+        .filter(|path| *path != data_path)
+    {
+        let fallback_actual = resolve_json_path(input_data, fallback_path);
+        if !is_empty_value(&fallback_actual) {
+            return (fallback_path.to_string(), fallback_actual);
+        }
+    }
+
+    (data_path.to_string(), actual)
+}
+
+fn is_empty_value(value: &Value) -> bool {
+    value.is_null()
+        || value.as_str().map(str::is_empty).unwrap_or(false)
+        || value.as_array().map(Vec::is_empty).unwrap_or(false)
 }
 
 fn resolve_json_path(source: &Value, path: &str) -> Value {
@@ -176,5 +232,113 @@ fn value_to_number(value: &Value) -> f64 {
         array.len() as f64
     } else {
         f64::NAN
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn config(condition_type: &str, operator: &str, value: &str) -> Value {
+        json!({
+            "conditionType": condition_type,
+            "operator": operator,
+            "value": value,
+        })
+    }
+
+    #[test]
+    fn status_code_condition_uses_status_fallback() {
+        let result = evaluate_condition(
+            &config("condition:status-code", "equals", "200"),
+            &json!({ "status": 200 }),
+        );
+
+        assert!(result.match_value);
+        assert_eq!(result.output["conditionDataPath"], "status");
+        assert_eq!(result.output["conditionActual"], 200);
+    }
+
+    #[test]
+    fn body_conditions_use_response_body_fallback() {
+        let result = evaluate_condition(
+            &config("condition:body-contains", "contains", "token"),
+            &json!({ "responseBody": "csrf token found" }),
+        );
+
+        assert!(result.match_value);
+        assert_eq!(result.output["conditionDataPath"], "responseBody");
+    }
+
+    #[test]
+    fn header_exists_is_case_insensitive() {
+        let result = evaluate_condition(
+            &config("condition:header-exists", "equals", "x-api-key"),
+            &json!({ "headers": { "X-API-Key": "secret" } }),
+        );
+
+        assert!(result.match_value);
+    }
+
+    #[test]
+    fn array_conditions_match_any_item() {
+        let result = evaluate_condition(
+            &config("condition:port-open", "equals", "443"),
+            &json!({ "ports": [80, 443, 8080] }),
+        );
+
+        assert!(result.match_value);
+    }
+
+    #[test]
+    fn false_conditions_still_emit_structured_output() {
+        let result = evaluate_condition(
+            &config("condition:url-contains", "contains", "/admin"),
+            &json!({ "url": "https://example.com/docs" }),
+        );
+
+        assert!(!result.match_value);
+        assert_eq!(result.output["match"], false);
+        assert_eq!(result.output["conditionExpected"], "/admin");
+        assert_eq!(result.output["conditionOperator"], "contains");
+    }
+
+    #[test]
+    fn response_size_counts_string_bytes() {
+        let result = evaluate_condition(
+            &config("condition:response-size", "gt", "3"),
+            &json!({ "body": "hello" }),
+        );
+
+        assert!(result.match_value);
+        assert_eq!(result.output["conditionActual"], 5);
+    }
+
+    #[test]
+    fn crawl_status_and_severity_are_real_conditions() {
+        assert!(
+            evaluate_condition(
+                &config("condition:crawl-status", "equals", "visited"),
+                &json!({ "status": "visited" }),
+            )
+            .match_value
+        );
+        assert!(
+            evaluate_condition(
+                &config("condition:severity", "equals", "high"),
+                &json!({ "severity": "HIGH" }),
+            )
+            .match_value
+        );
+    }
+
+    #[test]
+    fn ai_confidence_uses_numeric_comparison() {
+        let result = evaluate_condition(
+            &config("condition:ai-confidence", "gt", "0.8"),
+            &json!({ "confidence": 0.91 }),
+        );
+
+        assert!(result.match_value);
     }
 }

@@ -1,3 +1,4 @@
+pub mod auto_mark;
 pub mod chat;
 pub mod commands;
 pub mod keyring;
@@ -9,7 +10,10 @@ use std::collections::BTreeMap;
 use tauri::{AppHandle, State};
 
 // Type re-exports
-pub use types::{AiChatRequest, AiChatResponse, AiSettings, ChatMessageRecord, ChatSessionRecord};
+pub use types::{
+    AiChatRequest, AiChatResponse, AiSettings, ChatMessageRecord, ChatSessionRecord,
+    InvokerMarkerSuggestionRequest, InvokerMarkerSuggestionResponse,
+};
 
 // Non-command function re-exports
 pub use chat::ensure_third_party_ai_sharing_allowed;
@@ -59,4 +63,12 @@ pub async fn send_ai_chat_message(
     request: AiChatRequest,
 ) -> Result<AiChatResponse, String> {
     chat::send_ai_chat_message_impl(app, history, request).await
+}
+
+#[tauri::command]
+pub async fn suggest_invoker_markers(
+    app: AppHandle,
+    request: InvokerMarkerSuggestionRequest,
+) -> Result<InvokerMarkerSuggestionResponse, String> {
+    auto_mark::suggest_invoker_markers_impl(app, request).await
 }

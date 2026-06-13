@@ -14,7 +14,10 @@ use super::types::{
 
 const SCHEDULER_TICK: Duration = Duration::from_secs(15);
 
-pub(crate) fn ensure_scheduled_trigger_scheduler(app: AppHandle, state: &State<'_, AutomationRuntimeState>) {
+pub(crate) fn ensure_scheduled_trigger_scheduler(
+    app: AppHandle,
+    state: &State<'_, AutomationRuntimeState>,
+) {
     {
         let mut inner = match state.0.lock() {
             Ok(inner) => inner,
@@ -58,10 +61,11 @@ fn tick_scheduled_triggers(app: &AppHandle) {
             let Some(trigger_node) = scheduled_trigger_node(&workflow) else {
                 continue;
             };
-            let interval = match schedule_interval(&config_string(&trigger_node.data.config, "schedule")) {
-                Some(interval) => interval,
-                None => continue,
-            };
+            let interval =
+                match schedule_interval(&config_string(&trigger_node.data.config, "schedule")) {
+                    Some(interval) => interval,
+                    None => continue,
+                };
 
             let Some(last_run) = inner
                 .scheduled_last_run_by_trigger_id
@@ -175,9 +179,7 @@ fn parse_duration(value: &str) -> Option<Duration> {
     }
 }
 
-pub(crate) fn prune_scheduled_trigger_state(
-    inner: &mut super::types::AutomationRuntimeInner,
-) {
+pub(crate) fn prune_scheduled_trigger_state(inner: &mut super::types::AutomationRuntimeInner) {
     let trigger_ids: std::collections::HashSet<String> = inner
         .workflows
         .iter()
@@ -201,15 +203,33 @@ mod tests {
 
     #[test]
     fn parses_every_duration() {
-        assert_eq!(schedule_interval("@every 30s"), Some(Duration::from_secs(30)));
-        assert_eq!(schedule_interval("@every 5m"), Some(Duration::from_secs(300)));
-        assert_eq!(schedule_interval("@every 2h"), Some(Duration::from_secs(7200)));
+        assert_eq!(
+            schedule_interval("@every 30s"),
+            Some(Duration::from_secs(30))
+        );
+        assert_eq!(
+            schedule_interval("@every 5m"),
+            Some(Duration::from_secs(300))
+        );
+        assert_eq!(
+            schedule_interval("@every 2h"),
+            Some(Duration::from_secs(7200))
+        );
     }
 
     #[test]
     fn parses_common_cron_intervals() {
-        assert_eq!(schedule_interval("*/5 * * * *"), Some(Duration::from_secs(300)));
-        assert_eq!(schedule_interval("0 */6 * * *"), Some(Duration::from_secs(21_600)));
-        assert_eq!(schedule_interval("0 * * * *"), Some(Duration::from_secs(3_600)));
+        assert_eq!(
+            schedule_interval("*/5 * * * *"),
+            Some(Duration::from_secs(300))
+        );
+        assert_eq!(
+            schedule_interval("0 */6 * * *"),
+            Some(Duration::from_secs(21_600))
+        );
+        assert_eq!(
+            schedule_interval("0 * * * *"),
+            Some(Duration::from_secs(3_600))
+        );
     }
 }

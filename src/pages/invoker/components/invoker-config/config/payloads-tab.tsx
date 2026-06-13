@@ -259,11 +259,6 @@ export function PayloadsTab() {
                           file_path: undefined,
                         })
                       }
-                      options={{
-                        lineNumbers: 'off',
-                        scrollBeyondLastLine: false,
-                        wordWrap: 'off',
-                      }}
                     />
                   </div>
 

@@ -58,7 +58,10 @@ function TriggerNodeComponent({ id, data, selected }: NodeProps) {
   const config = nodeData.config as TriggerConfig;
   const isManual = config?.triggerType === 'trigger:manual';
   const isLiveTraffic = config?.triggerType === 'trigger:live-traffic-captured';
-  const liveTrafficNeedsHost = isLiveTraffic && !config.host?.trim();
+  const isWebSocketMessage = config?.triggerType === 'trigger:websocket-message';
+  const triggerNeedsHost = (isLiveTraffic || isWebSocketMessage) && !config.host?.trim();
+  const liveTrafficNeedsHost = isLiveTraffic && triggerNeedsHost;
+  const websocketNeedsHost = isWebSocketMessage && triggerNeedsHost;
   const runtime = useNodeRuntimeStatus(id);
   const isExecuting = runtime?.status === 'running';
   const warning = getAutomationNodeWarning(nodeData, runtime);
@@ -95,11 +98,11 @@ function TriggerNodeComponent({ id, data, selected }: NodeProps) {
             CATEGORY_BORDER.trigger,
             CATEGORY_BG.trigger,
             selected && 'ring-2 ring-ring ring-offset-2 ring-offset-background',
-            liveTrafficNeedsHost && 'border-amber-500 shadow-amber-500/20',
+            triggerNeedsHost && 'border-amber-500 shadow-amber-500/20',
             isExecuting && 'border-red-500 animate-pulse ring-2 ring-red-500 ring-offset-2 shadow-lg shadow-red-500/25',
           )}
         >
-      {liveTrafficNeedsHost && (
+      {triggerNeedsHost && (
         <div className="rounded-t-[5px] border-b border-amber-500/40 bg-amber-500/15 px-3 py-2 text-amber-700 dark:text-amber-200">
           <div className="flex items-start gap-2">
             <AlertTriangle className="mt-0.5 size-5 shrink-0" />
@@ -122,7 +125,7 @@ function TriggerNodeComponent({ id, data, selected }: NodeProps) {
         </div>
         {warning && (
           <AlertTriangle
-            className={cn('shrink-0 text-amber-500', liveTrafficNeedsHost ? 'size-5' : 'size-3.5')}
+            className={cn('shrink-0 text-amber-500', triggerNeedsHost ? 'size-5' : 'size-3.5')}
             aria-label={warning}
             title={warning}
           />
@@ -189,6 +192,48 @@ function TriggerNodeComponent({ id, data, selected }: NodeProps) {
               <span className="text-muted-foreground">
                 · {[
                   config.method && `Method: ${config.method}`,
+                  config.host && `Host: ${config.host}`,
+                  config.value && `${config.operator ?? 'contains'} "${config.value}"`,
+                ].filter(Boolean).join(' · ')}
+              </span>
+            )}
+          </div>
+        </div>
+      )}
+
+      {isWebSocketMessage && (
+        <div
+          className={cn(
+            'border-t px-3 py-1.5',
+            websocketNeedsHost
+              ? 'border-amber-500/30 bg-amber-500/[0.06]'
+              : isWorkflowListening
+              ? 'border-violet-500/20 bg-violet-500/[0.03]'
+              : 'border-amber-500/20 bg-amber-500/[0.04]'
+          )}
+        >
+          <div className="flex items-center gap-1.5 text-[10px]">
+            <div
+              className={cn(
+                'size-1.5 rounded-full',
+                websocketNeedsHost
+                  ? 'bg-amber-500'
+                  : isWorkflowListening
+                  ? 'animate-pulse bg-violet-400 shadow-[0_0_4px_theme(colors.violet.400)]'
+                  : 'bg-amber-500'
+              )}
+            />
+            <span className={cn('font-medium', websocketNeedsHost ? 'text-amber-500' : isWorkflowListening ? 'text-violet-400' : 'text-amber-500')}>
+              {websocketNeedsHost ? 'Host required' : isWorkflowListening ? 'Listening for messages' : 'Listening paused'}
+            </span>
+            {[
+              config.direction && `Direction: ${config.direction}`,
+              config.host && `Host: ${config.host}`,
+              config.value && `${config.operator ?? 'contains'} "${config.value}"`,
+            ].filter(Boolean).length > 0 && (
+              <span className="text-muted-foreground">
+                · {[
+                  config.direction && `Direction: ${config.direction}`,
                   config.host && `Host: ${config.host}`,
                   config.value && `${config.operator ?? 'contains'} "${config.value}"`,
                 ].filter(Boolean).join(' · ')}

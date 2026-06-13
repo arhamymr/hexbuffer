@@ -35,10 +35,7 @@ export function InterceptRequestPanel() {
             language="javascript"
             value={rawRequest}
             onChange={handleRawChange}
-            options={{
-              readOnly: !selectedRequestId,
-              scrollBeyondLastLine: false,
-            }}
+            options={{ readOnly: !selectedRequestId }}
           />
         </div>
       </div>

@@ -205,12 +205,6 @@ export function LogEntryBurpView() {
                   value={rawRequest}
                   options={{
                     readOnly: true,
-                    scrollBeyondLastLine: false,
-                    minimap: { enabled: false },
-                    fontSize: 12,
-                    lineHeight: 18,
-                    renderWhitespace: 'selection',
-                    padding: { top: 12, bottom: 12 },
                   }}
                 />
               </div>
@@ -282,12 +276,6 @@ export function LogEntryBurpView() {
                   value={rawResponse}
                   options={{
                     readOnly: true,
-                    scrollBeyondLastLine: false,
-                    minimap: { enabled: false },
-                    fontSize: 12,
-                    lineHeight: 18,
-                    renderWhitespace: 'selection',
-                    padding: { top: 12, bottom: 12 },
                   }}
                 />
               </div>

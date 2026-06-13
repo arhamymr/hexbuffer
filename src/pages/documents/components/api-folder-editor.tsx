@@ -19,15 +19,7 @@ export function ApiFolderEditor({ document }: ApiFolderEditorProps) {
         '',
         ...document.apiEntries.map((entry) => `- ${entry.method} ${entry.url}`),
       ].join('\n')}
-      options={{
-        readOnly: true,
-        fontSize: 13,
-        lineHeight: 20,
-        fontFamily: 'Geist Mono, Menlo, Monaco, Consolas, monospace',
-        padding: { top: 16, bottom: 16 },
-        scrollBeyondLastLine: false,
-        minimap: { enabled: true },
-      }}
+      options={{ readOnly: true }}
     />
   );
 }

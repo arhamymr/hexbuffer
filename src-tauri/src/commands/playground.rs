@@ -431,6 +431,34 @@ pub fn rename_project_file(
 }
 
 #[tauri::command]
+pub fn create_directory(dir_path: String, project_path: String) -> Result<(), String> {
+    let project_root = Path::new(&project_path)
+        .canonicalize()
+        .map_err(|e| format!("Failed to resolve project path: {}", e))?;
+
+    let target = if Path::new(&dir_path).is_absolute() {
+        PathBuf::from(&dir_path)
+    } else {
+        project_root.join(&dir_path)
+    };
+
+    // Validate parent is within project
+    if let Some(parent) = target.parent() {
+        let parent_canon = parent
+            .canonicalize()
+            .map_err(|e| format!("Failed to resolve parent path: {}", e))?;
+        if !parent_canon.starts_with(&project_root) {
+            return Err("Access denied: target path is outside the project directory".to_string());
+        }
+    }
+
+    std::fs::create_dir_all(&target)
+        .map_err(|e| format!("Failed to create directory: {}", e))?;
+
+    Ok(())
+}
+
+#[tauri::command]
 pub fn run_build_command(
     working_dir: String,
     command: String,

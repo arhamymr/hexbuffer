@@ -90,6 +90,16 @@ export async function renameProjectFile(
   });
 }
 
+export async function createDirectory(
+  dirPath: string,
+  projectPath: string,
+): Promise<void> {
+  return invoke('create_directory', {
+    dirPath,
+    projectPath,
+  });
+}
+
 export async function runBuildCommand(
   workingDir: string,
   command: string,

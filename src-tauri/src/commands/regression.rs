@@ -71,6 +71,7 @@ pub async fn run_regression_test(
         )
         .env("XBUFFER_AI_PROVIDER", &settings.provider)
         .env("0XBUFFER_AI_MODEL", &settings.model)
+        .env("AI_SDK_LOG_WARNINGS", "false")
         .env("0XBUFFER_AI_ARTIFACT_DIR", artifact_dir.to_string_lossy().to_string());
 
     let mut command: Command = sidecar_command.into();

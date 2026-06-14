@@ -1,9 +1,9 @@
 import { randomUUID } from 'node:crypto';
 
-import { emit, log } from '../events.mjs';
-import { testCaseSchema } from './types.mjs';
-import { runRegressionSteps } from './executor.mjs';
-import { verifyWithAI } from './ai-verifier.mjs';
+import { emit, log } from './events.mjs';
+import { testCaseSchema } from './regression/types.mjs';
+import { runRegressionSteps } from './regression/executor.mjs';
+import { verifyWithAI } from './regression/ai-verifier.mjs';
 
 /**
  * Regression test runner — entry point for the `regression` sidecar mode.

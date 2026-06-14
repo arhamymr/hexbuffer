@@ -1,5 +1,9 @@
 #!/usr/bin/env node
 
+// Suppress AI SDK warnings from leaking into stdout JSON-line protocol
+process.env.AI_SDK_LOG_WARNINGS = 'false';
+globalThis.AI_SDK_LOG_WARNINGS = false;
+
 /**
  * 0xBuffer AI Engine Sidecar — Harness Contract
  *

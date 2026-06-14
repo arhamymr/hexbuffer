@@ -29,7 +29,7 @@ pub use commands::browser::{
     browser_snapshot, browser_type, delete_ai_browser_session, get_ai_browser_session,
     get_browser_status, has_any_active_crawl, list_ai_browser_insights, list_ai_browser_logs,
     list_ai_browser_pages, list_recent_ai_browser_sessions, stop_all_active_crawls,
-    BrowserProcessState,
+    stop_browser_process, BrowserProcessState,
 };
 pub use commands::packet_capture::{
     configure_capture_network, get_packet_capture_status, get_packets_paginated,

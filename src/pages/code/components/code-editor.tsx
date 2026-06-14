@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { X, Circle } from 'lucide-react';
-import { TextEditor } from '@/components/ui/text-editor';
+import { Circle, FileCode2, X } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -11,6 +10,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { Button } from '@/components/ui/button';
+import { MonacoEditor } from '@/components/ui/monaco-editor';
 import type { OpenTab } from '../types';
 
 interface CodeEditorProps {
@@ -70,65 +71,77 @@ export function CodeEditor({
 
   if (tabs.length === 0) {
     return (
-      <div className="flex h-full items-center justify-center">
-        <p className="text-sm text-muted-foreground">
-          No file open. Select a file from the tree to start editing.
-        </p>
+      <div className="flex h-full items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-2 text-center">
+          <FileCode2 className="h-8 w-8 text-muted-foreground/50" />
+          <p className="text-sm text-muted-foreground">No file open</p>
+          <p className="text-xs text-muted-foreground">
+            Select a file from the project tree to start editing.
+          </p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="flex h-full flex-col overflow-hidden">
-      {/* Tab bar */}
-      <div className="flex shrink-0 items-center border-b bg-muted/30">
-        <div className="flex flex-1 overflow-x-auto">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden bg-background">
+      <div className="flex shrink-0 items-center border-b bg-muted/60">
+        <div className="flex min-w-0 flex-1 overflow-x-auto">
           {tabs.map((tab) => {
             const isActive = tab.path === activeTabPath;
             return (
               <button
                 key={tab.path}
-                className={`group flex items-center gap-1.5 border-r px-3 py-1.5 text-xs whitespace-nowrap transition-colors ${
+                className={`group flex h-9 max-w-[220px] items-center gap-1.5 border-r px-3 text-xs whitespace-nowrap transition-colors ${
                   isActive
-                    ? 'border-b-2 border-b-primary bg-background text-foreground'
+                    ? 'bg-background text-foreground'
                     : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
                 }`}
                 onClick={() => onTabChange(tab.path)}
+                type="button"
               >
+                <FileCode2 className="h-3.5 w-3.5 shrink-0" />
                 <span className="max-w-[120px] truncate">{tab.name}</span>
                 {tab.isDirty && (
                   <Circle className="h-1.5 w-1.5 shrink-0 fill-current text-amber-500" />
                 )}
-                <span
-                  className="ml-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded opacity-0 hover:bg-muted group-hover:opacity-100"
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="ml-0.5 h-5 w-5 shrink-0 opacity-0 group-hover:opacity-100"
                   onClick={(e) => {
                     e.stopPropagation();
                     handleTabClose(tab);
                   }}
+                  aria-label={`Close ${tab.name}`}
                 >
                   <X className="h-3 w-3" />
-                </span>
+                </Button>
               </button>
             );
           })}
         </div>
       </div>
 
-      {/* Editor */}
-      <div className="flex-1 min-h-0 overflow-hidden">
-        <TextEditor
-          key={activeTabPath}
+      <div className="min-h-0 flex-1 overflow-hidden">
+        <MonacoEditor
           value={activeContent}
           language={activeLanguage}
+          path={activeTabPath}
           onChange={(value) => {
-            if (activeTabPath && value !== undefined) {
+            if (activeTabPath) {
               onContentChange(activeTabPath, value);
             }
           }}
+          className="h-full w-full"
         />
       </div>
 
-      {/* Unsaved changes dialog */}
+      <div className="flex h-7 shrink-0 items-center justify-between border-t bg-muted/40 px-3 text-[11px] text-muted-foreground">
+        <span className="min-w-0 truncate">{activeTabPath ?? 'No file selected'}</span>
+        <span className="shrink-0 uppercase">{activeLanguage || 'text'}</span>
+      </div>
+
       <AlertDialog
         open={pendingClose !== null}
         onOpenChange={(open) => {
@@ -154,4 +167,3 @@ export function CodeEditor({
     </div>
   );
 }
-

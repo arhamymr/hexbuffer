@@ -106,6 +106,7 @@ fn run_ai_chat_engine(
         )
         .env("XBUFFER_AI_PROVIDER", settings.provider.trim())
         .env("0XBUFFER_AI_MODEL", settings.model.trim())
+        .env("AI_SDK_LOG_WARNINGS", "false")
         .env(api_key_env_name(&settings.provider)?, api_key.trim());
     let mut command: Command = sidecar_command.into();
     command.stdout(Stdio::piped()).stderr(Stdio::piped());

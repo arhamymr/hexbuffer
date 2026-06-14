@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { invoke } from '@tauri-apps/api/core';
-import { Info, Loader2, Sparkles, Target } from 'lucide-react';
+import { Astroid, Info, Loader2, Sparkles, Target } from 'lucide-react';
 import type { EditorView } from '@codemirror/view';
 
 import { Badge } from '@/components/ui/badge';
@@ -292,9 +292,9 @@ export function RequestTab() {
                 {autoMarkLoading ? (
                   <Loader2 className="mr-1 h-4 w-4 animate-spin" />
                 ) : (
-                  <Sparkles className="mr-1 h-4 w-4" />
+                  <Astroid className="mr-1 h-4 w-4" />
                 )}
-                Auto mark
+                Auto
               </Button>
               <Button
                 type="button"
@@ -304,7 +304,7 @@ export function RequestTab() {
                 disabled={isRunning}
               >
                 <Target className="mr-1 h-4 w-4" />
-                Mark Target
+                Mark
               </Button>
             </ButtonGroup>
             <Tooltip>

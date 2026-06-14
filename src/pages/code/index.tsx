@@ -132,7 +132,7 @@ export function PlaygroundPage() {
 
   // ── Project tab content (no embedded terminal — uses global footer terminal) ──
   const projectContent = !isLanding && project ? (
-    <div className="flex h-full flex-col overflow-hidden bg-background rounded-lg">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden bg-background">
       <PlaygroundToolbar
         project={project}
         isBuilding={isBuilding}
@@ -143,9 +143,9 @@ export function PlaygroundPage() {
         onCloseProject={handleCloseProject}
       />
 
-      <ResizablePanelGroup orientation="horizontal" className="flex-1 min-h-0">
-        <ResizablePanel defaultSize={25} minSize={14}>
-          <div className="h-full border-r bg-muted/20">
+      <main className="min-h-0 flex-1">
+        <ResizablePanelGroup orientation="horizontal" className="min-h-0">
+          <ResizablePanel defaultSize={24} minSize={18}>
             <FileTree
               files={fileTree}
               activePath={activeTabPath}
@@ -155,22 +155,22 @@ export function PlaygroundPage() {
               onRenameFile={handleRenameFile}
               onRefresh={handleRefreshTree}
             />
-          </div>
-        </ResizablePanel>
-        <ResizableHandle withHandle />
-        <ResizablePanel defaultSize={75} minSize={40}>
-          <CodeEditor
-            tabs={openTabs}
-            activeTabPath={activeTabPath}
-            activeContent={activeContent}
-            activeLanguage={activeLanguage}
-            onTabChange={setActiveEditorTab}
-            onTabClose={handleTabClose}
-            onContentChange={handleContentChange}
-            onSave={handleSaveFile}
-          />
-        </ResizablePanel>
-      </ResizablePanelGroup>
+          </ResizablePanel>
+          <ResizableHandle withHandle />
+          <ResizablePanel defaultSize={76} minSize={40}>
+            <CodeEditor
+              tabs={openTabs}
+              activeTabPath={activeTabPath}
+              activeContent={activeContent}
+              activeLanguage={activeLanguage}
+              onTabChange={setActiveEditorTab}
+              onTabClose={handleTabClose}
+              onContentChange={handleContentChange}
+              onSave={handleSaveFile}
+            />
+          </ResizablePanel>
+        </ResizablePanelGroup>
+      </main>
     </div>
   ) : null;
 
@@ -186,7 +186,7 @@ export function PlaygroundPage() {
         const landing = tabs.find((t) => t.id === '__playground_landing__');
         if (landing) setActiveTab(landing.id);
       }}
-      contentClassName="flex-1 min-h-0"
+      contentClassName="flex-1 border rounded-md overflow-hidden bg-background min-h-0"
     >
       {isLanding ? landingContent : projectContent}
     </TabbedPageLayout>

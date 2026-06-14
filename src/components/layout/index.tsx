@@ -20,6 +20,7 @@ import {
 const TERMINAL_PANEL_DEFAULT_SIZE = 30;
 const TERMINAL_PANEL_MIN_SIZE = 15;
 const TERMINAL_PANEL_COLLAPSED_SIZE = 0;
+const TERMINAL_PANEL_MIN_HEIGHT_PX = 150;
 
 export function AppLayout({ children }: { children?: React.ReactNode }) {
   const {
@@ -74,7 +75,7 @@ export function AppLayout({ children }: { children?: React.ReactNode }) {
                 }}
               >
                 <React.Suspense fallback={null}>
-                  <div className="h-full">
+                  <div className="h-full" style={{ minHeight: TERMINAL_PANEL_MIN_HEIGHT_PX }}>
                     <TerminalPanel ref={handleTerminalRef} onClosePanel={toggleTerminal} />
                   </div>
                 </React.Suspense>

@@ -41,11 +41,11 @@ export interface PlaygroundProject {
   language: PlaygroundLanguage;
 }
 
-/** A tab in the Playground page tab bar. */
-export interface PlaygroundTab {
-  id: string;
+/** An open workspace folder (replaces the old tab-based project model). */
+export interface WorkspaceFolder {
   name: string;
-  project: PlaygroundProject | null; // null = landing / "get started" tab
+  path: string;
+  language: string; // auto-detected: 'rust' | 'c' | 'cpp' | 'unknown' | etc.
 }
 
 export interface ProjectSummary {
@@ -78,14 +78,72 @@ export function getLanguageFromPath(filePath: string): string {
       return 'cpp';
     case 'js':
     case 'jsx':
+    case 'mjs':
       return 'javascript';
+    case 'ts':
+    case 'tsx':
+    case 'mts':
+      return 'typescript';
+    case 'py':
+    case 'pyw':
+      return 'python';
+    case 'go':
+      return 'go';
+    case 'java':
+      return 'java';
+    case 'kt':
+    case 'kts':
+      return 'kotlin';
+    case 'swift':
+      return 'swift';
+    case 'rb':
+      return 'ruby';
+    case 'php':
+      return 'php';
     case 'html':
     case 'htm':
       return 'html';
+    case 'css':
+    case 'scss':
+    case 'sass':
+    case 'less':
+      return 'css';
+    case 'json':
+      return 'json';
+    case 'yaml':
+    case 'yml':
+      return 'yaml';
+    case 'toml':
+    case 'ini':
+    case 'cfg':
+      return 'ini';
+    case 'xml':
+    case 'svg':
+      return 'xml';
     case 'md':
     case 'markdown':
       return 'markdown';
+    case 'sh':
+    case 'bash':
+    case 'zsh':
+      return 'shell';
+    case 'sql':
+      return 'sql';
+    case 'dockerfile':
+      return 'dockerfile';
     default:
       return '';
   }
+}
+
+/** Detect workspace language by inspecting file tree for known markers. */
+export function detectWorkspaceLanguage(tree: FileTreeNode[]): string {
+  const rootNames = tree.map((n) => n.name);
+  if (rootNames.includes('Cargo.toml')) return 'rust';
+  if (rootNames.includes('main.cpp') || rootNames.includes('main.cc')) return 'cpp';
+  if (rootNames.includes('main.c')) return 'c';
+  if (rootNames.includes('package.json')) return 'javascript';
+  if (rootNames.includes('go.mod')) return 'go';
+  if (rootNames.includes('requirements.txt') || rootNames.includes('pyproject.toml')) return 'python';
+  return 'unknown';
 }

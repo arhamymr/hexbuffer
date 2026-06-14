@@ -1,6 +1,6 @@
 import React from 'react';
 import { useRegressionStore } from '@/stores/regression';
-import type { TestCase, TestStep } from '../types';
+import type { TestCase } from '../types';
 import type { PageTabItem } from '@/components/tabs-layout/types';
 
 interface RegressionTab {
@@ -36,7 +36,7 @@ export function useRegressionPage() {
     loadTestCases();
   }, [loadTestCases]);
 
-  // Auto-select first test case into a tab
+  // Ensure at least one default tab always exists
   React.useEffect(() => {
     if (tabs.length === 0 && testCases.length > 0) {
       const first = testCases[0];
@@ -61,6 +61,10 @@ export function useRegressionPage() {
   const activeTabTestCaseId = activeTab?.testCaseId ?? null;
   const selectedCase = testCases.find((c) => c.id === activeTabTestCaseId) || null;
   const selectedRuns = activeTabTestCaseId ? runs[activeTabTestCaseId] || [] : [];
+  const totalRuns = React.useMemo(
+    () => Object.values(runs).reduce((total, testRuns) => total + testRuns.length, 0),
+    [runs],
+  );
 
   // Build PageTabItem array for TabbedPageLayout
   const pageTabs: PageTabItem[] = React.useMemo(
@@ -71,9 +75,16 @@ export function useRegressionPage() {
           id: tab.id,
           name: tc?.name || 'New Test Case',
           closable: true,
+          status:
+            activeRun?.testCaseId && activeRun.testCaseId === tab.testCaseId
+              ? {
+                  kind: activeRun.status === 'running' || activeRun.status === 'queued' ? 'running' : 'ready',
+                  label: `Test ${activeRun.status}`,
+                }
+              : undefined,
         };
       }),
-    [tabs, testCases],
+    [tabs, testCases, activeRun],
   );
 
   // Open or switch to a tab for a given test case (viewing mode)
@@ -165,8 +176,15 @@ export function useRegressionPage() {
       const tab = prev.find((t) => t.id === activeTabId);
       if (!tab) return prev;
       if (tab.isNew) {
-        // Remove new unsaved tab
-        return prev.filter((t) => t.id !== activeTabId);
+        // Remove new unsaved tab and keep focus on a remaining tab.
+        const idx = prev.findIndex((t) => t.id === activeTabId);
+        const next = prev.filter((t) => t.id !== activeTabId);
+        if (next.length > 0) {
+          setActiveTabId(next[Math.min(idx, next.length - 1)].id);
+        } else {
+          setActiveTabId(null);
+        }
+        return next;
       }
       // Revert to viewing mode
       return prev.map((t) =>
@@ -179,9 +197,15 @@ export function useRegressionPage() {
   const handleDelete = React.useCallback(
     async (id: string) => {
       await deleteTestCase(id);
-      setTabs((prev) => prev.filter((t) => t.testCaseId !== id));
+      setTabs((prev) => {
+        const next = prev.filter((t) => t.testCaseId !== id);
+        if (activeTab?.testCaseId === id) {
+          setActiveTabId(next[0]?.id ?? null);
+        }
+        return next;
+      });
     },
-    [deleteTestCase],
+    [deleteTestCase, activeTab?.testCaseId],
   );
 
   // Close a tab
@@ -223,6 +247,11 @@ export function useRegressionPage() {
     [testCases, saveTestCase],
   );
 
+  // Add a new tab via the "+" button
+  const handleAddTab = React.useCallback(() => {
+    handleCreate();
+  }, [handleCreate]);
+
   const handleRun = React.useCallback(
     async (testCaseId: string) => {
       await runTest(testCaseId);
@@ -232,10 +261,12 @@ export function useRegressionPage() {
 
   return {
     testCases,
+    totalRuns,
     selectedCase,
     selectedRuns,
     activeRun,
     liveSteps,
+    handleAddTab,
     editingCase: activeTab?.editingCase ?? null,
     isNew: activeTab?.isNew ?? false,
     internalTabs: tabs,

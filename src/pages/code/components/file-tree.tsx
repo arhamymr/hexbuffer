@@ -1,11 +1,12 @@
 import { useState, useCallback } from 'react';
 import {
   ChevronRight,
-  File,
   FileCode,
   Folder,
   FolderOpen,
+  FolderPlus,
   Plus,
+  RefreshCw,
   Trash2,
   Pencil,
 } from 'lucide-react';
@@ -25,6 +26,7 @@ interface FileTreeProps {
   activePath: string | null;
   onFileClick: (path: string) => void;
   onNewFile: (parentPath: string, fileName: string) => Promise<void>;
+  onNewFolder: (parentPath: string, folderName: string) => Promise<void>;
   onDeleteFile: (path: string) => Promise<void>;
   onRenameFile: (oldPath: string, newName: string) => Promise<void>;
   onRefresh: () => void;
@@ -35,34 +37,94 @@ export function FileTree({
   activePath,
   onFileClick,
   onNewFile,
+  onNewFolder,
   onDeleteFile,
   onRenameFile,
   onRefresh,
 }: FileTreeProps) {
   if (files.length === 0) {
     return (
-      <div className="flex h-full flex-col items-center justify-center gap-2 p-4 text-center">
-        <File className="h-8 w-8 text-muted-foreground/50" />
-        <p className="text-xs text-muted-foreground">Empty project</p>
+      <div className="flex h-full min-h-0 flex-col border-r bg-background">
+        <FileTreeHeader
+          onNewFile={() => onNewFile('', 'untitled.txt')}
+          onNewFolder={() => onNewFolder('', 'new-folder')}
+          onRefresh={onRefresh}
+        />
+        <div className="flex flex-1 flex-col items-center justify-center gap-2 p-4 text-center">
+          <Folder className="h-8 w-8 text-muted-foreground/50" />
+          <p className="text-xs text-muted-foreground">Empty folder</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="h-full overflow-auto p-2">
-      <div className="space-y-0.5">
-        {files.map((node) => (
-          <FileTreeItem
-            key={node.path}
-            node={node}
-            depth={0}
-            activePath={activePath}
-            onFileClick={onFileClick}
-            onNewFile={onNewFile}
-            onDeleteFile={onDeleteFile}
-            onRenameFile={onRenameFile}
-          />
-        ))}
+    <div className="flex h-full min-h-0 flex-col border-r bg-background">
+      <FileTreeHeader
+        onNewFile={() => onNewFile('', 'untitled.txt')}
+        onNewFolder={() => onNewFolder('', 'new-folder')}
+        onRefresh={onRefresh}
+      />
+      <div className="min-h-0 flex-1 overflow-auto p-2">
+        <div className="space-y-0.5">
+          {files.map((node) => (
+            <FileTreeItem
+              key={node.path}
+              node={node}
+              depth={0}
+              activePath={activePath}
+              onFileClick={onFileClick}
+              onNewFile={onNewFile}
+              onNewFolder={onNewFolder}
+              onDeleteFile={onDeleteFile}
+              onRenameFile={onRenameFile}
+            />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+type CreateMode = 'file' | 'folder' | null;
+
+function FileTreeHeader({
+  onNewFile,
+  onNewFolder,
+  onRefresh,
+}: {
+  onNewFile: () => void;
+  onNewFolder: () => void;
+  onRefresh: () => void;
+}) {
+  return (
+    <div className="flex h-10 shrink-0 items-center justify-between border-b bg-muted/40 px-3">
+      <span className="text-xs font-medium uppercase text-muted-foreground">Explorer</span>
+      <div className="flex items-center gap-1">
+        <button
+          className="flex h-6 w-6 items-center justify-center rounded hover:bg-muted"
+          onClick={onNewFile}
+          type="button"
+          aria-label="New file"
+        >
+          <Plus className="h-3.5 w-3.5" />
+        </button>
+        <button
+          className="flex h-6 w-6 items-center justify-center rounded hover:bg-muted"
+          onClick={onNewFolder}
+          type="button"
+          aria-label="New folder"
+        >
+          <FolderPlus className="h-3.5 w-3.5" />
+        </button>
+        <button
+          className="flex h-6 w-6 items-center justify-center rounded hover:bg-muted"
+          onClick={onRefresh}
+          type="button"
+          aria-label="Refresh files"
+        >
+          <RefreshCw className="h-3.5 w-3.5" />
+        </button>
       </div>
     </div>
   );
@@ -74,6 +136,7 @@ interface FileTreeItemProps {
   activePath: string | null;
   onFileClick: (path: string) => void;
   onNewFile: (parentPath: string, fileName: string) => Promise<void>;
+  onNewFolder: (parentPath: string, folderName: string) => Promise<void>;
   onDeleteFile: (path: string) => Promise<void>;
   onRenameFile: (oldPath: string, newName: string) => Promise<void>;
 }
@@ -84,12 +147,13 @@ function FileTreeItem({
   activePath,
   onFileClick,
   onNewFile,
+  onNewFolder,
   onDeleteFile,
   onRenameFile,
 }: FileTreeItemProps) {
   const [isOpen, setIsOpen] = useState(depth < 1);
   const [isRenaming, setIsRenaming] = useState(false);
-  const [isCreating, setIsCreating] = useState(false);
+  const [createMode, setCreateMode] = useState<CreateMode>(null);
   const [renameValue, setRenameValue] = useState(node.name);
   const [createValue, setCreateValue] = useState('');
 
@@ -104,11 +168,15 @@ function FileTreeItem({
   const handleCreateSubmit = useCallback(async () => {
     const trimmed = createValue.trim();
     if (trimmed) {
-      await onNewFile(node.path, trimmed);
+      if (createMode === 'file') {
+        await onNewFile(node.path, trimmed);
+      } else if (createMode === 'folder') {
+        await onNewFolder(node.path, trimmed);
+      }
     }
-    setIsCreating(false);
+    setCreateMode(null);
     setCreateValue('');
-  }, [createValue, node.path, onNewFile]);
+  }, [createValue, createMode, node.path, onNewFile, onNewFolder]);
 
   const isActive = activePath === node.path;
 
@@ -137,12 +205,12 @@ function FileTreeItem({
             </div>
           </ContextMenuTrigger>
           <ContextMenuContent className="w-40">
-            <ContextMenuItem onClick={() => setIsCreating(true)}>
+            <ContextMenuItem onClick={() => setCreateMode('file')}>
               <Plus className="mr-2 h-3.5 w-3.5" />
               New File
             </ContextMenuItem>
-            <ContextMenuItem onClick={() => setIsCreating(true)}>
-              <Plus className="mr-2 h-3.5 w-3.5" />
+            <ContextMenuItem onClick={() => setCreateMode('folder')}>
+              <FolderPlus className="mr-2 h-3.5 w-3.5" />
               New Folder
             </ContextMenuItem>
             <ContextMenuSeparator />
@@ -160,16 +228,16 @@ function FileTreeItem({
           </ContextMenuContent>
         </ContextMenu>
         <CollapsibleContent>
-          {isCreating && (
+          {createMode !== null && (
             <div className="py-1" style={{ paddingLeft: `${8 + (depth + 1) * 14}px` }}>
               <Input
                 className="h-6 text-xs"
-                placeholder="filename"
+                placeholder={createMode === 'file' ? 'filename' : 'folder name'}
                 value={createValue}
                 onChange={(e) => setCreateValue(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') handleCreateSubmit();
-                  if (e.key === 'Escape') setIsCreating(false);
+                  if (e.key === 'Escape') setCreateMode(null);
                 }}
                 onBlur={handleCreateSubmit}
                 autoFocus
@@ -184,6 +252,7 @@ function FileTreeItem({
               activePath={activePath}
               onFileClick={onFileClick}
               onNewFile={onNewFile}
+              onNewFolder={onNewFolder}
               onDeleteFile={onDeleteFile}
               onRenameFile={onRenameFile}
             />

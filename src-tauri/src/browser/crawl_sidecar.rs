@@ -393,7 +393,8 @@ pub(crate) fn run_sidecar_crawl(
                 .to_string(),
         )
         .env("XBUFFER_AI_PROVIDER", &settings.provider)
-        .env("0XBUFFER_AI_MODEL", &settings.model);
+        .env("0XBUFFER_AI_MODEL", &settings.model)
+        .env("AI_SDK_LOG_WARNINGS", "false");
     let mut command: Command = sidecar_command.into();
 
     command

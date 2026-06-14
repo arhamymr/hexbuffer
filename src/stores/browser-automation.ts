@@ -294,9 +294,15 @@ export const useBrowserAutomationStore = create<BrowserAutomationState>((set, ge
 
   closeTab: (id) => {
     const tab = get().tabs.find((item) => item.id === id);
-    if (tab?.session) {
-      markSessionDeleted(tab.session.id);
-      void invokeOptional('delete_ai_browser_session', { sessionId: tab.session.id });
+    const session = tab?.session;
+    if (session) {
+      markSessionDeleted(session.id);
+      void (async () => {
+        if (!isTerminalStatus(session.status)) {
+          await invokeOptional('ai_browser_stop_crawl', { sessionId: session.id });
+        }
+        await invokeOptional('delete_ai_browser_session', { sessionId: session.id });
+      })();
     }
 
     set((state) => {

@@ -9,7 +9,7 @@ pub use crate::browser::{
 
 // ── Agent browser types ──
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
 use std::process::{Child, Command, Stdio};
 use std::sync::{
@@ -240,19 +240,23 @@ pub fn browser_close(
     app: AppHandle,
     state: State<'_, BrowserProcessState>,
 ) -> Result<BrowserStatus, String> {
-    {
-        let mut child = state
-            .child
-            .lock()
-            .map_err(|_| "Failed to lock browser process state".to_string())?;
-
-        if let Some(mut process) = child.take() {
-            let _ = process.kill();
-            let _ = process.wait();
-        }
-    }
+    stop_browser_process(&state)?;
 
     get_browser_status(app, state)
+}
+
+pub fn stop_browser_process(state: &BrowserProcessState) -> Result<(), String> {
+    let mut child = state
+        .child
+        .lock()
+        .map_err(|_| "Failed to lock browser process state".to_string())?;
+
+    if let Some(mut process) = child.take() {
+        let _ = process.kill();
+        let _ = process.wait();
+    }
+
+    Ok(())
 }
 
 #[tauri::command]
@@ -1076,7 +1080,7 @@ pub fn has_any_active_crawl(state: &AiBrowserState) -> bool {
 /// Stop every crawl session that is currently running or paused.
 /// Called when the app is about to close while crawls are still active.
 pub fn stop_all_active_crawls(app: &AppHandle, state: &AiBrowserState) {
-    let active_sessions: Vec<String> = state
+    let mut active_sessions: HashSet<String> = state
         .sessions
         .lock()
         .ok()
@@ -1088,6 +1092,10 @@ pub fn stop_all_active_crawls(app: &AppHandle, state: &AiBrowserState) {
                 .collect()
         })
         .unwrap_or_default();
+
+    if let Ok(children) = state.children.lock() {
+        active_sessions.extend(children.keys().cloned());
+    }
 
     for session_id in &active_sessions {
         if let Some(cancel_flags) = state

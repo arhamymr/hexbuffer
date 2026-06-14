@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowUpDown, Box, Bug, Code2, FileText, Globe, PauseCircle, RotateCw, LoaderPinwheel, Atom, Hexagon, FlaskConical, Binary } from 'lucide-react';
+import { ArrowUpDown, Box, Bug, PauseCircle, RotateCw, LoaderPinwheel, Atom, Hexagon, FlaskConical, Binary, AppWindow, BookText } from 'lucide-react';
 
 interface NavItem {
   label: string;
@@ -12,13 +12,13 @@ interface NavItem {
 export const allNavItems: NavItem[] = [
   { label: 'Live Traffic', icon: ArrowUpDown, href: '/live-traffic' },
   { label: 'Workflow', icon: LoaderPinwheel, href: '/automation', devOnly: true },
-  { label: 'Browser', icon: Globe, href: '/browser-automation'},
+  { label: 'Browser', icon: AppWindow, href: '/browser-automation'},
   { label: 'Intercept', icon: PauseCircle, href: '/intercept' },
   { label: 'Code', icon: Binary, href: '/playground', devOnly: true },
   { label: 'Invoker', icon: Hexagon, href: '/invoker' },
   { label: 'Repeater', icon: RotateCw, href: '/repeater' },
   { label: 'Threats', icon: Atom, href: '/threats', devOnly: true},
-  { label: 'Documents', icon: FileText, href: '/documents'},
+  { label: 'Documents', icon: BookText, href: '/documents'},
   { label: 'Tools', icon: Box, href: '/tools' },
   { label: 'Debugger', icon: Bug, href: '/debugger', devOnly: true },
   { label: 'Regression', icon: FlaskConical, href: '/regression', devOnly: true },

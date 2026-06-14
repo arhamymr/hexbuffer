@@ -70,10 +70,13 @@ fn main() {
 
             // Show main window after setup
             if let Some(main_window) = app.get_webview_window("main") {
-                main_window.show().map_err(|e| {
-                    eprintln!("[main] Failed to show main window: {}", e);
-                    tauri::Error::WindowNotFound
-                }).ok();
+                main_window
+                    .show()
+                    .map_err(|e| {
+                        eprintln!("[main] Failed to show main window: {}", e);
+                        tauri::Error::WindowNotFound
+                    })
+                    .ok();
             }
 
             eprintln!("[main] Tauri setup complete");
@@ -225,6 +228,7 @@ fn main() {
             zeroxbuffer::commands::playground::write_project_file,
             zeroxbuffer::commands::playground::delete_project_file,
             zeroxbuffer::commands::playground::rename_project_file,
+            zeroxbuffer::commands::playground::create_directory,
             zeroxbuffer::commands::playground::run_build_command,
             // Regression testing
             zeroxbuffer::commands::regression::run_regression_test,
@@ -266,50 +270,23 @@ fn main() {
         .plugin(tauri_plugin_pty::init())
         .plugin(tauri_plugin_notification::init())
         .on_window_event(|window, event| {
-            if let tauri::WindowEvent::CloseRequested { api, .. } = event {
-                // Only intercept close events when the window is actually visible.
+            if let tauri::WindowEvent::CloseRequested { .. } = event {
+                // Only run close cleanup when the window is actually visible.
                 // Spurious CloseRequested events can fire during startup before the
-                // window is shown, which would show the confirmation dialog prematurely.
+                // window is shown.
                 if !window.is_visible().unwrap_or(true) {
                     return;
                 }
 
-                let has_active = window
-                    .try_state::<zeroxbuffer::AiBrowserState>()
-                    .map(|state| zeroxbuffer::has_any_active_crawl(state.inner()))
-                    .unwrap_or(false);
-
-                if !has_active {
-                    return;
+                if let Some(state) = window.try_state::<zeroxbuffer::AiBrowserState>() {
+                    zeroxbuffer::stop_all_active_crawls(window.app_handle(), state.inner());
                 }
 
-                api.prevent_close();
-
-                use tauri_plugin_dialog::{DialogExt, MessageDialogButtons};
-                let window_clone = window.clone();
-
-                window
-                    .dialog()
-                    .message("A browser crawl is currently running. Are you sure you want to close the app?")
-                    .title("Crawl In Progress")
-                    .kind(tauri_plugin_dialog::MessageDialogKind::Warning)
-                    .buttons(MessageDialogButtons::OkCancelCustom("Close".into(), "Cancel".into()))
-                    .show(move |confirmed| {
-                        if confirmed {
-                            if let Some(state) = window_clone
-                                .try_state::<zeroxbuffer::AiBrowserState>()
-                            {
-                                if zeroxbuffer::has_any_active_crawl(state.inner()) {
-                                    zeroxbuffer::stop_all_active_crawls(
-                                        window_clone.app_handle(),
-                                        state.inner(),
-                                    );
-                                    std::thread::sleep(std::time::Duration::from_millis(300));
-                                }
-                            }
-                            let _ = window_clone.destroy();
-                        }
-                    });
+                if let Some(state) = window.try_state::<zeroxbuffer::BrowserProcessState>() {
+                    if let Err(error) = zeroxbuffer::stop_browser_process(state.inner()) {
+                        eprintln!("[main] Failed to stop browser process on close: {}", error);
+                    }
+                }
             }
         })
         .run(tauri::generate_context!())

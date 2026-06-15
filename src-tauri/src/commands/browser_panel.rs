@@ -331,12 +331,6 @@ impl BrowserTabManager {
         Ok(())
     }
 
-    pub fn open_devtools(&self, tab_id: &str) -> Result<(), String> {
-        let webview = self.get_webview(tab_id)?;
-        webview.open_devtools();
-        Ok(())
-    }
-
     pub fn invalidate_annotation_injected(&self, tab_id: &str) {
         let mut annotation_injected = self
             .annotation_injected
@@ -709,17 +703,6 @@ pub async fn browser_tab_reload(
     match browser_manager.reload(&tab_id) {
         Ok(()) => Ok(IpcResult::ok_unit()),
         Err(e) => Ok(IpcResult::err(e, "BROWSER_TAB_RELOAD_FAILED")),
-    }
-}
-
-#[tauri::command]
-pub async fn browser_tab_open_devtools(
-    tab_id: String,
-    browser_manager: State<'_, Arc<BrowserTabManager>>,
-) -> Result<IpcResult<()>, String> {
-    match browser_manager.open_devtools(&tab_id) {
-        Ok(()) => Ok(IpcResult::ok_unit()),
-        Err(e) => Ok(IpcResult::err(e, "BROWSER_TAB_OPEN_DEVTOOLS_FAILED")),
     }
 }
 

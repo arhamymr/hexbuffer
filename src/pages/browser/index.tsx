@@ -23,6 +23,7 @@ import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/componen
 import { TabbedPageLayout } from '@/components/tabs-layout/tabbed-page-layout';
 import { useAppStore } from '@/stores/app';
 import { useBrowserAutomationStore } from '@/stores/browser-automation';
+import { useShallow } from 'zustand/react/shallow';
 import type { ActionLogEntry } from '@/stores/browser-automation';
 import { useBrowserAutomationPage } from './hooks/use-page';
 import { toast } from 'sonner';
@@ -58,7 +59,18 @@ export function BrowserAutomationPage() {
     stopCrawl,
     setSearch,
     clearLogs,
-  } = useBrowserAutomationStore();
+  } = useBrowserAutomationStore(
+    useShallow((s) => ({
+      updateSetup: s.updateSetup,
+      saveConfig: s.saveConfig,
+      startCrawl: s.startCrawl,
+      pauseCrawl: s.pauseCrawl,
+      resumeCrawl: s.resumeCrawl,
+      stopCrawl: s.stopCrawl,
+      setSearch: s.setSearch,
+      clearLogs: s.clearLogs,
+    }))
+  );
 
   if (!activeTab) {
     return null;

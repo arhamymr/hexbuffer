@@ -1,10 +1,9 @@
 import { useRef, useCallback, useEffect } from 'react';
 import { usePlaygroundPage } from './hooks/use-playground-page';
-import { GetStartedCard } from './components/get-started-card';
+import { WelcomeScreen } from './components/welcome-screen';
 import { FileTree } from './components/file-tree';
 import { CodeEditor } from './components/code-editor';
 import { PlaygroundToolbar } from './components/playground-toolbar';
-import { TabbedPageLayout } from '@/components/tabs-layout/tabbed-page-layout';
 import { useGlobalTerminalStore } from '@/stores/global-terminal';
 import {
   ResizablePanelGroup,
@@ -14,19 +13,11 @@ import {
 
 export function PlaygroundPage() {
   const {
-    tabs,
-    activeTabId,
-    activeTab,
-    setActiveTab,
-    closeTab,
-    closeTabsToLeft,
-    closeTabsToRight,
-    project,
+    workspace,
     systemInfo,
     isLoadingSystemInfo,
     systemInfoError,
-    existingProjects,
-    isLoadingProjects,
+    recentFolders,
     fileTree,
     openTabs,
     activeTabPath,
@@ -35,20 +26,22 @@ export function PlaygroundPage() {
     buildOutput,
     isBuilding,
     buildHistory,
+    handleOpenFolder,
+    handleOpenRecentFolder,
+    handleCloseFolder,
     handleCreateProject,
-    handleOpenExistingProject,
     handleOpenFile,
     handleTabClose,
     handleContentChange,
     handleSaveFile,
     handleBuild,
     handleRun,
-    handleCloseProject,
     handleRefreshTree,
     handleNewFile,
+    handleNewFolder,
     handleDeleteFile,
     handleRenameFile,
-    setActiveTab: setActiveEditorTab,
+    setActiveEditorTab,
     clearBuildHistory,
   } = usePlaygroundPage();
 
@@ -114,43 +107,42 @@ export function PlaygroundPage() {
     handleRun();
   }, [handleRun, requestOpen]);
 
-  // ── Landing tab content ──
-  const isLanding = !activeTab?.project;
-  const landingContent = isLanding ? (
-    <div className="h-full overflow-hidden">
-      <GetStartedCard
+  // ── Welcome screen (no folder open) ──
+  if (!workspace) {
+    return (
+      <WelcomeScreen
+        onOpenFolder={handleOpenFolder}
+        recentFolders={recentFolders}
+        onOpenRecent={handleOpenRecentFolder}
         systemInfo={systemInfo}
         isLoadingSystemInfo={isLoadingSystemInfo}
         systemInfoError={systemInfoError}
-        existingProjects={existingProjects}
-        isLoadingProjects={isLoadingProjects}
         onCreateProject={handleCreateProject}
-        onOpenProject={handleOpenExistingProject}
       />
-    </div>
-  ) : null;
+    );
+  }
 
-  // ── Project tab content (no embedded terminal — uses global footer terminal) ──
-  const projectContent = !isLanding && project ? (
-    <div className="flex h-full min-h-0 flex-col overflow-hidden bg-background">
+  // ── Workspace view (folder open) ──
+  return (
+    <div className="flex h-full min-h-0 flex-row overflow-hidden bg-background">
       <PlaygroundToolbar
-        project={project}
+        workspace={workspace}
         isBuilding={isBuilding}
         onBuild={handleBuildAndShow}
         onRun={handleRunAndShow}
-        onNewFile={() => handleNewFile('', 'untitled.txt')}
         onRefresh={handleRefreshTree}
-        onCloseProject={handleCloseProject}
+        onCloseFolder={handleCloseFolder}
       />
 
-      <main className="min-h-0 flex-1">
-        <ResizablePanelGroup orientation="horizontal" className="min-h-0">
+      <main className="min-h-0 min-w-0 flex-1">
+        <ResizablePanelGroup orientation="horizontal" className="h-full">
           <ResizablePanel defaultSize={24} minSize={18}>
             <FileTree
               files={fileTree}
               activePath={activeTabPath}
               onFileClick={handleOpenFile}
               onNewFile={handleNewFile}
+              onNewFolder={handleNewFolder}
               onDeleteFile={handleDeleteFile}
               onRenameFile={handleRenameFile}
               onRefresh={handleRefreshTree}
@@ -172,23 +164,5 @@ export function PlaygroundPage() {
         </ResizablePanelGroup>
       </main>
     </div>
-  ) : null;
-
-  return (
-    <TabbedPageLayout
-      tabs={tabs}
-      activeTabId={activeTabId ?? ''}
-      onTabChange={setActiveTab}
-      onTabClose={closeTab}
-      onCloseTabsToLeft={closeTabsToLeft}
-      onCloseTabsToRight={closeTabsToRight}
-      onTabAdd={() => {
-        const landing = tabs.find((t) => t.id === '__playground_landing__');
-        if (landing) setActiveTab(landing.id);
-      }}
-      contentClassName="flex-1 border rounded-md overflow-hidden bg-background min-h-0"
-    >
-      {isLanding ? landingContent : projectContent}
-    </TabbedPageLayout>
   );
 }

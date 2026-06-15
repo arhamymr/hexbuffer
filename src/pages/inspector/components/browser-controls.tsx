@@ -1,10 +1,9 @@
-import { ArrowLeft, ArrowRight, Bug, Crosshair, Globe, Loader2, RotateCcw } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Crosshair, Globe, Loader2, RotateCcw } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import {
   browserTabGoBack,
   browserTabGoForward,
-  browserTabOpenDevtools,
   browserTabReload,
 } from '@/lib/browser-panel-api';
 import { cn } from '@/lib/utils';
@@ -98,19 +97,6 @@ export function BrowserControls({ browserTabId }: BrowserControlsProps) {
             placeholder="Enter URL..."
           />
         </div>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <button
-              onClick={() => browserTabOpenDevtools(browserTabId).catch(console.error)}
-              className="p-1.5 rounded shrink-0 hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors"
-              aria-label="Open debug console"
-              title="Debug Console"
-            >
-              <Bug size={14} />
-            </button>
-          </TooltipTrigger>
-          <TooltipContent side="bottom">Debug Console</TooltipContent>
-        </Tooltip>
         <Tooltip>
           <TooltipTrigger asChild>
             <button

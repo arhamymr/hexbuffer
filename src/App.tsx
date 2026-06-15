@@ -1,23 +1,52 @@
 import React from "react";
 import { Routes, Route } from "react-router-dom";
-import { LiveTrafficPage } from "@/pages/live-traffic";
-import { InvokerPage } from "@/pages/invoker";
-import { Settings } from "@/pages/settings";
-import { RepeaterPage } from "@/pages/repeater";
-import { InterceptPage } from "@/pages/intercept";
-import { ToolsPage } from "@/pages/tools";
-import { DocumentsPage } from "@/pages/documents";
-import { BrowserAutomationPage } from "@/pages/browser";
-import { ListenerPage } from "@/pages/listener";
-import { DebuggerPage } from "@/pages/debugger";
-import { AutomationPage } from "@/pages/automation";
-import { ThreatsPage } from "@/pages/threats";
-import { RegressionPage } from "@/pages/regression";
-import { PlaygroundPage } from "@/pages/code";
-import { CaInstallDialog } from "@/components/ca-install-dialog";
 import { AssistantPage } from "@/pages/assistant";
+import { CaInstallDialog } from "@/components/ca-install-dialog";
 import { startLiveTrafficWatcher, stopLiveTrafficWatcher } from "@/triggers/live-traffic";
 import { startPageCrawledWatcher, stopPageCrawledWatcher } from "@/triggers/browser-automation";
+
+const LiveTrafficPage = React.lazy(() =>
+  import("@/pages/live-traffic").then((m) => ({ default: m.LiveTrafficPage }))
+);
+const InvokerPage = React.lazy(() =>
+  import("@/pages/invoker").then((m) => ({ default: m.InvokerPage }))
+);
+const Settings = React.lazy(() =>
+  import("@/pages/settings").then((m) => ({ default: m.Settings }))
+);
+const RepeaterPage = React.lazy(() =>
+  import("@/pages/repeater").then((m) => ({ default: m.RepeaterPage }))
+);
+const InterceptPage = React.lazy(() =>
+  import("@/pages/intercept").then((m) => ({ default: m.InterceptPage }))
+);
+const ToolsPage = React.lazy(() =>
+  import("@/pages/tools").then((m) => ({ default: m.ToolsPage }))
+);
+const DocumentsPage = React.lazy(() =>
+  import("@/pages/documents").then((m) => ({ default: m.DocumentsPage }))
+);
+const BrowserAutomationPage = React.lazy(() =>
+  import("@/pages/browser").then((m) => ({ default: m.BrowserAutomationPage }))
+);
+const ListenerPage = React.lazy(() =>
+  import("@/pages/listener").then((m) => ({ default: m.ListenerPage }))
+);
+const DebuggerPage = React.lazy(() =>
+  import("@/pages/debugger").then((m) => ({ default: m.DebuggerPage }))
+);
+const AutomationPage = React.lazy(() =>
+  import("@/pages/automation").then((m) => ({ default: m.AutomationPage }))
+);
+const ThreatsPage = React.lazy(() =>
+  import("@/pages/threats").then((m) => ({ default: m.ThreatsPage }))
+);
+const RegressionPage = React.lazy(() =>
+  import("@/pages/regression").then((m) => ({ default: m.RegressionPage }))
+);
+const PlaygroundPage = React.lazy(() =>
+  import("@/pages/code").then((m) => ({ default: m.PlaygroundPage }))
+);
 
 function AutomationEventWatchers() {
   React.useEffect(() => {
@@ -38,23 +67,25 @@ function AppRoutes() {
     <>
       <AutomationEventWatchers />
       <CaInstallDialog />
-      <Routes>
-        <Route path="/" element={<AssistantPage />} />
-        <Route path="/live-traffic" element={<LiveTrafficPage />} />
-        <Route path="/intercept" element={<InterceptPage />} />
-        <Route path="/repeater" element={<RepeaterPage />} />
-        <Route path="/invoker" element={<InvokerPage />} />
-        <Route path="/browser-automation" element={<BrowserAutomationPage />} />
-        <Route path="/listener" element={<ListenerPage />} />
-        <Route path="/debugger" element={<DebuggerPage />} />
-        <Route path="/tools" element={<ToolsPage />} />
-        <Route path="/documents" element={<DocumentsPage />} />
-        <Route path="/automation" element={<AutomationPage />} />
-        <Route path="/threats" element={<ThreatsPage />} />
-        <Route path="/settings" element={<Settings />} />
-        <Route path="/regression" element={<RegressionPage />} />
-        <Route path="/playground" element={<PlaygroundPage />} />
-      </Routes>
+      <React.Suspense fallback={<div className="h-full flex items-center justify-center text-muted-foreground text-sm">Loading…</div>}>
+        <Routes>
+          <Route path="/" element={<AssistantPage />} />
+          <Route path="/live-traffic" element={<LiveTrafficPage />} />
+          <Route path="/intercept" element={<InterceptPage />} />
+          <Route path="/repeater" element={<RepeaterPage />} />
+          <Route path="/invoker" element={<InvokerPage />} />
+          <Route path="/browser-automation" element={<BrowserAutomationPage />} />
+          <Route path="/listener" element={<ListenerPage />} />
+          <Route path="/debugger" element={<DebuggerPage />} />
+          <Route path="/tools" element={<ToolsPage />} />
+          <Route path="/documents" element={<DocumentsPage />} />
+          <Route path="/automation" element={<AutomationPage />} />
+          <Route path="/threats" element={<ThreatsPage />} />
+          <Route path="/settings" element={<Settings />} />
+          <Route path="/regression" element={<RegressionPage />} />
+          <Route path="/playground" element={<PlaygroundPage />} />
+        </Routes>
+      </React.Suspense>
     </>
   );
 }

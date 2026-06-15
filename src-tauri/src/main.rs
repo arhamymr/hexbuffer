@@ -13,13 +13,27 @@ use zeroxbuffer::{
     PacketCaptureState, PortScanState, ProxyState, SqliScanState,
 };
 
+/// Append a timestamped line to both stderr and /tmp/0xbuffer.log
+fn log(msg: &str) {
+    let ts = chrono::Local::now().format("%Y-%m-%d %H:%M:%S%.3f");
+    let line = format!("[{ts}] {msg}");
+    eprintln!("{line}");
+    let _ = std::fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open("/tmp/0xbuffer.log")
+        .and_then(|mut f| std::io::Write::write_all(&mut f, format!("{line}\n").as_bytes()));
+}
+
 fn main() {
-    eprintln!("[main] Application starting...");
+    // Start a fresh log file on each launch
+    let _ = std::fs::write("/tmp/0xbuffer.log", "");
+    log("Application starting...");
 
     std::panic::set_hook(Box::new(|panic_info| {
         let msg = format!("PANIC: {:?}", panic_info);
-        eprintln!("{}", msg);
-        let _ = std::fs::write("/tmp/0xbuffer_panic.log", msg);
+        log(&msg);
+        let _ = std::fs::write("/tmp/0xbuffer_panic.log", &msg);
     }));
 
     tauri::Builder::default()
@@ -29,7 +43,7 @@ fn main() {
                 .plugin(tauri_plugin_updater::Builder::new().build())
                 .expect("Failed to initialize updater plugin");
 
-            eprintln!("[main] Initializing database...");
+            log("Initializing database...");
             let app_dir = app
                 .path()
                 .app_data_dir()
@@ -38,9 +52,9 @@ fn main() {
             zeroxbuffer::proxy::https::cert::init_ca_dir(app_dir.clone());
 
             let db_path = app_dir.join("0xbuffer.db");
-            eprintln!("[main] Opening database at {:?}", db_path);
+            log(&format!("Opening database at {:?}", db_path));
             let history = HistoryBridge::new(db_path).expect("Failed to initialize history bridge");
-            eprintln!("[main] History bridge initialized");
+            log("History bridge initialized");
 
             app.manage(Mutex::new(ProxyState::new()));
             app.manage(IntruderState::default());
@@ -56,30 +70,38 @@ fn main() {
             app.manage(zeroxbuffer::commands::inspector::InspectorCdpState::default());
             app.manage(Arc::new(BrowserTabManager::new(app.handle().clone())));
             app.manage(history);
-            eprintln!("[main] Building Tauri app...");
+            log("Building Tauri app...");
 
             #[cfg(desktop)]
             {
                 let handle = app.handle().clone();
                 tauri::async_runtime::spawn(async move {
                     if let Err(e) = check_for_updates(handle).await {
-                        eprintln!("[updater] startup check failed: {e}");
+                        log(&format!("[updater] startup check failed: {e}"));
                     }
                 });
             }
 
-            // Show main window after setup
-            if let Some(main_window) = app.get_webview_window("main") {
-                main_window
-                    .show()
-                    .map_err(|e| {
-                        eprintln!("[main] Failed to show main window: {}", e);
-                        tauri::Error::WindowNotFound
-                    })
-                    .ok();
+            // Fallback: if React fails to mount and call show_main_window,
+            // auto-dismiss the splash after 10 seconds to prevent the app from
+            // getting stuck on the splash screen in production builds.
+            {
+                let handle = app.handle().clone();
+                tauri::async_runtime::spawn(async move {
+                    tokio::time::sleep(std::time::Duration::from_secs(10)).await;
+                    if let Some(splash) = handle.get_webview_window("splashscreen") {
+                        log("Splash fallback timer fired — closing splash");
+                        let _ = splash.close();
+                    }
+                    if let Some(main_window) = handle.get_webview_window("main") {
+                        let _ = main_window.show();
+                        let _ = main_window.set_focus();
+                        log("Splash fallback: main window shown");
+                    }
+                });
             }
 
-            eprintln!("[main] Tauri setup complete");
+            log("Tauri setup complete");
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -246,7 +268,6 @@ fn main() {
             zeroxbuffer::commands::browser_panel::browser_tab_go_back,
             zeroxbuffer::commands::browser_panel::browser_tab_go_forward,
             zeroxbuffer::commands::browser_panel::browser_tab_reload,
-            zeroxbuffer::commands::browser_panel::browser_tab_open_devtools,
             zeroxbuffer::commands::browser_panel::browser_tab_inject_annotation,
             zeroxbuffer::commands::browser_panel::browser_tab_remove_annotation_overlay,
             zeroxbuffer::commands::browser_panel::browser_tab_inject_annotation_markers,
@@ -331,19 +352,37 @@ async fn check_for_updates(app: tauri::AppHandle) -> tauri_plugin_updater::Resul
 
 #[tauri::command]
 fn show_main_window(app: tauri::AppHandle) -> Result<(), String> {
+    log("show_main_window invoked by frontend");
+
     // Close splashscreen if it exists
     if let Some(splash_window) = app.get_webview_window("splashscreen") {
-        splash_window.close().map_err(|error| error.to_string())?;
+        log("Closing splash screen");
+        splash_window.close().map_err(|error| {
+            log(&format!("Failed to close splash: {error}"));
+            error.to_string()
+        })?;
+    } else {
+        log("No splash screen found to close");
     }
 
     // Show and focus main window
     let main_window = app
         .get_webview_window("main")
-        .ok_or_else(|| "main window was not found".to_string())?;
+        .ok_or_else(|| {
+            log("ERROR: main window was not found");
+            "main window was not found".to_string()
+        })?;
 
-    main_window.show().map_err(|error| error.to_string())?;
-    main_window.set_focus().map_err(|error| error.to_string())?;
+    main_window.show().map_err(|error| {
+        log(&format!("Failed to show main window: {error}"));
+        error.to_string()
+    })?;
+    main_window.set_focus().map_err(|error| {
+        log(&format!("Failed to focus main window: {error}"));
+        error.to_string()
+    })?;
 
+    log("Main window shown and focused successfully");
     Ok(())
 }
 

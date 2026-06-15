@@ -1,5 +1,6 @@
 import React from 'react';
 import { useRegressionStore } from '@/stores/regression';
+import { useShallow } from 'zustand/react/shallow';
 import type { TestCase } from '../types';
 import type { PageTabItem } from '@/components/tabs-layout/types';
 
@@ -26,7 +27,19 @@ export function useRegressionPage() {
     deleteTestCase,
     runTest,
     loadRuns,
-  } = useRegressionStore();
+  } = useRegressionStore(
+    useShallow((s) => ({
+      testCases: s.testCases,
+      runs: s.runs,
+      activeRun: s.activeRun,
+      liveSteps: s.liveSteps,
+      loadTestCases: s.loadTestCases,
+      saveTestCase: s.saveTestCase,
+      deleteTestCase: s.deleteTestCase,
+      runTest: s.runTest,
+      loadRuns: s.loadRuns,
+    }))
+  );
 
   const [tabs, setTabs] = React.useState<RegressionTab[]>([]);
   const [activeTabId, setActiveTabId] = React.useState<string | null>(null);

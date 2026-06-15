@@ -35,6 +35,10 @@ function getResponseDetailCallId(): string | null {
 function MainWindowReadySignal() {
   React.useEffect(() => {
     const timeoutId = window.setTimeout(() => {
+      // Mark as dismissed so the HTML fallback timer won't fire
+      if (typeof (window as any).__dismissSplash === 'function') {
+        (window as any).__dismissSplash();
+      }
       invoke("show_main_window").catch((error) => {
         console.error("Failed to show main window:", error);
       });

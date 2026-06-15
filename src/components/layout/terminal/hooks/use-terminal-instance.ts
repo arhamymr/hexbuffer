@@ -1,7 +1,6 @@
 import { platform } from '@tauri-apps/plugin-os';
 import { FitAddon } from '@xterm/addon-fit';
 import { SearchAddon, type ISearchOptions } from '@xterm/addon-search';
-import { WebglAddon } from '@xterm/addon-webgl';
 import { Terminal } from '@xterm/xterm';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { spawn } from 'tauri-pty';
@@ -13,10 +12,7 @@ import {
   fitTerminal,
 } from '../lib/terminal-fit';
 import { useTheme } from '@/components/theme-provider';
-import { useTerminalRenderer } from '@/stores/app-settings-store';
 import type { TerminalInstanceHandle, TerminalStatus } from '../types';
-
-const MAX_WEBGL_RETRIES = 3;
 
 interface UseTerminalInstanceArgs {
   isActive: boolean;
@@ -50,14 +46,16 @@ export function useTerminalInstance({
   const termRef = useRef<Terminal | null>(null);
   const fitAddonRef = useRef<FitAddon | null>(null);
   const searchAddonRef = useRef<SearchAddon | null>(null);
-  const webglAddonRef = useRef<WebglAddon | null>(null);
   const ptyRef = useRef<ReturnType<typeof spawn> | null>(null);
   const cleanupFnsRef = useRef<Array<() => void>>([]);
   const disposedRef = useRef(false);
   const initInProgressRef = useRef(false);
-  const rendererPreference = useTerminalRenderer();
-  const rendererPreferenceRef = useRef(rendererPreference);
-  rendererPreferenceRef.current = rendererPreference;
+
+  // Use ref for onStatusChange to avoid destabilizing the init effect.
+  // Without this, an inline onStatusChange prop causes initTerminal to change
+  // identity on every render, which tears down and re-creates the terminal.
+  const onStatusChangeRef = useRef(onStatusChange);
+  onStatusChangeRef.current = onStatusChange;
 
   const { theme } = useTheme();
   const isDark = theme === 'dark';
@@ -80,9 +78,9 @@ export function useTerminalInstance({
     (nextStatus: TerminalStatus, error?: string) => {
       setStatus(nextStatus);
       setErrorMsg(error ?? '');
-      onStatusChange?.(nextStatus, error);
+      onStatusChangeRef.current?.(nextStatus, error);
     },
-    [onStatusChange],
+    [],
   );
 
   const isDisposed = useCallback(() => disposedRef.current, []);
@@ -184,6 +182,18 @@ export function useTerminalInstance({
 
       term.open(containerRef.current);
 
+      term.attachCustomKeyEventHandler((event) => {
+        if (event.type !== 'keydown') return true;
+
+        if (event.key === 'Backspace') {
+          event.preventDefault();
+          ptyRef.current?.write('\x7f');
+          return false;
+        }
+
+        return true;
+      });
+
       if (isActiveRef.current) {
         try {
           term.focus();
@@ -221,37 +231,6 @@ export function useTerminalInstance({
         ptyRef.current = pty;
         return pty;
       })();
-
-      const shouldLoadWebgl = rendererPreferenceRef.current !== 'dom';
-      if (shouldLoadWebgl) {
-        let webglAttempts = 0;
-        const loadWebgl = (): void => {
-          if (disposedRef.current || webglAttempts >= MAX_WEBGL_RETRIES) {
-            if (webglAttempts >= MAX_WEBGL_RETRIES) {
-              console.warn('[Terminal] WebGL failed after max retries, using DOM renderer');
-            }
-            return;
-          }
-
-          try {
-            const webglAddon = new WebglAddon();
-            webglAddonRef.current = webglAddon;
-            webglAddon.onContextLoss(() => {
-              webglAddon.dispose();
-              webglAddonRef.current = null;
-              webglAttempts += 1;
-              loadWebgl();
-            });
-            term.loadAddon(webglAddon);
-          } catch {
-            webglAttempts += 1;
-            console.warn(`[Terminal] WebGL attempt ${webglAttempts} failed`);
-            loadWebgl();
-          }
-        };
-
-        loadWebgl();
-      }
 
       const pty = await ptyPromise;
 
@@ -350,13 +329,6 @@ export function useTerminalInstance({
         }
       }
       cleanupFnsRef.current = [];
-
-      try {
-        webglAddonRef.current?.dispose();
-      } catch {
-        // ignore cleanup failures
-      }
-      webglAddonRef.current = null;
 
       try {
         searchAddonRef.current?.dispose();

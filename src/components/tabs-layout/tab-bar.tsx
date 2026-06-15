@@ -146,7 +146,7 @@ export function PageTabBar({
         ref={scrollContainerRef}
         className="flex items-center gap-1 overflow-x-auto bg-muted/30 [&::-webkit-scrollbar]:hidden [scrollbar-width:none]"
       >
-        <div className="flex min-w-full w-max items-center gap-1 px-2 pt-2">
+        <div className="flex min-w-full w-max items-center gap-1 px-2 pt-2 -mb-0.5">
           {tabs.map((tab) => {
             const tabIndex = tabs.findIndex((currentTab) => currentTab.id === tab.id);
             const canRename = !tab.disabled && Boolean(onTabRename);

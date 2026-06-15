@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useTargetStore } from '@/stores/target';
+import { useShallow } from 'zustand/react/shallow';
 import type { Target } from '@/types';
 
 export function useTargetSelectorDialog() {
@@ -7,7 +8,12 @@ export function useTargetSelectorDialog() {
   const [showCreateNew, setShowCreateNew] = useState(false);
   const [editingTarget, setEditingTarget] = useState<Target | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const { targets, updateTarget } = useTargetStore();
+  const { targets, updateTarget } = useTargetStore(
+    useShallow((s) => ({
+      targets: s.targets,
+      updateTarget: s.updateTarget,
+    }))
+  );
 
   const handleSelectTarget = (target: Target) => {
     if (!target.tabActive) {

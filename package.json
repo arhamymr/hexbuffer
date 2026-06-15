@@ -1,7 +1,7 @@
 {
   "name": "0xbuffer",
   "private": true,
-  "version": "2026.0.15",
+  "version": "2026.0.23",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -34,6 +34,7 @@
     "@hookform/resolvers": "^5.2.2",
     "@hugeicons/core-free-icons": "^4.1.1",
     "@hugeicons/react": "^1.1.6",
+    "@lezer/highlight": "^1.2.3",
     "@mdxeditor/editor": "^4.0.3",
     "@radix-ui/react-accordion": "^1.2.12",
     "@radix-ui/react-alert-dialog": "^1.1.15",
@@ -82,7 +83,6 @@
     "@tauri-apps/plugin-updater": "^2",
     "@xterm/addon-fit": "^0.10.0",
     "@xterm/addon-search": "^0.15.0",
-    "@xterm/addon-webgl": "^0.18.0",
     "@xterm/xterm": "^5.5.0",
     "@xyflow/react": "^12.11.0",
     "ai": "^6.0.194",

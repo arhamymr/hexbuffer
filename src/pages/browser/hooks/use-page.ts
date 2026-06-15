@@ -3,6 +3,7 @@
 import { useEffect, useMemo } from 'react';
 import { listen } from '@tauri-apps/api/event';
 import { useBrowserAutomationStore } from '@/stores/browser-automation';
+import { useShallow } from 'zustand/react/shallow';
 import { buildCrawlTree } from '../lib/crawl-data';
 import type {
   ActivityLog,
@@ -28,7 +29,24 @@ export function useBrowserAutomationPage() {
     applyInsightCreated,
     applyLogCreated,
     applyHumanInputRequested,
-  } = useBrowserAutomationStore();
+  } = useBrowserAutomationStore(
+    useShallow((s) => ({
+      tabs: s.tabs,
+      activeTabId: s.activeTabId,
+      setActiveTabId: s.setActiveTabId,
+      renameTab: s.renameTab,
+      closeTab: s.closeTab,
+      overview: s.overview,
+      loadPersistedSessions: s.loadPersistedSessions,
+      applySessionStarted: s.applySessionStarted,
+      applySessionUpdated: s.applySessionUpdated,
+      applyPageDiscovered: s.applyPageDiscovered,
+      applyPageUpdated: s.applyPageUpdated,
+      applyInsightCreated: s.applyInsightCreated,
+      applyLogCreated: s.applyLogCreated,
+      applyHumanInputRequested: s.applyHumanInputRequested,
+    }))
+  );
 
   const activeTab = useMemo(
     () => tabs.find((tab) => tab.id === activeTabId) ?? tabs[0] ?? null,

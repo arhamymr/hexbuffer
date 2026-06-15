@@ -8,8 +8,8 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { ButtonGroup } from '@/components/ui/button-group';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Separator } from '@/components/ui/separator';
 import { useGlobalTerminalStore } from '@/stores/global-terminal';
 import type { WorkspaceFolder } from '../types';
 
@@ -40,7 +40,10 @@ export function PlaygroundToolbar({
   onRefresh,
   onCloseFolder,
 }: PlaygroundToolbarProps) {
-  const hasBuildSupport = workspace.language !== 'unknown' && LANGUAGE_LABELS[workspace.language] !== undefined || ['rust', 'c', 'cpp'].includes(workspace.language);
+  const hasBuildSupport =
+    (workspace.language !== 'unknown' && LANGUAGE_LABELS[workspace.language] !== undefined) ||
+    ['rust', 'c', 'cpp'].includes(workspace.language);
+
   const languageLabel = LANGUAGE_LABELS[workspace.language] ?? null;
 
   const isTerminalOpen = useGlobalTerminalStore((s) => s.isOpen);
@@ -49,110 +52,132 @@ export function PlaygroundToolbar({
   const handleToggleTerminal = () => setIsOpen(!isTerminalOpen);
 
   return (
-    <header className="shrink-0 border-b bg-muted px-3 py-3">
-      <div className="flex flex-row gap-3 xl:items-center xl:justify-between">
-        <div className="flex min-w-0 flex-1 items-center gap-2">
-          <span className="truncate text-sm font-medium">{workspace.name}</span>
+    <aside className="flex w-11 shrink-0 flex-col items-center gap-1 border-r bg-muted/50 py-2">
+      {/* Workspace label (rotated, top) */}
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <div className="mb-1 flex h-7 w-7 cursor-default items-center justify-center">
+            <span
+              className="max-w-[24px] truncate text-[10px] font-semibold uppercase tracking-wide text-muted-foreground"
+              title={workspace.name}
+            >
+              {workspace.name.slice(0, 2)}
+            </span>
+          </div>
+        </TooltipTrigger>
+        <TooltipContent side="right">
+          <span className="font-medium">{workspace.name}</span>
           {languageLabel && (
-            <span className="shrink-0 rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary uppercase">
+            <span className="ml-1.5 rounded bg-primary/10 px-1 py-0.5 text-[10px] font-medium text-primary">
               {languageLabel}
             </span>
           )}
-        </div>
+        </TooltipContent>
+      </Tooltip>
 
-        <div className="flex flex-wrap items-center gap-2">
-          {hasBuildSupport && (
-            <ButtonGroup>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="xs"
-                    onClick={onBuild}
-                    disabled={isBuilding}
-                    aria-label="Build"
-                  >
-                    {isBuilding ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Hammer className="h-4 w-4" />
-                    )}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom">Build</TooltipContent>
-              </Tooltip>
+      <Separator className="w-6" />
 
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="xs"
-                    onClick={onRun}
-                    disabled={isBuilding}
-                    aria-label="Run"
-                  >
-                    <Play className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom">Run</TooltipContent>
-              </Tooltip>
-            </ButtonGroup>
-          )}
+      {/* Build / Run */}
+      {hasBuildSupport && (
+        <>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                className="h-8 w-8"
+                onClick={onBuild}
+                disabled={isBuilding}
+                aria-label="Build"
+              >
+                {isBuilding ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Hammer className="h-4 w-4" />
+                )}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="right">Build</TooltipContent>
+          </Tooltip>
 
-          <ButtonGroup>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="xs"
-                  onClick={onRefresh}
-                  aria-label="Refresh files"
-                >
-                  <RefreshCw className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">Refresh</TooltipContent>
-            </Tooltip>
-          </ButtonGroup>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                className="h-8 w-8"
+                onClick={onRun}
+                disabled={isBuilding}
+                aria-label="Run"
+              >
+                <Play className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="right">Run</TooltipContent>
+          </Tooltip>
 
-          <ButtonGroup>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="xs"
-                  onClick={handleToggleTerminal}
-                  aria-label={isTerminalOpen ? 'Hide terminal' : 'Show terminal'}
-                >
-                  {isTerminalOpen ? (
-                    <PanelBottomClose className="h-4 w-4" />
-                  ) : (
-                    <PanelBottomOpen className="h-4 w-4" />
-                  )}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">
-                {isTerminalOpen ? 'Hide Terminal' : 'Show Terminal'}
-              </TooltipContent>
-            </Tooltip>
+          <Separator className="my-0.5 w-6" />
+        </>
+      )}
 
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="xs"
-                  className="text-muted-foreground hover:text-destructive"
-                  onClick={onCloseFolder}
-                  aria-label="Close folder"
-                >
-                  <FolderX className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">Close Folder</TooltipContent>
-            </Tooltip>
-          </ButtonGroup>
-        </div>
-      </div>
-    </header>
+      {/* File operations */}
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            className="h-8 w-8"
+            onClick={onRefresh}
+            aria-label="Refresh files"
+          >
+            <RefreshCw className="h-4 w-4" />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent side="right">Refresh Files</TooltipContent>
+      </Tooltip>
+
+      {/* Spacer pushes bottom actions down */}
+      <div className="flex-1" />
+
+      <Separator className="my-0.5 w-6" />
+
+      {/* Terminal toggle */}
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            className="h-8 w-8"
+            onClick={handleToggleTerminal}
+            aria-label={isTerminalOpen ? 'Hide terminal' : 'Show terminal'}
+          >
+            {isTerminalOpen ? (
+              <PanelBottomClose className="h-4 w-4" />
+            ) : (
+              <PanelBottomOpen className="h-4 w-4" />
+            )}
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent side="right">
+          {isTerminalOpen ? 'Hide Terminal' : 'Show Terminal'}
+        </TooltipContent>
+      </Tooltip>
+
+      {/* Close folder */}
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            className="h-8 w-8 text-muted-foreground hover:text-destructive"
+            onClick={onCloseFolder}
+            aria-label="Close folder"
+          >
+            <FolderX className="h-4 w-4" />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent side="right">Close Folder</TooltipContent>
+      </Tooltip>
+    </aside>
   );
 }

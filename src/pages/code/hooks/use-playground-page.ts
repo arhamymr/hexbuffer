@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useMemo } from 'react';
 import { usePlaygroundStore } from '@/stores/playground';
+import { useShallow } from 'zustand/react/shallow';
 import * as api from '../api';
 import {
   getLanguageFromPath,
@@ -12,14 +13,64 @@ import { toast } from 'sonner';
 import { open as openDialog } from '@tauri-apps/plugin-dialog';
 
 export function usePlaygroundPage() {
-  const store = usePlaygroundStore();
+  const {
+    workspace,
+    systemInfo,
+    isLoadingSystemInfo,
+    systemInfoError,
+    recentFolders,
+    fileTree,
+    openEditorTabs,
+    activeEditorPath,
+    buildOutput,
+    isBuilding,
+    buildHistory,
+    loadSystemInfo,
+    setIsLoadingFileTree,
+    setFileTree,
+    setWorkspace,
+    setOpenEditorTabs,
+    setActiveEditorPath,
+    setBuildOutput,
+    clearBuildHistory,
+    addRecentFolder,
+    removeRecentFolder,
+    setIsBuilding,
+    addBuildHistory,
+  } = usePlaygroundStore(
+    useShallow((s) => ({
+      workspace: s.workspace,
+      systemInfo: s.systemInfo,
+      isLoadingSystemInfo: s.isLoadingSystemInfo,
+      systemInfoError: s.systemInfoError,
+      recentFolders: s.recentFolders,
+      fileTree: s.fileTree,
+      openEditorTabs: s.openEditorTabs,
+      activeEditorPath: s.activeEditorPath,
+      buildOutput: s.buildOutput,
+      isBuilding: s.isBuilding,
+      buildHistory: s.buildHistory,
+      loadSystemInfo: s.loadSystemInfo,
+      setIsLoadingFileTree: s.setIsLoadingFileTree,
+      setFileTree: s.setFileTree,
+      setWorkspace: s.setWorkspace,
+      setOpenEditorTabs: s.setOpenEditorTabs,
+      setActiveEditorPath: s.setActiveEditorPath,
+      setBuildOutput: s.setBuildOutput,
+      clearBuildHistory: s.clearBuildHistory,
+      addRecentFolder: s.addRecentFolder,
+      removeRecentFolder: s.removeRecentFolder,
+      setIsBuilding: s.setIsBuilding,
+      addBuildHistory: s.addBuildHistory,
+    }))
+  );
 
   // File contents cache: filePath → content
   const fileContentsRef = useRef<Map<string, string>>(new Map());
 
   // Load system info on mount
   useEffect(() => {
-    store.loadSystemInfo();
+    loadSystemInfo();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -28,9 +79,8 @@ export function usePlaygroundPage() {
   useEffect(() => {
     if (hasHydratedRef.current) return;
     hasHydratedRef.current = true;
-    const ws = store.workspace;
-    if (ws?.path) {
-      void loadWorkspaceTree(ws.path);
+    if (workspace?.path) {
+      void loadWorkspaceTree(workspace.path);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -39,39 +89,37 @@ export function usePlaygroundPage() {
 
   const loadWorkspaceTree = useCallback(
     async (folderPath: string) => {
-      store.setIsLoadingFileTree(true);
+      setIsLoadingFileTree(true);
       try {
         const tree = await api.listProjectFiles(folderPath);
-        store.setFileTree(tree);
+        setFileTree(tree);
         // Detect language from tree
         const lang = detectWorkspaceLanguage(tree);
-        const ws = store.workspace;
-        if (ws && ws.path === folderPath && ws.language !== lang) {
-          store.setWorkspace({ ...ws, language: lang });
+        if (workspace && workspace.path === folderPath && workspace.language !== lang) {
+          setWorkspace({ ...workspace, language: lang });
         }
       } catch (err) {
         toast.error(
           typeof err === 'string' ? err : err instanceof Error ? err.message : 'Failed to load folder',
         );
       } finally {
-        store.setIsLoadingFileTree(false);
+        setIsLoadingFileTree(false);
       }
     },
-    [store],
+    [setIsLoadingFileTree, setFileTree, setWorkspace, workspace],
   );
 
   // ── Derived data ──
 
   const activeContent = useMemo(() => {
-    const ap = store.activeEditorPath;
-    if (!ap) return '';
-    return fileContentsRef.current.get(ap) ?? '';
-  }, [store.activeEditorPath, store.openEditorTabs]);
+    if (!activeEditorPath) return '';
+    return fileContentsRef.current.get(activeEditorPath) ?? '';
+  }, [activeEditorPath, openEditorTabs]);
 
   const activeLanguage = useMemo(() => {
-    const tab = store.openEditorTabs.find((t) => t.path === store.activeEditorPath);
+    const tab = openEditorTabs.find((t) => t.path === activeEditorPath);
     return tab?.language ?? '';
-  }, [store.openEditorTabs, store.activeEditorPath]);
+  }, [openEditorTabs, activeEditorPath]);
 
   // ── Folder operations ──
 
@@ -89,27 +137,26 @@ export function usePlaygroundPage() {
       const name = folderPath.split('/').pop() ?? folderPath;
       const workspace: WorkspaceFolder = { name, path: folderPath, language: 'unknown' };
 
-      store.setWorkspace(workspace);
-      store.setFileTree([]);
-      store.setOpenEditorTabs([]);
-      store.setActiveEditorPath(null);
-      store.setBuildOutput(null);
-      store.clearBuildHistory();
+      setWorkspace(workspace);
+      setOpenEditorTabs([]);
+      setActiveEditorPath(null);
+      setBuildOutput(null);
+      clearBuildHistory();
       fileContentsRef.current.clear();
-      store.addRecentFolder(folderPath);
+      addRecentFolder(folderPath);
 
       // Load tree and detect language
-      store.setIsLoadingFileTree(true);
+      setIsLoadingFileTree(true);
       const tree = await api.listProjectFiles(folderPath);
-      store.setFileTree(tree);
+      setFileTree(tree);
       const lang = detectWorkspaceLanguage(tree);
-      store.setWorkspace({ ...workspace, language: lang });
-      store.setIsLoadingFileTree(false);
+      setWorkspace({ ...workspace, language: lang });
+      setIsLoadingFileTree(false);
     } catch (err) {
       const msg = typeof err === 'string' ? err : err instanceof Error ? err.message : 'Failed to open folder';
       toast.error(msg);
     }
-  }, [store]);
+  }, [setWorkspace, setOpenEditorTabs, setActiveEditorPath, setBuildOutput, clearBuildHistory, addRecentFolder, setIsLoadingFileTree, setFileTree]);
 
   const handleOpenRecentFolder = useCallback(
     async (folderPath: string) => {
@@ -117,40 +164,39 @@ export function usePlaygroundPage() {
         const name = folderPath.split('/').pop() ?? folderPath;
         const workspace: WorkspaceFolder = { name, path: folderPath, language: 'unknown' };
 
-        store.setWorkspace(workspace);
-        store.setFileTree([]);
-        store.setOpenEditorTabs([]);
-        store.setActiveEditorPath(null);
-        store.setBuildOutput(null);
-        store.clearBuildHistory();
+        setWorkspace(workspace);
+        setOpenEditorTabs([]);
+        setActiveEditorPath(null);
+        setBuildOutput(null);
+        clearBuildHistory();
         fileContentsRef.current.clear();
-        store.addRecentFolder(folderPath);
+        addRecentFolder(folderPath);
 
-        store.setIsLoadingFileTree(true);
+        setIsLoadingFileTree(true);
         const tree = await api.listProjectFiles(folderPath);
-        store.setFileTree(tree);
+        setFileTree(tree);
         const lang = detectWorkspaceLanguage(tree);
-        store.setWorkspace({ ...workspace, language: lang });
-        store.setIsLoadingFileTree(false);
+        setWorkspace({ ...workspace, language: lang });
+        setIsLoadingFileTree(false);
       } catch (err) {
         const msg = typeof err === 'string' ? err : err instanceof Error ? err.message : 'Failed to open folder';
         toast.error(msg);
         // Remove stale path from recents
-        store.removeRecentFolder(folderPath);
+        removeRecentFolder(folderPath);
       }
     },
-    [store],
+    [setWorkspace, setOpenEditorTabs, setActiveEditorPath, setBuildOutput, clearBuildHistory, addRecentFolder, setIsLoadingFileTree, setFileTree, removeRecentFolder],
   );
 
   const handleCloseFolder = useCallback(() => {
-    store.setWorkspace(null);
-    store.setFileTree([]);
-    store.setOpenEditorTabs([]);
-    store.setActiveEditorPath(null);
-    store.setBuildOutput(null);
-    store.clearBuildHistory();
+    setWorkspace(null);
+    setFileTree([]);
+    setOpenEditorTabs([]);
+    setActiveEditorPath(null);
+    setBuildOutput(null);
+    clearBuildHistory();
     fileContentsRef.current.clear();
-  }, [store]);
+  }, [setWorkspace, setFileTree, setOpenEditorTabs, setActiveEditorPath, setBuildOutput, clearBuildHistory]);
 
   // ── Create Project (secondary flow) ──
 
@@ -171,19 +217,19 @@ export function usePlaygroundPage() {
           path: project.path,
           language: project.language,
         };
-        store.setWorkspace(workspace);
-        store.setOpenEditorTabs([]);
-        store.setActiveEditorPath(null);
-        store.setBuildOutput(null);
-        store.clearBuildHistory();
+        setWorkspace(workspace);
+        setOpenEditorTabs([]);
+        setActiveEditorPath(null);
+        setBuildOutput(null);
+        clearBuildHistory();
         fileContentsRef.current.clear();
-        store.addRecentFolder(project.path);
+        addRecentFolder(project.path);
 
         // Load tree
-        store.setIsLoadingFileTree(true);
+        setIsLoadingFileTree(true);
         const tree = await api.listProjectFiles(project.path);
-        store.setFileTree(tree);
-        store.setIsLoadingFileTree(false);
+        setFileTree(tree);
+        setIsLoadingFileTree(false);
 
         // Auto-open main file
         const flatFiles = tree.flatMap((n) =>
@@ -204,8 +250,8 @@ export function usePlaygroundPage() {
             language: getLanguageFromPath(wanted.path),
             isDirty: false,
           };
-          store.setOpenEditorTabs([openTab]);
-          store.setActiveEditorPath(wanted.path);
+          setOpenEditorTabs([openTab]);
+          setActiveEditorPath(wanted.path);
         }
       } catch (err) {
         const msg =
@@ -217,22 +263,20 @@ export function usePlaygroundPage() {
         toast.error(msg);
       }
     },
-    [store],
+    [setWorkspace, setOpenEditorTabs, setActiveEditorPath, setBuildOutput, clearBuildHistory, addRecentFolder, setIsLoadingFileTree, setFileTree],
   );
 
   // ── File operations ──
 
   const handleOpenFile = useCallback(
     async (filePath: string) => {
-      const ws = store.workspace;
-      if (!ws) return;
+      if (!workspace) return;
 
       const cache = fileContentsRef.current;
       if (cache.has(filePath)) {
-        // Already cached — just select it
-        const alreadyOpen = store.openEditorTabs.some((t) => t.path === filePath);
+        const alreadyOpen = openEditorTabs.some((t) => t.path === filePath);
         if (alreadyOpen) {
-          store.setActiveEditorPath(filePath);
+          setActiveEditorPath(filePath);
           return;
         }
         const newTab: OpenTab = {
@@ -241,18 +285,18 @@ export function usePlaygroundPage() {
           language: getLanguageFromPath(filePath),
           isDirty: false,
         };
-        store.setOpenEditorTabs([...store.openEditorTabs, newTab]);
-        store.setActiveEditorPath(filePath);
+        setOpenEditorTabs([...openEditorTabs, newTab]);
+        setActiveEditorPath(filePath);
         return;
       }
 
       try {
-        const result = await api.readProjectFile(filePath, ws.path);
+        const result = await api.readProjectFile(filePath, workspace.path);
         cache.set(filePath, result.content);
 
-        const alreadyOpen = store.openEditorTabs.some((t) => t.path === filePath);
+        const alreadyOpen = openEditorTabs.some((t) => t.path === filePath);
         if (alreadyOpen) {
-          store.setActiveEditorPath(filePath);
+          setActiveEditorPath(filePath);
           return;
         }
         const newTab: OpenTab = {
@@ -261,55 +305,54 @@ export function usePlaygroundPage() {
           language: getLanguageFromPath(filePath),
           isDirty: false,
         };
-        store.setOpenEditorTabs([...store.openEditorTabs, newTab]);
-        store.setActiveEditorPath(filePath);
+        setOpenEditorTabs([...openEditorTabs, newTab]);
+        setActiveEditorPath(filePath);
       } catch (err) {
         const msg = typeof err === 'string' ? err : err instanceof Error ? err.message : 'Failed to open file';
         toast.error(msg);
       }
     },
-    [store],
+    [workspace, openEditorTabs, setActiveEditorPath, setOpenEditorTabs],
   );
 
   const handleTabClose = useCallback(
     (filePath: string) => {
       const cache = fileContentsRef.current;
       cache.delete(filePath);
-      const remaining = store.openEditorTabs.filter((t) => t.path !== filePath);
+      const remaining = openEditorTabs.filter((t) => t.path !== filePath);
       const newActivePath =
-        store.activeEditorPath === filePath
+        activeEditorPath === filePath
           ? remaining.length > 0
             ? remaining[remaining.length - 1].path
             : null
-          : store.activeEditorPath;
-      store.setOpenEditorTabs(remaining);
-      store.setActiveEditorPath(newActivePath);
+          : activeEditorPath;
+      setOpenEditorTabs(remaining);
+      setActiveEditorPath(newActivePath);
     },
-    [store],
+    [openEditorTabs, activeEditorPath, setOpenEditorTabs, setActiveEditorPath],
   );
 
   const handleContentChange = useCallback(
     (filePath: string, content: string) => {
       fileContentsRef.current.set(filePath, content);
-      store.setOpenEditorTabs(
-        store.openEditorTabs.map((t) =>
+      setOpenEditorTabs(
+        openEditorTabs.map((t) =>
           t.path === filePath ? { ...t, isDirty: true } : t,
         ),
       );
     },
-    [store],
+    [openEditorTabs, setOpenEditorTabs],
   );
 
   const handleSaveFile = useCallback(
     async (filePath: string) => {
-      const ws = store.workspace;
-      if (!ws) return;
+      if (!workspace) return;
 
       const content = fileContentsRef.current.get(filePath) ?? '';
       try {
-        await api.writeProjectFile(filePath, content, ws.path);
-        store.setOpenEditorTabs(
-          store.openEditorTabs.map((t) =>
+        await api.writeProjectFile(filePath, content, workspace.path);
+        setOpenEditorTabs(
+          openEditorTabs.map((t) =>
             t.path === filePath ? { ...t, isDirty: false } : t,
           ),
         );
@@ -318,107 +361,103 @@ export function usePlaygroundPage() {
         toast.error(msg);
       }
     },
-    [store],
+    [workspace, openEditorTabs, setOpenEditorTabs],
   );
 
   // ── Build & Run ──
 
   const handleBuild = useCallback(async () => {
-    const ws = store.workspace;
-    if (!ws || ws.language === 'unknown') return;
-    if (store.isBuilding) return;
+    if (!workspace || workspace.language === 'unknown') return;
+    if (isBuilding) return;
 
-    store.setIsBuilding(true);
-    store.setBuildOutput(null);
+    setIsBuilding(true);
+    setBuildOutput(null);
 
     const command =
-      ws.language === 'rust'
+      workspace.language === 'rust'
         ? 'cargo'
-        : ws.language === 'cpp'
+        : workspace.language === 'cpp'
           ? 'clang++'
           : 'gcc';
     const args =
-      ws.language === 'rust'
+      workspace.language === 'rust'
         ? ['build']
-        : ws.language === 'cpp'
+        : workspace.language === 'cpp'
           ? ['main.cpp', '-o', 'main']
           : ['main.c', '-o', 'main'];
 
     try {
-      const output = await api.runBuildCommand(ws.path, command, args);
-      store.setBuildOutput(output);
-      store.addBuildHistory({
+      const output = await api.runBuildCommand(workspace.path, command, args);
+      setBuildOutput(output);
+      addBuildHistory({
         timestamp: Date.now(),
         command: `${command} ${args.join(' ')}`,
         output,
       });
     } catch (err) {
       const msg = typeof err === 'string' ? err : err instanceof Error ? err.message : 'Build failed';
-      store.setBuildOutput({
+      setBuildOutput({
         stdout: '',
         stderr: msg,
         exitCode: -1,
         success: false,
       });
     } finally {
-      store.setIsBuilding(false);
+      setIsBuilding(false);
     }
-  }, [store]);
+  }, [workspace, isBuilding, setIsBuilding, setBuildOutput, addBuildHistory]);
 
   const handleRun = useCallback(async () => {
-    const ws = store.workspace;
-    if (!ws || ws.language === 'unknown') return;
-    if (store.isBuilding) return;
+    if (!workspace || workspace.language === 'unknown') return;
+    if (isBuilding) return;
 
-    store.setIsBuilding(true);
-    store.setBuildOutput(null);
+    setIsBuilding(true);
+    setBuildOutput(null);
 
-    const command = ws.language === 'rust' ? 'cargo' : './main';
-    const args = ws.language === 'rust' ? ['run'] : [];
+    const command = workspace.language === 'rust' ? 'cargo' : './main';
+    const args = workspace.language === 'rust' ? ['run'] : [];
 
     try {
-      const output = await api.runBuildCommand(ws.path, command, args);
-      store.setBuildOutput(output);
-      store.addBuildHistory({
+      const output = await api.runBuildCommand(workspace.path, command, args);
+      setBuildOutput(output);
+      addBuildHistory({
         timestamp: Date.now(),
         command: `${command} ${args.join(' ')}`,
         output,
       });
     } catch (err) {
       const msg = typeof err === 'string' ? err : err instanceof Error ? err.message : 'Run failed';
-      store.setBuildOutput({
+      setBuildOutput({
         stdout: '',
         stderr: msg,
         exitCode: -1,
         success: false,
       });
     } finally {
-      store.setIsBuilding(false);
+      setIsBuilding(false);
     }
-  }, [store]);
+  }, [workspace, isBuilding, setIsBuilding, setBuildOutput, addBuildHistory]);
 
   // ── File tree operations ──
 
   const handleRefreshTree = useCallback(async () => {
-    const ws = store.workspace;
-    if (!ws) return;
+    if (!workspace) return;
     try {
-      const tree = await api.listProjectFiles(ws.path);
-      store.setFileTree(tree);
+      const tree = await api.listProjectFiles(workspace.path);
+      setFileTree(tree);
     } catch (err) {
       toast.error(
         typeof err === 'string' ? err : err instanceof Error ? err.message : 'Failed to refresh file tree',
       );
     }
-  }, [store]);
+  }, [workspace, setFileTree]);
 
   const handleNewFile = useCallback(
     async (parentPath: string, fileName: string) => {
-      const ws = store.workspace;
-      if (!ws) return;
+      if (!workspace) return;
       const filePath = parentPath ? `${parentPath}/${fileName}` : fileName;
       try {
-        await api.writeProjectFile(filePath, '', ws.path);
+        await api.writeProjectFile(filePath, '', workspace.path);
         await handleRefreshTree();
       } catch (err) {
         toast.error(
@@ -426,16 +465,15 @@ export function usePlaygroundPage() {
         );
       }
     },
-    [store, handleRefreshTree],
+    [workspace, handleRefreshTree],
   );
 
   const handleNewFolder = useCallback(
     async (parentPath: string, folderName: string) => {
-      const ws = store.workspace;
-      if (!ws) return;
+      if (!workspace) return;
       const dirPath = parentPath ? `${parentPath}/${folderName}` : folderName;
       try {
-        await api.createDirectory(dirPath, ws.path);
+        await api.createDirectory(dirPath, workspace.path);
         await handleRefreshTree();
       } catch (err) {
         toast.error(
@@ -443,30 +481,29 @@ export function usePlaygroundPage() {
         );
       }
     },
-    [store, handleRefreshTree],
+    [workspace, handleRefreshTree],
   );
 
   const handleDeleteFile = useCallback(
     async (filePath: string) => {
-      const ws = store.workspace;
-      if (!ws) return;
+      if (!workspace) return;
       try {
-        await api.deleteProjectFile(filePath, ws.path);
+        await api.deleteProjectFile(filePath, workspace.path);
         // Close editor tabs for deleted file(s)
         const cache = fileContentsRef.current;
-        const remaining = store.openEditorTabs.filter((t) => {
+        const remaining = openEditorTabs.filter((t) => {
           const shouldClose = t.path === filePath || t.path.startsWith(filePath + '/');
           if (shouldClose) cache.delete(t.path);
           return !shouldClose;
         });
-        const isActiveGone = !remaining.some((t) => t.path === store.activeEditorPath);
+        const isActiveGone = !remaining.some((t) => t.path === activeEditorPath);
         const newActivePath = isActiveGone
           ? remaining.length > 0
             ? remaining[remaining.length - 1].path
             : null
-          : store.activeEditorPath;
-        store.setOpenEditorTabs(remaining);
-        store.setActiveEditorPath(newActivePath);
+          : activeEditorPath;
+        setOpenEditorTabs(remaining);
+        setActiveEditorPath(newActivePath);
         await handleRefreshTree();
       } catch (err) {
         toast.error(
@@ -474,21 +511,20 @@ export function usePlaygroundPage() {
         );
       }
     },
-    [store, handleRefreshTree],
+    [workspace, openEditorTabs, activeEditorPath, setOpenEditorTabs, setActiveEditorPath, handleRefreshTree],
   );
 
   const handleRenameFile = useCallback(
     async (oldPath: string, newName: string) => {
-      const ws = store.workspace;
-      if (!ws) return;
+      if (!workspace) return;
       const parts = oldPath.split('/');
       parts[parts.length - 1] = newName;
       const newPath = parts.join('/');
       try {
-        await api.renameProjectFile(oldPath, newPath, ws.path);
+        await api.renameProjectFile(oldPath, newPath, workspace.path);
         // Update editor tabs
         const cache = fileContentsRef.current;
-        const updatedTabs = store.openEditorTabs.map((t) => {
+        const updatedTabs = openEditorTabs.map((t) => {
           if (t.path === oldPath) {
             // Single file rename
             const content = cache.get(oldPath);
@@ -513,13 +549,13 @@ export function usePlaygroundPage() {
           return t;
         });
         const newActivePath =
-          store.activeEditorPath === oldPath
+          activeEditorPath === oldPath
             ? newPath
-            : store.activeEditorPath?.startsWith(oldPath + '/')
-              ? newPath + store.activeEditorPath.slice(oldPath.length)
-              : store.activeEditorPath;
-        store.setOpenEditorTabs(updatedTabs);
-        store.setActiveEditorPath(newActivePath);
+            : activeEditorPath?.startsWith(oldPath + '/')
+              ? newPath + activeEditorPath.slice(oldPath.length)
+              : activeEditorPath;
+        setOpenEditorTabs(updatedTabs);
+        setActiveEditorPath(newActivePath);
         await handleRefreshTree();
       } catch (err) {
         toast.error(
@@ -527,37 +563,37 @@ export function usePlaygroundPage() {
         );
       }
     },
-    [store, handleRefreshTree],
+    [workspace, openEditorTabs, activeEditorPath, setOpenEditorTabs, setActiveEditorPath, handleRefreshTree],
   );
 
   // ── Editor tab management ──
 
   const setActiveEditorTab = useCallback(
     (path: string) => {
-      store.setActiveEditorPath(path);
+      setActiveEditorPath(path);
     },
-    [store],
+    [setActiveEditorPath],
   );
 
   // ── Return ──
 
   return {
     // Workspace
-    workspace: store.workspace,
-    systemInfo: store.systemInfo,
-    isLoadingSystemInfo: store.isLoadingSystemInfo,
-    systemInfoError: store.systemInfoError,
-    recentFolders: store.recentFolders,
+    workspace,
+    systemInfo,
+    isLoadingSystemInfo,
+    systemInfoError,
+    recentFolders,
 
     // Editor state
-    fileTree: store.fileTree,
-    openTabs: store.openEditorTabs,
-    activeTabPath: store.activeEditorPath,
+    fileTree,
+    openTabs: openEditorTabs,
+    activeTabPath: activeEditorPath,
     activeContent,
     activeLanguage,
-    buildOutput: store.buildOutput,
-    isBuilding: store.isBuilding,
-    buildHistory: store.buildHistory,
+    buildOutput,
+    isBuilding,
+    buildHistory,
 
     // Actions
     handleOpenFolder,
@@ -576,6 +612,6 @@ export function usePlaygroundPage() {
     handleDeleteFile,
     handleRenameFile,
     setActiveEditorTab,
-    clearBuildHistory: store.clearBuildHistory,
+    clearBuildHistory,
   };
 }

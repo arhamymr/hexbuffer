@@ -53,7 +53,7 @@ export function getTerminalOptions(platform: string, isDark: boolean): ITerminal
     theme: isDark ? darkTheme : lightTheme,
     cursorBlink: true,
     allowProposedApi: true,
-    scrollback: 10000,
+    scrollback: 2000,
     tabStopWidth: 4,
   }
 

@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { useDocumentsStore } from '@/stores/documents';
+import { useShallow } from 'zustand/react/shallow';
 import { sendRepeaterRequest } from '@/pages/repeater/api';
 import { parseRawHttpRequest } from '@/lib/http-message';
 import { type DocumentSectionKey, type DocumentTemplateId } from '../constants';
@@ -54,7 +55,17 @@ export function useDocumentsPage() {
     loadFromDb,
     updateDocument,
     closeDocument,
-  } = useDocumentsStore();
+  } = useDocumentsStore(
+    useShallow((s) => ({
+      documents: s.documents,
+      activeDocumentId: s.activeDocumentId,
+      setActiveDocumentId: s.setActiveDocumentId,
+      addDocument: s.addDocument,
+      loadFromDb: s.loadFromDb,
+      updateDocument: s.updateDocument,
+      closeDocument: s.closeDocument,
+    }))
+  );
 
   React.useEffect(() => {
     void loadFromDb().catch((error) => {

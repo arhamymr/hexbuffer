@@ -18,6 +18,7 @@ export function LiveTrafficPage() {
     historyMode,
     setHistoryMode,
     sendScopeToDocuments,
+    isPinnedTabActive,
   } = useHttpHistoryPage();
 
   const renderTabContextMenuItems = useCallback((tab: { id: string }) =>
@@ -30,8 +31,8 @@ export function LiveTrafficPage() {
   );
 
   const historyView = useMemo(() =>
-    historyMode === 'http' ? <HttpHistoryView /> : <WebSocketHistoryView />,
-    [historyMode]
+    historyMode === 'http' ? <HttpHistoryView isPinnedTabActive={isPinnedTabActive} /> : <WebSocketHistoryView />,
+    [historyMode, isPinnedTabActive]
   );
 
   return (

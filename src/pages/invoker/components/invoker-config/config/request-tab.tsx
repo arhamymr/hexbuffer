@@ -321,7 +321,7 @@ export function RequestTab() {
         </div>
         <div className="h-[460px] overflow-hidden rounded-md border">
           <TextEditor
-            language="plaintext"
+            language="javascript"
             value={rawRequestDraft}
             onChange={(value) => {
               editRef.current = true;
@@ -334,17 +334,17 @@ export function RequestTab() {
         </div>
       </div>
       <Dialog open={suggestionsDialogOpen} onOpenChange={setSuggestionsDialogOpen}>
-        <DialogContent className="grid max-h-[min(780px,calc(100vh-2rem))] gap-4 overflow-hidden sm:max-w-[960px]">
+        <DialogContent className="flex max-h-[min(780px,calc(100vh-2rem))] flex-col gap-4 overflow-hidden sm:max-w-[960px]">
           <DialogHeader>
             <DialogTitle>Confirm AI marker suggestions</DialogTitle>
           </DialogHeader>
 
-          <div className="grid min-h-0 gap-4 md:grid-cols-[minmax(0,1fr)_320px]">
-            <div className="min-h-0">
+          <div className="grid min-h-0 flex-1 gap-4 overflow-hidden md:grid-cols-[minmax(0,1fr)_320px]">
+            <div className="min-h-0 overflow-hidden">
               <HighlightedRequestPreview text={rawRequestDraft} suggestions={selectedSuggestions} />
             </div>
 
-            <div className="min-h-0 overflow-auto rounded-md border">
+            <div className="min-h-0 max-h-full overflow-auto rounded-md border">
               <div className="flex items-center justify-between border-b px-3 py-2">
                 <span className="text-sm font-medium">
                   {selectedSuggestions.length} / {suggestions.length} selected

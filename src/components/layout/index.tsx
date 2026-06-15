@@ -11,22 +11,13 @@ import type { TerminalPanelHandle } from '@/components/layout/terminal';
 const TerminalPanel = React.lazy(() =>
   import('./terminal').then((m) => ({ default: m.TerminalPanel }))
 );
-import {
-  ResizableHandle,
-  ResizablePanel,
-  ResizablePanelGroup,
-} from '@/components/ui/resizable';
 
-const TERMINAL_PANEL_DEFAULT_SIZE = 30;
-const TERMINAL_PANEL_MIN_SIZE = 15;
-const TERMINAL_PANEL_COLLAPSED_SIZE = 0;
-const TERMINAL_PANEL_MIN_HEIGHT_PX = 150;
+const TERMINAL_PANEL_HEIGHT_PX = 320;
 
 export function AppLayout({ children }: { children?: React.ReactNode }) {
   const {
     isTerminalOpen,
     toggleTerminal,
-    terminalPanelRef,
   } = useAppLayout();
 
   const initInspectorListeners = useInspectorStore((state) => state.initListeners);
@@ -51,38 +42,20 @@ export function AppLayout({ children }: { children?: React.ReactNode }) {
   return (
     <div className="h-screen overflow-hidden bg-background flex flex-col rounded-md border shadow-2xl">
       <TopNav />
-      <main className="relative flex min-h-0 flex-1 overflow-hidden">
-        <ResizablePanelGroup orientation="vertical">
-          <ResizablePanel
-            defaultSize={isTerminalOpen ? 100 - TERMINAL_PANEL_DEFAULT_SIZE : 100}
-            minSize={30}
-          >
-            <section className="h-full min-w-0 overflow-hidden">
-              {children}
+      <main className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
+        <section className="min-h-0 min-w-0 flex-1 overflow-hidden">
+          {children}
+        </section>
+        {isTerminalOpen && (
+          <React.Suspense fallback={null}>
+            <section
+              className="shrink-0 border-t bg-background"
+              style={{ height: TERMINAL_PANEL_HEIGHT_PX }}
+            >
+              <TerminalPanel ref={handleTerminalRef} onClosePanel={toggleTerminal} />
             </section>
-          </ResizablePanel>
-          {isTerminalOpen && (
-            <>
-              <ResizableHandle withHandle />
-              <ResizablePanel
-                panelRef={terminalPanelRef}
-                defaultSize={TERMINAL_PANEL_DEFAULT_SIZE}
-                minSize={TERMINAL_PANEL_MIN_SIZE}
-                collapsedSize={TERMINAL_PANEL_COLLAPSED_SIZE}
-                collapsible
-                onResize={(size) => {
-                  if (size.asPercentage <= TERMINAL_PANEL_COLLAPSED_SIZE && isTerminalOpen) toggleTerminal();
-                }}
-              >
-                <React.Suspense fallback={null}>
-                  <div className="h-full" style={{ minHeight: TERMINAL_PANEL_MIN_HEIGHT_PX }}>
-                    <TerminalPanel ref={handleTerminalRef} onClosePanel={toggleTerminal} />
-                  </div>
-                </React.Suspense>
-              </ResizablePanel>
-            </>
-          )}
-        </ResizablePanelGroup>
+          </React.Suspense>
+        )}
       </main>
       <AppFooter
         isTerminalOpen={isTerminalOpen}

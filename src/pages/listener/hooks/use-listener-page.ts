@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo } from 'react';
 import { useListenerStore } from '@/stores/listener';
+import { useShallow } from 'zustand/react/shallow';
 import * as api from '../api';
 import {
   MOCK_INTERACTIONS,
@@ -39,7 +40,29 @@ export function useListenerPage() {
     isPolling,
     setIsPolling,
     setLastPollError,
-  } = useListenerStore();
+  } = useListenerStore(
+    useShallow((s) => ({
+      activeSubTab: s.activeSubTab,
+      setActiveSubTab: s.setActiveSubTab,
+      servers: s.servers,
+      setServers: s.setServers,
+      payloads: s.payloads,
+      setPayloads: s.setPayloads,
+      interactions: s.interactions,
+      setInteractions: s.setInteractions,
+      stats: s.stats,
+      setStats: s.setStats,
+      selectedInteractionId: s.selectedInteractionId,
+      setSelectedInteractionId: s.setSelectedInteractionId,
+      selectedPayloadFilter: s.selectedPayloadFilter,
+      setSelectedPayloadFilter: s.setSelectedPayloadFilter,
+      selectedTypeFilter: s.selectedTypeFilter,
+      setSelectedTypeFilter: s.setSelectedTypeFilter,
+      isPolling: s.isPolling,
+      setIsPolling: s.setIsPolling,
+      setLastPollError: s.setLastPollError,
+    }))
+  );
 
   const loadServers = useCallback(async () => {
     if (USE_MOCK) {

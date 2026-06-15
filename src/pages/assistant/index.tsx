@@ -48,6 +48,7 @@ import { getMessageText, getReasoningParts, hasContent, providerLabel } from './
 import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
 import { TriangleLogo } from '@/components/layout/triangle-logo';
+
 function AIAssistantPaneContent() {
   const {
     aiSettings,
@@ -282,7 +283,7 @@ function AIAssistantPaneContent() {
                     </Message>
                   ) : null}
 
-                  {/* Completed task summary (shown after response arrives) */}
+                  {/* Completed task summary */}
                   {status !== 'submitted' && trackedActions.length > 0 ? (
                     <Message from="assistant">
                       <MessageContent>

@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { toast } from 'sonner';
 import { useInvokerStore } from '@/stores/invoker';
+import { useShallow } from 'zustand/react/shallow';
 import {
   allPositionsHavePayloads,
   findRequestPayloadPositions,
@@ -21,7 +22,21 @@ export function useInvokerPage() {
     stopAttack,
     startAttack,
     updateConfig,
-  } = useInvokerStore();
+  } = useInvokerStore(
+    useShallow((s) => ({
+      tabs: s.tabs,
+      activeTabId: s.activeTabId,
+      setActiveTabId: s.setActiveTabId,
+      renameTab: s.renameTab,
+      closeTab: s.closeTab,
+      setBaseRequest: s.setBaseRequest,
+      setPendingRequest: s.setPendingRequest,
+      clearStartError: s.clearStartError,
+      stopAttack: s.stopAttack,
+      startAttack: s.startAttack,
+      updateConfig: s.updateConfig,
+    }))
+  );
 
   const activeTab = React.useMemo(
     () => tabs.find((tab) => tab.id === activeTabId) ?? tabs[0],

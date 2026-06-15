@@ -1,7 +1,7 @@
 'use client';
 
-import { useCallback, useState, useRef, memo, type MouseEvent } from "react";
-import { ArrowDown, ArrowUp, AlertTriangle, Send, EllipsisVertical, Copy, Plus, Trash2, FilePlus2 } from "lucide-react";
+import { useCallback, useState, useRef, memo, useMemo, type MouseEvent } from "react";
+import { ArrowDown, ArrowUp, AlertTriangle, Send, EllipsisVertical, Copy, Plus, Trash2, FilePlus2, Pin, PinOff } from "lucide-react";
 import {
   flexRender,
   getCoreRowModel,
@@ -39,12 +39,20 @@ import { copyText } from '@/lib/clipboard';
 import { useTargetStore } from '@/stores/target';
 import { useNavStore } from '@/stores/nav';
 import { useInterceptStore } from '@/pages/intercept/state/intercept-store';
+import { usePinnedRequestsStore } from '@/pages/live-traffic/state/pinned-requests-store';
 import { HistoryLoadingState } from "../history-loading-state";
 import { BrowserIcon } from "./browser-icon";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const CallActionCell = memo(function CallActionCell({ call }: { call: ApiCall }) {
   const { triggerRefresh } = useHistoryQuery();
+  const togglePin = usePinnedRequestsStore((s) => s.togglePin);
+  const isPinned = usePinnedRequestsStore((s) => s.isPinned);
+  const pinned = isPinned(call.id);
+
+  const handleTogglePin = useCallback(() => {
+    togglePin(call);
+  }, [call, togglePin]);
 
   const handleCopyCurlCommand = useCallback(async () => {
     try {
@@ -218,6 +226,13 @@ const CallActionCell = memo(function CallActionCell({ call }: { call: ApiCall })
           <Copy className="mr-2 size-3" /> Copy URL
         </DropdownMenuItem>
         <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={handleTogglePin} className="text-xs">
+          {pinned
+            ? <><PinOff className="mr-2 size-3" /> Unpin</>
+            : <><Pin className="mr-2 size-3" /> Pin</>
+          }
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleAddToScope} className="text-xs">
           <Plus className="mr-2 size-3" /> Add to Target
         </DropdownMenuItem>
@@ -245,137 +260,11 @@ const CallActionCell = memo(function CallActionCell({ call }: { call: ApiCall })
   );
 });
 
-export const callsColumns: ColumnDef<ApiCall>[] = [
-  {
-    accessorKey: "timestamp",
-    header: "Time",
-    size: 90,
-    cell: ({ row }) => (
-      <span className="text-xs font-mono text-muted-foreground">
-        {formatTimestamp(row.original.timestamp)}
-      </span>
-    ),
-  },
-  {
-    accessorKey: "method",
-    header: "Method",
-    size: 100,
-    cell: ({ row }) => (
-      <div className="flex gap-2">
-        <MethodBadge method={row.original.method} />
-        <StatusBadge status={row.original.response_status} />
-        {row.original.content_decoded && (
-          <span title="Request body was decoded from gzip/br/deflate">
-            <AlertTriangle className="h-3 w-3 text-yellow-500" />
-          </span>
-        )}
-      </div>
-    ),
-  },
-  {
-    accessorKey: "host",
-    header: "Host",
-    size: 180,
-    cell: ({ row, table }) => (
-      <div className="flex items-center gap-1.5 truncate">
-        <BrowserIcon userAgent={row.original.user_agent} />
-        <span className="truncate">
-          <HighlightedText
-            text={row.original.host}
-            query={(table.options.meta as { searchQuery?: string } | undefined)?.searchQuery ?? ""}
-          />
-        </span>
-      </div>
-    ),
-  },
-  {
-    accessorKey: "path",
-    header: "Path",
-    size: 200,
-    cell: ({ row, table }) => (
-      <HighlightedText
-        text={row.original.path}
-        query={(table.options.meta as { searchQuery?: string } | undefined)?.searchQuery ?? ""}
-      />
-    ),
-  },
-  {
-    accessorKey: "response_body_size",
-    header: "Size",
-    size: 70,
-    cell: ({ row }) => (
-      <span className="text-xs text-muted-foreground text-right block">
-        {formatBytes(row.original.response_body_size)}
-      </span>
-    ),
-  },
-  {
-    accessorKey: "request_body_size",
-    header: "Length",
-    size: 70,
-    cell: ({ row }) => (
-      <span className="text-xs text-muted-foreground text-right block">
-        {formatBytes(row.original.request_body_size)}
-      </span>
-    ),
-  },
-  {
-    accessorKey: "response_content_type",
-    header: "MIME Type",
-    size: 150,
-    cell: ({ row, table }) => (
-      <span className="text-xs text-muted-foreground truncate block">
-        <HighlightedText
-          text={row.original.response_content_type || "-"}
-          query={(table.options.meta as { searchQuery?: string } | undefined)?.searchQuery ?? ""}
-        /> 
-      </span>
-    ),
-  },
-  {
-    id: "action",
-    header: "",
-    size: 36,
-    cell: ({ row }) => <CallActionCell call={row.original} />,
-  },
-];
-
-const trafficTableSkeletonWidths = ["70%", "85%", "80%", "95%", "60%", "55%", "75%", "40%"];
-
-function TrafficTableSkeletonRows({ rows = 3 }: { rows?: number }) {
-  return (
-    <>
-      {Array.from({ length: rows }).map((_, rowIndex) => (
-        <tr
-          key={rowIndex}
-          className="border-b animate-in fade-in-0 slide-in-from-top-1 duration-300"
-          aria-hidden="true"
-        >
-          {trafficTableSkeletonWidths.map((width, columnIndex) => (
-            <td
-              key={columnIndex}
-              className={columnIndex === 4 || columnIndex === 5 ? "px-3 py-2 text-right" : "px-3 py-2"}
-            >
-              <Skeleton
-                className={columnIndex === 7 ? "mx-auto h-5 w-9" : "h-3"}
-                style={{
-                  width:
-                    columnIndex === 7
-                      ? undefined
-                      : rowIndex % 2 === 0
-                        ? width
-                        : `${Math.max(45, Number.parseInt(width, 10) - 12)}%`,
-                }}
-              />
-            </td>
-          ))}
-        </tr>
-      ))}
-    </>
-  );
-}
-
-export const TrafficTable = memo(function TrafficTable() {
+export const TrafficTable = memo(function TrafficTable({
+  isPinnedTabActive = false,
+}: {
+  isPinnedTabActive?: boolean;
+}) {
   const tableContainerRef = useRef<HTMLDivElement>(null);
   const [isContextMenuOpen, setIsContextMenuOpen] = useState(false);
   const {
@@ -396,10 +285,185 @@ export const TrafficTable = memo(function TrafficTable() {
     removeCallLocally,
     selectedCallId,
   } = useHistoryTable({ isStreamPaused: isContextMenuOpen });
+
+  const pinnedIds = usePinnedRequestsStore((s) => s.pinnedIds);
+  const unpinId = usePinnedRequestsStore((s) => s.unpinId);
+  const pinnedCalls = usePinnedRequestsStore((s) => s.pinnedCalls);
+  const pinnedSet = useMemo(() => new Set(pinnedIds), [pinnedIds]);
+
+  const filteredCalls = useMemo(() => {
+    const pinned: ApiCall[] = [];
+    const unpinned: ApiCall[] = [];
+    const seenIds = new Set<string>();
+
+    // First, add all cached pinned calls from the store (survive pagination)
+    for (const id of pinnedIds) {
+      const cached = pinnedCalls[id];
+      if (cached) {
+        pinned.push(cached);
+        seenIds.add(id);
+      }
+    }
+
+    // Then partition current page calls, skipping any already added from cache
+    for (const call of calls) {
+      if (seenIds.has(call.id)) continue;
+      if (pinnedSet.has(call.id)) {
+        pinned.push(call);
+      } else {
+        unpinned.push(call);
+      }
+    }
+
+    if (isPinnedTabActive) return pinned;
+    return [...pinned, ...unpinned];
+  }, [calls, isPinnedTabActive, pinnedSet, pinnedIds, pinnedCalls]);
+
+  const removeCallLocallyWithUnpin = useCallback(
+    (id: string) => {
+      unpinId(id);
+      removeCallLocally(id);
+    },
+    [removeCallLocally, unpinId]
+  );
+
+  const columns = useMemo<ColumnDef<ApiCall>[]>(() => [
+    {
+      accessorKey: "timestamp",
+      header: "Time",
+      size: 90,
+      cell: ({ row }) => (
+        <span className="text-xs font-mono text-muted-foreground">
+          {formatTimestamp(row.original.timestamp)}
+        </span>
+      ),
+    },
+    {
+      accessorKey: "method",
+      header: "Method",
+      size: 100,
+      cell: ({ row }) => (
+        <div className="flex gap-2">
+          <MethodBadge method={row.original.method} />
+          <StatusBadge status={row.original.response_status} />
+          {row.original.content_decoded && (
+            <span title="Request body was decoded from gzip/br/deflate">
+              <AlertTriangle className="h-3 w-3 text-yellow-500" />
+            </span>
+          )}
+        </div>
+      ),
+    },
+    {
+      accessorKey: "host",
+      header: "Host",
+      size: 180,
+      cell: ({ row, table }) => (
+        <div className="flex items-center gap-1.5 truncate">
+          {pinnedSet.has(row.original.id) && (
+            <Pin className="size-3 text-amber-500 shrink-0" />
+          )}
+          <BrowserIcon userAgent={row.original.user_agent} />
+          <span className="truncate">
+            <HighlightedText
+              text={row.original.host}
+              query={(table.options.meta as { searchQuery?: string } | undefined)?.searchQuery ?? ""}
+            />
+          </span>
+        </div>
+      ),
+    },
+    {
+      accessorKey: "path",
+      header: "Path",
+      size: 200,
+      cell: ({ row, table }) => (
+        <HighlightedText
+          text={row.original.path}
+          query={(table.options.meta as { searchQuery?: string } | undefined)?.searchQuery ?? ""}
+        />
+      ),
+    },
+    {
+      accessorKey: "response_body_size",
+      header: "Size",
+      size: 70,
+      cell: ({ row }) => (
+        <span className="text-xs text-muted-foreground text-right block">
+          {formatBytes(row.original.response_body_size)}
+        </span>
+      ),
+    },
+    {
+      accessorKey: "request_body_size",
+      header: "Length",
+      size: 70,
+      cell: ({ row }) => (
+        <span className="text-xs text-muted-foreground text-right block">
+          {formatBytes(row.original.request_body_size)}
+        </span>
+      ),
+    },
+    {
+      accessorKey: "response_content_type",
+      header: "MIME Type",
+      size: 150,
+      cell: ({ row, table }) => (
+        <span className="text-xs text-muted-foreground truncate block">
+          <HighlightedText
+            text={row.original.response_content_type || "-"}
+            query={(table.options.meta as { searchQuery?: string } | undefined)?.searchQuery ?? ""}
+          /> 
+        </span>
+      ),
+    },
+    {
+      id: "action",
+      header: "",
+      size: 36,
+      cell: ({ row }) => <CallActionCell call={row.original} />,
+    },
+  ], [pinnedSet]);
+
+  const trafficTableSkeletonWidths = ["70%", "85%", "80%", "95%", "60%", "55%", "75%", "40%"];
+
+  function TrafficTableSkeletonRows({ rows = 3 }: { rows?: number }) {
+    return (
+      <>
+        {Array.from({ length: rows }).map((_, rowIndex) => (
+          <tr
+            key={rowIndex}
+            className="border-b animate-in fade-in-0 slide-in-from-top-1 duration-300"
+            aria-hidden="true"
+          >
+            {trafficTableSkeletonWidths.map((width, columnIndex) => (
+              <td
+                key={columnIndex}
+                className={columnIndex === 4 || columnIndex === 5 ? "px-3 py-2 text-right" : "px-3 py-2"}
+              >
+                <Skeleton
+                  className={columnIndex === 7 ? "mx-auto h-5 w-9" : "h-3"}
+                  style={{
+                    width:
+                      columnIndex === 7
+                        ? undefined
+                        : rowIndex % 2 === 0
+                          ? width
+                          : `${Math.max(45, Number.parseInt(width, 10) - 12)}%`,
+                  }}
+                />
+              </td>
+            ))}
+          </tr>
+        ))}
+      </>
+    );
+  }
+
   const totalPages = Math.max(1, Math.ceil(pagination.total / pagination.perPage));
   const table = useReactTable({
-    data: calls,
-    columns: callsColumns,
+    data: filteredCalls,
+    columns: columns,
     getCoreRowModel: getCoreRowModel(),
     getRowId: (row) => row.id,
     meta: {
@@ -440,11 +504,19 @@ export const TrafficTable = memo(function TrafficTable() {
   if (calls.length === 0 && !isLoading) {
     return (
       <Empty>
-        <EmptyTitle>{hasActiveFilters || hasScopedTab ? 'No matching traffic' : 'No traffic yet'}</EmptyTitle>
+        <EmptyTitle>
+          {isPinnedTabActive
+            ? 'No pinned requests'
+            : hasActiveFilters || hasScopedTab
+              ? 'No matching traffic'
+              : 'No traffic yet'}
+        </EmptyTitle>
         <EmptyDescription>
-          {hasActiveFilters || hasScopedTab
-            ? 'The database has traffic, but the current tab or filters may be hiding it. Switch to All History or clear the active filters.'
-            : 'HTTP requests will appear here once captured.'}
+          {isPinnedTabActive
+            ? 'Right-click a request and select Pin to add it here (max 10).'
+            : hasActiveFilters || hasScopedTab
+              ? 'The database has traffic, but the current tab or filters may be hiding it. Switch to All History or clear the active filters.'
+              : 'HTTP requests will appear here once captured.'}
         </EmptyDescription>
       </Empty>
     );
@@ -517,13 +589,16 @@ export const TrafficTable = memo(function TrafficTable() {
                 <LogEntryContextMenu
                   key={row.id}
                   call={call}
-                  onDelete={removeCallLocally}
+                  onDelete={removeCallLocallyWithUnpin}
                   onOpenChange={handleContextMenuOpenChange}
                 >
                   <tr
                     className={
-                      "absolute flex items-center w-full hover:bg-muted/50 font-mono transition-colors border-b cursor-pointer" +
-                      (call.id === selectedCallId ? " hover:!bg-muted bg-muted" : "")
+                      "absolute flex items-center w-full font-mono transition-colors border-b cursor-pointer" +
+                      (pinnedSet.has(call.id) ? " bg-amber-500/5 dark:bg-amber-950/20" : "") +
+                      (call.id === selectedCallId
+                        ? " hover:!bg-muted bg-muted"
+                        : " hover:bg-muted/50")
                     }
                     style={{
                       height: `${virtualRow.size}px`,
@@ -585,7 +660,7 @@ export const TrafficTable = memo(function TrafficTable() {
       <div className="flex items-center justify-between gap-3 p-1 border-t">
         <div className="flex items-center gap-3 text-xs text-muted-foreground">
           <span>
-            Showing {calls.length} of {pagination.total} request{pagination.total === 1 ? '' : 's'}
+            Showing {filteredCalls.length} of {pagination.total} request{pagination.total === 1 ? '' : 's'}
           </span>
           <span>
             {pagination.page}/{totalPages} page

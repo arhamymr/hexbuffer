@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { useRepeaterStore } from '@/stores/repeater';
+import { useShallow } from 'zustand/react/shallow';
 import { parseRawHttpRequest } from '@/lib/http-message';
 import { sendRepeaterRequest } from '../api';
 import { type ParsedRepeaterRequest, type RepeaterTab } from '../types';
@@ -14,7 +15,18 @@ export function useRepeaterPage() {
     closeTab,
     closeTabsToLeft,
     closeTabsToRight,
-  } = useRepeaterStore();
+  } = useRepeaterStore(
+    useShallow((s) => ({
+      tabs: s.tabs,
+      activeTabId: s.activeTabId,
+      setActiveTabId: s.setActiveTabId,
+      updateTab: s.updateTab,
+      renameTab: s.renameTab,
+      closeTab: s.closeTab,
+      closeTabsToLeft: s.closeTabsToLeft,
+      closeTabsToRight: s.closeTabsToRight,
+    }))
+  );
 
   const activeTab = React.useMemo(
     () => tabs.find((tab) => tab.id === activeTabId) ?? tabs[0] ?? null,

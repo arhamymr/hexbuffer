@@ -16,9 +16,7 @@ import {
 import { useTheme } from '@/components/theme-provider';
 import { cn } from '@/lib/utils';
 import { TerminalInstance } from './terminal-instance';
-import { TerminalTabs } from './terminal-tabs';
-import { useTerminalSessions } from '../hooks/use-terminal-sessions';
-import type { TerminalInstanceHandle, TerminalPanelHandle, TerminalStatus } from '../types';
+import type { TerminalInstanceHandle, TerminalPanelHandle } from '../types';
 import '@xterm/xterm/css/xterm.css';
 
 const NOOP = () => {};
@@ -27,16 +25,7 @@ export const TerminalPanel = React.forwardRef<
   TerminalPanelHandle,
   { onClosePanel?: () => void }
 >(function TerminalPanel({ onClosePanel }, ref) {
-  const {
-    sessions,
-    activeSessionId,
-    setActiveSessionId,
-    createTerminalSession,
-    renameTerminalSession,
-    closeTerminalSession,
-    updateTerminalSessionStatus,
-  } = useTerminalSessions();
-  const instanceRefs = React.useRef<Record<string, TerminalInstanceHandle | null>>({});
+  const instanceRef = React.useRef<TerminalInstanceHandle | null>(null);
   const [isSearchOpen, setIsSearchOpen] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState('');
   const [hasSearchMatch, setHasSearchMatch] = React.useState<boolean | null>(null);
@@ -46,8 +35,8 @@ export const TerminalPanel = React.forwardRef<
   const isDark = theme === 'dark';
 
   const activeInstance = React.useCallback(() => {
-    return instanceRefs.current[activeSessionId] ?? null;
-  }, [activeSessionId]);
+    return instanceRef.current;
+  }, []);
 
   React.useImperativeHandle(
     ref,
@@ -118,20 +107,9 @@ export const TerminalPanel = React.forwardRef<
   return (
     <div className="flex h-full w-full flex-col">
       <div className={cn('flex h-7 shrink-0 items-center gap-1 border-b px-1', toolbarBg, toolbarBorder)}>
-        <TerminalTabs
-          sessions={sessions}
-          activeSessionId={activeSessionId}
-          onSelectSession={(sessionId) => {
-            setActiveSessionId(sessionId);
-            setHasSearchMatch(null);
-          }}
-          onCreateSession={createTerminalSession}
-          onRenameSession={renameTerminalSession}
-          onCloseSession={(sessionId) => {
-            delete instanceRefs.current[sessionId];
-            closeTerminalSession(sessionId);
-          }}
-        />
+        <div className="flex min-w-0 flex-1 items-center px-2 text-xs font-medium text-muted-foreground">
+          Terminal
+        </div>
 
         {isSearchOpen && (
           <div className="flex h-6 w-64 shrink-0 items-center gap-1">
@@ -225,18 +203,12 @@ export const TerminalPanel = React.forwardRef<
       </div>
 
       <div className="relative min-h-0 flex-1">
-        {sessions.map((session) => (
-          <TerminalInstance
-            key={session.id}
-            ref={(handle) => {
-              instanceRefs.current[session.id] = handle;
-            }}
-            isActive={session.id === activeSessionId}
-            onStatusChange={(status: TerminalStatus, error?: string) => {
-              updateTerminalSessionStatus(session.id, status, error);
-            }}
-          />
-        ))}
+        <TerminalInstance
+          ref={(handle) => {
+            instanceRef.current = handle;
+          }}
+          isActive
+        />
       </div>
     </div>
   );

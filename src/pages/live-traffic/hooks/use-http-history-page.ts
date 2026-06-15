@@ -5,9 +5,11 @@ import { useDocumentsStore } from '@/stores/documents';
 import { useTargetStore } from '@/stores/target';
 import { toast } from 'sonner';
 import { useHistoryQuery } from './use-history-query';
+import { usePinnedRequestsStore } from '../state/pinned-requests-store';
 
 export type HistoryMode = 'http' | 'websocket';
 const ALL_HISTORY_TAB_ID = 'all-scope';
+const PINNED_TAB_ID = 'pinned';
 
 export function useHttpHistoryPage() {
   const [historyMode, setHistoryMode] = React.useState<HistoryMode>(() => {
@@ -22,6 +24,9 @@ export function useHttpHistoryPage() {
   const targets = useTargetStore((state) => state.targets);
   const removeActiveTab = useTargetStore((state) => state.removeActiveTab);
   const { setActiveScope } = useHistoryQuery();
+  const pinnedIds = usePinnedRequestsStore((state) => state.pinnedIds);
+  const unpinAll = usePinnedRequestsStore((state) => state.unpinAll);
+  const pinnedCount = pinnedIds.length;
   const activeTargets = React.useMemo(
     () => targets.filter((target) => target.tabActive),
     [targets]
@@ -29,29 +34,44 @@ export function useHttpHistoryPage() {
   const tabs = React.useMemo<PageTabItem[]>(
     () => [
       { id: ALL_HISTORY_TAB_ID, name: 'All History', closable: false },
+      ...(pinnedCount > 0
+        ? [{ id: PINNED_TAB_ID, name: `Pinned (${pinnedCount})`, closable: true } as const]
+        : []),
       ...activeTargets.map((target) => ({
         id: target.id,
         name: target.name,
       })),
     ],
-    [activeTargets]
+    [activeTargets, pinnedCount]
   );
   const { activeTabId, setActiveTabId } = useTabState(tabs, 'http-history-target-tabs');
   const activeTab = activeTabId === ALL_HISTORY_TAB_ID
     ? null
     : activeTargets.find((target) => target.id === activeTabId);
 
+  const isPinnedTabActive = activeTabId === PINNED_TAB_ID;
+
   const removeTab = React.useCallback((targetId: string) => {
     if (targetId === ALL_HISTORY_TAB_ID) {
       return;
     }
 
+    if (targetId === PINNED_TAB_ID) {
+      unpinAll();
+      setActiveTabId(ALL_HISTORY_TAB_ID);
+      return;
+    }
+
     removeActiveTab(targetId);
-  }, [removeActiveTab]);
+  }, [removeActiveTab, unpinAll, setActiveTabId]);
 
   React.useEffect(() => {
-    setActiveScope(activeTab?.scope ?? null);
-  }, [activeTab?.scope, setActiveScope]);
+    if (isPinnedTabActive) {
+      setActiveScope(null);
+    } else {
+      setActiveScope(activeTab?.scope ?? null);
+    }
+  }, [activeTab?.scope, setActiveScope, isPinnedTabActive]);
 
   const sendScopeToDocuments = React.useCallback((targetId: string) => {
     const target = activeTargets.find((activeTarget) => activeTarget.id === targetId);
@@ -90,5 +110,6 @@ export function useHttpHistoryPage() {
     historyMode,
     setHistoryMode: persistHistoryMode,
     sendScopeToDocuments,
+    isPinnedTabActive,
   };
 }

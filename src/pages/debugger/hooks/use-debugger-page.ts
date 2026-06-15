@@ -3,6 +3,7 @@
 import { useEffect, useMemo } from 'react';
 import { listen } from '@tauri-apps/api/event';
 import { useDebuggerStore, type DebuggerEntry } from '@/stores/debugger';
+import { useShallow } from 'zustand/react/shallow';
 
 function safeSummary(payload: unknown, fallback: string): string {
   if (!payload || typeof payload !== 'object') return fallback;
@@ -44,7 +45,19 @@ export function useDebuggerPage() {
     togglePaused,
     setSearch,
     clearEntries,
-  } = useDebuggerStore();
+  } = useDebuggerStore(
+    useShallow((s) => ({
+      entries: s.entries,
+      selectedEntryId: s.selectedEntryId,
+      paused: s.paused,
+      search: s.search,
+      addEntry: s.addEntry,
+      selectEntry: s.selectEntry,
+      togglePaused: s.togglePaused,
+      setSearch: s.setSearch,
+      clearEntries: s.clearEntries,
+    }))
+  );
 
   useEffect(() => {
     const unlisteners: Array<() => void> = [];

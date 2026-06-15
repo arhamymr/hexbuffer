@@ -8,7 +8,7 @@ import {
   ContextMenuItem,
   ContextMenuSeparator,
 } from '@/components/ui/context-menu';
-import { Copy, Plus, Trash2, Send, FilePlus2 } from 'lucide-react';
+import { Copy, Plus, Trash2, Send, FilePlus2, Pin, PinOff } from 'lucide-react';
 import { toast } from 'sonner';
 import type { ApiCall } from '@/types';
 import { deleteHistoryLog, fetchHistoryDetail } from '@/pages/live-traffic/services/history-service';
@@ -24,6 +24,7 @@ import { copyText } from '@/lib/clipboard';
 import { useTargetStore } from '@/stores/target';
 import { useNavStore } from '@/stores/nav';
 import { useInterceptStore } from '@/pages/intercept/state/intercept-store';
+import { usePinnedRequestsStore } from '@/pages/live-traffic/state/pinned-requests-store';
 
 interface LogEntryContextMenuProps {
   call: ApiCall;
@@ -48,6 +49,9 @@ export const LogEntryContextMenu = memo(function LogEntryContextMenu({
   onOpenChange,
 }: LogEntryContextMenuProps) {
   const { triggerRefresh } = useHistoryQuery();
+  const togglePin = usePinnedRequestsStore((s) => s.togglePin);
+  const isPinned = usePinnedRequestsStore((s) => s.isPinned);
+  const pinned = isPinned(call.id);
 
   const handleCopyCurlCommand = useCallback(async () => {
     try {
@@ -66,6 +70,10 @@ export const LogEntryContextMenu = memo(function LogEntryContextMenu({
       toast.error('Failed to copy as curl command (bash)');
     }
   }, [call.id]);
+
+  const handleTogglePin = useCallback(() => {
+    togglePin(call);
+  }, [call, togglePin]);
 
   const handleCopyUrl = useCallback(async () => {
     try {
@@ -220,6 +228,7 @@ export const LogEntryContextMenu = memo(function LogEntryContextMenu({
   const handleDelete = useCallback(async () => {
     try {
       await deleteHistoryLog(call.id);
+      usePinnedRequestsStore.getState().unpinId(call.id);
       onDelete?.(call.id);
       triggerRefresh();
     } catch (error) {
@@ -238,6 +247,13 @@ export const LogEntryContextMenu = memo(function LogEntryContextMenu({
         </ContextMenuItem>
         <ContextMenuItem onClick={handleCopyUrl} className='text-xs'>
           <Copy className="mr-2 size-3" /> Copy URL
+        </ContextMenuItem>
+        <ContextMenuSeparator />
+        <ContextMenuItem onClick={handleTogglePin} className='text-xs'>
+          {pinned
+            ? <><PinOff className="mr-2 size-3" /> Unpin</>
+            : <><Pin className="mr-2 size-3" /> Pin</>
+          }
         </ContextMenuItem>
         <ContextMenuSeparator />
         <ContextMenuItem onClick={handleAddToScope} className='text-xs'>

@@ -55,6 +55,7 @@ export function SettingsLayout({ settings }: SettingsLayoutProps) {
           <AiSettingsTab settings={settings} />
         </TabsContent>
 
+
         <TabsContent value="automation" className="flex-1 overflow-auto px-6 py-4 space-y-4">
           <AutomationSettingsTab />
         </TabsContent>

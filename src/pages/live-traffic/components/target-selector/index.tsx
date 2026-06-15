@@ -38,7 +38,7 @@ export function TargetSelectorDialog() {
       <DialogTrigger asChild>
         <Button size="xs" className="gap-2 h-7 gap-1 text-xs">
           <Target className="h-4 w-4" />
-          MANAGE TARGET
+          Manage Target
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">

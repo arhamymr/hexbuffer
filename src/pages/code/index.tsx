@@ -155,6 +155,7 @@ export function PlaygroundPage() {
               activeTabPath={activeTabPath}
               activeContent={activeContent}
               activeLanguage={activeLanguage}
+              workspacePath={workspace?.path}
               onTabChange={setActiveEditorTab}
               onTabClose={handleTabClose}
               onContentChange={handleContentChange}

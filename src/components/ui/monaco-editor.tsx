@@ -154,8 +154,22 @@ export function MonacoEditor({
       !currentModel || (uri && currentModel.uri.toString() !== uri.toString());
 
     if (shouldReplaceModel) {
-      currentModel?.dispose();
-      const model = monacoApi.editor.createModel(value, language || undefined, uri);
+      // Detach current model from this editor (don't dispose — another pane may use it)
+      if (currentModel) {
+        editor.setModel(null);
+      }
+      // Reuse existing model for this URI, or create a new one
+      let model: MonacoTextModel | null = uri ? monacoApi.editor.getModel(uri) : null;
+      if (!model) {
+        model = monacoApi.editor.createModel(value, language || undefined, uri);
+      } else if (model.getValue() !== value) {
+        // Sync content if reusing an existing model that has stale content
+        model.pushEditOperations(
+          [],
+          [{ range: model.getFullModelRange(), text: value }],
+          () => null,
+        );
+      }
       modelRef.current = model;
       editor.setModel(model);
       return;

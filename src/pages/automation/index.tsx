@@ -18,7 +18,7 @@ import { useAutomationPage } from './hooks/use-automation-page';
 import type { AutomationNodeType, AutomationNodeData } from './types';
 import type { WorkflowCanvasBridge } from './hooks/use-workflow-canvas';
 import { Button } from '@/components/ui/button';
-import { PanelBottomOpen } from 'lucide-react';
+import { PanelBottomClose, PanelBottomOpen } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export function AutomationPage() {
@@ -87,7 +87,6 @@ export function AutomationPage() {
           >
             <ResizablePanel
               id="automation-canvas-panel"
-              order={1}
               defaultSize={selectedNode ? 60 : 100}
               minSize="420px"
               className="min-w-0"
@@ -95,7 +94,7 @@ export function AutomationPage() {
               <ResizablePanelGroup orientation="vertical" className="h-full min-h-0">
                 <ResizablePanel defaultSize={75} minSize={30}>
                   <div className="relative flex h-full min-h-0 flex-col">
-                    {!showExecutionLog && (
+                    {!showExecutionLog ? (
                       <Button
                         variant="ghost"
                         size="xs"
@@ -109,7 +108,21 @@ export function AutomationPage() {
                       >
                         <PanelBottomOpen className="size-3.5" />
                       </Button>
-                    )}
+                    ) : 
+                    <Button
+                        variant="ghost"
+                        size="xs"
+                        className={cn(
+                          'absolute bottom-2 left-2 z-20 h-7 w-7 rounded-md p-0',
+                          'bg-background/80 backdrop-blur-sm border',
+                          'hover:bg-accent'
+                        )}
+                        onClick={() => setShowExecutionLog(false)}
+                        title="Show execution log"
+                      >
+                        <PanelBottomClose className="size-3.5" />
+                      </Button>
+                    }
                     <WorkflowToolbar />
                     <div className="flex-1 min-h-0">
                       <WorkflowCanvas
@@ -145,7 +158,6 @@ export function AutomationPage() {
                 <ResizableHandle withHandle />
                 <ResizablePanel
                   id="automation-node-config-panel"
-                  order={2}
                   defaultSize="460px"
                   minSize="380px"
                   maxSize="760px"

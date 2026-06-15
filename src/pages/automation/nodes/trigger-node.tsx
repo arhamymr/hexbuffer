@@ -13,7 +13,7 @@ import {
   Radio,
   Activity,
   Network,
-  GripVertical,
+  Grip,
   AlertTriangle,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -116,11 +116,12 @@ function TriggerNodeComponent({ id, data, selected }: NodeProps) {
         </div>
       )}
       <div className="flex items-center gap-2 px-3 py-2.5">
-        <div className={cn('flex size-7 items-center justify-center rounded-lg', CATEGORY_ICON_BG.trigger)}>
+        <Grip className="size-3.5 shrink-0 text-muted-foreground/30 opacity-80 group-hover:opacity-100 transition-opacity" />
+        <div className={cn('flex size-7 items-center justify-center rounded-md', CATEGORY_ICON_BG.trigger)}>
           <Icon className={cn('size-3.5', CATEGORY_ICON_TEXT.trigger)} />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-xs font-semibold">{nodeData.label}</p>
+          <p className="truncate text-xs">{nodeData.label}</p>
           <p className="truncate text-[10px] text-muted-foreground">Trigger</p>
         </div>
         {warning && (
@@ -134,8 +135,7 @@ function TriggerNodeComponent({ id, data, selected }: NodeProps) {
           <NodeCapabilityBadge reason={capability.reason} />
         )}
         <NodeCardMenu nodeId={id} nodeLabel={nodeData.label} />
-        <GripVertical className="size-3.5 shrink-0 text-muted-foreground/30 opacity-0 group-hover:opacity-100 transition-opacity" />
-      </div>
+       </div>
 
       {isManual && (
         <div className="border-t border-blue-500/20 px-3 py-1.5">

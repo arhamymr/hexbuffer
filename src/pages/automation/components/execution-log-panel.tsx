@@ -10,7 +10,6 @@ import {
   Trash2,
   ChevronDown,
   ChevronRight,
-  PanelBottomClose,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -37,7 +36,6 @@ const EMPTY_EXECUTION_LOGS: ExecutionLog[] = [];
 
 interface ExecutionLogPanelProps {
   workflowId: string | null;
-  onHide: () => void;
 }
 
 function formatTime(iso: string): string {
@@ -58,7 +56,7 @@ function dedupeById<T extends { id: string }>(items: T[]): T[] {
   return Array.from(new Map(items.map((item) => [item.id, item])).values());
 }
 
-export function ExecutionLogPanel({ workflowId, onHide }: ExecutionLogPanelProps) {
+export function ExecutionLogPanel({ workflowId }: ExecutionLogPanelProps) {
   const logs = useAutomationStore((s) =>
     workflowId ? s.executionLogsByWorkflowId[workflowId] ?? EMPTY_EXECUTION_LOGS : EMPTY_EXECUTION_LOGS
   );
@@ -133,15 +131,6 @@ export function ExecutionLogPanel({ workflowId, onHide }: ExecutionLogPanelProps
               <Trash2 className="size-3" />
             </Button>
           )}
-          <Button
-            variant="ghost"
-            size="xs"
-            className="h-5 w-5 p-0"
-            onClick={onHide}
-            title="Hide execution log"
-          >
-            <PanelBottomClose className="size-3" />
-          </Button>
         </div>
       </div>
 

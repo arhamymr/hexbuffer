@@ -21,6 +21,13 @@ import {
 import { Input } from '@/components/ui/input';
 import type { FileTreeNode } from '../types';
 
+function sortTreeChildren(nodes: FileTreeNode[]): FileTreeNode[] {
+  return [...nodes].sort((a, b) => {
+    if (a.isDir !== b.isDir) return a.isDir ? -1 : 1;
+    return a.name.localeCompare(b.name);
+  });
+}
+
 interface FileTreeProps {
   files: FileTreeNode[];
   activePath: string | null;
@@ -65,13 +72,15 @@ export function FileTree({
         onNewFolder={() => onNewFolder('', 'new-folder')}
         onRefresh={onRefresh}
       />
-      <div className="min-h-0 flex-1 overflow-auto p-2">
+      <div className="min-h-0 flex-1 overflow-auto">
         <div className="space-y-0.5">
-          {files.map((node) => (
+          {sortTreeChildren(files).map((node, index) => (
             <FileTreeItem
               key={node.path}
               node={node}
               depth={0}
+              isLast={index === files.length - 1}
+              lastAtDepths={new Set()}
               activePath={activePath}
               onFileClick={onFileClick}
               onNewFile={onNewFile}
@@ -98,7 +107,7 @@ function FileTreeHeader({
   onRefresh: () => void;
 }) {
   return (
-    <div className="flex h-10 shrink-0 items-center justify-between border-b bg-muted/40 px-3">
+    <div className="flex h-9 shrink-0 items-center justify-between border-b px-3 bg-muted">
       <span className="text-xs font-medium uppercase text-muted-foreground">Explorer</span>
       <div className="flex items-center gap-1">
         <button
@@ -133,6 +142,8 @@ function FileTreeHeader({
 interface FileTreeItemProps {
   node: FileTreeNode;
   depth: number;
+  isLast: boolean;
+  lastAtDepths: Set<number>;
   activePath: string | null;
   onFileClick: (path: string) => void;
   onNewFile: (parentPath: string, fileName: string) => Promise<void>;
@@ -144,6 +155,8 @@ interface FileTreeItemProps {
 function FileTreeItem({
   node,
   depth,
+  isLast,
+  lastAtDepths,
   activePath,
   onFileClick,
   onNewFile,
@@ -181,27 +194,85 @@ function FileTreeItem({
   const isActive = activePath === node.path;
 
   if (node.isDir) {
+    const childLastAtDepths = new Set(lastAtDepths);
+    if (isLast) childLastAtDepths.add(depth);
+
     return (
       <Collapsible open={isOpen} onOpenChange={setIsOpen}>
         <ContextMenu>
           <ContextMenuTrigger asChild>
             <div>
-              <CollapsibleTrigger asChild>
-                <button
-                  className="flex w-full items-center gap-1 rounded px-2 py-1 text-left text-xs hover:bg-muted/50"
-                  style={{ paddingLeft: `${8 + depth * 14}px` }}
-                >
-                  <ChevronRight
-                    className={`h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform ${isOpen ? 'rotate-90' : ''}`}
+              {isRenaming ? (
+                <div className="flex items-center py-0.5">
+                  {/* Guide columns for rename mode */}
+                  {Array.from({ length: depth + 1 }).map((_, d) => (
+                    <div key={d} className="relative shrink-0" style={{ width: 14, height: 24 }}>
+                      {d < depth && !lastAtDepths.has(d) && (
+                        <div className="absolute inset-0 border-r border-border" />
+                      )}
+                      {d === depth && depth > 0 && (
+                        <>
+                          <div className="absolute border-t border-border" style={{ left: '50%', right: 0, top: '50%' }} />
+                          <div className="absolute border-r border-border" style={{ left: '50%', top: 0, height: '50%' }} />
+                          {!isLast && (
+                            <div className="absolute border-r border-border" style={{ left: '50%', top: '50%', bottom: 0 }} />
+                          )}
+                        </>
+                      )}
+                      {d === depth && depth === 0 && !isLast && (
+                        <div className="absolute inset-0 border-r border-border" />
+                      )}
+                    </div>
+                  ))}
+                  <Input
+                    className="h-6 flex-1 text-xs"
+                    value={renameValue}
+                    onChange={(e) => setRenameValue(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') handleRenameSubmit();
+                      if (e.key === 'Escape') setIsRenaming(false);
+                    }}
+                    onBlur={handleRenameSubmit}
+                    autoFocus
                   />
-                  {isOpen ? (
-                    <FolderOpen className="h-3.5 w-3.5 shrink-0 text-amber-500" />
-                  ) : (
-                    <Folder className="h-3.5 w-3.5 shrink-0 text-amber-500" />
-                  )}
-                  <span className="truncate font-medium">{node.name}</span>
-                </button>
-              </CollapsibleTrigger>
+                </div>
+              ) : (
+                <CollapsibleTrigger asChild>
+                  <button
+                    className="flex w-full items-center gap-1 rounded px-2 py-1 text-left text-xs hover:bg-muted/50"
+                  >
+                    {/* Tree guide columns */}
+                    {Array.from({ length: depth + 1 }).map((_, d) => (
+                      <div key={d} className="relative shrink-0" style={{ width: 14, height: 24 }}>
+                        {d < depth && !lastAtDepths.has(d) && (
+                          <div className="absolute inset-0 border-r border-border" />
+                        )}
+                        {d === depth && depth > 0 && (
+                          <>
+                            <div className="absolute border-t border-border" style={{ left: '50%', right: 0, top: '50%' }} />
+                            <div className="absolute border-r border-border" style={{ left: '50%', top: 0, height: '50%' }} />
+                            {!isLast && (
+                              <div className="absolute border-r border-border" style={{ left: '50%', top: '50%', bottom: 0 }} />
+                            )}
+                          </>
+                        )}
+                        {d === depth && depth === 0 && !isLast && (
+                          <div className="absolute inset-0 border-r border-border" />
+                        )}
+                      </div>
+                    ))}
+                    <ChevronRight
+                      className={`h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform ${isOpen ? 'rotate-90' : ''}`}
+                    />
+                    {isOpen ? (
+                      <FolderOpen className="h-3.5 w-3.5 shrink-0 text-amber-500" />
+                    ) : (
+                      <Folder className="h-3.5 w-3.5 shrink-0 text-amber-500" />
+                    )}
+                    <span className="truncate font-medium">{node.name}</span>
+                  </button>
+                </CollapsibleTrigger>
+              )}
             </div>
           </ContextMenuTrigger>
           <ContextMenuContent className="w-40">
@@ -228,35 +299,48 @@ function FileTreeItem({
           </ContextMenuContent>
         </ContextMenu>
         <CollapsibleContent>
-          {createMode !== null && (
-            <div className="py-1" style={{ paddingLeft: `${8 + (depth + 1) * 14}px` }}>
-              <Input
-                className="h-6 text-xs"
-                placeholder={createMode === 'file' ? 'filename' : 'folder name'}
-                value={createValue}
-                onChange={(e) => setCreateValue(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') handleCreateSubmit();
-                  if (e.key === 'Escape') setCreateMode(null);
-                }}
-                onBlur={handleCreateSubmit}
-                autoFocus
+          <div className="relative">
+            {!isLast && (
+              <div
+                className="absolute border-l border-border top-0 bottom-0"
+                style={{ left: `${depth * 14 + 7}px` }}
               />
-            </div>
-          )}
-          {node.children.map((child) => (
-            <FileTreeItem
-              key={child.path}
-              node={child}
-              depth={depth + 1}
-              activePath={activePath}
-              onFileClick={onFileClick}
-              onNewFile={onNewFile}
-              onNewFolder={onNewFolder}
-              onDeleteFile={onDeleteFile}
-              onRenameFile={onRenameFile}
-            />
-          ))}
+            )}
+            {createMode !== null && (
+              <div className="py-1" style={{ paddingLeft: `${8 + (depth + 1) * 14}px` }}>
+                <Input
+                  className="h-6 text-xs"
+                  placeholder={createMode === 'file' ? 'filename' : 'folder name'}
+                  value={createValue}
+                  onChange={(e) => setCreateValue(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleCreateSubmit();
+                    if (e.key === 'Escape') setCreateMode(null);
+                  }}
+                  onBlur={handleCreateSubmit}
+                  autoFocus
+                />
+              </div>
+            )}
+            {sortTreeChildren(node.children).map((child, index) => {
+              const sortedChildren = sortTreeChildren(node.children);
+              return (
+                <FileTreeItem
+                  key={child.path}
+                  node={child}
+                  depth={depth + 1}
+                  isLast={index === sortedChildren.length - 1}
+                  lastAtDepths={childLastAtDepths}
+                  activePath={activePath}
+                  onFileClick={onFileClick}
+                  onNewFile={onNewFile}
+                  onNewFolder={onNewFolder}
+                  onDeleteFile={onDeleteFile}
+                  onRenameFile={onRenameFile}
+                />
+              );
+            })}
+          </div>
         </CollapsibleContent>
       </Collapsible>
     );
@@ -268,9 +352,29 @@ function FileTreeItem({
       <ContextMenuTrigger asChild>
         <div>
           {isRenaming ? (
-            <div style={{ paddingLeft: `${8 + depth * 14}px` }} className="py-0.5">
+            <div className="flex items-center py-0.5">
+              {/* Guide columns for rename mode */}
+              {Array.from({ length: depth + 1 }).map((_, d) => (
+                <div key={d} className="relative shrink-0" style={{ width: 14, height: 24 }}>
+                  {d < depth && !lastAtDepths.has(d) && (
+                    <div className="absolute inset-0 border-r border-border" />
+                  )}
+                  {d === depth && depth > 0 && (
+                    <>
+                      <div className="absolute border-t border-border" style={{ left: '50%', right: 0, top: '50%' }} />
+                      <div className="absolute border-r border-border" style={{ left: '50%', top: 0, height: '50%' }} />
+                      {!isLast && (
+                        <div className="absolute border-r border-border" style={{ left: '50%', top: '50%', bottom: 0 }} />
+                      )}
+                    </>
+                  )}
+                  {d === depth && depth === 0 && !isLast && (
+                    <div className="absolute inset-0 border-r border-border" />
+                  )}
+                </div>
+              ))}
               <Input
-                className="h-6 text-xs"
+                className="h-6 flex-1 text-xs"
                 value={renameValue}
                 onChange={(e) => setRenameValue(e.target.value)}
                 onKeyDown={(e) => {
@@ -286,9 +390,28 @@ function FileTreeItem({
               className={`flex w-full items-center gap-1 rounded px-2 py-1 text-left text-xs hover:bg-muted/50 ${
                 isActive ? 'bg-primary/10 text-primary' : ''
               }`}
-              style={{ paddingLeft: `${8 + depth * 14}px` }}
               onClick={() => onFileClick(node.path)}
             >
+              {/* Tree guide columns */}
+              {Array.from({ length: depth + 1 }).map((_, d) => (
+                <div key={d} className="relative shrink-0" style={{ width: 14, height: 24 }}>
+                  {d < depth && !lastAtDepths.has(d) && (
+                    <div className="absolute inset-0 border-r border-border" />
+                  )}
+                  {d === depth && depth > 0 && (
+                    <>
+                      <div className="absolute border-t border-border" style={{ left: '50%', right: 0, top: '50%' }} />
+                      <div className="absolute border-r border-border" style={{ left: '50%', top: 0, height: '50%' }} />
+                      {!isLast && (
+                        <div className="absolute border-r border-border" style={{ left: '50%', top: '50%', bottom: 0 }} />
+                      )}
+                    </>
+                  )}
+                  {d === depth && depth === 0 && !isLast && (
+                    <div className="absolute inset-0 border-r border-border" />
+                  )}
+                </div>
+              ))}
               <FileCode className="h-3.5 w-3.5 shrink-0 text-blue-400" />
               <span className="truncate">{node.name}</span>
             </button>

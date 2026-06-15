@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Pause, Play, X, Trash2, Search } from 'lucide-react';
+import { Pause, Play, X, Search, Trash } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
@@ -80,14 +80,14 @@ export function LogFilters({
         <div className='relative flex items-center w-full'>
           <Search className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
 
-        <Input
-          placeholder="Search URL, host, method, body..."
-          value={filter.search}
-          onChange={(e) => storeSetSearch(e.target.value)}
-          className="pl-8 flex-1 w-full shadow-none bg-background"
-        />
+          <Input
+            placeholder="Search URL, host, method, body..."
+            value={filter.search}
+            onChange={(e) => storeSetSearch(e.target.value)}
+            className="pl-8 flex-1 w-full shadow-none bg-background"
+          />
         </div>
-        
+
         {hasActiveFilters && (
           <Button variant="destructive" size="xs" onClick={clearFilters}>
             <X className="h-4 w-4 mr-1" />
@@ -126,11 +126,13 @@ export function LogFilters({
         )}
       </div>
 
-      <div className="flex items-center justify-end gap-4">
+      <div className="flex items-center justify-between gap-4">
+        <Button variant="ghost" size="xs" onClick={() => setClearDialogOpen(true)} className='text-xs !text-red-500 text-muted-foreground'>
+          <Trash className="size-3 mb-0.5" />
+          Clear All History
+        </Button>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-
-
             <div className="flex items-center gap-2">
               <span className="text-xs text-muted-foreground">Method:</span>
               <ToggleGroup
@@ -170,11 +172,7 @@ export function LogFilters({
                 ))}
               </ToggleGroup>
             </div>
-            <p className='text-muted-foreground'>|</p>
-            <Button variant="outline" size="xs" onClick={() => setClearDialogOpen(true)} className='text-xs text-muted-foreground'>
-              <Trash2 className="h-3 w-3" />
-              Clear All
-            </Button>
+
           </div>
         </div>
       </div>
@@ -182,14 +180,14 @@ export function LogFilters({
       <AlertDialog open={clearDialogOpen} onOpenChange={setClearDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Clear All Logs?</AlertDialogTitle>
+            <AlertDialogTitle>Clear All History ?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete all logged HTTP requests and responses. This action cannot be undone.
+              This will permanently delete all logged history requests and responses. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={clearCalls}>Clear All</AlertDialogAction>
+            <AlertDialogAction variant="destructive" onClick={clearCalls}>Clear All</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

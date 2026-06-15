@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
-import { AlertTriangle, SquareFunction, GripVertical } from 'lucide-react';
+import { AlertTriangle, SquareFunction, Grip } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   Tooltip,
@@ -67,11 +67,12 @@ function ConditionNodeComponent({ id, data, selected }: NodeProps) {
       />
 
       <div className="flex items-center gap-2 px-3 py-2.5">
-        <div className={cn('flex size-7 items-center justify-center rounded-lg', CATEGORY_ICON_BG.condition)}>
+        <Grip className="size-3.5 shrink-0 text-muted-foreground/30 opacity-80 group-hover:opacity-100 transition-opacity" />
+        <div className={cn('flex size-7 items-center justify-center rounded-md', CATEGORY_ICON_BG.condition)}>
           <SquareFunction className={cn('size-3.5', CATEGORY_ICON_TEXT.condition)} />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-xs font-semibold">{nodeData.label}</p>
+          <p className="truncate text-xs">{nodeData.label}</p>
           <p className="truncate text-[10px] text-muted-foreground">Condition</p>
         </div>
         {warning && (
@@ -84,7 +85,6 @@ function ConditionNodeComponent({ id, data, selected }: NodeProps) {
           <NodeCapabilityBadge reason={capability.reason} />
         )}
         <NodeCardMenu nodeId={id} nodeLabel={nodeData.label} />
-        <GripVertical className="size-3.5 shrink-0 text-muted-foreground/30 opacity-0 group-hover:opacity-100 transition-opacity" />
       </div>
 
       {config && (

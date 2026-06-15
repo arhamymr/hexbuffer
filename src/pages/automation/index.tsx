@@ -144,7 +144,6 @@ export function AutomationPage() {
                       <div className="h-full min-h-0">
                         <ExecutionLogPanel
                           workflowId={activeWorkflowId || null}
-                          onHide={() => setShowExecutionLog(false)}
                         />
                       </div>
                     </ResizablePanel>

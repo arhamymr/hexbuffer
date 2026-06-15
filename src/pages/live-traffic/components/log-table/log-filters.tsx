@@ -76,24 +76,17 @@ export function LogFilters({
   return (
     <div className="space-y-1 p-1 bg-muted">
       <div className="relative flex items-center gap-2">
-        <TargetSelectorDialog />
         <div className='relative flex items-center w-full'>
           <Search className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-
           <Input
             placeholder="Search URL, host, method, body..."
             value={filter.search}
             onChange={(e) => storeSetSearch(e.target.value)}
-            className="pl-8 flex-1 w-full shadow-none bg-background"
+            className="pl-8 h-6 flex-1 w-full shadow-none bg-background"
           />
         </div>
 
-        {hasActiveFilters && (
-          <Button variant="destructive" size="xs" onClick={clearFilters}>
-            <X className="h-4 w-4 mr-1" />
-            Clear
-          </Button>
-        )}
+        
 
         <ToggleGroup
           type="single"
@@ -111,19 +104,18 @@ export function LogFilters({
         {historyMode === 'http' && (
           <Button
             variant={isStreamManuallyPaused ? 'default' : 'outline'}
-            size="xs"
             onClick={() => setStreamManuallyPaused(!isStreamManuallyPaused)}
-            className="text-xs"
             title={isStreamManuallyPaused ? 'Resume live HTTP updates' : 'Pause live HTTP updates'}
           >
             {isStreamManuallyPaused ? (
-              <Play className="h-3 w-3" />
+              <Play className="size-3" />
             ) : (
-              <Pause className="h-3 w-3" />
+              <Pause className="size-3" />
             )}
             {isStreamManuallyPaused ? 'Resume' : 'Pause'}
           </Button>
         )}
+         <TargetSelectorDialog />
       </div>
 
       <div className="flex items-center justify-between gap-4">
@@ -134,6 +126,7 @@ export function LogFilters({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-2">
+             
               <span className="text-xs text-muted-foreground">Method:</span>
               <ToggleGroup
                 type="multiple"
@@ -172,7 +165,12 @@ export function LogFilters({
                 ))}
               </ToggleGroup>
             </div>
-
+ {hasActiveFilters && (
+                <Button variant="destructive" className='h-6' size="xs" onClick={clearFilters}>
+                  <X className="h-4 w-4 mr-1" />
+                  Clear
+                </Button>
+              )}
           </div>
         </div>
       </div>

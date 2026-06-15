@@ -125,11 +125,12 @@ function TriggerNodeComponent({ id, data, selected }: NodeProps) {
           <p className="truncate text-[10px] text-muted-foreground">Trigger</p>
         </div>
         {warning && (
-          <AlertTriangle
-            className={cn('shrink-0 text-amber-500', triggerNeedsHost ? 'size-5' : 'size-3.5')}
-            aria-label={warning}
-            title={warning}
-          />
+          <span title={warning}>
+            <AlertTriangle
+              className={cn('shrink-0 text-amber-500', triggerNeedsHost ? 'size-5' : 'size-3.5')}
+              aria-label={warning}
+            />
+          </span>
         )}
         {!capability.supported && capability.reason && (
           <NodeCapabilityBadge reason={capability.reason} />

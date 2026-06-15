@@ -203,27 +203,7 @@ function FileTreeItem({
           <ContextMenuTrigger asChild>
             <div>
               {isRenaming ? (
-                <div className="flex items-center py-0.5">
-                  {/* Guide columns for rename mode */}
-                  {Array.from({ length: depth + 1 }).map((_, d) => (
-                    <div key={d} className="relative shrink-0" style={{ width: 14, height: 24 }}>
-                      {d < depth && !lastAtDepths.has(d) && (
-                        <div className="absolute inset-0 border-r border-border" />
-                      )}
-                      {d === depth && depth > 0 && (
-                        <>
-                          <div className="absolute border-t border-border" style={{ left: '50%', right: 0, top: '50%' }} />
-                          <div className="absolute border-r border-border" style={{ left: '50%', top: 0, height: '50%' }} />
-                          {!isLast && (
-                            <div className="absolute border-r border-border" style={{ left: '50%', top: '50%', bottom: 0 }} />
-                          )}
-                        </>
-                      )}
-                      {d === depth && depth === 0 && !isLast && (
-                        <div className="absolute inset-0 border-r border-border" />
-                      )}
-                    </div>
-                  ))}
+                <div className="flex items-center py-0.5" style={{ paddingLeft: `${depth * 14 + 8}px` }}>
                   <Input
                     className="h-6 flex-1 text-xs"
                     value={renameValue}
@@ -240,27 +220,8 @@ function FileTreeItem({
                 <CollapsibleTrigger asChild>
                   <button
                     className="flex w-full items-center gap-1 rounded px-2 py-1 text-left text-xs hover:bg-muted/50"
+                    style={{ paddingLeft: `${depth * 14 + 8}px` }}
                   >
-                    {/* Tree guide columns */}
-                    {Array.from({ length: depth + 1 }).map((_, d) => (
-                      <div key={d} className="relative shrink-0" style={{ width: 14, height: 24 }}>
-                        {d < depth && !lastAtDepths.has(d) && (
-                          <div className="absolute inset-0 border-r border-border" />
-                        )}
-                        {d === depth && depth > 0 && (
-                          <>
-                            <div className="absolute border-t border-border" style={{ left: '50%', right: 0, top: '50%' }} />
-                            <div className="absolute border-r border-border" style={{ left: '50%', top: 0, height: '50%' }} />
-                            {!isLast && (
-                              <div className="absolute border-r border-border" style={{ left: '50%', top: '50%', bottom: 0 }} />
-                            )}
-                          </>
-                        )}
-                        {d === depth && depth === 0 && !isLast && (
-                          <div className="absolute inset-0 border-r border-border" />
-                        )}
-                      </div>
-                    ))}
                     <ChevronRight
                       className={`h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform ${isOpen ? 'rotate-90' : ''}`}
                     />
@@ -299,13 +260,7 @@ function FileTreeItem({
           </ContextMenuContent>
         </ContextMenu>
         <CollapsibleContent>
-          <div className="relative">
-            {!isLast && (
-              <div
-                className="absolute border-l border-border top-0 bottom-0"
-                style={{ left: `${depth * 14 + 7}px` }}
-              />
-            )}
+          <div>
             {createMode !== null && (
               <div className="py-1" style={{ paddingLeft: `${8 + (depth + 1) * 14}px` }}>
                 <Input
@@ -352,27 +307,7 @@ function FileTreeItem({
       <ContextMenuTrigger asChild>
         <div>
           {isRenaming ? (
-            <div className="flex items-center py-0.5">
-              {/* Guide columns for rename mode */}
-              {Array.from({ length: depth + 1 }).map((_, d) => (
-                <div key={d} className="relative shrink-0" style={{ width: 14, height: 24 }}>
-                  {d < depth && !lastAtDepths.has(d) && (
-                    <div className="absolute inset-0 border-r border-border" />
-                  )}
-                  {d === depth && depth > 0 && (
-                    <>
-                      <div className="absolute border-t border-border" style={{ left: '50%', right: 0, top: '50%' }} />
-                      <div className="absolute border-r border-border" style={{ left: '50%', top: 0, height: '50%' }} />
-                      {!isLast && (
-                        <div className="absolute border-r border-border" style={{ left: '50%', top: '50%', bottom: 0 }} />
-                      )}
-                    </>
-                  )}
-                  {d === depth && depth === 0 && !isLast && (
-                    <div className="absolute inset-0 border-r border-border" />
-                  )}
-                </div>
-              ))}
+            <div className="flex items-center py-0.5" style={{ paddingLeft: `${depth * 14 + 8}px` }}>
               <Input
                 className="h-6 flex-1 text-xs"
                 value={renameValue}
@@ -390,28 +325,9 @@ function FileTreeItem({
               className={`flex w-full items-center gap-1 rounded px-2 py-1 text-left text-xs hover:bg-muted/50 ${
                 isActive ? 'bg-primary/10 text-primary' : ''
               }`}
+              style={{ paddingLeft: `${depth * 14 + 8}px` }}
               onClick={() => onFileClick(node.path)}
             >
-              {/* Tree guide columns */}
-              {Array.from({ length: depth + 1 }).map((_, d) => (
-                <div key={d} className="relative shrink-0" style={{ width: 14, height: 24 }}>
-                  {d < depth && !lastAtDepths.has(d) && (
-                    <div className="absolute inset-0 border-r border-border" />
-                  )}
-                  {d === depth && depth > 0 && (
-                    <>
-                      <div className="absolute border-t border-border" style={{ left: '50%', right: 0, top: '50%' }} />
-                      <div className="absolute border-r border-border" style={{ left: '50%', top: 0, height: '50%' }} />
-                      {!isLast && (
-                        <div className="absolute border-r border-border" style={{ left: '50%', top: '50%', bottom: 0 }} />
-                      )}
-                    </>
-                  )}
-                  {d === depth && depth === 0 && !isLast && (
-                    <div className="absolute inset-0 border-r border-border" />
-                  )}
-                </div>
-              ))}
               <FileCode className="h-3.5 w-3.5 shrink-0 text-blue-400" />
               <span className="truncate">{node.name}</span>
             </button>

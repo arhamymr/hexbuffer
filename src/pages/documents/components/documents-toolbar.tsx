@@ -1,8 +1,10 @@
 import { Download, Redo2, Undo2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { ButtonGroup } from '@/components/ui/button-group';
 import { Input } from '@/components/ui/input';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { type MarkdownEditorMode, type ReconDocument } from '../types';
+import { Separator } from '@/components/ui/separator';
 
 interface DocumentsToolbarProps {
   activeDocument: ReconDocument;
@@ -36,42 +38,47 @@ export function DocumentsToolbar({
   onTitleChange,
 }: DocumentsToolbarProps) {
   return (
-    <div className="flex bg-muted shrink-0 items-center gap-3 border-b bg-background p-2">
+    <div className="flex justify-between bg-muted shrink-0 items-center gap-3 border-b bg-background p-1">
       <Input
         value={activeDocument.title}
         onChange={(event) => onTitleChange(event.target.value)}
         placeholder="Untitled recon document"
         className="h-7 max-w-72 border-transparent px-2 text-xs font-medium"
       />
-      <div className="min-w-0 flex-1 truncate font-mono text-[12px] text-muted-foreground">
-        documents / {activeFileName}
-      </div>
-      {canPreviewMarkdown && (
+      <div className='flex items-center gap-2'>
+  {canPreviewMarkdown && (
         <div className="flex items-center gap-1">
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-sm"
-            className="size-7"
-            aria-label="Undo"
-            title="Undo"
-            disabled={!canUndoMarkdown}
-            onClick={onUndoMarkdown}
-          >
-            <Undo2 className="size-4" />
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-sm"
-            className="size-7"
-            aria-label="Redo"
-            title="Redo"
-            disabled={!canRedoMarkdown}
-            onClick={onRedoMarkdown}
-          >
-            <Redo2 className="size-4" />
-          </Button>
+          {markdownMode === 'code' &&
+
+            <>
+              <ButtonGroup>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon-sm"
+                  className="size-7"
+                  aria-label="Undo"
+                  title="Undo"
+                  disabled={!canUndoMarkdown}
+                  onClick={onUndoMarkdown}
+                >
+                  <Undo2 className="size-4" />
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon-sm"
+                  className="size-7"
+                  aria-label="Redo"
+                  title="Redo"
+                  disabled={!canRedoMarkdown}
+                  onClick={onRedoMarkdown}
+                >
+                  <Redo2 className="size-4" />
+                </Button>
+              </ButtonGroup>
+            </>}
+
           <ToggleGroup
             type="single"
             value={markdownMode}
@@ -80,7 +87,7 @@ export function DocumentsToolbar({
                 onMarkdownModeChange(value);
               }
             }}
-            className="rounded border bg-background"
+            className="border rounded-sm bg-background h-7 overflow-hidden"
           >
             <ToggleGroupItem value="markdown" size="sm" className="text-[11px]">
               Markdown
@@ -103,6 +110,8 @@ export function DocumentsToolbar({
         <Download className="size-4" />
         {exporting ? 'Exporting' : 'PDF'}
       </Button>
+      </div>
+    
     </div>
   );
 }

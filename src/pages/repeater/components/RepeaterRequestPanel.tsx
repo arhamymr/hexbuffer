@@ -28,7 +28,7 @@ export function RepeaterRequestPanel({
           ) : (
             <Play className="h-4 w-4" />
           )}
-          SEND
+          Send
         </Button>
       </div>
 
@@ -38,7 +38,6 @@ export function RepeaterRequestPanel({
         </Label>
         <div className="flex-1 min-h-0 overflow-hidden rounded-md border">
           <TextEditor
-            language="javascript"
             value={rawRequest}
             onChange={(value) => onRawRequestChange(value ?? '')}
           />

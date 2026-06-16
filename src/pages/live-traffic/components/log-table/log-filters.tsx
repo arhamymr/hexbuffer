@@ -22,6 +22,7 @@ import { useHistoryQueryStore } from '@/pages/live-traffic/state/history-query-s
 import { useShallow } from 'zustand/react/shallow';
 import type { HistoryMode } from '@/pages/live-traffic/hooks/use-http-history-page';
 import { TargetSelectorDialog } from '../target-selector';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface LogFiltersProps {
   filter?: HistoryFilterState;
@@ -86,7 +87,7 @@ export function LogFilters({
           />
         </div>
 
-        
+
 
         <ToggleGroup
           type="single"
@@ -97,7 +98,18 @@ export function LogFilters({
           className="ml-auto bg-background cursor-pointer"
         >
           <ToggleGroupItem value="http">HTTP</ToggleGroupItem>
-          <ToggleGroupItem value="websocket" disabled>WebSocket</ToggleGroupItem>
+          <ToggleGroupItem value="grpc">
+            <Tooltip >
+              <TooltipTrigger>
+                  WebSocket
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Websocket not available</p>
+              </TooltipContent>
+            </Tooltip>
+          </ToggleGroupItem>
+
+
         </ToggleGroup>
 
 
@@ -115,7 +127,7 @@ export function LogFilters({
             {isStreamManuallyPaused ? 'Resume' : 'Pause'}
           </Button>
         )}
-         <TargetSelectorDialog />
+        <TargetSelectorDialog />
       </div>
 
       <div className="flex items-center justify-between gap-4">
@@ -126,7 +138,7 @@ export function LogFilters({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-2">
-             
+
               <span className="text-xs text-muted-foreground">Method:</span>
               <ToggleGroup
                 type="multiple"
@@ -165,12 +177,12 @@ export function LogFilters({
                 ))}
               </ToggleGroup>
             </div>
- {hasActiveFilters && (
-                <Button variant="destructive" className='h-6' size="xs" onClick={clearFilters}>
-                  <X className="h-4 w-4 mr-1" />
-                  Clear
-                </Button>
-              )}
+            {hasActiveFilters && (
+              <Button variant="destructive" className='h-6' size="xs" onClick={clearFilters}>
+                <X className="h-4 w-4 mr-1" />
+                Clear
+              </Button>
+            )}
           </div>
         </div>
       </div>

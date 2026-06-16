@@ -20,7 +20,7 @@ import { useDocumentsPage } from './hooks/use-documents-page';
 import { type MarkdownEditorMode } from './types';
 
 export function DocumentsPage() {
-  const [markdownMode, setMarkdownMode] = React.useState<MarkdownEditorMode>('markdown');
+  const [markdownMode, setMarkdownMode] = React.useState<MarkdownEditorMode>('code');
   const {
     tabs,
     activeDocumentId,
@@ -58,7 +58,6 @@ export function DocumentsPage() {
     activeApiEntry,
     activeCustomSection,
     activeLabel,
-    activeFileName,
     isCustomSectionFile,
     documentPendingDelete,
     documentIdPendingDelete,
@@ -93,13 +92,11 @@ export function DocumentsPage() {
         <div className="flex h-full min-h-0 flex-col">
           <DocumentsToolbar
             activeDocument={activeDocument}
-            activeFileName={activeFileName}
             exporting={exporting}
             canPreviewMarkdown={isCustomSectionFile}
             markdownMode={markdownMode}
             canUndoMarkdown={isCustomSectionFile && canUndoCustomSection}
             canRedoMarkdown={isCustomSectionFile && canRedoCustomSection}
-            onNewDocument={openTemplateDialog}
             onExportPdf={handleExportPdf}
             onMarkdownModeChange={setMarkdownMode}
             onUndoMarkdown={undoCustomSectionChange}

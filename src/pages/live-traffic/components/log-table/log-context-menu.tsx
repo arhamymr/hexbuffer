@@ -270,52 +270,52 @@ export const LogEntryContextMenu = memo(function LogEntryContextMenu({
       <ContextMenuTrigger asChild>
         {children}
       </ContextMenuTrigger>
-      <ContextMenuContent>
-        <ContextMenuItem onClick={handleCopyCurlCommand} className='text-xs'>
-          <Copy className="mr-2 size-3" /> Copy as curl command (bash)
+      <ContextMenuContent className="p-0.5">
+        <ContextMenuItem onClick={handleCopyCurlCommand} className='text-xs py-1 px-1.5'>
+          <Copy className="mr-1.5 size-3" /> Copy as curl command (bash)
         </ContextMenuItem>
-        <ContextMenuItem onClick={handleCopyUrl} className='text-xs'>
-          <Copy className="mr-2 size-3" /> Copy URL
+        <ContextMenuItem onClick={handleCopyUrl} className='text-xs py-1 px-1.5'>
+          <Copy className="mr-1.5 size-3" /> Copy URL
         </ContextMenuItem>
         <ContextMenuSeparator />
-        <ContextMenuItem onClick={handleTogglePin} className='text-xs'>
+        <ContextMenuItem onClick={handleTogglePin} className='text-xs py-1 px-1.5'>
           {pinned
-            ? <><PinOff className="mr-2 size-3" /> Unpin</>
-            : <><Pin className="mr-2 size-3" /> Pin</>
+            ? <><PinOff className="mr-1.5 size-3" /> Unpin</>
+            : <><Pin className="mr-1.5 size-3" /> Pin</>
           }
         </ContextMenuItem>
         <ContextMenuSeparator />
         {groups.length === 0 ? (
-          <ContextMenuItem onClick={handleQuickAddToGroup} className='text-xs'>
-            <Plus className="mr-2 size-3" /> Add to Group
+          <ContextMenuItem onClick={handleQuickAddToGroup} className='text-xs py-1 px-1.5'>
+            <Plus className="mr-1.5 size-3" /> Add to Group
           </ContextMenuItem>
         ) : (
           <ContextMenuSub>
-            <ContextMenuSubTrigger className='text-xs'>
-              <Plus className="mr-2 size-3" /> Add to Group
+            <ContextMenuSubTrigger className='text-xs py-1 px-1.5'>
+              <Plus className="mr-1.5 size-3" /> Add to Group
             </ContextMenuSubTrigger>
             <ContextMenuSubContent>
               {groups.map((g) => (
                 <ContextMenuItem
                   key={g.id}
-                  className='text-xs'
+                  className='text-xs py-1 px-1.5'
                   onClick={() => addRequestToGroup(g.id, call)}
                 >
-                  <span className="mr-2 size-1.5 rounded-full" style={{ backgroundColor: g.color }} />
+                  <span className="mr-1.5 size-1.5 rounded-full" style={{ backgroundColor: g.color }} />
                   {g.name}
                   {requestGroupIds.includes(g.id) && <span className="ml-auto text-muted-foreground">✓</span>}
                 </ContextMenuItem>
               ))}
               <ContextMenuSeparator />
-              <ContextMenuItem className='text-xs' onClick={() => onNewGroup?.(call)}>
-                <Plus className="mr-2 size-3" /> New Group…
+              <ContextMenuItem className='text-xs py-1 px-1.5' onClick={() => onNewGroup?.(call)}>
+                <Plus className="mr-1.5 size-3" /> New Group…
               </ContextMenuItem>
             </ContextMenuSubContent>
           </ContextMenuSub>
         )}
         {requestGroupIds.length > 0 && (
           <ContextMenuSub>
-            <ContextMenuSubTrigger className='text-xs'>
+            <ContextMenuSubTrigger className='text-xs py-1 px-1.5'>
               Remove from Group
             </ContextMenuSubTrigger>
             <ContextMenuSubContent>
@@ -325,10 +325,10 @@ export const LogEntryContextMenu = memo(function LogEntryContextMenu({
                 return (
                   <ContextMenuItem
                     key={g.id}
-                    className='text-xs'
+                    className='text-xs py-1 px-1.5'
                     onClick={() => removeRequestFromGroup(g.id, call.id)}
                   >
-                    <span className="mr-2 size-1.5 rounded-full" style={{ backgroundColor: g.color }} />
+                    <span className="mr-1.5 size-1.5 rounded-full" style={{ backgroundColor: g.color }} />
                     {g.name}
                   </ContextMenuItem>
                 );
@@ -337,30 +337,30 @@ export const LogEntryContextMenu = memo(function LogEntryContextMenu({
           </ContextMenuSub>
         )}
         <ContextMenuSeparator />
-        <ContextMenuItem onClick={handleAddToScope} className='text-xs'>
-          <Plus className="mr-2 size-3" /> Add to Target
+        <ContextMenuItem onClick={handleAddToScope} className='text-xs py-1 px-1.5'>
+          <Plus className="mr-1.5 size-3" /> Add to Target
         </ContextMenuItem>
-        <ContextMenuItem onClick={handleOpenInInvoker} className='text-xs'>
-          <Send className="mr-2 size-3" /> Send to Invoker
+        <ContextMenuItem onClick={handleOpenInInvoker} className='text-xs py-1 px-1.5'>
+          <Send className="mr-1.5 size-3" /> Send to Invoker
         </ContextMenuItem>
-        <ContextMenuItem onClick={handleOpenInRepeater} className='text-xs'>
-          <Send className="mr-2 size-3" /> Send to Repeater
+        <ContextMenuItem onClick={handleOpenInRepeater} className='text-xs py-1 px-1.5'>
+          <Send className="mr-1.5 size-3" /> Send to Repeater
         </ContextMenuItem>
-        <ContextMenuItem onClick={handleSendToIntercept} className='text-xs'>
-          <Send className="mr-2 size-3" /> Send to Intercept
+        <ContextMenuItem onClick={handleSendToIntercept} className='text-xs py-1 px-1.5'>
+          <Send className="mr-1.5 size-3" /> Send to Intercept
         </ContextMenuItem>
-        <ContextMenuItem onClick={handleOpenInBrowserAutomation} className='text-xs'>
-          <Send className="mr-2 size-3" /> Send to Automate Browser
+        <ContextMenuItem onClick={handleOpenInBrowserAutomation} className='text-xs py-1 px-1.5'>
+          <Send className="mr-1.5 size-3" /> Send to Automate Browser
         </ContextMenuItem>
         {/* <ContextMenuItem onClick={handleOpenInPromptInjection} className='text-xs'>
           <Bot className="mr-2 size-4" /> Open in Prompt Injection
         </ContextMenuItem> */}
-        <ContextMenuItem onClick={handleSaveToDocuments} className='text-xs'>
-          <FilePlus2 className="mr-2 size-4" /> Save to Documents
+        <ContextMenuItem onClick={handleSaveToDocuments} className='text-xs py-1 px-1.5'>
+          <FilePlus2 className="mr-1.5 size-3" /> Save to Documents
         </ContextMenuItem>
         <ContextMenuSeparator />
-        <ContextMenuItem onClick={handleDelete} variant="destructive" className='text-xs'>
-          <Trash2 className="mr-2 size-3" /> Delete
+        <ContextMenuItem onClick={handleDelete} variant="destructive" className='text-xs py-1 px-1.5'>
+          <Trash2 className="mr-1.5 size-3" /> Delete
         </ContextMenuItem>
       </ContextMenuContent>
     </ContextMenu>

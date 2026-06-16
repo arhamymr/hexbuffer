@@ -240,7 +240,6 @@ export function PageDetailPanel({ page, searchQuery = '' }: PageDetailPanelProps
               <TabsContent value="source" className="flex-1 min-h-0">
                 <TextEditor
                   value={htmlContent ?? ''}
-                  language="html"
                   options={{ readOnly: true }}
                 />
               </TabsContent>

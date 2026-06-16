@@ -337,6 +337,9 @@ else
     echo "Installing dependencies..."
     pnpm install
 
+    # Ensure Windows target is available (needed by some dependencies even on non-Windows)
+    ensure_rust_target x86_64-pc-windows-msvc
+
     echo "Building Tauri desktop app..."
     pnpm tauri build --bundles "$BUNDLE_TYPES"
 

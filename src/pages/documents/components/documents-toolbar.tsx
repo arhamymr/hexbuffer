@@ -4,17 +4,14 @@ import { ButtonGroup } from '@/components/ui/button-group';
 import { Input } from '@/components/ui/input';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { type MarkdownEditorMode, type ReconDocument } from '../types';
-import { Separator } from '@/components/ui/separator';
 
 interface DocumentsToolbarProps {
   activeDocument: ReconDocument;
-  activeFileName: string;
   exporting: boolean;
   canPreviewMarkdown: boolean;
   markdownMode: MarkdownEditorMode;
   canUndoMarkdown: boolean;
   canRedoMarkdown: boolean;
-  onNewDocument: () => void;
   onExportPdf: () => void;
   onMarkdownModeChange: (mode: MarkdownEditorMode) => void;
   onUndoMarkdown: () => void;
@@ -24,13 +21,11 @@ interface DocumentsToolbarProps {
 
 export function DocumentsToolbar({
   activeDocument,
-  activeFileName,
   exporting,
   canPreviewMarkdown,
   markdownMode,
   canUndoMarkdown,
   canRedoMarkdown,
-  onNewDocument,
   onExportPdf,
   onMarkdownModeChange,
   onUndoMarkdown,

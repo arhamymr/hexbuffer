@@ -100,7 +100,6 @@ export function RepeaterResponsePanel({
         </Label>
         <div className="flex-1 min-h-0 overflow-hidden rounded-md border">
           <TextEditor
-            language="javascript"
             value={buildRawHttpResponse(response, { prettyJsonBody: true })}
             options={{ readOnly: false }}
           />

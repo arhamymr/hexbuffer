@@ -9,7 +9,6 @@ export function ApiFolderEditor({ document }: ApiFolderEditorProps) {
   return (
     <TextEditor
       path={`${document.id}/api.md`}
-      language="markdown"
       value={[
         '# api',
         '',

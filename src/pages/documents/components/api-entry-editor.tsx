@@ -68,7 +68,6 @@ export function ApiEntryEditor({
           <div className="min-h-0 flex-1">
             <TextEditor
               path={`${document.id}/api/${entry.id}.http`}
-              language="plaintext"
               value={rawRequest}
               onChange={(value) => {
                 const nextValue = value ?? '';
@@ -105,21 +104,18 @@ export function ApiEntryEditor({
             ) : error ? (
               <TextEditor
                 path={`${document.id}/api/${entry.id}.error.txt`}
-                language="plaintext"
                 value={error}
                 options={{ readOnly: true }}
               />
             ) : response ? (
               <TextEditor
                 path={`${document.id}/api/${entry.id}.response.http`}
-                language="html"
                 value={buildRawHttpResponse(response)}
                 options={{ readOnly: true }}
               />
             ) : (
               <TextEditor
                 path={`${document.id}/api/${entry.id}.response.txt`}
-                language="plaintext"
                 value="Fetch this saved API to view a fresh response."
                 options={{ readOnly: true }}
               />

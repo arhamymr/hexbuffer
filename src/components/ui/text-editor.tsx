@@ -6,26 +6,23 @@ import { EditorState, Compartment, Prec } from '@codemirror/state';
 import { EditorView, keymap } from '@codemirror/view';
 import { HighlightStyle, syntaxHighlighting } from '@codemirror/language';
 import { tags as t } from '@lezer/highlight';
-import { javascript } from '@codemirror/lang-javascript';
-import { html } from '@codemirror/lang-html';
-import { markdown } from '@codemirror/lang-markdown';
-import { cpp } from '@codemirror/lang-cpp';
-import { rust } from '@codemirror/lang-rust';
 import { useTheme } from '@/components/theme-provider';
 import type { Extension } from '@codemirror/state';
+import { javascript } from '@codemirror/lang-javascript';
 
 // ---------------------------------------------------------------------------
 // Theme definitions
 // ---------------------------------------------------------------------------
 
-const darkBaseTheme = EditorView.theme(
+const darkBase = EditorView.theme(
   {
     '&': { backgroundColor: 'oklch(23.639% 0.00479 145.683)', color: 'oklch(0.985 0 0)' },
+    '.cm-gutters': { backgroundColor: 'oklch(23.639% 0.00479 145.683)', color: '#7f848e', border: 'none' },
   },
   { dark: true },
 );
 
-const darkHighlightStyle = HighlightStyle.define([
+const darkHighlight = HighlightStyle.define([
   { tag: t.keyword, color: '#c678dd' },
   { tag: t.atom, color: '#d19a66' },
   { tag: t.number, color: '#d19a66' },
@@ -47,61 +44,48 @@ const darkHighlightStyle = HighlightStyle.define([
   { tag: t.attributeValue, color: '#98c379' },
 ]);
 
-const darkTheme: Extension = [darkBaseTheme, syntaxHighlighting(darkHighlightStyle)];
+const themeDark: Extension = [darkBase, Prec.highest(syntaxHighlighting(darkHighlight))];
 
-const lightBaseTheme = EditorView.theme(
+// ---------------------------------------------------------------------------
+
+const lightBase = EditorView.theme(
   {
-    '&': { backgroundColor: '#ffffff', color: '#000000' },
+    '&': { backgroundColor: '#ffffffff', color: '#000000ff' },
+    '.cm-gutters': { backgroundColor: '#f0efefff', color: '#6c6c6cff', border: 'none' },
+
+    '.cm-cursor': { borderLeftColor: '#528bff' },
+    // '&.cm-focused .cm-selectionBackground, .cm-selectionBackground': { backgroundColor: '#3e4451' },
   },
   { dark: false },
 );
 
-const lightHighlightStyle = HighlightStyle.define([
-  { tag: t.keyword, color: '#a626a4' },
-  { tag: t.atom, color: '#986801' },
-  { tag: t.number, color: '#986801' },
-  { tag: t.string, color: '#50a14f' },
-  { tag: t.variableName, color: '#e45649' },
-  { tag: t.propertyName, color: '#4078f2' },
-  { tag: t.function(t.variableName), color: '#4078f2' },
-  { tag: t.lineComment, color: '#a0a1a7' },
-  { tag: t.blockComment, color: '#a0a1a7' },
-  { tag: t.typeName, color: '#c18401' },
-  { tag: t.bool, color: '#986801' },
-  { tag: t.operator, color: '#0184bc' },
-  { tag: t.punctuation, color: '#383a42' },
-  { tag: t.paren, color: '#383a42' },
-  { tag: t.bracket, color: '#383a42' },
-  { tag: t.brace, color: '#383a42' },
-  { tag: t.tagName, color: '#e45649' },
-  { tag: t.attributeName, color: '#986801' },
-  { tag: t.attributeValue, color: '#50a14f' },
+const lightHighlight = HighlightStyle.define([
+  { tag: t.keyword, color: '#bf00f9ff' },
+  { tag: t.atom, color: '#d19a66' },
+  { tag: t.number, color: '#d19a66' },
+  { tag: t.string, color: '#4fbd00ff' },
+  { tag: t.variableName, color: '#95000cff' },
+  { tag: t.propertyName, color: '#0382e9ff' },
+  { tag: t.function(t.variableName), color: '#00a100ff' },
+  { tag: t.lineComment, color: '#5c6370' },
+  { tag: t.blockComment, color: '#3f4653ff' },
+  { tag: t.typeName, color: '#f7a000ff' },
+  { tag: t.bool, color: '#c08751ff' },
+  { tag: t.operator, color: '#2e6f78ff' },
+  { tag: t.punctuation, color: '#abb2bf' },
+  { tag: t.paren, color: '#abb2bf' },
+  { tag: t.bracket, color: '#abb2bf' },
+  { tag: t.brace, color: '#abb2bf' },
+  { tag: t.tagName, color: '#e06c75' },
+  { tag: t.attributeName, color: '#d19a66' },
+  { tag: t.attributeValue, color: '#53ae12ff' },
 ]);
 
-const lightTheme: Extension = [lightBaseTheme, syntaxHighlighting(lightHighlightStyle)];
+const themeLight: Extension = [lightBase, Prec.highest(syntaxHighlighting(lightHighlight))];
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-
-function buildLanguageExtension(language?: string): Extension {
-  switch (language) {
-    case 'javascript':
-      return javascript();
-    case 'html':
-      return html();
-    case 'markdown':
-      return markdown();
-    case 'c':
-      return cpp();
-    case 'cpp':
-      return cpp();
-    case 'rust':
-      return rust();
-    default:
-      return [];
-  }
-}
 
 interface TextEditorOptions {
   readOnly?: boolean;
@@ -126,7 +110,6 @@ function buildOptionsExtensions(opts?: TextEditorOptions): Extension {
 
 export interface TextEditorProps {
   value?: string;
-  language?: string;
   onChange?: (value: string | undefined) => void;
   onMount?: (view: EditorView) => void;
   options?: TextEditorOptions;
@@ -137,7 +120,6 @@ export interface TextEditorProps {
 
 export function TextEditor({
   value,
-  language,
   onChange,
   onMount,
   options,
@@ -151,14 +133,12 @@ export function TextEditor({
   const { theme } = useTheme();
 
   const optionsCompartment = useRef(new Compartment());
-  const languageCompartment = useRef(new Compartment());
-  const themeCompartment = useRef(new Compartment());
 
   useEffect(() => {
     onChangeRef.current = onChange;
   }, [onChange]);
 
-  // Create EditorView once
+  // Create / recreate EditorView (theme change triggers full rebuild)
   useEffect(() => {
     if (!containerRef.current) return;
 
@@ -168,6 +148,7 @@ export function TextEditor({
         doc: value ?? '',
         extensions: [
           basicSetup,
+          javascript(),
           EditorView.lineWrapping,
           // Layout: fill container, scroll, enable native text selection
           EditorView.theme({
@@ -175,20 +156,19 @@ export function TextEditor({
             '.cm-scroller': { overflow: 'auto' },
             '.cm-content': {
               userSelect: 'text',
-              fontSize: '11px',
+              fontSize: '12px',
             },
             '.cm-line': {
               userSelect: 'text',
             },
             '.cm-gutter': {
-              fontSize: '11px',
+              fontSize: '12px',
             },
           }),
 
           // Dynamic compartments
           optionsCompartment.current.of(buildOptionsExtensions(options)),
-          languageCompartment.current.of(buildLanguageExtension(language)),
-          themeCompartment.current.of(theme === 'dark' ? darkTheme : lightTheme),
+          theme === 'dark' ? themeDark : themeLight,
           // Update listener
           EditorView.updateListener.of((update) => {
             if (update.docChanged && !isExternalUpdate.current) {
@@ -206,8 +186,7 @@ export function TextEditor({
       view.destroy();
       viewRef.current = null;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [theme]);
 
   // Sync external value changes
   useEffect(() => {
@@ -230,20 +209,6 @@ export function TextEditor({
       effects: optionsCompartment.current.reconfigure(buildOptionsExtensions(options)),
     });
   }, [options]);
-
-  // Sync language changes
-  useEffect(() => {
-    viewRef.current?.dispatch({
-      effects: languageCompartment.current.reconfigure(buildLanguageExtension(language)),
-    });
-  }, [language]);
-
-  // Sync theme changes
-  useEffect(() => {
-    viewRef.current?.dispatch({
-      effects: themeCompartment.current.reconfigure(theme === 'dark' ? darkTheme : lightTheme),
-    });
-  }, [theme]);
 
   return (
     <div

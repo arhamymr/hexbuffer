@@ -69,7 +69,7 @@ function ToggleGroupItem({
           variant: context.variant || variant,
           size: context.size || size,
         }),
-        "w-auto min-w-0 text-xs shrink-0 px-2 py-1 focus:z-10 focus-visible:z-10 data-[state=on]:text-primary",
+        "cursor-pointer w-auto min-w-0 text-xs shrink-0 px-2 py-1 focus:z-10 focus-visible:z-10 data-[state=on]:text-primary",
         "data-[spacing=0]:rounded-none data-[spacing=0]:shadow-none data-[spacing=0]:first:rounded-l-md data-[spacing=0]:last:rounded-r-md data-[spacing=0]:data-[variant=outline]:border-l-0 data-[spacing=0]:data-[variant=outline]:first:border-l",
         className
       )}

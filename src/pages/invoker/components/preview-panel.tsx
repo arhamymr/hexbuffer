@@ -118,7 +118,6 @@ export function InvokerPreviewPane() {
               <Label className="text-xs text-muted-foreground mb-1 block">Raw Response</Label>
               <div className="flex-1 min-h-0 overflow-hidden rounded-md border">
                 <TextEditor
-                  language="javascript"
                   value={buildRawAttackResponse(selectedResult)}
                   options={{ readOnly: true }}
                 />

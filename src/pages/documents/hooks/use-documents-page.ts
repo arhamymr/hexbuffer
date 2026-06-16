@@ -3,7 +3,7 @@ import { useDocumentsStore } from '@/stores/documents';
 import { useShallow } from 'zustand/react/shallow';
 import { sendRepeaterRequest } from '@/pages/repeater/api';
 import { parseRawHttpRequest } from '@/lib/http-message';
-import { type DocumentSectionKey, type DocumentTemplateId } from '../constants';
+import { type DocumentTemplateId } from '../constants';
 import { type ReconDocument, type CustomSection } from '../types';
 import { type RepeaterResponse } from '@/pages/repeater/types';
 import { exportDocumentToPdf } from '../lib/export-document';
@@ -142,20 +142,6 @@ export function useDocumentsPage() {
       }));
     },
     [updateDocument]
-  );
-
-  const updateSection = React.useCallback(
-    (sectionKey: DocumentSectionKey, value: string) => {
-      updateActiveDocument((document) => ({
-        ...document,
-        sections: {
-          ...document.sections,
-          [sectionKey]: value,
-        },
-        updatedAt: new Date().toISOString(),
-      }));
-    },
-    [updateActiveDocument]
   );
 
   const applyCustomSectionContent = React.useCallback(
@@ -624,7 +610,6 @@ export function useDocumentsPage() {
     activeDocument,
     renameDocument,
     updateTitle,
-    updateSection,
     addCustomSection,
     removeCustomSection,
     reorderCustomSections,
@@ -637,11 +622,9 @@ export function useDocumentsPage() {
     addApiEntry,
     updateApiEntryRaw,
     apiEditError,
-    selectedApiEntryId,
     apiResponse,
     isFetchingApi,
     apiFetchError,
-    selectApiEntry,
     fetchSelectedApi,
     activeFileId,
     openFileIds,
@@ -653,8 +636,6 @@ export function useDocumentsPage() {
     activeApiEntry,
     activeCustomSection,
     activeLabel,
-    activeFileName,
-    isSectionFile: false,
     isCustomSectionFile: isCustomSectionFileFlag,
     documentPendingDelete,
     documentIdPendingDelete,

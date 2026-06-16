@@ -32,7 +32,6 @@ export function InterceptRequestPanel() {
         <Label className="mb-1 block text-xs text-muted-foreground">Raw {messageLabel}</Label>
         <div className="min-h-0 flex-1 overflow-hidden rounded-md border">
           <TextEditor
-            language="javascript"
             value={rawRequest}
             onChange={handleRawChange}
             options={{ readOnly: !selectedRequestId }}

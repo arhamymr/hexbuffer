@@ -250,7 +250,6 @@ export function PayloadsTab() {
                 <>
                   <div className="h-36 overflow-hidden rounded-md border">
                     <TextEditor
-                      language="javascript"
                       value={payload.values.join('\n')}
                       onChange={(value) =>
                         updatePositionPayload(position.name, {

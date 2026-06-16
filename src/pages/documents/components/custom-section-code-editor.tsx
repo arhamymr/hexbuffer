@@ -15,7 +15,6 @@ export function CustomSectionCodeEditor({
   return (
     <TextEditor
       path={`${documentId}/sections/${section.key}.md`}
-      language="markdown"
       value={section.content}
       onChange={(value) => onChange(value ?? '')}
     />

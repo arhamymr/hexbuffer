@@ -3,7 +3,7 @@
 import { useState, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
-import { FileText, Table2, EllipsisVertical, ExternalLink, Send, Crosshair } from 'lucide-react';
+import { FileText, Table2, EllipsisVertical, ExternalLink, Send, Crosshair, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from '@/components/ui/badge';
@@ -25,6 +25,7 @@ import {
 import { TextEditor } from '@/components/ui/text-editor';
 import { buildRawHttpRequest, buildRawHttpResponse, formatJsonBody } from '@/lib/http-message';
 import { useHistoryDetail } from '@/pages/live-traffic/hooks/use-history-detail';
+import { useHistoryQuery } from '@/pages/live-traffic/hooks/use-history-query';
 import { InspectorSection, buildHeadersList, buildParamsList } from './inspector';
 import { parseCookieHeader } from './cookie-display';
 import { formatBytes } from './utils';
@@ -49,6 +50,7 @@ function isJsonContent(headers: Record<string, string>, body: string | null): bo
 
 export function LogEntryBurpView() {
   const { selectedCallId, call, isLoading, loadError } = useHistoryDetail();
+  const { setSelectedCallId } = useHistoryQuery();
   const [viewMode, setViewMode] = useState<DetailViewMode>('text');
   const navigate = useNavigate();
 
@@ -201,7 +203,6 @@ export function LogEntryBurpView() {
               </Label>
               <div className="min-h-0 flex-1 overflow-hidden rounded-md border">
                 <TextEditor
-                  language="javascript"
                   value={rawRequest}
                   options={{
                     readOnly: true,
@@ -236,33 +237,44 @@ export function LogEntryBurpView() {
                 </Badge>
               )}
             </div>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-7 w-7">
-                  <EllipsisVertical className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => setViewMode(viewMode === 'table' ? 'text' : 'table')} className="text-xs">
-                  {viewMode === 'table' ? (
-                    <><FileText className="mr-2 h-4 w-4" /> Toggle Doc</>
-                  ) : (
-                    <><Table2 className="mr-2 h-4 w-4" /> Toggle Table</>
-                  )}
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleOpenInNewWindow} disabled={!call.response_status} className="text-xs">
-                  <ExternalLink className="mr-2 h-4 w-4" /> Open in New Window
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleSendToRepeater} className="text-xs">
-                  <Send className="mr-2 h-4 w-4" /> Send to Repeater
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleSendToInvoker} className="text-xs">
-                  <Crosshair className="mr-2 h-4 w-4" /> Send to Invoker
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <div className='flex gap-2 items-center'>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-7 w-7">
+                    <EllipsisVertical className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => setViewMode(viewMode === 'table' ? 'text' : 'table')} className="text-xs">
+                    {viewMode === 'table' ? (
+                      <><FileText className="mr-2 h-4 w-4" /> Toggle Doc</>
+                    ) : (
+                      <><Table2 className="mr-2 h-4 w-4" /> Toggle Table</>
+                    )}
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleOpenInNewWindow} disabled={!call.response_status} className="text-xs">
+                    <ExternalLink className="mr-2 h-4 w-4" /> Open in New Window
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleSendToRepeater} className="text-xs">
+                    <Send className="mr-2 h-4 w-4" /> Send to Repeater
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleSendToInvoker} className="text-xs">
+                    <Crosshair className="mr-2 h-4 w-4" /> Send to Invoker
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6 text-destructive hover:text-destructive"
+                onClick={() => setSelectedCallId(null)}
+              >
+                <X className="h-3.5 w-3.5" />
+              </Button>
+            </div>
+
           </div>
 
           {viewMode === 'text' ? (
@@ -272,7 +284,6 @@ export function LogEntryBurpView() {
               </Label>
               <div className="min-h-0 flex-1 overflow-hidden rounded-md border">
                 <TextEditor
-                  language="javascript"
                   value={rawResponse}
                   options={{
                     readOnly: true,

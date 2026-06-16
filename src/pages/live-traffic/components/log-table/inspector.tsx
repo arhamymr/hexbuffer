@@ -103,7 +103,6 @@ export const InspectorSection = memo(function InspectorSection({
               {defaultView === 'text' ? (
                 <div className="h-80 overflow-hidden">
                   <TextEditor
-                    language="javascript"
                     value={formatItemsAsText(items)}
                     options={{
                       readOnly: true,

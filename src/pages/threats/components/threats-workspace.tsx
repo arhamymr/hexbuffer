@@ -340,7 +340,6 @@ function DecompilerView({ rows }: { rows: GhidraDecompiledFunction[] }) {
         <div className="min-h-0 flex-1">
           <TextEditor
             height="100%"
-            language="c"
             value={selected?.code ?? ''}
             options={{ readOnly: true }}
           />

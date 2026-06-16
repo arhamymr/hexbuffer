@@ -65,7 +65,7 @@ export type DocumentSectionKey = (typeof DOCUMENT_SECTION_DEFINITIONS)[number]['
 
 export type DocumentTemplateId = 'blank' | 'developer' | 'qa' | 'securityResearcher';
 
-export interface DocumentTemplateCustomSection {
+interface DocumentTemplateCustomSection {
   title: string;
   description: string;
   placeholder: string;

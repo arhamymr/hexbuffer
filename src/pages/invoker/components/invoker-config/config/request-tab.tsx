@@ -321,7 +321,6 @@ export function RequestTab() {
         </div>
         <div className="h-[460px] overflow-hidden rounded-md border">
           <TextEditor
-            language="javascript"
             value={rawRequestDraft}
             onChange={(value) => {
               editRef.current = true;

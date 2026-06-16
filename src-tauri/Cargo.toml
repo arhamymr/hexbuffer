@@ -1,6 +1,6 @@
 [package]
 name = "zeroxbuffer"
-version = "2026.0.27"
+version = "2026.0.31"
 description = "Proxy App"
 authors = ["Arham"]
 edition = "2021"
@@ -18,7 +18,7 @@ tauri-plugin-clipboard-manager = "2"
 tauri-plugin-shell = "2"
 tauri-plugin-os = "2"
 tauri-plugin-pty = "0.3"
-tauri-plugin-notification = "2"
+tauri-plugin-notification = { version = "2", features = ["windows7-compat"] }
 
 [target.'cfg(any(target_os = "macos", windows, target_os = "linux"))'.dependencies]
 tauri-plugin-updater = "2"

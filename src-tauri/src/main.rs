@@ -319,32 +319,12 @@ async fn check_for_updates(app: tauri::AppHandle) -> tauri_plugin_updater::Resul
     use tauri_plugin_updater::UpdaterExt;
 
     if let Some(update) = app.updater()?.check().await? {
-        eprintln!(
-            "[updater] update {} available (current: {})",
+        log(&format!(
+            "[updater] update {} available (current: {}) — user will be prompted via UI",
             update.version, update.current_version
-        );
-
-        let mut downloaded = 0;
-        update
-            .download_and_install(
-                |chunk_length, content_length| {
-                    downloaded += chunk_length;
-                    if let Some(total) = content_length {
-                        eprintln!("[updater] downloaded {downloaded} / {total}");
-                    } else {
-                        eprintln!("[updater] downloaded {downloaded}");
-                    }
-                },
-                || {
-                    eprintln!("[updater] download finished");
-                },
-            )
-            .await?;
-
-        eprintln!("[updater] update installed, restarting");
-        app.restart();
+        ));
     } else {
-        eprintln!("[updater] no update available");
+        log("[updater] no update available");
     }
 
     Ok(())

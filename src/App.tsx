@@ -1,10 +1,12 @@
 import React from "react";
 import { Routes, Route } from "react-router-dom";
-import { AssistantPage } from "@/pages/assistant";
 import { CaInstallDialog } from "@/components/ca-install-dialog";
 import { startLiveTrafficWatcher, stopLiveTrafficWatcher } from "@/triggers/live-traffic";
 import { startPageCrawledWatcher, stopPageCrawledWatcher } from "@/triggers/browser-automation";
 
+const AssistantPage = React.lazy(() =>
+  import("@/pages/assistant").then((m) => ({ default: m.AssistantPage }))
+);
 const LiveTrafficPage = React.lazy(() =>
   import("@/pages/live-traffic").then((m) => ({ default: m.LiveTrafficPage }))
 );

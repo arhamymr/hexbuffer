@@ -112,6 +112,7 @@ export function PageTabBar({
             title={tab.status?.label}
           >
             <span className="flex items-center gap-1.5 whitespace-nowrap text-xs">
+              {tab.indicator}
               {StatusIcon && (
                 <StatusIcon
                   className={cn(

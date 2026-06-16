@@ -31,12 +31,13 @@
 
       img {
         display: block;
-        width: min(100vw, 984px);
-        height: auto;
+        max-width: 100%;
+        max-height: 100vh;
+        object-fit: contain;
       }
     </style>
   </head>
   <body data-tauri-drag-region>
-    <img src="/splash-screen.png" alt="0xbuffer" draggable="false" data-tauri-drag-region />
+    <img src="/public/splash-screen.png" alt="0xbuffer" draggable="false" data-tauri-drag-region />
   </body>
 </html>

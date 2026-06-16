@@ -27,7 +27,11 @@ node -e "
   fs.writeFileSync('$ROOT/package.json', JSON.stringify(pkg, null, 2) + '\n');
 "
 
-sed -i '' "s/^version = \".*\"/version = \"$NEW_VERSION\"/" "$ROOT/src-tauri/Cargo.toml"
+if [ "$(uname -s)" = "Darwin" ]; then
+  sed -i '' "s/^version = \".*\"/version = \"$NEW_VERSION\"/" "$ROOT/src-tauri/Cargo.toml"
+else
+  sed -i "s/^version = \".*\"/version = \"$NEW_VERSION\"/" "$ROOT/src-tauri/Cargo.toml"
+fi
 
 node -e "
   const fs = require('fs');

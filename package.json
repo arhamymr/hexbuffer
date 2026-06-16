@@ -1,7 +1,7 @@
 {
   "name": "0xbuffer",
   "private": true,
-  "version": "2026.0.27",
+  "version": "2026.0.31",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -10,7 +10,7 @@
     "sidecars:build": "node sidecars/build-sidecars.mjs",
     "preview": "vite preview",
     "fix:packet-permissions": "bash scripts/fix-packet-capture-permissions.sh",
-    "deploy": "sudo bash ./scripts/deploy.sh"
+    "deploy": "bash ./scripts/deploy.sh"
   },
   "dependencies": {
     "@ai-sdk/deepseek": "^2.0.35",

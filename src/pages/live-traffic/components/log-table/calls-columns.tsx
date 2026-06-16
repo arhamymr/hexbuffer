@@ -18,6 +18,9 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuSubContent,
 } from "@/components/ui/dropdown-menu";
 import { formatTimestamp, formatBytes } from "./utils";
 import { StatusBadge, MethodBadge } from "@/components/status-badge";
@@ -40,15 +43,39 @@ import { useTargetStore } from '@/stores/target';
 import { useNavStore } from '@/stores/nav';
 import { useInterceptStore } from '@/pages/intercept/state/intercept-store';
 import { usePinnedRequestsStore } from '@/pages/live-traffic/state/pinned-requests-store';
+import { useGroupsStore } from '@/pages/live-traffic/state/groups-store';
+import type { GroupDefinition } from '@/pages/live-traffic/state/groups-store';
 import { HistoryLoadingState } from "../history-loading-state";
 import { BrowserIcon } from "./browser-icon";
 import { Skeleton } from "@/components/ui/skeleton";
+import { CreateGroupDialog } from "../group-dialog";
 
-const CallActionCell = memo(function CallActionCell({ call }: { call: ApiCall }) {
+const CallActionCell = memo(function CallActionCell({ call, onNewGroup }: { call: ApiCall; onNewGroup?: (call: ApiCall) => void }) {
   const { triggerRefresh } = useHistoryQuery();
   const togglePin = usePinnedRequestsStore((s) => s.togglePin);
   const isPinned = usePinnedRequestsStore((s) => s.isPinned);
   const pinned = isPinned(call.id);
+
+  const groups = useGroupsStore((s) => s.groups);
+  const groupRequestIds = useGroupsStore((s) => s.groupRequestIds);
+  const addRequestToGroup = useGroupsStore((s) => s.addRequestToGroup);
+  const removeRequestFromGroup = useGroupsStore((s) => s.removeRequestFromGroup);
+  const createGroup = useGroupsStore((s) => s.createGroup);
+
+  const requestGroupIds = useMemo(() => {
+    return groups.filter((g) => groupRequestIds[g.id]?.includes(call.id)).map((g) => g.id);
+  }, [groups, groupRequestIds, call.id]);
+
+  const handleQuickAddToGroup = useCallback(() => {
+    const name = `Group ${groups.length + 1}`;
+    const existing = groups.find((g) => g.name.toLowerCase() === name.toLowerCase());
+    if (existing) {
+      addRequestToGroup(existing.id, call);
+    } else {
+      const groupId = createGroup(name);
+      if (groupId) addRequestToGroup(groupId, call);
+    }
+  }, [groups, createGroup, addRequestToGroup, call]);
 
   const handleTogglePin = useCallback(() => {
     togglePin(call);
@@ -233,6 +260,58 @@ const CallActionCell = memo(function CallActionCell({ call }: { call: ApiCall })
           }
         </DropdownMenuItem>
         <DropdownMenuSeparator />
+        {groups.length === 0 ? (
+          <DropdownMenuItem onClick={handleQuickAddToGroup} className="text-xs">
+            <Plus className="mr-2 size-3" /> Add to Group
+          </DropdownMenuItem>
+        ) : (
+          <DropdownMenuSub>
+            <DropdownMenuSubTrigger className="text-xs">
+              <Plus className="mr-2 size-3" /> Add to Group
+            </DropdownMenuSubTrigger>
+            <DropdownMenuSubContent>
+              {groups.map((g) => (
+                <DropdownMenuItem
+                  key={g.id}
+                  className="text-xs"
+                  onClick={() => addRequestToGroup(g.id, call)}
+                >
+                  <span className="mr-2 size-1.5 rounded-full" style={{ backgroundColor: g.color }} />
+                  {g.name}
+                  {requestGroupIds.includes(g.id) && <span className="ml-auto text-muted-foreground">✓</span>}
+                </DropdownMenuItem>
+              ))}
+              <DropdownMenuSeparator />
+              <DropdownMenuItem className="text-xs" onClick={() => onNewGroup?.(call)}>
+                <Plus className="mr-2 size-3" /> New Group…
+              </DropdownMenuItem>
+            </DropdownMenuSubContent>
+          </DropdownMenuSub>
+        )}
+        {requestGroupIds.length > 0 && (
+          <DropdownMenuSub>
+            <DropdownMenuSubTrigger className="text-xs">
+              Remove from Group
+            </DropdownMenuSubTrigger>
+            <DropdownMenuSubContent>
+              {requestGroupIds.map((gid) => {
+                const g = groups.find((gr) => gr.id === gid);
+                if (!g) return null;
+                return (
+                  <DropdownMenuItem
+                    key={g.id}
+                    className="text-xs"
+                    onClick={() => removeRequestFromGroup(g.id, call.id)}
+                  >
+                    <span className="mr-2 size-1.5 rounded-full" style={{ backgroundColor: g.color }} />
+                    {g.name}
+                  </DropdownMenuItem>
+                );
+              })}
+            </DropdownMenuSubContent>
+          </DropdownMenuSub>
+        )}
+        <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleAddToScope} className="text-xs">
           <Plus className="mr-2 size-3" /> Add to Target
         </DropdownMenuItem>
@@ -262,8 +341,12 @@ const CallActionCell = memo(function CallActionCell({ call }: { call: ApiCall })
 
 export const TrafficTable = memo(function TrafficTable({
   isPinnedTabActive = false,
+  isGroupTabActive = false,
+  activeGroupId = null,
 }: {
   isPinnedTabActive?: boolean;
+  isGroupTabActive?: boolean;
+  activeGroupId?: string | null;
 }) {
   const tableContainerRef = useRef<HTMLDivElement>(null);
   const [isContextMenuOpen, setIsContextMenuOpen] = useState(false);
@@ -291,7 +374,26 @@ export const TrafficTable = memo(function TrafficTable({
   const pinnedCalls = usePinnedRequestsStore((s) => s.pinnedCalls);
   const pinnedSet = useMemo(() => new Set(pinnedIds), [pinnedIds]);
 
+  const groups = useGroupsStore((s) => s.groups);
+  const groupRequestIds = useGroupsStore((s) => s.groupRequestIds);
+  const cachedCalls = useGroupsStore((s) => s.cachedCalls);
+  const getGroupsForRequest = useGroupsStore((s) => s.getGroupsForRequest);
+
+  const [groupDialogCall, setGroupDialogCall] = useState<ApiCall | null>(null);
+  const [isGroupDialogOpen, setIsGroupDialogOpen] = useState(false);
+
+  const handleNewGroup = useCallback((call: ApiCall) => {
+    setGroupDialogCall(call);
+    setIsGroupDialogOpen(true);
+  }, []);
+
   const filteredCalls = useMemo(() => {
+    // Group tab: show only cached group requests
+    if (isGroupTabActive && activeGroupId) {
+      const ids = groupRequestIds[activeGroupId] ?? [];
+      return ids.map((id) => cachedCalls[id]).filter(Boolean);
+    }
+
     const pinned: ApiCall[] = [];
     const unpinned: ApiCall[] = [];
     const seenIds = new Set<string>();
@@ -317,7 +419,7 @@ export const TrafficTable = memo(function TrafficTable({
 
     if (isPinnedTabActive) return pinned;
     return [...pinned, ...unpinned];
-  }, [calls, isPinnedTabActive, pinnedSet, pinnedIds, pinnedCalls]);
+  }, [calls, isPinnedTabActive, isGroupTabActive, activeGroupId, pinnedSet, pinnedIds, pinnedCalls, groupRequestIds, cachedCalls]);
 
   const removeCallLocallyWithUnpin = useCallback(
     (id: string) => {
@@ -358,20 +460,31 @@ export const TrafficTable = memo(function TrafficTable({
       accessorKey: "host",
       header: "Host",
       size: 180,
-      cell: ({ row, table }) => (
-        <div className="flex items-center gap-1.5 truncate">
-          {pinnedSet.has(row.original.id) && (
-            <Pin className="size-3 text-amber-500 shrink-0" />
-          )}
-          <BrowserIcon userAgent={row.original.user_agent} />
-          <span className="truncate">
-            <HighlightedText
-              text={row.original.host}
-              query={(table.options.meta as { searchQuery?: string } | undefined)?.searchQuery ?? ""}
-            />
-          </span>
-        </div>
-      ),
+      cell: ({ row, table }) => {
+        const requestGroups = getGroupsForRequest(row.original.id);
+        return (
+          <div className="flex items-center gap-1.5 truncate">
+            {pinnedSet.has(row.original.id) && (
+              <Pin className="size-3 text-amber-500 shrink-0" />
+            )}
+            {requestGroups.map((g: GroupDefinition) => (
+              <span
+                key={g.id}
+                className="size-1.5 rounded-full shrink-0"
+                style={{ backgroundColor: g.color }}
+                title={g.name}
+              />
+            ))}
+            <BrowserIcon userAgent={row.original.user_agent} />
+            <span className="truncate">
+              <HighlightedText
+                text={row.original.host}
+                query={(table.options.meta as { searchQuery?: string } | undefined)?.searchQuery ?? ""}
+              />
+            </span>
+          </div>
+        );
+      },
     },
     {
       accessorKey: "path",
@@ -421,9 +534,9 @@ export const TrafficTable = memo(function TrafficTable({
       id: "action",
       header: "",
       size: 36,
-      cell: ({ row }) => <CallActionCell call={row.original} />,
+      cell: ({ row }) => <CallActionCell call={row.original} onNewGroup={handleNewGroup} />,
     },
-  ], [pinnedSet]);
+  ], [pinnedSet, getGroupsForRequest, handleNewGroup, groups, groupRequestIds]);
 
   const trafficTableSkeletonWidths = ["70%", "85%", "80%", "95%", "60%", "55%", "75%", "40%"];
 
@@ -501,6 +614,20 @@ export const TrafficTable = memo(function TrafficTable({
     return <HistoryLoadingState label="Loading HTTP history..." columns={9} />;
   }
 
+  if (isGroupTabActive && filteredCalls.length === 0) {
+    return (
+      <>
+        <Empty>
+          <EmptyTitle>No requests in this group</EmptyTitle>
+          <EmptyDescription>
+            Right-click a request and choose "Add to Group" to populate this group.
+          </EmptyDescription>
+        </Empty>
+        <CreateGroupDialog open={isGroupDialogOpen} onOpenChange={setIsGroupDialogOpen} initialCall={groupDialogCall ?? undefined} />
+      </>
+    );
+  }
+
   if (calls.length === 0 && !isLoading) {
     return (
       <Empty>
@@ -521,8 +648,8 @@ export const TrafficTable = memo(function TrafficTable({
       </Empty>
     );
   }
-
   return (
+    <>
     <div className="h-full flex flex-col">
       {newEventsCount > 0 && (
         <div className="flex items-center justify-center py-1 border-b bg-muted/50">
@@ -591,11 +718,13 @@ export const TrafficTable = memo(function TrafficTable({
                   call={call}
                   onDelete={removeCallLocallyWithUnpin}
                   onOpenChange={handleContextMenuOpenChange}
+                  onNewGroup={handleNewGroup}
                 >
                   <tr
                     className={
                       "absolute flex items-center w-full font-mono transition-colors border-b cursor-pointer" +
                       (pinnedSet.has(call.id) ? " bg-amber-500/5 dark:bg-amber-950/20" : "") +
+                      (isGroupTabActive ? " bg-sky-500/5 dark:bg-sky-950/20" : "") +
                       (call.id === selectedCallId
                         ? " hover:!bg-muted bg-muted"
                         : " hover:bg-muted/50")
@@ -677,5 +806,7 @@ export const TrafficTable = memo(function TrafficTable({
         </Button>
       </div>
     </div>
+    <CreateGroupDialog open={isGroupDialogOpen} onOpenChange={setIsGroupDialogOpen} initialCall={groupDialogCall ?? undefined} />
+    </>
   );
 });

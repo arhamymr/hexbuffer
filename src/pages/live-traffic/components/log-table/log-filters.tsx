@@ -97,7 +97,7 @@ export function LogFilters({
           className="ml-auto bg-background cursor-pointer"
         >
           <ToggleGroupItem value="http">HTTP</ToggleGroupItem>
-          <ToggleGroupItem value="websocket">WebSocket</ToggleGroupItem>
+          <ToggleGroupItem value="websocket" disabled>WebSocket</ToggleGroupItem>
         </ToggleGroup>
 
 

@@ -25,13 +25,18 @@ export default defineConfig({
       output: {
         manualChunks(id) {
           if (id.includes("node_modules")) {
-            if (id.includes("jspdf")) return "vendor-jspdf";
-            if (id.includes("@tauri-apps")) return "vendor-tauri";
-            if (id.includes("lucide-react")) return "vendor-lucide";
+            // Heavy standalone packages
+            if (id.includes("shiki")) return "vendor-shiki";
             if (id.includes("monaco-editor")) return "vendor-monaco";
-            if (id.includes("@xyflow") || id.includes("reactflow")) return "vendor-reactflow";
-            if (id.includes("@tanstack")) return "vendor-tanstack";
+            if (id.includes("jspdf")) return "vendor-jspdf";
+            if (id.includes("@rive-app")) return "vendor-rive";
+            if (id.includes("@mdxeditor")) return "vendor-mdxeditor";
             if (id.includes("xterm") || id.includes("@xterm")) return "vendor-xterm";
+            if (id.includes("@xyflow") || id.includes("reactflow")) return "vendor-reactflow";
+            if (id.includes("motion")) return "vendor-motion";
+            if (id.includes("@tauri-apps")) return "vendor-tauri";
+            if (id.includes("@tanstack")) return "vendor-tanstack";
+            if (id.includes("lucide-react")) return "vendor-lucide";
             return "vendor";
           }
         },

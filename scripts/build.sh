@@ -8,20 +8,35 @@ usage() {
   cat <<EOF
 Usage:
   ./scripts/build.sh                 Build/upload current VERSION
+  ./scripts/build.sh --help          Show this help
   ./scripts/build.sh 2026.1.1        Bump to exact version, then build/upload
   ./scripts/build.sh --bump          Auto-increment patch version, then build/upload
   ./scripts/build.sh --version 2026.1.1
+  ./scripts/build.sh --windows       Cross-compile Windows x86_64 from macOS/Linux
   ./scripts/build.sh --windows-all   Build/upload Windows x64, x86, and ARM64
+  ./scripts/build.sh --all            Build native platform + all Windows targets
 EOF
 }
 
 REQUESTED_VERSION=""
 AUTO_BUMP=false
 FORCE_BUILD=false
+WINDOWS=false
 WINDOWS_ALL=false
+ALL=false
 
 while [ $# -gt 0 ]; do
   case "$1" in
+    --all)
+      ALL=true
+      FORCE_BUILD=true
+      shift
+      ;;
+    --windows)
+      WINDOWS=true
+      FORCE_BUILD=true
+      shift
+      ;;
     --windows-all)
       WINDOWS_ALL=true
       FORCE_BUILD=true
@@ -42,7 +57,7 @@ while [ $# -gt 0 ]; do
       FORCE_BUILD=true
       shift 2
       ;;
-    --help|-h)
+    --help|-h|help)
       usage
       exit 0
       ;;
@@ -70,16 +85,38 @@ else
   echo "[env] .env not found; continuing with shell environment only"
 fi
 
-if $WINDOWS_ALL; then
+if $WINDOWS || $WINDOWS_ALL || $ALL; then
+  case "$(uname -s)" in
+    MINGW*|MSYS*|CYGWIN*) ;; # native Windows — no cargo-xwin needed
+    *)
+      if ! command -v cargo-xwin >/dev/null 2>&1; then
+        echo "cargo-xwin is required for cross-compiling Windows from $(uname -s)."
+        echo "  cargo install --locked cargo-xwin"
+        exit 1
+      fi
+      ;;
+  esac
+fi
+
+ensure_rust_target() {
+  local target="$1"
+  if ! rustup target list --installed 2>/dev/null | grep -q "$target"; then
+    echo "Installing Rust target: $target"
+    rustup target add "$target"
+  fi
+}
+
+if $WINDOWS; then
+  ensure_rust_target x86_64-pc-windows-msvc
+fi
+
+if $WINDOWS_ALL || $ALL; then
   case "$(uname -s)" in
     MINGW*|MSYS*|CYGWIN*) ;;
     *)
-      echo "--windows-all must be run on a Windows release machine."
-      echo "Install these Rust targets first:"
-      echo "  rustup target add x86_64-pc-windows-msvc"
-      echo "  rustup target add i686-pc-windows-msvc"
-      echo "  rustup target add aarch64-pc-windows-msvc"
-      exit 1
+      for t in x86_64-pc-windows-msvc i686-pc-windows-msvc aarch64-pc-windows-msvc; do
+        ensure_rust_target "$t"
+      done
       ;;
   esac
 fi
@@ -132,6 +169,7 @@ BUNDLE_DIR=""
 BUNDLE_EXT=""
 INSTALLER_DIR=""
 INSTALLER_GLOB=""
+BUNDLE_TYPES=""
 
 case "$(uname -s)" in
   Darwin)
@@ -139,22 +177,25 @@ case "$(uname -s)" in
     BUNDLE_EXT=".app.tar.gz"
     INSTALLER_DIR="$SRC_DIR/dmg"
     INSTALLER_GLOB="*.dmg"
+    BUNDLE_TYPES="app,dmg"
     ;;
   Linux)
     BUNDLE_DIR="$SRC_DIR/appimage"
     BUNDLE_EXT=".AppImage"
     INSTALLER_DIR="$SRC_DIR/appimage"
     INSTALLER_GLOB="*.AppImage"
+    BUNDLE_TYPES="appimage"
     ;;
   MINGW*|MSYS*|CYGWIN*)
     BUNDLE_DIR="$SRC_DIR/nsis"
     BUNDLE_EXT=".exe"
     INSTALLER_DIR="$SRC_DIR/nsis"
     INSTALLER_GLOB="*.exe"
+    BUNDLE_TYPES="nsis"
     ;;
 esac
 
-if [ -z "$BUNDLE_DIR" ] || [ -z "$BUNDLE_EXT" ] || [ -z "$INSTALLER_DIR" ] || [ -z "$INSTALLER_GLOB" ]; then
+if [ -z "$BUNDLE_DIR" ] || [ -z "$BUNDLE_EXT" ] || [ -z "$INSTALLER_DIR" ] || [ -z "$INSTALLER_GLOB" ] || [ -z "$BUNDLE_TYPES" ]; then
   echo -e "${RED}Unsupported platform: $(uname -s) $(uname -m)${NC}"
   exit 1
 fi
@@ -195,24 +236,78 @@ windows_bundle_dir_for_target() {
   echo "src-tauri/target/${rust_target}/release/bundle/nsis"
 }
 
+windows_runner_args() {
+  case "$(uname -s)" in
+    MINGW*|MSYS*|CYGWIN*) echo "" ;; # native — no runner needed
+    *) echo "--runner cargo-xwin" ;;
+  esac
+}
+
+build_windows() {
+  echo "Installing dependencies..."
+  pnpm install
+
+  local runner_args
+  runner_args=$(windows_runner_args)
+
+  echo "Cross-compiling Tauri Windows app (x86_64)..."
+  pnpm tauri build $runner_args --target x86_64-pc-windows-msvc --bundles nsis
+
+  echo "Windows build complete."
+}
+
 build_windows_all() {
   echo "Installing dependencies..."
   pnpm install
 
-  local entry rust_target updater_platform
+  local runner_args entry rust_target updater_platform
+  runner_args=$(windows_runner_args)
+
   for entry in "${WINDOWS_TARGETS[@]}"; do
     rust_target="${entry%%:*}"
     updater_platform="${entry#*:}"
 
     echo "Building Tauri Windows app for ${updater_platform} (${rust_target})..."
-    pnpm tauri build --target "$rust_target" --bundles nsis
+    pnpm tauri build $runner_args --target "$rust_target" --bundles nsis
   done
 
   echo "Windows builds complete."
 }
 
+build_all() {
+  echo "Installing dependencies..."
+  pnpm install
+
+  # ── Native platform build ─────────────────────────────────────────
+  echo "Building native platform ($PLATFORM)..."
+  pnpm tauri build --bundles "$BUNDLE_TYPES"
+  echo "Native build complete."
+
+  # ── Windows cross-compile ─────────────────────────────────────────
+  local runner_args
+  runner_args=$(windows_runner_args)
+
+  if [ -n "$runner_args" ]; then
+    local entry rust_target updater_platform
+    for entry in "${WINDOWS_TARGETS[@]}"; do
+      rust_target="${entry%%:*}"
+      updater_platform="${entry#*:}"
+
+      echo "Cross-compiling Windows app for ${updater_platform} (${rust_target})..."
+      pnpm tauri build $runner_args --target "$rust_target" --bundles nsis
+    done
+    echo "Windows builds complete."
+  else
+    echo "Already on Windows — native build covers this platform."
+  fi
+}
+
 if $WINDOWS_ALL; then
   build_windows_all
+elif $WINDOWS; then
+  build_windows
+elif $ALL; then
+  build_all
 else
   # ── Check for existing artifacts ─────────────────────────────────────
 
@@ -243,7 +338,7 @@ else
     pnpm install
 
     echo "Building Tauri desktop app..."
-    pnpm tauri build --bundles app,dmg
+    pnpm tauri build --bundles "$BUNDLE_TYPES"
 
     echo "Build complete."
   fi
@@ -390,6 +485,29 @@ if $WINDOWS_ALL; then
     target_bundle_dir=$(windows_bundle_dir_for_target "$rust_target")
     upload_platform_artifacts "$updater_platform" "$target_bundle_dir" ".exe" "$target_bundle_dir" "*.exe" "$LATEST_JSON"
   done
+elif $WINDOWS; then
+  target_bundle_dir=$(windows_bundle_dir_for_target "x86_64-pc-windows-msvc")
+  upload_platform_artifacts "windows-x86_64" "$target_bundle_dir" ".exe" "$target_bundle_dir" "*.exe" "$LATEST_JSON"
+elif $ALL; then
+  # Upload native platform artifacts
+  INSTALLER_NAME_OVERRIDE=""
+  if [ "$(uname -s)" = "Darwin" ]; then
+    INSTALLER_NAME_OVERRIDE="${APP_NAME}_${VERSION}_${PLATFORM#darwin-}.dmg"
+  fi
+  upload_platform_artifacts "$PLATFORM" "$BUNDLE_DIR" "$BUNDLE_EXT" "$INSTALLER_DIR" "$INSTALLER_GLOB" "$LATEST_JSON" "$INSTALLER_NAME_OVERRIDE"
+
+  # Upload Windows artifacts (only if cross-compiled)
+  case "$(uname -s)" in
+    MINGW*|MSYS*|CYGWIN*) ;; # already uploaded as native platform
+    *)
+      for entry in "${WINDOWS_TARGETS[@]}"; do
+        rust_target="${entry%%:*}"
+        updater_platform="${entry#*:}"
+        target_bundle_dir=$(windows_bundle_dir_for_target "$rust_target")
+        upload_platform_artifacts "$updater_platform" "$target_bundle_dir" ".exe" "$target_bundle_dir" "*.exe" "$LATEST_JSON"
+      done
+      ;;
+  esac
 else
   INSTALLER_NAME_OVERRIDE=""
   if [ "$(uname -s)" = "Darwin" ]; then

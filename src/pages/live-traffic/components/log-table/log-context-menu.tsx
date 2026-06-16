@@ -1,12 +1,15 @@
 'use client';
 
-import { useCallback, memo } from 'react';
+import { useCallback, memo, useMemo } from 'react';
 import {
   ContextMenu,
   ContextMenuTrigger,
   ContextMenuContent,
   ContextMenuItem,
   ContextMenuSeparator,
+  ContextMenuSub,
+  ContextMenuSubTrigger,
+  ContextMenuSubContent,
 } from '@/components/ui/context-menu';
 import { Copy, Plus, Trash2, Send, FilePlus2, Pin, PinOff } from 'lucide-react';
 import { toast } from 'sonner';
@@ -25,12 +28,14 @@ import { useTargetStore } from '@/stores/target';
 import { useNavStore } from '@/stores/nav';
 import { useInterceptStore } from '@/pages/intercept/state/intercept-store';
 import { usePinnedRequestsStore } from '@/pages/live-traffic/state/pinned-requests-store';
+import { useGroupsStore } from '@/pages/live-traffic/state/groups-store';
 
 interface LogEntryContextMenuProps {
   call: ApiCall;
   children: React.ReactNode;
   onDelete?: (id: string) => void;
   onOpenChange?: (open: boolean) => void;
+  onNewGroup?: (call: ApiCall) => void;
 }
 
 function buildAutomationTargetUrl(request: ApiCall) {
@@ -47,11 +52,34 @@ export const LogEntryContextMenu = memo(function LogEntryContextMenu({
   children,
   onDelete,
   onOpenChange,
+  onNewGroup,
 }: LogEntryContextMenuProps) {
   const { triggerRefresh } = useHistoryQuery();
   const togglePin = usePinnedRequestsStore((s) => s.togglePin);
   const isPinned = usePinnedRequestsStore((s) => s.isPinned);
   const pinned = isPinned(call.id);
+
+  const groups = useGroupsStore((s) => s.groups);
+  const groupRequestIds = useGroupsStore((s) => s.groupRequestIds);
+  const addRequestToGroup = useGroupsStore((s) => s.addRequestToGroup);
+  const removeRequestFromGroup = useGroupsStore((s) => s.removeRequestFromGroup);
+  const removeRequestFromAllGroups = useGroupsStore((s) => s.removeRequestFromAllGroups);
+  const createGroup = useGroupsStore((s) => s.createGroup);
+
+  const requestGroupIds = useMemo(() => {
+    return groups.filter((g) => groupRequestIds[g.id]?.includes(call.id)).map((g) => g.id);
+  }, [groups, groupRequestIds, call.id]);
+
+  const handleQuickAddToGroup = useCallback(() => {
+    const name = `Group ${groups.length + 1}`;
+    const existing = groups.find((g) => g.name.toLowerCase() === name.toLowerCase());
+    if (existing) {
+      addRequestToGroup(existing.id, call);
+    } else {
+      const groupId = createGroup(name);
+      if (groupId) addRequestToGroup(groupId, call);
+    }
+  }, [groups, createGroup, addRequestToGroup, call]);
 
   const handleCopyCurlCommand = useCallback(async () => {
     try {
@@ -229,12 +257,13 @@ export const LogEntryContextMenu = memo(function LogEntryContextMenu({
     try {
       await deleteHistoryLog(call.id);
       usePinnedRequestsStore.getState().unpinId(call.id);
+      removeRequestFromAllGroups(call.id);
       onDelete?.(call.id);
       triggerRefresh();
     } catch (error) {
       console.error('Failed to delete:', error);
     }
-  }, [call.id, onDelete, triggerRefresh]);
+  }, [call.id, onDelete, triggerRefresh, removeRequestFromAllGroups]);
 
   return (
     <ContextMenu onOpenChange={onOpenChange}>
@@ -255,6 +284,58 @@ export const LogEntryContextMenu = memo(function LogEntryContextMenu({
             : <><Pin className="mr-2 size-3" /> Pin</>
           }
         </ContextMenuItem>
+        <ContextMenuSeparator />
+        {groups.length === 0 ? (
+          <ContextMenuItem onClick={handleQuickAddToGroup} className='text-xs'>
+            <Plus className="mr-2 size-3" /> Add to Group
+          </ContextMenuItem>
+        ) : (
+          <ContextMenuSub>
+            <ContextMenuSubTrigger className='text-xs'>
+              <Plus className="mr-2 size-3" /> Add to Group
+            </ContextMenuSubTrigger>
+            <ContextMenuSubContent>
+              {groups.map((g) => (
+                <ContextMenuItem
+                  key={g.id}
+                  className='text-xs'
+                  onClick={() => addRequestToGroup(g.id, call)}
+                >
+                  <span className="mr-2 size-1.5 rounded-full" style={{ backgroundColor: g.color }} />
+                  {g.name}
+                  {requestGroupIds.includes(g.id) && <span className="ml-auto text-muted-foreground">✓</span>}
+                </ContextMenuItem>
+              ))}
+              <ContextMenuSeparator />
+              <ContextMenuItem className='text-xs' onClick={() => onNewGroup?.(call)}>
+                <Plus className="mr-2 size-3" /> New Group…
+              </ContextMenuItem>
+            </ContextMenuSubContent>
+          </ContextMenuSub>
+        )}
+        {requestGroupIds.length > 0 && (
+          <ContextMenuSub>
+            <ContextMenuSubTrigger className='text-xs'>
+              Remove from Group
+            </ContextMenuSubTrigger>
+            <ContextMenuSubContent>
+              {requestGroupIds.map((gid) => {
+                const g = groups.find((gr) => gr.id === gid);
+                if (!g) return null;
+                return (
+                  <ContextMenuItem
+                    key={g.id}
+                    className='text-xs'
+                    onClick={() => removeRequestFromGroup(g.id, call.id)}
+                  >
+                    <span className="mr-2 size-1.5 rounded-full" style={{ backgroundColor: g.color }} />
+                    {g.name}
+                  </ContextMenuItem>
+                );
+              })}
+            </ContextMenuSubContent>
+          </ContextMenuSub>
+        )}
         <ContextMenuSeparator />
         <ContextMenuItem onClick={handleAddToScope} className='text-xs'>
           <Plus className="mr-2 size-3" /> Add to Target

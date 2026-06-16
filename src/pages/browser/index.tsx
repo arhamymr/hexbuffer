@@ -163,13 +163,13 @@ export function BrowserAutomationPage() {
         contentClassName="flex-1 border rounded-md overflow-hidden bg-background min-h-0"
       >
         <div className="flex h-full min-h-0 flex-col bg-background">
-          <header className="bg-muted px-3 py-3">
+          <header className="bg-muted p-1">
             <div className="flex flex-row gap-3 xl:items-center xl:justify-between">
               <div className="flex min-w-0 flex-1 items-center gap-3">
                 <div className="relative w-full max-w-[230px]">
                   <Search className="absolute left-2 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                   <Input
-                    className="pl-8 bg-background"
+                    className="pl-8 h-7 bg-background"
                     placeholder="Search pages, logs, insights..."
                     value={search}
                     onChange={(event) => setSearch(event.target.value)}
@@ -178,13 +178,14 @@ export function BrowserAutomationPage() {
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
+                <CrawlStatusBadge status={status} />
                 <CrawlSetupScreen
                   setup={setup}
                   disabled={isRunning}
                   onSetupChange={updateSetup}
                   onSave={saveConfig}
                 />
-                <CrawlStatusBadge status={status} />
+               
                 <ButtonGroup>
                   <Button variant="outline" size="xs" onClick={pauseCrawl} disabled={!isRunning} aria-label="Pause">
                     <Pause className="h-4 w-4" />

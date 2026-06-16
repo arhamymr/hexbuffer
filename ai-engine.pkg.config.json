@@ -1,0 +1,5 @@
+{
+  "assets": [
+    "node_modules/.pnpm/playwright@1.60.0/node_modules/playwright-core/browsers.json"
+  ]
+}

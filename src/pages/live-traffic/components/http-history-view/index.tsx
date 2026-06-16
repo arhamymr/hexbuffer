@@ -6,13 +6,15 @@ import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/componen
 
 interface HttpHistoryViewProps {
   isPinnedTabActive?: boolean;
+  isGroupTabActive?: boolean;
+  activeGroupId?: string | null;
 }
 
-export function HttpHistoryView({ isPinnedTabActive = false }: HttpHistoryViewProps) {
+export function HttpHistoryView({ isPinnedTabActive = false, isGroupTabActive = false, activeGroupId = null }: HttpHistoryViewProps) {
   return (
     <ResizablePanelGroup orientation="vertical" className="flex-1">
       <ResizablePanel defaultSize={60}>
-        <TrafficTable isPinnedTabActive={isPinnedTabActive} />
+        <TrafficTable isPinnedTabActive={isPinnedTabActive} isGroupTabActive={isGroupTabActive} activeGroupId={activeGroupId} />
       </ResizablePanel>
       <ResizableHandle withHandle />
       <ResizablePanel defaultSize={40} className='bg-muted'>

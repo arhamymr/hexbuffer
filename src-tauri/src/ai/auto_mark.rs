@@ -48,10 +48,10 @@ fn run_invoker_auto_mark_engine(
         .shell()
         .sidecar("ai-engine")
         .map_err(|error| format!("Failed to prepare AI engine sidecar: {}", error))?
-        .env("0XBUFFER_AI_ENGINE_MODE", "invoker-auto-mark")
-        .env("0XBUFFER_INVOKER_RAW_REQUEST", request.raw_request.clone())
+        .env("HEXBUFFER_AI_ENGINE_MODE", "invoker-auto-mark")
+        .env("HEXBUFFER_INVOKER_RAW_REQUEST", request.raw_request.clone())
         .env("XBUFFER_AI_PROVIDER", provider.trim())
-        .env("0XBUFFER_AI_MODEL", model.trim())
+        .env("HEXBUFFER_AI_MODEL", model.trim())
         .env("AI_SDK_LOG_WARNINGS", "false")
         .env(api_key_env_name(provider)?, api_key.trim());
 

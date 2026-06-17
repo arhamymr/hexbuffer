@@ -18,7 +18,7 @@ export const useAutomationStore = create<AutomationState>()(
       ...createLiveTrafficSlice(set as never, get as never),
     }),
     {
-      name: '0xbuffer-automation',
+      name: 'hexbuffer-automation',
       partialize: (state) => ({
         workflows: state.workflows,
         activeWorkflowId: state.activeWorkflowId,

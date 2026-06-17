@@ -30,7 +30,7 @@ export function CaCertificateSettingsTab({ settings }: CaCertificateSettingsTabP
         <SecurityNoticeIcon className="size-4" />
         <AlertTitle>Important Security Notice</AlertTitle>
         <AlertDescription>
-          Open Browser uses an isolated Chrome profile managed by 0xbuffer. Install the 0xbuffer CA only
+          Open Browser uses an isolated Chrome profile managed by hexbuffer. Install the hexbuffer CA only
           when you want to intercept HTTPS traffic from external browsers or apps.
         </AlertDescription>
       </Alert>

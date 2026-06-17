@@ -1,5 +1,5 @@
 // Exports defined strings to strings.json.
-// @category 0xbuffer
+// @category hexbuffer
 
 import ghidra.app.script.GhidraScript;
 import ghidra.program.model.data.StringDataInstance;

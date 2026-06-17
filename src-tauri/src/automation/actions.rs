@@ -1222,13 +1222,13 @@ mod tests {
     #[test]
     fn resolves_templates_with_top_level_and_dotted_paths() {
         let input = json!({
-            "host": "0xbuffer.com",
+            "host": "hexbuffer.com",
             "action": { "documentId": "doc-1" },
         });
 
         assert_eq!(
             resolve_template("{{host}} -> {{action.documentId}}", &input),
-            "0xbuffer.com -> doc-1"
+            "hexbuffer.com -> doc-1"
         );
     }
 

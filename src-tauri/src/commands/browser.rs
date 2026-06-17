@@ -213,7 +213,7 @@ pub fn browser_open(
             .arg("--args")
             .arg(format!("--proxy-server=http://localhost:{}", proxy_port))
             .arg("--session")
-            .arg("0xbuffer-browser")
+            .arg("hexbuffer-browser")
             .stdout(Stdio::piped())
             .stderr(Stdio::piped());
 
@@ -229,7 +229,7 @@ pub fn browser_open(
             .session_name
             .lock()
             .map_err(|_| "Failed to lock session name".to_string())?;
-        *session = "0xbuffer-browser".to_string();
+        *session = "hexbuffer-browser".to_string();
     }
 
     get_browser_status(app, state)
@@ -550,7 +550,7 @@ pub async fn ai_browser_start_crawl(
     let proxy_port = crate::proxy::active_proxy_port().unwrap_or(0);
     if proxy_port == 0 {
         return Err(
-            "The 0xbuffer proxy is not running. Start the proxy first, then retry the crawl."
+            "The hexbuffer proxy is not running. Start the proxy first, then retry the crawl."
                 .to_string(),
         );
     }

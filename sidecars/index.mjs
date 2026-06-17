@@ -5,7 +5,7 @@ process.env.AI_SDK_LOG_WARNINGS = 'false';
 globalThis.AI_SDK_LOG_WARNINGS = false;
 
 /**
- * 0xBuffer AI Engine Sidecar — Harness Contract
+ * hexbuffer AI Engine Sidecar — Harness Contract
  *
  * Spawned by the Tauri app. Reads configuration from environment variables
  * and communicates results via JSON lines on stdout.
@@ -25,9 +25,9 @@ globalThis.AI_SDK_LOG_WARNINGS = false;
  * - validate: Exits 0 if all checks pass, non-zero with diagnostics otherwise
  *
  * ## Required Environment Variables
- * - 0XBUFFER_AI_ENGINE_MODE: 'crawl' | 'chat' | 'invoker-auto-mark' | 'regression' | 'validate'
- * - 0XBUFFER_CRAWL_SESSION_ID (crawl mode): Session identifier
- * - 0XBUFFER_CRAWL_CONFIG_JSON (crawl mode): JSON crawl configuration
+ * - HEXBUFFER_AI_ENGINE_MODE: 'crawl' | 'chat' | 'invoker-auto-mark' | 'regression' | 'validate'
+ * - HEXBUFFER_CRAWL_SESSION_ID (crawl mode): Session identifier
+ * - HEXBUFFER_CRAWL_CONFIG_JSON (crawl mode): JSON crawl configuration
  * - XBUFFER_AI_PROVIDER: 'deepseek' | 'openai'
  * - OPENAI_API_KEY or DEEPSEEK_API_KEY: depending on provider
  *
@@ -50,7 +50,7 @@ export { runCli };
 const VALID_MODES = ['crawl', 'chat', 'invoker-auto-mark', 'validate', 'regression', 'scrape-page', 'regression-single-step'];
 
 function runPreflight() {
-  const mode = process.env['0XBUFFER_AI_ENGINE_MODE'] || 'crawl';
+  const mode = process.env['HEXBUFFER_AI_ENGINE_MODE'] || 'crawl';
   const checks = [];
 
   // ── Layer 1: Task Specification ──────────────────────────────────────
@@ -59,46 +59,46 @@ function runPreflight() {
     checks.push({
       layer: 'task-specification',
       message: `Invalid mode "${mode}". Must be one of: ${VALID_MODES.join(', ')}`,
-      fix: 'Set 0XBUFFER_AI_ENGINE_MODE to a valid value',
+      fix: 'Set HEXBUFFER_AI_ENGINE_MODE to a valid value',
     });
   }
 
   if (mode === 'crawl') {
-    const sessionId = process.env['0XBUFFER_CRAWL_SESSION_ID'];
+    const sessionId = process.env['HEXBUFFER_CRAWL_SESSION_ID'];
     if (!sessionId) {
       checks.push({
         layer: 'task-specification',
-        message: 'Missing required env var: 0XBUFFER_CRAWL_SESSION_ID',
-        fix: 'Ensure the Tauri backend sets 0XBUFFER_CRAWL_SESSION_ID before spawning',
+        message: 'Missing required env var: HEXBUFFER_CRAWL_SESSION_ID',
+        fix: 'Ensure the Tauri backend sets HEXBUFFER_CRAWL_SESSION_ID before spawning',
       });
     }
 
-    const rawConfig = process.env['0XBUFFER_CRAWL_CONFIG_JSON'] || '{}';
+    const rawConfig = process.env['HEXBUFFER_CRAWL_CONFIG_JSON'] || '{}';
     try {
       const config = JSON.parse(rawConfig);
       if (!config.targetUrl) {
         checks.push({
           layer: 'task-specification',
-          message: '0XBUFFER_CRAWL_CONFIG_JSON missing required field: targetUrl',
+          message: 'HEXBUFFER_CRAWL_CONFIG_JSON missing required field: targetUrl',
           fix: 'Include targetUrl in the crawl config JSON',
         });
       }
     } catch {
       checks.push({
         layer: 'task-specification',
-        message: '0XBUFFER_CRAWL_CONFIG_JSON is not valid JSON',
+        message: 'HEXBUFFER_CRAWL_CONFIG_JSON is not valid JSON',
         fix: 'Ensure the config is serialized as valid JSON before spawning the sidecar',
       });
     }
   }
 
   if (mode === 'regression') {
-    const rawConfig = process.env['0XBUFFER_REGRESSION_CONFIG_JSON'];
+    const rawConfig = process.env['HEXBUFFER_REGRESSION_CONFIG_JSON'];
     if (!rawConfig) {
       checks.push({
         layer: 'task-specification',
-        message: 'Missing required env var: 0XBUFFER_REGRESSION_CONFIG_JSON',
-        fix: 'Ensure the Tauri backend sets 0XBUFFER_REGRESSION_CONFIG_JSON before spawning',
+        message: 'Missing required env var: HEXBUFFER_REGRESSION_CONFIG_JSON',
+        fix: 'Ensure the Tauri backend sets HEXBUFFER_REGRESSION_CONFIG_JSON before spawning',
       });
     } else {
       try {
@@ -106,31 +106,31 @@ function runPreflight() {
         if (!config.targetUrl) {
           checks.push({
             layer: 'task-specification',
-            message: '0XBUFFER_REGRESSION_CONFIG_JSON missing required field: targetUrl',
+            message: 'HEXBUFFER_REGRESSION_CONFIG_JSON missing required field: targetUrl',
             fix: 'Include targetUrl in the regression config JSON',
           });
         }
         if (!config.steps || config.steps.length === 0) {
           checks.push({
             layer: 'task-specification',
-            message: '0XBUFFER_REGRESSION_CONFIG_JSON requires at least one step',
+            message: 'HEXBUFFER_REGRESSION_CONFIG_JSON requires at least one step',
             fix: 'Include a non-empty steps array in the regression config JSON',
           });
         }
       } catch {
         checks.push({
           layer: 'task-specification',
-          message: '0XBUFFER_REGRESSION_CONFIG_JSON is not valid JSON',
+          message: 'HEXBUFFER_REGRESSION_CONFIG_JSON is not valid JSON',
           fix: 'Ensure the config is serialized as valid JSON before spawning the sidecar',
         });
       }
     }
   }
 
-  if (mode === 'invoker-auto-mark' && !process.env['0XBUFFER_INVOKER_RAW_REQUEST']?.trim()) {
+  if (mode === 'invoker-auto-mark' && !process.env['HEXBUFFER_INVOKER_RAW_REQUEST']?.trim()) {
     checks.push({
       layer: 'task-specification',
-      message: 'Missing required env var: 0XBUFFER_INVOKER_RAW_REQUEST',
+      message: 'Missing required env var: HEXBUFFER_INVOKER_RAW_REQUEST',
       fix: 'Ensure the Tauri backend passes the raw HTTP request before spawning',
     });
   }
@@ -176,7 +176,7 @@ function runPreflight() {
 if (import.meta.url === `file://${process.argv[1]}`) {
   const isValidateMode =
     process.argv.includes('--validate') ||
-    process.env['0XBUFFER_AI_ENGINE_MODE'] === 'validate';
+    process.env['HEXBUFFER_AI_ENGINE_MODE'] === 'validate';
 
   const { mode, checks } = runPreflight();
   const failures = checks;

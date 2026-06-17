@@ -312,7 +312,7 @@ fn write_intercept_ca(app: &AppHandle) -> Result<PathBuf, String> {
     let app_data_dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
     std::fs::create_dir_all(&app_data_dir).map_err(|e| e.to_string())?;
 
-    let ca_path = app_data_dir.join("0xbuffer-ca.pem");
+    let ca_path = app_data_dir.join("hexbuffer-ca.pem");
     let ca_pem =
         crate::proxy::https::cert::export_ca_cert_pem().map_err(|error| format!("{error}"))?;
     std::fs::write(&ca_path, ca_pem).map_err(|e| e.to_string())?;
@@ -403,16 +403,16 @@ fn import_intercept_ca_to_chrome_profile(app: &AppHandle) -> Result<String, Stri
     let ca_path = write_intercept_ca(app)?;
     let ca_pem = std::fs::read_to_string(&ca_path).map_err(|e| e.to_string())?;
     let ca_fingerprint = format!("{:x}", Sha256::digest(ca_pem.as_bytes()));
-    let import_marker_path = profile_dir.join("0xbuffer-ca.sha256");
+    let import_marker_path = profile_dir.join("hexbuffer-ca.sha256");
     if std::fs::read_to_string(&import_marker_path)
         .map(|value| value.trim() == ca_fingerprint)
         .unwrap_or(false)
     {
-        return Ok("0xbuffer CA is already trusted in the managed Chrome profile.".to_string());
+        return Ok("hexbuffer CA is already trusted in the managed Chrome profile.".to_string());
     }
 
     let db_dir = format!("sql:{}", profile_dir.display());
-    let nickname = "0xbuffer Security Tools Root CA".to_string();
+    let nickname = "hexbuffer Security Tools Root CA".to_string();
 
     let init_args = vec![
         "-N".to_string(),
@@ -446,7 +446,7 @@ fn import_intercept_ca_to_chrome_profile(app: &AppHandle) -> Result<String, Stri
     match run_certutil(&add_args) {
         Ok(()) => {
             std::fs::write(import_marker_path, ca_fingerprint).map_err(|e| e.to_string())?;
-            Ok("0xbuffer CA imported into the managed Chrome profile. Close old Intercept browser windows and open it again.".to_string())
+            Ok("hexbuffer CA imported into the managed Chrome profile. Close old Intercept browser windows and open it again.".to_string())
         }
         Err(error) => Err(format!(
             "Chrome-profile CA import failed: {error}. Install NSS tools with `brew install nss`, then try again."
@@ -484,7 +484,7 @@ fn run_security(args: &[String]) -> Result<(), String> {
 fn install_intercept_ca_to_macos_keychain(app: &AppHandle) -> Result<String, String> {
     let ca_path = write_intercept_ca(app)?;
     let keychain_path = user_login_keychain_path()?;
-    let cert_name = "0xbuffer Security Tools Root CA".to_string();
+    let cert_name = "hexbuffer Security Tools Root CA".to_string();
 
     let delete_args = vec![
         "delete-certificate".to_string(),
@@ -506,7 +506,7 @@ fn install_intercept_ca_to_macos_keychain(app: &AppHandle) -> Result<String, Str
     ];
 
     run_security(&add_args).map(|_| {
-        "0xbuffer CA installed in your macOS login keychain and trusted for SSL. Restart browsers that were already open.".to_string()
+        "hexbuffer CA installed in your macOS login keychain and trusted for SSL. Restart browsers that were already open.".to_string()
     })
 }
 

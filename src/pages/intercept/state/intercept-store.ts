@@ -513,7 +513,7 @@ export const useInterceptStore = create<InterceptState>()(
       },
     }),
     {
-      name: '0xbuffer-intercept-tabs',
+      name: 'hexbuffer-intercept-tabs',
       partialize: (state) => ({
         tabs: state.tabs,
         activeTabId: state.activeTabId,

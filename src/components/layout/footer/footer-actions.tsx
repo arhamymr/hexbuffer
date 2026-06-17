@@ -88,7 +88,7 @@ export function FooterActions({
             }
             new WebviewWindow('settings', {
               url: '/?window=settings',
-              title: '0xbuffer - Settings',
+              title: 'hexbuffer - Settings',
               width: 700,
               height: 600,
               decorations: true,

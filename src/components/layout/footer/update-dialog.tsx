@@ -59,17 +59,17 @@ export function UpdateDialog({
               : updateFailed
                 ? 'Update failed'
                 : updateInProgress
-                  ? 'Updating 0xbuffer'
+                  ? 'Updating hexbuffer'
                   : 'Install app update?'}
           </DialogTitle>
           <DialogDescription>
             {updateSucceeded
-              ? 'The update was installed successfully. 0xbuffer is restarting to finish applying it.'
+              ? 'The update was installed successfully. hexbuffer is restarting to finish applying it.'
               : updateFailed
                 ? 'The automatic update could not be installed. You can try again or run the manual update command.'
                 : updateInProgress
-                  ? 'Keep 0xbuffer open while the update downloads and installs.'
-                  : `Version ${displayedVersion ? `v${displayedVersion}` : 'the latest version'} is ready to download. 0xbuffer will install it and restart after you confirm.`}
+                  ? 'Keep hexbuffer open while the update downloads and installs.'
+                  : `Version ${displayedVersion ? `v${displayedVersion}` : 'the latest version'} is ready to download. hexbuffer will install it and restart after you confirm.`}
           </DialogDescription>
         </DialogHeader>
 

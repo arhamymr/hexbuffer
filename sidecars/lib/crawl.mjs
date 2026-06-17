@@ -73,19 +73,19 @@ function enqueueCandidates({ queue, enqueued, visited, extract, analysis, config
 }
 
 export async function runCrawl() {
-  const sessionId = process.env['0XBUFFER_CRAWL_SESSION_ID'];
-  const config = JSON.parse(process.env['0XBUFFER_CRAWL_CONFIG_JSON'] || '{}');
+  const sessionId = process.env['HEXBUFFER_CRAWL_SESSION_ID'];
+  const config = JSON.parse(process.env['HEXBUFFER_CRAWL_CONFIG_JSON'] || '{}');
   if (!sessionId || !config.targetUrl) {
     log(sessionId || 'unknown', 'error', 'error',
-      `[task-specification] Missing required config: ${!sessionId ? '0XBUFFER_CRAWL_SESSION_ID' : ''}${!sessionId && !config.targetUrl ? ', ' : ''}${!config.targetUrl ? 'targetUrl' : ''}`,
+      `[task-specification] Missing required config: ${!sessionId ? 'HEXBUFFER_CRAWL_SESSION_ID' : ''}${!sessionId && !config.targetUrl ? ', ' : ''}${!config.targetUrl ? 'targetUrl' : ''}`,
       config.targetUrl || 'unknown',
       { layer: 'task-specification', fix: 'Ensure the Tauri backend sets both env vars before spawning the sidecar' }
     );
-    throw new Error(`[task-specification] Missing ${!sessionId ? '0XBUFFER_CRAWL_SESSION_ID' : ''}${!sessionId && !config.targetUrl ? ' and ' : ''}${!config.targetUrl ? '0XBUFFER_CRAWL_CONFIG_JSON.targetUrl' : ''}`);
+    throw new Error(`[task-specification] Missing ${!sessionId ? 'HEXBUFFER_CRAWL_SESSION_ID' : ''}${!sessionId && !config.targetUrl ? ' and ' : ''}${!config.targetUrl ? 'HEXBUFFER_CRAWL_CONFIG_JSON.targetUrl' : ''}`);
   }
 
   let playwrightRuntime;
-  const useFetchCrawler = process.env['0XBUFFER_USE_FETCH_CRAWLER'] === '1' && config.headless !== false;
+  const useFetchCrawler = process.env['HEXBUFFER_USE_FETCH_CRAWLER'] === '1' && config.headless !== false;
 
   const seedUrl = normalizeUrl(config.resumeFromUrl || config.targetUrl);
   const queue = [{

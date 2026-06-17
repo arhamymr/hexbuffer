@@ -1,4 +1,4 @@
-# 0xbuffer
+# hexbuffer
 
 A network proxy and traffic inspection tool built with Tauri, React, and TypeScript.
 

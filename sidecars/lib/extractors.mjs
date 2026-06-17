@@ -15,7 +15,7 @@ import { chromium } from 'playwright';
 import { log } from './events.mjs';
 
 function sessionId() {
-  return process.env['0XBUFFER_CRAWL_SESSION_ID'];
+  return process.env['HEXBUFFER_CRAWL_SESSION_ID'];
 }
 
 function nowMs() {
@@ -135,8 +135,8 @@ export async function fetchExtract(url, config) {
 }
 
 async function capturePageArtifacts(page, config, pageId) {
-  const artifactRoot = process.env['0XBUFFER_AI_ARTIFACT_DIR'];
-  const sessionId = process.env['0XBUFFER_CRAWL_SESSION_ID'];
+  const artifactRoot = process.env['HEXBUFFER_AI_ARTIFACT_DIR'];
+  const sessionId = process.env['HEXBUFFER_CRAWL_SESSION_ID'];
   if (!artifactRoot || !sessionId || !pageId) {
     return {};
   }
@@ -199,14 +199,14 @@ async function capturePageArtifacts(page, config, pageId) {
 }
 
 function storageStatePath() {
-  const artifactRoot = process.env['0XBUFFER_AI_ARTIFACT_DIR'];
-  const sessionId = process.env['0XBUFFER_CRAWL_SESSION_ID'];
+  const artifactRoot = process.env['HEXBUFFER_AI_ARTIFACT_DIR'];
+  const sessionId = process.env['HEXBUFFER_CRAWL_SESSION_ID'];
   if (!artifactRoot || !sessionId) return undefined;
   return path.join(artifactRoot, sessionId, 'storage-state.json');
 }
 
 async function createContext(browser) {
-  const proxyPort = process.env['0XBUFFER_PROXY_PORT'] || '8888';
+  const proxyPort = process.env['HEXBUFFER_PROXY_PORT'] || '8888';
   const storageState = storageStatePath();
   const startedAt = nowMs();
   const contextOptions = {

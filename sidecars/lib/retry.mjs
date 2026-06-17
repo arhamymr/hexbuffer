@@ -24,7 +24,7 @@ export function isTransientError(error) {
 
 function getMaxAttempts(override) {
   if (override !== undefined) return override;
-  const env = process.env['0XBUFFER_MAX_RETRIES'];
+  const env = process.env['HEXBUFFER_MAX_RETRIES'];
   if (env !== undefined) {
     const parsed = Number.parseInt(env, 10);
     if (Number.isFinite(parsed) && parsed >= 1) return parsed;
@@ -37,7 +37,7 @@ function getMaxAttempts(override) {
  *
  * @param {Function} fn - Async function to retry. Called fresh on each attempt.
  * @param {Object} [options]
- * @param {number} [options.maxAttempts] - Max total attempts (default 3, env 0XBUFFER_MAX_RETRIES overrides)
+ * @param {number} [options.maxAttempts] - Max total attempts (default 3, env HEXBUFFER_MAX_RETRIES overrides)
  * @param {number} [options.initialDelayMs] - Initial delay in ms (default 500)
  * @param {number} [options.backoffMultiplier] - Backoff multiplier (default 2)
  * @param {number} [options.maxDelayMs] - Max delay cap in ms (default 10000)

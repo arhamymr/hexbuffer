@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { copyText } from '@/lib/clipboard';
 import { cn } from '@/lib/utils';
 
-const MANUAL_UPDATE_COMMAND = 'curl -fsSLO https://dist.0xbuffer.com/install.sh && bash install.sh';
+const MANUAL_UPDATE_COMMAND = 'curl -fsSLO https://dist.hexbuffer.com/install.sh && bash install.sh';
 
 interface ManualUpdateCommandProps {
   className?: string;

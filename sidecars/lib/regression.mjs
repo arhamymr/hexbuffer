@@ -8,17 +8,17 @@ import { verifyWithAI } from './regression/ai-verifier.mjs';
 /**
  * Regression test runner — entry point for the `regression` sidecar mode.
  *
- * Reads test case config from `0XBUFFER_REGRESSION_CONFIG_JSON` env var,
+ * Reads test case config from `HEXBUFFER_REGRESSION_CONFIG_JSON` env var,
  * executes Playwright steps, runs AI verification on ai-verify steps,
  * and emits JSON-line events for real-time progress.
  */
 export async function runRegression() {
-  const rawConfig = process.env['0XBUFFER_REGRESSION_CONFIG_JSON'];
+  const rawConfig = process.env['HEXBUFFER_REGRESSION_CONFIG_JSON'];
   if (!rawConfig) {
     emit({
       type: 'regression:test_failed',
       runId: 'unknown',
-      error: '[task-specification] Missing 0XBUFFER_REGRESSION_CONFIG_JSON',
+      error: '[task-specification] Missing HEXBUFFER_REGRESSION_CONFIG_JSON',
       finishedAt: new Date().toISOString(),
     });
     process.exitCode = 1;
@@ -32,7 +32,7 @@ export async function runRegression() {
     emit({
       type: 'regression:test_failed',
       runId: 'unknown',
-      error: '[task-specification] Invalid JSON in 0XBUFFER_REGRESSION_CONFIG_JSON',
+      error: '[task-specification] Invalid JSON in HEXBUFFER_REGRESSION_CONFIG_JSON',
       finishedAt: new Date().toISOString(),
     });
     process.exitCode = 1;
@@ -54,8 +54,8 @@ export async function runRegression() {
 
   const testCase = parsed.data;
   const runId = randomUUID();
-  const sessionId = process.env['0XBUFFER_REGRESSION_SESSION_ID'] || `regression-${runId.slice(0, 8)}`;
-  const artifactDir = process.env['0XBUFFER_AI_ARTIFACT_DIR'] || null;
+  const sessionId = process.env['HEXBUFFER_REGRESSION_SESSION_ID'] || `regression-${runId.slice(0, 8)}`;
+  const artifactDir = process.env['HEXBUFFER_AI_ARTIFACT_DIR'] || null;
 
   log(sessionId, 'info', 'regression', `Starting regression test "${testCase.name}"`, testCase.targetUrl);
 

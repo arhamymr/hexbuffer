@@ -148,7 +148,7 @@ export const usePlaygroundStore = create<PlaygroundState>()(
       },
     }),
     {
-      name: '0xbuffer-playground',
+      name: 'hexbuffer-playground',
       partialize: (state) => ({
         workspace: state.workspace,
         recentFolders: state.recentFolders,

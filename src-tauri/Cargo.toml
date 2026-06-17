@@ -1,5 +1,5 @@
 [package]
-name = "zeroxbuffer"
+name = "hexbuffer"
 version = "2026.0.35"
 description = "Proxy App"
 authors = ["Arham"]

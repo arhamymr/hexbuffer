@@ -53,7 +53,7 @@ export function CaInstallDialog() {
       }
       new WebviewWindow('settings', {
         url: '/?window=settings',
-        title: '0xbuffer - Settings',
+        title: 'hexbuffer - Settings',
         width: 700,
         height: 600,
         decorations: true,
@@ -70,7 +70,7 @@ export function CaInstallDialog() {
         <DialogHeader>
           <DialogTitle>Install Root CA Certificate</DialogTitle>
           <DialogDescription>
-            0xbuffer uses your installed Chrome with an isolated profile. Install the CA only when you want
+            hexbuffer uses your installed Chrome with an isolated profile. Install the CA only when you want
             to intercept traffic from your regular browser or other apps.
           </DialogDescription>
         </DialogHeader>
@@ -78,7 +78,7 @@ export function CaInstallDialog() {
         <Alert variant="default" className="min-h-11 items-center shrink-0 border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-500/50 dark:bg-amber-500/10 dark:text-amber-200">
           <AlertTitle>External apps need this certificate</AlertTitle>
           <AlertDescription>
-            Browsers or apps outside 0xbuffer may block intercepted HTTPS requests unless they trust the 0xbuffer CA that signs proxy certificates
+            Browsers or apps outside hexbuffer may block intercepted HTTPS requests unless they trust the hexbuffer CA that signs proxy certificates
           </AlertDescription>
         </Alert>
 

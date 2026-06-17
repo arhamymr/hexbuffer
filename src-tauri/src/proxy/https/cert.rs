@@ -9,7 +9,7 @@ use std::sync::OnceLock;
 static CA_ROOT: OnceLock<PathBuf> = OnceLock::new();
 
 pub fn init_ca_dir(app_data_dir: PathBuf) {
-    CA_ROOT.get_or_init(|| app_data_dir.join(".0xbuffer"));
+    CA_ROOT.get_or_init(|| app_data_dir.join(".hexbuffer"));
 }
 
 #[derive(Debug)]
@@ -22,7 +22,7 @@ fn get_ca_dir() -> PathBuf {
     CA_ROOT.get().cloned().unwrap_or_else(|| {
         std::env::current_dir()
             .unwrap_or_else(|_| PathBuf::from("."))
-            .join(".0xbuffer")
+            .join(".hexbuffer")
     })
 }
 
@@ -76,10 +76,10 @@ fn generate_ca(
     params.key_usages = vec![KeyUsagePurpose::KeyCertSign, KeyUsagePurpose::CrlSign];
     params
         .distinguished_name
-        .push(rcgen::DnType::OrganizationName, "0xbuffer");
+        .push(rcgen::DnType::OrganizationName, "hexbuffer");
     params
         .distinguished_name
-        .push(rcgen::DnType::CommonName, "0xbuffer Security Tools Root CA");
+        .push(rcgen::DnType::CommonName, "hexbuffer Security Tools Root CA");
 
     let key_pair = KeyPair::generate()?;
     let key_pem = key_pair.serialize_pem();

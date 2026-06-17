@@ -67,7 +67,7 @@ export const usePinnedRequestsStore = create<PinnedRequestsState>()(
       getPinnedCalls: () => Object.values(get().pinnedCalls),
     }),
     {
-      name: '0xbuffer-pinned-requests',
+      name: 'hexbuffer-pinned-requests',
     }
   )
 );

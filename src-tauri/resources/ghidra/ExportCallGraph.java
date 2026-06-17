@@ -1,5 +1,5 @@
 // Exports a direct function call graph to callgraph.json.
-// @category 0xbuffer
+// @category hexbuffer
 
 import ghidra.app.script.GhidraScript;
 import ghidra.program.model.listing.Function;

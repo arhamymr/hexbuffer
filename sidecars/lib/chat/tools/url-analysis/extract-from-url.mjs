@@ -27,7 +27,7 @@ export const extractFromUrlDef = {
   execute: async ({ url }, ctx) => {
     try {
       const response = await fetch(url, {
-        headers: { 'User-Agent': 'Mozilla/5.0 (compatible; 0xbuffer/1.0)' },
+        headers: { 'User-Agent': 'Mozilla/5.0 (compatible; hexbuffer/1.0)' },
         redirect: 'follow',
         signal: AbortSignal.timeout(15000),
       });

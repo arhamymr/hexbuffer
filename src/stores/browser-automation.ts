@@ -115,8 +115,8 @@ type BrowserAutomationSet = (
     | ((state: BrowserAutomationState) => Partial<BrowserAutomationState>),
 ) => void;
 
-const STORAGE_KEY = '0xbuffer:crawl-setup-config';
-const DELETED_SESSIONS_STORAGE_KEY = '0xbuffer:deleted-ai-browser-sessions';
+const STORAGE_KEY = 'hexbuffer:crawl-setup-config';
+const DELETED_SESSIONS_STORAGE_KEY = 'hexbuffer:deleted-ai-browser-sessions';
 const DEFAULT_EXPANDED_PAGE_IDS = ['page-root', 'page-products', 'page-login'];
 
 function makeSession(setup: CrawlSetupConfig): CrawlSession {

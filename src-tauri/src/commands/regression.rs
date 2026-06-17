@@ -61,19 +61,19 @@ pub async fn run_regression_test(
         .shell()
         .sidecar("ai-engine")
         .map_err(|e| format!("Failed to prepare sidecar: {}", e))?
-        .env("0XBUFFER_AI_ENGINE_MODE", "regression")
-        .env("0XBUFFER_REGRESSION_CONFIG_JSON", &config_json)
-        .env("0XBUFFER_REGRESSION_SESSION_ID", &run_id)
+        .env("HEXBUFFER_AI_ENGINE_MODE", "regression")
+        .env("HEXBUFFER_REGRESSION_CONFIG_JSON", &config_json)
+        .env("HEXBUFFER_REGRESSION_SESSION_ID", &run_id)
         .env(
-            "0XBUFFER_PROXY_PORT",
+            "HEXBUFFER_PROXY_PORT",
             crate::proxy::active_proxy_port()
                 .unwrap_or_else(crate::proxy::default_proxy_port)
                 .to_string(),
         )
         .env("XBUFFER_AI_PROVIDER", &settings.provider)
-        .env("0XBUFFER_AI_MODEL", &settings.model)
+        .env("HEXBUFFER_AI_MODEL", &settings.model)
         .env("AI_SDK_LOG_WARNINGS", "false")
-        .env("0XBUFFER_AI_ARTIFACT_DIR", artifact_dir.to_string_lossy().to_string());
+        .env("HEXBUFFER_AI_ARTIFACT_DIR", artifact_dir.to_string_lossy().to_string());
 
     let mut command: Command = sidecar_command.into();
     command
@@ -227,8 +227,8 @@ pub async fn scrape_page_for_steps(
         .shell()
         .sidecar("ai-engine")
         .map_err(|e| format!("Failed to prepare sidecar: {}", e))?
-        .env("0XBUFFER_AI_ENGINE_MODE", "scrape-page")
-        .env("0XBUFFER_SCRAPE_TARGET_URL", &target_url)
+        .env("HEXBUFFER_AI_ENGINE_MODE", "scrape-page")
+        .env("HEXBUFFER_SCRAPE_TARGET_URL", &target_url)
         .env("XBUFFER_AI_PROVIDER", &settings.provider)
         .env("AI_SDK_LOG_WARNINGS", "false");
 
@@ -328,9 +328,9 @@ pub async fn run_regression_step(
         .shell()
         .sidecar("ai-engine")
         .map_err(|e| format!("Failed to prepare sidecar: {}", e))?
-        .env("0XBUFFER_AI_ENGINE_MODE", "regression-single-step")
-        .env("0XBUFFER_REGRESSION_STEP_JSON", &step_json_str)
-        .env("0XBUFFER_REGRESSION_TARGET_URL", &target_url)
+        .env("HEXBUFFER_AI_ENGINE_MODE", "regression-single-step")
+        .env("HEXBUFFER_REGRESSION_STEP_JSON", &step_json_str)
+        .env("HEXBUFFER_REGRESSION_TARGET_URL", &target_url)
         .env("XBUFFER_AI_PROVIDER", &settings.provider)
         .env("AI_SDK_LOG_WARNINGS", "false");
 

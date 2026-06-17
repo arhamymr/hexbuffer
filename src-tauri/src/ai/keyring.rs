@@ -4,7 +4,7 @@ use std::sync::{Mutex, OnceLock};
 
 use super::providers::normalize_ai_provider;
 
-const AI_KEYRING_SERVICE: &str = "0xbuffer.ai";
+const AI_KEYRING_SERVICE: &str = "hexbuffer.ai";
 static AI_API_KEY_CACHE: OnceLock<Mutex<BTreeMap<String, String>>> = OnceLock::new();
 
 pub fn read_optional_ai_api_key(provider: &str) -> Result<Option<String>, String> {
@@ -82,7 +82,7 @@ pub(crate) fn keyring_error(error: KeyringError) -> String {
     let message = error.to_string();
     if message.contains("Platform secure storage failure") {
         return format!(
-            "OS credential store error: {}. Unlock Keychain Access and re-save the API key. If it keeps failing, delete the stale 0xbuffer.ai item for this provider from Keychain Access, then save the key again.",
+            "OS credential store error: {}. Unlock Keychain Access and re-save the API key. If it keeps failing, delete the stale hexbuffer.ai item for this provider from Keychain Access, then save the key again.",
             message
         );
     }

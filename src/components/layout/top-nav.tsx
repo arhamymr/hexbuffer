@@ -100,7 +100,7 @@ export function TopNav() {
             <p className={cn(
               proxyStatus === "connected" ? "text-primary" : "text-muted-foreground",
               "max-w-0 overflow-hidden whitespace-nowrap text-sm font-mono opacity-0 transition-all duration-200 no-underline group-hover:max-w-20 group-hover:opacity-100")}>
-              0xbuffer
+              hexbuffer
             </p>
           </Link>
 

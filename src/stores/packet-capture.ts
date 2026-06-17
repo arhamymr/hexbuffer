@@ -27,7 +27,7 @@ export const usePacketCaptureStore = create<PacketCaptureState>()(
         }),
     }),
     {
-      name: '0xbuffer-packet-capture',
+      name: 'hexbuffer-packet-capture',
     }
   )
 );

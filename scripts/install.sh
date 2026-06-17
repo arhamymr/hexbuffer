@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-APP_NAME="0xbuffer"
-BASE_URL="${OXBUFFER_RELEASES_URL:-https://dist.0xbuffer.com}"
+APP_NAME="hexbuffer"
+BASE_URL="${OXBUFFER_RELEASES_URL:-https://dist.hexbuffer.com}"
 BASE_URL="${BASE_URL%/}"
 
 OS="$(uname -s)"
@@ -170,10 +170,10 @@ install_linux() {
   mkdir -p "$DESKTOP_DIR"
   cat > "$DESKTOP_FILE" <<EOF
 [Desktop Entry]
-Name=0xbuffer
+Name=hexbuffer
 Comment=Security reconnaissance and proxy tool
 Exec=$TARGET_APPIMAGE
-Icon=0xbuffer
+Icon=hexbuffer
 Type=Application
 Categories=Development;Security;
 Terminal=false
@@ -195,7 +195,7 @@ case "$OS" in
     ;;
   *)
     echo "Unsupported platform: $OS"
-    echo "0xbuffer install script supports macOS and Linux."
+    echo "hexbuffer install script supports macOS and Linux."
     exit 1
     ;;
 esac

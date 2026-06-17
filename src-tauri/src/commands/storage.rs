@@ -39,7 +39,7 @@ pub async fn get_storage_info(app: AppHandle) -> Result<StorageInfo, String> {
         .path()
         .app_data_dir()
         .map_err(|error| error.to_string())?;
-    let database_path = app_data_dir.join("0xbuffer.db");
+    let database_path = app_data_dir.join("hexbuffer.db");
     let browser_artifacts_path = app_data_dir.join("ai-browser-artifacts");
 
     Ok(StorageInfo {
@@ -110,7 +110,7 @@ pub async fn reset_local_data(
         .map_err(|error| error.to_string())?;
     let artifact_dir = app_data_dir.join("ai-browser-artifacts");
     let intercept_browser_profile_dir = app_data_dir.join("intercept-browser-profile");
-    let ca_path = app_data_dir.join("0xbuffer-ca.pem");
+    let ca_path = app_data_dir.join("hexbuffer-ca.pem");
     let (files_deleted, bytes_deleted) = count_files(&artifact_dir)?;
 
     if artifact_dir.exists() {

@@ -1,5 +1,5 @@
 // Exports imported symbols to imports.json.
-// @category 0xbuffer
+// @category hexbuffer
 
 import ghidra.app.script.GhidraScript;
 import ghidra.program.model.symbol.ExternalLocation;

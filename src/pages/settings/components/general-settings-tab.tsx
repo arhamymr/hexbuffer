@@ -214,7 +214,7 @@ export function GeneralSettingsTab({ settings }: GeneralSettingsTabProps) {
                   <AlertDialogTitle>Reset local browser data?</AlertDialogTitle>
                   <AlertDialogDescription>
                     This clears browser automation artifacts, resets the managed intercept browser profile,
-                    and removes saved 0xbuffer CA files. Proxy history and documents stay in the database.
+                    and removes saved hexbuffer CA files. Proxy history and documents stay in the database.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>

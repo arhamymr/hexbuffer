@@ -53,7 +53,7 @@ const DEFAULT_AI_SETTINGS: AiSettings = {
   allowThirdPartyAiSharing: false,
 };
 
-const LEGACY_AI_KEY_MIGRATION_ATTEMPTED_KEY = '0xbuffer-ai-keys-migration-attempted';
+const LEGACY_AI_KEY_MIGRATION_ATTEMPTED_KEY = 'hexbuffer-ai-keys-migration-attempted';
 
 export function useSettingsPage() {
   const [downloading, setDownloading] = React.useState(false);
@@ -99,7 +99,7 @@ export function useSettingsPage() {
       return;
     }
 
-    const legacyValue = window.localStorage.getItem('0xbuffer-ai-keys');
+    const legacyValue = window.localStorage.getItem('hexbuffer-ai-keys');
     if (!legacyValue) {
       window.localStorage.setItem(LEGACY_AI_KEY_MIGRATION_ATTEMPTED_KEY, 'true');
       return;
@@ -114,7 +114,7 @@ export function useSettingsPage() {
         await invoke<AiKeyStatus>('set_ai_api_key', { provider, apiKey });
       }
 
-      window.localStorage.removeItem('0xbuffer-ai-keys');
+      window.localStorage.removeItem('hexbuffer-ai-keys');
       window.localStorage.setItem(LEGACY_AI_KEY_MIGRATION_ATTEMPTED_KEY, 'true');
       if (entries.length > 0) {
         toast.success('Migrated saved AI API keys to the OS credential store');
@@ -198,7 +198,7 @@ export function useSettingsPage() {
 
       const filePath = await save({
         title: 'Save CA Certificate',
-        defaultPath: '0xbuffer-ca.pem',
+        defaultPath: 'hexbuffer-ca.pem',
         filters: [
           {
             name: 'PEM Certificate',

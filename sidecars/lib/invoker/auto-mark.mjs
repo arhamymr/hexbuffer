@@ -316,8 +316,8 @@ function validateAiSuggestions(candidates, selected) {
 
 export async function runInvokerAutoMark() {
   const provider = process.env.XBUFFER_AI_PROVIDER || 'deepseek';
-  const model = process.env['0XBUFFER_AI_MODEL'] || 'deepseek-chat';
-  const rawRequest = process.env['0XBUFFER_INVOKER_RAW_REQUEST'] || '';
+  const model = process.env['HEXBUFFER_AI_MODEL'] || 'deepseek-chat';
+  const rawRequest = process.env['HEXBUFFER_INVOKER_RAW_REQUEST'] || '';
 
   if (!rawRequest.trim()) {
     emit({
@@ -352,7 +352,7 @@ export async function runInvokerAutoMark() {
         model: providerModel(),
         schema: candidateSelectionSchema,
         system: [
-          'You are helping configure 0xbuffer Invoker fuzzing markers for an authorized web security test.',
+          'You are helping configure hexbuffer Invoker fuzzing markers for an authorized web security test.',
           'Select only candidate IDs worth fuzzing.',
           'Prefer user-controlled identifiers, filters, search terms, IDs, tokens, JSON/form values, cookies, and custom auth-related headers.',
           'Avoid selecting generic static path words, structural protocol fields, or values that are unlikely to affect application behavior.',

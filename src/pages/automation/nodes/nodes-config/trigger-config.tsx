@@ -169,7 +169,7 @@ export function TriggerConfigForm({ config, onChange, onRun }: TriggerConfigForm
                 className="min-h-20 resize-none text-xs"
                 value={config.host ?? ''}
                 onChange={(e) => onChange({ host: e.target.value })}
-                placeholder={'0xbuffer.com\nmycarrier.telkom.co.id\nhttps://app.example.com\napi.example.com:443\n*.target.local'}
+                placeholder={'hexbuffer.com\nmycarrier.telkom.co.id\nhttps://app.example.com\napi.example.com:443\n*.target.local'}
               />
               <p className="text-[10px] text-muted-foreground">
                 Required. Enter hostnames, full URLs, optional ports, or wildcard domains. Separate with new lines, commas, semicolons, or spaces.

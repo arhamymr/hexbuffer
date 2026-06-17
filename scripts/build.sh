@@ -121,7 +121,7 @@ if $WINDOWS_ALL || $ALL; then
   esac
 fi
 
-APP_NAME="0xbuffer"
+APP_NAME="hexbuffer"
 
 if [ -n "$REQUESTED_VERSION" ]; then
   "$ROOT/scripts/bump-version.sh" "$REQUESTED_VERSION"
@@ -131,7 +131,7 @@ fi
 
 VERSION="$(cat "$ROOT/VERSION")"
 PUB_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-BASE_URL="${UPDATER_BASE_URL:-https://dist.0xbuffer.com}"
+BASE_URL="${UPDATER_BASE_URL:-https://dist.hexbuffer.com}"
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -476,7 +476,7 @@ r2_cp "$ROOT/scripts/install.sh" "s3://${R2_BUCKET}/install.sh"
 
 # ── Update latest.json ───────────────────────────────────────────────
 
-LATEST_JSON="/tmp/0xbuffer_latest.json"
+LATEST_JSON="/tmp/hexbuffer_latest.json"
 
 echo "[upload] downloading existing latest.json..."
 r2_cat "s3://${R2_BUCKET}/latest.json" > "$LATEST_JSON" || echo '{}' > "$LATEST_JSON"

@@ -220,7 +220,7 @@ pub async fn start_threat_analysis(
         .path()
         .app_data_dir()
         .map_err(|error| error.to_string())?;
-    let db_path = app_data_dir.join("0xbuffer.db");
+    let db_path = app_data_dir.join("hexbuffer.db");
     let settings = read_settings(&settings_path(&app)?)?;
     let mut options = options;
     options.enabled_yara_rule_paths = settings

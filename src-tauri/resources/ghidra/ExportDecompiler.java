@@ -1,5 +1,5 @@
 // Exports decompiled functions to decompiled.json.
-// @category 0xbuffer
+// @category hexbuffer
 
 import ghidra.app.decompiler.DecompInterface;
 import ghidra.app.decompiler.DecompileResults;

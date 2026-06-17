@@ -9,7 +9,7 @@ import { getApiKeyEnvName } from './ai/provider.mjs';
 import { emit } from './events.mjs';
 
 export async function runCli() {
-  const mode = process.env['0XBUFFER_AI_ENGINE_MODE'] || 'crawl';
+  const mode = process.env['HEXBUFFER_AI_ENGINE_MODE'] || 'crawl';
   const provider = process.env.XBUFFER_AI_PROVIDER || 'deepseek';
   const apiKeyEnv = getApiKeyEnvName(provider);
   const hasKey = !!process.env[apiKeyEnv]?.trim();
@@ -17,7 +17,7 @@ export async function runCli() {
   const keyStatus = hasKey
     ? `${apiKeyEnv} set (${process.env[apiKeyEnv].trim().length} chars)`
     : `${apiKeyEnv} missing`;
-  process.stderr.write(`[ai-engine] mode=${mode} provider=${provider} model=${process.env['0XBUFFER_AI_MODEL'] || 'default'} ${keyStatus}\n`);
+  process.stderr.write(`[ai-engine] mode=${mode} provider=${provider} model=${process.env['HEXBUFFER_AI_MODEL'] || 'default'} ${keyStatus}\n`);
 
   if (mode === 'chat') {
     await runChat();
@@ -32,11 +32,11 @@ export async function runCli() {
     return;
   }
   if (mode === 'scrape-page') {
-    const targetUrl = process.env['0XBUFFER_SCRAPE_TARGET_URL'];
+    const targetUrl = process.env['HEXBUFFER_SCRAPE_TARGET_URL'];
     if (!targetUrl) {
       emit({
         type: 'scrape:failed',
-        error: '[task-specification] Missing 0XBUFFER_SCRAPE_TARGET_URL',
+        error: '[task-specification] Missing HEXBUFFER_SCRAPE_TARGET_URL',
         createdAt: new Date().toISOString(),
       });
       process.exitCode = 1;
@@ -60,13 +60,13 @@ export async function runCli() {
     return;
   }
   if (mode === 'regression-single-step') {
-    const stepJson = process.env['0XBUFFER_REGRESSION_STEP_JSON'];
-    const targetUrl = process.env['0XBUFFER_REGRESSION_TARGET_URL'] || '';
+    const stepJson = process.env['HEXBUFFER_REGRESSION_STEP_JSON'];
+    const targetUrl = process.env['HEXBUFFER_REGRESSION_TARGET_URL'] || '';
 
     if (!stepJson) {
       emit({
         type: 'step:failed',
-        error: '[task-specification] Missing 0XBUFFER_REGRESSION_STEP_JSON',
+        error: '[task-specification] Missing HEXBUFFER_REGRESSION_STEP_JSON',
         createdAt: new Date().toISOString(),
       });
       process.exitCode = 1;

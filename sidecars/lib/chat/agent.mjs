@@ -30,10 +30,10 @@ import {
   requestHumanSelectionDef,
 } from './tools/index.mjs';
 
-const CHAT_AGENT_ID = '0xbuffer-chat-agent';
+const CHAT_AGENT_ID = 'hexbuffer-chat-agent';
 
 const CHAT_INSTRUCTIONS = [
-  'You are the AI Analyst inside 0xbuffer, a desktop application for web application recon, traffic analysis, security testing, and reporting.',
+  'You are the AI Analyst inside hexbuffer, a desktop application for web application recon, traffic analysis, security testing, and reporting.',
   'Help users understand captured HTTP traffic, summarize recon and crawler results, identify suspicious patterns, and suggest safe testing steps.',
   'When users ask about targets, add them to scope using the addScope tool so the app tracks them. Use the hosts array to add multiple hosts at once. Use the targetId parameter (target display name) to add new hosts to an existing target instead of creating a new one.',
   'When users want findings or notes saved, write them to documents using the writeDocumentSection tool.',
@@ -69,7 +69,7 @@ function toChatMessages(messages) {
  * Avoids stdin pipe issues (broken pipe when the sidecar crashes early).
  */
 async function readContextFile() {
-  const path = process.env['0XBUFFER_AI_CHAT_CONTEXT_FILE'];
+  const path = process.env['HEXBUFFER_AI_CHAT_CONTEXT_FILE'];
   if (!path) return {};
   const raw = await readFile(path, 'utf-8');
   if (!raw.trim()) return {};
@@ -77,10 +77,10 @@ async function readContextFile() {
 }
 
 export async function runChat() {
-  const request = JSON.parse(process.env['0XBUFFER_AI_CHAT_REQUEST_JSON'] || '{"messages":[]}');
+  const request = JSON.parse(process.env['HEXBUFFER_AI_CHAT_REQUEST_JSON'] || '{"messages":[]}');
   const context = await readContextFile();
   const provider = process.env.XBUFFER_AI_PROVIDER || 'deepseek';
-  const model = process.env['0XBUFFER_AI_MODEL'] || 'deepseek-chat';
+  const model = process.env['HEXBUFFER_AI_MODEL'] || 'deepseek-chat';
 
   const messages = toChatMessages(request.messages || []);
   if (messages.length === 0) {
@@ -90,7 +90,7 @@ export async function runChat() {
       model,
       message: '[task-specification] No valid user messages found in chat request',
       layer: 'task-specification',
-      fix: 'Ensure 0XBUFFER_AI_CHAT_REQUEST_JSON contains at least one user or system message',
+      fix: 'Ensure HEXBUFFER_AI_CHAT_REQUEST_JSON contains at least one user or system message',
       createdAt: new Date().toISOString(),
     });
     process.exitCode = 1;

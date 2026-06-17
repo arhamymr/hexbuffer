@@ -68,7 +68,7 @@ export const useListenerStore = create<ListenerState>()(
       setLastPollError: (err) => set({ lastPollError: err }),
     }),
     {
-      name: '0xbuffer-listener',
+      name: 'hexbuffer-listener',
       partialize: (state) => ({
         activeSubTab: state.activeSubTab,
         servers: state.servers,

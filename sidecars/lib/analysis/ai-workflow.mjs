@@ -177,9 +177,9 @@ export async function analyzeWithAgent(extract, baseline, sessionId) {
   const toolContext = createToolContext();
 
   const createCrawlAgent = () => createAgent({
-    id: '0xbuffer-crawl-advisor',
+    id: 'hexbuffer-crawl-advisor',
     instructions: [
-      'You are 0xbuffer crawl advisor.',
+      'You are hexbuffer crawl advisor.',
       'Analyze pages for reconnaissance only.',
       'A deterministic heuristic engine has already analyzed this page. You will receive its findings as baseline context.',
       'Build on the heuristic findings: add deeper reasoning, surface issues regex cannot catch, refine severity, or identify subtle indicators.',

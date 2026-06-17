@@ -87,7 +87,7 @@ export const useLicenseStore = create<LicenseState>()(
       },
     }),
     {
-      name: '0xbuffer-license',
+      name: 'hexbuffer-license',
       partialize: (state) => ({
         licenseKey: state.licenseKey,
         status: state.status,

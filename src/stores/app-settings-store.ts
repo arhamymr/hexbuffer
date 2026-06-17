@@ -28,7 +28,7 @@ export const useAppSettingsStore = create<AppSettingsState>()(
       resetHiddenNavItems: () => set({ hiddenNavItems: [] }),
     }),
     {
-      name: '0xbuffer-app-settings',
+      name: 'hexbuffer-app-settings',
       partialize: (state) => ({
         terminalRenderer: state.terminalRenderer,
         hiddenNavItems: state.hiddenNavItems,

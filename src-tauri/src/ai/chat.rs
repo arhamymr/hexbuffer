@@ -95,17 +95,17 @@ fn run_ai_chat_engine(
         .shell()
         .sidecar("ai-engine")
         .map_err(|error| format!("Failed to prepare AI engine sidecar: {}", error))?
-        .env("0XBUFFER_AI_ENGINE_MODE", "chat")
+        .env("HEXBUFFER_AI_ENGINE_MODE", "chat")
         .env(
-            "0XBUFFER_AI_CHAT_REQUEST_JSON",
+            "HEXBUFFER_AI_CHAT_REQUEST_JSON"
             serde_json::to_string(request).map_err(|error| error.to_string())?,
         )
         .env(
-            "0XBUFFER_AI_CHAT_CONTEXT_FILE",
+            "HEXBUFFER_AI_CHAT_CONTEXT_FILE"
             context_file.to_string_lossy().to_string(),
         )
         .env("XBUFFER_AI_PROVIDER", settings.provider.trim())
-        .env("0XBUFFER_AI_MODEL", settings.model.trim())
+        .env("HEXBUFFER_AI_MODEL", settings.model.trim())
         .env("AI_SDK_LOG_WARNINGS", "false")
         .env(api_key_env_name(&settings.provider)?, api_key.trim());
     let mut command: Command = sidecar_command.into();
@@ -278,9 +278,9 @@ fn run_ai_chat_engine(
 }
 
 fn temp_context_file() -> Result<PathBuf, String> {
-    let dir = std::env::temp_dir().join("0xbuffer");
+    let dir = std::env::temp_dir().join("hexbuffer");
     std::fs::create_dir_all(&dir)
-        .map_err(|e| format!("Failed to create 0xbuffer temp dir: {}", e))?;
+        .map_err(|e| format!("Failed to create hexbuffer temp dir: {}", e))?;
     Ok(dir.join("ai-chat-context.json"))
 }
 

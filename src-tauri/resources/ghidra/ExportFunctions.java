@@ -1,5 +1,5 @@
 // Exports functions discovered by Ghidra to functions.json.
-// @category 0xbuffer
+// @category hexbuffer
 
 import ghidra.app.script.GhidraScript;
 import ghidra.program.model.listing.Function;

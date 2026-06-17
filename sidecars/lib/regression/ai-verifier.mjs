@@ -40,7 +40,7 @@ export async function verifyWithAI(page, prompt, runId, sessionId) {
   const title = await page.title().catch(() => '(unknown)');
 
   const agent = createAgent({
-    id: '0xbuffer-regression-verifier',
+    id: 'hexbuffer-regression-verifier',
     instructions: [
       'You are a QA regression tester. Your job is to verify that a web page is working correctly.',
       'You will receive the page URL, title, and an HTML snapshot.',

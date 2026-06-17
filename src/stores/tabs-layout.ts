@@ -19,7 +19,7 @@ export const useTabsLayoutStore = create<TabsLayoutState>()(
         })),
     }),
     {
-      name: '0xbuffer-tabs-layout',
+      name: 'hexbuffer-tabs-layout',
       partialize: (state) => ({
         activeTabIds: state.activeTabIds,
       }),

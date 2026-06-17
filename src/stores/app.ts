@@ -155,7 +155,7 @@ export const useAppStore = create<AppState>()(
       },
     }),
     {
-      name: '0xbuffer-app',
+      name: 'hexbuffer-app',
       merge: (persisted, current): AppState => {
         const base = current as AppState;
         const state = persisted as Partial<AppState> | undefined;

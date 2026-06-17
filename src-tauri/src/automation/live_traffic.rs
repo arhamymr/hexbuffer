@@ -503,10 +503,10 @@ mod tests {
 
     #[test]
     fn host_whitelist_accepts_exact_and_wildcard_hosts() {
-        let hosts = parse_host_whitelist(Some("mycarrier.telkom.co.id, *.0xbuffer.com"));
+        let hosts = parse_host_whitelist(Some("mycarrier.telkom.co.id, *.hexbuffer.com"));
 
         assert!(hosts.contains(&"mycarrier.telkom.co.id".to_string()));
-        assert!(hosts.contains(&"0xbuffer.com".to_string()));
+        assert!(hosts.contains(&"hexbuffer.com".to_string()));
     }
 
     #[test]
@@ -516,7 +516,7 @@ mod tests {
             timestamp: Utc::now(),
             request: ProxyRequest {
                 method: "GET".to_string(),
-                uri: "https://0xbuffer.com/docs".to_string(),
+                uri: "https://hexbuffer.com/docs".to_string(),
                 http_version: "HTTP/2".to_string(),
                 headers: HashMap::new(),
                 body: Vec::new(),
@@ -524,7 +524,7 @@ mod tests {
             },
             response: None,
             client_addr: "127.0.0.1:12345".to_string(),
-            server_addr: "https://0xbuffer.com".to_string(),
+            server_addr: "https://hexbuffer.com".to_string(),
         };
         let parts = get_record_url_parts(&record);
         let config = json!({

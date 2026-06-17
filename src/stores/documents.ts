@@ -496,7 +496,7 @@ export const useDocumentsStore = create<DocumentsState>()(
         }),
     }),
     {
-      name: '0xbuffer-documents',
+      name: 'hexbuffer-documents',
       partialize: (state) => ({
         documents: state.documents,
         activeDocumentId: state.activeDocumentId,

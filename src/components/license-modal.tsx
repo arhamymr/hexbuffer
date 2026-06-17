@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/dialog';
 import { useLicenseStore } from '@/stores/license';
 
-const CHECKOUT_URL = 'https://0xbuffer.com/payment';
+const CHECKOUT_URL = 'https://hexbuffer.com/payment';
 const LICENSE_KEY_PATTERN = /^0XB-[A-Z0-9]{5}-[A-Z0-9]{5}-[A-Z0-9]{5}-[A-Z0-9]{5}$/;
 
 function maskKey(key: string): string {

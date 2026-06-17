@@ -383,17 +383,17 @@ pub(crate) fn run_sidecar_crawl(
         .shell()
         .sidecar("ai-engine")
         .map_err(|error| format!("Failed to prepare AI browser sidecar: {}", error))?
-        .env("0XBUFFER_CRAWL_SESSION_ID", session_id)
-        .env("0XBUFFER_CRAWL_WORKER_ID", worker_id)
-        .env("0XBUFFER_CRAWL_CONFIG_JSON", config_json)
+        .env("HEXBUFFER_CRAWL_SESSION_ID", session_id)
+        .env("HEXBUFFER_CRAWL_WORKER_ID", worker_id)
+        .env("HEXBUFFER_CRAWL_CONFIG_JSON", config_json)
         .env(
-            "0XBUFFER_PROXY_PORT",
+            "HEXBUFFER_PROXY_PORT",
             crate::proxy::active_proxy_port()
                 .unwrap_or_else(crate::proxy::default_proxy_port)
                 .to_string(),
         )
         .env("XBUFFER_AI_PROVIDER", &settings.provider)
-        .env("0XBUFFER_AI_MODEL", &settings.model)
+        .env("HEXBUFFER_AI_MODEL", &settings.model)
         .env("AI_SDK_LOG_WARNINGS", "false");
     let mut command: Command = sidecar_command.into();
 
@@ -403,7 +403,7 @@ pub(crate) fn run_sidecar_crawl(
         .stderr(Stdio::piped());
 
     if let Some(dir) = artifact_dir {
-        command.env("0XBUFFER_AI_ARTIFACT_DIR", dir);
+        command.env("HEXBUFFER_AI_ARTIFACT_DIR", dir);
     }
 
     #[cfg(unix)]

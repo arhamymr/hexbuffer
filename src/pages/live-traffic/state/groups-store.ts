@@ -163,6 +163,6 @@ export const useGroupsStore = create<GroupsState>()(
         return ids.map((id) => cachedCalls[id]).filter(Boolean);
       },
     }),
-    { name: '0xbuffer-groups' }
+    { name: 'hexbuffer-groups' }
   )
 );

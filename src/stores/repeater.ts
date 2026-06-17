@@ -136,7 +136,7 @@ export const useRepeaterStore = create<RepeaterState>()(
         }),
     }),
     {
-      name: '0xbuffer-repeater',
+      name: 'hexbuffer-repeater',
       partialize: (state) => ({
         tabs: state.tabs,
         activeTabId: state.activeTabId,

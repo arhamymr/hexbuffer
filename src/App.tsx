@@ -4,9 +4,6 @@ import { CaInstallDialog } from "@/components/ca-install-dialog";
 import { startLiveTrafficWatcher, stopLiveTrafficWatcher } from "@/triggers/live-traffic";
 import { startPageCrawledWatcher, stopPageCrawledWatcher } from "@/triggers/browser-automation";
 
-const AssistantPage = React.lazy(() =>
-  import("@/pages/assistant").then((m) => ({ default: m.AssistantPage }))
-);
 const LiveTrafficPage = React.lazy(() =>
   import("@/pages/live-traffic").then((m) => ({ default: m.LiveTrafficPage }))
 );
@@ -71,8 +68,7 @@ function AppRoutes() {
       <CaInstallDialog />
       <React.Suspense fallback={<div className="h-full flex items-center justify-center text-muted-foreground text-sm">Loading…</div>}>
         <Routes>
-          <Route path="/" element={<AssistantPage />} />
-          <Route path="/live-traffic" element={<LiveTrafficPage />} />
+          <Route path="/" element={<LiveTrafficPage />} />
           <Route path="/intercept" element={<InterceptPage />} />
           <Route path="/repeater" element={<RepeaterPage />} />
           <Route path="/invoker" element={<InvokerPage />} />

@@ -1,10 +1,10 @@
 import React from 'react';
-import { Play, Square, CheckCircle2, XCircle, Loader2, Clock, AlertTriangle } from 'lucide-react';
+import { Play, CheckCircle2, XCircle, Loader2, Clock, AlertTriangle, PlayCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import type { StepResult, TestCase, TestRun, RunStatus } from '../types';
+import type { StepResult, TestCase, TestRun } from '../types';
 import { STEP_KIND_LABELS, STEP_KIND_ICONS } from '../constants';
 
 interface TestRunnerProps {
@@ -13,7 +13,10 @@ interface TestRunnerProps {
   liveSteps: StepResult[];
   latestRun: TestRun | null;
   onRun: (testCaseId: string) => void;
+  onRunStep: (stepIndex: number) => void;
   isRunning: boolean;
+  runningStepIndex: number | null;
+  singleStepResults: Record<number, StepResult>;
 }
 
 export function TestRunner({
@@ -22,7 +25,10 @@ export function TestRunner({
   liveSteps,
   latestRun,
   onRun,
+  onRunStep,
   isRunning,
+  runningStepIndex,
+  singleStepResults,
 }: TestRunnerProps) {
   const bottomRef = React.useRef<HTMLDivElement>(null);
 
@@ -49,6 +55,12 @@ export function TestRunner({
 
   // Map the test case steps with results
   const stepStatuses = testCase.steps.map((step, i) => {
+    // Check for single-step results first
+    const singleResult = singleStepResults[i];
+    if (singleResult) {
+      return { ...step, status: singleResult.status, error: singleResult.error || null, durationMs: singleResult.durationMs || 0 };
+    }
+
     const result = displaySteps.find((r) => r.stepIndex === i);
     if (isActiveForThis && !result) {
       return { ...step, status: 'pending' as const, error: null, durationMs: 0 };
@@ -57,6 +69,7 @@ export function TestRunner({
   });
 
   const isRunningForThis = isActiveForThis && isRunning;
+  const canRunSingleStep = !isRunning;
 
   return (
     <div className="flex flex-col h-full">
@@ -68,24 +81,26 @@ export function TestRunner({
             {testCase.targetUrl || 'No target URL'}
           </p>
         </div>
-        <Button
-          size="sm"
-          onClick={() => onRun(testCase.id)}
-          disabled={isRunning}
-          className="gap-1.5 shrink-0"
-        >
-          {isRunningForThis ? (
-            <>
-              <Loader2 className="size-3.5 animate-spin" />
-              Running...
-            </>
-          ) : (
-            <>
-              <Play className="size-3.5" />
-              Run Test
-            </>
-          )}
-        </Button>
+        <div className="flex items-center gap-1.5 shrink-0">
+          <Button
+            size="sm"
+            onClick={() => onRun(testCase.id)}
+            disabled={isRunning}
+            className="gap-1.5 shrink-0"
+          >
+            {isRunningForThis ? (
+              <>
+                <Loader2 className="size-3.5 animate-spin" />
+                Running...
+              </>
+            ) : (
+              <>
+                <Play className="size-3.5" />
+                Run Test
+              </>
+            )}
+          </Button>
+        </div>
       </div>
 
       {/* Step progress */}
@@ -97,12 +112,13 @@ export function TestRunner({
             const isPassed = step.status === 'passed';
             const isFailed = step.status === 'failed';
             const isPending = step.status === 'pending' || step.status === 'skipped';
+            const isSingleRunning = runningStepIndex === i;
 
             return (
               <div
                 key={i}
                 className={cn(
-                  'flex items-center gap-2.5 px-3 py-2 rounded-md transition-colors',
+                  'flex items-center gap-2.5 px-3 py-2 rounded-md transition-colors group',
                   isRunning && 'bg-blue-50 dark:bg-blue-950/30',
                   isPassed && 'bg-green-50/50 dark:bg-green-950/20',
                   isFailed && 'bg-red-50 dark:bg-red-950/30',
@@ -111,16 +127,13 @@ export function TestRunner({
               >
                 {/* Status icon */}
                 <div className="shrink-0">
-                  {isRunning && (
+                  {isRunning || isSingleRunning ? (
                     <Loader2 className="size-4 text-blue-500 animate-spin" />
-                  )}
-                  {isPassed && (
+                  ) : isPassed ? (
                     <CheckCircle2 className="size-4 text-green-500" />
-                  )}
-                  {isFailed && (
+                  ) : isFailed ? (
                     <XCircle className="size-4 text-red-500" />
-                  )}
-                  {isPending && (
+                  ) : (
                     <Clock className="size-4 text-muted-foreground/40" />
                   )}
                 </div>
@@ -151,6 +164,19 @@ export function TestRunner({
                     </div>
                   )}
                 </div>
+
+                {/* Run Step button (single step execution) */}
+                {canRunSingleStep && isPending && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="size-6 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={() => onRunStep(i)}
+                    title={`Run step ${i + 1}`}
+                  >
+                    <PlayCircle className="size-3.5 text-muted-foreground hover:text-blue-500" />
+                  </Button>
+                )}
 
                 {/* Duration */}
                 {!isPending && step.durationMs > 0 && (

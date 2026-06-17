@@ -11,9 +11,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { cn } from '@/lib/utils';
 import type { TestStep, StepKind } from '../types';
-import { STEP_KIND_LABELS, STEP_KIND_ICONS, STEP_KIND_DESCRIPTIONS, STEP_KIND_OPTIONS } from '../constants';
+import { STEP_KIND_ICONS, STEP_KIND_OPTIONS } from '../constants';
 
 interface StepBuilderProps {
   step: TestStep;
@@ -96,7 +95,7 @@ export function StepBuilder({ step, index, onChange, onRemove, onMove, totalStep
   );
 }
 
-function StepFields({
+export function StepFields({
   step,
   onChange,
 }: {

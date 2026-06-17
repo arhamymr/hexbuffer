@@ -395,6 +395,7 @@ CREATE INDEX IF NOT EXISTS idx_ai_chat_messages_created ON ai_chat_messages(crea
 pub const CREATE_REGRESSION_TABLES: &str = r#"
 CREATE TABLE IF NOT EXISTS regression_test_cases (
     id TEXT PRIMARY KEY,
+    test_name TEXT NOT NULL DEFAULT 'Default Test',
     name TEXT NOT NULL,
     description TEXT NOT NULL DEFAULT '',
     target_url TEXT NOT NULL,

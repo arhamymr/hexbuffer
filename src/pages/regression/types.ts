@@ -30,6 +30,7 @@ export interface TestStep {
 
 export interface TestCase {
   id: string;
+  testName: string;
   name: string;
   description: string;
   targetUrl: string;
@@ -82,5 +83,58 @@ export interface TestRunRecord {
   startedAt: string | null;
   finishedAt: string | null;
   error: string | null;
+  createdAt: string;
+}
+
+// ── Scraped page structure for AI step generation context ────────────
+
+export interface FormField {
+  tagName: string;
+  name: string;
+  id: string;
+  type: string;
+  placeholder: string;
+  ariaLabel: string;
+  autocomplete: string;
+  required: boolean;
+  disabled: boolean;
+}
+
+export interface ButtonInfo {
+  text: string;
+  id: string;
+  className: string;
+  tagName: string;
+  type: string;
+}
+
+export interface LinkInfo {
+  text: string;
+  href: string;
+  id: string;
+  className: string;
+}
+
+export interface PageStructure {
+  title: string;
+  url: string;
+  finalUrl?: string;
+  statusCode?: number | null;
+  forms: FormField[];
+  buttons: ButtonInfo[];
+  links: LinkInfo[];
+  headings: string[];
+  textContent: string;
+}
+
+// ── Regression log entries for the Playwright log panel ──────────────
+
+export interface RegressionLogEntry {
+  id: string;
+  runId: string;
+  level: 'info' | 'warning' | 'error';
+  logType: string;
+  message: string;
+  url?: string;
   createdAt: string;
 }

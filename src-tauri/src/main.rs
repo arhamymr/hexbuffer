@@ -3,7 +3,11 @@
 
 use std::sync::Arc;
 use std::sync::Mutex;
-use tauri::Manager;
+use tauri::{
+    menu::{Menu, MenuItem, Submenu},
+    tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
+    Manager,
+};
 use zeroxbuffer::commands::browser_panel::BrowserTabManager;
 use zeroxbuffer::commands::intruder::IntruderState;
 use zeroxbuffer::commands::repeater::WsRepeaterState;
@@ -53,6 +57,9 @@ fn main() {
 
             let db_path = app_dir.join("0xbuffer.db");
             log(&format!("Opening database at {:?}", db_path));
+            let database = zeroxbuffer::db::repository::Database::new(db_path.clone())
+                .expect("Failed to initialize database");
+            database.init().expect("Failed to initialize database schema");
             let history = HistoryBridge::new(db_path).expect("Failed to initialize history bridge");
             log("History bridge initialized");
 
@@ -69,6 +76,7 @@ fn main() {
             app.manage(zeroxbuffer::automation::AutomationRuntimeState::default());
             app.manage(zeroxbuffer::commands::inspector::InspectorCdpState::default());
             app.manage(Arc::new(BrowserTabManager::new(app.handle().clone())));
+            app.manage(database);
             app.manage(history);
             log("Building Tauri app...");
 
@@ -99,6 +107,79 @@ fn main() {
                         log("Splash fallback: main window shown");
                     }
                 });
+            }
+
+            // System tray icon + menu
+            {
+                let icon = app.default_window_icon().cloned();
+
+                let assistant_i = MenuItem::with_id(app, "nav:/", "Assistant", true, None::<&str>)?;
+                let live_traffic_i = MenuItem::with_id(app, "nav:/live-traffic", "Live Traffic", true, None::<&str>)?;
+                let browser_i = MenuItem::with_id(app, "nav:/browser-automation", "Browser", true, None::<&str>)?;
+                let intercept_i = MenuItem::with_id(app, "nav:/intercept", "Intercept", true, None::<&str>)?;
+                let invoker_i = MenuItem::with_id(app, "nav:/invoker", "Invoker", true, None::<&str>)?;
+                let repeater_i = MenuItem::with_id(app, "nav:/repeater", "Repeater", true, None::<&str>)?;
+                let documents_i = MenuItem::with_id(app, "nav:/documents", "Documents", true, None::<&str>)?;
+                let tools_i = MenuItem::with_id(app, "nav:/tools", "Tools", true, None::<&str>)?;
+                let features_menu = Submenu::with_items(
+                    app,
+                    "Features",
+                    true,
+                    &[&assistant_i, &live_traffic_i, &browser_i, &intercept_i, &invoker_i, &repeater_i, &documents_i, &tools_i],
+                )?;
+
+                let show_i =
+                    MenuItem::with_id(app, "show", "Show", true, None::<&str>)?;
+                let quit_i =
+                    MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
+                let menu = Menu::with_items(app, &[&features_menu, &show_i, &quit_i])?;
+
+                let handle = app.handle().clone();
+                TrayIconBuilder::new()
+                    .menu(&menu)
+                    .on_menu_event(move |app, event| match event.id.as_ref() {
+                        "show" => {
+                            if let Some(window) = app.get_webview_window("main") {
+                                let _ = window.unminimize();
+                                let _ = window.show();
+                                let _ = window.set_focus();
+                            }
+                        }
+                        "quit" => {
+                            log("Quit via tray menu");
+                            app.exit(0);
+                        }
+                        id if id.starts_with("nav:") => {
+                            let path = &id[4..]; // strip "nav:" prefix
+                            if let Some(window) = app.get_webview_window("main") {
+                                let _ = window.unminimize();
+                                let _ = window.show();
+                                let _ = window.set_focus();
+                                let js = format!("window.location.href = '{}'", path);
+                                let _ = window.eval(&js);
+                            }
+                        }
+                        _ => {}
+                    })
+                    .on_tray_icon_event(move |_tray, event| match event {
+                        TrayIconEvent::Click {
+                            button: MouseButton::Left,
+                            button_state: MouseButtonState::Up,
+                            ..
+                        } => {
+                            if let Some(window) = handle.get_webview_window("main") {
+                                let _ = window.unminimize();
+                                let _ = window.show();
+                                let _ = window.set_focus();
+                            }
+                        }
+                        _ => {}
+                    })
+                    .icon(
+                        icon.expect("default window icon must be set in tauri.conf.json"),
+                    )
+                    .build(app)?;
+                log("System tray icon created");
             }
 
             log("Tauri setup complete");
@@ -258,6 +339,8 @@ fn main() {
             zeroxbuffer::commands::regression::save_regression_test_case,
             zeroxbuffer::commands::regression::delete_regression_test_case,
             zeroxbuffer::commands::regression::list_regression_runs,
+            zeroxbuffer::commands::regression::scrape_page_for_steps,
+            zeroxbuffer::commands::regression::run_regression_step,
             // Browser panel (embedded webview)
             zeroxbuffer::commands::browser_panel::browser_tab_create,
             zeroxbuffer::commands::browser_panel::browser_tab_navigate,

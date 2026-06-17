@@ -1,8 +1,8 @@
-import { useLocation, useNavigate } from 'react-router-dom';
 import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
 import { ArrowUp, Loader2, MessageSquare, Moon, Settings, Sun, TerminalSquare } from 'lucide-react';
 import { Button } from '../../ui/button';
 import { Separator } from '@/components/ui/separator';
+import { useChatboxStore } from '@/stores/chatbox';
 
 interface FooterActionsProps {
   theme: string;
@@ -27,9 +27,8 @@ export function FooterActions({
   downloading,
   onOpenUpdateDialog,
 }: FooterActionsProps) {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const isLandingPage = location.pathname === '/';
+  const isChatboxOpen = useChatboxStore((s) => s.isOpen);
+  const toggleChatbox = useChatboxStore((s) => s.toggle);
 
   return (
     <div className="flex shrink-0 items-center gap-1">
@@ -45,8 +44,8 @@ export function FooterActions({
        <Button
         variant="ghost"
         size="xs"
-        className={`h-8 w-8 p-0 ${isLandingPage ? 'text-primary' : ''}`}
-        onClick={() => navigate('/')}
+        className={`h-8 w-8 p-0 ${isChatboxOpen ? 'text-primary hover:text-primary' : ''}`}
+        onClick={toggleChatbox}
         title="AI Assistant"
       >
         <MessageSquare className="size-4" />

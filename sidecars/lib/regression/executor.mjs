@@ -16,6 +16,9 @@ export async function runRegressionSteps(testCase, runId, artifactDir) {
   let context;
   let page;
 
+  log(runId, 'info', 'regression', `Starting regression test "${testCase.name}"`, testCase.targetUrl);
+  log(runId, 'info', 'regression', `Test case has ${steps.length} step(s)`);
+
   emit({
     type: 'regression:test_started',
     testCaseId: testCase.id,
@@ -26,16 +29,23 @@ export async function runRegressionSteps(testCase, runId, artifactDir) {
   });
 
   try {
+    log(runId, 'info', 'regression', 'Launching Playwright Chromium browser', testCase.targetUrl);
     browser = await chromium.launch({ headless: true });
+    log(runId, 'info', 'regression', 'Browser launched successfully');
+
     context = await browser.newContext({
       viewport: { width: 1280, height: 720 },
       ignoreHTTPSErrors: true,
     });
+
     page = await context.newPage();
+    log(runId, 'info', 'regression', 'Browser context and page created');
 
     for (let i = 0; i < steps.length; i++) {
       const step = steps[i];
       const stepStartedAt = Date.now();
+
+      log(runId, 'info', 'regression', `Step ${i + 1}/${steps.length}: ${step.kind}`, page.url());
 
       emit({
         type: 'regression:step_started',
@@ -48,6 +58,8 @@ export async function runRegressionSteps(testCase, runId, artifactDir) {
       try {
         const screenshotPath = await executeStep(page, step, i, runId, artifactDir);
         const durationMs = Date.now() - stepStartedAt;
+
+        log(runId, 'info', 'regression', `Step ${i + 1} passed (${durationMs}ms)`, page.url());
 
         const result = {
           stepIndex: i,
@@ -72,9 +84,13 @@ export async function runRegressionSteps(testCase, runId, artifactDir) {
         });
       } catch (error) {
         const durationMs = Date.now() - stepStartedAt;
+
+        log(runId, 'error', 'regression', `Step ${i + 1} failed: ${error.message}`, page.url());
+
         let screenshotPath = null;
         try {
           screenshotPath = await takeScreenshot(page, `step-${i}-error`, artifactDir);
+          log(runId, 'info', 'regression', `Error screenshot captured: ${screenshotPath}`);
         } catch { /* screenshot best-effort */ }
 
         const result = {
@@ -105,43 +121,131 @@ export async function runRegressionSteps(testCase, runId, artifactDir) {
     }
   } finally {
     if (browser) {
+      log(runId, 'info', 'regression', 'Closing Playwright browser');
       await browser.close().catch(() => {});
+      log(runId, 'info', 'regression', 'Browser closed');
     }
   }
 
+  const passedCount = results.filter((r) => r.status === 'passed').length;
+  const failedCount = results.filter((r) => r.status === 'failed').length;
+  log(runId, 'info', 'regression', `Test completed: ${passedCount} passed, ${failedCount} failed out of ${results.length} step(s)`);
+
   return results;
+}
+
+/**
+ * Execute a single regression test step independently.
+ * Used by the UI for per-step "Run Step" execution.
+ * For navigate steps, navigates to step.value directly.
+ * For all other steps, first navigates to targetUrl, then executes the step.
+ */
+export async function runSingleStep(step, targetUrl, artifactDir) {
+  const runId = randomUUID();
+  const stepStartedAt = Date.now();
+  let browser;
+
+  try {
+    log(runId, 'info', 'regression', `Running single step: ${step.kind}`, targetUrl);
+    browser = await chromium.launch({ headless: true });
+    log(runId, 'info', 'regression', 'Browser launched for single step');
+
+    const context = await browser.newContext({
+      viewport: { width: 1280, height: 720 },
+      ignoreHTTPSErrors: true,
+    });
+    const page = await context.newPage();
+
+    // For non-navigate steps, navigate to targetUrl first
+    if (step.kind !== 'navigate') {
+      if (!targetUrl) {
+        throw new Error('targetUrl is required for non-navigate steps');
+      }
+      log(runId, 'info', 'navigation', `Navigating to ${targetUrl}`, targetUrl);
+      await page.goto(targetUrl, { waitUntil: 'networkidle', timeout: 30000 });
+      log(runId, 'info', 'navigation', 'Navigation completed', page.url());
+    }
+
+    const screenshotPath = await executeStep(page, step, 0, runId, artifactDir);
+    const durationMs = Date.now() - stepStartedAt;
+
+    log(runId, 'info', 'regression', `Single step passed (${durationMs}ms)`, page.url());
+
+    return {
+      stepIndex: 0,
+      kind: step.kind,
+      status: 'passed',
+      error: null,
+      screenshotPath,
+      durationMs,
+      startedAt: new Date(stepStartedAt).toISOString(),
+      finishedAt: new Date().toISOString(),
+    };
+  } catch (error) {
+    const durationMs = Date.now() - stepStartedAt;
+    log(runId, 'error', 'regression', `Single step failed: ${error.message}`);
+
+    return {
+      stepIndex: 0,
+      kind: step.kind,
+      status: 'failed',
+      error: error.message,
+      screenshotPath: null,
+      durationMs,
+      startedAt: new Date(stepStartedAt).toISOString(),
+      finishedAt: new Date().toISOString(),
+    };
+  } finally {
+    if (browser) {
+      await browser.close().catch(() => {});
+      log(runId, 'info', 'regression', 'Browser closed after single step');
+    }
+  }
 }
 
 async function executeStep(page, step, stepIndex, runId, artifactDir) {
   switch (step.kind) {
     case 'navigate': {
       if (!step.value) throw new Error('navigate step requires a URL');
-      await page.goto(step.value, { waitUntil: 'networkidle', timeout: 30000 });
+      log(runId, 'info', 'navigation', `Navigating to ${step.value}`, step.value);
+      const response = await page.goto(step.value, { waitUntil: 'networkidle', timeout: 30000 });
+      log(runId, 'info', 'navigation', `Navigation completed — status ${response?.status() || 'unknown'}`, page.url());
       return null;
     }
     case 'click': {
       if (!step.selector) throw new Error('click step requires a selector');
+      log(runId, 'info', 'action', `Clicking "${step.selector}"`, page.url());
       await page.click(step.selector, { timeout: 5000 });
+      log(runId, 'info', 'action', `Clicked "${step.selector}" successfully`, page.url());
       return null;
     }
     case 'fill': {
       if (!step.selector) throw new Error('fill step requires a selector');
       if (step.value === undefined) throw new Error('fill step requires a value');
+      log(runId, 'info', 'action', `Filling "${step.selector}" with "${step.value}"`, page.url());
       await page.fill(step.selector, step.value, { timeout: 5000 });
+      log(runId, 'info', 'action', `Filled "${step.selector}" successfully`, page.url());
       return null;
     }
     case 'wait': {
       const ms = step.ms || 1000;
+      log(runId, 'info', 'action', `Waiting ${ms}ms`, page.url());
       await page.waitForTimeout(ms);
+      log(runId, 'info', 'action', `Wait completed (${ms}ms)`, page.url());
       return null;
     }
     case 'screenshot': {
       const name = step.name || `step-${stepIndex}`;
-      return await takeScreenshot(page, name, artifactDir);
+      log(runId, 'info', 'action', `Taking screenshot "${name}"`, page.url());
+      const path = await takeScreenshot(page, name, artifactDir);
+      log(runId, 'info', 'action', `Screenshot saved: ${path || '(no artifact dir)'}`, page.url());
+      return path;
     }
     case 'assert-visible': {
       if (!step.selector) throw new Error('assert-visible step requires a selector');
+      log(runId, 'info', 'assertion', `Asserting element "${step.selector}" is visible`, page.url());
       await page.waitForSelector(step.selector, { state: 'visible', timeout: 10000 });
+      log(runId, 'info', 'assertion', `Element "${step.selector}" is visible — assertion passed`, page.url());
       emit({
         type: 'regression:assertion_passed',
         runId,
@@ -153,8 +257,10 @@ async function executeStep(page, step, stepIndex, runId, artifactDir) {
     }
     case 'assert-text': {
       if (!step.value) throw new Error('assert-text step requires expected text');
+      log(runId, 'info', 'assertion', `Asserting text "${step.value}" is present`, page.url());
       try {
         await page.getByText(step.value).first().waitFor({ state: 'visible', timeout: 10000 });
+        log(runId, 'info', 'assertion', `Text "${step.value}" found — assertion passed`, page.url());
         emit({
           type: 'regression:assertion_passed',
           runId,
@@ -163,6 +269,7 @@ async function executeStep(page, step, stepIndex, runId, artifactDir) {
           description: `Text "${step.value}" found`,
         });
       } catch {
+        log(runId, 'error', 'assertion', `Text "${step.value}" not found on page`, page.url());
         emit({
           type: 'regression:assertion_failed',
           runId,
@@ -178,8 +285,10 @@ async function executeStep(page, step, stepIndex, runId, artifactDir) {
     }
     case 'assert-url': {
       if (!step.pattern) throw new Error('assert-url step requires a pattern');
+      log(runId, 'info', 'assertion', `Asserting URL matches pattern "${step.pattern}"`, page.url());
       try {
         await page.waitForURL(step.pattern, { timeout: 10000 });
+        log(runId, 'info', 'assertion', `URL matches "${step.pattern}" — assertion passed`, page.url());
         emit({
           type: 'regression:assertion_passed',
           runId,
@@ -189,6 +298,7 @@ async function executeStep(page, step, stepIndex, runId, artifactDir) {
         });
       } catch {
         const currentUrl = page.url();
+        log(runId, 'error', 'assertion', `URL "${currentUrl}" does not match "${step.pattern}"`, page.url());
         emit({
           type: 'regression:assertion_failed',
           runId,
@@ -203,6 +313,7 @@ async function executeStep(page, step, stepIndex, runId, artifactDir) {
       return null;
     }
     case 'ai-verify': {
+      log(runId, 'info', 'regression', `AI verification step scheduled: "${step.prompt || 'no prompt'}"`, page.url());
       // ai-verify is handled separately by the ai-verifier after all steps
       return null;
     }

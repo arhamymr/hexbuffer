@@ -342,6 +342,27 @@
   stroke-width: 3;
 }
 
+/* ===== Regression Flow ===== */
+.regression-flow {
+  --xy-minimap-background-color: var(--background);
+  --xy-minimap-mask-background-color: color-mix(in oklch, var(--muted) 60%, transparent);
+  --xy-minimap-node-background-color: var(--muted);
+}
+
+.regression-flow .react-flow__pane {
+  cursor: default;
+}
+
+.regression-flow .react-flow__edge-path {
+  stroke: var(--primary);
+  stroke-width: 1.5;
+  opacity: 1;
+}
+
+.regression-flow .react-flow__node {
+  font-family: inherit;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -417,4 +438,39 @@
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
+}
+
+/* ===== MDXEditor dark mode overrides ===== */
+/* MDXEditor's second Radix definition (lines 1821+ in its style.css) pins
+   --slate-*, --blue-*, etc. to light values via :root. The dark variant
+   uses CSS module class _dark_6j9u9_1 which never appears in the DOM.
+   This block overrides the editor-specific variables for dark mode. */
+.dark .mdxeditor {
+  --basePageBg: var(--background);
+  --baseBase: var(--background);
+  --baseBgSubtle: var(--muted);
+  --baseBg: var(--muted);
+  --baseBgHover: oklch(1 0 0 / 0.08);
+  --baseBgActive: oklch(1 0 0 / 0.05);
+  --baseLine: var(--border);
+  --baseBorder: var(--border);
+  --baseBorderHover: oklch(1 0 0 / 0.2);
+  --baseSolid: var(--muted-foreground);
+  --baseSolidHover: var(--foreground);
+  --baseText: var(--foreground);
+  --baseTextContrast: var(--foreground);
+  --accentSolid: #0090ff;
+  --accentSolidHover: #3b9eff;
+  --accentText: #70b8ff;
+  --accentTextContrast: #c2e6ff;
+  --admonitionTipBg: oklch(0.2 0.03 200);
+  --admonitionTipBorder: oklch(0.35 0.06 200);
+  --admonitionInfoBg: oklch(0.2 0.03 145);
+  --admonitionInfoBorder: oklch(0.35 0.06 145);
+  --admonitionCautionBg: oklch(0.2 0.03 85);
+  --admonitionCautionBorder: oklch(0.35 0.06 85);
+  --admonitionDangerBg: oklch(0.2 0.04 20);
+  --admonitionDangerBorder: oklch(0.35 0.08 20);
+  --admonitionNoteBg: var(--muted);
+  --admonitionNoteBorder: var(--border);
 }

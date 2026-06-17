@@ -1,6 +1,6 @@
 [package]
 name = "zeroxbuffer"
-version = "2026.0.34"
+version = "2026.0.35"
 description = "Proxy App"
 authors = ["Arham"]
 edition = "2021"
@@ -9,7 +9,7 @@ edition = "2021"
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
-tauri = { version = "2", features = ["protocol-asset", "macos-private-api", "unstable", "devtools"] }
+tauri = { version = "2", features = ["protocol-asset", "macos-private-api", "unstable", "devtools", "tray-icon"] }
 tauri-plugin-opener = "2"
 tauri-plugin-dialog = "2"
 tauri-plugin-fs = "2"

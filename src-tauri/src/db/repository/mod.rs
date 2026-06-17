@@ -40,6 +40,12 @@ impl Database {
         conn.execute_batch(crate::db::schema::CREATE_COLLABORATOR_TABLES)?;
         conn.execute_batch(crate::db::schema::CREATE_AI_CHAT_TABLES)?;
         conn.execute_batch(crate::db::schema::CREATE_REGRESSION_TABLES)?;
+        Self::ensure_column(
+            &conn,
+            "regression_test_cases",
+            "test_name",
+            "TEXT NOT NULL DEFAULT 'Default Test'",
+        )?;
         Self::ensure_column(&conn, "ai_browser_pages", "ai_used_for_analysis", "INTEGER")?;
         Self::ensure_column(&conn, "ai_browser_pages", "screenshot_path", "TEXT")?;
         Self::ensure_column(&conn, "ai_browser_pages", "rendered_html_path", "TEXT")?;

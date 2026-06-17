@@ -1,13 +1,26 @@
 import { create } from 'zustand';
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
-import type { TestCase, TestRun, StepResult, AiVerdict } from '@/pages/regression/types';
+import type { TestCase, TestRun, StepResult, AiVerdict, RegressionLogEntry } from '@/pages/regression/types';
+
+function normalizeTestCase(testCase: TestCase): TestCase {
+  return {
+    ...testCase,
+    testName: testCase.testName || 'Default Test',
+    name: testCase.name || 'New Test Case',
+    description: testCase.description || '',
+    targetUrl: testCase.targetUrl || '',
+    steps: testCase.steps || [],
+    enabled: testCase.enabled ?? true,
+  };
+}
 
 interface RegressionState {
   testCases: TestCase[];
   runs: Record<string, TestRun[]>; // testCaseId → runs
   activeRun: { testCaseId: string; runId: string; status: string } | null;
   liveSteps: StepResult[];
+  logs: RegressionLogEntry[];
 
   // Actions
   loadTestCases: () => Promise<void>;
@@ -15,6 +28,8 @@ interface RegressionState {
   deleteTestCase: (id: string) => Promise<void>;
   runTest: (testCaseId: string) => Promise<{ runId: string }>;
   loadRuns: (testCaseId: string) => Promise<void>;
+  clearLogs: () => void;
+  runSingleStep: (testCaseId: string, stepIndex: number) => Promise<StepResult | null>;
 
   // Internal
   _startListening: () => Promise<void>;
@@ -29,29 +44,35 @@ export const useRegressionStore = create<RegressionState>()((set, get) => ({
   runs: {},
   activeRun: null,
   liveSteps: [],
+  logs: [],
 
   loadTestCases: async () => {
     const cases = await invoke<TestCase[]>('list_regression_test_cases');
-    set({ testCases: cases });
+    set({
+      testCases: cases.map(normalizeTestCase),
+    });
   },
 
   saveTestCase: async (tc) => {
+    const normalized = normalizeTestCase(tc);
     const saved = await invoke<TestCase>('save_regression_test_case', {
       testCase: {
-        id: tc.id,
-        name: tc.name,
-        description: tc.description,
-        targetUrl: tc.targetUrl,
-        steps: tc.steps,
-        enabled: tc.enabled,
+        id: normalized.id,
+        testName: normalized.testName,
+        name: normalized.name,
+        description: normalized.description,
+        targetUrl: normalized.targetUrl,
+        steps: normalized.steps,
+        enabled: normalized.enabled,
       },
     });
-    const testCases = get().testCases.map((c) => (c.id === saved.id ? saved : c));
-    if (!testCases.find((c) => c.id === saved.id)) {
-      testCases.unshift(saved);
+    const normalizedSaved = normalizeTestCase(saved);
+    const testCases = get().testCases.map((c) => (c.id === normalizedSaved.id ? normalizedSaved : c));
+    if (!testCases.find((c) => c.id === normalizedSaved.id)) {
+      testCases.unshift(normalizedSaved);
     }
     set({ testCases });
-    return saved;
+    return normalizedSaved;
   },
 
   deleteTestCase: async (id) => {
@@ -73,6 +94,7 @@ export const useRegressionStore = create<RegressionState>()((set, get) => ({
     set({
       activeRun: { testCaseId, runId: result.runId, status: 'queued' },
       liveSteps: [],
+      logs: [],
     });
 
     return result;
@@ -83,6 +105,29 @@ export const useRegressionStore = create<RegressionState>()((set, get) => ({
       testCaseId,
     });
     set({ runs: { ...get().runs, [testCaseId]: runs } });
+  },
+
+  clearLogs: () => {
+    set({ logs: [] });
+  },
+
+  runSingleStep: async (testCaseId, stepIndex) => {
+    const tc = get().testCases.find((c) => c.id === testCaseId);
+    if (!tc) return null;
+
+    const step = tc.steps[stepIndex];
+    if (!step) return null;
+
+    try {
+      const result = await invoke<StepResult>('run_regression_step', {
+        stepJson: step,
+        targetUrl: tc.targetUrl,
+      });
+      return result;
+    } catch (error) {
+      console.error('Failed to run single step:', error);
+      return null;
+    }
   },
 
   _startListening: async () => {
@@ -169,7 +214,24 @@ export const useRegressionStore = create<RegressionState>()((set, get) => ({
       }
     );
 
-    unlisteners = [u1, u2, u3, u4, u5, u6];
+    const u7 = await listen<{ runId?: string; level?: string; logType?: string; message?: string; url?: string; createdAt?: string }>(
+      'regression:log-created',
+      (event) => {
+        set((s) => ({
+          logs: [...s.logs, {
+            id: crypto.randomUUID(),
+            runId: event.payload.runId || '',
+            level: (event.payload.level as 'info' | 'warning' | 'error') || 'info',
+            logType: event.payload.logType || 'regression',
+            message: event.payload.message || '',
+            url: event.payload.url || undefined,
+            createdAt: event.payload.createdAt || new Date().toISOString(),
+          }],
+        }));
+      }
+    );
+
+    unlisteners = [u1, u2, u3, u4, u5, u6, u7];
   },
 
   _stopListening: () => {

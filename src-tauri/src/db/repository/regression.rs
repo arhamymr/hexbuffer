@@ -7,6 +7,7 @@ use super::Database;
 #[serde(rename_all = "camelCase")]
 pub struct RegressionTestCaseRecord {
     pub id: String,
+    pub test_name: String,
     pub name: String,
     pub description: String,
     pub target_url: String,
@@ -36,19 +37,20 @@ impl Database {
     pub fn list_regression_test_cases(&self) -> SqlResult<Vec<RegressionTestCaseRecord>> {
         let conn = self.conn.lock().unwrap();
         let mut stmt = conn.prepare(
-            "SELECT id, name, description, target_url, steps_json, enabled, created_at, updated_at \
+            "SELECT id, test_name, name, description, target_url, steps_json, enabled, created_at, updated_at \
              FROM regression_test_cases ORDER BY updated_at DESC",
         )?;
         let rows = stmt.query_map([], |row| {
             Ok(RegressionTestCaseRecord {
                 id: row.get(0)?,
-                name: row.get(1)?,
-                description: row.get(2)?,
-                target_url: row.get(3)?,
-                steps_json: row.get(4)?,
-                enabled: row.get::<_, i32>(5)? != 0,
-                created_at: row.get(6)?,
-                updated_at: row.get(7)?,
+                test_name: row.get(1)?,
+                name: row.get(2)?,
+                description: row.get(3)?,
+                target_url: row.get(4)?,
+                steps_json: row.get(5)?,
+                enabled: row.get::<_, i32>(6)? != 0,
+                created_at: row.get(7)?,
+                updated_at: row.get(8)?,
             })
         })?;
         rows.collect()
@@ -57,19 +59,20 @@ impl Database {
     pub fn get_regression_test_case(&self, id: &str) -> SqlResult<Option<RegressionTestCaseRecord>> {
         let conn = self.conn.lock().unwrap();
         let mut stmt = conn.prepare(
-            "SELECT id, name, description, target_url, steps_json, enabled, created_at, updated_at \
+            "SELECT id, test_name, name, description, target_url, steps_json, enabled, created_at, updated_at \
              FROM regression_test_cases WHERE id = ?1",
         )?;
         let mut rows = stmt.query_map(params![id], |row| {
             Ok(RegressionTestCaseRecord {
                 id: row.get(0)?,
-                name: row.get(1)?,
-                description: row.get(2)?,
-                target_url: row.get(3)?,
-                steps_json: row.get(4)?,
-                enabled: row.get::<_, i32>(5)? != 0,
-                created_at: row.get(6)?,
-                updated_at: row.get(7)?,
+                test_name: row.get(1)?,
+                name: row.get(2)?,
+                description: row.get(3)?,
+                target_url: row.get(4)?,
+                steps_json: row.get(5)?,
+                enabled: row.get::<_, i32>(6)? != 0,
+                created_at: row.get(7)?,
+                updated_at: row.get(8)?,
             })
         })?;
         match rows.next() {
@@ -82,6 +85,7 @@ impl Database {
     pub fn save_regression_test_case(
         &self,
         id: &str,
+        test_name: &str,
         name: &str,
         description: &str,
         target_url: &str,
@@ -100,20 +104,21 @@ impl Database {
 
         if exists {
             conn.execute(
-                "UPDATE regression_test_cases SET name = ?1, description = ?2, target_url = ?3, \
-                 steps_json = ?4, enabled = ?5, updated_at = ?6 WHERE id = ?7",
-                params![name, description, target_url, steps_json, enabled_int, now, id],
+                "UPDATE regression_test_cases SET test_name = ?1, name = ?2, description = ?3, target_url = ?4, \
+                 steps_json = ?5, enabled = ?6, updated_at = ?7 WHERE id = ?8",
+                params![test_name, name, description, target_url, steps_json, enabled_int, now, id],
             )?;
         } else {
             conn.execute(
-                "INSERT INTO regression_test_cases (id, name, description, target_url, steps_json, \
-                 enabled, created_at, updated_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
-                params![id, name, description, target_url, steps_json, enabled_int, now, now],
+                "INSERT INTO regression_test_cases (id, test_name, name, description, target_url, steps_json, \
+                 enabled, created_at, updated_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
+                params![id, test_name, name, description, target_url, steps_json, enabled_int, now, now],
             )?;
         }
 
         Ok(RegressionTestCaseRecord {
             id: id.to_string(),
+            test_name: test_name.to_string(),
             name: name.to_string(),
             description: description.to_string(),
             target_url: target_url.to_string(),

@@ -150,7 +150,7 @@ export function AppFooter({ isTerminalOpen, onToggleTerminal }: AppFooterProps) 
 
   return (
     <>
-      <footer className="border-t px-4 py-1.5 flex items-center justify-between text-xs text-muted-foreground">
+      <footer className="border-t px-4 py-1.5 flex items-center justify-between text-xs text-muted-foreground bg-background">
         <div className="flex items-center gap-4">
           <span>© 0xbuffer v{pkg.version}</span>
           <ProxyStatusIndicator

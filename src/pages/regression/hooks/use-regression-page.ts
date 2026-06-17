@@ -22,22 +22,26 @@ export function useRegressionPage() {
     runs,
     activeRun,
     liveSteps,
+    logs,
     loadTestCases,
     saveTestCase,
     deleteTestCase,
     runTest,
     loadRuns,
+    clearLogs,
   } = useRegressionStore(
     useShallow((s) => ({
       testCases: s.testCases,
       runs: s.runs,
       activeRun: s.activeRun,
       liveSteps: s.liveSteps,
+      logs: s.logs,
       loadTestCases: s.loadTestCases,
       saveTestCase: s.saveTestCase,
       deleteTestCase: s.deleteTestCase,
       runTest: s.runTest,
       loadRuns: s.loadRuns,
+      clearLogs: s.clearLogs,
     }))
   );
 
@@ -52,10 +56,15 @@ export function useRegressionPage() {
   // Ensure at least one default tab always exists
   React.useEffect(() => {
     if (tabs.length === 0 && testCases.length > 0) {
-      const first = testCases[0];
-      const tabId = makeTabId();
-      setTabs([{ id: tabId, testCaseId: first.id, isEditing: false, editingCase: null, isNew: false }]);
-      setActiveTabId(tabId);
+      const nextTabs = testCases.map((testCase) => ({
+        id: makeTabId(),
+        testCaseId: testCase.id,
+        isEditing: false,
+        editingCase: null,
+        isNew: false,
+      }));
+      setTabs(nextTabs);
+      setActiveTabId(nextTabs[0]?.id ?? null);
     }
   }, [testCases, tabs.length]);
 
@@ -125,6 +134,7 @@ export function useRegressionPage() {
   const handleCreate = React.useCallback(() => {
     const newCase: TestCase = {
       id: crypto.randomUUID(),
+      testName: selectedCase?.testName || 'New Test',
       name: 'New Test Case',
       description: '',
       targetUrl: '',
@@ -143,7 +153,7 @@ export function useRegressionPage() {
     };
     setTabs((prev) => [...prev, newTab]);
     setActiveTabId(tabId);
-  }, []);
+  }, [selectedCase?.testName]);
 
   // Edit the test case — converts existing viewing tab to edit mode, or creates a new edit tab
   const handleEdit = React.useCallback((tc: TestCase) => {
@@ -181,6 +191,19 @@ export function useRegressionPage() {
       );
     },
     [saveTestCase, activeTabId],
+  );
+
+  const handleDraftChange = React.useCallback(
+    (tc: TestCase) => {
+      setTabs((prev) =>
+        prev.map((t) =>
+          t.id === activeTabId && t.isEditing
+            ? { ...t, editingCase: tc }
+            : t,
+        ),
+      );
+    },
+    [activeTabId],
   );
 
   // Cancel edit: revert tab to viewing mode (or close if new)
@@ -279,6 +302,8 @@ export function useRegressionPage() {
     selectedRuns,
     activeRun,
     liveSteps,
+    logs,
+    clearLogs,
     handleAddTab,
     editingCase: activeTab?.editingCase ?? null,
     isNew: activeTab?.isNew ?? false,
@@ -288,6 +313,7 @@ export function useRegressionPage() {
     handleCreate,
     handleEdit,
     handleSave,
+    handleDraftChange,
     handleDelete,
     handleRun,
     handleCancelEdit,

@@ -15,6 +15,8 @@ globalThis.AI_SDK_LOG_WARNINGS = false;
  * - `chat`: Interactive AI chat agent
  * - `invoker-auto-mark`: AI-assisted Invoker marker suggestion
  * - `regression`: Browser-based regression test runner with Playwright + AI verification
+ * - `scrape-page`: Scrape a target page's DOM structure for AI step generation
+ * - `regression-single-step`: Run a single regression step via Playwright
  * - `validate`: Dry-run that checks all prerequisites without executing
  *
  * ## Definition of Done
@@ -45,7 +47,7 @@ export { runCli };
 // Pre-flight validation (Harness Layers 1–3)
 // ---------------------------------------------------------------------------
 
-const VALID_MODES = ['crawl', 'chat', 'invoker-auto-mark', 'validate', 'regression'];
+const VALID_MODES = ['crawl', 'chat', 'invoker-auto-mark', 'validate', 'regression', 'scrape-page', 'regression-single-step'];
 
 function runPreflight() {
   const mode = process.env['0XBUFFER_AI_ENGINE_MODE'] || 'crawl';

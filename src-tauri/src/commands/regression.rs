@@ -38,6 +38,7 @@ pub async fn run_regression_test(
     // Build config for the sidecar
     let test_case_value: Value = serde_json::json!({
         "id": record.id,
+        "testName": record.test_name,
         "name": record.name,
         "description": record.description,
         "targetUrl": record.target_url,
@@ -195,6 +196,11 @@ pub async fn run_regression_test(
 
                     let _ = app_clone.emit("regression:test-failed", &message);
                 }
+                "log_created" => {
+                    // Forward Playwright execution logs to the frontend
+                    // Namespaced as regression:log-created to avoid conflicts with crawl events
+                    let _ = app_clone.emit("regression:log-created", &message);
+                }
                 _ => {
                     let tauri_event = event_type.replace(':', "-");
                     let _ = app_clone.emit(&tauri_event, &message);
@@ -211,6 +217,203 @@ pub async fn run_regression_test(
 }
 
 #[tauri::command]
+pub async fn scrape_page_for_steps(
+    app: AppHandle,
+    target_url: String,
+) -> Result<Value, String> {
+    let settings = crate::ai::read_ai_settings(&app).unwrap_or_default();
+
+    let sidecar_command = app
+        .shell()
+        .sidecar("ai-engine")
+        .map_err(|e| format!("Failed to prepare sidecar: {}", e))?
+        .env("0XBUFFER_AI_ENGINE_MODE", "scrape-page")
+        .env("0XBUFFER_SCRAPE_TARGET_URL", &target_url)
+        .env("XBUFFER_AI_PROVIDER", &settings.provider)
+        .env("AI_SDK_LOG_WARNINGS", "false");
+
+    let mut command: Command = sidecar_command.into();
+    command
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped());
+
+    // Inject API key if available
+    if let Ok(Some(api_key)) = crate::ai::read_optional_ai_api_key(&settings.provider) {
+        if !api_key.trim().is_empty() {
+            if let Ok(env_name) = crate::ai::api_key_env_name(&settings.provider) {
+                command.env(env_name, api_key.trim());
+            }
+        }
+    }
+
+    #[cfg(unix)]
+    command.process_group(0);
+
+    let mut child = command
+        .spawn()
+        .map_err(|e| format!("Failed to start scrape sidecar: {}", e))?;
+
+    let stdout = child
+        .stdout
+        .take()
+        .ok_or_else(|| "Failed to capture sidecar stdout".to_string())?;
+
+    // Read all stdout lines and look for scrape result
+    let reader = BufReader::new(stdout);
+    let mut last_error: Option<String> = None;
+
+    for line in reader.lines() {
+        let line = match line {
+            Ok(l) => l,
+            Err(_) => break,
+        };
+
+        let trimmed = line.trim();
+        if trimmed.is_empty() {
+            continue;
+        }
+
+        let message: Value = match serde_json::from_str(trimmed) {
+            Ok(m) => m,
+            Err(_) => continue,
+        };
+
+        let event_type = message
+            .get("type")
+            .and_then(Value::as_str)
+            .unwrap_or("");
+
+        match event_type {
+            "scrape:result" => {
+                // Return the scraped data
+                if let Some(data) = message.get("data") {
+                    return Ok(data.clone());
+                }
+                return Ok(message);
+            }
+            "scrape:failed" => {
+                last_error = Some(
+                    message
+                        .get("error")
+                        .and_then(Value::as_str)
+                        .unwrap_or("Unknown scrape error")
+                        .to_string(),
+                );
+            }
+            _ => {}
+        }
+    }
+
+    // Wait for process to finish
+    let _ = child.wait();
+
+    Err(last_error.unwrap_or_else(|| "No scrape result received from sidecar".to_string()))
+}
+
+/// Spawn the AI engine sidecar to run a single regression step via Playwright.
+/// Returns the step result (passed/failed with error details and duration).
+#[tauri::command]
+pub async fn run_regression_step(
+    app: AppHandle,
+    step_json: Value,
+    target_url: String,
+) -> Result<Value, String> {
+    let settings = crate::ai::read_ai_settings(&app).unwrap_or_default();
+
+    let step_json_str = serde_json::to_string(&step_json)
+        .map_err(|e| format!("Failed to serialize step: {}", e))?;
+
+    let sidecar_command = app
+        .shell()
+        .sidecar("ai-engine")
+        .map_err(|e| format!("Failed to prepare sidecar: {}", e))?
+        .env("0XBUFFER_AI_ENGINE_MODE", "regression-single-step")
+        .env("0XBUFFER_REGRESSION_STEP_JSON", &step_json_str)
+        .env("0XBUFFER_REGRESSION_TARGET_URL", &target_url)
+        .env("XBUFFER_AI_PROVIDER", &settings.provider)
+        .env("AI_SDK_LOG_WARNINGS", "false");
+
+    let mut command: Command = sidecar_command.into();
+    command
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped());
+
+    // Inject API key if available
+    if let Ok(Some(api_key)) = crate::ai::read_optional_ai_api_key(&settings.provider) {
+        if !api_key.trim().is_empty() {
+            if let Ok(env_name) = crate::ai::api_key_env_name(&settings.provider) {
+                command.env(env_name, api_key.trim());
+            }
+        }
+    }
+
+    #[cfg(unix)]
+    command.process_group(0);
+
+    let mut child = command
+        .spawn()
+        .map_err(|e| format!("Failed to start single-step sidecar: {}", e))?;
+
+    let stdout = child
+        .stdout
+        .take()
+        .ok_or_else(|| "Failed to capture sidecar stdout".to_string())?;
+
+    // Read all stdout lines and look for step result
+    let reader = BufReader::new(stdout);
+    let mut last_error: Option<String> = None;
+
+    for line in reader.lines() {
+        let line = match line {
+            Ok(l) => l,
+            Err(_) => break,
+        };
+
+        let trimmed = line.trim();
+        if trimmed.is_empty() {
+            continue;
+        }
+
+        let message: Value = match serde_json::from_str(trimmed) {
+            Ok(m) => m,
+            Err(_) => continue,
+        };
+
+        let event_type = message
+            .get("type")
+            .and_then(Value::as_str)
+            .unwrap_or("");
+
+        match event_type {
+            "step:result" => {
+                // Return the step result data
+                if let Some(data) = message.get("data") {
+                    return Ok(data.clone());
+                }
+                return Ok(message);
+            }
+            "step:failed" => {
+                last_error = Some(
+                    message
+                        .get("error")
+                        .and_then(Value::as_str)
+                        .unwrap_or("Unknown step error")
+                        .to_string(),
+                );
+            }
+            _ => {}
+        }
+    }
+
+    // Wait for process to finish
+    let _ = child.wait();
+
+    Err(last_error.unwrap_or_else(|| "No step result received from sidecar".to_string()))
+}
+
+#[tauri::command]
 pub async fn list_regression_test_cases(
     state: tauri::State<'_, Database>,
 ) -> Result<Vec<Value>, String> {
@@ -223,6 +426,7 @@ pub async fn list_regression_test_cases(
         .map(|r| {
             serde_json::json!({
                 "id": r.id,
+                "testName": r.test_name,
                 "name": r.name,
                 "description": r.description,
                 "targetUrl": r.target_url,
@@ -251,6 +455,11 @@ pub async fn save_regression_test_case(
         .get("name")
         .and_then(Value::as_str)
         .unwrap_or("New Test Case")
+        .to_string();
+    let test_name = test_case
+        .get("testName")
+        .and_then(Value::as_str)
+        .unwrap_or("Default Test")
         .to_string();
     let description = test_case
         .get("description")
@@ -282,6 +491,7 @@ pub async fn save_regression_test_case(
     let record = state
         .save_regression_test_case(
             &actual_id,
+            &test_name,
             &name,
             &description,
             &target_url,
@@ -292,6 +502,7 @@ pub async fn save_regression_test_case(
 
     Ok(serde_json::json!({
         "id": record.id,
+        "testName": record.test_name,
         "name": record.name,
         "description": record.description,
         "targetUrl": record.target_url,

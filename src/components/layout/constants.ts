@@ -10,7 +10,7 @@ interface NavItem {
 }
 
 export const allNavItems: NavItem[] = [
-  { label: 'Live Traffic', icon: ArrowUpDown, href: '/live-traffic' },
+  { label: 'Live Traffic', icon: ArrowUpDown, href: '/' },
   { label: 'Workflow', icon: LoaderPinwheel, href: '/automation', devOnly: true },
   { label: 'Browser', icon: AppWindow, href: '/browser-automation'},
   { label: 'Intercept', icon: PauseCircle, href: '/intercept' },

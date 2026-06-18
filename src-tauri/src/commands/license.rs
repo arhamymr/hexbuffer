@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
-const LICENSE_SERVER_URL: &str = "https://hexbuffer.com";
+const LICENSE_SERVER_URL: &str = "https://0xbuffer.com";
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct LicenseInfo {

@@ -1,6 +1,6 @@
 # hexbuffer
 
-A network proxy and traffic inspection tool built with Tauri, React, and TypeScript.
+hexbuffer combines real-time traffic interception, manual request crafting, automated attacks, AI-driven reconnaissance, and professional report building in a single desktop application. No web-based tool sprawl. No juggling five different windows. Just open hexbuffer and get to work.
 
 ## Features
 

@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "hexbuffer"
+  "productName": "hexbuffer",
   "version": "2026.0.35",
-  "identifier": "com.hexbuffer"
+  "identifier": "com.hexbuffer",
   "build": {
     "beforeDevCommand": "pnpm sidecars:build && pnpm dev:clean",
     "devUrl": "http://localhost:1420",
@@ -15,7 +15,7 @@
     "windows": [
       {
         "label": "main",
-        "title": "hexbuffer"
+        "title": "hexbuffer",
         "decorations": false,
         "transparent": true,
         "visible": false,
@@ -25,7 +25,7 @@
       {
         "label": "splashscreen",
         "url": "/splashscreen.html",
-        "title": "hexbuffer"
+        "title": "hexbuffer",
         "decorations": false,
         "transparent": true,
         "resizable": false,

@@ -412,7 +412,7 @@ fn import_intercept_ca_to_chrome_profile(app: &AppHandle) -> Result<String, Stri
     }
 
     let db_dir = format!("sql:{}", profile_dir.display());
-    let nickname = "hexbuffer Security Tools Root CA".to_string();
+    let nickname = "Hexbuffer security Tools Root CA".to_string();
 
     let init_args = vec![
         "-N".to_string(),
@@ -484,7 +484,7 @@ fn run_security(args: &[String]) -> Result<(), String> {
 fn install_intercept_ca_to_macos_keychain(app: &AppHandle) -> Result<String, String> {
     let ca_path = write_intercept_ca(app)?;
     let keychain_path = user_login_keychain_path()?;
-    let cert_name = "hexbuffer Security Tools Root CA".to_string();
+    let cert_name = "Hexbuffer security Tools Root CA".to_string();
 
     let delete_args = vec![
         "delete-certificate".to_string(),

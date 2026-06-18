@@ -257,7 +257,7 @@ export function TestSuiteEditor({ testCase, isNew, onSave, onDraftChange, onCanc
             <div className="space-y-1.5">
               <Label className="text-xs">Test</Label>
               <Input
-                placeholder="Mycarrier Landing page"
+                placeholder="Landing page"
                 value={testName}
                 onChange={(e) => {
                   setTestName(e.target.value);

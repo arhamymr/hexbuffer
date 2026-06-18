@@ -503,9 +503,9 @@ mod tests {
 
     #[test]
     fn host_whitelist_accepts_exact_and_wildcard_hosts() {
-        let hosts = parse_host_whitelist(Some("mycarrier.telkom.co.id, *.hexbuffer.com"));
+        let hosts = parse_host_whitelist(Some("example.co.id, *.hexbuffer.com"));
 
-        assert!(hosts.contains(&"mycarrier.telkom.co.id".to_string()));
+        assert!(hosts.contains(&"example.co.id".to_string()));
         assert!(hosts.contains(&"hexbuffer.com".to_string()));
     }
 

@@ -91,23 +91,22 @@ fn run_ai_chat_engine(
     std::fs::write(&context_file, &context_json)
         .map_err(|e| format!("Failed to write context temp file: {}", e))?;
 
+    let request_json =
+        serde_json::to_string(request).map_err(|error| error.to_string())?;
+    let context_path = context_file.to_string_lossy().to_string();
+    let api_key_env = api_key_env_name(&settings.provider)?;
+
     let sidecar_command = app
         .shell()
         .sidecar("ai-engine")
         .map_err(|error| format!("Failed to prepare AI engine sidecar: {}", error))?
         .env("HEXBUFFER_AI_ENGINE_MODE", "chat")
-        .env(
-            "HEXBUFFER_AI_CHAT_REQUEST_JSON"
-            serde_json::to_string(request).map_err(|error| error.to_string())?,
-        )
-        .env(
-            "HEXBUFFER_AI_CHAT_CONTEXT_FILE"
-            context_file.to_string_lossy().to_string(),
-        )
+        .env("HEXBUFFER_AI_CHAT_REQUEST_JSON", request_json)
+        .env("HEXBUFFER_AI_CHAT_CONTEXT_FILE", context_path)
         .env("XBUFFER_AI_PROVIDER", settings.provider.trim())
         .env("HEXBUFFER_AI_MODEL", settings.model.trim())
         .env("AI_SDK_LOG_WARNINGS", "false")
-        .env(api_key_env_name(&settings.provider)?, api_key.trim());
+        .env(&api_key_env, api_key.trim());
     let mut command: Command = sidecar_command.into();
     command.stdout(Stdio::piped()).stderr(Stdio::piped());
 

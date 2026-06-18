@@ -22,7 +22,7 @@ export function RepeaterRequestPanel({
     <div className="flex flex-col h-full">
       <div className="bg-muted h-10 px-3 py-2 border-b flex items-center justify-between">
         <span className="text-sm font-medium">Request</span>
-        <Button size="xs" onClick={onSend} disabled={isLoading}>
+        <Button onClick={onSend} disabled={isLoading}>
           {isLoading ? (
             <Loader2 className="h-4 w-4 animate-spin" />
           ) : (

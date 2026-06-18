@@ -167,7 +167,7 @@ export function PortScannerTool() {
             </Select>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button type="button" variant="ghost" size="icon-sm" className="shrink-0">
+                <Button type="button" variant="ghost" className="shrink-0">
                   <Info className="h-4 w-4" />
                 </Button>
               </TooltipTrigger>
@@ -232,7 +232,7 @@ export function PortScannerTool() {
               <Download className="h-3.5 w-3.5" />
               CSV
             </Button>
-            <Button variant="ghost" size="icon-sm" onClick={clearResults} disabled={results.length === 0 && !error}>
+            <Button variant="ghost" onClick={clearResults} disabled={results.length === 0 && !error}>
               <Trash2 className="h-4 w-4" />
             </Button>
             {isRunning ? (

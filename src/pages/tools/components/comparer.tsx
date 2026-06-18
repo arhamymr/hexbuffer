@@ -93,7 +93,7 @@ export function ComparerTool() {
               <Copy className="h-3.5 w-3.5" />
               Copy diff
             </Button>
-            <Button variant="ghost" size="icon-sm" onClick={handleClear} disabled={!hasContent}>
+            <Button variant="ghost" onClick={handleClear} disabled={!hasContent}>
               <Trash2 className="h-4 w-4" />
             </Button>
           </div>
@@ -143,7 +143,7 @@ export function ComparerTool() {
                 Unified diff output updates automatically.
               </div>
             </div>
-            <Button variant="ghost" size="icon-sm" onClick={handleCopy} disabled={diffResult.length === 0}>
+            <Button variant="ghost" onClick={handleCopy} disabled={diffResult.length === 0}>
               <Copy className="h-4 w-4" />
             </Button>
           </div>

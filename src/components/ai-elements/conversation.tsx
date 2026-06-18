@@ -89,7 +89,6 @@ export const ConversationScrollButton = ({
           className
         )}
         onClick={handleScrollToBottom}
-        size="icon"
         type="button"
         variant="outline"
         {...props}
@@ -157,7 +156,6 @@ export const ConversationDownload = ({
         className
       )}
       onClick={handleDownload}
-      size="icon"
       type="button"
       variant="outline"
       {...props}

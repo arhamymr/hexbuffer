@@ -136,7 +136,6 @@ export const PlanTrigger = ({ className, ...props }: PlanTriggerProps) => (
     <Button
       className={cn("size-8", className)}
       data-slot="plan-trigger"
-      size="icon"
       variant="ghost"
       {...props}
     >

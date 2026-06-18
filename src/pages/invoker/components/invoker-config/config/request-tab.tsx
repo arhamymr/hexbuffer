@@ -309,7 +309,7 @@ export function RequestTab() {
             </ButtonGroup>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button type="button" variant="ghost" size="icon-sm" className="shrink-0">
+                <Button type="button" variant="ghost" className="shrink-0">
                   <Info className="h-4 w-4" />
                 </Button>
               </TooltipTrigger>
@@ -399,7 +399,7 @@ export function RequestTab() {
           </div>
 
           <DialogFooter>
-            <Button type="button" variant="outline" size="xs" onClick={() => setSuggestionsDialogOpen(false)}>
+            <Button type="button" variant="outline" onClick={() => setSuggestionsDialogOpen(false)}>
               Cancel
             </Button>
             <Button

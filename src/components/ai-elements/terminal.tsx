@@ -147,7 +147,6 @@ export const TerminalCopyButton = ({
         className
       )}
       onClick={copyToClipboard}
-      size="icon"
       variant="ghost"
       {...props}
     >
@@ -176,7 +175,6 @@ export const TerminalClearButton = ({
         className
       )}
       onClick={onClear}
-      size="icon"
       variant="ghost"
       {...props}
     >

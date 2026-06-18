@@ -78,7 +78,7 @@ export function InterceptBypassPanel() {
               placeholder="e.g. api.example.com or *.example.com"
               className="h-7 flex-1 text-xs"
             />
-            <Button size="xs" variant="outline" className="h-7 shrink-0" onClick={handleAdd} disabled={!value.trim()}>
+            <Button variant="outline" className="h-7 shrink-0" onClick={handleAdd} disabled={!value.trim()}>
               <Plus className="h-3 w-3" />
               Add
             </Button>

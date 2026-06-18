@@ -194,7 +194,7 @@ export function DebuggerPage() {
             {paused ? 'Resume' : 'Pause'}
           </Button>
 
-          <Button variant="outline" size="xs" onClick={clearEntries}>
+          <Button variant="outline" onClick={clearEntries}>
             <Trash2 className="size-3.5 mr-1" />
             Clear
           </Button>

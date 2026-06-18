@@ -53,11 +53,11 @@ export function ThreatsSettingsTab({ settings }: ThreatsSettingsTabProps) {
         )}
 
         <div className="flex flex-wrap gap-2">
-          <Button size="xs" onClick={handleValidateGhidra} variant="outline">
+          <Button onClick={handleValidateGhidra} variant="outline">
             <CrosshairIcon className="mr-2 size-4" />
             Validate
           </Button>
-          <Button size="xs" onClick={handleSaveThreatSettings} disabled={threatSettingsSaving}>
+          <Button onClick={handleSaveThreatSettings} disabled={threatSettingsSaving}>
             <SaveIcon className="mr-2 size-4" />
             {threatSettingsSaving ? 'Saving...' : 'Save'}
           </Button>
@@ -71,7 +71,7 @@ export function ThreatsSettingsTab({ settings }: ThreatsSettingsTabProps) {
                 Imported rules are copied into app-managed storage and used during Threats analysis.
               </p>
             </div>
-            <Button size="xs" variant="outline" onClick={handleImportYaraRulePack}>
+            <Button variant="outline" onClick={handleImportYaraRulePack}>
               <FilePlus2Icon className="mr-2 size-4" />
               Import Rules
             </Button>
@@ -100,7 +100,6 @@ export function ThreatsSettingsTab({ settings }: ThreatsSettingsTabProps) {
                       <div className="mt-1 truncate font-mono text-[11px] text-muted-foreground">{pack.path}</div>
                     </div>
                     <Button
-                      size="icon-sm"
                       variant="ghost"
                       onClick={() => handleDeleteYaraRulePack(pack.id)}
                       aria-label={`Delete ${pack.name}`}

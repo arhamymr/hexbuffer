@@ -76,7 +76,7 @@ export function WebSocketTable({ selectedConnectionId, onSelectConnection }: Web
     <div className="overflow-auto h-full flex flex-col">
       {newEventsCount > 0 && (
         <div className="flex items-center justify-center py-1 border-b bg-muted/50">
-          <Button variant="outline" size="xs" onClick={handleRefresh}>
+          <Button variant="outline" onClick={handleRefresh}>
             {newEventsCount} new connection{newEventsCount > 1 ? 's' : ''} - Click to refresh
           </Button>
         </div>

@@ -240,7 +240,7 @@ export function LogEntryBurpView() {
             <div className='flex gap-2 items-center'>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-7 w-7">
+                  <Button variant="ghost" className="h-7 w-7">
                     <EllipsisVertical className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>

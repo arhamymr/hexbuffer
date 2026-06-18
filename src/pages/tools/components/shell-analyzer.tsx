@@ -181,7 +181,7 @@ export function ShellAnalyzerTool() {
               <Copy className="h-3.5 w-3.5" />
               Copy Report
             </Button>
-            <Button variant="ghost" size="icon-sm" onClick={handleClear} disabled={!input && !result}>
+            <Button variant="ghost" onClick={handleClear} disabled={!input && !result}>
               <Trash2 className="h-4 w-4" />
             </Button>
           </div>
@@ -198,7 +198,7 @@ export function ShellAnalyzerTool() {
                   Paste a shell script to analyze.
                 </div>
               </div>
-              <Button variant="ghost" size="icon-sm" onClick={handleClear} disabled={!input}>
+              <Button variant="ghost" onClick={handleClear} disabled={!input}>
                 <Trash2 className="h-4 w-4" />
               </Button>
             </div>

@@ -109,7 +109,7 @@ export function DataTable<TData, TValue>({
           </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="xs" className="ml-auto">
+              <Button variant="outline" className="ml-auto">
                 <Settings2 className="mr-2 h-4 w-4" />
                 View
               </Button>

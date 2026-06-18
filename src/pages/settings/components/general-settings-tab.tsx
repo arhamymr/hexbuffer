@@ -109,7 +109,6 @@ export function GeneralSettingsTab({ settings }: GeneralSettingsTabProps) {
           </div>
           <div className="flex flex-wrap gap-2">
             <Button
-              size="xs"
               onClick={handleSaveProxyDefaultPort}
               disabled={!proxyPortIsChanged && !proxyRuntimeDiffers}
             >
@@ -117,7 +116,6 @@ export function GeneralSettingsTab({ settings }: GeneralSettingsTabProps) {
               Save Port
             </Button>
             <Button
-              size="xs"
               variant="outline"
               onClick={handleResetProxyDefaultPort}
               disabled={proxyDefaultPort === proxyFactoryDefaultPort}
@@ -145,7 +143,6 @@ export function GeneralSettingsTab({ settings }: GeneralSettingsTabProps) {
           </p>
           <div className="flex flex-wrap gap-2">
             <Button
-              size="xs"
               onClick={handleCheckForUpdates}
               disabled={updateChecking || updateDownloading}
             >
@@ -154,7 +151,6 @@ export function GeneralSettingsTab({ settings }: GeneralSettingsTabProps) {
             </Button>
             {updateAvailable && (
               <Button
-                size="xs"
                 variant="default"
                 onClick={handleInstallUpdate}
                 disabled={updateDownloading}
@@ -201,7 +197,6 @@ export function GeneralSettingsTab({ settings }: GeneralSettingsTabProps) {
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button
-                  size="xs"
                   variant="destructive"
                   disabled={resettingLocalData}
                 >

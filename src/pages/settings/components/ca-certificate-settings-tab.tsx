@@ -48,11 +48,11 @@ export function CaCertificateSettingsTab({ settings }: CaCertificateSettingsTabP
         <CardContent className="space-y-4">
           <div className="flex flex-col gap-2">
             <div className="flex flex-wrap gap-2">
-              <Button size="xs" onClick={handleInstallMacCert} disabled={installingCa} className="w-fit">
+              <Button onClick={handleInstallMacCert} disabled={installingCa} className="w-fit">
                 <KeyRoundIcon className="mr-2 size-4" />
                 {installingCa ? 'Installing...' : 'Install to macOS Keychain'}
               </Button>
-              <Button size="xs" variant="outline" onClick={handleDownloadCert} disabled={downloading} className="w-fit">
+              <Button variant="outline" onClick={handleDownloadCert} disabled={downloading} className="w-fit">
                 <DownloadIcon className="mr-2 size-4" />
                 {downloading ? 'Saving...' : 'Save CA Certificate'}
               </Button>

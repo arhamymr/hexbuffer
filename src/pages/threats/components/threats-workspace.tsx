@@ -89,7 +89,7 @@ export function ThreatsWorkspace({
             <ShieldAlert className="size-3.5 text-primary" />
             Threats
           </div>
-          <Button size="icon-sm" onClick={handleImportSample}>
+          <Button onClick={handleImportSample}>
             <FilePlus2 className="size-3.5" />
           </Button>
         </div>
@@ -149,22 +149,22 @@ export function ThreatsWorkspace({
               <Switch id="run-ghidra" checked={runGhidra} onCheckedChange={setRunGhidra} />
               <Label htmlFor="run-ghidra" className="text-xs">Ghidra</Label>
             </div>
-            <Button size="xs" variant={yaraRulesPath ? 'secondary' : 'outline'} onClick={handleChooseYaraRules}>
+            <Button variant={yaraRulesPath ? 'secondary' : 'outline'} onClick={handleChooseYaraRules}>
               <Siren className="size-4" />
               YARA
             </Button>
             {analyzing ? (
-              <Button size="xs" variant="outline" onClick={handleCancelAnalysis}>
+              <Button variant="outline" onClick={handleCancelAnalysis}>
                 <Square className="size-3.5" />
                 Cancel
               </Button>
             ) : (
-              <Button size="xs" onClick={handleAnalyze} disabled={!selectedSample}>
+              <Button onClick={handleAnalyze} disabled={!selectedSample}>
                 <Play className="size-4" />
                 Analyze
               </Button>
             )}
-            <Button size="icon-sm" variant="ghost" onClick={handleDeleteSample} disabled={!selectedSample || analyzing}>
+            <Button variant="ghost" onClick={handleDeleteSample} disabled={!selectedSample || analyzing}>
               <Trash2 className="size-4" />
             </Button>
           </div>

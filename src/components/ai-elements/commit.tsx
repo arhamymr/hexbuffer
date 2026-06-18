@@ -258,7 +258,6 @@ export const CommitCopyButton = ({
     <Button
       className={cn("size-7 shrink-0", className)}
       onClick={copyToClipboard}
-      size="icon"
       variant="ghost"
       {...props}
     >

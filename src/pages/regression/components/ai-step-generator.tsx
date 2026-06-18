@@ -479,7 +479,7 @@ export function AiStepGenerator({ targetUrl, onStepsGenerated }: AiStepGenerator
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-1.5">
+        <Button variant="outline" className="gap-1.5">
           <Sparkles className="size-3.5" />
           Generate with AI
         </Button>

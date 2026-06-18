@@ -353,7 +353,6 @@ export const StackTraceCopyButton = memo(
       <Button
         className={cn("size-7", className)}
         onClick={copyToClipboard}
-        size="icon"
         variant="ghost"
         {...props}
       >

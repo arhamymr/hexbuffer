@@ -41,7 +41,7 @@ export function ManualUpdateCommand({ className, message }: ManualUpdateCommandP
         <code className="min-w-0 flex-1 break-all rounded-md bg-background px-3 py-2 font-mono text-xs text-muted-foreground">
           {MANUAL_UPDATE_COMMAND}
         </code>
-        <Button size="xs" variant="outline" onClick={handleCopy}>
+        <Button variant="outline" onClick={handleCopy}>
           {copied ? (
             <CheckIcon className="mr-2 size-4" />
           ) : (

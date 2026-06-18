@@ -29,7 +29,7 @@ export function TestCaseList({
     <div className="flex flex-col h-full border-r bg-card">
       <div className="flex items-center justify-between px-4 py-3 border-b">
         <h2 className="text-sm font-semibold">Test Cases</h2>
-        <Button variant="ghost" size="icon" onClick={onCreate} title="New test case">
+        <Button variant="ghost" onClick={onCreate} title="New test case">
           <Plus className="size-4" />
         </Button>
       </div>
@@ -38,7 +38,7 @@ export function TestCaseList({
           <div className="p-4 text-center text-muted-foreground text-sm">
             <FlaskConical className="size-8 mx-auto mb-2 opacity-40" />
             <p>No test cases yet</p>
-            <Button variant="outline" size="sm" className="mt-2" onClick={onCreate}>
+            <Button variant="outline" className="mt-2" onClick={onCreate}>
               <Plus className="size-3 mr-1" /> Create Test Case
             </Button>
           </div>

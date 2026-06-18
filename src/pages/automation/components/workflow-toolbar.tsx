@@ -84,10 +84,10 @@ export function WorkflowToolbar() {
               if (e.key === 'Escape') cancelEdit();
             }}
           />
-          <Button variant="ghost" size="xs" onClick={confirmEdit}>
+          <Button variant="ghost" onClick={confirmEdit}>
             <Check className="size-3.5" />
           </Button>
-          <Button variant="ghost" size="xs" onClick={cancelEdit}>
+          <Button variant="ghost" onClick={cancelEdit}>
             <X className="size-3.5" />
           </Button>
         </div>
@@ -96,7 +96,7 @@ export function WorkflowToolbar() {
           <span className="truncate text-xs font-medium max-w-[200px]">
             {workflow.name}
           </span>
-          <Button variant="ghost" size="xs" className="h-6 w-6 p-0" onClick={startEdit}>
+          <Button variant="ghost" className="h-6 w-6 p-0" onClick={startEdit}>
             <Pencil className="size-3" />
           </Button>
         </div>

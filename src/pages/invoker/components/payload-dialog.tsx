@@ -20,13 +20,13 @@ export function InvokerPayloadDialog() {
           <DialogTitle>Load Payloads from File</DialogTitle>
         </DialogHeader>
         <div className="grid gap-4 py-4">
-          <Button type="button" size="xs" onClick={handleSelectPayloadFile}>
+          <Button type="button" onClick={handleSelectPayloadFile}>
             Choose File
           </Button>
           <input type="file" onChange={handleLoadPayloads} accept=".txt,.lst,.wordlist" />
         </div>
         <DialogFooter>
-          <Button variant="outline" size="xs" onClick={() => setPayloadDialogOpen(false)}>
+          <Button variant="outline" onClick={() => setPayloadDialogOpen(false)}>
             Cancel
           </Button>
         </DialogFooter>

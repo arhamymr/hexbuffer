@@ -352,6 +352,7 @@ impl Database {
                     COALESCE(LENGTH(response_body), 0),
                     COALESCE(server_addr, ''),
                     json_extract(CASE WHEN request_headers IS NOT NULL AND request_headers != '' THEN request_headers ELSE '{{}}' END, '$.user-agent'),
+                    json_extract(CASE WHEN request_headers IS NOT NULL AND request_headers != '' THEN request_headers ELSE '{{}}' END, '$.referer'),
                     json_extract(CASE WHEN response_headers IS NOT NULL AND response_headers != '' THEN response_headers ELSE '{{}}' END, '$.content-type')
              FROM http_logs
              ORDER BY timestamp {} LIMIT ? OFFSET ?",
@@ -472,6 +473,7 @@ impl Database {
                     COALESCE(LENGTH(response_body), 0),
                     COALESCE(server_addr, ''),
                     json_extract(CASE WHEN request_headers IS NOT NULL AND request_headers != '' THEN request_headers ELSE '{{}}' END, '$.user-agent'),
+                    json_extract(CASE WHEN request_headers IS NOT NULL AND request_headers != '' THEN request_headers ELSE '{{}}' END, '$.referer'),
                     json_extract(CASE WHEN response_headers IS NOT NULL AND response_headers != '' THEN response_headers ELSE '{{}}' END, '$.content-type')
              FROM http_logs WHERE 1=1{}
              ORDER BY timestamp {} LIMIT ? OFFSET ?",
@@ -769,7 +771,8 @@ fn row_to_proxy_summary(row: &rusqlite::Row) -> SqlResult<ProxySummaryRow> {
         response_body_size: row.get::<_, i64>(7)? as usize,
         server_addr: row.get(8)?,
         user_agent: row.get(9)?,
-        response_content_type: row.get(10)?,
+        referrer: row.get(10)?,
+        response_content_type: row.get(11)?,
     })
 }
 

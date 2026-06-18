@@ -458,12 +458,23 @@ export const TrafficTable = memo(function TrafficTable({
     },
     {
       accessorKey: "host",
-      header: "Host",
-      size: 180,
+      header: "URL",
+      size: 500,
       cell: ({ row, table }) => {
         const requestGroups = getGroupsForRequest(row.original.id);
+        const displayUrl = (() => {
+          try {
+            const u = new URL(row.original.url);
+            if ((u.protocol === 'https:' && u.port === '443') || (u.protocol === 'http:' && u.port === '80')) {
+              u.port = '';
+            }
+            return u.toString();
+          } catch {
+            return row.original.url;
+          }
+        })();
         return (
-          <div className="flex items-center gap-1.5 truncate">
+          <div className="flex items-center gap-1.5 min-w-0">
             {pinnedSet.has(row.original.id) && (
               <Pin className="size-3 text-amber-500 shrink-0" />
             )}
@@ -476,9 +487,9 @@ export const TrafficTable = memo(function TrafficTable({
               />
             ))}
             <BrowserIcon userAgent={row.original.user_agent} />
-            <span className="truncate">
+            <span className="truncate" style={{ direction: 'rtl', textAlign: 'left' }}>
               <HighlightedText
-                text={row.original.host}
+                text={displayUrl}
                 query={(table.options.meta as { searchQuery?: string } | undefined)?.searchQuery ?? ""}
               />
             </span>
@@ -487,15 +498,20 @@ export const TrafficTable = memo(function TrafficTable({
       },
     },
     {
-      accessorKey: "path",
-      header: "Path",
-      size: 200,
-      cell: ({ row, table }) => (
-        <HighlightedText
-          text={row.original.path}
-          query={(table.options.meta as { searchQuery?: string } | undefined)?.searchQuery ?? ""}
-        />
-      ),
+      accessorKey: "referrer",
+      header: "Referrer",
+      size: 160,
+      cell: ({ row, table }) => {
+        const displayReferrer = row.original.referrer?.replace(/^https?:\/\//i, '') || '-';
+        return (
+          <span className="truncate block">
+            <HighlightedText
+              text={displayReferrer}
+              query={(table.options.meta as { searchQuery?: string } | undefined)?.searchQuery ?? ""}
+            />
+          </span>
+        );
+      },
     },
     {
       accessorKey: "response_body_size",
@@ -611,7 +627,7 @@ export const TrafficTable = memo(function TrafficTable({
   }
 
   if (isLoading && calls.length === 0) {
-    return <HistoryLoadingState label="Loading HTTP history..." columns={9} />;
+    return <HistoryLoadingState label="Loading HTTP history..." columns={8} />;
   }
 
   if (isGroupTabActive && filteredCalls.length === 0) {
@@ -653,7 +669,7 @@ export const TrafficTable = memo(function TrafficTable({
     <div className="h-full flex flex-col">
       {newEventsCount > 0 && (
         <div className="flex items-center justify-center py-1 border-b bg-muted/50">
-          <Button variant="outline" size="xs" onClick={handleRefresh}>
+          <Button variant="outline" onClick={handleRefresh}>
             {newEventsCount} new request{newEventsCount > 1 ? 's' : ''} - Click to refresh
           </Button>
         </div>
@@ -678,7 +694,8 @@ export const TrafficTable = memo(function TrafficTable({
                       }
                       style={{
                         width: header.column.getSize(),
-                        flex: header.column.id === "path" ? "1 1 auto" : "0 0 auto",
+                        minWidth: header.column.getSize(),
+                        flex: header.column.id === "host" ? "1 1 auto" : "0 0 auto",
                       }}
                     >
                       {header.isPlaceholder ? null : header.column.id === "timestamp" ? (
@@ -749,8 +766,7 @@ export const TrafficTable = memo(function TrafficTable({
                             (isRightAligned ? " text-right" : isCentered ? " text-center" : "")
                           }
                           title={
-                            cell.column.id === "host" ||
-                            cell.column.id === "path"
+                            cell.column.id === "host"
                               ? call.url
                               : cell.column.id === "response_content_type"
                                 ? call.response_content_type ?? undefined
@@ -758,7 +774,8 @@ export const TrafficTable = memo(function TrafficTable({
                           }
                           style={{
                             width: cell.column.getSize(),
-                            flex: cell.column.id === "path" ? "1 1 auto" : "0 0 auto",
+                            minWidth: cell.column.getSize(),
+                            flex: cell.column.id === "host" ? "1 1 auto" : "0 0 auto",
                           }}
                         >
                           {flexRender(cell.column.columnDef.cell, cell.getContext())}

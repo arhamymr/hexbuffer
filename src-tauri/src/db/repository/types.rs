@@ -43,6 +43,7 @@ pub struct ProxySummaryRow {
     pub response_body_size: usize,
     pub server_addr: String,
     pub user_agent: Option<String>,
+    pub referrer: Option<String>,
     pub response_content_type: Option<String>,
 }
 

@@ -57,11 +57,11 @@ function ArtifactActions({ label, path, onView }: { label: string; path?: string
       <p className="break-all font-mono text-[11px] leading-4 text-muted-foreground">{path}</p>
       <div className="flex gap-1.5">
         {onView && (
-          <Button variant="outline" size="xs" onClick={onView}>
+          <Button variant="outline" onClick={onView}>
             <Maximize2 className="h-3.5 w-3.5" />
           </Button>
         )}
-        <Button variant="outline" size="xs" onClick={() => copyText(path)}>
+        <Button variant="outline" onClick={() => copyText(path)}>
           <Copy className="h-3.5 w-3.5" />
         </Button>
       </div>
@@ -186,15 +186,14 @@ export function PageDetailPanel({ page, searchQuery = '' }: PageDetailPanelProps
 
       <div className="shrink-0 border-t p-2">
         <div className="flex gap-1.5">
-          <Button variant="outline" size="xs" onClick={handleOpenPage}>
+          <Button variant="outline" onClick={handleOpenPage}>
             <ExternalLink className="h-3.5 w-3.5" />
           </Button>
-          <Button variant="outline" size="xs" onClick={handleCopyUrl}>
+          <Button variant="outline" onClick={handleCopyUrl}>
             <Copy className="h-3.5 w-3.5" />
           </Button>
           <Button
             variant={page.interesting ? 'secondary' : 'outline'}
-            size="xs"
             onClick={() => markPageInteresting(page.id)}
           >
             <Star className="h-3.5 w-3.5" />

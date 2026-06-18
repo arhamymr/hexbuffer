@@ -48,7 +48,7 @@ export function TargetDialog({ onTargetCreated }: TargetDialogProps) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button size="xs">
+        <Button>
           <Plus className="h-4 w-4" />
         </Button>
       </DialogTrigger>
@@ -100,10 +100,10 @@ export function TargetDialog({ onTargetCreated }: TargetDialogProps) {
           </div>
         </div>
         <DialogFooter>
-          <Button size="xs" variant="outline" onClick={() => setOpen(false)}>
+          <Button variant="outline" onClick={() => setOpen(false)}>
             Cancel
           </Button>
-          <Button size="xs" onClick={handleCreate} disabled={!name.trim() || loading}>
+          <Button onClick={handleCreate} disabled={!name.trim() || loading}>
             Create Target
           </Button>
         </DialogFooter>

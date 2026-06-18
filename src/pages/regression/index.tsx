@@ -123,13 +123,12 @@ export function RegressionPage() {
                 <Badge variant="outline" className="h-7 rounded-sm bg-background text-xs">
                   {activeTabRunCount || totalRuns} run{(activeTabRunCount || totalRuns) !== 1 ? 's' : ''}
                 </Badge>
-                <Button variant="outline" size="xs" onClick={handleCreate}>
+                <Button variant="outline" onClick={handleCreate}>
                   <Plus className="size-4" />
                   New
                 </Button>
                 <Button
                   variant="outline"
-                  size="xs"
                   onClick={handleRunAllInActiveTest}
                   disabled={isRunning || activeTestEnabledCount === 0}
                 >
@@ -137,7 +136,6 @@ export function RegressionPage() {
                   Run All
                 </Button>
                 <Button
-                  size="xs"
                   onClick={() => activeTabTestCase && handleRun(activeTabTestCase.id)}
                   disabled={isRunning || !activeTabTestCase || activeTab?.isEditing}
                 >
@@ -157,7 +155,7 @@ export function RegressionPage() {
                   <p className="max-w-sm text-xs text-muted-foreground">
                     Create a new test case to start building regression coverage.
                   </p>
-                  <Button variant="outline" size="xs" className="mt-4" onClick={handleCreate}>
+                  <Button variant="outline" className="mt-4" onClick={handleCreate}>
                     <Plus className="size-4" />
                     New test case
                   </Button>

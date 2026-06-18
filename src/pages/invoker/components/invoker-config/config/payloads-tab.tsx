@@ -430,7 +430,7 @@ function PayloadFileButton({ positionName }: { positionName: string }) {
 
   return (
     <>
-      <Button variant="outline" size="xs" onClick={() => inputRef.current?.click()}>
+      <Button variant="outline" onClick={() => inputRef.current?.click()}>
         Load from File
       </Button>
       <input

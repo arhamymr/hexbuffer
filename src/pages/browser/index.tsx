@@ -187,24 +187,24 @@ export function BrowserAutomationPage() {
                 />
                
                 <ButtonGroup>
-                  <Button variant="outline" size="xs" onClick={pauseCrawl} disabled={!isRunning} aria-label="Pause">
+                  <Button variant="outline" onClick={pauseCrawl} disabled={!isRunning} aria-label="Pause">
                     <Pause className="h-4 w-4" />
                   </Button>
-                  <Button variant="outline" size="xs" onClick={resumeCrawl} disabled={!isPaused} aria-label="Resume">
+                  <Button variant="outline" onClick={resumeCrawl} disabled={!isPaused} aria-label="Resume">
                     <RotateCcw className="h-4 w-4" />
                   </Button>
-                  <Button variant="outline" size="xs" onClick={stopCrawl} disabled={!isRunning && !isPaused} aria-label="Stop">
+                  <Button variant="outline" onClick={stopCrawl} disabled={!isRunning && !isPaused} aria-label="Stop">
                     <Square className="h-4 w-4" />
                   </Button>
                 </ButtonGroup>
                 <ButtonGroup>
-                  <Button size="xs" onClick={() => startCrawl(true)} disabled={proxyStatus === "disconnected" || isRunning || !setup.targetUrl.trim()}>
+                  <Button onClick={() => startCrawl(true)} disabled={proxyStatus === "disconnected" || isRunning || !setup.targetUrl.trim()}>
                     <Play className="h-4 w-4" />
                     Start
                   </Button>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button size="xs" variant="outline" disabled={isRunning || !setup.targetUrl.trim()} aria-label="More start options">
+                      <Button variant="outline" disabled={isRunning || !setup.targetUrl.trim()} aria-label="More start options">
                         <ChevronDownIcon className="h-3 w-3" />
                       </Button>
                     </DropdownMenuTrigger>

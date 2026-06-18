@@ -255,7 +255,7 @@ export function SqlInjectionTool() {
                     onChange={e => setParameters(prev => prev.map(p => p.name === param.name ? { ...p, value: e.target.value } : p))}
                     placeholder="value"
                   />
-                  <Button variant="ghost" size="icon-sm" onClick={() => removeParameter(param.name)}>
+                  <Button variant="ghost" onClick={() => removeParameter(param.name)}>
                     <Trash2 className="h-3.5 w-3.5" />
                   </Button>
                 </div>
@@ -273,7 +273,7 @@ export function SqlInjectionTool() {
                   value={newParamValue}
                   onChange={e => setNewParamValue(e.target.value)}
                 />
-                <Button size="sm" onClick={addParameter}>Add</Button>
+                <Button onClick={addParameter}>Add</Button>
               </div>
             </div>
           </div>
@@ -533,15 +533,15 @@ export function SqlInjectionTool() {
         </span>
         {error && <span className="text-destructive">{error}</span>}
         <div className="flex-1" />
-        <Button variant="outline" size="sm" onClick={() => exportResults('json')} disabled={vulnerabilities.length === 0}>
+        <Button variant="outline" onClick={() => exportResults('json')} disabled={vulnerabilities.length === 0}>
           <Download className="h-3.5 w-3.5" />
           JSON
         </Button>
-        <Button variant="outline" size="sm" onClick={() => exportResults('csv')} disabled={vulnerabilities.length === 0}>
+        <Button variant="outline" onClick={() => exportResults('csv')} disabled={vulnerabilities.length === 0}>
           <Download className="h-3.5 w-3.5" />
           CSV
         </Button>
-        <Button variant="ghost" size="sm" onClick={clearResults} disabled={vulnerabilities.length === 0 && databases.length === 0}>
+        <Button variant="ghost" onClick={clearResults} disabled={vulnerabilities.length === 0 && databases.length === 0}>
           <Trash2 className="h-3.5 w-3.5" />
         </Button>
       </div>

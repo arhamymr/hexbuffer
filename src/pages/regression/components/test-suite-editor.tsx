@@ -163,16 +163,15 @@ export function TestSuiteEditor({ testCase, isNew, onSave, onDraftChange, onCanc
           </h2>
         </div>
         <div className="flex items-center gap-1.5">
-          <Button variant="outline" size="sm" onClick={() => setConfigOpen(true)} className="gap-1">
+          <Button variant="outline" onClick={() => setConfigOpen(true)} className="gap-1">
             <Settings2 className="size-3.5" />
             Config
           </Button>
-          <Button variant="ghost" size="sm" onClick={onCancel} className="gap-1">
+          <Button variant="ghost" onClick={onCancel} className="gap-1">
             <X className="size-3.5" />
             Cancel
           </Button>
           <Button
-            size="sm"
             onClick={handleSave}
             disabled={!canSave || isSaving}
             className="gap-1"
@@ -207,7 +206,6 @@ export function TestSuiteEditor({ testCase, isNew, onSave, onDraftChange, onCanc
               />
               <Button
                 variant="outline"
-                size="sm"
                 onClick={handleAddStep}
                 className="gap-1"
               >
@@ -223,7 +221,7 @@ export function TestSuiteEditor({ testCase, isNew, onSave, onDraftChange, onCanc
             onAddStep={handleAddStep}
             emptyActions={
               <>
-                <Button variant="outline" size="sm" onClick={handleAddStep} className="gap-1">
+                <Button variant="outline" onClick={handleAddStep} className="gap-1">
                   <Plus className="size-3.5" />
                   Add Step
                 </Button>
@@ -333,7 +331,7 @@ export function TestSuiteEditor({ testCase, isNew, onSave, onDraftChange, onCanc
           </div>
 
           <DialogFooter>
-            <Button size="sm" onClick={handleConfigDone} disabled={!canSave}>
+            <Button onClick={handleConfigDone} disabled={!canSave}>
               Done
             </Button>
           </DialogFooter>

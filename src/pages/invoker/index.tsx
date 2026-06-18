@@ -103,12 +103,12 @@ export function InvokerPage() {
 
 
                     {isRunning ? (
-                      <Button variant="destructive" size="xs" onClick={stopAttack}>
+                      <Button variant="destructive" onClick={stopAttack}>
                         <Square className="h-4 w-4 mr-1" />
                         Stop
                       </Button>
                     ) : (
-                      <Button size="xs" onClick={() => { clearStartError(); handleStartAttack(); }} disabled={!canStart}>
+                      <Button onClick={() => { clearStartError(); handleStartAttack(); }} disabled={!canStart}>
                         <Play className="h-4 w-4 mr-1" />
                         Start
                       </Button>

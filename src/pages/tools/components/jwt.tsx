@@ -418,7 +418,7 @@ export function JwtTool() {
                   <Copy className="h-3.5 w-3.5" />
                   Copy Token
                 </Button>
-                <Button variant="ghost" size="icon-sm" onClick={handleClear} disabled={!tokenInput}>
+                <Button variant="ghost" onClick={handleClear} disabled={!tokenInput}>
                   <Trash2 className="h-4 w-4" />
                 </Button>
               </>

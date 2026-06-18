@@ -80,7 +80,7 @@ export function ListenerPayloads({
         </span>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
-            <Button size="sm" variant="outline" className="h-7 gap-1 text-xs">
+            <Button variant="outline" className="h-7 gap-1 text-xs">
               <Plus className="h-3 w-3" />
               New Payload
             </Button>
@@ -178,7 +178,7 @@ export function ListenerPayloads({
                   <td className="px-3 py-1.5">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-7 w-7">
+                        <Button variant="ghost" className="h-7 w-7">
                           <MoreHorizontal className="h-3 w-3" />
                         </Button>
                       </DropdownMenuTrigger>

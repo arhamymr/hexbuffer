@@ -32,6 +32,7 @@ export interface ApiCall {
 
   headers: Record<string, string>;
   user_agent: string | null;
+  referrer: string | null;
   cookies: Record<string, string>;
   request_body: string | null;
   request_body_size: number;
@@ -103,6 +104,7 @@ export interface ProxyLogSummary {
   response_body_size: number;
   server_addr: string;
   user_agent: string | null;
+  referrer: string | null;
 }
 
 export interface PaginatedResponse<T> {

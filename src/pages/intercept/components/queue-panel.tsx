@@ -40,7 +40,7 @@ export function InterceptQueuePanel() {
           <span className="text-xs font-medium">Intercept Queue</span>
         </div>
         <div className="flex items-center gap-2">
-          <Button size="xs" onClick={handleForward} disabled={!hasSelection || isBusy}>
+          <Button onClick={handleForward} disabled={!hasSelection || isBusy}>
             {isBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
             Forward
           </Button>

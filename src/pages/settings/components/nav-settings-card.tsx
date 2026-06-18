@@ -54,7 +54,6 @@ export function NavSettingsCard() {
         })}
         <div className="flex flex-wrap items-center gap-2 border-t pt-4">
           <Button
-            size="xs"
             variant="outline"
             onClick={resetHiddenNavItems}
             disabled={!hasHiddenItems}

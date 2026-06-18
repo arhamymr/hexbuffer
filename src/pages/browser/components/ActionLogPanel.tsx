@@ -34,7 +34,7 @@ export function ActionLogPanel({ actions, onClear }: ActionLogPanelProps) {
     <div className="flex-1 flex flex-col min-h-0 border-b">
       <div className="px-2 py-1 border-b flex items-center justify-between">
         <span className="text-xs font-medium">Action Log</span>
-        <Button variant="ghost" size="xs" onClick={onClear}>
+        <Button variant="ghost" onClick={onClear}>
           Clear
         </Button>
       </div>

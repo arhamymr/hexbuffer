@@ -29,7 +29,7 @@ export function ScopeManager({ target, targets, onScopeUpdated }: ScopeManagerPr
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="xs">
+        <Button variant="outline">
           <Settings className="mr-2 h-4 w-4" />
           Manage Scope
         </Button>
@@ -45,7 +45,7 @@ export function ScopeManager({ target, targets, onScopeUpdated }: ScopeManagerPr
           <ScopeTable targets={targets} onTargetsUpdated={onScopeUpdated} />
         </div>
         <DialogFooter>
-          <Button size="xs" variant="outline" onClick={() => setOpen(false)}>
+          <Button variant="outline" onClick={() => setOpen(false)}>
             Close
           </Button>
         </DialogFooter>

@@ -97,7 +97,7 @@ export function HashTool() {
               <Copy className="h-3.5 w-3.5" />
               Copy
             </Button>
-            <Button variant="ghost" size="icon-sm" onClick={handleClear} disabled={!input && !output}>
+            <Button variant="ghost" onClick={handleClear} disabled={!input && !output}>
               <Trash2 className="h-4 w-4" />
             </Button>
           </div>
@@ -114,7 +114,7 @@ export function HashTool() {
                   Enter text to hash with {activeOption.label}.
                 </div>
               </div>
-              <Button variant="ghost" size="icon-sm" onClick={handleClear} disabled={!input && !output}>
+              <Button variant="ghost" onClick={handleClear} disabled={!input && !output}>
                 <Trash2 className="h-4 w-4" />
               </Button>
             </div>
@@ -134,7 +134,7 @@ export function HashTool() {
                   Hash output updates automatically.
                 </div>
               </div>
-              <Button variant="ghost" size="icon-sm" onClick={handleCopy} disabled={!output}>
+              <Button variant="ghost" onClick={handleCopy} disabled={!output}>
                 <Copy className="h-4 w-4" />
               </Button>
             </div>

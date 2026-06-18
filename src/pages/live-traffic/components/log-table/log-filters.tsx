@@ -78,12 +78,12 @@ export function LogFilters({
     <div className="space-y-1 p-1 bg-muted">
       <div className="relative flex items-center gap-2">
         <div className='relative flex items-center w-full'>
-          <Search className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Search className="absolute left-2 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="Search URL, host, method, body..."
             value={filter.search}
             onChange={(e) => storeSetSearch(e.target.value)}
-            className="pl-8 h-6 flex-1 w-full shadow-none bg-background"
+            className="pl-8 flex-1 w-full shadow-none bg-background"
           />
         </div>
 
@@ -131,7 +131,7 @@ export function LogFilters({
       </div>
 
       <div className="flex items-center justify-between gap-4">
-        <Button variant="ghost" size="xs" onClick={() => setClearDialogOpen(true)} className='text-xs !text-red-500 text-muted-foreground'>
+        <Button variant="ghost" onClick={() => setClearDialogOpen(true)} className='text-xs !text-red-500 text-muted-foreground'>
           <Trash className="size-3 mb-0.5" />
           Clear All History
         </Button>
@@ -178,7 +178,7 @@ export function LogFilters({
               </ToggleGroup>
             </div>
             {hasActiveFilters && (
-              <Button variant="destructive" className='h-6' size="xs" onClick={clearFilters}>
+              <Button variant="destructive" className='h-6' onClick={clearFilters}>
                 <X className="h-4 w-4 mr-1" />
                 Clear
               </Button>

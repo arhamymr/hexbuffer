@@ -22,7 +22,7 @@ export function WorkflowListPanel() {
     <div className="flex h-full flex-col border-r bg-background">
       <div className="flex items-center justify-between border-b px-3 py-2">
         <span className="text-xs font-semibold text-muted-foreground">Workflows</span>
-        <Button variant="ghost" size="xs" className="h-6 w-6 p-0" onClick={() => setTemplatesOpen(true)}>
+        <Button variant="ghost" className="h-6 w-6 p-0" onClick={() => setTemplatesOpen(true)}>
           <Plus className="size-3.5" />
         </Button>
       </div>
@@ -32,7 +32,7 @@ export function WorkflowListPanel() {
           <div className="flex flex-col items-center justify-center gap-2 p-6 text-muted-foreground">
             <Workflow className="size-8 opacity-30" />
             <p className="text-[11px] text-center">No workflows yet</p>
-            <Button variant="outline" size="xs" onClick={() => setTemplatesOpen(true)}>
+            <Button variant="outline" onClick={() => setTemplatesOpen(true)}>
               Create your first workflow
             </Button>
           </div>

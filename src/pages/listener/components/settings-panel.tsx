@@ -115,7 +115,7 @@ export function ListenerSettings({
         </span>
         <Dialog open={dialogOpen} onOpenChange={handleDialogOpenChange}>
           <DialogTrigger asChild>
-            <Button size="sm" variant="outline" className="h-7 gap-1 text-xs">
+            <Button variant="outline" className="h-7 gap-1 text-xs">
               <Plus className="h-3 w-3" />
               Add Server
             </Button>
@@ -218,7 +218,6 @@ export function ListenerSettings({
                   </p>
                   <div className="flex gap-2 pt-1">
                     <Button
-                      size="sm"
                       variant="outline"
                       className="h-7 gap-1 text-[10px]"
                       onClick={() => handleCheck(s.id)}
@@ -230,7 +229,6 @@ export function ListenerSettings({
                       Check
                     </Button>
                     <Button
-                      size="sm"
                       variant="destructive"
                       className="h-7 gap-1 text-[10px]"
                       onClick={() => onDeleteServer(s.id)}

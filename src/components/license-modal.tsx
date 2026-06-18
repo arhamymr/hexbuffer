@@ -98,7 +98,6 @@ export function LicenseModal({ open, onOpenChange }: LicenseModalProps) {
               </div>
               <Button
                 className="mt-3 w-full"
-                size="sm"
                 onClick={handleBuyLicense}
               >
                 <ShoppingBag className="size-4" />

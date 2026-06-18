@@ -212,7 +212,7 @@ export function TargetDialogForm({ target, onCancel, onSaved }: TargetDialogForm
         {target && (
           <AlertDialog>
             <AlertDialogTrigger asChild>
-              <Button size="xs" type="button" variant="destructive" className="gap-2">
+              <Button type="button" variant="destructive" className="gap-2">
                 <Trash2 className="h-4 w-4" />
                 Delete
               </Button>
@@ -238,10 +238,10 @@ export function TargetDialogForm({ target, onCancel, onSaved }: TargetDialogForm
           </AlertDialog>
         )}
         <div className="flex gap-2 sm:ml-auto">
-          <Button size="xs" type="button" variant="outline" onClick={onCancel}>
+          <Button type="button" variant="outline" onClick={onCancel}>
             Cancel
           </Button>
-          <Button size="xs" type="button" disabled={isSubmitting} onClick={() => void saveTarget()}>
+          <Button type="button" disabled={isSubmitting} onClick={() => void saveTarget()}>
             {target ? 'Save Changes' : 'Create Target'}
           </Button>
         </div>

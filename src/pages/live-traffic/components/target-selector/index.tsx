@@ -36,7 +36,7 @@ export function TargetSelectorDialog() {
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button size="xs" className="gap-2 h-7 gap-1 text-xs">
+        <Button className="gap-2 h-7 gap-1 text-xs">
           <Target className="h-4 w-4" />
           Manage Target
         </Button>
@@ -81,7 +81,7 @@ export function TargetSelectorDialog() {
               <span className="text-sm text-muted-foreground mr-auto">
                 {filteredCount} target{filteredCount !== 1 ? 's' : ''}
               </span>
-              <Button size="xs" variant="outline" onClick={handleCreateNew} className="gap-2">
+              <Button variant="outline" onClick={handleCreateNew} className="gap-2">
                 <Plus className="h-4 w-4" />
                 Create New Target
               </Button>

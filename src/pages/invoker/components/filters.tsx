@@ -25,7 +25,7 @@ export function InvokerFilters() {
         />
       </div>
       <div className="flex-1" />
-      <Button variant="outline" size="xs" onClick={clearResults} disabled={resultsCount === 0}>
+      <Button variant="outline" onClick={clearResults} disabled={resultsCount === 0}>
         <Trash2 className="h-4 w-4 mr-1" />
         Clear
       </Button>

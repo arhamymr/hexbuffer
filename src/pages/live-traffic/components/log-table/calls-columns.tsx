@@ -443,7 +443,7 @@ export const TrafficTable = memo(function TrafficTable({
     {
       accessorKey: "method",
       header: "Method",
-      size: 100,
+      size: 90,
       cell: ({ row }) => (
         <div className="flex gap-2">
           <MethodBadge method={row.original.method} />
@@ -500,7 +500,7 @@ export const TrafficTable = memo(function TrafficTable({
     {
       accessorKey: "referrer",
       header: "Referrer",
-      size: 160,
+      size: 210,
       cell: ({ row, table }) => {
         const displayReferrer = row.original.referrer?.replace(/^https?:\/\//i, '') || '-';
         return (
@@ -516,7 +516,7 @@ export const TrafficTable = memo(function TrafficTable({
     {
       accessorKey: "response_body_size",
       header: "Size",
-      size: 70,
+      size: 60,
       cell: ({ row }) => (
         <span className="text-xs text-muted-foreground text-right block">
           {formatBytes(row.original.response_body_size)}
@@ -526,7 +526,7 @@ export const TrafficTable = memo(function TrafficTable({
     {
       accessorKey: "request_body_size",
       header: "Length",
-      size: 70,
+      size: 60,
       cell: ({ row }) => (
         <span className="text-xs text-muted-foreground text-right block">
           {formatBytes(row.original.request_body_size)}

@@ -9,7 +9,7 @@ import { openTargetSelector, toggleStreamPause, toggleHistoryMode } from '@/trig
 import { toggleInterceptEnabled, forwardPaused } from '@/triggers';
 import { toggleBrowserCrawl, stopBrowserCrawl, startBrowserCrawl } from '@/triggers';
 import { startInvokerAttack, stopInvokerAttack } from '@/triggers';
-import { sendRequest } from '@/triggers';
+import { sendRepeaterRequest } from '@/triggers';
 import { useInvokerStore } from '@/stores/invoker';
 import { useRepeaterStore } from '@/stores/repeater';
 
@@ -187,7 +187,7 @@ export function useFloatingPageButtons(pathname: string): PageButton[] {
           icon: repeaterLoading ? Loader2 : SendHorizonal,
           label: 'Send',
           isActive: false,
-          onClick: () => { void sendRequest(); },
+          onClick: () => { void sendRepeaterRequest(); },
           visible: true,
           variant: 'primary',
         },

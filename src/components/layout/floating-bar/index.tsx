@@ -31,7 +31,8 @@ export function AppSidebar() {
       <div
         ref={dock.dockRef}
         className={cn(
-          'fixed bottom-4 left-1/2 z-50 flex items-center gap-2 transition-all duration-300',
+          'fixed bottom-4 left-1/2 z-50 flex items-center gap-2',
+          !dock.dragging && 'transition-transform duration-300 ease-out',
           dock.dragging && 'cursor-grabbing select-none',
         )}
         style={{
@@ -42,7 +43,7 @@ export function AppSidebar() {
         <DockPageButtons/>
 
         {/* Main dock */}
-        <div className="flex items-center gap-1 rounded-md border px-2 py-1.5 backdrop-blur-xl">
+        <div className="flex items-center gap-1 rounded-md border px-1 py-1 backdrop-blur-xl">
 
         {/* Category nav items */}
         {visibleCategories.map((cat) => {
@@ -56,7 +57,7 @@ export function AppSidebar() {
                 <Link
                   to={firstHref}
                   className={cn(
-                    'relative flex size-7 items-center justify-center rounded-md text-muted-foreground transition-all hover:bg-muted/80 hover:text-foreground hover:scale-110',
+                    'relative flex size-7 items-center justify-center rounded-sm text-muted-foreground transition-all hover:bg-muted/80 hover:text-foreground hover:scale-110',
                     active && 'bg-primary/15 text-primary',
                   )}
                 >
@@ -68,7 +69,7 @@ export function AppSidebar() {
           );
         })}
 
-        <div className="mx-1 h-7 w-px bg-border" />
+        <div className="mx-1 h-5 w-px bg-border" />
 
         {/* Terminal */}
         <Tooltip>
@@ -76,7 +77,7 @@ export function AppSidebar() {
             <button
               type="button"
               className={cn(
-                'flex size-8 items-center justify-center rounded-md text-muted-foreground transition-all hover:bg-muted/80 hover:text-foreground hover:scale-110',
+                'flex size-7 items-center justify-center rounded-sm text-muted-foreground transition-all hover:bg-muted/80 hover:text-foreground hover:scale-110',
                 dock.isTerminalOpen && 'text-primary scale-110',
               )}
               onClick={dock.toggleTerminal}
@@ -93,7 +94,7 @@ export function AppSidebar() {
             <button
               type="button"
               className={cn(
-                'flex size-8 items-center justify-center rounded-md text-muted-foreground transition-all hover:bg-muted/80 hover:text-foreground hover:scale-110',
+                'flex size-7 items-center justify-center rounded-sm text-muted-foreground transition-all hover:bg-muted/80 hover:text-foreground hover:scale-110',
                 dock.isChatboxOpen && 'text-primary scale-110',
               )}
               onClick={dock.toggleChatbox}
@@ -104,7 +105,7 @@ export function AppSidebar() {
           <TooltipContent side="top" sideOffset={12}>AI Assistant</TooltipContent>
         </Tooltip>
 
-        <div className="mx-1 h-7 w-px bg-border" />
+        <div className="mx-1 h-5 w-px bg-border" />
 
         {/* Update badge */}
         {dock.updateAvailable && !dock.updateInstalled && (
@@ -112,7 +113,7 @@ export function AppSidebar() {
             <TooltipTrigger asChild>
               <button
                 type="button"
-                className="relative flex size-8 items-center justify-center rounded-md text-green-600 transition-all hover:bg-muted/80 hover:scale-110 dark:text-green-400"
+                className="relative flex size-7 items-center justify-center rounded-sm text-green-600 transition-all hover:bg-muted/80 hover:scale-110 dark:text-green-400"
                 onClick={() => dock.setUpdateDialogOpen(true)}
                 disabled={dock.updateDownloading}
               >
@@ -137,7 +138,7 @@ export function AppSidebar() {
         <div className="group flex items-center gap-1">
           <button
             type="button"
-            className="flex size-8 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-all hover:bg-muted/80 hover:text-foreground hover:scale-110"
+            className="flex size-7 shrink-0 items-center justify-center rounded-sm text-muted-foreground transition-all hover:bg-muted/80 hover:text-foreground hover:scale-110"
           >
             <MoreHorizontal className="size-4" />
           </button>
@@ -146,7 +147,7 @@ export function AppSidebar() {
             {/* Settings */}
             <button
               type="button"
-              className="flex size-8 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-all hover:bg-muted/80 hover:text-foreground hover:scale-110"
+              className="flex size-7 shrink-0 items-center justify-center rounded-sm text-muted-foreground transition-all hover:bg-muted/80 hover:text-foreground hover:scale-110"
               onClick={dock.openSettings}
             >
               <Settings className="size-4" />
@@ -155,7 +156,7 @@ export function AppSidebar() {
             {/* Theme */}
             <button
               type="button"
-              className="flex size-8 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-all hover:bg-muted/80 hover:text-foreground hover:scale-110"
+              className="flex size-7 shrink-0 items-center justify-center rounded-sm text-muted-foreground transition-all hover:bg-muted/80 hover:text-foreground hover:scale-110"
               onClick={dock.toggleTheme}
             >
               {dock.theme === 'dark' ? <Sun className="size-4" /> : <Moon className="size-4" />}
@@ -164,7 +165,7 @@ export function AppSidebar() {
             {/* License */}
             <button
               type="button"
-              className="flex size-8 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-all hover:bg-muted/80 hover:text-foreground hover:scale-110"
+              className="flex size-7 shrink-0 items-center justify-center rounded-sm text-muted-foreground transition-all hover:bg-muted/80 hover:text-foreground hover:scale-110"
               onClick={() => dock.setLicenseModalOpen(true)}
             >
               {dock.licenseStatus === 'lifetime' ? (
@@ -176,7 +177,7 @@ export function AppSidebar() {
           </div>
         </div>
 
-        <div className="mx-1 h-7 w-px bg-border" />
+        <div className="mx-1 h-5 w-px bg-border" />
 
         {/* Drag handle */}
         <div

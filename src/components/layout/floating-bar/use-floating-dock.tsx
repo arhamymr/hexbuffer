@@ -47,99 +47,113 @@ export function useSidebarDock() {
   const [updateDialogOpen, setUpdateDialogOpen] = React.useState(false);
 
   // ── Drag state ──────────────────────────────────────────────────────────
+  // Committed position (used for React render — updated on mouseup for snap)
   const [position, setPosition] = React.useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [dragging, setDragging] = React.useState(false);
-  const [hasDragged, setHasDragged] = React.useState(false);
-  const dragStartRef = React.useRef<{ mouseX: number; mouseY: number; posX: number; posY: number } | null>(null);
   const dockRef = React.useRef<HTMLDivElement>(null);
+
+  // Refs for drag-time state (avoid re-renders during mousemove)
+  const dragPosRef = React.useRef({ x: 0, y: 0 });
+  const dragStartRef = React.useRef<{
+    mouseX: number; mouseY: number;
+    posX: number; posY: number;
+    dockW: number; dockH: number;
+    hasMoved: boolean;
+  } | null>(null);
+  const rafIdRef = React.useRef(0);
 
   const handleMouseDown = React.useCallback((e: React.MouseEvent) => {
     e.preventDefault();
+    const el = dockRef.current;
+    if (!el) return;
+    // Cache dimensions once at drag start
+    const rect = el.getBoundingClientRect();
     dragStartRef.current = {
       mouseX: e.clientX,
       mouseY: e.clientY,
-      posX: position.x,
-      posY: position.y,
+      posX: dragPosRef.current.x,
+      posY: dragPosRef.current.y,
+      dockW: rect.width,
+      dockH: rect.height,
+      hasMoved: false,
     };
     setDragging(true);
-    setHasDragged(false);
-  }, [position]);
+  }, []);
 
   React.useEffect(() => {
     if (!dragging) return;
 
+    const applyTransform = () => {
+      const el = dockRef.current;
+      if (!el) return;
+      const { x, y } = dragPosRef.current;
+      el.style.transform = `translate(calc(-50% + ${x}px), ${y}px)`;
+    };
+
     const handleMouseMove = (e: MouseEvent) => {
-      if (!dragStartRef.current || !dockRef.current) return;
-      const dx = e.clientX - dragStartRef.current.mouseX;
-      const dy = e.clientY - dragStartRef.current.mouseY;
-      if (Math.abs(dx) > 2 || Math.abs(dy) > 2) {
-        setHasDragged(true);
+      const ds = dragStartRef.current;
+      if (!ds) return;
+      const dx = e.clientX - ds.mouseX;
+      const dy = e.clientY - ds.mouseY;
+      if (!ds.hasMoved && (Math.abs(dx) > 2 || Math.abs(dy) > 2)) {
+        ds.hasMoved = true;
       }
 
-      let newX = dragStartRef.current.posX + dx;
-      let newY = dragStartRef.current.posY + dy;
+      let newX = ds.posX + dx;
+      let newY = ds.posY + dy;
 
-      const dockRect = dockRef.current.getBoundingClientRect();
+      // Boundary clamping using cached dimensions
       const winW = window.innerWidth;
       const winH = window.innerHeight;
-      const dockW = dockRect.width;
-      const dockH = dockRect.height;
       const gap = 8;
-
-      const maxLeft = winW / 2 - dockW / 2 - gap;
-      const maxRight = winW / 2 - dockW / 2 - gap;
-      const maxUp = winH - dockH - 16 - gap;
+      const maxLeft = winW / 2 - ds.dockW / 2 - gap;
+      const maxRight = maxLeft;
+      const maxUp = winH - ds.dockH - 16 - gap;
       const maxDown = 16 - gap;
 
       newX = Math.max(-maxLeft, Math.min(maxRight, newX));
       newY = Math.max(-maxUp, Math.min(maxDown, newY));
 
-      setPosition({ x: newX, y: newY });
+      dragPosRef.current = { x: newX, y: newY };
+
+      // Throttle DOM writes to animation frames
+      cancelAnimationFrame(rafIdRef.current);
+      rafIdRef.current = requestAnimationFrame(applyTransform);
     };
 
     const handleMouseUp = () => {
-      if (!dockRef.current) {
-        setDragging(false);
-        dragStartRef.current = null;
-        return;
-      }
+      cancelAnimationFrame(rafIdRef.current);
 
-      const dockRect = dockRef.current.getBoundingClientRect();
-      const winW = window.innerWidth;
-      const winH = window.innerHeight;
-      const dockW = dockRect.width;
-      const dockH = dockRect.height;
+      // Snap logic using cached dimensions
+      const ds = dragStartRef.current;
+      const { x: px, y: py } = dragPosRef.current;
+      let snapX = px;
+      let snapY = py;
 
-      setPosition((prev) => {
-        let snapX = prev.x;
-        let snapY = prev.y;
+      if (Math.abs(px) < SNAP_THRESHOLD && Math.abs(py) < SNAP_THRESHOLD) {
+        snapX = 0;
+        snapY = 0;
+      } else {
+        if (Math.abs(py) < SNAP_THRESHOLD) snapY = 0;
 
-        if (Math.abs(prev.x) < SNAP_THRESHOLD && Math.abs(prev.y) < SNAP_THRESHOLD) {
-          return { x: 0, y: 0 };
-        }
-
-        if (Math.abs(prev.y) < SNAP_THRESHOLD) {
-          snapY = 0;
-        }
+        const winW = window.innerWidth;
+        const winH = window.innerHeight;
+        const dockW = ds?.dockW ?? 0;
+        const dockH = ds?.dockH ?? 0;
 
         const leftEdgeX = -(winW / 2 - dockW / 2 - 8);
-        if (Math.abs(prev.x - leftEdgeX) < SNAP_THRESHOLD) {
-          snapX = leftEdgeX;
-        }
+        if (Math.abs(px - leftEdgeX) < SNAP_THRESHOLD) snapX = leftEdgeX;
 
         const rightEdgeX = winW / 2 - dockW / 2 - 8;
-        if (Math.abs(prev.x - rightEdgeX) < SNAP_THRESHOLD) {
-          snapX = rightEdgeX;
-        }
+        if (Math.abs(px - rightEdgeX) < SNAP_THRESHOLD) snapX = rightEdgeX;
 
         const topEdgeY = -(winH - dockH - 16 - 8);
-        if (Math.abs(prev.y - topEdgeY) < SNAP_THRESHOLD) {
-          snapY = topEdgeY;
-        }
+        if (Math.abs(py - topEdgeY) < SNAP_THRESHOLD) snapY = topEdgeY;
+      }
 
-        return { x: snapX, y: snapY };
-      });
-
+      // Commit to React state once (triggers CSS transition for snap animation)
+      dragPosRef.current = { x: snapX, y: snapY };
+      setPosition({ x: snapX, y: snapY });
       setDragging(false);
       dragStartRef.current = null;
     };
@@ -149,6 +163,7 @@ export function useSidebarDock() {
     return () => {
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
+      cancelAnimationFrame(rafIdRef.current);
     };
   }, [dragging]);
 

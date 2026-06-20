@@ -14,7 +14,7 @@ import {
   resumeScan as orchResumeScan,
   stopScan as orchStopScan,
   submitCrawlInput as orchSubmitCrawlInput,
-} from '@/triggers/browser-automation';
+} from '@/triggers/browser';
 import { invoke } from '@tauri-apps/api/core';
 import { useNavStore } from '@/stores/nav';
 import type {

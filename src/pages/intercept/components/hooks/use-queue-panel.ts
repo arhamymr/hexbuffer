@@ -19,6 +19,8 @@ export function useQueuePanel() {
   const addCaptureHost = useInterceptStore((state) => state.addCaptureHost);
   const removeCaptureHostAndForward = useInterceptStore((state) => state.removeCaptureHostAndForward);
 
+  const toggleIntercept = useInterceptStore((state) => state.toggleIntercept);
+
   const [removingIds, setRemovingIds] = React.useState<Set<string>>(new Set());
 
   const isEnabled = status?.mode === 'Enabled';
@@ -68,6 +70,13 @@ export function useQueuePanel() {
     [addCaptureHost]
   );
 
+  const handleToggleIntercept = React.useCallback(
+    (enabled: boolean) => {
+      void toggleIntercept(enabled);
+    },
+    [toggleIntercept]
+  );
+
   return {
     isEnabled,
     activeTab,
@@ -83,5 +92,6 @@ export function useQueuePanel() {
     handleDrop,
     handleDontCapture,
     handleAddCaptureHost,
+    handleToggleIntercept,
   };
 }

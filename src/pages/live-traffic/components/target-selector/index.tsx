@@ -15,7 +15,15 @@ import { TargetSearchList } from './target-search-list';
 import { TargetDialogForm } from './target-dialog-form';
 import { useTargetSelectorDialog } from './hooks';
 
-export function TargetSelectorDialog() {
+export function TargetSelectorDialog({
+  externalOpen,
+  onExternalOpenChange,
+}: {
+  externalOpen?: boolean;
+  onExternalOpenChange?: (open: boolean) => void;
+} = {}) {
+  const isExternallyControlled = externalOpen !== undefined && onExternalOpenChange !== undefined;
+
   const {
     open,
     handleOpenChange,
@@ -31,16 +39,18 @@ export function TargetSelectorDialog() {
     filteredTargets,
     targetCount,
     handleSelectTarget,
-  } = useTargetSelectorDialog();
+  } = useTargetSelectorDialog({ externalOpen, onExternalOpenChange });
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogTrigger asChild>
-        <Button className="gap-2 h-7 gap-1 text-xs">
-          <Target className="h-4 w-4" />
-          Manage Target
-        </Button>
-      </DialogTrigger>
+      {!isExternallyControlled && (
+        <DialogTrigger asChild>
+          <Button>
+            <Target className="size-3" />
+            Manage Target
+          </Button>
+        </DialogTrigger>
+      )}
       <DialogContent className="sm:max-w-[425px]">
         {showCreateNew ? (
           <>

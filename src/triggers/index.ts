@@ -8,6 +8,10 @@ export {
   getLiveTrafficWorkflows,
   startLiveTrafficWatcher,
   stopLiveTrafficWatcher,
+  openTargetSelector,
+  closeTargetSelector,
+  toggleStreamPause,
+  toggleHistoryMode,
 } from './live-traffic';
 
 export type {
@@ -21,6 +25,8 @@ export {
   toggleIntercept,
   openBrowser as openInterceptBrowser,
   trustCA as trustInterceptCA,
+  toggleInterceptEnabled,
+  forwardPaused,
 } from './intercept';
 
 export {
@@ -34,6 +40,8 @@ export {
   startAttack as startInvokerAttack,
   stopAttack as stopInvokerAttack,
   sendToInvoker,
+  startInvokerAttack as startInvokerUiAttack,
+  stopInvokerAttack as stopInvokerUiAttack,
 } from './invoker';
 
 export type { SendToInvokerOptions } from './invoker';
@@ -44,10 +52,13 @@ export {
   resumeScan as resumeBrowserScan,
   stopScan as stopBrowserScan,
   submitCrawlInput as submitBrowserCrawlInput,
-} from './browser-automation';
-export type { TriggerScanOptions, SubmitCrawlInputOptions } from './browser-automation';
+  toggleBrowserCrawl,
+  stopBrowserCrawl,
+  startBrowserCrawl,
+} from './browser';
+export type { TriggerScanOptions, SubmitCrawlInputOptions } from './browser';
 
-export { sendToRepeater } from './repeater';
+export { sendToRepeater, sendRequest as sendRepeaterRequest } from './repeater';
 export type { SendToRepeaterOptions } from './repeater';
 
 export { writeDocument } from './documents';

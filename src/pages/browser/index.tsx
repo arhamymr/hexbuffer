@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 
-import { ChevronDownIcon, EyeIcon, Pause, Play, RotateCcw, ScrollText, Search, Square, Target, InfoIcon } from 'lucide-react';
+import { InfoIcon } from 'lucide-react';
 import { AiInsightsPanel } from './components/insight-panel';
 import { ActionLogPanel } from './components/ActionLogPanel';
 import { CrawlSetupScreen } from './components/setup-screen';
@@ -10,15 +10,6 @@ import { CrawlTreePanel } from './components/tree-panel';
 import { PageDetailPanel } from './components/page-detail-panel';
 import { Alert, AlertAction, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { ButtonGroup } from '@/components/ui/button-group';
-import { Input } from '@/components/ui/input';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
 import { TabbedPageLayout } from '@/components/tabs-layout/tabbed-page-layout';
 import { useAppStore } from '@/stores/app';
@@ -53,21 +44,11 @@ export function BrowserAutomationPage() {
   const {
     updateSetup,
     saveConfig,
-    startCrawl,
-    pauseCrawl,
-    resumeCrawl,
-    stopCrawl,
-    setSearch,
     clearLogs,
   } = useBrowserAutomationStore(
     useShallow((s) => ({
       updateSetup: s.updateSetup,
       saveConfig: s.saveConfig,
-      startCrawl: s.startCrawl,
-      pauseCrawl: s.pauseCrawl,
-      resumeCrawl: s.resumeCrawl,
-      stopCrawl: s.stopCrawl,
-      setSearch: s.setSearch,
       clearLogs: s.clearLogs,
     }))
   );
@@ -92,7 +73,6 @@ export function BrowserAutomationPage() {
 
   const status = session?.status ?? 'idle';
   const isRunning = status === 'running';
-  const isPaused = status === 'paused';
 
   const [isStarting, setIsStarting] = useState(false);
   const proxyStatus = useAppStore((state) => state.proxyStatus);
@@ -164,64 +144,14 @@ export function BrowserAutomationPage() {
       >
         <div className="flex h-full min-h-0 flex-col bg-background">
           <header className="bg-muted p-1">
-            <div className="flex flex-row gap-3 xl:items-center xl:justify-between">
-              <div className="flex min-w-0 flex-1 items-center gap-3">
-                <div className="relative w-full max-w-[230px]">
-                  <Search className="absolute left-2 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    className="pl-8 h-7 bg-background"
-                    placeholder="Search pages, logs, insights..."
-                    value={search}
-                    onChange={(event) => setSearch(event.target.value)}
-                  />
-                </div>
-              </div>
-
-              <div className="flex flex-wrap items-center gap-2">
-                <CrawlStatusBadge status={status} />
-                <CrawlSetupScreen
-                  setup={setup}
-                  disabled={isRunning}
-                  onSetupChange={updateSetup}
-                  onSave={saveConfig}
-                />
-               
-                <ButtonGroup>
-                  <Button variant="outline" onClick={pauseCrawl} disabled={!isRunning} aria-label="Pause">
-                    <Pause className="h-4 w-4" />
-                  </Button>
-                  <Button variant="outline" onClick={resumeCrawl} disabled={!isPaused} aria-label="Resume">
-                    <RotateCcw className="h-4 w-4" />
-                  </Button>
-                  <Button variant="outline" onClick={stopCrawl} disabled={!isRunning && !isPaused} aria-label="Stop">
-                    <Square className="h-4 w-4" />
-                  </Button>
-                </ButtonGroup>
-                <ButtonGroup>
-                  <Button onClick={() => startCrawl(true)} disabled={proxyStatus === "disconnected" || isRunning || !setup.targetUrl.trim()}>
-                    <Play className="h-4 w-4" />
-                    Start
-                  </Button>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="outline" disabled={isRunning || !setup.targetUrl.trim()} aria-label="More start options">
-                        <ChevronDownIcon className="h-3 w-3" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-48">
-                      <DropdownMenuItem className='text-xs' onClick={() => startCrawl(true)}>
-                        <Play className="size-3.5" />
-                        Start (Headless)
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem className='text-xs' onClick={() => startCrawl(false)}>
-                        <EyeIcon className="size-3.5" />
-                        Start Visible
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </ButtonGroup>
-              </div>
+            <div className="flex flex-wrap justify-end items-center gap-2">
+              <CrawlStatusBadge status={status} />
+              <CrawlSetupScreen
+                setup={setup}
+                disabled={isRunning}
+                onSetupChange={updateSetup}
+                onSave={saveConfig}
+              />
             </div>
           </header>
 

@@ -7,7 +7,7 @@ import { GripHorizontal, Loader2, Pause } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { OpenBrowserButton } from './open-browser';
 import { ProxyButton } from './proxy-button';
-import { mainNavItems } from './constants';
+import { mainNavItems, navCategories } from './constants';
 import { TitlebarButtons } from './titlebar-buttons';
 import { TriangleLogo } from './triangle-logo';
 import { useTopNav } from './hooks/use-top-nav';
@@ -16,6 +16,7 @@ import { useAutomationStore } from '@/stores/automation';
 import { useBrowserAutomationStore } from '@/stores/browser-automation';
 import { useAppSettingsStore } from '@/stores/app-settings-store';
 import { Separator } from '../ui/separator';
+import { GlobalSearch } from './global-search';
 
 type CrawlStatusKey = 'automation-running' | 'browser-running' | 'browser-paused';
 
@@ -52,10 +53,19 @@ export function TopNav() {
   } = useTopNav();
   const navigate = useNavigate();
   const hiddenNavItems = useAppSettingsStore((s) => s.hiddenNavItems);
-  const visibleNavItems = React.useMemo(
-    () => mainNavItems.filter((item) => !hiddenNavItems.includes(item.href)),
-    [hiddenNavItems],
+
+  // Find which category is active based on current route
+  const activeCategory = React.useMemo(
+    () => navCategories.find((cat) => cat.items.some((item) => item.href === pathname)) ?? null,
+    [pathname],
   );
+
+  const visibleNavItems = React.useMemo(() => {
+    const base = mainNavItems.filter((item) => !hiddenNavItems.includes(item.href));
+    if (!activeCategory) return base;
+    const categoryHrefs = new Set(activeCategory.items.map((i) => i.href));
+    return base.filter((item) => categoryHrefs.has(item.href));
+  }, [hiddenNavItems, activeCategory]);
 
   React.useEffect(() => {
     if (hiddenNavItems.includes(pathname)) {
@@ -154,6 +164,10 @@ export function TopNav() {
               `}
             />
           </div>
+        </div>
+
+        <div className="flex shrink-0 items-center">
+          <GlobalSearch />
         </div>
 
         <div className="flex shrink-0 items-center gap-2 h-5 bg-background pl-2">

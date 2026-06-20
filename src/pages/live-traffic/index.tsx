@@ -5,11 +5,14 @@ import { TabbedPageLayout } from "@/components/tabs-layout/tabbed-page-layout";
 import { Card } from "@/components/ui/card";
 import { ContextMenuItem } from "@/components/ui/context-menu";
 import { LogFilters } from "./components/log-table/log-filters";
+import { TargetSelectorDialog } from "./components/target-selector";
 import { HttpHistoryView } from "./components/http-history-view";
 import { WebSocketHistoryView } from "./components/websocket-history-view";
 import { useHttpHistoryPage } from "./hooks/use-http-history-page";
 import { CreateGroupDialog } from "./components/group-dialog";
 import { useGroupsStore } from "./state/groups-store";
+import { useFloatingBarUiStore } from '@/stores/floating-bar-ui';
+import { closeTargetSelector } from '@/triggers';
 
 export function LiveTrafficPage() {
   const {
@@ -30,6 +33,7 @@ export function LiveTrafficPage() {
   } = useHttpHistoryPage();
 
   const deleteGroup = useGroupsStore((s) => s.deleteGroup);
+  const isTargetSelectorOpen = useFloatingBarUiStore((s) => s.isTargetSelectorOpen);
 
   const renderTabContextMenuItems = useCallback((tab: { id: string }) => {
     if (tab.id === 'all-scope') return null;
@@ -67,10 +71,7 @@ export function LiveTrafficPage() {
         renderTabContextMenuItems={renderTabContextMenuItems}
         contentClassName="flex-1 border rounded-lg flex flex-col overflow-hidden bg-background min-h-0"
       >
-        <LogFilters
-          historyMode={historyMode}
-          setHistoryMode={setHistoryMode}
-        />
+        <LogFilters />
         <Card className="flex-1 flex flex-col overflow-hidden !py-0 rounded-none">
           {historyView}
         </Card>
@@ -78,6 +79,10 @@ export function LiveTrafficPage() {
       <CreateGroupDialog
         open={isGroupDialogOpen}
         onOpenChange={setIsGroupDialogOpen}
+      />
+      <TargetSelectorDialog
+        externalOpen={isTargetSelectorOpen}
+        onExternalOpenChange={(open) => { if (!open) closeTargetSelector(); }}
       />
     </>
   );

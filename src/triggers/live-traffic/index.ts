@@ -20,3 +20,10 @@ export {
 } from './captured';
 
 export type { LiveTrafficFilterMatch } from './captured';
+
+export {
+  openTargetSelector,
+  closeTargetSelector,
+  toggleStreamPause,
+  toggleHistoryMode,
+} from './ui';

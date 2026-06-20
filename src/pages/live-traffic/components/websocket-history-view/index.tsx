@@ -10,7 +10,7 @@ export function WebSocketHistoryView() {
   const [selectedConnectionId, setSelectedConnectionId] = useState<string | null>(null);
 
   return (
-    <ResizablePanelGroup orientation="vertical" className="flex-1">
+    <ResizablePanelGroup orientation="vertical" className="flex-1 min-w-0">
       <ResizablePanel defaultSize={60}>
         <WebSocketTable
           selectedConnectionId={selectedConnectionId}

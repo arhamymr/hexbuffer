@@ -51,7 +51,7 @@ export function TabbedPageLayout({
         />
       </div>
       <div className={contentClassName + ' m-2'}>
-        <Tabs value={activeTabId} onValueChange={onTabChange} className="gap-0 h-full flex flex-col">
+        <Tabs value={activeTabId} onValueChange={onTabChange} className="gap-0 h-full flex flex-col min-w-0">
           {children}
         </Tabs>
       </div>

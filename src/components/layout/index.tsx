@@ -9,26 +9,14 @@ import { useInspectorStore } from '@/stores/inspector';
 import { useGlobalTerminalStore } from '@/stores/global-terminal';
 import { useChatboxStore } from '@/stores/chatbox';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
+import { AppSidebar } from './floating-bar';
 import type { TerminalPanelHandle } from '@/components/layout/terminal';
 
 const TerminalPanel = React.lazy(() =>
   import('./terminal').then((m) => ({ default: m.TerminalPanel }))
 );
 
-const TERMINAL_PANEL_HEIGHT_PX = 320;
 const CHATBOX_DEFAULT_SIZE = 25;
-const CHATBOX_STORAGE_KEY = 'apprecon-chatbox-size';
-
-function getChatboxSize(): number {
-  try {
-    const saved = localStorage.getItem(CHATBOX_STORAGE_KEY);
-    if (saved) {
-      const n = Number(saved);
-      if (!isNaN(n) && n > 0) return n;
-    }
-  } catch {}
-  return CHATBOX_DEFAULT_SIZE;
-}
 
 export function AppLayout({ children }: { children?: React.ReactNode }) {
   const {
@@ -41,15 +29,6 @@ export function AppLayout({ children }: { children?: React.ReactNode }) {
   const isChatboxOpen = useChatboxStore((s) => s.isOpen);
   const closeChatbox = useChatboxStore((s) => s.close);
 
-  const [chatboxSize, setChatboxSize] = React.useState(getChatboxSize);
-
-  const handleChatboxResize = React.useCallback((size: { asPercentage: number }) => {
-    const pct = size.asPercentage;
-    if (pct > 0) {
-      try { localStorage.setItem(CHATBOX_STORAGE_KEY, String(pct)); } catch {}
-      setChatboxSize(pct);
-    }
-  }, []);
 
   const handleTerminalRef = React.useCallback(
     (handle: TerminalPanelHandle | null) => {
@@ -68,17 +47,31 @@ export function AppLayout({ children }: { children?: React.ReactNode }) {
   }, [setTerminalHandle]);
 
   return (
-    <div className="flex h-screen flex-col rounded-md border shadow-2xl">
+    <div className="flex h-screen flex-col rounded-md border bg-background">
       <TopNav />
       <div className="min-h-0 flex-1">
         <ResizablePanelGroup
-          id="app-layout-panels"
+          key={isChatboxOpen ? 'with-chatbox' : 'without-chatbox'}
           orientation="horizontal"
           className="h-full"
         >
+           {isChatboxOpen && (
+            <>
+              <ResizablePanel
+                id="app-chatbox-panel"
+                defaultSize={CHATBOX_DEFAULT_SIZE}
+                minSize={15}
+              >
+                <div className="h-full overflow-hidden bg-background">
+                  <AIAssistantPane onClose={closeChatbox} />
+                </div>
+              </ResizablePanel>
+               <ResizableHandle withHandle />
+            </>
+          )}
           <ResizablePanel
             id="app-main-panel"
-            defaultSize={isChatboxOpen ? 100 - chatboxSize : 100}
+            defaultSize={isChatboxOpen ? 100 - CHATBOX_DEFAULT_SIZE : 100}
             minSize={30}
           >
             <ResizablePanelGroup
@@ -107,28 +100,11 @@ export function AppLayout({ children }: { children?: React.ReactNode }) {
               )}
             </ResizablePanelGroup>
           </ResizablePanel>
-          {isChatboxOpen && (
-            <>
-              <ResizableHandle withHandle />
-              <ResizablePanel
-                id="app-chatbox-panel"
-                defaultSize={chatboxSize}
-                minSize={15}
-                maxSize={60}
-                onResize={handleChatboxResize}
-              >
-                <div className="h-full overflow-hidden bg-background">
-                  <AIAssistantPane onClose={closeChatbox} />
-                </div>
-              </ResizablePanel>
-            </>
-          )}
+         
         </ResizablePanelGroup>
       </div>
-      <AppFooter
-        isTerminalOpen={isTerminalOpen}
-        onToggleTerminal={toggleTerminal}
-      />
+      <AppSidebar />
+      <AppFooter />
     </div>
   );
 }

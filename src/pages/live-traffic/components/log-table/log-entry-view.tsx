@@ -190,9 +190,6 @@ export function LogEntryBurpView() {
                 Request
               </span>
               {call.method && <MethodBadge method={call.method} />}
-              <span className="text-xs font-mono truncate text-muted-foreground" title={call.url}>
-                {call.url}
-              </span>
             </div>
           </div>
 
@@ -204,9 +201,6 @@ export function LogEntryBurpView() {
               <div className="min-h-0 flex-1 overflow-hidden rounded-md border">
                 <TextEditor
                   value={rawRequest}
-                  options={{
-                    readOnly: true,
-                  }}
                 />
               </div>
             </div>
@@ -285,9 +279,6 @@ export function LogEntryBurpView() {
               <div className="min-h-0 flex-1 overflow-hidden rounded-md border">
                 <TextEditor
                   value={rawResponse}
-                  options={{
-                    readOnly: true,
-                  }}
                 />
               </div>
             </div>

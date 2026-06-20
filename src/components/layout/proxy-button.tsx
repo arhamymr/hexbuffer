@@ -21,7 +21,7 @@ export function ProxyButton() {
           <Asterisk className="!size-4 shrink-0" />
         )}
         <span className="max-w-0 overflow-hidden whitespace-nowrap opacity-0 transition-all duration-300 group-hover:ml-1 group-hover:max-w-17 group-hover:opacity-100">
-          {isConnected ? 'PROXY ON' : 'PROXY OFF'}
+          {isConnected ? 'Proxy On' : 'Proxy Off'}
         </span>
       </Badge>
       <Switch

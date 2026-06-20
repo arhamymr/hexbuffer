@@ -24,6 +24,17 @@ export function useHttpHistoryPage() {
     localStorage.setItem('history-mode', mode);
     setHistoryMode(mode);
   }, []);
+
+  // Listen for external history mode changes from the floating bar
+  React.useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail as HistoryMode;
+      setHistoryMode(detail);
+    };
+    window.addEventListener('history-mode-change', handler);
+    return () => window.removeEventListener('history-mode-change', handler);
+  }, []);
+
   const targets = useTargetStore((state) => state.targets);
   const removeActiveTab = useTargetStore((state) => state.removeActiveTab);
   const { setActiveScope } = useHistoryQuery();

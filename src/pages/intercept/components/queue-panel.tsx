@@ -1,7 +1,6 @@
 'use client';
 
-import { ArrowLeft, ArrowRight, Flag, Loader2, PauseCircle, Play, Plus, ShieldOff, Trash2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { ArrowLeft, ArrowRight, Flag, PauseCircle, Play, Plus, ShieldOff, Trash2 } from 'lucide-react';
 import {
   ContextMenu,
   ContextMenuContent,
@@ -20,13 +19,10 @@ export function InterceptQueuePanel() {
     isEnabled,
     activeTab,
     activeRequests,
-    hasSelection,
-    isBusy,
     selectedRequestId,
     removingIds,
     setSelectedRequestId,
     getRequestMeta,
-    handleForward,
     handleInterceptResponse,
     handleDrop,
     handleDontCapture,
@@ -35,18 +31,6 @@ export function InterceptQueuePanel() {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="bg-muted flex h-10 items-center justify-between border-b px-3 py-2">
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-medium">Intercept Queue</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button onClick={handleForward} disabled={!hasSelection || isBusy}>
-            {isBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
-            Forward
-          </Button>
-        </div>
-      </div>
-
       <InterceptBypassPanel />
 
       <div className="flex min-h-0 flex-1 flex-col p-2">

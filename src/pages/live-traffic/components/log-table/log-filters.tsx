@@ -1,9 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { Pause, Play, X, Search, Trash } from 'lucide-react';
+import { X, Trash } from 'lucide-react';
+import { CrawlStatusBadge } from '@/components/status-badge';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import {
   AlertDialog,
@@ -20,17 +20,12 @@ import { clearHistoryLogs } from '@/pages/live-traffic/services/history-service'
 import type { HistoryFilterState } from '@/pages/live-traffic/state/history-query-store';
 import { useHistoryQueryStore } from '@/pages/live-traffic/state/history-query-store';
 import { useShallow } from 'zustand/react/shallow';
-import type { HistoryMode } from '@/pages/live-traffic/hooks/use-http-history-page';
-import { TargetSelectorDialog } from '../target-selector';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface LogFiltersProps {
   filter?: HistoryFilterState;
   onFilterChange?: (filter: HistoryFilterState) => void;
   onClearFilters?: () => void;
   clearCalls?: () => void;
-  historyMode?: HistoryMode;
-  setHistoryMode: (mode: HistoryMode) => void;
 }
 
 export function LogFilters({
@@ -38,25 +33,19 @@ export function LogFilters({
   onFilterChange,
   onClearFilters,
   clearCalls: clearCallsProp,
-  historyMode = 'http',
-  setHistoryMode,
 }: LogFiltersProps) {
   const [clearDialogOpen, setClearDialogOpen] = useState(false);
+  const isStreamManuallyPaused = useHistoryQueryStore((s) => s.isStreamManuallyPaused);
+
   const {
     filter: storeFilter,
-    setSearch: storeSetSearch,
     clearFilters: storeClearFilters,
-    isStreamManuallyPaused,
-    setStreamManuallyPaused,
     triggerRefresh,
     setSelectedCallId: storeSetSelectedCallId,
   } = useHistoryQueryStore(
     useShallow((state) => ({
       filter: state.filter,
-      setSearch: state.setSearch,
       clearFilters: state.clearFilters,
-      isStreamManuallyPaused: state.isStreamManuallyPaused,
-      setStreamManuallyPaused: state.setStreamManuallyPaused,
       triggerRefresh: state.triggerRefresh,
       setSelectedCallId: state.setSelectedCallId,
     }))
@@ -75,117 +64,69 @@ export function LogFilters({
     filter.search || filter.pathFilter || filter.methods.size > 0 || filter.statusCodes.size > 0;
 
   return (
-    <div className="space-y-1 p-1 bg-muted">
-      <div className="relative flex items-center gap-2">
-        <div className='relative flex items-center w-full'>
-          <Search className="absolute left-2 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Search URL, host, method, body..."
-            value={filter.search}
-            onChange={(e) => storeSetSearch(e.target.value)}
-            className="pl-8 flex-1 w-full shadow-none bg-background"
-          />
-        </div>
+    <div className="bg-muted p-1 px-2">
+      <div className="flex items-center gap-2 justify-between w-full">
+          <div className='flex gap-2 items-center'>
+            <span className="text-xs text-muted-foreground">Method:</span>
+            <ToggleGroup
+              type="multiple"
+              variant="outline"
+              size="sm"
+              value={Array.from(filter.methods)}
+              onValueChange={(values) =>
+                setFilter({ ...filter, methods: new Set(values) })
+              }
+              className="bg-background cursor-pointer"
+            >
+              {METHOD_FILTERS.map((method) => (
+                <ToggleGroupItem key={method} value={method}>
+                  {method}
+                </ToggleGroupItem>
+              ))}
+            </ToggleGroup>
 
-
-
-        <ToggleGroup
-          type="single"
-          variant="outline"
-          size="sm"
-          value={historyMode}
-          onValueChange={(val) => val && setHistoryMode(val as HistoryMode)}
-          className="ml-auto bg-background cursor-pointer"
-        >
-          <ToggleGroupItem value="http">HTTP</ToggleGroupItem>
-          <ToggleGroupItem value="grpc">
-            <Tooltip >
-              <TooltipTrigger>
-                  WebSocket
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Websocket not available</p>
-              </TooltipContent>
-            </Tooltip>
-          </ToggleGroupItem>
-
-
-        </ToggleGroup>
-
-
-        {historyMode === 'http' && (
-          <Button
-            variant={isStreamManuallyPaused ? 'default' : 'outline'}
-            onClick={() => setStreamManuallyPaused(!isStreamManuallyPaused)}
-            title={isStreamManuallyPaused ? 'Resume live HTTP updates' : 'Pause live HTTP updates'}
-          >
-            {isStreamManuallyPaused ? (
-              <Play className="size-3" />
-            ) : (
-              <Pause className="size-3" />
-            )}
-            {isStreamManuallyPaused ? 'Resume' : 'Pause'}
-          </Button>
-        )}
-        <TargetSelectorDialog />
-      </div>
-
-      <div className="flex items-center justify-between gap-4">
-        <Button variant="ghost" onClick={() => setClearDialogOpen(true)} className='text-xs !text-red-500 text-muted-foreground'>
-          <Trash className="size-3 mb-0.5" />
-          Clear All History
-        </Button>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-2">
-
-              <span className="text-xs text-muted-foreground">Method:</span>
-              <ToggleGroup
-                type="multiple"
-                variant="outline"
-                size="sm"
-                value={Array.from(filter.methods)}
-                onValueChange={(values) =>
-                  setFilter({ ...filter, methods: new Set(values) })
-                }
-                className="bg-background cursor-pointer"
-              >
-                {METHOD_FILTERS.map((method) => (
-                  <ToggleGroupItem key={method} value={method}>
-                    {method}
-                  </ToggleGroupItem>
-                ))}
-              </ToggleGroup>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-muted-foreground">Status:</span>
-              <ToggleGroup
-                type="multiple"
-                variant="outline"
-                size="sm"
-                value={Array.from(filter.statusCodes)}
-                onValueChange={(values) =>
-                  setFilter({ ...filter, statusCodes: new Set(values) })
-                }
-                className="text-[10px] bg-background cursor-pointer"
-              >
-                {STATUS_FILTERS.map((status) => (
-                  <ToggleGroupItem key={status.label} value={status.label}>
-                    {status.label}
-                  </ToggleGroupItem>
-                ))}
-              </ToggleGroup>
-            </div>
-            {hasActiveFilters && (
-              <Button variant="destructive" className='h-6' onClick={clearFilters}>
-                <X className="h-4 w-4 mr-1" />
-                Clear
-              </Button>
-            )}
+            <span className="text-xs text-muted-foreground">Status:</span>
+            <ToggleGroup
+              type="multiple"
+              variant="outline"
+              size="sm"
+              value={Array.from(filter.statusCodes)}
+              onValueChange={(values) =>
+                setFilter({ ...filter, statusCodes: new Set(values) })
+              }
+              className="text-[10px] bg-background cursor-pointer"
+            >
+              {STATUS_FILTERS.map((status) => (
+                <ToggleGroupItem key={status.label} value={status.label}>
+                  {status.label}
+                </ToggleGroupItem>
+              ))}
+            </ToggleGroup>
           </div>
+
+<div className='flex gap-2 items-center'>
+ {isStreamManuallyPaused && (
+            <CrawlStatusBadge status="paused" />
+          )}
+          
+          {hasActiveFilters && (
+            <Button variant="destructive" size="sm" className="h-6 shrink-0" onClick={clearFilters}>
+              <X className="h-4 w-4 mr-1" />
+              Clear
+            </Button>
+          )}
+
+
+          <Button variant="ghost" size="sm" onClick={() => setClearDialogOpen(true)} className="text-xs !text-red-500 shrink-0">
+            <Trash className="size-3 mb-0.5" />
+            Clear All History
+          </Button>
+
+
+          
+</div>
+         
         </div>
-      </div>
 
       <AlertDialog open={clearDialogOpen} onOpenChange={setClearDialogOpen}>
         <AlertDialogContent>

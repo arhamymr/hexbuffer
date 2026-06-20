@@ -3,8 +3,13 @@ import { useTargetStore } from '@/stores/target';
 import { useShallow } from 'zustand/react/shallow';
 import type { Target } from '@/types';
 
-export function useTargetSelectorDialog() {
-  const [open, setOpen] = useState(false);
+export function useTargetSelectorDialog(options?: {
+  externalOpen?: boolean;
+  onExternalOpenChange?: (open: boolean) => void;
+}) {
+  const isExternallyControlled = options?.externalOpen !== undefined && options?.onExternalOpenChange !== undefined;
+
+  const [internalOpen, setInternalOpen] = useState(false);
   const [showCreateNew, setShowCreateNew] = useState(false);
   const [editingTarget, setEditingTarget] = useState<Target | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -15,11 +20,17 @@ export function useTargetSelectorDialog() {
     }))
   );
 
+  const open = isExternallyControlled ? options!.externalOpen! : internalOpen;
+
   const handleSelectTarget = (target: Target) => {
     if (!target.tabActive) {
       updateTarget(target.id, { tabActive: true });
     }
-    setOpen(false);
+    if (isExternallyControlled) {
+      options!.onExternalOpenChange!(false);
+    } else {
+      setInternalOpen(false);
+    }
     setShowCreateNew(false);
   };
 
@@ -39,14 +50,22 @@ export function useTargetSelectorDialog() {
   };
 
   const handleSaveTarget = () => {
-    setOpen(false);
+    if (isExternallyControlled) {
+      options!.onExternalOpenChange!(false);
+    } else {
+      setInternalOpen(false);
+    }
     setShowCreateNew(false);
     setEditingTarget(null);
     setSearchQuery('');
   };
 
   const handleOpenChange = (nextOpen: boolean) => {
-    setOpen(nextOpen);
+    if (isExternallyControlled) {
+      options!.onExternalOpenChange!(nextOpen);
+    } else {
+      setInternalOpen(nextOpen);
+    }
     if (!nextOpen) {
       setShowCreateNew(false);
       setEditingTarget(null);

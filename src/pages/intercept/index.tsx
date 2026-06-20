@@ -52,7 +52,6 @@ export function InterceptPage() {
               <Button
                 variant="outline"
                 size="xs"
-                className="h-6 border-amber-300 text-amber-800 hover:bg-amber-100 dark:border-amber-500/50 dark:text-amber-300 dark:hover:bg-amber-500/20"
                 onClick={handleStartProxy}
                 disabled={isStarting || proxyStatus === 'starting'}
               >

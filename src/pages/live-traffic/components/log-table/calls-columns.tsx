@@ -487,7 +487,7 @@ export const TrafficTable = memo(function TrafficTable({
               />
             ))}
             <BrowserIcon userAgent={row.original.user_agent} />
-            <span className="truncate" style={{ direction: 'rtl', textAlign: 'left' }}>
+            <span className="truncate min-w-0" style={{ direction: 'rtl', textAlign: 'left' }}>
               <HighlightedText
                 text={displayUrl}
                 query={(table.options.meta as { searchQuery?: string } | undefined)?.searchQuery ?? ""}
@@ -516,7 +516,7 @@ export const TrafficTable = memo(function TrafficTable({
     {
       accessorKey: "response_body_size",
       header: "Size",
-      size: 60,
+      size: 80,
       cell: ({ row }) => (
         <span className="text-xs text-muted-foreground text-right block">
           {formatBytes(row.original.response_body_size)}
@@ -526,7 +526,7 @@ export const TrafficTable = memo(function TrafficTable({
     {
       accessorKey: "request_body_size",
       header: "Length",
-      size: 60,
+      size: 80,
       cell: ({ row }) => (
         <span className="text-xs text-muted-foreground text-right block">
           {formatBytes(row.original.request_body_size)}
@@ -675,10 +675,10 @@ export const TrafficTable = memo(function TrafficTable({
         </div>
       )}
       <div ref={tableContainerRef} className="flex-1 overflow-auto min-h-0">
-        <table className="grid w-full min-w-[850px]">
-          <thead className="sticky top-0 z-10 grid border-b bg-muted">
+        <table className="grid w-full min-w-0">
+          {/* <thead className="border-b top-0 z-10 grid min-w-0">
             {table.getHeaderGroups().map((headerGroup) => (
-              <tr key={headerGroup.id} className="flex  w-full">
+              <tr key={headerGroup.id} className="flex">
                 {headerGroup.headers.map((header) => {
                   const isRightAligned =
                     header.column.id === "response_body_size" ||
@@ -689,7 +689,7 @@ export const TrafficTable = memo(function TrafficTable({
                     <th
                       key={header.id}
                       className={
-                        "text-xs font-medium text-muted-foreground px-3 py-1" +
+                        "text-xs font-medium px-3 py-1" +
                         (isRightAligned ? " text-right" : isCentered ? " text-center" : " text-left")
                       }
                       style={{
@@ -718,7 +718,7 @@ export const TrafficTable = memo(function TrafficTable({
                 })}
               </tr>
             ))}
-          </thead>
+          </thead> */}
           <tbody
             className="grid relative"
             style={{

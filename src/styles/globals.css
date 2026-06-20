@@ -438,6 +438,31 @@
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
+
+  /* Animated border beam effect */
+  @keyframes border-beam {
+    from {
+      transform: translate(-50%, -50%) rotate(0deg);
+    }
+    to {
+      transform: translate(-50%, -50%) rotate(360deg);
+    }
+  }
+
+  .animate-border-beam {
+    animation: border-beam 6s linear infinite;
+  }
+
+  .bg-border-beam {
+    background: conic-gradient(
+      from 0deg,
+      transparent 0deg,
+      transparent 260deg,
+      var(--primary) 300deg,
+      transparent 340deg,
+      transparent 360deg
+    );
+  }
 }
 
 /* ===== MDXEditor dark mode overrides ===== */

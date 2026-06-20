@@ -1,17 +1,27 @@
 'use client';
 
 import * as React from 'react';
-import { Target, Play, Pause, ArrowLeftRight, ShieldCheck, ShieldOff, SendHorizonal, Square, RotateCcw, Loader2 } from 'lucide-react';
+import { Target, Play, Pause, ArrowLeftRight, ShieldCheck, ShieldOff, SendHorizonal, Square, RotateCcw, Loader2, Hammer, RefreshCw, FolderX } from 'lucide-react';
 import { useHistoryQueryStore } from '@/pages/live-traffic/state/history-query-store';
 import { useInterceptStore } from '@/pages/intercept/state/intercept-store';
 import { useBrowserAutomationStore } from '@/stores/browser-automation';
 import { openTargetSelector, toggleStreamPause, toggleHistoryMode } from '@/triggers';
 import { toggleInterceptEnabled, forwardPaused } from '@/triggers';
 import { toggleBrowserCrawl, stopBrowserCrawl, startBrowserCrawl } from '@/triggers';
-import { startInvokerAttack, stopInvokerAttack } from '@/triggers';
+import { startInvokerUiAttack, stopInvokerUiAttack } from '@/triggers';
 import { sendRepeaterRequest } from '@/triggers';
 import { useInvokerStore } from '@/stores/invoker';
 import { useRepeaterStore } from '@/stores/repeater';
+import { usePlaygroundStore } from '@/stores/playground';
+import { useNavigate } from 'react-router-dom';
+import { useCodeAuditStore } from '@/stores/code-audit';
+
+import {
+  buildPlayground,
+  runPlayground,
+  refreshPlaygroundTree,
+  closePlaygroundFolder,
+} from '@/triggers';
 
 export interface PageButton {
   key: string;
@@ -22,6 +32,12 @@ export interface PageButton {
   visible: boolean;
   variant?: 'primary' | 'destructive';
 }
+
+const LANGUAGE_LABELS: Record<string, string> = {
+  rust: 'Rust',
+  c: 'C',
+  cpp: 'C++',
+};
 
 export function useFloatingPageButtons(pathname: string): PageButton[] {
   const isPaused = useHistoryQueryStore((s) => s.isStreamManuallyPaused);
@@ -36,6 +52,11 @@ export function useFloatingPageButtons(pathname: string): PageButton[] {
   const invokerActiveTabId = useInvokerStore((s) => s.activeTabId);
   const repeaterTabs = useRepeaterStore((s) => s.tabs);
   const repeaterActiveTabId = useRepeaterStore((s) => s.activeTabId);
+  const workspace = usePlaygroundStore((s) => s.workspace);
+  const isBuilding = usePlaygroundStore((s) => s.isBuilding);
+  const navigate = useNavigate();
+  const setAuditDirectory = useCodeAuditStore((s) => s.setDirectoryPath);
+  const startAudit = useCodeAuditStore((s) => s.startAudit);
   const [historyMode, setHistoryMode] = React.useState<'http' | 'websocket'>(() =>
     localStorage.getItem('history-mode') === 'websocket' ? 'websocket' : 'http'
   );
@@ -162,7 +183,7 @@ export function useFloatingPageButtons(pathname: string): PageButton[] {
           icon: Play,
           label: 'Start',
           isActive: false,
-          onClick: startInvokerAttack,
+          onClick: startInvokerUiAttack,
           visible: !invokerRunning,
           variant: 'primary',
         },
@@ -171,7 +192,7 @@ export function useFloatingPageButtons(pathname: string): PageButton[] {
           icon: Square,
           label: 'Stop',
           isActive: false,
-          onClick: stopInvokerAttack,
+          onClick: stopInvokerUiAttack,
           visible: invokerRunning,
           variant: 'destructive',
         },
@@ -194,7 +215,70 @@ export function useFloatingPageButtons(pathname: string): PageButton[] {
       ];
     }
 
+    if (pathname === '/playground') {
+      if (!workspace) return [];
+
+      const hasBuildSupport = ['rust', 'c', 'cpp'].includes(workspace.language);
+
+      const buttons: PageButton[] = [];
+
+      if (hasBuildSupport) {
+        buttons.push(
+          {
+            key: 'playground-build',
+            icon: isBuilding ? Loader2 : Hammer,
+            label: 'Build',
+            isActive: isBuilding,
+            onClick: () => { void buildPlayground(); },
+            visible: true,
+          },
+          {
+            key: 'playground-run',
+            icon: Play,
+            label: 'Run',
+            isActive: false,
+            onClick: () => { void runPlayground(); },
+            visible: !isBuilding,
+          }
+        );
+      }
+
+      buttons.push(
+        {
+          key: 'playground-audit',
+          icon: ShieldCheck,
+          label: 'Audit Codebase',
+          isActive: false,
+          onClick: () => {
+            setAuditDirectory(workspace.path);
+            void startAudit();
+            navigate('/code-audit');
+          },
+          visible: true,
+        },
+        {
+          key: 'playground-refresh',
+          icon: RefreshCw,
+          label: 'Refresh Files',
+          isActive: false,
+          onClick: () => { void refreshPlaygroundTree(); },
+          visible: true,
+        },
+        {
+          key: 'playground-close',
+          icon: FolderX,
+          label: 'Close Folder',
+          isActive: false,
+          onClick: closePlaygroundFolder,
+          visible: true,
+          variant: 'destructive',
+        }
+      );
+
+      return buttons;
+    }
+
     return [];
 
-  }, [pathname, isPaused, historyMode, interceptStatus, interceptRequests, interceptActiveTabId, interceptSelectedId, interceptIsBusy, browserTabs, browserActiveTabId, invokerTabs, invokerActiveTabId, repeaterTabs, repeaterActiveTabId]);
+  }, [pathname, isPaused, historyMode, interceptStatus, interceptRequests, interceptActiveTabId, interceptSelectedId, interceptIsBusy, browserTabs, browserActiveTabId, invokerTabs, invokerActiveTabId, repeaterTabs, repeaterActiveTabId, workspace, isBuilding, setAuditDirectory, startAudit, navigate]);
 }

@@ -3,7 +3,6 @@ import { usePlaygroundPage } from './hooks/use-playground-page';
 import { WelcomeScreen } from './components/welcome-screen';
 import { FileTree } from './components/file-tree';
 import { CodeEditor } from './components/code-editor';
-import { PlaygroundToolbar } from './components/playground-toolbar';
 import { useGlobalTerminalStore } from '@/stores/global-terminal';
 import {
   ResizablePanelGroup,
@@ -96,16 +95,7 @@ export function PlaygroundPage() {
     writeStore(`${exitColor}→ exit code: ${out.exitCode}\x1b[0m`);
   }, [buildOutput, isBuilding, buildHistory, writeStore]);
 
-  // ── Auto-open global terminal on build/run ──
-  const handleBuildAndShow = useCallback(() => {
-    requestOpen();
-    handleBuild();
-  }, [handleBuild, requestOpen]);
 
-  const handleRunAndShow = useCallback(() => {
-    requestOpen();
-    handleRun();
-  }, [handleRun, requestOpen]);
 
   // ── Welcome screen (no folder open) ──
   if (!workspace) {
@@ -125,15 +115,6 @@ export function PlaygroundPage() {
   // ── Workspace view (folder open) ──
   return (
     <div className="flex h-full min-h-0 flex-row overflow-hidden bg-background">
-      <PlaygroundToolbar
-        workspace={workspace}
-        isBuilding={isBuilding}
-        onBuild={handleBuildAndShow}
-        onRun={handleRunAndShow}
-        onRefresh={handleRefreshTree}
-        onCloseFolder={handleCloseFolder}
-      />
-
       <main className="min-h-0 min-w-0 flex-1">
         <ResizablePanelGroup orientation="horizontal" className="h-full">
           <ResizablePanel defaultSize={24} minSize={18}>

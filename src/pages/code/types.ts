@@ -149,14 +149,11 @@ export function getLanguageFromPath(filePath: string): string {
   }
 }
 
-/** Detect workspace language by inspecting file tree for known markers. */
 export function detectWorkspaceLanguage(tree: FileTreeNode[]): string {
   const rootNames = tree.map((n) => n.name);
   if (rootNames.includes('Cargo.toml')) return 'rust';
   if (rootNames.includes('main.cpp') || rootNames.includes('main.cc')) return 'cpp';
   if (rootNames.includes('main.c')) return 'c';
-  if (rootNames.includes('package.json')) return 'javascript';
-  if (rootNames.includes('go.mod')) return 'go';
-  if (rootNames.includes('requirements.txt') || rootNames.includes('pyproject.toml')) return 'python';
   return 'unknown';
 }
+

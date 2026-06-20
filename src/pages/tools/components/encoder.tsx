@@ -128,84 +128,80 @@ export function EncoderDecoderTool() {
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-background">
-      <header className="bg-muted px-3 py-3">
-        <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-          <div className="flex flex-wrap items-center gap-2">
-            <Tabs value={activeType} onValueChange={(v) => setActiveType(v as CodecType)}>
-              <TabsList className="grid grid-cols-3 bg-background">
-                <TabsTrigger value="url">URL</TabsTrigger>
-                <TabsTrigger value="base64">Base64</TabsTrigger>
-                <TabsTrigger value="hex">Hex</TabsTrigger>
-              </TabsList>
-            </Tabs>
-            <Tabs value={mode} onValueChange={(v) => setMode(v as CodecMode)}>
-              <TabsList className="grid grid-cols-2 bg-background">
-                <TabsTrigger value="encode">Encode</TabsTrigger>
-                <TabsTrigger value="decode">Decode</TabsTrigger>
-              </TabsList>
-            </Tabs>
-            <Badge variant="outline" className="font-normal">
-              {codecLabels[activeType]} {currentMode.source} to {currentMode.target}
-            </Badge>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2">
-            <Button variant="outline" onClick={handleSwap}>
-              <ArrowLeftRight className="h-3.5 w-3.5" />
-              Swap
-            </Button>
-            <Button variant="outline" onClick={handleCopy} disabled={!output}>
-              <Copy className="h-3.5 w-3.5" />
-              Copy
-            </Button>
-            <Button variant="ghost" onClick={handleClear} disabled={!input && !output && !error}>
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          </div>
+      <div className="flex h-10 shrink-0 items-center justify-between border-b bg-muted/40 px-3 gap-2">
+        <div className="flex items-center gap-2">
+          <Tabs value={activeType} onValueChange={(v) => setActiveType(v as CodecType)}>
+            <TabsList className="h-7 bg-background p-0.5 border">
+              <TabsTrigger value="url" className="h-6 text-xs px-2.5">URL</TabsTrigger>
+              <TabsTrigger value="base64" className="h-6 text-xs px-2.5">Base64</TabsTrigger>
+              <TabsTrigger value="hex" className="h-6 text-xs px-2.5">Hex</TabsTrigger>
+            </TabsList>
+          </Tabs>
+          <Tabs value={mode} onValueChange={(v) => setMode(v as CodecMode)}>
+            <TabsList className="h-7 bg-background p-0.5 border">
+              <TabsTrigger value="encode" className="h-6 text-xs px-2.5">Encode</TabsTrigger>
+              <TabsTrigger value="decode" className="h-6 text-xs px-2.5">Decode</TabsTrigger>
+            </TabsList>
+          </Tabs>
+          <Badge variant="outline" className="font-normal text-[10px] py-px h-5 hidden md:inline-flex">
+            {codecLabels[activeType]} {currentMode.source} to {currentMode.target}
+          </Badge>
         </div>
-      </header>
 
-      <main className="min-h-0 flex-1 border-t">
-        <section className="grid h-full min-h-0 grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+        <div className="flex items-center gap-1.5">
+          <Button variant="outline" size="sm" onClick={handleSwap} className="h-7 text-xs gap-1 px-2">
+            <ArrowLeftRight className="h-3 w-3" />
+            Swap
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleCopy} disabled={!output} className="h-7 text-xs gap-1 px-2">
+            <Copy className="h-3 w-3" />
+            Copy Output
+          </Button>
+          <Button variant="ghost" size="icon" onClick={handleClear} disabled={!input && !output && !error} className="h-7 w-7 text-muted-foreground hover:text-foreground">
+            <Trash2 className="h-3.5 w-3.5" />
+          </Button>
+        </div>
+      </div>
+
+      <main className="min-h-0 flex-1 flex flex-col">
+        <section className="grid h-full min-h-0 grid-cols-1 lg:grid-cols-2">
+          {/* Input Panel */}
           <div className="flex min-h-0 flex-col border-b bg-background lg:border-b-0 lg:border-r">
-            <div className="flex items-center justify-between gap-3 border-b px-3 py-2">
-              <div>
-                <Label className="text-sm font-medium">{currentMode.source}</Label>
-                <div className="text-xs text-muted-foreground">
-                  Enter content to {mode} as {codecLabels[activeType]}.
-                </div>
+            <div className="flex h-8 shrink-0 items-center justify-between border-b bg-muted/10 px-3">
+              <div className="flex items-baseline gap-2">
+                <span className="text-[11px] font-semibold uppercase text-muted-foreground tracking-wider">{currentMode.source}</span>
+                <span className="text-[10px] text-muted-foreground hidden sm:inline">Enter content to {mode}</span>
               </div>
-              <Button variant="ghost" onClick={handleClear} disabled={!input && !output && !error}>
-                <Trash2 className="h-4 w-4" />
+              <Button variant="ghost" size="icon" onClick={handleClear} disabled={!input && !output && !error} className="h-6 w-6 text-muted-foreground hover:text-foreground">
+                <Trash2 className="h-3 w-3" />
               </Button>
             </div>
             <Textarea
-              className="min-h-0 flex-1 resize-none rounded-none border-0 font-mono text-sm shadow-none focus-visible:ring-0"
+              className="min-h-0 flex-1 resize-none rounded-none border-0 font-mono text-xs shadow-none focus-visible:ring-0 bg-transparent p-3"
               placeholder={`Enter ${currentMode.source.toLowerCase()}...`}
               value={input}
               onChange={(e) => setInput(e.target.value)}
             />
           </div>
 
+          {/* Output Panel */}
           <div className="flex min-h-0 flex-col bg-background">
-            <div className="flex items-center justify-between gap-3 border-b px-3 py-2">
-              <div>
-                <Label className="text-sm font-medium">{currentMode.target}</Label>
-                <div className="text-xs text-muted-foreground">
-                  Converted output updates automatically.
-                </div>
+            <div className="flex h-8 shrink-0 items-center justify-between border-b bg-muted/10 px-3">
+              <div className="flex items-baseline gap-2">
+                <span className="text-[11px] font-semibold uppercase text-muted-foreground tracking-wider">{currentMode.target}</span>
+                <span className="text-[10px] text-muted-foreground hidden sm:inline">Auto-updates</span>
               </div>
-              <Button variant="ghost" onClick={handleCopy} disabled={!output}>
-                <Copy className="h-4 w-4" />
+              <Button variant="ghost" size="icon" onClick={handleCopy} disabled={!output} className="h-6 w-6 text-muted-foreground hover:text-foreground">
+                <Copy className="h-3 w-3" />
               </Button>
             </div>
             {error ? (
-              <div className="min-h-0 flex-1 bg-destructive/10 p-4 text-sm text-destructive">
+              <div className="min-h-0 flex-1 bg-destructive/5 p-4 text-xs font-mono text-destructive whitespace-pre-wrap overflow-auto">
                 {error}
               </div>
             ) : (
               <Textarea
-                className="min-h-0 flex-1 resize-none rounded-none border-0 font-mono text-sm shadow-none focus-visible:ring-0"
+                className="min-h-0 flex-1 resize-none rounded-none border-0 font-mono text-xs shadow-none focus-visible:ring-0 bg-transparent p-3"
                 placeholder={`${currentMode.target} output will appear here...`}
                 value={output}
                 readOnly

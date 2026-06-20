@@ -3,18 +3,20 @@ import { chromium } from 'playwright';
 
 import { emit, log } from '../events.mjs';
 import { testCaseSchema, stepResultSchema } from './types.mjs';
+import { verifyWithAI } from './ai-verifier.mjs';
 
 /**
  * Execute a single regression test step using Playwright.
  * Emits events for each step start/complete/fail so the Tauri backend
  * can relay them to the frontend in real time.
  */
-export async function runRegressionSteps(testCase, runId, artifactDir) {
+export async function runRegressionSteps(testCase, runId, artifactDir, sessionId) {
   const steps = testCase.steps;
   const results = [];
   let browser;
   let context;
   let page;
+  let aiVerdict = null;
 
   log(runId, 'info', 'regression', `Starting regression test "${testCase.name}"`, testCase.targetUrl);
   log(runId, 'info', 'regression', `Test case has ${steps.length} step(s)`);
@@ -56,7 +58,16 @@ export async function runRegressionSteps(testCase, runId, artifactDir) {
       });
 
       try {
-        const screenshotPath = await executeStep(page, step, i, runId, artifactDir);
+        const executeResult = await executeStep(page, step, i, runId, artifactDir, sessionId);
+        let screenshotPath = null;
+        if (executeResult && typeof executeResult === 'object') {
+          if (executeResult.screenshotPath) screenshotPath = executeResult.screenshotPath;
+          if (executeResult.aiVerdict) {
+            aiVerdict = executeResult.aiVerdict;
+          }
+        } else if (typeof executeResult === 'string') {
+          screenshotPath = executeResult;
+        }
         const durationMs = Date.now() - stepStartedAt;
 
         log(runId, 'info', 'regression', `Step ${i + 1} passed (${durationMs}ms)`, page.url());
@@ -83,6 +94,9 @@ export async function runRegressionSteps(testCase, runId, artifactDir) {
           finishedAt: result.finishedAt,
         });
       } catch (error) {
+        if (page && page.aiVerdict) {
+          aiVerdict = page.aiVerdict;
+        }
         const durationMs = Date.now() - stepStartedAt;
 
         log(runId, 'error', 'regression', `Step ${i + 1} failed: ${error.message}`, page.url());
@@ -131,7 +145,7 @@ export async function runRegressionSteps(testCase, runId, artifactDir) {
   const failedCount = results.filter((r) => r.status === 'failed').length;
   log(runId, 'info', 'regression', `Test completed: ${passedCount} passed, ${failedCount} failed out of ${results.length} step(s)`);
 
-  return results;
+  return { results, aiVerdict };
 }
 
 /**
@@ -166,7 +180,13 @@ export async function runSingleStep(step, targetUrl, artifactDir) {
       log(runId, 'info', 'navigation', 'Navigation completed', page.url());
     }
 
-    const screenshotPath = await executeStep(page, step, 0, runId, artifactDir);
+    const executeResult = await executeStep(page, step, 0, runId, artifactDir, runId);
+    let screenshotPath = null;
+    if (executeResult && typeof executeResult === 'object') {
+      if (executeResult.screenshotPath) screenshotPath = executeResult.screenshotPath;
+    } else if (typeof executeResult === 'string') {
+      screenshotPath = executeResult;
+    }
     const durationMs = Date.now() - stepStartedAt;
 
     log(runId, 'info', 'regression', `Single step passed (${durationMs}ms)`, page.url());
@@ -203,7 +223,7 @@ export async function runSingleStep(step, targetUrl, artifactDir) {
   }
 }
 
-async function executeStep(page, step, stepIndex, runId, artifactDir) {
+async function executeStep(page, step, stepIndex, runId, artifactDir, sessionId) {
   switch (step.kind) {
     case 'navigate': {
       if (!step.value) throw new Error('navigate step requires a URL');
@@ -313,9 +333,35 @@ async function executeStep(page, step, stepIndex, runId, artifactDir) {
       return null;
     }
     case 'ai-verify': {
-      log(runId, 'info', 'regression', `AI verification step scheduled: "${step.prompt || 'no prompt'}"`, page.url());
-      // ai-verify is handled separately by the ai-verifier after all steps
-      return null;
+      if (!step.prompt) throw new Error('ai-verify step requires a prompt');
+      log(runId, 'info', 'regression', `Running AI verification: "${step.prompt}"`, page.url());
+      const verdict = await verifyWithAI(page, step.prompt, runId, sessionId);
+      if (!verdict) {
+        throw new Error('AI verification skipped or failed to run (AI provider might be unavailable).');
+      }
+      page.aiVerdict = verdict;
+      if (!verdict.pass) {
+        log(runId, 'error', 'regression', `AI verification failed: ${verdict.reasoning}`, page.url());
+        emit({
+          type: 'regression:assertion_failed',
+          runId,
+          stepIndex,
+          kind: 'ai-verify',
+          description: `AI verification failed: ${verdict.reasoning}`,
+          expected: step.prompt,
+          actual: `Failed: ${verdict.reasoning}. Suggestions: ${verdict.suggestions.join(', ')}`,
+        });
+        throw new Error(`AI verification failed: ${verdict.reasoning}`);
+      }
+      log(runId, 'info', 'regression', `AI verification passed: ${verdict.reasoning}`, page.url());
+      emit({
+        type: 'regression:assertion_passed',
+        runId,
+        stepIndex,
+        kind: 'ai-verify',
+        description: `AI verification passed: ${verdict.reasoning}`,
+      });
+      return { aiVerdict: verdict };
     }
     default:
       throw new Error(`Unknown step kind: ${step.kind}`);

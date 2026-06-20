@@ -141,170 +141,176 @@ export function PortScannerTool() {
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-background">
-      <header className="bg-muted px-3 py-3">
-        <div className="flex flex-col gap-3">
-          <div className="flex gap-2">
+      <div className="flex flex-col border-b bg-muted/40 shrink-0">
+        {/* Controls row 1 */}
+        <div className="flex items-center gap-2 px-3 py-1.5 border-b bg-muted/10">
+          <Input
+            className="h-7 text-xs bg-background max-w-[280px]"
+            placeholder="Target host or CIDR (e.g. example.com)"
+            value={target}
+            onChange={(event) => setTarget(event.target.value)}
+          />
+          <Select value={preset} onValueChange={handlePresetChange}>
+            <SelectTrigger className="h-7 text-xs w-[110px] bg-background">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="text-xs">
+              <SelectItem value="quick" className="text-xs">Quick</SelectItem>
+              <SelectItem value="web" className="text-xs">Web</SelectItem>
+              <SelectItem value="top100" className="text-xs">Top 100</SelectItem>
+              <SelectItem value="full" className="text-xs">Full</SelectItem>
+              <SelectItem value="custom" className="text-xs">Custom</SelectItem>
+            </SelectContent>
+          </Select>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button type="button" variant="ghost" className="h-7 w-7 shrink-0 text-muted-foreground hover:text-foreground">
+                <Info className="h-3.5 w-3.5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent className="max-w-[360px] text-xs">
+              {selectedPortLabel}
+            </TooltipContent>
+          </Tooltip>
+
+          {preset === 'custom' && (
             <Input
-              className="bg-background"
-              placeholder="Target host or CIDR (example.com, 192.168.1.0/24)"
-              value={target}
-              onChange={(event) => setTarget(event.target.value)}
+              className="h-7 text-xs bg-background flex-1 max-w-[200px]"
+              value={ports}
+              onChange={(event) => setPorts(event.target.value)}
+              placeholder="1-100 or 80,443"
             />
-          </div>
-          <div className="flex gap-2">
+          )}
 
-            <Select value={preset} onValueChange={handlePresetChange}>
-              <SelectTrigger className="bg-background">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="quick">Quick</SelectItem>
-                <SelectItem value="web">Web</SelectItem>
-                <SelectItem value="top100">Top 100</SelectItem>
-                <SelectItem value="full">Full</SelectItem>
-                <SelectItem value="custom">Custom</SelectItem>
-              </SelectContent>
-            </Select>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button type="button" variant="ghost" className="shrink-0">
-                  <Info className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent className="max-w-[360px]">
-                {selectedPortLabel}
-              </TooltipContent>
-            </Tooltip>
+          <div className="h-4 w-px bg-border mx-1" />
 
-            <div className="flex flex-wrap items-center gap-2">
-              <div className="flex items-center gap-2">
-                <Label className="text-xs text-muted-foreground">Timeout</Label>
-                <Input
-                  className="h-8 w-20 bg-background text-right"
-                  value={timeoutMs}
-                  onChange={(event) => setTimeoutMs(event.target.value)}
-                />
-              </div>
-              <div className="flex items-center gap-2">
-                <Label className="text-xs text-muted-foreground">Concurrency</Label>
-                <Input
-                  className="h-8 w-20 bg-background text-right"
-                  value={concurrency}
-                  onChange={(event) => setConcurrency(event.target.value)}
-                />
-              </div>
-              <div className="flex items-center gap-2 rounded-md border bg-background px-2 py-1.5">
-                <Checkbox
-                  id="banner-grab"
-                  checked={bannerGrab}
-                  onCheckedChange={(checked) => setBannerGrab(checked === true)}
-                />
-                <Label htmlFor="banner-grab" className="text-xs text-muted-foreground">
-                  Banner
-                </Label>
-              </div>
-            </div>
-
-            {preset === 'custom' && (
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1">
+              <Label className="text-[10px] uppercase font-semibold text-muted-foreground">Timeout</Label>
               <Input
-                className="bg-background lg:col-span-3"
-                value={ports}
-                onChange={(event) => setPorts(event.target.value)}
-                placeholder="1-100 or 80,443,244"
+                className="h-7 w-14 bg-background text-right text-xs px-1.5 focus-visible:ring-1"
+                value={timeoutMs}
+                onChange={(event) => setTimeoutMs(event.target.value)}
               />
-            )}
+            </div>
+            <div className="flex items-center gap-1">
+              <Label className="text-[10px] uppercase font-semibold text-muted-foreground">Concurrency</Label>
+              <Input
+                className="h-7 w-14 bg-background text-right text-xs px-1.5 focus-visible:ring-1"
+                value={concurrency}
+                onChange={(event) => setConcurrency(event.target.value)}
+              />
+            </div>
+            <div className="flex items-center gap-1.5 rounded border bg-background h-7 px-2">
+              <Checkbox
+                id="banner-grab"
+                checked={bannerGrab}
+                onCheckedChange={(checked) => setBannerGrab(checked === true)}
+              />
+              <Label htmlFor="banner-grab" className="text-[10px] uppercase font-semibold text-muted-foreground cursor-pointer select-none">
+                Banner
+              </Label>
+            </div>
           </div>
+        </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            <Badge variant="outline" className="font-normal">
+        {/* Controls row 2 */}
+        <div className="flex h-9 items-center justify-between px-3 gap-2 bg-muted/5">
+          <div className="flex items-center gap-2">
+            <Badge variant="outline" className="font-normal text-[10px] py-0 h-5">
               SYN scan requires privileged helper
             </Badge>
-            <div className="flex-1" />
-            <Button variant="outline" onClick={copyOpenPorts} disabled={!hasResults}>
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            <Button variant="outline" size="sm" onClick={copyOpenPorts} disabled={!hasResults} className="h-6 text-[11px] gap-1 px-2">
               <Copy className="h-3.5 w-3.5" />
-              Copy Open Port
+              Copy Ports
             </Button>
-            <Button variant="outline" onClick={() => exportResults('json')} disabled={!hasResults}>
+            <Button variant="outline" size="sm" onClick={() => exportResults('json')} disabled={!hasResults} className="h-6 text-[11px] gap-1 px-2">
               <Download className="h-3.5 w-3.5" />
               JSON
             </Button>
-            <Button variant="outline" onClick={() => exportResults('csv')} disabled={!hasResults}>
+            <Button variant="outline" size="sm" onClick={() => exportResults('csv')} disabled={!hasResults} className="h-6 text-[11px] gap-1 px-2">
               <Download className="h-3.5 w-3.5" />
               CSV
             </Button>
-            <Button variant="ghost" onClick={clearResults} disabled={results.length === 0 && !error}>
-              <Trash2 className="h-4 w-4" />
+            <Button variant="ghost" size="icon" onClick={clearResults} disabled={results.length === 0 && !error} className="h-6 w-6 text-muted-foreground hover:text-foreground">
+              <Trash2 className="h-3.5 w-3.5" />
             </Button>
+            <div className="h-4 w-px bg-border mx-0.5" />
             {isRunning ? (
-              <Button variant="destructive" onClick={stopScan}>
-                <Square className="h-4 w-4" />
+              <Button variant="destructive" size="sm" onClick={stopScan} className="h-6 text-[11px] gap-1 px-2.5">
+                <Square className="h-3 w-3 fill-current" />
                 Stop
               </Button>
             ) : (
-              <Button onClick={startScan} disabled={!target.trim() || parsedPorts.length === 0}>
-                <Play className="h-4 w-4" />
+              <Button size="sm" onClick={startScan} disabled={!target.trim() || parsedPorts.length === 0} className="h-6 text-[11px] gap-1 px-2.5">
+                <Play className="h-3 w-3 fill-current" />
                 Start
               </Button>
             )}
           </div>
         </div>
-      </header>
+      </div>
 
-      <main className="min-h-0 flex-1 border-t">
-        <section className="flex h-full min-h-0 flex-col bg-background">
-          <div className="flex items-center justify-between gap-3 border-b px-3 py-2">
-            <div>
-              <div className="text-sm font-medium">Open Ports</div>
-              <div className="text-xs text-muted-foreground">Host, service, latency, and captured banners.</div>
-            </div>
-            <div className="flex items-center gap-2">
-              {error && <span className="max-w-[420px] truncate text-xs text-destructive">{error}</span>}
-              {isRunning && (
-                <Badge variant="secondary" className="animate-pulse">
-                  {progress.current} / {progress.total}
-                </Badge>
-              )}
-            </div>
+      <main className="min-h-0 flex-1 flex flex-col bg-background">
+        <div className="flex h-8 shrink-0 items-center justify-between border-b bg-muted/10 px-3">
+          <div className="flex items-baseline gap-2">
+            <span className="text-[11px] font-semibold uppercase text-muted-foreground tracking-wider">Open Ports</span>
+            <span className="text-[10px] text-muted-foreground hidden sm:inline">Host, service, latency & captured banners</span>
           </div>
-
-          <div className="min-h-0 flex-1 overflow-auto">
-            {!hasResults ? (
-              <div className="flex h-full flex-col items-center justify-center gap-2 text-muted-foreground">
-                <Radar className="h-8 w-8" />
-                <p className="text-sm">No open ports found</p>
-              </div>
-            ) : (
-              <Table>
-                <TableHeader className="sticky top-0 z-10 bg-background">
-                  <TableRow>
-                    <TableHead>Host</TableHead>
-                    <TableHead>Port</TableHead>
-                    <TableHead>State</TableHead>
-                    <TableHead>Service</TableHead>
-                    <TableHead>Time</TableHead>
-                    <TableHead>Banner</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {openResults.map((result) => (
-                    <TableRow key={`${result.host}:${result.port}`}>
-                      <TableCell className="font-mono">{result.host}</TableCell>
-                      <TableCell className="font-mono">{result.port}</TableCell>
-                      <TableCell>
-                        <Badge variant={result.state === 'open' ? 'default' : 'secondary'}>{result.state}</Badge>
-                      </TableCell>
-                      <TableCell>{result.service}</TableCell>
-                      <TableCell className="text-muted-foreground">{result.response_time_ms ? `${result.response_time_ms}ms` : '-'}</TableCell>
-                      <TableCell className="max-w-[460px] truncate font-mono text-xs" title={result.banner ?? ''}>
-                        {result.banner || '-'}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+          <div className="flex items-center gap-2">
+            {error && <span className="max-w-[320px] truncate text-[10px] text-destructive font-mono">{error}</span>}
+            {isRunning && (
+              <Badge variant="secondary" className="animate-pulse text-[9px] h-4 py-0 px-1.5 font-mono">
+                {progress.current} / {progress.total}
+              </Badge>
             )}
           </div>
-        </section>
+        </div>
+
+        <div className="min-h-0 flex-1 overflow-auto">
+          {!hasResults ? (
+            <div className="flex h-full flex-col items-center justify-center gap-2 text-muted-foreground">
+              <Radar className="h-8 w-8 text-muted-foreground/60 animate-pulse" />
+              <p className="text-xs">No open ports found</p>
+            </div>
+          ) : (
+            <Table className="text-xs">
+              <TableHeader className="sticky top-0 z-10 bg-background">
+                <TableRow className="hover:bg-transparent">
+                  <TableHead className="h-8 py-0">Host</TableHead>
+                  <TableHead className="h-8 py-0">Port</TableHead>
+                  <TableHead className="h-8 py-0">State</TableHead>
+                  <TableHead className="h-8 py-0">Service</TableHead>
+                  <TableHead className="h-8 py-0">Time</TableHead>
+                  <TableHead className="h-8 py-0">Banner</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {openResults.map((result) => (
+                  <TableRow key={`${result.host}:${result.port}`} className="hover:bg-muted/30">
+                    <TableCell className="font-mono py-1">{result.host}</TableCell>
+                    <TableCell className="font-mono py-1">{result.port}</TableCell>
+                    <TableCell className="py-1">
+                      <Badge variant="outline" className="text-[9px] py-px h-4 font-normal border-emerald-500/20 text-emerald-600 bg-emerald-500/5">
+                        {result.state}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="py-1">{result.service}</TableCell>
+                    <TableCell className="text-muted-foreground py-1">
+                      {result.response_time_ms ? `${result.response_time_ms}ms` : '-'}
+                    </TableCell>
+                    <TableCell className="max-w-[460px] truncate font-mono text-[11px] py-1" title={result.banner ?? ''}>
+                      {result.banner || '-'}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </div>
       </main>
     </div>
   );

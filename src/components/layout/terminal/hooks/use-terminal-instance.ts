@@ -38,24 +38,83 @@ const SEARCH_OPTIONS: ISearchOptions = {
   },
 };
 
+interface GlobalTerminalState {
+  term: Terminal | null;
+  fitAddon: FitAddon | null;
+  searchAddon: SearchAddon | null;
+  pty: ReturnType<typeof spawn> | null;
+  cleanupFns: Array<() => void>;
+  status: TerminalStatus;
+  errorMsg: string;
+}
+
+const globalState: GlobalTerminalState = {
+  term: null,
+  fitAddon: null,
+  searchAddon: null,
+  pty: null,
+  cleanupFns: [],
+  status: 'loading',
+  errorMsg: '',
+};
+
+const statusListeners = new Set<(status: TerminalStatus, errorMsg: string) => void>();
+
+function setGlobalTerminalStatus(nextStatus: TerminalStatus, error?: string) {
+  globalState.status = nextStatus;
+  globalState.errorMsg = error ?? '';
+  for (const listener of statusListeners) {
+    try {
+      listener(nextStatus, globalState.errorMsg);
+    } catch (err) {
+      console.error('[Terminal] Status listener error:', err);
+    }
+  }
+}
+
+function cleanupGlobalTerminal() {
+  if (globalState.pty) {
+    try {
+      globalState.pty.kill();
+    } catch {
+      // ignore cleanup failures
+    }
+    globalState.pty = null;
+  }
+
+  for (const fn of globalState.cleanupFns) {
+    try {
+      fn();
+    } catch {
+      // ignore cleanup failures
+    }
+  }
+  globalState.cleanupFns = [];
+
+  try {
+    globalState.searchAddon?.dispose();
+  } catch {
+    // ignore cleanup failures
+  }
+  globalState.searchAddon = null;
+
+  try {
+    globalState.term?.dispose();
+  } catch {
+    // ignore cleanup failures
+  }
+  globalState.term = null;
+  globalState.fitAddon = null;
+}
+
 export function useTerminalInstance({
   isActive,
   onStatusChange,
 }: UseTerminalInstanceArgs): UseTerminalInstanceReturn {
   const containerRef = useRef<HTMLDivElement>(null);
-  const termRef = useRef<Terminal | null>(null);
-  const fitAddonRef = useRef<FitAddon | null>(null);
-  const searchAddonRef = useRef<SearchAddon | null>(null);
-  const ptyRef = useRef<ReturnType<typeof spawn> | null>(null);
-  const cleanupFnsRef = useRef<Array<() => void>>([]);
+  const hookCleanupFnsRef = useRef<Array<() => void>>([]);
   const disposedRef = useRef(false);
   const initInProgressRef = useRef(false);
-
-  // Use ref for onStatusChange to avoid destabilizing the init effect.
-  // Without this, an inline onStatusChange prop causes initTerminal to change
-  // identity on every render, which tears down and re-creates the terminal.
-  const onStatusChangeRef = useRef(onStatusChange);
-  onStatusChangeRef.current = onStatusChange;
 
   const { theme } = useTheme();
   const isDark = theme === 'dark';
@@ -64,8 +123,8 @@ export function useTerminalInstance({
   const isActiveRef = useRef(isActive);
   isActiveRef.current = isActive;
 
-  const [status, setStatus] = useState<TerminalStatus>('loading');
-  const [errorMsg, setErrorMsg] = useState('');
+  const [status, setStatus] = useState<TerminalStatus>(globalState.status);
+  const [errorMsg, setErrorMsg] = useState(globalState.errorMsg);
 
   const fitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const ptyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -74,11 +133,29 @@ export function useTerminalInstance({
   const lastColsRef = useRef(0);
   const lastRowsRef = useRef(0);
 
+  const onStatusChangeRef = useRef(onStatusChange);
+  onStatusChangeRef.current = onStatusChange;
+
+  useEffect(() => {
+    const listener = (newStatus: TerminalStatus, newError: string) => {
+      setStatus(newStatus);
+      setErrorMsg(newError);
+      onStatusChangeRef.current?.(newStatus, newError);
+    };
+    statusListeners.add(listener);
+
+    // Sync state
+    setStatus(globalState.status);
+    setErrorMsg(globalState.errorMsg);
+
+    return () => {
+      statusListeners.delete(listener);
+    };
+  }, []);
+
   const setTerminalStatus = useCallback(
     (nextStatus: TerminalStatus, error?: string) => {
-      setStatus(nextStatus);
-      setErrorMsg(error ?? '');
-      onStatusChangeRef.current?.(nextStatus, error);
+      setGlobalTerminalStatus(nextStatus, error);
     },
     [],
   );
@@ -88,7 +165,7 @@ export function useTerminalInstance({
   const resizePty = useCallback((cols: number, rows: number): void => {
     if (cols === lastColsRef.current && rows === lastRowsRef.current) return;
 
-    const pty = ptyRef.current;
+    const pty = globalState.pty;
     if (!pty) return;
 
     lastColsRef.current = cols;
@@ -99,8 +176,8 @@ export function useTerminalInstance({
   const performFit = useCallback(
     (force = false): boolean => {
       const result = fitTerminal({
-        fitAddon: fitAddonRef.current,
-        terminal: termRef.current,
+        fitAddon: globalState.fitAddon,
+        terminal: globalState.term,
         container: containerRef.current,
         lastWidth: lastContainerWidthRef.current,
         lastHeight: lastContainerHeightRef.current,
@@ -124,7 +201,7 @@ export function useTerminalInstance({
       const didFit = performFitRef.current(force);
       if (!didFit && !force) return;
 
-      const term = termRef.current;
+      const term = globalState.term;
       if (!term) return;
 
       resizePty(term.cols, term.rows);
@@ -141,7 +218,7 @@ export function useTerminalInstance({
       const didFit = performFitRef.current(false);
       if (!didFit) return;
 
-      const term = termRef.current;
+      const term = globalState.term;
       if (!term) return;
 
       const cols = term.cols;
@@ -164,20 +241,54 @@ export function useTerminalInstance({
     if (!containerRef.current) return;
     if (initInProgressRef.current) return;
 
+    // 1. Re-use existing session if active and not exited/errored
+    if (globalState.term && globalState.pty && globalState.status !== 'exited' && globalState.status !== 'error') {
+      try {
+        const term = globalState.term;
+        term.open(containerRef.current);
+
+        if (isActiveRef.current) {
+          try {
+            term.focus();
+          } catch {
+            // ignore focus errors
+          }
+        }
+
+        // Set up ResizeObserver for this mount
+        const observer = new ResizeObserver(() => {
+          if (isActiveRef.current) handleResizeRef.current();
+        });
+        observer.observe(containerRef.current);
+        hookCleanupFnsRef.current.push(() => observer.disconnect());
+
+        // Perform fit to sync sizes
+        syncPtySize(true);
+        return;
+      } catch (err) {
+        console.error('[Terminal] Failed to attach to existing terminal, recreating:', err);
+        cleanupGlobalTerminal();
+        // and fall through to create a new one...
+      }
+    }
+
     initInProgressRef.current = true;
+    setTerminalStatus('loading');
 
     try {
+      cleanupGlobalTerminal();
+
       const os = platform();
       const termOptions = getTerminalOptions(os === 'windows' ? 'Win32' : os, isDarkRef.current);
       const term = new Terminal(termOptions);
-      termRef.current = term;
+      globalState.term = term;
 
       const fitAddon = new FitAddon();
-      fitAddonRef.current = fitAddon;
+      globalState.fitAddon = fitAddon;
       term.loadAddon(fitAddon);
 
       const searchAddon = new SearchAddon({ highlightLimit: 1000 });
-      searchAddonRef.current = searchAddon;
+      globalState.searchAddon = searchAddon;
       term.loadAddon(searchAddon);
 
       term.open(containerRef.current);
@@ -187,7 +298,7 @@ export function useTerminalInstance({
 
         if (event.key === 'Backspace') {
           event.preventDefault();
-          ptyRef.current?.write('\x7f');
+          globalState.pty?.write('\x7f');
           return false;
         }
 
@@ -207,7 +318,7 @@ export function useTerminalInstance({
           if (isActiveRef.current) handleResizeRef.current();
         });
         observer.observe(containerRef.current);
-        cleanupFnsRef.current.push(() => observer.disconnect());
+        hookCleanupFnsRef.current.push(() => observer.disconnect());
       }
 
       const proposed = fitAddon.proposeDimensions();
@@ -228,7 +339,7 @@ export function useTerminalInstance({
           return null;
         }
 
-        ptyRef.current = pty;
+        globalState.pty = pty;
         return pty;
       })();
 
@@ -250,10 +361,10 @@ export function useTerminalInstance({
       }
 
       const onDataDisposable = pty.onData((data: Uint8Array) => {
-        if (!data || data.length === 0 || disposedRef.current) return;
+        if (!data || data.length === 0) return;
         term.write(data);
       });
-      cleanupFnsRef.current.push(() => {
+      globalState.cleanupFns.push(() => {
         try {
           onDataDisposable.dispose();
         } catch {
@@ -262,13 +373,11 @@ export function useTerminalInstance({
       });
 
       const onExitDisposable = pty.onExit(({ exitCode }: { exitCode: number }) => {
-        if (!disposedRef.current) {
-          term.writeln(`\r\n\x1b[90m[Process exited with code ${exitCode}]\x1b[0m`);
-          term.options.disableStdin = true;
-          setTerminalStatus('exited');
-        }
+        term.writeln(`\r\n\x1b[90m[Process exited with code ${exitCode}]\x1b[0m`);
+        term.options.disableStdin = true;
+        setTerminalStatus('exited');
       });
-      cleanupFnsRef.current.push(() => {
+      globalState.cleanupFns.push(() => {
         try {
           onExitDisposable.dispose();
         } catch {
@@ -277,9 +386,9 @@ export function useTerminalInstance({
       });
 
       const termDataDisposable = term.onData((data: string) => {
-        ptyRef.current?.write(data);
+        globalState.pty?.write(data);
       });
-      cleanupFnsRef.current.push(() => {
+      globalState.cleanupFns.push(() => {
         try {
           termDataDisposable.dispose();
         } catch {
@@ -314,42 +423,20 @@ export function useTerminalInstance({
       if (fitTimerRef.current) clearTimeout(fitTimerRef.current);
       if (ptyTimerRef.current) clearTimeout(ptyTimerRef.current);
 
-      try {
-        ptyRef.current?.kill();
-      } catch {
-        // ignore cleanup failures
-      }
-      ptyRef.current = null;
-
-      for (const fn of cleanupFnsRef.current) {
+      for (const fn of hookCleanupFnsRef.current) {
         try {
           fn();
         } catch {
           // ignore cleanup failures
         }
       }
-      cleanupFnsRef.current = [];
-
-      try {
-        searchAddonRef.current?.dispose();
-      } catch {
-        // ignore cleanup failures
-      }
-      searchAddonRef.current = null;
-
-      try {
-        termRef.current?.dispose();
-      } catch {
-        // ignore cleanup failures
-      }
-      termRef.current = null;
-      fitAddonRef.current = null;
+      hookCleanupFnsRef.current = [];
     };
   }, [initTerminal]);
 
   useEffect(() => {
-    if (termRef.current) {
-      termRef.current.options.theme = getTerminalTheme(isDark);
+    if (globalState.term) {
+      globalState.term.options.theme = getTerminalTheme(isDark);
     }
   }, [isDark]);
 
@@ -358,7 +445,7 @@ export function useTerminalInstance({
 
     const id = setTimeout(() => {
       syncPtySize(true);
-      termRef.current?.focus();
+      globalState.term?.focus();
     }, 0);
 
     return () => clearTimeout(id);
@@ -367,28 +454,28 @@ export function useTerminalInstance({
   const handle = useMemo<TerminalInstanceHandle>(
     () => ({
       write(data: string) {
-        termRef.current?.write(data);
+        globalState.term?.write(data);
       },
       writeln(data: string) {
-        termRef.current?.writeln(data);
+        globalState.term?.writeln(data);
       },
       clear() {
-        termRef.current?.clear();
+        globalState.term?.clear();
       },
       focus() {
-        termRef.current?.focus();
+        globalState.term?.focus();
       },
       findNext(query: string) {
         if (!query) return false;
-        return searchAddonRef.current?.findNext(query, SEARCH_OPTIONS) ?? false;
+        return globalState.searchAddon?.findNext(query, SEARCH_OPTIONS) ?? false;
       },
       findPrevious(query: string) {
         if (!query) return false;
-        return searchAddonRef.current?.findPrevious(query, SEARCH_OPTIONS) ?? false;
+        return globalState.searchAddon?.findPrevious(query, SEARCH_OPTIONS) ?? false;
       },
       clearSearch() {
-        searchAddonRef.current?.clearDecorations();
-        termRef.current?.clearSelection();
+        globalState.searchAddon?.clearDecorations();
+        globalState.term?.clearSelection();
       },
     }),
     [],

@@ -29,19 +29,7 @@ import type { ApiCall } from '@/types';
 import { useHistoryTable } from '@/pages/live-traffic/hooks/use-history-table';
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { deleteHistoryLog, fetchHistoryDetail } from '@/pages/live-traffic/services/history-service';
-import { createDefaultAttackConfig, findRequestPayloadPositions } from '@/pages/invoker/types';
-import { useInvokerStore } from '@/stores/invoker';
-import { useDocumentsStore } from '@/stores/documents';
-import { useBrowserAutomationStore } from '@/stores/browser-automation';
-import { useHistoryQuery } from '@/pages/live-traffic/hooks/use-history-query';
-import { adaptProxyRecordToApiCall } from '@/pages/live-traffic/hooks/use-history-table';
-import { useRepeaterStore } from '@/stores/repeater';
-import { buildHttpCurlCommand, buildRawHttpRequest } from '@/lib/http-message';
-import { copyText } from '@/lib/clipboard';
-import { useTargetStore } from '@/stores/target';
-import { useNavStore } from '@/stores/nav';
-import { useInterceptStore } from '@/pages/intercept/state/intercept-store';
+import { useLogEntryActions } from '@/pages/live-traffic/hooks/use-log-entry-actions';
 import { usePinnedRequestsStore } from '@/pages/live-traffic/state/pinned-requests-store';
 import { useGroupsStore } from '@/pages/live-traffic/state/groups-store';
 import type { GroupDefinition } from '@/pages/live-traffic/state/groups-store';
@@ -51,189 +39,24 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { CreateGroupDialog } from "../group-dialog";
 
 const CallActionCell = memo(function CallActionCell({ call, onNewGroup }: { call: ApiCall; onNewGroup?: (call: ApiCall) => void }) {
-  const { triggerRefresh } = useHistoryQuery();
-  const togglePin = usePinnedRequestsStore((s) => s.togglePin);
-  const isPinned = usePinnedRequestsStore((s) => s.isPinned);
-  const pinned = isPinned(call.id);
-
-  const groups = useGroupsStore((s) => s.groups);
-  const groupRequestIds = useGroupsStore((s) => s.groupRequestIds);
-  const addRequestToGroup = useGroupsStore((s) => s.addRequestToGroup);
-  const removeRequestFromGroup = useGroupsStore((s) => s.removeRequestFromGroup);
-  const createGroup = useGroupsStore((s) => s.createGroup);
-
-  const requestGroupIds = useMemo(() => {
-    return groups.filter((g) => groupRequestIds[g.id]?.includes(call.id)).map((g) => g.id);
-  }, [groups, groupRequestIds, call.id]);
-
-  const handleQuickAddToGroup = useCallback(() => {
-    const name = `Group ${groups.length + 1}`;
-    const existing = groups.find((g) => g.name.toLowerCase() === name.toLowerCase());
-    if (existing) {
-      addRequestToGroup(existing.id, call);
-    } else {
-      const groupId = createGroup(name);
-      if (groupId) addRequestToGroup(groupId, call);
-    }
-  }, [groups, createGroup, addRequestToGroup, call]);
-
-  const handleTogglePin = useCallback(() => {
-    togglePin(call);
-  }, [call, togglePin]);
-
-  const handleCopyCurlCommand = useCallback(async () => {
-    try {
-      const detail = await fetchHistoryDetail(call.id);
-      const request = adaptProxyRecordToApiCall(detail);
-      const curl = buildHttpCurlCommand({
-        method: request.method,
-        url: request.url,
-        headers: request.headers,
-        body: request.request_body ?? '',
-      });
-      if (await copyText(curl)) toast.success('Copied as curl command (bash)');
-      else toast.error('Failed to copy as curl command (bash)');
-    } catch (error) {
-      console.error('Failed to copy curl command:', error);
-      toast.error('Failed to copy as curl command (bash)');
-    }
-  }, [call.id]);
-
-  const handleCopyUrl = useCallback(async () => {
-    try {
-      const detail = await fetchHistoryDetail(call.id);
-      const request = adaptProxyRecordToApiCall(detail);
-      if (await copyText(request.url)) toast.success('Copied URL');
-      else toast.error('Failed to copy URL');
-    } catch {
-      if (await copyText(call.url)) toast.success('Copied URL');
-      else toast.error('Failed to copy URL');
-    }
-  }, [call.id, call.url]);
-
-  const handleAddToScope = useCallback(() => {
-    const target = useTargetStore.getState().addHostTarget(call.host);
-    if (!target) {
-      toast.error('Host is unavailable');
-      return;
-    }
-    toast.success(`Added ${target.name} to targets`);
-  }, [call.host]);
-
-  const handleOpenInInvoker = useCallback(async () => {
-    try {
-      const detail = await fetchHistoryDetail(call.id);
-      const request = adaptProxyRecordToApiCall(detail);
-      const baseRequest = {
-        method: request.method,
-        url: request.url,
-        headers: request.headers,
-        body: request.request_body || '',
-        follow_redirects: true,
-        max_hops: 10,
-      };
-      const config = {
-        ...createDefaultAttackConfig(),
-        name: `${request.method} ${request.path || request.url}`,
-        base_request: baseRequest,
-        positions: findRequestPayloadPositions(baseRequest),
-      };
-      useInvokerStore.getState().addAttackTab(config);
-      useNavStore.getState().triggerNavBlink('/invoker');
-      toast.success(`Sent ${request.method} ${request.path || request.url} to Invoker`);
-    } catch (error) {
-      console.error('Failed to open request in Invoker:', error);
-      toast.error('Failed to open request in Invoker');
-    }
-  }, [call.id]);
-
-  const handleOpenInRepeater = useCallback(async () => {
-    try {
-      const detail = await fetchHistoryDetail(call.id);
-      const request = adaptProxyRecordToApiCall(detail);
-      useRepeaterStore.getState().addRequestTab({
-        raw: buildRawHttpRequest({
-          method: request.method,
-          url: request.url,
-          headers: request.headers,
-          body: request.request_body || '',
-        }),
-        url: request.url,
-      });
-      useNavStore.getState().triggerNavBlink('/repeater');
-      toast.success(`Sent ${request.method} ${request.path || request.url} to Repeater`);
-    } catch (error) {
-      console.error('Failed to open request in Repeater:', error);
-      toast.error('Failed to open request in Repeater');
-    }
-  }, [call.id]);
-
-  const handleSendToIntercept = useCallback(() => {
-    const host = call.host?.trim();
-    if (!host) {
-      toast.error('Host is unavailable');
-      return;
-    }
-    useInterceptStore.getState().addTabForHost(host);
-    useNavStore.getState().triggerNavBlink('/intercept');
-    toast.success(`Intercept tab created for ${host}`);
-  }, [call.host]);
-
-  const handleOpenInBrowserAutomation = useCallback(async () => {
-    try {
-      const detail = await fetchHistoryDetail(call.id);
-      const request = adaptProxyRecordToApiCall(detail);
-      const targetUrl = (() => {
-        try {
-          return new URL(request.url).origin;
-        } catch {
-          const host = request.host || request.url.replace(/^https?:\/\//i, '').split('/')[0];
-          return host ? `https://${host}` : request.url;
-        }
-      })();
-      useBrowserAutomationStore.getState().addAutomationTab(
-        { targetUrl },
-        request.host || targetUrl
-      );
-      useNavStore.getState().triggerNavBlink('/browser-automation');
-      toast.success(`Sent ${request.host || targetUrl} to Browser Automation`);
-    } catch (error) {
-      console.error('Failed to open target in Browser Automation:', error);
-      toast.error('Failed to open target in Browser Automation');
-    }
-  }, [call.id]);
-
-  const handleSaveToDocuments = useCallback(async () => {
-    try {
-      const detail = await fetchHistoryDetail(call.id);
-      const request = adaptProxyRecordToApiCall(detail);
-      useDocumentsStore.getState().addApiEntryToActiveDocument({
-        sourceHistoryId: request.id,
-        method: request.method,
-        url: request.url,
-        host: request.host,
-        path: request.path,
-        headers: request.headers,
-        requestBody: request.request_body,
-        responseStatus: request.response_status,
-        responseContentType: request.response_content_type,
-        capturedAt: request.timestamp,
-      });
-      toast.success('Saved API to active document');
-    } catch (error) {
-      console.error('Failed to save API to documents:', error);
-      toast.error('Failed to save API to documents');
-    }
-  }, [call.id]);
-
-  const handleDelete = useCallback(async () => {
-    try {
-      await deleteHistoryLog(call.id);
-      triggerRefresh();
-    } catch (error) {
-      console.error('Failed to delete:', error);
-    }
-  }, [call.id, triggerRefresh]);
+  const {
+    pinned,
+    groups,
+    requestGroupIds,
+    addRequestToGroup,
+    removeRequestFromGroup,
+    handleQuickAddToGroup,
+    handleTogglePin,
+    handleCopyCurlCommand,
+    handleCopyUrl,
+    handleAddToScope,
+    handleOpenInInvoker,
+    handleOpenInRepeater,
+    handleSendToIntercept,
+    handleOpenInBrowserAutomation,
+    handleSaveToDocuments,
+    handleDelete,
+  } = useLogEntryActions(call);
 
   return (
     <DropdownMenu>
@@ -560,15 +383,23 @@ export const TrafficTable = memo(function TrafficTable({
     return (
       <>
         {Array.from({ length: rows }).map((_, rowIndex) => (
-          <tr
+          <div
             key={rowIndex}
-            className="border-b animate-in fade-in-0 slide-in-from-top-1 duration-300"
+            className="flex items-center w-full border-b animate-in fade-in-0 slide-in-from-top-1 duration-300"
             aria-hidden="true"
           >
             {trafficTableSkeletonWidths.map((width, columnIndex) => (
-              <td
+              <div
                 key={columnIndex}
-                className={columnIndex === 4 || columnIndex === 5 ? "px-3 py-2 text-right" : "px-3 py-2"}
+                className={
+                  "text-xs px-3 py-2" +
+                  (columnIndex === 4 || columnIndex === 5 ? " text-right" : "")
+                }
+                style={{
+                  width: columns[columnIndex]?.size,
+                  minWidth: columns[columnIndex]?.size,
+                  flex: columnIndex === 2 ? "1 1 auto" : "0 0 auto",
+                }}
               >
                 <Skeleton
                   className={columnIndex === 7 ? "mx-auto h-5 w-9" : "h-3"}
@@ -581,9 +412,9 @@ export const TrafficTable = memo(function TrafficTable({
                           : `${Math.max(45, Number.parseInt(width, 10) - 12)}%`,
                   }}
                 />
-              </td>
+              </div>
             ))}
-          </tr>
+          </div>
         ))}
       </>
     );
@@ -674,53 +505,10 @@ export const TrafficTable = memo(function TrafficTable({
           </Button>
         </div>
       )}
-      <div ref={tableContainerRef} className="flex-1 overflow-y-auto">
-        <table className="grid w-full">
-          {/* <thead className="border-b top-0 z-10 grid min-w-0">
-            {table.getHeaderGroups().map((headerGroup) => (
-              <tr key={headerGroup.id} className="flex">
-                {headerGroup.headers.map((header) => {
-                  const isRightAligned =
-                    header.column.id === "response_body_size" ||
-                    header.column.id === "request_body_size";
-                  const isCentered = header.column.id === "action";
-
-                  return (
-                    <th
-                      key={header.id}
-                      className={
-                        "text-xs font-medium px-3 py-1" +
-                        (isRightAligned ? " text-right" : isCentered ? " text-center" : " text-left")
-                      }
-                      style={{
-                        width: header.column.getSize(),
-                        minWidth: header.column.getSize(),
-                        flex: header.column.id === "host" ? "1 1 auto" : "0 0 auto",
-                      }}
-                    >
-                      {header.isPlaceholder ? null : header.column.id === "timestamp" ? (
-                        <button
-                          className="flex items-center gap-1 hover:text-foreground transition-colors"
-                          onClick={toggleSortOrder}
-                        >
-                          Time
-                          {sortOrder === 'desc' ? (
-                            <ArrowDown className="h-3 w-3" />
-                          ) : (
-                            <ArrowUp className="h-3 w-3" />
-                          )}
-                        </button>
-                      ) : (
-                        flexRender(header.column.columnDef.header, header.getContext())
-                      )}
-                    </th>
-                  );
-                })}
-              </tr>
-            ))}
-          </thead> */}
-          <tbody
-            className="flex relative flex-1 w-full"
+      <div ref={tableContainerRef} className="flex-1 overflow-auto">
+        <div className="w-full min-w-max">
+          <div
+            className="relative w-full"
             style={{
               height: `${rowVirtualizer.getTotalSize()}px`,
             }}
@@ -737,7 +525,7 @@ export const TrafficTable = memo(function TrafficTable({
                   onOpenChange={handleContextMenuOpenChange}
                   onNewGroup={handleNewGroup}
                 >
-                  <tr
+                  <div
                     className={
                       "absolute left-0 right-0 flex items-center w-full min-w-0 font-mono transition-colors border-b cursor-pointer" +
                       (pinnedSet.has(call.id) ? " bg-amber-500/10 dark:bg-amber-800/20" : "") +
@@ -759,7 +547,7 @@ export const TrafficTable = memo(function TrafficTable({
                       const isCentered = cell.column.id === "action";
 
                       return (
-                        <td
+                        <div
                           key={cell.id}
                           className={
                             "text-xs text-muted-foreground px-3 py-1 truncate" +
@@ -779,28 +567,24 @@ export const TrafficTable = memo(function TrafficTable({
                           }}
                         >
                           {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                        </td>
+                        </div>
                       );
                     })}
-                  </tr>
+                  </div>
                 </LogEntryContextMenu>
               );
             })}
-          </tbody>
-        </table>
+          </div>
+        </div>
         {isLoading && calls.length > 0 && (
-          <table className="w-full min-w-[850px]">
-            <tbody>
-              <TrafficTableSkeletonRows />
-            </tbody>
-          </table>
+          <div className="w-full min-w-[850px]">
+            <TrafficTableSkeletonRows />
+          </div>
         )}
         {isLoadingMore && (
-          <table className="w-full min-w-[850px]">
-            <tbody>
-              <TrafficTableSkeletonRows rows={2} />
-            </tbody>
-          </table>
+          <div className="w-full min-w-[850px]">
+            <TrafficTableSkeletonRows rows={2} />
+          </div>
         )}
       </div>
       <div className="flex items-center justify-between gap-3 p-1 border-t">

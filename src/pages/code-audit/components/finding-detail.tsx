@@ -2,6 +2,12 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import type { Finding, AiExplanation } from '@/stores/code-audit';
+import { ExternalLink } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useNavigate } from 'react-router-dom';
+import { usePlaygroundStore } from '@/stores/playground';
+import { useCodeAuditStore } from '@/stores/code-audit';
+import { getLanguageFromPath } from '../../code/types';
 
 interface FindingDetailProps {
   finding: Finding | null;
@@ -17,6 +23,8 @@ const SEVERITY_VARIANTS: Record<string, 'destructive' | 'default' | 'secondary' 
 };
 
 export function FindingDetail({ finding, explanation }: FindingDetailProps) {
+  const navigate = useNavigate();
+
   if (!finding) {
     return (
       <div className="flex items-center justify-center h-full text-sm text-muted-foreground">
@@ -25,25 +33,81 @@ export function FindingDetail({ finding, explanation }: FindingDetailProps) {
     );
   }
 
+  const handleOpenInEditor = () => {
+    const directoryPath = useCodeAuditStore.getState().directoryPath;
+    if (!directoryPath) return;
+
+    const {
+      workspace,
+      setWorkspace,
+      openEditorTabs,
+      setOpenEditorTabs,
+      setActiveEditorPath,
+      setActiveEditorLine,
+    } = usePlaygroundStore.getState();
+
+    if (!workspace || workspace.path !== directoryPath) {
+      const name = directoryPath.split('/').pop() || directoryPath;
+      setWorkspace({
+        name,
+        path: directoryPath,
+        language: 'unknown',
+      });
+    }
+
+    const alreadyOpen = openEditorTabs.some((t) => t.path === finding.filePath);
+    if (!alreadyOpen) {
+      const fileName = finding.filePath.split('/').pop() || finding.filePath;
+      const newTab = {
+        path: finding.filePath,
+        name: fileName,
+        language: getLanguageFromPath(finding.filePath),
+        isDirty: false,
+      };
+      setOpenEditorTabs([...openEditorTabs, newTab]);
+    }
+
+    setActiveEditorPath(finding.filePath);
+    if (finding.line) {
+      setActiveEditorLine(finding.line);
+    } else {
+      setActiveEditorLine(null);
+    }
+
+    navigate('/playground');
+  };
+
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="p-4 border-b shrink-0">
-        <div className="flex items-center gap-2 mb-2">
-          <Badge
-            variant={SEVERITY_VARIANTS[finding.severity] || 'outline'}
-          >
-            {finding.severity.toUpperCase()}
-          </Badge>
-          <span className="text-xs text-muted-foreground font-mono">{finding.id}</span>
-          <span className="text-xs text-muted-foreground">{finding.ruleId}</span>
+      <div className="p-4 border-b shrink-0 flex items-start justify-between gap-4">
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2 mb-2">
+            <Badge
+              variant={SEVERITY_VARIANTS[finding.severity] || 'outline'}
+            >
+              {finding.severity.toUpperCase()}
+            </Badge>
+            <span className="text-xs text-muted-foreground font-mono">{finding.id}</span>
+            <span className="text-xs text-muted-foreground">{finding.ruleId}</span>
+          </div>
+          <h3 className="text-sm font-semibold truncate">{finding.title}</h3>
+          <p className="text-xs text-muted-foreground mt-1 truncate">
+            {finding.filePath}
+            {finding.line ? `:${finding.line}` : ''}
+            {finding.column ? `:${finding.column}` : ''}
+          </p>
         </div>
-        <h3 className="text-sm font-semibold">{finding.title}</h3>
-        <p className="text-xs text-muted-foreground mt-1">
-          {finding.filePath}
-          {finding.line ? `:${finding.line}` : ''}
-          {finding.column ? `:${finding.column}` : ''}
-        </p>
+
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleOpenInEditor}
+          className="shrink-0"
+        >
+          <ExternalLink className="mr-1.5 h-3.5 w-3.5" />
+          View in Editor
+        </Button>
       </div>
 
       {/* Content tabs */}

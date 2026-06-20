@@ -70,6 +70,6 @@ export const regressionEventSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('regression:step_failed'), runId: z.string(), stepIndex: z.number(), kind: stepKindSchema, error: z.string(), screenshotPath: z.string().nullable(), finishedAt: z.string() }),
   z.object({ type: z.literal('regression:assertion_passed'), runId: z.string(), stepIndex: z.number(), kind: stepKindSchema, description: z.string() }),
   z.object({ type: z.literal('regression:assertion_failed'), runId: z.string(), stepIndex: z.number(), kind: stepKindSchema, description: z.string(), expected: z.string(), actual: z.string() }),
-  z.object({ type: z.literal('regression:test_finished'), runId: z.string(), status: runStatusSchema, passedSteps: z.number(), failedSteps: z.number(), totalSteps: z.number(), aiVerdict: z.object({ pass: z.boolean(), reasoning: z.string(), suggestions: z.array(z.string()) }).nullable(), finishedAt: z.string() }),
+  z.object({ type: z.literal('regression:test_finished'), runId: z.string(), status: runStatusSchema, passedSteps: z.number(), failedSteps: z.number(), totalSteps: z.number(), stepResults: z.array(stepResultSchema).optional(), aiVerdict: z.object({ pass: z.boolean(), reasoning: z.string(), suggestions: z.array(z.string()) }).nullable(), finishedAt: z.string() }),
   z.object({ type: z.literal('regression:test_failed'), runId: z.string(), error: z.string(), finishedAt: z.string() }),
 ]);

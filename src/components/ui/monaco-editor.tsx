@@ -55,20 +55,24 @@ export interface MonacoEditorProps {
   value?: string;
   language?: string;
   path?: string | null;
+  workspacePath?: string | null;
   onChange?: (value: string) => void;
   onMount?: (editor: MonacoEditorInstance) => void;
   options?: Monaco.editor.IStandaloneEditorConstructionOptions;
   className?: string;
+  lineNumber?: number | null;
 }
 
 export function MonacoEditor({
   value = '',
   language,
   path,
+  workspacePath,
   onChange,
   onMount,
   options,
   className,
+  lineNumber,
 }: MonacoEditorProps) {
   const { theme } = useTheme();
   const [monacoApi, setMonacoApi] = useState<MonacoApi | null>(null);
@@ -145,9 +149,19 @@ export function MonacoEditor({
     const editor = editorRef.current;
     if (!monacoApi || !editor) return;
 
-    const uri = path
-      ? monacoApi.Uri.parse(`apprecon://editor/${encodeURIComponent(path)}`)
-      : undefined;
+    let uri = undefined;
+    if (path) {
+      if (path.startsWith('/') || path.includes(':\\')) {
+        uri = monacoApi.Uri.file(path);
+      } else if (workspacePath) {
+        const absolutePath = workspacePath.endsWith('/') || workspacePath.endsWith('\\')
+          ? `${workspacePath}${path}`
+          : `${workspacePath}/${path}`;
+        uri = monacoApi.Uri.file(absolutePath);
+      } else {
+        uri = monacoApi.Uri.parse(`apprecon://editor/${encodeURIComponent(path)}`);
+      }
+    }
 
     const currentModel = modelRef.current;
     const shouldReplaceModel =
@@ -188,11 +202,23 @@ export function MonacoEditor({
       );
       isExternalUpdateRef.current = false;
     }
-  }, [language, monacoApi, path, value]);
+  }, [language, monacoApi, path, value, workspacePath]);
 
   useEffect(() => {
     editorRef.current?.updateOptions(options ?? {});
   }, [options]);
+
+  useEffect(() => {
+    const editor = editorRef.current;
+    if (monacoApi && editor && lineNumber) {
+      const timer = setTimeout(() => {
+        editor.revealLineInCenter(lineNumber);
+        editor.setPosition({ lineNumber, column: 1 });
+        editor.focus();
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [monacoApi, path, lineNumber]);
 
   return <div ref={containerRef} className={className ?? 'h-full w-full'} />;
 }

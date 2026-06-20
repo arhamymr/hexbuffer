@@ -11,6 +11,8 @@ import { buildRawHttpRequest, buildRawHttpResponse } from '@/lib/http-message';
 import { type RepeaterResponse } from '@/pages/repeater/types';
 import { type ReconDocument, type SavedApiEntry } from '../types';
 
+import { useApiEntryEditor } from './hooks/use-api-entry-editor';
+
 interface ApiEntryEditorProps {
   document: ReconDocument;
   entry: SavedApiEntry;
@@ -21,11 +23,6 @@ interface ApiEntryEditorProps {
   onChangeRawRequest: (entryId: string, rawRequest: string) => void;
 }
 
-function formatSavedTime(value: string) {
-  return new Date(value).toLocaleString();
-}
-
-
 export function ApiEntryEditor({
   document,
   entry,
@@ -35,21 +32,11 @@ export function ApiEntryEditor({
   editError,
   onChangeRawRequest,
 }: ApiEntryEditorProps) {
-  const savedRawRequest = React.useMemo(
-    () =>
-      buildRawHttpRequest({
-        method: entry.method,
-        url: entry.url,
-        headers: entry.headers,
-        body: entry.requestBody ?? '',
-      }),
-    [entry.headers, entry.method, entry.requestBody, entry.url]
-  );
-  const [rawRequest, setRawRequest] = React.useState(savedRawRequest);
-
-  React.useEffect(() => {
-    setRawRequest(savedRawRequest);
-  }, [entry.id, savedRawRequest]);
+  const {
+    rawRequest,
+    handleRawRequestChange,
+    formattedSavedTime,
+  } = useApiEntryEditor({ entry, onChangeRawRequest });
 
   return (
     <ResizablePanelGroup orientation="vertical" className="min-h-0 flex-1">
@@ -61,7 +48,7 @@ export function ApiEntryEditor({
               {editError ? (
                 <span className="text-destructive">{editError}</span>
               ) : (
-                <>Saved {formatSavedTime(entry.savedAt)}</>
+                <>Saved {formattedSavedTime}</>
               )}
             </span>
           </div>
@@ -69,11 +56,7 @@ export function ApiEntryEditor({
             <TextEditor
               path={`${document.id}/api/${entry.id}.http`}
               value={rawRequest}
-              onChange={(value) => {
-                const nextValue = value ?? '';
-                setRawRequest(nextValue);
-                onChangeRawRequest(entry.id, nextValue);
-              }}
+              onChange={handleRawRequestChange}
               options={{}}
             />
           </div>

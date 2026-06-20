@@ -107,10 +107,10 @@ export async function runCrawl() {
     const apiKeyEnv = provider === 'openai' ? 'OPENAI_API_KEY' : 'DEEPSEEK_API_KEY';
     log(sessionId, 'warning', 'ai', `${provider === 'openai' ? 'OpenAI' : 'DeepSeek'} AI agent unavailable (${apiKeyEnv} missing). Using deterministic analysis for all pages.`, config.targetUrl);
   }
-  if (config.headless === false && !useFetchCrawler) {
+  if (!useFetchCrawler) {
     try {
       playwrightRuntime = await createPlaywrightRuntime(config);
-      log(sessionId, 'info', 'session', 'Browser Automation started in visible browser mode', config.targetUrl);
+      log(sessionId, 'info', 'session', `Browser Automation started in ${config.headless === false ? 'visible' : 'headless'} browser mode`, config.targetUrl);
     } catch (error) {
       log(sessionId, 'error', 'error', `[execution-environment] Failed to create Playwright runtime: ${error.message}`, config.targetUrl, {
         layer: 'execution-environment',

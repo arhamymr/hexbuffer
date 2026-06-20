@@ -13,6 +13,8 @@ import {
   type DocumentTemplateId,
 } from '../constants';
 
+import { useDocumentTemplateDialog } from './hooks/use-document-template-dialog';
+
 interface DocumentTemplateDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -58,10 +60,10 @@ export function DocumentTemplateDialog({
   onOpenChange,
   onSelectTemplate,
 }: DocumentTemplateDialogProps) {
-  const handleSelectTemplate = (templateId: DocumentTemplateId) => {
-    onSelectTemplate(templateId);
-    onOpenChange(false);
-  };
+  const { handleSelectTemplate } = useDocumentTemplateDialog({
+    onOpenChange,
+    onSelectTemplate,
+  });
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

@@ -1,4 +1,3 @@
-import { useRef, useEffect, useCallback } from 'react';
 import {
   MDXEditor,
   headingsPlugin,
@@ -31,6 +30,7 @@ import { EditorView } from '@codemirror/view';
 import { HighlightStyle, syntaxHighlighting } from '@codemirror/language';
 import { tags as t } from '@lezer/highlight';
 import { type CustomSection } from '../types';
+import { useCustomSectionEditor } from './hooks/use-custom-section-editor';
 
 const darkTheme = [
   EditorView.theme(
@@ -89,29 +89,7 @@ interface CustomSectionEditorProps {
 }
 
 export function CustomSectionEditor({ section, onChange }: CustomSectionEditorProps) {
-  const ref = useRef<MDXEditorMethods>(null);
-  const isInternalChangeRef = useRef(false);
-
-  const handleChange = useCallback(
-    (markdown: string) => {
-      isInternalChangeRef.current = true;
-      onChange(markdown);
-    },
-    [onChange],
-  );
-
-  // Sync external content changes (e.g. undo/redo) into the editor
-  useEffect(() => {
-    if (isInternalChangeRef.current) {
-      isInternalChangeRef.current = false;
-      return;
-    }
-    if (!ref.current) return;
-    const currentMarkdown = ref.current.getMarkdown();
-    if (currentMarkdown !== section.content) {
-      ref.current.setMarkdown(section.content);
-    }
-  }, [section.content]);
+  const { ref, handleChange } = useCustomSectionEditor({ section, onChange });
 
   return (
     <MDXEditor

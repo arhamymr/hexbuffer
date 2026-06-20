@@ -64,3 +64,11 @@ export type { SendToRepeaterOptions } from './repeater';
 
 export { writeDocument } from './documents';
 export type { WriteDocumentOptions } from './documents';
+
+export {
+  buildPlayground,
+  runPlayground,
+  refreshPlaygroundTree,
+  closePlaygroundFolder,
+} from './playground';
+

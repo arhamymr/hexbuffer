@@ -80,6 +80,25 @@ fn main() {
             app.manage(Arc::new(BrowserTabManager::new(app.handle().clone())));
             app.manage(database);
             app.manage(history);
+            // Start the LSP Server
+            let (port_tx, port_rx) = tokio::sync::oneshot::channel();
+            tauri::async_runtime::spawn(async move {
+                hexbuffer::commands::lsp::run_lsp_server(port_tx).await;
+            });
+            let app_handle = app.handle().clone();
+            tauri::async_runtime::spawn(async move {
+                if let Ok(port) = port_rx.await {
+                    if let Some(state) = app_handle.try_state::<hexbuffer::commands::lsp::LspState>() {
+                        if let Ok(mut port_lock) = state.port.lock() {
+                            *port_lock = Some(port);
+                        }
+                    }
+                }
+            });
+            app.manage(hexbuffer::commands::lsp::LspState {
+                port: Mutex::new(None),
+            });
+
             log("Building Tauri app...");
 
             #[cfg(desktop)]
@@ -369,7 +388,8 @@ fn main() {
             hexbuffer::commands::browser_panel::browser_tab_report_element_captured,
             hexbuffer::commands::browser_panel::browser_tab_report_annotation_marker_clicked,
             show_main_window,
-            safe_start_dragging
+            safe_start_dragging,
+            hexbuffer::commands::lsp::get_lsp_port
         ])
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())

@@ -42,8 +42,13 @@ export function AppSidebar() {
         {/* Page-specific action buttons dock */}
         <DockPageButtons/>
 
-        {/* Main dock */}
-        <div className="flex items-center gap-1 rounded-md border px-1 py-1 backdrop-blur-xl">
+        {/* Main dock wrapper with animated border beam */}
+        <div className="relative p-[1px] rounded-md overflow-hidden flex items-center justify-center">
+          {/* Glowing border beam */}
+          <div className="absolute top-1/2 left-1/2 aspect-square w-[300%] h-[300%] bg-border-beam animate-border-beam pointer-events-none" />
+
+          {/* Main dock inner content */}
+          <div className="relative z-10 flex items-center gap-1 rounded-[calc(var(--radius)-3px)] bg-background/90 px-1 py-1 backdrop-blur-xl">
 
         {/* Category nav items */}
         {visibleCategories.map((cat) => {
@@ -187,7 +192,8 @@ export function AppSidebar() {
           <Grip className="size-4" />
         </div>
 
-        </div>{/* end main dock */}
+          </div>{/* end main dock inner content */}
+        </div>{/* end main dock wrapper */}
       </div>{/* end wrapper */}
 
       {/* Update confirmation dialog */}

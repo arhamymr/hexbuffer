@@ -18,7 +18,7 @@ const CATEGORY_LABELS: Record<XssPayloadCategory, string> = {
   reflected: 'Reflected',
   'dom-based': 'DOM-based',
   polyglot: 'Polyglot',
-  'filter-bypass': 'Filter Bypass',
+  'filter-bypass': 'Bypass',
   'context-specific': 'Context',
 };
 
@@ -188,52 +188,48 @@ export function XssGeneratorTool() {
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-background">
-      {/* Header */}
-      <header className="bg-muted px-3 py-3">
-        <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-          <div className="flex flex-wrap items-center gap-2">
-            <Badge variant="outline" className="font-normal">
-              <Zap className="mr-1 h-3 w-3" />
-              XSS Payload Generator
-            </Badge>
-            <Badge variant="secondary" className="text-[10px]">
-              {filteredPayloads.length} payloads
-            </Badge>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2">
-            <Button variant="outline" onClick={() => handleCopy(encodedOutput)} disabled={!encodedOutput}>
-              <Copy className="h-3.5 w-3.5" />
-              Copy Output
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              onClick={handleClear}
-              disabled={!basePayload && !encodedOutput}
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          </div>
+      <div className="flex h-10 shrink-0 items-center justify-between border-b bg-muted/40 px-3 gap-2">
+        <div className="flex items-center gap-2">
+          <Badge variant="outline" className="font-normal text-[10px] py-px h-5 gap-1">
+            <Zap className="h-3 w-3 text-amber-500 fill-amber-500/20" />
+            XSS Generator
+          </Badge>
+          <Badge variant="secondary" className="font-normal text-[10px] py-px h-5">
+            {filteredPayloads.length} payloads
+          </Badge>
         </div>
-      </header>
 
-      {/* Main */}
-      <main className="min-h-0 flex-1 border-t">
-        <section className="grid h-full min-h-0 grid-cols-1 lg:grid-cols-[320px_minmax(0,1fr)]">
+        <div className="flex items-center gap-1.5">
+          <Button variant="outline" size="sm" onClick={() => handleCopy(encodedOutput)} disabled={!encodedOutput} className="h-7 text-xs gap-1 px-2">
+            <Copy className="h-3 w-3" />
+            Copy Output
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleClear}
+            disabled={!basePayload && !encodedOutput}
+            className="h-7 w-7 text-muted-foreground hover:text-foreground"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </Button>
+        </div>
+      </div>
+
+      <main className="min-h-0 flex-1 flex flex-col">
+        <section className="grid h-full min-h-0 grid-cols-1 lg:grid-cols-[300px_1fr]">
           {/* Left: Payload Library */}
           <div className="flex min-h-0 flex-col border-b bg-background lg:border-b-0 lg:border-r">
-            <div className="border-b px-3 py-2">
-              <Label className="text-sm font-medium">Payload Library</Label>
-              <div className="text-xs text-muted-foreground">
-                Select a payload to load into the builder.
+            <div className="flex h-8 shrink-0 items-center justify-between border-b bg-muted/10 px-3">
+              <div className="flex items-baseline gap-2">
+                <span className="text-[11px] font-semibold uppercase text-muted-foreground tracking-wider">Payload Library</span>
               </div>
             </div>
-            <div className="border-b px-3 py-2">
+            <div className="border-b px-2 py-1.5 bg-muted/5">
               <Tabs value={activeCategory} onValueChange={(v) => setActiveCategory(v as XssPayloadCategory)}>
-                <TabsList className="grid w-full grid-cols-5 bg-muted">
+                <TabsList className="h-7 bg-background p-0.5 border w-full grid grid-cols-5">
                   {(Object.keys(CATEGORY_LABELS) as XssPayloadCategory[]).map((cat) => (
-                    <TabsTrigger key={cat} value={cat} className="text-[11px] px-1">
+                    <TabsTrigger key={cat} value={cat} className="h-6 text-[10px] px-1 truncate">
                       {CATEGORY_LABELS[cat]}
                     </TabsTrigger>
                   ))}
@@ -241,15 +237,15 @@ export function XssGeneratorTool() {
               </Tabs>
             </div>
             <ScrollArea className="min-h-0 flex-1">
-              <div className="divide-y">
+              <div className="divide-y border-t-0">
                 {filteredPayloads.map((p) => (
                   <button
                     key={p.id}
-                    className="w-full cursor-pointer px-3 py-2.5 text-left transition-colors hover:bg-muted/50"
+                    className="w-full cursor-pointer px-3 py-2 text-left transition-colors hover:bg-muted/50 block border-b last:border-b-0"
                     onClick={() => handleSelectPayload(p)}
                   >
-                    <span className="block truncate font-mono text-xs">{p.payload}</span>
-                    <span className="mt-0.5 block text-[10px] text-muted-foreground">{p.label}</span>
+                    <span className="block truncate font-mono text-[11px]">{p.payload}</span>
+                    <span className="mt-0.5 block text-[9px] text-muted-foreground font-medium">{p.label}</span>
                   </button>
                 ))}
               </div>
@@ -258,20 +254,20 @@ export function XssGeneratorTool() {
 
           {/* Right: Builder + Output */}
           <div className="flex min-h-0 flex-col bg-background">
-            <div className="border-b px-3 py-2">
-              <Label className="text-sm font-medium">Payload Builder</Label>
-              <div className="text-xs text-muted-foreground">
-                Edit payload, apply encodings, and set injection context.
+            <div className="flex h-8 shrink-0 items-center justify-between border-b bg-muted/10 px-3">
+              <div className="flex items-baseline gap-2">
+                <span className="text-[11px] font-semibold uppercase text-muted-foreground tracking-wider">Payload Builder</span>
+                <span className="text-[10px] text-muted-foreground hidden sm:inline">Apply encoding and context</span>
               </div>
             </div>
 
             <ScrollArea className="min-h-0 flex-1">
               <div className="space-y-4 p-4">
                 {/* Selected Payload */}
-                <div>
-                  <Label className="text-xs font-medium">Payload</Label>
+                <div className="space-y-1">
+                  <Label className="text-xs font-semibold text-muted-foreground">Payload</Label>
                   <Textarea
-                    className="mt-1.5 min-h-[80px] font-mono text-sm"
+                    className="min-h-[70px] font-mono text-xs p-2.5 bg-muted/5 focus-visible:ring-1"
                     placeholder="Select a payload from the library or type your own..."
                     value={basePayload}
                     onChange={(e) => setBasePayload(e.target.value)}
@@ -279,32 +275,32 @@ export function XssGeneratorTool() {
                 </div>
 
                 {/* Encoding Pipeline */}
-                <div>
-                  <Label className="text-xs font-medium">Encoding Pipeline</Label>
-                  <div className="text-[11px] text-muted-foreground mb-2">
+                <div className="space-y-1">
+                  <Label className="text-xs font-semibold text-muted-foreground">Encoding Pipeline</Label>
+                  <div className="text-[10px] text-muted-foreground">
                     Applied in order: URL → HTML Entity → Base64 → Double URL → Unicode
                   </div>
-                  <div className="flex flex-wrap gap-3">
+                  <div className="flex flex-wrap gap-x-4 gap-y-2 py-1">
                     {ENCODING_ORDER.map((enc) => (
-                      <label key={enc} className="flex items-center gap-2 cursor-pointer">
+                      <label key={enc} className="flex items-center gap-1.5 cursor-pointer text-xs select-none">
                         <Checkbox
                           checked={encodings.has(enc)}
                           onCheckedChange={() => toggleEncoding(enc)}
                         />
-                        <span className="text-sm">{ENCODING_LABELS[enc]}</span>
+                        <span>{ENCODING_LABELS[enc]}</span>
                       </label>
                     ))}
                   </div>
                 </div>
 
                 {/* Injection Context */}
-                <div>
-                  <Label className="text-xs font-medium">Injection Context (optional)</Label>
-                  <div className="text-[11px] text-muted-foreground mb-1.5">
+                <div className="space-y-1">
+                  <Label className="text-xs font-semibold text-muted-foreground">Injection Context (optional)</Label>
+                  <div className="text-[10px] text-muted-foreground">
                     Use PAYLOAD or § as placeholder for the encoded payload.
                   </div>
                   <Input
-                    className="font-mono text-sm"
+                    className="h-8 font-mono text-xs bg-muted/5 focus-visible:ring-1"
                     placeholder='<input value="PAYLOAD">'
                     value={injectionContext}
                     onChange={(e) => setInjectionContext(e.target.value)}
@@ -312,20 +308,21 @@ export function XssGeneratorTool() {
                 </div>
 
                 {/* Output */}
-                <div>
+                <div className="space-y-1">
                   <div className="flex items-center justify-between">
-                    <Label className="text-xs font-medium">Encoded Output</Label>
+                    <Label className="text-xs font-semibold text-muted-foreground">Encoded Output</Label>
                     <Button
                       variant="ghost"
-                      size="icon-sm"
+                      size="icon"
                       onClick={() => handleCopy(encodedOutput)}
                       disabled={!encodedOutput}
+                      className="h-6 w-6 text-muted-foreground hover:text-foreground"
                     >
-                      <Copy className="h-3.5 w-3.5" />
+                      <Copy className="h-3 w-3" />
                     </Button>
                   </div>
                   <Textarea
-                    className="mt-1.5 min-h-[80px] font-mono text-sm"
+                    className="min-h-[70px] font-mono text-xs p-2.5 bg-muted/5 focus-visible:ring-1"
                     placeholder="Encoded output will appear here..."
                     value={encodedOutput}
                     readOnly

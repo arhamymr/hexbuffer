@@ -32,6 +32,7 @@ interface PlaygroundState {
   isLoadingFileTree: boolean;
   openEditorTabs: OpenTab[];
   activeEditorPath: string | null;
+  activeEditorLine: number | null;
 
   // Build state
   buildOutput: CommandOutput | null;
@@ -60,6 +61,7 @@ interface PlaygroundState {
   // Editor tabs
   setOpenEditorTabs: (tabs: OpenTab[]) => void;
   setActiveEditorPath: (path: string | null) => void;
+  setActiveEditorLine: (line: number | null) => void;
 
   // Build
   setBuildOutput: (output: CommandOutput | null) => void;
@@ -82,6 +84,7 @@ export const usePlaygroundStore = create<PlaygroundState>()(
       isLoadingFileTree: false,
       openEditorTabs: [],
       activeEditorPath: null,
+      activeEditorLine: null,
 
       buildOutput: null,
       isBuilding: false,
@@ -118,6 +121,7 @@ export const usePlaygroundStore = create<PlaygroundState>()(
 
       setOpenEditorTabs: (tabs) => set({ openEditorTabs: tabs }),
       setActiveEditorPath: (path) => set({ activeEditorPath: path }),
+      setActiveEditorLine: (line) => set({ activeEditorLine: line }),
 
       // ── Build ──
 

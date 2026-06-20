@@ -6,8 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Copy, RefreshCw, Trash2 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Copy, RefreshCw, Trash2, ShieldAlert } from 'lucide-react';
 
 function generateUUIDv4(): string {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
@@ -80,19 +80,21 @@ export function UtilsTool() {
   const [activeTab, setActiveTab] = React.useState('uuid');
 
   return (
-    <div className="flex flex-col h-full p-4 gap-4">
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-6">
-          <TabsTrigger value="uuid">UUID</TabsTrigger>
-          <TabsTrigger value="jwt">JWT</TabsTrigger>
-          <TabsTrigger value="hex">Hex</TabsTrigger>
-          <TabsTrigger value="json">JSON</TabsTrigger>
-          <TabsTrigger value="random">Random</TabsTrigger>
-          <TabsTrigger value="dns">DNS</TabsTrigger>
-        </TabsList>
-      </Tabs>
+    <div className="flex h-full min-h-0 flex-col bg-background">
+      <div className="flex h-10 shrink-0 items-center border-b bg-muted/40 px-3">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="h-7 bg-background p-0.5 border">
+            <TabsTrigger value="uuid" className="h-6 text-xs px-2.5">UUID</TabsTrigger>
+            <TabsTrigger value="jwt" className="h-6 text-xs px-2.5">JWT</TabsTrigger>
+            <TabsTrigger value="hex" className="h-6 text-xs px-2.5">Hex</TabsTrigger>
+            <TabsTrigger value="json" className="h-6 text-xs px-2.5">JSON</TabsTrigger>
+            <TabsTrigger value="random" className="h-6 text-xs px-2.5">Random</TabsTrigger>
+            <TabsTrigger value="dns" className="h-6 text-xs px-2.5">DNS</TabsTrigger>
+          </TabsList>
+        </Tabs>
+      </div>
 
-      <div className="flex-1 overflow-auto">
+      <div className="flex-1 min-h-0 overflow-hidden flex flex-col bg-background">
         {activeTab === 'uuid' && <UUIDGenerator />}
         {activeTab === 'jwt' && <JWTDecoder />}
         {activeTab === 'hex' && <HexFormatter />}
@@ -118,32 +120,35 @@ function UUIDGenerator() {
   }, []);
 
   return (
-    <div className="flex flex-col gap-4 h-full">
-      <div className="flex items-center gap-4">
+    <div className="flex flex-col h-full min-h-0">
+      <div className="flex h-9 shrink-0 items-center justify-between border-b bg-muted/5 px-3 py-1 gap-2">
         <div className="flex items-center gap-2">
-          <Label>Count:</Label>
+          <Label className="text-xs text-muted-foreground">Count</Label>
           <Input
             type="number"
             min={1}
             max={100}
             value={count}
             onChange={(e) => setCount(Math.max(1, Math.min(100, parseInt(e.target.value) || 1)))}
-            className="w-20"
+            className="h-7 w-16 text-xs bg-background focus-visible:ring-1"
           />
         </div>
-        <Button onClick={generate}>
-          <RefreshCw className="h-4 w-4 mr-1" />
+        <Button onClick={generate} size="sm" className="h-7 text-xs gap-1 px-2.5">
+          <RefreshCw className="h-3.5 w-3.5" />
           Generate
         </Button>
       </div>
-      <div className="flex-1 flex flex-col gap-2">
-        <div className="flex items-center justify-between">
-          <Label>Generated UUIDs</Label>
-          <Button variant="ghost" className="h-7 px-2" onClick={() => navigator.clipboard.writeText(uuid)}>
-            <Copy className="h-3.5 w-3.5" />
+      <div className="flex-1 flex flex-col min-h-0">
+        <div className="flex h-8 shrink-0 items-center justify-between border-b bg-muted/10 px-3">
+          <div className="flex items-baseline gap-2">
+            <span className="text-[11px] font-semibold uppercase text-muted-foreground tracking-wider">Generated UUIDs</span>
+            <span className="text-[10px] text-muted-foreground hidden sm:inline">Version 4</span>
+          </div>
+          <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-foreground" onClick={() => navigator.clipboard.writeText(uuid)}>
+            <Copy className="h-3 w-3" />
           </Button>
         </div>
-        <Textarea className="flex-1 font-mono text-sm" value={uuid} readOnly />
+        <Textarea className="min-h-0 flex-1 resize-none rounded-none border-0 font-mono text-xs shadow-none focus-visible:ring-0 bg-transparent p-3" value={uuid} readOnly />
       </div>
     </div>
   );
@@ -174,74 +179,91 @@ function JWTDecoder() {
     decode();
   }, [token]);
 
-  const copySection = async (label: string, content: string) => {
+  const copySection = async (content: string) => {
     await navigator.clipboard.writeText(content);
   };
 
   return (
-    <div className="flex flex-col gap-4 h-full">
-      <div className="flex flex-col gap-2">
-        <Label>JWT Token</Label>
+    <div className="flex h-full min-h-0 flex-col lg:flex-row">
+      {/* Left Input */}
+      <div className="flex min-h-[160px] lg:h-full lg:w-1/2 flex-col border-b lg:border-b-0 lg:border-r">
+        <div className="flex h-8 shrink-0 items-center justify-between border-b bg-muted/10 px-3">
+          <div className="flex items-baseline gap-2">
+            <span className="text-[11px] font-semibold uppercase text-muted-foreground tracking-wider">JWT Input</span>
+          </div>
+        </div>
         <Textarea
-          className="font-mono text-sm h-32"
+          className="min-h-0 flex-1 resize-none rounded-none border-0 font-mono text-xs shadow-none focus-visible:ring-0 bg-transparent p-3"
           placeholder="Paste JWT token here..."
           value={token}
           onChange={(e) => setToken(e.target.value)}
         />
       </div>
 
-      {error && (
-        <div className="p-3 bg-destructive/10 text-destructive text-sm rounded-md">{error}</div>
-      )}
-
-      {decoded && (
-        <div className="flex-1 flex flex-col gap-4 overflow-auto">
-          <div className="border rounded-lg overflow-hidden">
-            <div className="bg-muted/50 px-3 py-2 border-b flex items-center justify-between">
-              <span className="font-medium text-sm">Header</span>
-              <Button variant="ghost" className="h-6 w-6 p-0" onClick={() => copySection('header', JSON.stringify(decoded.header, null, 2))}>
-                <Copy className="h-3 w-3" />
-              </Button>
-            </div>
-            <div className="p-3">
-              <pre className="font-mono text-xs overflow-auto">{JSON.stringify(decoded.header, null, 2)}</pre>
-            </div>
+      {/* Right Outputs */}
+      <div className="flex-1 flex flex-col min-h-0 bg-background">
+        <div className="flex h-8 shrink-0 items-center justify-between border-b bg-muted/10 px-3">
+          <div className="flex items-baseline gap-2">
+            <span className="text-[11px] font-semibold uppercase text-muted-foreground tracking-wider">Breakdown</span>
           </div>
+        </div>
 
-          <div className="border rounded-lg overflow-hidden">
-            <div className="bg-muted/50 px-3 py-2 border-b flex items-center justify-between">
-              <span className="font-medium text-sm">Payload</span>
-              <Button variant="ghost" className="h-6 w-6 p-0" onClick={() => copySection('payload', JSON.stringify(decoded.payload, null, 2))}>
-                <Copy className="h-3 w-3" />
-              </Button>
-            </div>
-            <div className="p-3">
-              <pre className="font-mono text-xs overflow-auto">{JSON.stringify(decoded.payload, null, 2)}</pre>
-            </div>
-          </div>
+        {error && (
+          <div className="p-3 m-3 bg-destructive/5 text-destructive text-xs font-mono rounded border border-destructive/10">{error}</div>
+        )}
 
-          <div className="border rounded-lg overflow-hidden">
-            <div className="bg-muted/50 px-3 py-2 border-b flex items-center justify-between">
-              <span className="font-medium text-sm">Signature</span>
-              <Button variant="ghost" className="h-6 w-6 p-0" onClick={() => copySection('signature', decoded.signature)}>
-                <Copy className="h-3 w-3" />
-              </Button>
-            </div>
-            <div className="p-3">
-              <pre className="font-mono text-xs break-all">{decoded.signature}</pre>
-            </div>
-          </div>
+        {decoded ? (
+          <ScrollArea className="min-h-0 flex-1">
+            <div className="p-3 space-y-3">
+              <div className="border rounded-md overflow-hidden">
+                <div className="bg-muted/10 px-3 py-1 border-b flex items-center justify-between">
+                  <span className="font-semibold text-[10px] uppercase text-muted-foreground tracking-wider">Header</span>
+                  <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => copySection(JSON.stringify(decoded.header, null, 2))}>
+                    <Copy className="h-3 w-3" />
+                  </Button>
+                </div>
+                <pre className="font-mono text-xs p-2.5 overflow-auto bg-muted/5">{JSON.stringify(decoded.header, null, 2)}</pre>
+              </div>
 
-          {decoded.payload.exp && typeof decoded.payload.exp === 'number' && (
-            <div className="text-sm text-muted-foreground">
-              Token expires: {new Date((decoded.payload.exp as number) * 1000).toLocaleString()}
-              {Date.now() > (decoded.payload.exp as number) * 1000 && (
-                <span className="text-destructive ml-2">(Expired)</span>
+              <div className="border rounded-md overflow-hidden">
+                <div className="bg-muted/10 px-3 py-1 border-b flex items-center justify-between">
+                  <span className="font-semibold text-[10px] uppercase text-muted-foreground tracking-wider">Payload</span>
+                  <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => copySection(JSON.stringify(decoded.payload, null, 2))}>
+                    <Copy className="h-3 w-3" />
+                  </Button>
+                </div>
+                <pre className="font-mono text-xs p-2.5 overflow-auto bg-muted/5">{JSON.stringify(decoded.payload, null, 2)}</pre>
+              </div>
+
+              <div className="border rounded-md overflow-hidden">
+                <div className="bg-muted/10 px-3 py-1 border-b flex items-center justify-between">
+                  <span className="font-semibold text-[10px] uppercase text-muted-foreground tracking-wider">Signature</span>
+                  <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => copySection(decoded.signature)}>
+                    <Copy className="h-3 w-3" />
+                  </Button>
+                </div>
+                <pre className="font-mono text-[10px] break-all p-2.5 bg-muted/5">{decoded.signature}</pre>
+              </div>
+
+              {decoded.payload.exp && typeof decoded.payload.exp === 'number' && (
+                <div className="text-[11px] text-muted-foreground flex items-center gap-1">
+                  <span>Expires: {new Date((decoded.payload.exp as number) * 1000).toLocaleString()}</span>
+                  {Date.now() > (decoded.payload.exp as number) * 1000 && (
+                    <span className="text-destructive font-semibold flex items-center gap-0.5">
+                      <ShieldAlert className="h-3 w-3" />
+                      (Expired)
+                    </span>
+                  )}
+                </div>
               )}
             </div>
-          )}
-        </div>
-      )}
+          </ScrollArea>
+        ) : (
+          <div className="flex-1 flex items-center justify-center text-xs text-muted-foreground">
+            Decoded payload will show here
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -259,24 +281,33 @@ function HexFormatter() {
   }, [input]);
 
   return (
-    <div className="flex flex-col gap-4 h-full">
-      <div className="flex items-center gap-2">
-        <Label>Hex String</Label>
-        <span className="text-xs text-muted-foreground">(remove spaces, colons, or 0x prefixes)</span>
+    <div className="flex h-full min-h-0 flex-col lg:flex-row">
+      <div className="flex min-h-[120px] lg:h-full lg:w-1/2 flex-col border-b lg:border-b-0 lg:border-r">
+        <div className="flex h-8 shrink-0 items-center justify-between border-b bg-muted/10 px-3">
+          <div className="flex items-baseline gap-2">
+            <span className="text-[11px] font-semibold uppercase text-muted-foreground tracking-wider">Hex Input</span>
+            <span className="text-[10px] text-muted-foreground hidden sm:inline">(removes 0x spaces, colons)</span>
+          </div>
+        </div>
+        <Textarea
+          className="min-h-0 flex-1 resize-none rounded-none border-0 font-mono text-xs shadow-none focus-visible:ring-0 bg-transparent p-3"
+          placeholder="Enter hex string (e.g., 48656c6c6f20576f726c64)"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+        />
       </div>
-      <Textarea
-        className="flex-1 font-mono text-sm"
-        placeholder="Enter hex string (e.g., 48656c6c6f20576f726c64)"
-        value={input}
-        onChange={(e) => setInput(e.target.value)}
-      />
-      <div className="flex items-center justify-between">
-        <Label>Formatted Output</Label>
-        <Button variant="ghost" className="h-7 px-2" onClick={() => navigator.clipboard.writeText(output)} disabled={!output}>
-          <Copy className="h-3.5 w-3.5" />
-        </Button>
+
+      <div className="flex-1 flex flex-col min-h-0 bg-background">
+        <div className="flex h-8 shrink-0 items-center justify-between border-b bg-muted/10 px-3">
+          <div className="flex items-baseline gap-2">
+            <span className="text-[11px] font-semibold uppercase text-muted-foreground tracking-wider">Formatted Hex</span>
+          </div>
+          <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-foreground" onClick={() => navigator.clipboard.writeText(output)} disabled={!output}>
+            <Copy className="h-3 w-3" />
+          </Button>
+        </div>
+        <Textarea className="min-h-0 flex-1 resize-none rounded-none border-0 font-mono text-xs shadow-none focus-visible:ring-0 bg-transparent p-3" value={output} readOnly />
       </div>
-      <Textarea className="flex-1 font-mono text-sm" value={output} readOnly />
     </div>
   );
 }
@@ -297,32 +328,41 @@ function JSONFormatter() {
   const isValid = isValidJSON(input);
 
   return (
-    <div className="flex flex-col gap-4 h-full">
-      <div className="flex items-center gap-4">
-        <Label>JSON Input</Label>
-        <Tabs value={mode} onValueChange={(v) => setMode(v as 'format' | 'minify')}>
-          <TabsList className="grid grid-cols-2">
-            <TabsTrigger value="format">Format</TabsTrigger>
-            <TabsTrigger value="minify">Minify</TabsTrigger>
-          </TabsList>
-        </Tabs>
-        {!isValid && input.trim() && (
-          <span className="text-xs text-destructive">Invalid JSON</span>
-        )}
+    <div className="flex h-full min-h-0 flex-col lg:flex-row">
+      <div className="flex min-h-[140px] lg:h-full lg:w-1/2 flex-col border-b lg:border-b-0 lg:border-r">
+        <div className="flex h-8 shrink-0 items-center justify-between border-b bg-muted/10 px-3">
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] font-semibold uppercase text-muted-foreground tracking-wider">JSON Input</span>
+            <Tabs value={mode} onValueChange={(v) => setMode(v as 'format' | 'minify')}>
+              <TabsList className="h-6 bg-background p-0.5 border">
+                <TabsTrigger value="format" className="h-5 text-[10px] px-2">Format</TabsTrigger>
+                <TabsTrigger value="minify" className="h-5 text-[10px] px-2">Minify</TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
+          {!isValid && input.trim() && (
+            <span className="text-[10px] text-destructive font-mono">Invalid JSON</span>
+          )}
+        </div>
+        <Textarea
+          className="min-h-0 flex-1 resize-none rounded-none border-0 font-mono text-xs shadow-none focus-visible:ring-0 bg-transparent p-3"
+          placeholder='{"key": "value"}'
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+        />
       </div>
-      <Textarea
-        className="flex-1 font-mono text-sm"
-        placeholder='{"key": "value"}'
-        value={input}
-        onChange={(e) => setInput(e.target.value)}
-      />
-      <div className="flex items-center justify-between">
-        <Label>Output</Label>
-        <Button variant="ghost" className="h-7 px-2" onClick={() => navigator.clipboard.writeText(output)} disabled={!output}>
-          <Copy className="h-3.5 w-3.5" />
-        </Button>
+
+      <div className="flex-1 flex flex-col min-h-0 bg-background">
+        <div className="flex h-8 shrink-0 items-center justify-between border-b bg-muted/10 px-3">
+          <div className="flex items-baseline gap-2">
+            <span className="text-[11px] font-semibold uppercase text-muted-foreground tracking-wider">Output</span>
+          </div>
+          <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-foreground" onClick={() => navigator.clipboard.writeText(output)} disabled={!output}>
+            <Copy className="h-3 w-3" />
+          </Button>
+        </div>
+        <Textarea className="min-h-0 flex-1 resize-none rounded-none border-0 font-mono text-xs shadow-none focus-visible:ring-0 bg-transparent p-3" value={output} readOnly />
       </div>
-      <Textarea className="flex-1 font-mono text-sm" value={output} readOnly />
     </div>
   );
 }
@@ -351,41 +391,48 @@ function RandomGenerator() {
   }, [length, charset]);
 
   return (
-    <div className="flex flex-col gap-4 h-full">
-      <div className="flex items-center gap-4">
-        <div className="flex items-center gap-2">
-          <Label>Length:</Label>
-          <Input
-            type="number"
-            min={1}
-            max={1024}
-            value={length}
-            onChange={(e) => setLength(Math.max(1, Math.min(1024, parseInt(e.target.value) || 1)))}
-            className="w-20"
-          />
+    <div className="flex flex-col h-full min-h-0">
+      <div className="flex h-9 shrink-0 items-center justify-between border-b bg-muted/5 px-3 py-1 gap-2">
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5">
+            <Label className="text-xs text-muted-foreground">Length</Label>
+            <Input
+              type="number"
+              min={1}
+              max={1024}
+              value={length}
+              onChange={(e) => setLength(Math.max(1, Math.min(1024, parseInt(e.target.value) || 1)))}
+              className="h-7 w-16 text-xs bg-background focus-visible:ring-1"
+            />
+          </div>
+          <div className="flex items-center gap-1.5">
+            <Label className="text-xs text-muted-foreground">Charset</Label>
+            <Tabs value={charset} onValueChange={setCharset}>
+              <TabsList className="h-6 bg-background p-0.5 border">
+                <TabsTrigger value="alphanumeric" className="h-5 text-[10px] px-1.5">AlphaNum</TabsTrigger>
+                <TabsTrigger value="hex" className="h-5 text-[10px] px-1.5">Hex</TabsTrigger>
+                <TabsTrigger value="special" className="h-5 text-[10px] px-1.5">Special</TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Label>Charset:</Label>
-          <Tabs value={charset} onValueChange={setCharset}>
-            <TabsList className="grid grid-cols-3">
-              <TabsTrigger value="alphanumeric">AlphaNum</TabsTrigger>
-              <TabsTrigger value="hex">Hex</TabsTrigger>
-              <TabsTrigger value="special">Special</TabsTrigger>
-            </TabsList>
-          </Tabs>
-        </div>
-        <Button onClick={generate}>
-          <RefreshCw className="h-4 w-4 mr-1" />
+        <Button onClick={generate} size="sm" className="h-7 text-xs gap-1 px-2.5">
+          <RefreshCw className="h-3.5 w-3.5" />
           Regenerate
         </Button>
       </div>
-      <div className="flex items-center justify-between">
-        <Label>Random String</Label>
-        <Button variant="ghost" className="h-7 px-2" onClick={() => navigator.clipboard.writeText(output)}>
-          <Copy className="h-3.5 w-3.5" />
-        </Button>
+
+      <div className="flex-1 flex flex-col min-h-0">
+        <div className="flex h-8 shrink-0 items-center justify-between border-b bg-muted/10 px-3">
+          <div className="flex items-baseline gap-2">
+            <span className="text-[11px] font-semibold uppercase text-muted-foreground tracking-wider">Random String</span>
+          </div>
+          <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-foreground" onClick={() => navigator.clipboard.writeText(output)}>
+            <Copy className="h-3 w-3" />
+          </Button>
+        </div>
+        <Textarea className="min-h-0 flex-1 resize-none rounded-none border-0 font-mono text-xs shadow-none focus-visible:ring-0 bg-transparent p-3" value={output} readOnly />
       </div>
-      <Textarea className="flex-1 font-mono text-sm" value={output} readOnly />
     </div>
   );
 }
@@ -424,42 +471,56 @@ function DNSLookup() {
   };
 
   return (
-    <div className="flex flex-col gap-4 h-full">
-      <div className="flex items-center gap-2">
+    <div className="flex flex-col h-full min-h-0 bg-background">
+      <div className="flex h-9 shrink-0 items-center gap-2 border-b bg-muted/5 px-3 py-1">
         <Input
-          placeholder="Enter domain (e.g., example.com)"
+          placeholder="Enter domain (e.g. google.com)"
           value={domain}
           onChange={(e) => setDomain(e.target.value)}
-          className="flex-1"
+          className="h-7 text-xs bg-background flex-1 max-w-[240px]"
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') lookup();
+          }}
         />
         <Tabs value={recordType} onValueChange={setRecordType}>
-          <TabsList className="grid grid-cols-5">
-            <TabsTrigger value="A">A</TabsTrigger>
-            <TabsTrigger value="AAAA">AAAA</TabsTrigger>
-            <TabsTrigger value="CNAME">CNAME</TabsTrigger>
-            <TabsTrigger value="MX">MX</TabsTrigger>
-            <TabsTrigger value="TXT">TXT</TabsTrigger>
+          <TabsList className="h-6 bg-background p-0.5 border">
+            <TabsTrigger value="A" className="h-5 text-[10px] px-1.5">A</TabsTrigger>
+            <TabsTrigger value="AAAA" className="h-5 text-[10px] px-1.5">AAAA</TabsTrigger>
+            <TabsTrigger value="CNAME" className="h-5 text-[10px] px-1.5">CNAME</TabsTrigger>
+            <TabsTrigger value="MX" className="h-5 text-[10px] px-1.5">MX</TabsTrigger>
+            <TabsTrigger value="TXT" className="h-5 text-[10px] px-1.5">TXT</TabsTrigger>
           </TabsList>
         </Tabs>
-        <Button onClick={lookup} disabled={!domain.trim() || isLoading}>
+        <Button onClick={lookup} disabled={!domain.trim() || isLoading} className="h-7 text-xs px-2.5">
           {isLoading ? 'Looking up...' : 'Lookup'}
         </Button>
       </div>
 
-      {error && (
-        <div className="p-3 bg-destructive/10 text-destructive text-sm rounded-md">{error}</div>
-      )}
-
-      {results.length > 0 && (
-        <div className="flex-1 flex flex-col gap-2">
-          <Label>Results</Label>
-          <div className="flex-1 border rounded-lg p-4 overflow-auto">
-            {results.map((result, index) => (
-              <div key={index} className="font-mono text-sm mb-2">{result}</div>
-            ))}
+      <div className="flex-1 flex flex-col min-h-0 bg-background">
+        <div className="flex h-8 shrink-0 items-center justify-between border-b bg-muted/10 px-3">
+          <div className="flex items-baseline gap-2">
+            <span className="text-[11px] font-semibold uppercase text-muted-foreground tracking-wider">DNS Records</span>
           </div>
         </div>
-      )}
+
+        {error && (
+          <div className="p-3 m-3 bg-destructive/5 text-destructive text-xs font-mono rounded border border-destructive/10 shrink-0">{error}</div>
+        )}
+
+        <div className="flex-1 min-h-0 p-3 overflow-auto">
+          {results.length > 0 ? (
+            <div className="border rounded-md bg-muted/5 divide-y">
+              {results.map((result, index) => (
+                <div key={index} className="font-mono text-xs p-2 break-all">{result}</div>
+              ))}
+            </div>
+          ) : (
+            <div className="flex h-full items-center justify-center text-xs text-muted-foreground">
+              {isLoading ? 'Resolving domain name...' : 'Lookup a domain to see records'}
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { Circle, FileCode2, SplitSquareVertical, X } from 'lucide-react';
+import { FileCode2 } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -15,10 +15,15 @@ import {
   ResizablePanel,
   ResizableHandle,
 } from '@/components/ui/resizable';
-import { getLanguageFromPath, isImageFile } from '../types';
-import type { OpenTab } from '../types';
+import { getLanguageFromPath, isImageFile } from '../../types';
+import type { OpenTab } from '../../types';
 import { useCodeEditor } from './hooks/use-code-editor';
 import type { SecondaryLayout, SecondaryPane } from './hooks/use-code-editor';
+import { TabBar } from './components/tab-bar';
+import { StatusBar } from './components/status-bar';
+import { ImagePreview } from './components/image-preview';
+import { usePlaygroundStore } from '@/stores/playground';
+import { useMonacoLsp } from '@/hooks/use-monaco-lsp';
 
 interface CodeEditorProps {
   tabs: OpenTab[];
@@ -65,6 +70,11 @@ export function CodeEditor({
     onSave,
   });
 
+  useMonacoLsp(activeLanguage);
+
+  const activeEditorPath = usePlaygroundStore((s) => s.activeEditorPath);
+  const activeEditorLine = usePlaygroundStore((s) => s.activeEditorLine);
+
   if (tabs.length === 0) {
     return (
       <div className="flex h-full items-center justify-center bg-background">
@@ -75,108 +85,6 @@ export function CodeEditor({
             Select a file from the project tree to start editing.
           </p>
         </div>
-      </div>
-    );
-  }
-
-  // ── Image preview sub-component ──
-  function ImagePreview({ src, alt }: { src: string; alt: string }) {
-    return (
-      <div className="flex h-full w-full items-center justify-center bg-[#1e1e1e] p-4">
-        <img
-          src={src}
-          alt={alt}
-          className="max-h-full max-w-full object-contain rounded"
-        />
-      </div>
-    );
-  }
-
-  // ── Shared tab bar sub-component ──
-  function TabBar({
-    tabs: tabList,
-    activePath,
-    onTabClick,
-    onTabClose: onClose,
-    dirtyMap,
-    onSplit,
-    onClosePane,
-  }: {
-    tabs: OpenTab[];
-    activePath: string | null;
-    onTabClick: (path: string) => void;
-    onTabClose: (tab: OpenTab) => void;
-    dirtyMap?: Record<string, boolean>;
-    onSplit?: () => void;
-    onClosePane?: () => void;
-  }) {
-    return (
-      <div className="flex shrink-0 items-center border-b bg-muted">
-        <div className="flex min-w-0 flex-1 overflow-x-auto">
-          {tabList.map((tab) => {
-            const isActive = tab.path === activePath;
-            const isDirty = dirtyMap ? dirtyMap[tab.path] : tab.isDirty;
-            return (
-              <button
-                key={tab.path}
-                className={`group flex h-9 max-w-[220px] items-center gap-1.5 border-r px-3 text-xs whitespace-nowrap transition-colors ${
-                  isActive
-                    ? 'bg-background text-foreground'
-                    : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
-                }`}
-                onClick={() => onTabClick(tab.path)}
-                type="button"
-              >
-                <FileCode2 className="h-3.5 w-3.5 shrink-0" />
-                <span className="max-w-[120px] truncate">{tab.name}</span>
-                {isDirty && (
-                  <Circle className="h-1.5 w-1.5 shrink-0 fill-current text-amber-500" />
-                )}
-                <span
-                  className="ml-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded opacity-0 group-hover:opacity-100 hover:bg-muted-foreground/20"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onClose(tab);
-                  }}
-                  role="button"
-                  aria-label={`Close ${tab.name}`}
-                >
-                  <X className="h-3 w-3" />
-                </span>
-              </button>
-            );
-          })}
-        </div>
-        {onSplit && workspacePath && (
-          <button
-            className="flex h-9 w-9 shrink-0 items-center justify-center border-l text-muted-foreground hover:bg-muted/50"
-            onClick={onSplit}
-            aria-label="Split editor"
-            type="button"
-          >
-            <SplitSquareVertical className="h-4 w-4" />
-          </button>
-        )}
-        {onClosePane && (
-          <button
-            className="flex h-9 w-9 shrink-0 items-center justify-center border-l text-muted-foreground hover:bg-muted/50"
-            onClick={onClosePane}
-            aria-label="Close pane"
-            type="button"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        )}
-      </div>
-    );
-  }
-
-  // ── Status bar sub-component ──
-  function StatusBar({ filePath, language }: { filePath: string | null; language: string }) {
-    return (
-      <div className="flex h-7 shrink-0 items-center justify-between border-t bg-muted/40 px-3 text-[11px] text-muted-foreground">
-        <span className="min-w-0 truncate">{filePath ?? 'No file selected'}</span>
-        <span className="shrink-0 uppercase">{language || 'text'}</span>
       </div>
     );
   }
@@ -228,12 +136,14 @@ export function CodeEditor({
                 value={content}
                 language={language}
                 path={pane.activePath}
+                workspacePath={workspacePath}
                 onChange={(value) => {
                   if (pane.activePath) {
                     handleSecondaryContentChange(pane.id, pane.activePath, value);
                   }
                 }}
                 className="h-full w-full"
+                lineNumber={pane.activePath === activeEditorPath ? activeEditorLine : undefined}
               />
             )
           ) : (
@@ -263,6 +173,7 @@ export function CodeEditor({
           onTabClick={onTabChange}
           onTabClose={handleTabClose}
           onSplit={handleToggleSplit}
+          workspacePath={workspacePath}
         />
 
         <div className="min-h-0 flex-1 overflow-hidden">
@@ -272,13 +183,15 @@ export function CodeEditor({
             <MonacoEditor
               value={activeContent}
               language={activeLanguage}
-              path={activeTabPath}
+              path={activeTabPath ?? undefined}
+              workspacePath={workspacePath}
               onChange={(value) => {
                 if (activeTabPath) {
                   onContentChange(activeTabPath, value);
                 }
               }}
               className="h-full w-full"
+              lineNumber={activeTabPath === activeEditorPath ? activeEditorLine : undefined}
             />
           )}
         </div>
@@ -324,6 +237,7 @@ export function CodeEditor({
               onTabClick={onTabChange}
               onTabClose={handleTabClose}
               onSplit={handleToggleSplit}
+              workspacePath={workspacePath}
             />
             <div className="min-h-0 flex-1 overflow-hidden">
               {activeTabPath && isImageFile(activeTabPath) ? (
@@ -332,13 +246,15 @@ export function CodeEditor({
                 <MonacoEditor
                   value={activeContent}
                   language={activeLanguage}
-                  path={activeTabPath}
+                  path={activeTabPath ?? undefined}
+                  workspacePath={workspacePath}
                   onChange={(value) => {
                     if (activeTabPath) {
                       onContentChange(activeTabPath, value);
                     }
                   }}
                   className="h-full w-full"
+                  lineNumber={activeTabPath === activeEditorPath ? activeEditorLine : undefined}
                 />
               )}
             </div>

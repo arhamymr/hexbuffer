@@ -36,11 +36,11 @@ const SEVERITY_CONFIG: Record<
   JwtVulnerabilitySeverity,
   { color: string; icon: React.ElementType }
 > = {
-  critical: { color: 'text-red-500 border-red-500/30 bg-red-500/10', icon: ShieldAlert },
-  high: { color: 'text-orange-500 border-orange-500/30 bg-orange-500/10', icon: Shield },
-  medium: { color: 'text-yellow-500 border-yellow-500/30 bg-yellow-500/10', icon: AlertTriangle },
-  low: { color: 'text-blue-500 border-blue-500/30 bg-blue-500/10', icon: Info },
-  info: { color: 'text-muted-foreground border-border bg-muted', icon: Info },
+  critical: { color: 'text-red-500 border-red-500/20 bg-red-500/5', icon: ShieldAlert },
+  high: { color: 'text-orange-500 border-orange-500/20 bg-orange-500/5', icon: Shield },
+  medium: { color: 'text-yellow-500 border-yellow-500/20 bg-yellow-500/5', icon: AlertTriangle },
+  low: { color: 'text-blue-500 border-blue-500/20 bg-blue-500/5', icon: Info },
+  info: { color: 'text-muted-foreground border-border bg-muted/50', icon: Info },
 };
 
 const ALGORITHM_OPTIONS: { value: JwtAlgorithm; label: string }[] = [
@@ -112,7 +112,6 @@ function decodeJwt(token: string): JwtDecoded | null {
 
 function formatTimestamp(value: unknown): string | null {
   if (typeof value !== 'number') return null;
-  // Handle milliseconds vs seconds
   const epoch = value > 1e12 ? value / 1000 : value;
   const date = new Date(epoch * 1000);
   if (isNaN(date.getTime())) return null;
@@ -123,10 +122,10 @@ function formatTimestamp(value: unknown): string | null {
   const absDiff = Math.abs(diffSec);
 
   let relative: string;
-  if (absDiff < 60) relative = `${Math.round(absDiff)} seconds`;
-  else if (absDiff < 3600) relative = `${Math.round(absDiff / 60)} minutes`;
-  else if (absDiff < 86400) relative = `${Math.round(absDiff / 3600)} hours`;
-  else relative = `${Math.round(absDiff / 86400)} days`;
+  if (absDiff < 60) relative = `${Math.round(absDiff)}s`;
+  else if (absDiff < 3600) relative = `${Math.round(absDiff / 60)}m`;
+  else if (absDiff < 86400) relative = `${Math.round(absDiff / 3600)}h`;
+  else relative = `${Math.round(absDiff / 86400)}d`;
 
   const direction = diffSec < 0 ? `${relative} ago` : `in ${relative}`;
   return `${formatted} (${direction})`;
@@ -239,16 +238,16 @@ function VulnerabilityCard({ vuln }: { vuln: JwtVulnerability }) {
   const Icon = config.icon;
 
   return (
-    <div className={`flex items-start gap-2.5 rounded-md border p-3 ${config.color}`}>
-      <Icon className="mt-0.5 h-4 w-4 shrink-0" />
+    <div className={`flex items-start gap-2.5 rounded-md border p-2 text-xs ${config.color}`}>
+      <Icon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
       <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-medium">{vuln.title}</span>
-          <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 uppercase">
+        <div className="flex items-center gap-1.5">
+          <span className="font-semibold">{vuln.title}</span>
+          <Badge variant="outline" className="text-[9px] px-1 py-0 h-3.5 uppercase font-medium">
             {vuln.severity}
           </Badge>
         </div>
-        <p className="mt-0.5 text-xs opacity-80">{vuln.description}</p>
+        <p className="mt-0.5 opacity-80 text-[11px] leading-relaxed">{vuln.description}</p>
       </div>
     </div>
   );
@@ -265,10 +264,10 @@ function DecodedSection({
 
   return (
     <div>
-      <Label className="text-xs font-semibold uppercase text-muted-foreground tracking-wide">
+      <Label className="text-[10px] font-bold uppercase text-muted-foreground tracking-wider">
         {title}
       </Label>
-      <div className="mt-1.5 space-y-1">
+      <div className="mt-1 space-y-0.5">
         {Object.entries(data).map(([key, value]) => {
           const display =
             timestampKeys.has(key) && typeof value === 'number'
@@ -278,7 +277,7 @@ function DecodedSection({
                 : String(value);
 
           return (
-            <div key={key} className="flex items-baseline gap-2 text-sm">
+            <div key={key} className="flex items-baseline gap-2 text-xs">
               <span className="font-mono text-muted-foreground shrink-0">{key}:</span>
               <span className="font-mono break-all">{display}</span>
             </div>
@@ -385,85 +384,84 @@ export function JwtTool() {
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-background">
-      {/* Header */}
-      <header className="bg-muted px-3 py-3">
-        <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-          <div className="flex flex-wrap items-center gap-2">
-            <Tabs value={mode} onValueChange={(v) => setMode(v as JwtMode)}>
-              <TabsList className="grid grid-cols-2 bg-background">
-                <TabsTrigger value="decode">Decode</TabsTrigger>
-                <TabsTrigger value="generate">Generate</TabsTrigger>
-              </TabsList>
-            </Tabs>
-            {mode === 'decode' && decoded && (
-              <Badge variant="outline" className="font-normal">
-                {decoded.algorithm}
-              </Badge>
-            )}
-            {mode === 'decode' && vulnerabilities.length > 0 && (
-              <Badge variant="outline" className="font-normal text-amber-500 border-amber-500/30">
-                {vulnerabilities.length} finding{vulnerabilities.length !== 1 ? 's' : ''}
-              </Badge>
-            )}
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2">
-            {mode === 'decode' && (
-              <>
-                <Button
-                  variant="outline"
-                  onClick={() => handleCopy(tokenInput)}
-                  disabled={!tokenInput}
-                >
-                  <Copy className="h-3.5 w-3.5" />
-                  Copy Token
-                </Button>
-                <Button variant="ghost" onClick={handleClear} disabled={!tokenInput}>
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </>
-            )}
-            {mode === 'generate' && (
-              <>
-                <Button
-                  variant="outline"
-                  onClick={() => handleCopy(generatedToken)}
-                  disabled={!generatedToken}
-                >
-                  <Copy className="h-3.5 w-3.5" />
-                  Copy Token
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  onClick={handleClearGenerate}
-                  disabled={!genHeader && !genPayload && !generatedToken}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </>
-            )}
-          </div>
+      <div className="flex h-10 shrink-0 items-center justify-between border-b bg-muted/40 px-3 gap-2">
+        <div className="flex items-center gap-2">
+          <Tabs value={mode} onValueChange={(v) => setMode(v as JwtMode)}>
+            <TabsList className="h-7 bg-background p-0.5 border">
+              <TabsTrigger value="decode" className="h-6 text-xs px-2.5">Decode</TabsTrigger>
+              <TabsTrigger value="generate" className="h-6 text-xs px-2.5">Generate</TabsTrigger>
+            </TabsList>
+          </Tabs>
+          {mode === 'decode' && decoded && (
+            <Badge variant="outline" className="font-normal text-[10px] py-px h-5">
+              {decoded.algorithm}
+            </Badge>
+          )}
+          {mode === 'decode' && vulnerabilities.length > 0 && (
+            <Badge variant="outline" className="font-normal text-[10px] py-px h-5 text-amber-500 border-amber-500/20">
+              {vulnerabilities.length} finding{vulnerabilities.length !== 1 ? 's' : ''}
+            </Badge>
+          )}
         </div>
-      </header>
 
-      {/* Main */}
-      <main className="min-h-0 flex-1 border-t">
+        <div className="flex items-center gap-1.5">
+          {mode === 'decode' && (
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleCopy(tokenInput)}
+                disabled={!tokenInput}
+                className="h-7 text-xs gap-1 px-2"
+              >
+                <Copy className="h-3 w-3" />
+                Copy Token
+              </Button>
+              <Button variant="ghost" size="icon" onClick={handleClear} disabled={!tokenInput} className="h-7 w-7 text-muted-foreground hover:text-foreground">
+                <Trash2 className="h-3.5 w-3.5" />
+              </Button>
+            </>
+          )}
+          {mode === 'generate' && (
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleCopy(generatedToken)}
+                disabled={!generatedToken}
+                className="h-7 text-xs gap-1 px-2"
+              >
+                <Copy className="h-3 w-3" />
+                Copy Token
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleClearGenerate}
+                disabled={!genHeader && !genPayload && !generatedToken}
+                className="h-7 w-7 text-muted-foreground hover:text-foreground"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </Button>
+            </>
+          )}
+        </div>
+      </div>
+
+      <main className="min-h-0 flex-1 flex flex-col">
         {mode === 'decode' ? (
           <div className="flex h-full min-h-0 flex-col">
-            <section className="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+            <section className="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-2">
               {/* Left: Token Input */}
               <div className="flex min-h-0 flex-col border-b bg-background lg:border-b-0 lg:border-r">
-                <div className="flex items-center justify-between gap-3 border-b px-3 py-2">
-                  <div>
-                    <Label className="text-sm font-medium">JWT Token</Label>
-                    <div className="text-xs text-muted-foreground">
-                      Paste a JWT token to decode and analyze.
-                    </div>
+                <div className="flex h-8 shrink-0 items-center justify-between border-b bg-muted/10 px-3">
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-[11px] font-semibold uppercase text-muted-foreground tracking-wider">JWT Token</span>
+                    <span className="text-[10px] text-muted-foreground hidden sm:inline">Paste token to decode</span>
                   </div>
                 </div>
                 <Textarea
-                  className="min-h-0 flex-1 resize-none rounded-none border-0 font-mono text-sm shadow-none focus-visible:ring-0"
+                  className="min-h-0 flex-1 resize-none rounded-none border-0 font-mono text-xs shadow-none focus-visible:ring-0 bg-transparent p-3"
                   placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
                   value={tokenInput}
                   onChange={(e) => setTokenInput(e.target.value)}
@@ -472,16 +470,14 @@ export function JwtTool() {
 
               {/* Right: Decoded Output */}
               <div className="flex min-h-0 flex-col bg-background">
-                <div className="flex items-center justify-between gap-3 border-b px-3 py-2">
-                  <div>
-                    <Label className="text-sm font-medium">Decoded</Label>
-                    <div className="text-xs text-muted-foreground">
-                      Header, payload, and signature breakdown.
-                    </div>
+                <div className="flex h-8 shrink-0 items-center justify-between border-b bg-muted/10 px-3">
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-[11px] font-semibold uppercase text-muted-foreground tracking-wider">Decoded Breakdown</span>
+                    <span className="text-[10px] text-muted-foreground hidden sm:inline">Header, payload & signature</span>
                   </div>
                   <Button
                     variant="ghost"
-                    size="icon-sm"
+                    size="icon"
                     onClick={() =>
                       handleCopy(
                         decoded
@@ -490,35 +486,36 @@ export function JwtTool() {
                       )
                     }
                     disabled={!decoded}
+                    className="h-6 w-6 text-muted-foreground hover:text-foreground"
                   >
-                    <Copy className="h-4 w-4" />
+                    <Copy className="h-3 w-3" />
                   </Button>
                 </div>
                 {decodeError ? (
-                  <div className="min-h-0 flex-1 bg-destructive/10 p-4 text-sm text-destructive">
+                  <div className="min-h-0 flex-1 bg-destructive/5 p-4 text-xs font-mono text-destructive whitespace-pre-wrap overflow-auto">
                     {decodeError}
                   </div>
                 ) : decoded ? (
                   <ScrollArea className="min-h-0 flex-1">
-                    <div className="space-y-5 p-4">
+                    <div className="space-y-4 p-4">
                       <DecodedSection title="Header" data={decoded.header} />
                       <DecodedSection title="Payload" data={decoded.payload} />
                       <div>
-                        <Label className="text-xs font-semibold uppercase text-muted-foreground tracking-wide">
+                        <Label className="text-[10px] font-bold uppercase text-muted-foreground tracking-wider">
                           Signature
                         </Label>
-                        <div className="mt-1.5 space-y-1">
-                          <div className="flex items-baseline gap-2 text-sm">
+                        <div className="mt-1 space-y-0.5">
+                          <div className="flex items-baseline gap-2 text-xs">
                             <span className="font-mono text-muted-foreground shrink-0">
                               Algorithm:
                             </span>
                             <span className="font-mono">{decoded.algorithm}</span>
                           </div>
-                          <div className="flex items-baseline gap-2 text-sm">
+                          <div className="flex items-baseline gap-2 text-xs">
                             <span className="font-mono text-muted-foreground shrink-0">
                               Value:
                             </span>
-                            <span className="font-mono break-all text-xs">
+                            <span className="font-mono break-all text-[11px] opacity-85">
                               {decoded.signature}
                             </span>
                           </div>
@@ -527,7 +524,7 @@ export function JwtTool() {
                     </div>
                   </ScrollArea>
                 ) : (
-                  <div className="flex min-h-0 flex-1 items-center justify-center text-sm text-muted-foreground">
+                  <div className="flex min-h-0 flex-1 items-center justify-center text-xs text-muted-foreground">
                     Paste a JWT token to decode.
                   </div>
                 )}
@@ -536,15 +533,15 @@ export function JwtTool() {
 
             {/* Vulnerability Findings */}
             {vulnerabilities.length > 0 && (
-              <section className="border-t bg-background">
-                <div className="border-b px-3 py-2">
-                  <Label className="text-sm font-medium">Vulnerability Findings</Label>
-                  <div className="text-xs text-muted-foreground">
-                    {vulnerabilities.length} issue{vulnerabilities.length !== 1 ? 's' : ''} detected
+              <section className="border-t bg-background flex flex-col shrink-0">
+                <div className="flex h-8 shrink-0 items-center justify-between border-b bg-muted/15 px-3">
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-[11px] font-semibold uppercase text-muted-foreground tracking-wider">Vulnerability Findings</span>
+                    <span className="text-[10px] text-muted-foreground hidden sm:inline">{vulnerabilities.length} issue{vulnerabilities.length !== 1 ? 's' : ''} detected</span>
                   </div>
                 </div>
-                <ScrollArea className="max-h-[200px]">
-                  <div className="space-y-2 p-3">
+                <ScrollArea className="max-h-[140px] overflow-auto">
+                  <div className="space-y-1.5 p-3">
                     {vulnerabilities.map((v) => (
                       <VulnerabilityCard key={v.id} vuln={v} />
                     ))}
@@ -555,56 +552,56 @@ export function JwtTool() {
           </div>
         ) : (
           /* Generate Mode */
-          <section className="grid h-full min-h-0 grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+          <section className="grid h-full min-h-0 grid-cols-1 lg:grid-cols-2">
             {/* Left: Config */}
             <div className="flex min-h-0 flex-col border-b bg-background lg:border-b-0 lg:border-r">
-              <div className="border-b px-3 py-2">
-                <Label className="text-sm font-medium">Configuration</Label>
-                <div className="text-xs text-muted-foreground">
-                  Define header, payload, and secret to generate a signed JWT.
+              <div className="flex h-8 shrink-0 items-center justify-between border-b bg-muted/10 px-3">
+                <div className="flex items-baseline gap-2">
+                  <span className="text-[11px] font-semibold uppercase text-muted-foreground tracking-wider">Configuration</span>
+                  <span className="text-[10px] text-muted-foreground hidden sm:inline">Set keys & payload</span>
                 </div>
               </div>
               <ScrollArea className="min-h-0 flex-1">
                 <div className="space-y-4 p-4">
-                  <div>
-                    <Label className="text-xs font-medium">Header (JSON)</Label>
+                  <div className="space-y-1">
+                    <Label className="text-xs font-semibold text-muted-foreground">Header (JSON)</Label>
                     <Textarea
-                      className="mt-1.5 min-h-[100px] font-mono text-sm"
+                      className="min-h-[80px] font-mono text-xs p-2.5 bg-muted/5 focus-visible:ring-1"
                       value={genHeader}
                       onChange={(e) => setGenHeader(e.target.value)}
                     />
                   </div>
-                  <div>
-                    <Label className="text-xs font-medium">Payload (JSON)</Label>
+                  <div className="space-y-1">
+                    <Label className="text-xs font-semibold text-muted-foreground">Payload (JSON)</Label>
                     <Textarea
-                      className="mt-1.5 min-h-[140px] font-mono text-sm"
+                      className="min-h-[120px] font-mono text-xs p-2.5 bg-muted/5 focus-visible:ring-1"
                       value={genPayload}
                       onChange={(e) => setGenPayload(e.target.value)}
                     />
                   </div>
-                  <div className="flex items-end gap-3">
-                    <div className="flex-1">
-                      <Label className="text-xs font-medium">Secret Key</Label>
+                  <div className="flex items-end gap-3 pt-1">
+                    <div className="flex-1 space-y-1">
+                      <Label className="text-xs font-semibold text-muted-foreground">Secret Key</Label>
                       <Input
-                        className="mt-1.5 font-mono text-sm"
+                        className="h-8 font-mono text-xs bg-muted/5 focus-visible:ring-1"
                         type="password"
                         placeholder="Enter secret key..."
                         value={genSecret}
                         onChange={(e) => setGenSecret(e.target.value)}
                       />
                     </div>
-                    <div className="w-[120px]">
-                      <Label className="text-xs font-medium">Algorithm</Label>
+                    <div className="w-[110px] space-y-1">
+                      <Label className="text-xs font-semibold text-muted-foreground">Algorithm</Label>
                       <Select
                         value={genAlgorithm}
                         onValueChange={(v) => setGenAlgorithm(v as JwtAlgorithm)}
                       >
-                        <SelectTrigger className="mt-1.5">
+                        <SelectTrigger className="h-8 text-xs bg-background">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
                           {ALGORITHM_OPTIONS.map((opt) => (
-                            <SelectItem key={opt.value} value={opt.value}>
+                            <SelectItem key={opt.value} value={opt.value} className="text-xs">
                               {opt.label}
                             </SelectItem>
                           ))}
@@ -613,15 +610,15 @@ export function JwtTool() {
                     </div>
                   </div>
                   <Button
-                    className="w-full"
+                    className="w-full h-8 text-xs gap-1.5 mt-2"
                     onClick={handleGenerate}
                     disabled={generating || !genSecret}
                   >
-                    <Key className="mr-2 h-4 w-4" />
+                    <Key className="h-3.5 w-3.5" />
                     {generating ? 'Generating...' : 'Generate JWT'}
                   </Button>
                   {genError && (
-                    <div className="rounded-md bg-destructive/10 p-2.5 text-sm text-destructive">
+                    <div className="rounded-md bg-destructive/5 p-2.5 text-xs text-destructive font-mono">
                       {genError}
                     </div>
                   )}
@@ -631,24 +628,23 @@ export function JwtTool() {
 
             {/* Right: Output */}
             <div className="flex min-h-0 flex-col bg-background">
-              <div className="flex items-center justify-between gap-3 border-b px-3 py-2">
-                <div>
-                  <Label className="text-sm font-medium">Generated Token</Label>
-                  <div className="text-xs text-muted-foreground">
-                    Signed JWT output. Copy to use in testing.
-                  </div>
+              <div className="flex h-8 shrink-0 items-center justify-between border-b bg-muted/10 px-3">
+                <div className="flex items-baseline gap-2">
+                  <span className="text-[11px] font-semibold uppercase text-muted-foreground tracking-wider">Generated Token</span>
+                  <span className="text-[10px] text-muted-foreground hidden sm:inline">Signed output</span>
                 </div>
                 <Button
                   variant="ghost"
-                  size="icon-sm"
+                  size="icon"
                   onClick={() => handleCopy(generatedToken)}
                   disabled={!generatedToken}
+                  className="h-6 w-6 text-muted-foreground hover:text-foreground"
                 >
-                  <Copy className="h-4 w-4" />
+                  <Copy className="h-3 w-3" />
                 </Button>
               </div>
               <Textarea
-                className="min-h-0 flex-1 resize-none rounded-none border-0 font-mono text-sm shadow-none focus-visible:ring-0"
+                className="min-h-0 flex-1 resize-none rounded-none border-0 font-mono text-xs shadow-none focus-visible:ring-0 bg-transparent p-3"
                 placeholder="Generated JWT token will appear here..."
                 value={generatedToken}
                 readOnly

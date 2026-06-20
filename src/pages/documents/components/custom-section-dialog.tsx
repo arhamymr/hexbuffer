@@ -12,6 +12,8 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 
+import { useCustomSectionDialog } from './hooks/use-custom-section-dialog';
+
 interface CustomSectionDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -31,34 +33,16 @@ export function CustomSectionDialog({
   initialValues = null,
   mode = 'add',
 }: CustomSectionDialogProps) {
-  const [title, setTitle] = React.useState('');
-  const [description, setDescription] = React.useState('');
-  const [placeholder, setPlaceholder] = React.useState('');
-
-  React.useEffect(() => {
-    if (!open) return;
-    setTitle(initialValues?.title ?? '');
-    setDescription(initialValues?.description ?? '');
-    setPlaceholder(initialValues?.placeholder ?? '');
-  }, [initialValues, open]);
-
-  const handleAdd = () => {
-    if (!title.trim()) return;
-    onAdd(title.trim(), description.trim(), placeholder.trim());
-    setTitle('');
-    setDescription('');
-    setPlaceholder('');
-    onOpenChange(false);
-  };
-
-  const handleOpenChange = (open: boolean) => {
-    if (!open) {
-      setTitle('');
-      setDescription('');
-      setPlaceholder('');
-    }
-    onOpenChange(open);
-  };
+  const {
+    title,
+    setTitle,
+    description,
+    setDescription,
+    placeholder,
+    setPlaceholder,
+    handleAdd,
+    handleOpenChange,
+  } = useCustomSectionDialog({ open, onOpenChange, onAdd, initialValues });
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>

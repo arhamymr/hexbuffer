@@ -1,7 +1,6 @@
 {
   "name": "hexbuffer-ai-engine-sidecar",
   "private": true,
-  "type": "module",
   "main": "./index.mjs",
   "bin": "./index.mjs",
   "dependencies": {

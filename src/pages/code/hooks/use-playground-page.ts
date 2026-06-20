@@ -4,6 +4,12 @@ import { usePlaygroundStore } from '@/stores/playground';
 import { useShallow } from 'zustand/react/shallow';
 import * as api from '../api';
 import {
+  buildPlayground,
+  runPlayground,
+  refreshPlaygroundTree,
+  closePlaygroundFolder,
+} from '@/triggers';
+import {
   getLanguageFromPath,
   isImageFile,
   detectWorkspaceLanguage,
@@ -86,6 +92,36 @@ export function usePlaygroundPage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Clear file contents cache when workspace is closed
+  useEffect(() => {
+    if (!workspace) {
+      fileContentsRef.current.clear();
+    }
+  }, [workspace]);
+
+  // Auto-load uncached file when activeEditorPath changes (e.g. navigation from other pages)
+  useEffect(() => {
+    if (activeEditorPath && workspace && !fileContentsRef.current.has(activeEditorPath)) {
+      const loadUncachedFile = async () => {
+        try {
+          if (isImageFile(activeEditorPath)) {
+            const absolutePath = `${workspace.path}/${activeEditorPath}`;
+            const assetUrl = convertFileSrc(absolutePath);
+            fileContentsRef.current.set(activeEditorPath, assetUrl);
+          } else {
+            const result = await api.readProjectFile(activeEditorPath, workspace.path);
+            fileContentsRef.current.set(activeEditorPath, result.content);
+          }
+          // Force a shallow re-render by updating the tabs references
+          setOpenEditorTabs([...openEditorTabs]);
+        } catch (err) {
+          console.error('Failed to auto-load file:', err);
+        }
+      };
+      void loadUncachedFile();
+    }
+  }, [activeEditorPath, workspace, openEditorTabs, setOpenEditorTabs]);
 
   // ── Helpers ──
 
@@ -191,14 +227,8 @@ export function usePlaygroundPage() {
   );
 
   const handleCloseFolder = useCallback(() => {
-    setWorkspace(null);
-    setFileTree([]);
-    setOpenEditorTabs([]);
-    setActiveEditorPath(null);
-    setBuildOutput(null);
-    clearBuildHistory();
-    fileContentsRef.current.clear();
-  }, [setWorkspace, setFileTree, setOpenEditorTabs, setActiveEditorPath, setBuildOutput, clearBuildHistory]);
+    closePlaygroundFolder();
+  }, []);
 
   // ── Create Project (secondary flow) ──
 
@@ -394,90 +424,18 @@ export function usePlaygroundPage() {
   // ── Build & Run ──
 
   const handleBuild = useCallback(async () => {
-    if (!workspace || workspace.language === 'unknown') return;
-    if (isBuilding) return;
-
-    setIsBuilding(true);
-    setBuildOutput(null);
-
-    const command =
-      workspace.language === 'rust'
-        ? 'cargo'
-        : workspace.language === 'cpp'
-          ? 'clang++'
-          : 'gcc';
-    const args =
-      workspace.language === 'rust'
-        ? ['build']
-        : workspace.language === 'cpp'
-          ? ['main.cpp', '-o', 'main']
-          : ['main.c', '-o', 'main'];
-
-    try {
-      const output = await api.runBuildCommand(workspace.path, command, args);
-      setBuildOutput(output);
-      addBuildHistory({
-        timestamp: Date.now(),
-        command: `${command} ${args.join(' ')}`,
-        output,
-      });
-    } catch (err) {
-      const msg = typeof err === 'string' ? err : err instanceof Error ? err.message : 'Build failed';
-      setBuildOutput({
-        stdout: '',
-        stderr: msg,
-        exitCode: -1,
-        success: false,
-      });
-    } finally {
-      setIsBuilding(false);
-    }
-  }, [workspace, isBuilding, setIsBuilding, setBuildOutput, addBuildHistory]);
+    await buildPlayground();
+  }, []);
 
   const handleRun = useCallback(async () => {
-    if (!workspace || workspace.language === 'unknown') return;
-    if (isBuilding) return;
-
-    setIsBuilding(true);
-    setBuildOutput(null);
-
-    const command = workspace.language === 'rust' ? 'cargo' : './main';
-    const args = workspace.language === 'rust' ? ['run'] : [];
-
-    try {
-      const output = await api.runBuildCommand(workspace.path, command, args);
-      setBuildOutput(output);
-      addBuildHistory({
-        timestamp: Date.now(),
-        command: `${command} ${args.join(' ')}`,
-        output,
-      });
-    } catch (err) {
-      const msg = typeof err === 'string' ? err : err instanceof Error ? err.message : 'Run failed';
-      setBuildOutput({
-        stdout: '',
-        stderr: msg,
-        exitCode: -1,
-        success: false,
-      });
-    } finally {
-      setIsBuilding(false);
-    }
-  }, [workspace, isBuilding, setIsBuilding, setBuildOutput, addBuildHistory]);
+    await runPlayground();
+  }, []);
 
   // ── File tree operations ──
 
   const handleRefreshTree = useCallback(async () => {
-    if (!workspace) return;
-    try {
-      const tree = await api.listProjectFiles(workspace.path);
-      setFileTree(tree);
-    } catch (err) {
-      toast.error(
-        typeof err === 'string' ? err : err instanceof Error ? err.message : 'Failed to refresh file tree',
-      );
-    }
-  }, [workspace, setFileTree]);
+    await refreshPlaygroundTree();
+  }, []);
 
   const handleNewFile = useCallback(
     async (parentPath: string, fileName: string) => {

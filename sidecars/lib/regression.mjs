@@ -3,7 +3,6 @@ import { randomUUID } from 'node:crypto';
 import { emit, log } from './events.mjs';
 import { testCaseSchema } from './regression/types.mjs';
 import { runRegressionSteps } from './regression/executor.mjs';
-import { verifyWithAI } from './regression/ai-verifier.mjs';
 
 /**
  * Regression test runner — entry point for the `regression` sidecar mode.
@@ -59,39 +58,8 @@ export async function runRegression() {
 
   log(sessionId, 'info', 'regression', `Starting regression test "${testCase.name}"`, testCase.targetUrl);
 
-  // Run Playwright steps
-  const stepResults = await runRegressionSteps(testCase, runId, artifactDir);
-
-  // Run AI verification for any ai-verify steps
-  let aiVerdict = null;
-  const aiVerifySteps = testCase.steps
-    .map((s, i) => ({ step: s, index: i }))
-    .filter(({ step }) => step.kind === 'ai-verify' && step.prompt);
-
-  if (aiVerifySteps.length > 0) {
-    // We need a browser page for AI verification. Re-open a quick browser.
-    const { chromium } = await import('playwright');
-    let browser;
-    try {
-      browser = await chromium.launch({ headless: true });
-      const context = await browser.newContext({
-        viewport: { width: 1280, height: 720 },
-        ignoreHTTPSErrors: true,
-      });
-      const page = await context.newPage();
-
-      // Navigate to the target URL to capture the final state
-      await page.goto(testCase.targetUrl, { waitUntil: 'networkidle', timeout: 30000 }).catch(() => {});
-
-      // Run the last ai-verify step's prompt as the verification
-      const lastAiStep = aiVerifySteps[aiVerifySteps.length - 1];
-      aiVerdict = await verifyWithAI(page, lastAiStep.step.prompt, runId, sessionId);
-      await browser.close();
-    } catch (error) {
-      log(sessionId, 'warning', 'regression', `AI verification browser setup failed: ${error.message}`, testCase.targetUrl);
-      if (browser) await browser.close().catch(() => {});
-    }
-  }
+  // Run Playwright steps and inline AI verification
+  const { results: stepResults, aiVerdict } = await runRegressionSteps(testCase, runId, artifactDir, sessionId);
 
   const passedSteps = stepResults.filter((r) => r.status === 'passed').length;
   const failedSteps = stepResults.filter((r) => r.status === 'failed').length;
@@ -104,6 +72,7 @@ export async function runRegression() {
     passedSteps,
     failedSteps,
     totalSteps: stepResults.length,
+    stepResults,
     aiVerdict,
     finishedAt: new Date().toISOString(),
   });

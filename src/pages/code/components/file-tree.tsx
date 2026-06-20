@@ -1,10 +1,10 @@
-import { useState, useCallback } from 'react';
 import {
   ChevronRight,
   FileCode,
   Folder,
   FolderOpen,
   FolderPlus,
+  ImageIcon,
   Plus,
   RefreshCw,
   Trash2,
@@ -20,6 +20,9 @@ import {
 } from '@/components/ui/context-menu';
 import { Input } from '@/components/ui/input';
 import type { FileTreeNode } from '../types';
+import { isImageFile } from '../types';
+import { useFileTreeItem } from './hooks/use-file-tree-item';
+import type { CreateMode } from './hooks/use-file-tree-item';
 
 function sortTreeChildren(nodes: FileTreeNode[]): FileTreeNode[] {
   return [...nodes].sort((a, b) => {
@@ -95,8 +98,6 @@ export function FileTree({
   );
 }
 
-type CreateMode = 'file' | 'folder' | null;
-
 function FileTreeHeader({
   onNewFile,
   onNewFolder,
@@ -164,32 +165,26 @@ function FileTreeItem({
   onDeleteFile,
   onRenameFile,
 }: FileTreeItemProps) {
-  const [isOpen, setIsOpen] = useState(depth < 1);
-  const [isRenaming, setIsRenaming] = useState(false);
-  const [createMode, setCreateMode] = useState<CreateMode>(null);
-  const [renameValue, setRenameValue] = useState(node.name);
-  const [createValue, setCreateValue] = useState('');
-
-  const handleRenameSubmit = useCallback(async () => {
-    const trimmed = renameValue.trim();
-    if (trimmed && trimmed !== node.name) {
-      await onRenameFile(node.path, trimmed);
-    }
-    setIsRenaming(false);
-  }, [renameValue, node.name, node.path, onRenameFile]);
-
-  const handleCreateSubmit = useCallback(async () => {
-    const trimmed = createValue.trim();
-    if (trimmed) {
-      if (createMode === 'file') {
-        await onNewFile(node.path, trimmed);
-      } else if (createMode === 'folder') {
-        await onNewFolder(node.path, trimmed);
-      }
-    }
-    setCreateMode(null);
-    setCreateValue('');
-  }, [createValue, createMode, node.path, onNewFile, onNewFolder]);
+  const {
+    isOpen,
+    setIsOpen,
+    isRenaming,
+    setIsRenaming,
+    createMode,
+    setCreateMode,
+    renameValue,
+    setRenameValue,
+    createValue,
+    setCreateValue,
+    handleRenameSubmit,
+    handleCreateSubmit,
+  } = useFileTreeItem({
+    node,
+    depth,
+    onNewFile,
+    onNewFolder,
+    onRenameFile,
+  });
 
   const isActive = activePath === node.path;
 
@@ -328,7 +323,11 @@ function FileTreeItem({
               style={{ paddingLeft: `${depth * 14 + 8}px` }}
               onClick={() => onFileClick(node.path)}
             >
-              <FileCode className="h-3.5 w-3.5 shrink-0 text-blue-400" />
+              {isImageFile(node.name) ? (
+                <ImageIcon className="h-3.5 w-3.5 shrink-0 text-emerald-400" />
+              ) : (
+                <FileCode className="h-3.5 w-3.5 shrink-0 text-blue-400" />
+              )}
               <span className="truncate">{node.name}</span>
             </button>
           )}

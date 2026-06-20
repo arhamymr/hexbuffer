@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 import { useHistoryQueryStore } from '@/pages/live-traffic/state/history-query-store';
 import { useBrowserAutomationStore } from '@/stores/browser-automation';
 import { useInvokerStore } from '@/stores/invoker';
+import { setBrowserSearch } from '@/triggers';
 
 // ---------------------------------------------------------------------------
 // GlobalSearch Component
@@ -33,9 +34,8 @@ export function GlobalSearch() {
   const liveSearch = useHistoryQueryStore((s) => s.filter.search);
   const liveSetSearch = useHistoryQueryStore((s) => s.setSearch);
 
-  // Browser Automation: read/write the active tab's search
+  // Browser Automation: read via store, write via trigger
   const browserSearch = useBrowserAutomationStore((s) => s.getActiveTab()?.search ?? '');
-  const browserSetSearch = useBrowserAutomationStore((s) => s.setSearch);
 
   // Invoker: read/write the active tab's filterSearch
   const invokerSearch = useInvokerStore((s) => s.tabs.find((t) => t.id === s.activeTabId)?.filterSearch ?? '');
@@ -65,7 +65,7 @@ export function GlobalSearch() {
     if (isLiveTraffic) {
       liveSetSearch(next);
     } else if (isBrowserAutomation) {
-      browserSetSearch(next);
+      setBrowserSearch(next);
     } else if (isInvoker) {
       invokerSetSearch(next);
     } else {

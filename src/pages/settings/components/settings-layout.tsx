@@ -6,6 +6,7 @@ import { AutomationSettingsTab } from './automation-settings-tab';
 import { CaCertificateSettingsTab } from './ca-certificate-settings-tab';
 import { GeneralSettingsTab } from './general-settings-tab';
 import { ThreatsSettingsTab } from './threats-settings-tab';
+import { getCurrentWebview } from '@tauri-apps/api/webview';
 
 interface SettingsLayoutProps {
   settings: SettingsPageState;
@@ -34,9 +35,9 @@ export function SettingsLayout({ settings }: SettingsLayoutProps) {
             <TabsTrigger value="automation">
               Automation
             </TabsTrigger>
-            <TabsTrigger value="threats">
+            {/* <TabsTrigger value="threats">
               Threats
-            </TabsTrigger>
+            </TabsTrigger> */}
             <TabsTrigger value="about">
               About
             </TabsTrigger>

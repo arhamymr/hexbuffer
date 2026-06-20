@@ -2481,6 +2481,7 @@ dependencies = [
  "tauri-plugin-pty",
  "tauri-plugin-shell",
  "tauri-plugin-updater",
+ "tempfile",
  "tokio",
  "tokio-test",
  "tokio-tungstenite",

@@ -1,0 +1,610 @@
+[
+  {
+    "id": "CWE-89",
+    "title": "SQL Injection",
+    "category": "injection",
+    "description": "Improper neutralization of special elements used in an SQL command. Attackers can manipulate SQL queries to access, modify, or delete database contents.",
+    "remediation": "Use parameterized queries (prepared statements) for all database access. Never concatenate user input into SQL strings. Use an ORM with safe query builders.",
+    "owasp_code": "A03:2021"
+  },
+  {
+    "id": "CWE-79",
+    "title": "Cross-Site Scripting (XSS)",
+    "category": "injection",
+    "description": "Improper neutralization of input during web page generation. Attackers can inject client-side scripts into web pages viewed by other users.",
+    "remediation": "Contextually encode all user-controlled output (HTML entity encoding for HTML context, JavaScript encoding for JS context, URL encoding for URL context). Use Content-Security-Policy headers.",
+    "owasp_code": "A03:2021"
+  },
+  {
+    "id": "CWE-798",
+    "title": "Use of Hardcoded Credentials",
+    "category": "hardcoded_secret",
+    "description": "The software contains hardcoded credentials such as passwords, API keys, or cryptographic keys. These can be extracted from source code, binaries, or configuration files.",
+    "remediation": "Store credentials in environment variables, a secrets manager (HashiCorp Vault, AWS Secrets Manager), or a secure key store. Never commit secrets to version control. Use .gitignore to exclude .env files.",
+    "owasp_code": "A07:2021"
+  },
+  {
+    "id": "CWE-259",
+    "title": "Use of Hardcoded Password",
+    "category": "hardcoded_secret",
+    "description": "The software contains a hardcoded password used for authentication, which may be recovered by an attacker from source code, binaries, or memory dumps.",
+    "remediation": "Store passwords outside of code in configuration files with restricted permissions, environment variables, or a secure credential store. Hash passwords when storing them, never store plaintext.",
+    "owasp_code": "A07:2021"
+  },
+  {
+    "id": "CWE-312",
+    "title": "Cleartext Storage of Sensitive Information",
+    "category": "hardcoded_secret",
+    "description": "The application stores sensitive information (credentials, tokens, personal data) in cleartext, making it accessible to anyone who can access the storage.",
+    "remediation": "Encrypt sensitive data at rest using strong encryption (AES-256-GCM). Use platform keychains (macOS Keychain, Windows DPAPI) for credentials. Hash passwords with bcrypt/argon2.",
+    "owasp_code": "A04:2021"
+  },
+  {
+    "id": "CWE-200",
+    "title": "Exposure of Sensitive Information",
+    "category": "hardcoded_secret",
+    "description": "The product exposes sensitive information to unauthorized actors. This includes API keys, tokens, internal URLs, debug information, or stack traces in error messages.",
+    "remediation": "Minimize the information in error messages sent to clients. Use generic error pages. Log detailed errors server-side only. Strip sensitive headers from responses.",
+    "owasp_code": "A04:2021"
+  },
+  {
+    "id": "CWE-311",
+    "title": "Missing Encryption of Sensitive Data",
+    "category": "cryptographic_failure",
+    "description": "The product does not encrypt sensitive data before storage or transmission. Attackers can intercept network traffic or access stored data to obtain sensitive information.",
+    "remediation": "Encrypt all sensitive data in transit using TLS 1.3. Encrypt sensitive data at rest. Use HTTPS exclusively. Implement HSTS headers.",
+    "owasp_code": "A04:2021"
+  },
+  {
+    "id": "CWE-327",
+    "title": "Use of Weak Cryptography",
+    "category": "cryptographic_failure",
+    "description": "The use of broken or weak cryptographic algorithms (MD5, SHA1, RC4, DES, 3DES) that can be practically attacked by adversaries.",
+    "remediation": "Use modern cryptographic algorithms: AES-256-GCM for encryption, SHA-256/384/512 for hashing, bcrypt/argon2 for passwords, RSA-2048+ or ECDSA for signatures. Avoid MD5, SHA1, RC4, DES.",
+    "owasp_code": "A04:2021"
+  },
+  {
+    "id": "CWE-22",
+    "title": "Path Traversal",
+    "category": "injection",
+    "description": "Improper limitation of a pathname to a restricted directory. Attackers can use '../' sequences to access files outside the intended directory.",
+    "remediation": "Validate and sanitize all file path inputs. Use a whitelist of allowed paths. Resolve canonical paths and verify they're within the allowed directory. Avoid passing user input to file system APIs.",
+    "owasp_code": "A01:2021"
+  },
+  {
+    "id": "CWE-918",
+    "title": "Server-Side Request Forgery (SSRF)",
+    "category": "injection",
+    "description": "The server fetches a URL controlled by the attacker. Attackers can make requests to internal services, cloud metadata endpoints, or other restricted resources.",
+    "remediation": "Whitelist allowed URLs/domains. Block requests to internal IP ranges (10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16, 127.0.0.0/8). Disable HTTP redirects. Validate URL schemes (only http/https).",
+    "owasp_code": "A10:2021"
+  },
+  {
+    "id": "CWE-78",
+    "title": "OS Command Injection",
+    "category": "injection",
+    "description": "Improper neutralization of special elements used in an OS command. Attackers can execute arbitrary commands on the host operating system.",
+    "remediation": "Avoid using shell command execution with user input. Use library APIs instead of shell commands. If unavoidable, use parameterized command execution (e.g., execFile instead of exec in Node.js).",
+    "owasp_code": "A03:2021"
+  },
+  {
+    "id": "CWE-502",
+    "title": "Deserialization of Untrusted Data",
+    "category": "injection",
+    "description": "The application deserializes untrusted data without sufficient verification, potentially allowing arbitrary code execution or object injection.",
+    "remediation": "Avoid deserializing untrusted data. Use safe serialization formats (JSON). If deserialization is required, validate the data structure before deserialization, and use allowlist-based type checking.",
+    "owasp_code": "A08:2021"
+  },
+  {
+    "id": "CWE-287",
+    "title": "Improper Authentication",
+    "category": "authentication",
+    "description": "When an actor claims a given identity, the software does not prove or insufficiently proves that the claim is correct. Attackers can bypass authentication.",
+    "remediation": "Implement multi-factor authentication. Use strong password policies. Implement proper session management. Use secure, industry-standard authentication protocols (OAuth 2.0, OIDC).",
+    "owasp_code": "A07:2021"
+  },
+  {
+    "id": "CWE-862",
+    "title": "Missing Authorization",
+    "category": "access_control",
+    "description": "The software does not perform an authorization check when an actor attempts to access a resource or perform an action. Attackers can access resources without proper permissions.",
+    "remediation": "Enforce authorization checks on every request. Use a centralized authorization layer. Default-deny access. Implement role-based access control (RBAC). Test authorization for every endpoint.",
+    "owasp_code": "A01:2021"
+  },
+  {
+    "id": "CWE-522",
+    "title": "Insufficiently Protected Credentials",
+    "category": "authentication",
+    "description": "The product transmits or stores authentication credentials in a way that allows interception or retrieval by unauthorized actors.",
+    "remediation": "Always transmit credentials over HTTPS. Use secure, HTTP-only, SameSite cookies for session tokens. Implement short token expiration with refresh mechanisms. Store password hashes, never plaintext.",
+    "owasp_code": "A07:2021"
+  },
+  {
+    "id": "CWE-319",
+    "title": "Cleartext Transmission of Sensitive Information",
+    "category": "cryptographic_failure",
+    "description": "Sensitive information is transmitted in cleartext over the network. Attackers on the same network can intercept and read this data.",
+    "remediation": "Use HTTPS/TLS for all communications. Enforce HSTS. Use certificate pinning for mobile apps. Encrypt sensitive payloads even over HTTPS for defense-in-depth.",
+    "owasp_code": "A04:2021"
+  },
+  {
+    "id": "CWE-434",
+    "title": "Unrestricted Upload of Dangerous File",
+    "category": "upload",
+    "description": "The software allows uploading files without proper validation of file type, content, or size. Attackers can upload malicious scripts or executables.",
+    "remediation": "Validate file types by content (magic bytes), not just extension. Store uploaded files outside the web root. Serve uploads with safe Content-Type headers. Scan uploads for malware. Limit file size.",
+    "owasp_code": "A03:2021"
+  },
+  {
+    "id": "CWE-295",
+    "title": "Improper Certificate Validation",
+    "category": "cryptographic_failure",
+    "description": "The software does not validate or incorrectly validates SSL/TLS certificates, enabling man-in-the-middle attacks.",
+    "remediation": "Always validate TLS certificates. Use the system trust store. Never disable certificate validation in production. Implement certificate pinning for high-security applications.",
+    "owasp_code": "A04:2021"
+  },
+  {
+    "id": "CWE-601",
+    "title": "Open Redirect",
+    "category": "access_control",
+    "description": "The web application accepts untrusted input to build a redirect URL, which can be exploited to redirect users to malicious sites.",
+    "remediation": "Avoid user-controlled redirect destinations. If redirects are needed, use a whitelist of allowed URLs or use relative paths. Validate the redirect target against a known list.",
+    "owasp_code": "A01:2021"
+  },
+  {
+    "id": "CWE-352",
+    "title": "Cross-Site Request Forgery (CSRF)",
+    "category": "access_control",
+    "description": "The web application does not verify that a request was intentionally sent by the user. Attackers can trick users into performing unwanted actions on authenticated sites.",
+    "remediation": "Use anti-CSRF tokens for state-changing requests. Implement SameSite=Strict/Lax cookies. Verify Origin/Referer headers. Use the double-submit cookie pattern for SPAs.",
+    "owasp_code": "A01:2021"
+  },
+  {
+    "id": "CWE-521",
+    "title": "Weak Password Requirements",
+    "category": "authentication",
+    "description": "The product does not require that users use strong passwords, making credential-based attacks more likely to succeed.",
+    "remediation": "Enforce minimum password length (12+ characters). Require mixed character types. Check against known compromised password lists (Have I Been Pwned API). Implement rate limiting on login attempts.",
+    "owasp_code": "A07:2021"
+  },
+  {
+    "id": "CWE-613",
+    "title": "Insufficient Session Expiration",
+    "category": "authentication",
+    "description": "Session tokens remain valid for too long after the user logs out or becomes inactive, allowing session hijacking or reuse.",
+    "remediation": "Set short absolute session timeouts (15-30 minutes idle, 4-8 hours absolute). Invalidate sessions server-side on logout. Use refresh tokens with rotation. Implement token revocation lists.",
+    "owasp_code": "A07:2021"
+  },
+  {
+    "id": "CWE-611",
+    "title": "XML External Entity (XXE) Injection",
+    "category": "injection",
+    "description": "The software processes XML documents containing external entity references, allowing attackers to read local files, perform SSRF, or cause DoS.",
+    "remediation": "Disable external entity processing in XML parsers. Use JSON instead of XML where possible. If XML is required, configure the parser to disable DTDs and external entities.",
+    "owasp_code": "A03:2021"
+  },
+  {
+    "id": "NPM-AUDIT-1",
+    "title": "Known Vulnerable npm Package",
+    "category": "vulnerable_dependency",
+    "description": "A dependency in package.json has known security vulnerabilities. Regularly audit dependencies with `npm audit` and update to patched versions.",
+    "remediation": "Run `npm audit` regularly. Use `npm audit fix` to auto-update compatible patches. Pin dependencies with exact versions. Use Dependabot or Renovate for automated updates.",
+    "owasp_code": "A06:2021"
+  },
+  {
+    "id": "PIP-AUDIT-1",
+    "title": "Known Vulnerable Python Package",
+    "category": "vulnerable_dependency",
+    "description": "A Python dependency has known security vulnerabilities. Use `pip-audit` or `safety` to scan for known vulnerable packages.",
+    "remediation": "Run `pip-audit` or `safety check` regularly. Pin dependencies with exact versions in requirements.txt. Use a virtual environment with locked dependencies.",
+    "owasp_code": "A06:2021"
+  },
+  {
+    "id": "CARGO-AUDIT-1",
+    "title": "Known Vulnerable Rust Crate",
+    "category": "vulnerable_dependency",
+    "description": "A Rust crate dependency has known security vulnerabilities reported in the RustSec Advisory Database.",
+    "remediation": "Run `cargo audit` regularly. Use `cargo update` to update to patched versions. Review the RustSec advisory for the specific vulnerability and its impact on your usage.",
+    "owasp_code": "A06:2021"
+  },
+  {
+    "id": "CWE-1333",
+    "title": "Inefficient Regular Expression (ReDoS)",
+    "category": "performance",
+    "description": "The product uses a regular expression with worst-case exponential time complexity, which can be exploited for denial-of-service attacks.",
+    "remediation": "Avoid nested quantifiers in regex. Use atomic groups or possessive quantifiers. Set regex timeouts. Use alternative parsing methods (e.g., proper URL parsers instead of URL regex).",
+    "owasp_code": "A04:2021"
+  },
+  {
+    "id": "CWE-400",
+    "title": "Uncontrolled Resource Consumption (DoS)",
+    "category": "performance",
+    "description": "The software does not properly control the allocation and maintenance of limited resources, enabling denial-of-service attacks.",
+    "remediation": "Implement request size limits. Set timeouts for all external calls. Use rate limiting. Implement pagination for list endpoints. Set maximum file upload sizes. Use connection pooling with limits.",
+    "owasp_code": "A04:2021"
+  },
+  {
+    "id": "CWE-770",
+    "title": "Allocation of Resources Without Limits",
+    "category": "performance",
+    "description": "The software allocates resources without enforcing limits, which can lead to resource exhaustion and denial of service.",
+    "remediation": "Set maximum sizes for all user-controlled allocations. Implement circuit breakers. Use streaming for large data. Set memory limits for workers/processes.",
+    "owasp_code": "A04:2021"
+  },
+  {
+    "id": "CWE-209",
+    "title": "Generation of Error Message Containing Sensitive Information",
+    "category": "information_disclosure",
+    "description": "The software generates error messages that include sensitive information about its environment, users, or associated data.",
+    "remediation": "Return generic error messages to clients. Log detailed errors server-side for debugging. Strip stack traces, file paths, and SQL queries from client-visible error messages.",
+    "owasp_code": "A04:2021"
+  },
+  {
+    "id": "GEN-SECRET-1",
+    "title": "Hardcoded Secret Best Practices",
+    "category": "hardcoded_secret",
+    "description": "Hardcoded secrets in source code are a common security anti-pattern. Secrets committed to version control remain accessible forever in git history.",
+    "remediation": "1. Remove the secret from the file. 2. Rotate/revoke the exposed credential immediately. 3. Use git-filter-repo or BFG to scrub from git history. 4. Store secrets in environment variables or a secrets manager. 5. Use pre-commit hooks (e.g., git-secrets, truffleHog) to prevent future leaks.",
+    "owasp_code": "A07:2021"
+  },
+  {
+    "id": "GEN-DEPS-1",
+    "title": "Dependency Management Best Practices",
+    "category": "vulnerable_dependency",
+    "description": "Outdated or vulnerable dependencies are a leading cause of security breaches in modern applications. Supply chain attacks exploit known vulnerabilities in dependencies.",
+    "remediation": "1. Keep dependencies updated. 2. Use lock files for reproducible builds. 3. Enable automated dependency updates (Dependabot/Renovate). 4. Audit dependencies regularly (`npm audit`, `cargo audit`, `pip-audit`). 5. Minimize the number of transitive dependencies. 6. Review new dependencies before adding them.",
+    "owasp_code": "A06:2021"
+  },
+  {
+    "id": "CWE-94",
+    "title": "Code Injection",
+    "category": "code_execution",
+    "description": "Improper control of generation of code (code injection). Attackers can inject and execute arbitrary code in the application context.",
+    "remediation": "Never evaluate user input as code. Use sandboxed execution environments if dynamic code execution is required. Validate and sanitize all inputs before processing.",
+    "owasp_code": "A03:2021"
+  },
+  {
+    "id": "CWE-20",
+    "title": "Improper Input Validation",
+    "category": "input_validation",
+    "description": "The product does not validate or incorrectly validates input that can affect the control flow or data flow of the program.",
+    "remediation": "Validate input at the boundary: type, length, format, range. Use allowlists over blocklists. Validate on both client and server. Use schema validation libraries (Zod, Joi, Pydantic).",
+    "owasp_code": "A03:2021"
+  },
+  {
+    "id": "CWE-77",
+    "title": "Command Injection",
+    "category": "command_injection",
+    "description": "Improper neutralization of special elements used in a command. Attackers can execute arbitrary commands on the host system.",
+    "remediation": "Avoid shell execution with user input. Use library/API calls instead of spawning processes. If unavoidable, use parameterized command execution and never pass raw user input to shell interpreters.",
+    "owasp_code": "A03:2021"
+  },
+  {
+    "id": "CWE-90",
+    "title": "LDAP Injection",
+    "category": "injection",
+    "description": "Improper neutralization of special elements used in LDAP queries. Attackers can modify LDAP queries to bypass authentication or access unauthorized data.",
+    "remediation": "Escape special LDAP characters (*, (, ), \\, NUL). Use parameterized LDAP queries where supported. Validate and sanitize all user input used in LDAP filters.",
+    "owasp_code": "A03:2021"
+  },
+  {
+    "id": "CWE-643",
+    "title": "XPath Injection",
+    "category": "injection",
+    "description": "Improper neutralization of data within XPath expressions. Attackers can manipulate XPath queries to access unauthorized XML data.",
+    "remediation": "Use parameterized XPath queries. Validate and sanitize user input. Pre-compile XPath expressions and use variable binding instead of string concatenation.",
+    "owasp_code": "A03:2021"
+  },
+  {
+    "id": "CWE-73",
+    "title": "External Control of File Name or Path",
+    "category": "path_traversal",
+    "description": "The software allows user input to control or influence file paths used in filesystem operations, enabling path traversal or arbitrary file access.",
+    "remediation": "Use path canonicalization and verify the result is within the allowed directory. Use a whitelist of allowed filenames. Avoid using user input directly in filesystem paths.",
+    "owasp_code": "A01:2021"
+  },
+  {
+    "id": "CWE-306",
+    "title": "Missing Authentication for Critical Function",
+    "category": "authentication",
+    "description": "The software does not perform authentication for functionality that requires a provable user identity or consumes significant resources.",
+    "remediation": "Enforce authentication on all non-public endpoints. Use middleware for authentication checks. Never rely on client-side checks for authentication.",
+    "owasp_code": "A07:2021"
+  },
+  {
+    "id": "CWE-307",
+    "title": "Improper Restriction of Excessive Authentication Attempts",
+    "category": "authentication",
+    "description": "The software does not limit the number of failed authentication attempts, enabling brute-force attacks against credentials.",
+    "remediation": "Implement account lockout after N failed attempts. Use rate limiting on login endpoints. Implement CAPTCHA after repeated failures. Use multi-factor authentication.",
+    "owasp_code": "A07:2021"
+  },
+  {
+    "id": "CWE-384",
+    "title": "Session Fixation",
+    "category": "authentication",
+    "description": "Authenticating a user without invalidating any existing session identifier gives an attacker the opportunity to steal authenticated sessions.",
+    "remediation": "Regenerate session IDs on authentication. Invalidate old sessions on login. Use secure, HTTP-only, SameSite cookies for session tokens.",
+    "owasp_code": "A07:2021"
+  },
+  {
+    "id": "CWE-620",
+    "title": "Unverified Password Change",
+    "category": "authentication",
+    "description": "The password change functionality does not require the current password or other verification, allowing attackers to change passwords without authorization.",
+    "remediation": "Require the current password for password changes. Send confirmation emails for password changes. Require MFA for sensitive account changes.",
+    "owasp_code": "A07:2021"
+  },
+  {
+    "id": "CWE-639",
+    "title": "Authorization Bypass Through User-Controlled Key",
+    "category": "access_control",
+    "description": "The system's authorization does not prevent a user from accessing another user's data by modifying a key (IDOR).",
+    "remediation": "Verify object ownership on every request. Use indirect object references (UUIDs instead of sequential IDs where appropriate). Implement access control checks at the data layer.",
+    "owasp_code": "A01:2021"
+  },
+  {
+    "id": "CWE-732",
+    "title": "Incorrect Permission Assignment for Critical Resource",
+    "category": "access_control",
+    "description": "The product specifies permissions for security-critical resources in a way that allows unintended actors to read or modify them.",
+    "remediation": "Use principle of least privilege. Default to deny access. Review file permissions and ACLs. Use role-based access control with regular audits.",
+    "owasp_code": "A01:2021"
+  },
+  {
+    "id": "CWE-326",
+    "title": "Inadequate Encryption Strength",
+    "category": "cryptographic_failure",
+    "description": "The software stores or transmits sensitive data using an encryption scheme that is theoretically sound but not strong enough for the level of protection required.",
+    "remediation": "Use AES-256 for symmetric encryption, RSA-2048+ for asymmetric, SHA-256+ for hashing. Keep key sizes in line with current NIST recommendations. Rotate keys regularly.",
+    "owasp_code": "A04:2021"
+  },
+  {
+    "id": "CWE-328",
+    "title": "Use of Weak Hash",
+    "category": "cryptographic_failure",
+    "description": "The software uses a cryptographic hash function that is known to be weak (MD5, SHA-1). Attackers can create hash collisions or perform faster brute-force attacks.",
+    "remediation": "Use SHA-256, SHA-384, or SHA-512 for general hashing. Use bcrypt, argon2id, or scrypt for password hashing. Never use MD5 or SHA-1 for security purposes.",
+    "owasp_code": "A04:2021"
+  },
+  {
+    "id": "CWE-338",
+    "title": "Use of Cryptographically Weak PRNG",
+    "category": "cryptographic_failure",
+    "description": "Using a non-cryptographically secure pseudo-random number generator in a security context can produce predictable values that attackers can guess.",
+    "remediation": "Use crypto.randomBytes() in Node.js, secrets module in Python, rand::thread_rng() for security in Rust. Never use Math.random() or similar for security-critical values.",
+    "owasp_code": "A04:2021"
+  },
+  {
+    "id": "CWE-347",
+    "title": "Improper Verification of Cryptographic Signature",
+    "category": "cryptographic_failure",
+    "description": "The software does not verify or incorrectly verifies the cryptographic signature for data, allowing tampering or forgery.",
+    "remediation": "Always verify signatures before processing signed data. Use standard libraries for JWT verification. Check the algorithm in JWT headers to prevent algorithm confusion attacks.",
+    "owasp_code": "A04:2021"
+  },
+  {
+    "id": "CWE-601-LANG",
+    "title": "Language-Specific: Open Redirect in Express",
+    "category": "open_redirect",
+    "description": "Express.js applications using res.redirect() with user-supplied URLs without validation are vulnerable to open redirect attacks.",
+    "remediation": "Validate redirect URLs against a whitelist. Use relative paths only. Example: if (!url.startsWith('/')) { return res.status(400).send('Invalid redirect'); }",
+    "owasp_code": "A01:2021"
+  },
+  {
+    "id": "CWE-915-LANG",
+    "title": "Language-Specific: Prototype Pollution in Node.js",
+    "category": "prototype_pollution",
+    "description": "Improperly handled recursive merge or object assignment functions in Node.js can allow attackers to inject properties into Object.prototype.",
+    "remediation": "Use Object.create(null) for dictionaries. Block __proto__, constructor, and prototype keys in user input. Use safe merge utilities or structuredClone for deep cloning.",
+    "owasp_code": "A08:2021"
+  },
+  {
+    "id": "CWE-1336-LANG",
+    "title": "Language-Specific: Formula Injection in CSV Export",
+    "category": "injection",
+    "description": "CSV exports that include user-controlled data starting with =, +, -, or @ can trigger formula injection when opened in Excel or Google Sheets.",
+    "remediation": "Prefix user-generated cell values starting with =, +, -, @ with a single quote. Sanitize CSV output to prevent formula execution in spreadsheet applications.",
+    "owasp_code": "A03:2021"
+  },
+  {
+    "id": "LANG-RUST-UNSAFE",
+    "title": "Language-Specific: Unsafe Rust Block",
+    "category": "code_execution",
+    "description": "Unsafe Rust blocks bypass the compiler's safety guarantees and can lead to memory corruption, undefined behavior, and security vulnerabilities.",
+    "remediation": "Minimize unsafe block size. Document why safe alternatives cannot be used. Add safety comments explaining invariants. Use Miri to detect undefined behavior in unsafe code.",
+    "owasp_code": "A04:2021"
+  },
+  {
+    "id": "LANG-RUST-PANIC",
+    "title": "Language-Specific: Unwrapped Results in Rust",
+    "category": "error_handling",
+    "description": "Using .unwrap() or .expect() on Result/Option types in production code can cause panics that crash the application, leading to denial of service.",
+    "remediation": "Use proper error handling with ? operator and Result propagation. Replace .unwrap() with proper match or .unwrap_or_else() with graceful fallbacks.",
+    "owasp_code": "A04:2021"
+  },
+  {
+    "id": "LANG-PYTHON-PICKLE",
+    "title": "Language-Specific: Unsafe Deserialization with pickle",
+    "category": "code_execution",
+    "description": "Python's pickle module can execute arbitrary code during deserialization. Deserializing untrusted pickle data is extremely dangerous.",
+    "remediation": "Never unpickle data from untrusted sources. Use JSON or MessagePack for serialization. If pickle is required, use a restricted unpickler or sign the data cryptographically.",
+    "owasp_code": "A08:2021"
+  },
+  {
+    "id": "LANG-PYTHON-YAML",
+    "title": "Language-Specific: Unsafe YAML Loading",
+    "category": "code_execution",
+    "description": "Using yaml.load() (without SafeLoader) can execute arbitrary Python code embedded in YAML files. This is the default in older PyYAML versions.",
+    "remediation": "Always use yaml.safe_load() instead of yaml.load(). For PyYAML 5.1+, yaml.load() requires an explicit Loader — never pass yaml.Loader for untrusted data.",
+    "owasp_code": "A08:2021"
+  },
+  {
+    "id": "LANG-JS-NOSQL",
+    "title": "Language-Specific: NoSQL Injection in MongoDB",
+    "category": "injection",
+    "description": "Passing user-controlled objects directly to MongoDB queries (e.g., { $gt: '' } as a password) can bypass authentication or filter conditions.",
+    "remediation": "Sanitize user input before passing to MongoDB queries. Use mongo-sanitize or express-mongo-sanitize. Cast user input to expected types before building queries.",
+    "owasp_code": "A03:2021"
+  },
+  {
+    "id": "LANG-JS-REGEX-DOS",
+    "title": "Language-Specific: Catastrophic Backtracking in Node.js",
+    "category": "redos",
+    "description": "Node.js runs on a single-threaded event loop. A regex with nested quantifiers matching malicious input can block the entire server.",
+    "remediation": "Use safe-regex or regexp-tree to detect vulnerable patterns. Set timeouts on regex operations. Use atomic groups or replace complex regex with proper parsers.",
+    "owasp_code": "A04:2021"
+  },
+  {
+    "id": "LANG-GO-SQL",
+    "title": "Language-Specific: SQL Injection via fmt.Sprintf in Go",
+    "category": "sql_injection",
+    "description": "Using fmt.Sprintf() to build SQL queries with user input bypasses Go's database/sql parameterization, enabling SQL injection.",
+    "remediation": "Use placeholders ($1, $2, ...) with db.Query() or db.Exec(). Never use fmt.Sprintf() to build SQL query strings with user data.",
+    "owasp_code": "A03:2021"
+  },
+  {
+    "id": "LANG-JAVA-DESERIAL",
+    "title": "Language-Specific: Java Deserialization Attacks",
+    "category": "code_execution",
+    "description": "Java's ObjectInputStream deserializes arbitrary objects from untrusted data. Gadget chains in common libraries (Commons Collections, Spring) can lead to RCE.",
+    "remediation": "Avoid Java native serialization. Use JSON or Protocol Buffers. If serialization is required, use a whitelist-based ObjectInputFilter (Java 9+) or a safe serialization library.",
+    "owasp_code": "A08:2021"
+  },
+  {
+    "id": "LANG-PHP-INCLUDE",
+    "title": "Language-Specific: Local File Inclusion in PHP",
+    "category": "path_traversal",
+    "description": "Using include() or require() with user-controlled paths allows attackers to include arbitrary files, leading to code execution or information disclosure.",
+    "remediation": "Use a whitelist of allowed include files. Never pass user input directly to include/require. Disable allow_url_include in php.ini.",
+    "owasp_code": "A03:2021"
+  },
+  {
+    "id": "MOBILE-M1",
+    "title": "OWASP Mobile M1: Improper Credential Usage",
+    "category": "hardcoded_secret",
+    "description": "Mobile apps with hardcoded credentials, API keys, or tokens can be reverse-engineered to extract these secrets.",
+    "remediation": "Store credentials in platform keychains (iOS Keychain, Android Keystore). Use OAuth 2.0 with PKCE for authentication. Never hardcode secrets in mobile app binaries.",
+    "owasp_code": "N/A (Mobile Top 10)"
+  },
+  {
+    "id": "MOBILE-M2",
+    "title": "OWASP Mobile M2: Insecure Data Storage",
+    "category": "cryptographic_failure",
+    "description": "Storing sensitive data in plaintext in SharedPreferences, NSUserDefaults, SQLite databases, or external storage exposes data to other apps or device theft.",
+    "remediation": "Encrypt sensitive data using platform encryption APIs. Use EncryptedSharedPreferences (Android) or Keychain (iOS). Never store secrets in plaintext local storage.",
+    "owasp_code": "N/A (Mobile Top 10)"
+  },
+  {
+    "id": "MOBILE-M3",
+    "title": "OWASP Mobile M3: Insecure Communication",
+    "category": "cryptographic_failure",
+    "description": "Mobile apps that communicate over HTTP or accept any TLS certificate are vulnerable to MITM attacks that can steal credentials and data.",
+    "remediation": "Enforce HTTPS with certificate pinning. Use Android Network Security Config or iOS App Transport Security. Never disable TLS validation in production builds.",
+    "owasp_code": "N/A (Mobile Top 10)"
+  },
+  {
+    "id": "CLOUD-CI-1",
+    "title": "CI/CD Pipeline: Secret in Build Logs",
+    "category": "hardcoded_secret",
+    "description": "Secrets echoed or logged during CI/CD builds remain accessible in build logs, which are often readable by anyone with repository access.",
+    "remediation": "Use CI/CD secret masking features (GitHub Actions secrets, GitLab CI masked variables). Never echo secrets. Use secret scanning tools in CI/CD pipelines.",
+    "owasp_code": "A06:2021"
+  },
+  {
+    "id": "CLOUD-IAM-1",
+    "title": "Cloud IAM: Overly Permissive IAM Policies",
+    "category": "misconfiguration",
+    "description": "IAM policies with wildcard actions (*) or resources (*) grant excessive permissions. A compromised service account with admin access can destroy infrastructure.",
+    "remediation": "Apply least privilege principle. Use specific actions and resources in IAM policies. Regularly audit IAM roles with tools like AWS IAM Access Analyzer.",
+    "owasp_code": "A01:2021"
+  },
+  {
+    "id": "CLOUD-S3-1",
+    "title": "Cloud Storage: Public S3 Bucket",
+    "category": "misconfiguration",
+    "description": "S3 buckets or cloud storage containers configured with public read/write access expose sensitive data to the internet.",
+    "remediation": "Block all public access by default. Use pre-signed URLs for temporary access. Enable bucket logging and monitoring for unauthorized access attempts.",
+    "owasp_code": "A04:2021"
+  },
+  {
+    "id": "CLOUD-ENV-1",
+    "title": "Container Security: Secrets in Dockerfile",
+    "category": "hardcoded_secret",
+    "description": "Hardcoding secrets in Dockerfiles (ENV API_KEY=xxx) embeds them in image layers, accessible to anyone with image access or via docker history.",
+    "remediation": "Use Docker BuildKit secrets (--secret flag). Use external secrets managers (HashiCorp Vault, AWS Secrets Manager). Never use ENV for secrets in Dockerfiles.",
+    "owasp_code": "A06:2021"
+  },
+  {
+    "id": "CLOUD-K8S-1",
+    "title": "Kubernetes Security: Privileged Container",
+    "category": "misconfiguration",
+    "description": "Containers running with privileged: true or securityContext.privileged can escape container isolation and access the host system.",
+    "remediation": "Never run containers as privileged. Use securityContext with readOnlyRootFilesystem, allowPrivilegeEscalation: false. Use Pod Security Standards (restricted).",
+    "owasp_code": "A04:2021"
+  },
+  {
+    "id": "API-RATE-1",
+    "title": "API Security: Missing Rate Limiting",
+    "category": "misconfiguration",
+    "description": "APIs without rate limiting can be abused for brute-force attacks, credential stuffing, data scraping, or denial of service.",
+    "remediation": "Implement rate limiting per endpoint, per IP, and per user. Use token bucket or sliding window algorithms. Return 429 Too Many Requests with Retry-After headers.",
+    "owasp_code": "A04:2021"
+  },
+  {
+    "id": "API-SIZE-1",
+    "title": "API Security: Missing Request Size Limits",
+    "category": "misconfiguration",
+    "description": "APIs that accept arbitrarily large request bodies can be exploited for memory exhaustion, disk filling, or DoS attacks.",
+    "remediation": "Set maximum request body size (e.g., express.json({ limit: '1mb' })). Set maximum file upload sizes. Implement streaming for large payloads instead of buffering.",
+    "owasp_code": "A04:2021"
+  },
+  {
+    "id": "GEN-SECRET-ROTATION",
+    "title": "Secret Rotation Best Practices",
+    "category": "hardcoded_secret",
+    "description": "Secrets that are never rotated remain valid indefinitely. If leaked, they provide permanent access until manually revoked.",
+    "remediation": "Implement automated secret rotation. Set short expiration times for API keys and tokens. Use short-lived credentials where possible (STS, temporary tokens). Audit key usage regularly.",
+    "owasp_code": "A07:2021"
+  },
+  {
+    "id": "GEN-LOGGING",
+    "title": "Secure Logging Best Practices",
+    "category": "information_disclosure",
+    "description": "Logging sensitive data (passwords, tokens, PII, credit card numbers) creates a secondary attack surface where attackers can find secrets in log files.",
+    "remediation": "Sanitize logs to remove secrets, tokens, and PII. Use structured logging with redaction filters. Never log request bodies that may contain passwords or tokens. Implement log retention policies.",
+    "owasp_code": "A09:2021"
+  },
+  {
+    "id": "GEN-ERRORS",
+    "title": "Secure Error Handling Best Practices",
+    "category": "information_disclosure",
+    "description": "Detailed error messages, stack traces, and debug output expose internal implementation details that attackers can use to identify vulnerabilities.",
+    "remediation": "Return generic error messages to clients. Log detailed errors server-side only. Use custom error pages for production. Configure framework debug mode to false in production.",
+    "owasp_code": "A04:2021"
+  },
+  {
+    "id": "GEN-CSP",
+    "title": "Content Security Policy Best Practices",
+    "category": "misconfiguration",
+    "description": "Missing or weak Content-Security-Policy headers leave applications vulnerable to XSS, data injection, and clickjacking attacks.",
+    "remediation": "Implement a strict CSP: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; object-src 'none'; frame-ancestors 'none'. Use nonces or hashes instead of 'unsafe-inline'. Report violations with report-uri.",
+    "owasp_code": "A05:2021"
+  },
+  {
+    "id": "GEN-CORS",
+    "title": "CORS Configuration Best Practices",
+    "category": "misconfiguration",
+    "description": "Misconfigured CORS headers can allow malicious websites to make authenticated cross-origin requests, stealing data or performing actions on behalf of users.",
+    "remediation": "Specify exact origins instead of wildcard (*). Never use Access-Control-Allow-Origin: * with credentials. Validate the Origin header against a whitelist. Use Access-Control-Allow-Methods with specific HTTP methods only.",
+    "owasp_code": "A01:2021"
+  },
+  {
+    "id": "GEN-SUPPLY-CHAIN",
+    "title": "Supply Chain Security Best Practices",
+    "category": "vulnerable_dependency",
+    "description": "Modern applications depend on hundreds or thousands of third-party packages. A single compromised dependency can give attackers access to the entire application.",
+    "remediation": "Use lockfiles and integrity hashes. Verify package signatures. Run software composition analysis (SCA) tools. Monitor for typosquatting and dependency confusion. Use private package registries for internal packages.",
+    "owasp_code": "A06:2021"
+  }
+]

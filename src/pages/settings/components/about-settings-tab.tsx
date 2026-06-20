@@ -7,7 +7,7 @@ export function AboutSettingsTab() {
   return (
     <>
       <div className="space-y-2">
-        <div className="flex items-center gap-2 text-sm font-medium text-green-500">
+        <div className="flex items-center gap-2 text-sm font-medium text-green-500 dark:text-green-400">
           <Triangle className="size-4" />
           About hexbuffer
         </div>

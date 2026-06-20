@@ -10,8 +10,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Separator } from '@/components/ui/separator';
-import { useGlobalTerminalStore } from '@/stores/global-terminal';
 import type { WorkspaceFolder } from '../types';
+import { usePlaygroundToolbar } from './hooks/use-playground-toolbar';
 
 interface PlaygroundToolbarProps {
   workspace: WorkspaceFolder;
@@ -22,16 +22,6 @@ interface PlaygroundToolbarProps {
   onCloseFolder: () => void;
 }
 
-const LANGUAGE_LABELS: Record<string, string> = {
-  rust: 'Rust',
-  c: 'C',
-  cpp: 'C++',
-  javascript: 'JavaScript',
-  typescript: 'TypeScript',
-  python: 'Python',
-  go: 'Go',
-};
-
 export function PlaygroundToolbar({
   workspace,
   isBuilding,
@@ -40,16 +30,12 @@ export function PlaygroundToolbar({
   onRefresh,
   onCloseFolder,
 }: PlaygroundToolbarProps) {
-  const hasBuildSupport =
-    (workspace.language !== 'unknown' && LANGUAGE_LABELS[workspace.language] !== undefined) ||
-    ['rust', 'c', 'cpp'].includes(workspace.language);
-
-  const languageLabel = LANGUAGE_LABELS[workspace.language] ?? null;
-
-  const isTerminalOpen = useGlobalTerminalStore((s) => s.isOpen);
-  const setIsOpen = useGlobalTerminalStore((s) => s.setIsOpen);
-
-  const handleToggleTerminal = () => setIsOpen(!isTerminalOpen);
+  const {
+    hasBuildSupport,
+    languageLabel,
+    isTerminalOpen,
+    handleToggleTerminal,
+  } = usePlaygroundToolbar({ workspace });
 
   return (
     <aside className="flex w-11 shrink-0 flex-col items-center gap-1 border-r bg-muted/50 py-2">

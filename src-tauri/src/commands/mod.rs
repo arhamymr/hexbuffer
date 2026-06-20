@@ -1,3 +1,4 @@
+pub mod audit;
 pub mod browser;
 pub mod browser_panel;
 pub mod cert;

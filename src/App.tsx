@@ -43,6 +43,9 @@ const ThreatsPage = React.lazy(() =>
 const RegressionPage = React.lazy(() =>
   import("@/pages/regression").then((m) => ({ default: m.RegressionPage }))
 );
+const CodeAuditPage = React.lazy(() =>
+  import("@/pages/code-audit").then((m) => ({ default: m.CodeAuditPage }))
+);
 const PlaygroundPage = React.lazy(() =>
   import("@/pages/code").then((m) => ({ default: m.PlaygroundPage }))
 );
@@ -81,6 +84,7 @@ function AppRoutes() {
           <Route path="/threats" element={<ThreatsPage />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/regression" element={<RegressionPage />} />
+          <Route path="/code-audit" element={<CodeAuditPage />} />
           <Route path="/playground" element={<PlaygroundPage />} />
         </Routes>
       </React.Suspense>

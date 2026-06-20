@@ -71,7 +71,7 @@ export function LiveTrafficPage() {
         renderTabContextMenuItems={renderTabContextMenuItems}
         contentClassName="flex-1 border rounded-lg flex flex-col overflow-hidden bg-background min-h-0"
       >
-        <LogFilters />
+        <LogFilters historyMode={historyMode} />
         <Card className="flex-1 flex flex-col overflow-hidden !py-0 rounded-none">
           {historyView}
         </Card>

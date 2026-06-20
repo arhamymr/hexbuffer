@@ -17,7 +17,7 @@ const { pathname } = useSidebarNav();
   if (!hasVisible) return null;
 
   return (
-    <div className="flex items-center gap-1 border rounded-md px-1 py-1 backdrop-blur-xl gap-1">
+    <div className="flex items-center gap-1 border rounded-lg px-1 py-1 backdrop-blur-xl gap-1">
       <AnimatePresence mode="popLayout">
         {pageButtons.map((btn) =>
           btn.visible && (

@@ -9,6 +9,7 @@ use tauri::{
     Manager,
 };
 use hexbuffer::commands::browser_panel::BrowserTabManager;
+use hexbuffer::commands::audit::AuditState;
 use hexbuffer::commands::intruder::IntruderState;
 use hexbuffer::commands::repeater::WsRepeaterState;
 use hexbuffer::commands::threats::ThreatAnalysisState;
@@ -74,6 +75,7 @@ fn main() {
             app.manage(ThreatAnalysisState::default());
             app.manage(CollaboratorPollingState::default());
             app.manage(hexbuffer::automation::AutomationRuntimeState::default());
+            app.manage(hexbuffer::commands::audit::AuditState::new());
             app.manage(hexbuffer::commands::inspector::InspectorCdpState::default());
             app.manage(Arc::new(BrowserTabManager::new(app.handle().clone())));
             app.manage(database);
@@ -119,13 +121,14 @@ fn main() {
                 let intercept_i = MenuItem::with_id(app, "nav:/intercept", "Intercept", true, None::<&str>)?;
                 let invoker_i = MenuItem::with_id(app, "nav:/invoker", "Invoker", true, None::<&str>)?;
                 let repeater_i = MenuItem::with_id(app, "nav:/repeater", "Repeater", true, None::<&str>)?;
+                let code_audit_i = MenuItem::with_id(app, "nav:/code-audit", "Code Audit", true, None::<&str>)?;
                 let documents_i = MenuItem::with_id(app, "nav:/documents", "Documents", true, None::<&str>)?;
                 let tools_i = MenuItem::with_id(app, "nav:/tools", "Tools", true, None::<&str>)?;
                 let features_menu = Submenu::with_items(
                     app,
                     "Features",
                     true,
-                    &[&assistant_i, &live_traffic_i, &browser_i, &intercept_i, &invoker_i, &repeater_i, &documents_i, &tools_i],
+                    &[&assistant_i, &live_traffic_i, &browser_i, &intercept_i, &invoker_i, &repeater_i, &code_audit_i, &documents_i, &tools_i],
                 )?;
 
                 let show_i =
@@ -321,6 +324,10 @@ fn main() {
             hexbuffer::commands::threats::list_threat_samples,
             hexbuffer::commands::threats::delete_threat_sample,
             hexbuffer::commands::threats::cancel_threat_analysis,
+            // Audit
+            hexbuffer::commands::audit::audit_directory,
+            hexbuffer::commands::audit::stop_audit,
+            hexbuffer::commands::audit::generate_audit_report,
             // Playground
             hexbuffer::commands::playground::check_compilers,
             hexbuffer::commands::playground::get_system_info,

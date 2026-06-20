@@ -137,7 +137,7 @@ export function AiSettingsTab({ settings }: AiSettingsTabProps) {
             </p>
           </div>
 
-          <label className="flex items-start gap-3 rounded-md border border-amber-500/40 bg-amber-500/10 p-3">
+          <label className="flex items-start gap-3 rounded-md border border-amber-500/40 bg-amber-500/10 dark:border-amber-500/30 dark:bg-amber-500/10 p-3">
             <Checkbox
               checked={aiSettings.allowThirdPartyAiSharing}
               onCheckedChange={(checked) => updateAiSettings({ allowThirdPartyAiSharing: checked === true })}
@@ -145,7 +145,7 @@ export function AiSettingsTab({ settings }: AiSettingsTabProps) {
             />
             <span className="min-w-0 space-y-1">
               <span className="flex items-center gap-2 text-sm font-medium">
-                <AlertTriangleIcon className="size-4 text-amber-600" />
+                <AlertTriangleIcon className="size-4 text-amber-600 dark:text-amber-400" />
                 Allow third-party AI data sharing
               </span>
               <span className="block text-xs leading-relaxed text-muted-foreground">
@@ -157,7 +157,7 @@ export function AiSettingsTab({ settings }: AiSettingsTabProps) {
           </label>
 
           {!canSaveAiSettings && (
-            <p className="text-xs text-amber-700">
+            <p className="text-xs text-amber-700 dark:text-amber-300">
               Enable third-party AI data sharing before saving or using an API key.
             </p>
           )}
@@ -192,7 +192,7 @@ export function AiSettingsTab({ settings }: AiSettingsTabProps) {
                     className="flex items-center justify-between rounded-md border px-3 py-2"
                   >
                     <span className="text-sm font-medium">{provider.label}</span>
-                    <span className={`flex items-center gap-1.5 text-xs ${saved ? 'text-green-600' : 'text-muted-foreground'}`}>
+                    <span className={`flex items-center gap-1.5 text-xs ${saved ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'}`}>
                       {saved ? (
                         <>
                           <CheckIcon className="size-3.5" />

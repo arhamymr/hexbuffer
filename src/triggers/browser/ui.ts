@@ -1,5 +1,9 @@
 import { useBrowserAutomationStore } from '@/stores/browser-automation';
 
+export function setBrowserSearch(search: string): void {
+  useBrowserAutomationStore.getState().setSearch(search);
+}
+
 export function toggleBrowserCrawl(): void {
   const store = useBrowserAutomationStore.getState();
   const tab = store.tabs.find((t) => t.id === store.activeTabId);

@@ -26,6 +26,7 @@ interface LogFiltersProps {
   onFilterChange?: (filter: HistoryFilterState) => void;
   onClearFilters?: () => void;
   clearCalls?: () => void;
+  historyMode?: 'http' | 'websocket';
 }
 
 export function LogFilters({
@@ -33,9 +34,12 @@ export function LogFilters({
   onFilterChange,
   onClearFilters,
   clearCalls: clearCallsProp,
+  historyMode: historyModeProp,
 }: LogFiltersProps) {
   const [clearDialogOpen, setClearDialogOpen] = useState(false);
   const isStreamManuallyPaused = useHistoryQueryStore((s) => s.isStreamManuallyPaused);
+
+  const historyMode = historyModeProp ?? (typeof window !== 'undefined' ? (localStorage.getItem('history-mode') as 'http' | 'websocket' | null) ?? 'http' : 'http');
 
   const {
     filter: storeFilter,
@@ -105,6 +109,9 @@ export function LogFilters({
           </div>
 
 <div className='flex gap-2 items-center'>
+          <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
+            {historyMode === 'http' ? 'HTTP' : 'WebSocket'}
+          </span>
  {isStreamManuallyPaused && (
             <CrawlStatusBadge status="paused" />
           )}

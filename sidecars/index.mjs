@@ -47,7 +47,7 @@ export { runCli };
 // Pre-flight validation (Harness Layers 1–3)
 // ---------------------------------------------------------------------------
 
-const VALID_MODES = ['crawl', 'chat', 'invoker-auto-mark', 'validate', 'regression', 'scrape-page', 'regression-single-step'];
+const VALID_MODES = ['crawl', 'chat', 'invoker-auto-mark', 'validate', 'regression', 'scrape-page', 'regression-single-step', 'audit'];
 
 function runPreflight() {
   const mode = process.env['HEXBUFFER_AI_ENGINE_MODE'] || 'crawl';

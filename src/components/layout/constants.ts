@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowUpDown, Box, Bug, PauseCircle, RotateCw, LoaderPinwheel, Atom, Hexagon, FlaskConical, Binary, AppWindow, BookText, SquareLibrary, Radar } from 'lucide-react';
+import { ArrowUpDown, Box, Bug, PauseCircle, RotateCw, LoaderPinwheel, Atom, Hexagon, FlaskConical, Binary, AppWindow, BookText, SquareLibrary, Radar, ShieldCheck } from 'lucide-react';
 
 export interface NavItem {
   label: string;
@@ -26,6 +26,7 @@ export const allNavItems: NavItem[] = [
   { label: 'Threats', icon: Atom, href: '/threats', devOnly: true},
   { label: 'Documents', icon: BookText, href: '/documents'},
   { label: 'Tools', icon: Box, href: '/tools' },
+  { label: 'Code Audit', icon: ShieldCheck, href: '/code-audit' },
   { label: 'Debugger', icon: Bug, href: '/debugger', devOnly: true },
   { label: 'Regression', icon: FlaskConical, href: '/regression', devOnly: true },
 ];
@@ -58,11 +59,18 @@ export const allCategories: NavCategory[] = [
     label: 'Analyze',
     icon: Radar,
     items: [
-      { label: 'Code', icon: Binary, href: '/playground', devOnly: true },
       { label: 'Threats', icon: Atom, href: '/threats', devOnly: true },
       { label: 'Debugger', icon: Bug, href: '/debugger', devOnly: true },
       { label: 'Tools', icon: Box, href: '/tools' },
       { label: 'Documents', icon: BookText, href: '/documents' },
+    ],
+  },
+  {
+    label: 'Code',
+    icon: Binary,
+    items: [
+      { label: 'Code', icon: Binary, href: '/playground', devOnly: true },
+      { label: 'Code Audit', icon: ShieldCheck, href: '/code-audit' },
     ],
   },
 ];

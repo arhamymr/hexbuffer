@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useRef, useMemo } from 'react';
+import { convertFileSrc } from '@tauri-apps/api/core';
 import { usePlaygroundStore } from '@/stores/playground';
 import { useShallow } from 'zustand/react/shallow';
 import * as api from '../api';
 import {
   getLanguageFromPath,
+  isImageFile,
   detectWorkspaceLanguage,
   type OpenTab,
   type PlaygroundLanguage,
@@ -290,6 +292,28 @@ export function usePlaygroundPage() {
         return;
       }
 
+      // Image files: use Tauri asset protocol instead of reading as text
+      if (isImageFile(filePath)) {
+        const absolutePath = `${workspace.path}/${filePath}`;
+        const assetUrl = convertFileSrc(absolutePath);
+        cache.set(filePath, assetUrl);
+
+        const alreadyOpen = openEditorTabs.some((t) => t.path === filePath);
+        if (alreadyOpen) {
+          setActiveEditorPath(filePath);
+          return;
+        }
+        const newTab: OpenTab = {
+          path: filePath,
+          name: filePath.split('/').pop() ?? filePath,
+          language: 'image',
+          isDirty: false,
+        };
+        setOpenEditorTabs([...openEditorTabs, newTab]);
+        setActiveEditorPath(filePath);
+        return;
+      }
+
       try {
         const result = await api.readProjectFile(filePath, workspace.path);
         cache.set(filePath, result.content);
@@ -347,6 +371,9 @@ export function usePlaygroundPage() {
   const handleSaveFile = useCallback(
     async (filePath: string) => {
       if (!workspace) return;
+
+      // Images are read-only in this view
+      if (isImageFile(filePath)) return;
 
       const content = fileContentsRef.current.get(filePath) ?? '';
       try {

@@ -287,7 +287,7 @@ export function DocumentsExplorer({
       <div className="flex h-8 shrink-0 items-center px-3 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
         Explorer
       </div>
-      <div className="min-h-0 flex-1 overflow-auto px-2 pb-3">
+      <div className="min-h-0 flex-1 overflow-auto pb-3">
         <DragDropProvider onDragEnd={handleDragEnd}>
           <div className="mt-1 space-y-0.5">
             {activeDocument.customSections.map((section, index) => {

@@ -9,6 +9,7 @@ pub mod packet_capture;
 #[path = "port-scanner/mod.rs"]
 pub mod port_scanner;
 pub mod proxy;
+pub mod scanner;
 pub mod sqli;
 pub mod threats;
 

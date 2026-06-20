@@ -60,6 +60,18 @@ export interface FileContent {
   content: string;
 }
 
+// Image file extensions that the code page can display as images
+const IMAGE_EXTENSIONS = new Set([
+  'png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp', 'ico', 'svg',
+  'avif', 'tiff', 'tif', 'heic', 'heif',
+]);
+
+/** Returns true if the file path has an image extension. */
+export function isImageFile(filePath: string): boolean {
+  const ext = filePath.split('.').pop()?.toLowerCase();
+  return ext ? IMAGE_EXTENSIONS.has(ext) : false;
+}
+
 /** Map file extension to a language identifier for the TextEditor. */
 export function getLanguageFromPath(filePath: string): string {
   const ext = filePath.split('.').pop()?.toLowerCase();
@@ -118,7 +130,6 @@ export function getLanguageFromPath(filePath: string): string {
     case 'cfg':
       return 'ini';
     case 'xml':
-    case 'svg':
       return 'xml';
     case 'md':
     case 'markdown':
@@ -132,6 +143,8 @@ export function getLanguageFromPath(filePath: string): string {
     case 'dockerfile':
       return 'dockerfile';
     default:
+      // Check image extensions
+      if (ext && IMAGE_EXTENSIONS.has(ext)) return 'image';
       return '';
   }
 }

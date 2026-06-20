@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import {
   Code2,
   FolderOpen,
@@ -20,6 +19,7 @@ import {
 } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { SystemInfo, PlaygroundLanguage } from '../types';
+import { useWelcomeScreen } from './hooks/use-welcome-screen';
 
 interface WelcomeScreenProps {
   onOpenFolder: () => void;
@@ -37,8 +37,6 @@ const LANGUAGE_OPTIONS: { value: PlaygroundLanguage; label: string }[] = [
   { value: 'cpp', label: 'C++' },
 ];
 
-const MAX_RECENT_DISPLAY = 8;
-
 export function WelcomeScreen({
   onOpenFolder,
   recentFolders,
@@ -48,23 +46,20 @@ export function WelcomeScreen({
   systemInfoError,
   onCreateProject,
 }: WelcomeScreenProps) {
-  const [showCreateForm, setShowCreateForm] = useState(false);
-  const [projectName, setProjectName] = useState('');
-  const [language, setLanguage] = useState<PlaygroundLanguage>('rust');
-  const [isCreating, setIsCreating] = useState(false);
-
-  const handleCreate = async () => {
-    const name = projectName.trim() || 'playground-project';
-    setIsCreating(true);
-    try {
-      await onCreateProject(name, language);
-    } finally {
-      setIsCreating(false);
-      setShowCreateForm(false);
-    }
-  };
-
-  const recentDisplay = recentFolders.slice(0, MAX_RECENT_DISPLAY);
+  const {
+    showCreateForm,
+    setShowCreateForm,
+    projectName,
+    setProjectName,
+    language,
+    setLanguage,
+    isCreating,
+    recentDisplay,
+    handleCreate,
+  } = useWelcomeScreen({
+    onCreateProject,
+    recentFolders,
+  });
 
   return (
     <div className="flex h-full items-start justify-center overflow-auto bg-background p-8">

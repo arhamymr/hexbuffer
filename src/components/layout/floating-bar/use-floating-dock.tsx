@@ -211,11 +211,9 @@ export function useSidebarDock() {
     try {
       const { WebviewWindow } = await import('@tauri-apps/api/webviewWindow');
       const existing = await WebviewWindow.getByLabel('settings');
+      // Close and recreate: on macOS child windows can't be elevated above parent
       if (existing) {
-        await existing.unminimize();
-        await existing.show();
-        await existing.setFocus();
-        return;
+        await existing.close();
       }
       new WebviewWindow('settings', {
         url: '/?window=settings',

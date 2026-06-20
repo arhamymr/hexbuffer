@@ -7,4 +7,4 @@ export {
 } from './crawl';
 export type { TriggerScanOptions, SubmitCrawlInputOptions } from './crawl';
 export { startPageCrawledWatcher, stopPageCrawledWatcher } from './page-crawled';
-export { toggleBrowserCrawl, stopBrowserCrawl, startBrowserCrawl } from './ui';
+export { toggleBrowserCrawl, stopBrowserCrawl, startBrowserCrawl, setBrowserSearch } from './ui';

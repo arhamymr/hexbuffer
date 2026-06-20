@@ -55,6 +55,7 @@ export {
   toggleBrowserCrawl,
   stopBrowserCrawl,
   startBrowserCrawl,
+  setBrowserSearch,
 } from './browser';
 export type { TriggerScanOptions, SubmitCrawlInputOptions } from './browser';
 

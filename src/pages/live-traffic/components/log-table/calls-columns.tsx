@@ -674,8 +674,8 @@ export const TrafficTable = memo(function TrafficTable({
           </Button>
         </div>
       )}
-      <div ref={tableContainerRef} className="flex-1 overflow-auto min-h-0">
-        <table className="grid w-full min-w-0">
+      <div ref={tableContainerRef} className="flex-1 overflow-y-auto">
+        <table className="grid w-full">
           {/* <thead className="border-b top-0 z-10 grid min-w-0">
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id} className="flex">
@@ -720,7 +720,7 @@ export const TrafficTable = memo(function TrafficTable({
             ))}
           </thead> */}
           <tbody
-            className="grid relative"
+            className="flex relative flex-1 w-full"
             style={{
               height: `${rowVirtualizer.getTotalSize()}px`,
             }}
@@ -739,8 +739,8 @@ export const TrafficTable = memo(function TrafficTable({
                 >
                   <tr
                     className={
-                      "absolute flex items-center w-full font-mono transition-colors border-b cursor-pointer" +
-                      (pinnedSet.has(call.id) ? " bg-amber-500/5 dark:bg-amber-950/20" : "") +
+                      "absolute left-0 right-0 flex items-center w-full min-w-0 font-mono transition-colors border-b cursor-pointer" +
+                      (pinnedSet.has(call.id) ? " bg-amber-500/10 dark:bg-amber-800/20" : "") +
                       (isGroupTabActive ? " bg-sky-500/5 dark:bg-sky-950/20" : "") +
                       (call.id === selectedCallId
                         ? " hover:!bg-muted bg-muted"

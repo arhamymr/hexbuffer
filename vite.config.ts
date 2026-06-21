@@ -5,6 +5,9 @@ import path from "path";
 export default defineConfig({
   plugins: [react()],
   clearScreen: false,
+  worker: {
+    format: "es",
+  },
   server: {
     port: 1420,
     strictPort: true,

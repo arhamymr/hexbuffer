@@ -2,7 +2,7 @@
 set -euo pipefail
 
 APP_NAME="hexbuffer"
-BASE_URL="${OXBUFFER_RELEASES_URL:-https://dist.hexbuffer.com}"
+BASE_URL="${OXBUFFER_RELEASES_URL:-https://dist.0xbuffer.com}"
 BASE_URL="${BASE_URL%/}"
 
 OS="$(uname -s)"

@@ -131,7 +131,7 @@ fi
 
 VERSION="$(cat "$ROOT/VERSION")"
 PUB_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-BASE_URL="${UPDATER_BASE_URL:-https://dist.hexbuffer.com}"
+BASE_URL="${UPDATER_BASE_URL:-https://dist.0xbuffer.com}"
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'

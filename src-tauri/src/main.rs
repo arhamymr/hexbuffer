@@ -9,7 +9,6 @@ use tauri::{
     Manager,
 };
 use hexbuffer::commands::browser_panel::BrowserTabManager;
-use hexbuffer::commands::audit::AuditState;
 use hexbuffer::commands::intruder::IntruderState;
 use hexbuffer::commands::repeater::WsRepeaterState;
 use hexbuffer::commands::threats::ThreatAnalysisState;

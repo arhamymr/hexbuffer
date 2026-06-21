@@ -5,7 +5,7 @@ use std::path::PathBuf;
 use std::process::{Command, Stdio};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
-use tauri::{AppHandle, Emitter, Manager, State};
+use tauri::{AppHandle, Emitter, State};
 use tauri_plugin_shell::ShellExt;
 
 use crate::ai::keyring::read_required_ai_api_key;
@@ -13,7 +13,7 @@ use crate::ai::providers::api_key_env_name;
 use crate::ai::settings::read_ai_settings;
 use crate::db::repository::DocumentRecord;
 use crate::scanner::report::generate_markdown_report;
-use crate::scanner::{scan_directory_with_events, AiExplanation, AuditResult, Finding};
+use crate::scanner::{scan_directory_with_events, AiExplanation, Finding};
 
 /// Shared state for controlling in-flight audits.
 #[derive(Default, Clone)]

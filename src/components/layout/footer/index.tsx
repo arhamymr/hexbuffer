@@ -21,7 +21,7 @@ export function AppFooter() {
     const interval = window.setInterval(() => {
       checkProxyStatus();
     }, 5000);
-    return () => window.clearInterval(interval);
+    return ()  => window.clearInterval(interval);
   }, [checkProxyStatus]);
 
   return (

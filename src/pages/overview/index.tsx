@@ -18,12 +18,18 @@ import binaryImg from '@/assets/feature/binary.png';
 import documentsImg from '@/assets/feature/documents.png';
 import toolsImg from '@/assets/feature/tools.png';
 import terminalImg from '@/assets/feature/terminal.png';
+import browserImg from '@/assets/feature/browser.png';
+import repeaterImg from '@/assets/feature/repeater.png';
+import workflowImg from '@/assets/feature/workflow.png';
 
 const FEATURE_IMAGES: Record<string, string> = {
   'Code': binaryImg,
   'Documents': documentsImg,
   'Tools': toolsImg,
-  'Debugger': terminalImg
+  'Debugger': terminalImg,
+  'Browser': browserImg,
+  'Repeater': repeaterImg,
+  'Workflow': workflowImg
 };
 
 const FEATURE_DESCRIPTIONS: Record<string, string> = {

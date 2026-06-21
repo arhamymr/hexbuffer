@@ -1,10 +1,6 @@
 import {
   ChevronRight,
-  FileCode,
-  Folder,
-  FolderOpen,
   FolderPlus,
-  ImageIcon,
   Plus,
   RefreshCw,
   Trash2,
@@ -19,10 +15,14 @@ import {
   ContextMenuTrigger,
 } from '@/components/ui/context-menu';
 import { Input } from '@/components/ui/input';
-import type { FileTreeNode } from '../types';
-import { isImageFile } from '../types';
-import { useFileTreeItem } from './hooks/use-file-tree-item';
-import type { CreateMode } from './hooks/use-file-tree-item';
+import type { FileTreeNode } from '../../types';
+import { useFileTreeItem } from '../hooks/use-file-tree-item';
+import type { CreateMode } from '../hooks/use-file-tree-item';
+import { getFileIconUrl, getFolderIconUrl } from '../../lib/file-icons';
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
 
 function sortTreeChildren(nodes: FileTreeNode[]): FileTreeNode[] {
   return [...nodes].sort((a, b) => {
@@ -30,6 +30,22 @@ function sortTreeChildren(nodes: FileTreeNode[]): FileTreeNode[] {
     return a.name.localeCompare(b.name);
   });
 }
+
+/** Tiny inline SVG image used for all file / folder icons. */
+function FileIcon({ src, className = '' }: { src: string; className?: string }) {
+  return (
+    <img
+      src={src}
+      className={`h-3.5 w-3.5 shrink-0 object-contain ${className}`}
+      aria-hidden="true"
+      alt=""
+    />
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Public component
+// ---------------------------------------------------------------------------
 
 interface FileTreeProps {
   files: FileTreeNode[];
@@ -61,7 +77,7 @@ export function FileTree({
           onRefresh={onRefresh}
         />
         <div className="flex flex-1 flex-col items-center justify-center gap-2 p-4 text-center">
-          <Folder className="h-8 w-8 text-muted-foreground/50" />
+          <FileIcon src={getFolderIconUrl('', false)} className="h-8 w-8 opacity-40" />
           <p className="text-xs text-muted-foreground">Empty folder</p>
         </div>
       </div>
@@ -97,6 +113,10 @@ export function FileTree({
     </div>
   );
 }
+
+// ---------------------------------------------------------------------------
+// Header
+// ---------------------------------------------------------------------------
 
 function FileTreeHeader({
   onNewFile,
@@ -139,6 +159,10 @@ function FileTreeHeader({
     </div>
   );
 }
+
+// ---------------------------------------------------------------------------
+// Tree item
+// ---------------------------------------------------------------------------
 
 interface FileTreeItemProps {
   node: FileTreeNode;
@@ -188,9 +212,14 @@ function FileTreeItem({
 
   const isActive = activePath === node.path;
 
+  // -------------------------------------------------------------------------
+  // Directory
+  // -------------------------------------------------------------------------
   if (node.isDir) {
     const childLastAtDepths = new Set(lastAtDepths);
     if (isLast) childLastAtDepths.add(depth);
+
+    const folderIcon = getFolderIconUrl(node.name, isOpen);
 
     return (
       <Collapsible open={isOpen} onOpenChange={setIsOpen}>
@@ -220,11 +249,7 @@ function FileTreeItem({
                     <ChevronRight
                       className={`h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform ${isOpen ? 'rotate-90' : ''}`}
                     />
-                    {isOpen ? (
-                      <FolderOpen className="h-3.5 w-3.5 shrink-0 text-amber-500" />
-                    ) : (
-                      <Folder className="h-3.5 w-3.5 shrink-0 text-amber-500" />
-                    )}
+                    <FileIcon src={folderIcon} />
                     <span className="truncate font-medium">{node.name}</span>
                   </button>
                 </CollapsibleTrigger>
@@ -296,7 +321,11 @@ function FileTreeItem({
     );
   }
 
+  // -------------------------------------------------------------------------
   // File node
+  // -------------------------------------------------------------------------
+  const fileIcon = getFileIconUrl(node.name);
+
   return (
     <ContextMenu>
       <ContextMenuTrigger asChild>
@@ -323,11 +352,7 @@ function FileTreeItem({
               style={{ paddingLeft: `${depth * 14 + 8}px` }}
               onClick={() => onFileClick(node.path)}
             >
-              {isImageFile(node.name) ? (
-                <ImageIcon className="h-3.5 w-3.5 shrink-0 text-emerald-400" />
-              ) : (
-                <FileCode className="h-3.5 w-3.5 shrink-0 text-blue-400" />
-              )}
+              <FileIcon src={fileIcon} />
               <span className="truncate">{node.name}</span>
             </button>
           )}

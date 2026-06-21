@@ -158,11 +158,12 @@ fn main() {
                     &[&assistant_i, &live_traffic_i, &browser_i, &intercept_i, &invoker_i, &repeater_i, &code_audit_i, &documents_i, &tools_i],
                 )?;
 
+                let settings_i = MenuItem::with_id(app, "nav:/settings", "Settings", true, None::<&str>)?;
                 let show_i =
                     MenuItem::with_id(app, "show", "Show", true, None::<&str>)?;
                 let quit_i =
                     MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
-                let menu = Menu::with_items(app, &[&features_menu, &show_i, &quit_i])?;
+                let menu = Menu::with_items(app, &[&features_menu, &settings_i, &show_i, &quit_i])?;
 
                 let handle = app.handle().clone();
                 TrayIconBuilder::new()

@@ -23,7 +23,6 @@ export function LiveTrafficPage() {
     renameTab,
     addGroup,
     historyMode,
-    setHistoryMode,
     sendScopeToDocuments,
     isPinnedTabActive,
     isGroupTabActive,

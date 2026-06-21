@@ -1,6 +1,7 @@
 pub mod ai_browser;
 pub mod chat_sessions;
 pub mod collaborator;
+pub mod api_collection;
 pub mod documents;
 pub mod packet_capture;
 pub mod proxy_logs;
@@ -40,6 +41,10 @@ impl Database {
         conn.execute_batch(crate::db::schema::CREATE_COLLABORATOR_TABLES)?;
         conn.execute_batch(crate::db::schema::CREATE_AI_CHAT_TABLES)?;
         conn.execute_batch(crate::db::schema::CREATE_REGRESSION_TABLES)?;
+        conn.execute_batch(crate::db::schema::CREATE_STASHES_TABLES)?;
+        conn.execute_batch(crate::db::schema::CREATE_CONTEXTS_TABLES)?;
+        conn.execute_batch(crate::db::schema::CREATE_CHRONICLE_TABLES)?;
+
         Self::ensure_column(
             &conn,
             "regression_test_cases",

@@ -22,8 +22,22 @@ pub fn get_lsp_port(state: State<'_, LspState>) -> Result<u16, String> {
     }
 }
 
-fn find_rust_analyzer() -> Option<PathBuf> {
-    // 1. Try checking if rust-analyzer is in the system PATH
+/// Resolve the rust-analyzer executable.
+/// Priority:
+///  1. `bundled_path` — the Tauri-sidecar binary shipped with the app
+///  2. System PATH (`rust-analyzer`)
+///  3. `~/.cargo/bin/rust-analyzer`
+///  4. Common macOS/Linux install locations
+fn find_rust_analyzer(bundled_path: Option<&std::path::Path>) -> Option<PathBuf> {
+    // 1. Prefer the bundled sidecar if it exists
+    if let Some(p) = bundled_path {
+        if p.exists() {
+            eprintln!("[LSP Proxy] Using bundled rust-analyzer: {:?}", p);
+            return Some(p.to_path_buf());
+        }
+    }
+
+    // 2. Try system PATH
     if let Ok(output) = std::process::Command::new("rust-analyzer")
         .arg("--version")
         .output()
@@ -33,7 +47,7 @@ fn find_rust_analyzer() -> Option<PathBuf> {
         }
     }
 
-    // 2. Check home directory
+    // 3. Check ~/.cargo/bin
     if let Some(home) = dirs::home_dir() {
         let cargo_bin = home.join(".cargo/bin/rust-analyzer");
         if cargo_bin.exists() {
@@ -41,12 +55,8 @@ fn find_rust_analyzer() -> Option<PathBuf> {
         }
     }
 
-    // 3. Check common macOS paths
-    let common_paths = vec![
-        "/opt/homebrew/bin/rust-analyzer",
-        "/usr/local/bin/rust-analyzer",
-    ];
-    for path in common_paths {
+    // 4. Check common macOS / Linux paths
+    for path in ["/opt/homebrew/bin/rust-analyzer", "/usr/local/bin/rust-analyzer"] {
         let p = PathBuf::from(path);
         if p.exists() {
             return Some(p);
@@ -123,7 +133,10 @@ where
     Ok(())
 }
 
-pub async fn run_lsp_server(port_sender: tokio::sync::oneshot::Sender<u16>) {
+pub async fn run_lsp_server(
+    port_sender: tokio::sync::oneshot::Sender<u16>,
+    bundled_ra_path: Option<PathBuf>,
+) {
     let listener = match TcpListener::bind("127.0.0.1:0").await {
         Ok(l) => l,
         Err(e) => {
@@ -145,6 +158,7 @@ pub async fn run_lsp_server(port_sender: tokio::sync::oneshot::Sender<u16>) {
     eprintln!("[LSP Proxy] Running WebSocket bridge on 127.0.0.1:{}", port);
 
     while let Ok((stream, _)) = listener.accept().await {
+        let bundled_ra_path = bundled_ra_path.clone();
         tokio::spawn(async move {
             let ws_stream = match accept_async(stream).await {
                 Ok(s) => s,
@@ -157,10 +171,10 @@ pub async fn run_lsp_server(port_sender: tokio::sync::oneshot::Sender<u16>) {
             eprintln!("[LSP Proxy] Client connected!");
             let (mut ws_write, mut ws_read) = ws_stream.split();
 
-            let ra_path = match find_rust_analyzer() {
+            let ra_path = match find_rust_analyzer(bundled_ra_path.as_deref()) {
                 Some(p) => p,
                 None => {
-                    eprintln!("[LSP Proxy] rust-analyzer executable not found on host system!");
+                    eprintln!("[LSP Proxy] rust-analyzer not found — install it with: rustup component add rust-analyzer");
                     return;
                 }
             };
@@ -208,7 +222,7 @@ pub async fn run_lsp_server(port_sender: tokio::sync::oneshot::Sender<u16>) {
             let mut reader_task = tokio::spawn(async move {
                 while let Some(Ok(msg)) = ws_read.next().await {
                     if let tokio_tungstenite::tungstenite::Message::Text(text) = msg {
-                        if write_lsp_message(&mut stdin, &text).await.is_err() {
+                        if write_lsp_message(&mut stdin, text.as_str()).await.is_err() {
                             break;
                         }
                     }

@@ -282,6 +282,59 @@ impl HistoryBridge {
             .map_err(|e| e.to_string())
     }
 
+    // --- Stashes (folders) ---
+    pub fn get_stashes(&self) -> Result<Vec<crate::StashRecord>, String> {
+        self.db.get_stashes().map_err(|e| e.to_string())
+    }
+
+    pub fn save_stash(&self, record: &crate::StashRecord) -> Result<(), String> {
+        self.db.upsert_stash(record).map_err(|e| e.to_string())
+    }
+
+    pub fn delete_stash(&self, id: &str) -> Result<(), String> {
+        self.db.delete_stash(id).map_err(|e| e.to_string())
+    }
+
+    // --- Stash Endpoints ---
+    pub fn get_stash_endpoints(&self) -> Result<Vec<crate::StashEndpointRecord>, String> {
+        self.db.get_stash_endpoints().map_err(|e| e.to_string())
+    }
+
+    pub fn save_stash_endpoint(&self, record: &crate::StashEndpointRecord) -> Result<(), String> {
+        self.db.upsert_stash_endpoint(record).map_err(|e| e.to_string())
+    }
+
+    pub fn delete_stash_endpoint(&self, id: &str) -> Result<(), String> {
+        self.db.delete_stash_endpoint(id).map_err(|e| e.to_string())
+    }
+
+    // --- Contexts (environments) ---
+    pub fn get_contexts(&self) -> Result<Vec<crate::ContextRecord>, String> {
+        self.db.get_contexts().map_err(|e| e.to_string())
+    }
+
+    pub fn save_context(&self, record: &crate::ContextRecord) -> Result<(), String> {
+        self.db.upsert_context(record).map_err(|e| e.to_string())
+    }
+
+    pub fn delete_context(&self, id: &str) -> Result<(), String> {
+        self.db.delete_context(id).map_err(|e| e.to_string())
+    }
+
+    // --- Chronicle (request history) ---
+    pub fn get_chronicle_logs(&self, limit: u32) -> Result<Vec<crate::ChronicleLogRecord>, String> {
+        self.db.get_chronicle_logs(limit).map_err(|e| e.to_string())
+    }
+
+    pub fn add_chronicle_log(&self, record: &crate::ChronicleLogRecord) -> Result<(), String> {
+        self.db.add_chronicle_log(record).map_err(|e| e.to_string())
+    }
+
+    pub fn clear_chronicle_logs(&self) -> Result<(), String> {
+        self.db.clear_chronicle_logs().map_err(|e| e.to_string())
+    }
+
+
     pub fn clear_all(&self) -> Result<(), String> {
         self.db.clear_logs().map_err(|e| e.to_string())
     }

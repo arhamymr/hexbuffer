@@ -1,13 +1,14 @@
 {
   "name": "hexbuffer",
   "private": true,
-  "version": "2026.0.40",
+  "version": "2026.0.41",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "dev:clean": "lsof -ti:1420 | xargs kill -9 2>/dev/null || true && vite",
     "build": "vite build",
-    "sidecars:build": "node sidecars/build-sidecars.mjs",
+    "sidecars:build": "node sidecars/download-rust-analyzer.mjs && node sidecars/build-sidecars.mjs",
+    "ra:download": "node sidecars/download-rust-analyzer.mjs",
     "preview": "vite preview",
     "fix:packet-permissions": "bash scripts/fix-packet-capture-permissions.sh",
     "deploy": "bash ./scripts/deploy.sh"

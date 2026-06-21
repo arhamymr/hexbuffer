@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 import { useHistoryQueryStore } from '@/pages/live-traffic/state/history-query-store';
 import { useBrowserAutomationStore } from '@/stores/browser-automation';
 import { useInvokerStore } from '@/stores/invoker';
+import { useNavStore } from '@/stores/nav';
 import { setBrowserSearch } from '@/triggers';
 
 // ---------------------------------------------------------------------------
@@ -26,9 +27,14 @@ export function GlobalSearch() {
   ];
   const isHidden = hiddenPaths.some((p) => pathname.startsWith(p));
 
-  const isLiveTraffic = pathname === '/';
+  const isOverview = pathname === '/';
+  const isLiveTraffic = pathname === '/live-traffic';
   const isBrowserAutomation = pathname.startsWith('/browser-automation');
   const isInvoker = pathname.startsWith('/invoker');
+
+  // Overview Search: read/write the nav store
+  const overviewSearch = useNavStore((s) => s.overviewSearchQuery);
+  const setOverviewSearch = useNavStore((s) => s.setOverviewSearchQuery);
 
   // Live Traffic: read/write the filter store directly
   const liveSearch = useHistoryQueryStore((s) => s.filter.search);
@@ -44,25 +50,31 @@ export function GlobalSearch() {
   // For non-routed pages, maintain local state
   const [query, setQuery] = React.useState('');
 
-  const placeholder = isLiveTraffic
-    ? 'Search URL, host, method, body…'
-    : isBrowserAutomation
-      ? 'Search pages, logs, insights…'
-      : isInvoker
-        ? 'Search status or payload…'
-        : 'Search pages…';
+  const placeholder = isOverview
+    ? 'Search features…'
+    : isLiveTraffic
+      ? 'Search URL, host, method, body…'
+      : isBrowserAutomation
+        ? 'Search pages, logs, insights…'
+        : isInvoker
+          ? 'Search status or payload…'
+          : 'Search pages…';
 
-  const value = isLiveTraffic
-    ? liveSearch
-    : isBrowserAutomation
-      ? browserSearch
-      : isInvoker
-        ? invokerSearch
-        : query;
+  const value = isOverview
+    ? overviewSearch
+    : isLiveTraffic
+      ? liveSearch
+      : isBrowserAutomation
+        ? browserSearch
+        : isInvoker
+          ? invokerSearch
+          : query;
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const next = e.target.value;
-    if (isLiveTraffic) {
+    if (isOverview) {
+      setOverviewSearch(next);
+    } else if (isLiveTraffic) {
       liveSetSearch(next);
     } else if (isBrowserAutomation) {
       setBrowserSearch(next);

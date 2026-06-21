@@ -37,7 +37,10 @@ pub use commands::packet_capture::{
     list_capture_interfaces, prepare_packet_capture_permissions, start_packet_capture,
     stop_packet_capture,
 };
-pub use db::repository::{Database, DocumentRecord, PaginatedResponse, TreeNode, TreePath};
+pub use db::repository::{
+    Database, DocumentRecord, PaginatedResponse, TreeNode, TreePath, StashRecord,
+    StashEndpointRecord, ContextRecord, ChronicleLogRecord,
+};
 pub use history::{
     HistoryBridge, ProxyLogSummary, StoredPacketSummary, WebSocketConnectionDetail,
     WebSocketConnectionSummary,

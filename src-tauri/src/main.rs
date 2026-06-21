@@ -79,11 +79,20 @@ fn main() {
             app.manage(Arc::new(BrowserTabManager::new(app.handle().clone())));
             app.manage(database);
             app.manage(history);
-            // Start the LSP Server
+            // Start the LSP Server — prefer the bundled rust-analyzer sidecar binary.
+            // Tauri places externalBin sidecars next to the app executable.
             let (port_tx, port_rx) = tokio::sync::oneshot::channel();
-            tauri::async_runtime::spawn(async move {
-                hexbuffer::commands::lsp::run_lsp_server(port_tx).await;
-            });
+            {
+                let ext = if cfg!(windows) { ".exe" } else { "" };
+                let bundled_ra = std::env::current_exe()
+                    .ok()
+                    .and_then(|exe| exe.parent().map(|dir| {
+                        dir.join(format!("rust-analyzer{}", ext))
+                    }));
+                tauri::async_runtime::spawn(async move {
+                    hexbuffer::commands::lsp::run_lsp_server(port_tx, bundled_ra).await;
+                });
+            }
             let app_handle = app.handle().clone();
             tauri::async_runtime::spawn(async move {
                 if let Ok(port) = port_rx.await {
@@ -258,7 +267,21 @@ fn main() {
             hexbuffer::commands::repeater::ws_repeater_connect,
             hexbuffer::commands::repeater::ws_repeater_send,
             hexbuffer::commands::repeater::ws_repeater_disconnect,
+            hexbuffer::commands::api_collection::send_forge_request,
+            hexbuffer::commands::api_collection::get_stashes,
+            hexbuffer::commands::api_collection::save_stash,
+            hexbuffer::commands::api_collection::delete_stash,
+            hexbuffer::commands::api_collection::get_stash_endpoints,
+            hexbuffer::commands::api_collection::save_stash_endpoint,
+            hexbuffer::commands::api_collection::delete_stash_endpoint,
+            hexbuffer::commands::api_collection::get_contexts,
+            hexbuffer::commands::api_collection::save_context,
+            hexbuffer::commands::api_collection::delete_context,
+            hexbuffer::commands::api_collection::get_chronicle_logs,
+            hexbuffer::commands::api_collection::add_chronicle_log,
+            hexbuffer::commands::api_collection::clear_chronicle_logs,
             hexbuffer::commands::intruder::start_intruder_attack,
+
             hexbuffer::commands::intruder::stop_intruder_attack,
             hexbuffer::port_scanner::scan_ports,
             hexbuffer::port_scanner::stop_port_scan,

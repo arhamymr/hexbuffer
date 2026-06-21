@@ -3,10 +3,14 @@ import { create } from 'zustand';
 interface NavState {
   blinkingItems: Set<string>;
   triggerNavBlink: (href: string) => void;
+  overviewSearchQuery: string;
+  setOverviewSearchQuery: (query: string) => void;
 }
 
 export const useNavStore = create<NavState>()((set, get) => ({
   blinkingItems: new Set(),
+  overviewSearchQuery: '',
+  setOverviewSearchQuery: (overviewSearchQuery) => set({ overviewSearchQuery }),
   triggerNavBlink: (href: string) => {
     const current = get().blinkingItems;
     const next = new Set(current);

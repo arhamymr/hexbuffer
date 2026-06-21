@@ -27,6 +27,7 @@ export interface PageButton {
   key: string;
   icon: React.ComponentType<{ className?: string }>;
   label: string;
+  showLabel?: boolean;
   isActive: boolean;
   onClick: () => void;
   visible: boolean;
@@ -73,7 +74,7 @@ export function useFloatingPageButtons(pathname: string): PageButton[] {
 
   return React.useMemo<PageButton[]>(() => {
 
-    if (pathname === '/') {
+    if (pathname === '/live-traffic') {
       return [
         {
           key: 'target-selector',
@@ -87,6 +88,7 @@ export function useFloatingPageButtons(pathname: string): PageButton[] {
           key: 'pause-resume',
           icon: isPaused ? Play : Pause,
           label: isPaused ? 'Resume' : 'Pause',
+          showLabel: true,
           isActive: isPaused,
           onClick: toggleStreamPause,
           visible: true,
@@ -94,7 +96,8 @@ export function useFloatingPageButtons(pathname: string): PageButton[] {
         {
           key: 'history-mode',
           icon: ArrowLeftRight,
-          label: historyMode === 'http' ? 'WebSocket' : 'HTTP',
+          showLabel: true,
+          label: historyMode === 'http' ? 'HTTP' : 'WebSocket',
           isActive: false,
           onClick: toggleHistoryMode,
           visible: true,
@@ -110,7 +113,8 @@ export function useFloatingPageButtons(pathname: string): PageButton[] {
         {
           key: 'intercept-toggle',
           icon: isEnabled ? ShieldCheck : ShieldOff,
-          label: isEnabled ? 'Intercept On' : 'Enable Intercept',
+          label: isEnabled ? 'On' : 'Off',
+          showLabel: true,
           isActive: isEnabled,
           onClick: toggleInterceptEnabled,
           visible: true,
@@ -119,6 +123,7 @@ export function useFloatingPageButtons(pathname: string): PageButton[] {
           key: 'intercept-forward',
           icon: SendHorizonal,
           label: 'Forward',
+          showLabel: true,
           isActive: hasSelection && !interceptIsBusy,
           onClick: forwardPaused,
           visible: true,
@@ -182,6 +187,7 @@ export function useFloatingPageButtons(pathname: string): PageButton[] {
           key: 'invoker-start',
           icon: Play,
           label: 'Start',
+          showLabel: true,
           isActive: false,
           onClick: startInvokerUiAttack,
           visible: !invokerRunning,
@@ -207,6 +213,7 @@ export function useFloatingPageButtons(pathname: string): PageButton[] {
           key: 'repeater-send',
           icon: repeaterLoading ? Loader2 : SendHorizonal,
           label: 'Send',
+          showLabel: true,
           isActive: false,
           onClick: () => { void sendRepeaterRequest(); },
           visible: true,

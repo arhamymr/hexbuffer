@@ -4,6 +4,9 @@ import { CaInstallDialog } from "@/components/ca-install-dialog";
 import { startLiveTrafficWatcher, stopLiveTrafficWatcher } from "@/triggers/live-traffic";
 import { startPageCrawledWatcher, stopPageCrawledWatcher } from "@/triggers/browser";
 
+const OverviewPage = React.lazy(() =>
+  import("@/pages/overview").then((m) => ({ default: m.OverviewPage }))
+);
 const LiveTrafficPage = React.lazy(() =>
   import("@/pages/live-traffic").then((m) => ({ default: m.LiveTrafficPage }))
 );
@@ -24,6 +27,9 @@ const ToolsPage = React.lazy(() =>
 );
 const DocumentsPage = React.lazy(() =>
   import("@/pages/documents").then((m) => ({ default: m.DocumentsPage }))
+);
+const ApiCollectionPage = React.lazy(() =>
+  import("@/pages/api-collection").then((m) => ({ default: m.ApiCollectionPage }))
 );
 const BrowserAutomationPage = React.lazy(() =>
   import("@/pages/browser").then((m) => ({ default: m.BrowserAutomationPage }))
@@ -71,7 +77,8 @@ function AppRoutes() {
       <CaInstallDialog />
       <React.Suspense fallback={<div className="h-full flex items-center justify-center text-muted-foreground text-sm">Loading…</div>}>
         <Routes>
-          <Route path="/" element={<LiveTrafficPage />} />
+          <Route path="/" element={<OverviewPage />} />
+          <Route path="/live-traffic" element={<LiveTrafficPage />} />
           <Route path="/intercept" element={<InterceptPage />} />
           <Route path="/repeater" element={<RepeaterPage />} />
           <Route path="/invoker" element={<InvokerPage />} />
@@ -80,6 +87,7 @@ function AppRoutes() {
           <Route path="/debugger" element={<DebuggerPage />} />
           <Route path="/tools" element={<ToolsPage />} />
           <Route path="/documents" element={<DocumentsPage />} />
+          <Route path="/api-collection" element={<ApiCollectionPage />} />
           <Route path="/automation" element={<AutomationPage />} />
           <Route path="/threats" element={<ThreatsPage />} />
           <Route path="/settings" element={<Settings />} />

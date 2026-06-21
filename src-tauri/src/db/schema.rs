@@ -421,3 +421,61 @@ CREATE TABLE IF NOT EXISTS regression_runs (
 CREATE INDEX IF NOT EXISTS idx_regression_runs_test_case ON regression_runs(test_case_id);
 CREATE INDEX IF NOT EXISTS idx_regression_runs_created ON regression_runs(created_at);
 "#;
+
+pub const CREATE_STASHES_TABLES: &str = r#"
+CREATE TABLE IF NOT EXISTS stashes (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    parent_id TEXT,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS stash_endpoints (
+    id TEXT PRIMARY KEY,
+    stash_id TEXT NOT NULL,
+    name TEXT NOT NULL,
+    method TEXT NOT NULL,
+    url TEXT NOT NULL,
+    headers TEXT,
+    body TEXT,
+    body_type TEXT,
+    pre_script TEXT,
+    test_script TEXT,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    FOREIGN KEY(stash_id) REFERENCES stashes(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_stashes_parent ON stashes(parent_id);
+CREATE INDEX IF NOT EXISTS idx_stash_endpoints_stash ON stash_endpoints(stash_id);
+"#;
+
+pub const CREATE_CONTEXTS_TABLES: &str = r#"
+CREATE TABLE IF NOT EXISTS contexts (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    variables TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
+"#;
+
+pub const CREATE_CHRONICLE_TABLES: &str = r#"
+CREATE TABLE IF NOT EXISTS chronicle_logs (
+    id TEXT PRIMARY KEY,
+    timestamp TEXT NOT NULL,
+    method TEXT NOT NULL,
+    url TEXT NOT NULL,
+    request_headers TEXT,
+    request_body TEXT,
+    response_status INTEGER,
+    response_status_text TEXT,
+    response_headers TEXT,
+    response_body TEXT,
+    duration_ms INTEGER
+);
+
+CREATE INDEX IF NOT EXISTS idx_chronicle_timestamp ON chronicle_logs(timestamp);
+"#;
+

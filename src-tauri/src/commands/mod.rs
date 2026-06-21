@@ -18,3 +18,5 @@ pub mod storage;
 pub mod terminal;
 pub mod threats;
 pub mod lsp;
+pub mod api_collection;
+

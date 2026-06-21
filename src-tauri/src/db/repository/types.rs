@@ -60,3 +60,57 @@ pub struct TreePath {
     pub count: u32,
     pub methods: Vec<String>,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct StashRecord {
+    pub id: String,
+    pub name: String,
+    pub parent_id: Option<String>,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct StashEndpointRecord {
+    pub id: String,
+    pub stash_id: String,
+    pub name: String,
+    pub method: String,
+    pub url: String,
+    pub headers: Option<String>, // JSON string
+    pub body: Option<String>,
+    pub body_type: Option<String>,
+    pub pre_script: Option<String>,
+    pub test_script: Option<String>,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ContextRecord {
+    pub id: String,
+    pub name: String,
+    pub variables: String, // JSON string
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ChronicleLogRecord {
+    pub id: String,
+    pub timestamp: String,
+    pub method: String,
+    pub url: String,
+    pub request_headers: Option<String>,
+    pub request_body: Option<String>,
+    pub response_status: Option<u16>,
+    pub response_status_text: Option<String>,
+    pub response_headers: Option<String>,
+    pub response_body: Option<String>,
+    pub duration_ms: Option<i64>,
+}
+

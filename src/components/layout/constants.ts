@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowUpDown, Box, Bug, PauseCircle, RotateCw, LoaderPinwheel, Atom, Hexagon, FlaskConical, Binary, AppWindow, BookText, SquareLibrary, Radar, ShieldCheck } from 'lucide-react';
+import { Home, ArrowUpDown, Box, Bug, PauseCircle, RotateCw, LoaderPinwheel, Atom, Hexagon, FlaskConical, Binary, AppWindow, BookText, SquareLibrary, Radar, ShieldCheck, Cat, List } from 'lucide-react';
 
 export interface NavItem {
   label: string;
@@ -12,23 +12,26 @@ export interface NavItem {
 export interface NavCategory {
   label: string;
   icon: React.ComponentType<{ className?: string }>;
+  devOnly?: boolean;
   items: NavItem[];
 }
 
 export const allNavItems: NavItem[] = [
-  { label: 'Live Traffic', icon: ArrowUpDown, href: '/' },
+  { label: 'Overview', icon: Home, href: '/' },
+  { label: 'Live Traffic', icon: ArrowUpDown, href: '/live-traffic' },
   { label: 'Workflow', icon: LoaderPinwheel, href: '/automation', devOnly: true },
-  { label: 'Browser', icon: AppWindow, href: '/browser'},
+  { label: 'Browser', icon: AppWindow, href: '/browser' },
   { label: 'Intercept', icon: PauseCircle, href: '/intercept' },
   { label: 'Code', icon: Binary, href: '/playground', devOnly: true },
   { label: 'Invoker', icon: Hexagon, href: '/invoker' },
   { label: 'Repeater', icon: RotateCw, href: '/repeater' },
-  { label: 'Threats', icon: Atom, href: '/threats', devOnly: true},
-  { label: 'Documents', icon: BookText, href: '/documents'},
+  { label: 'Threats', icon: Atom, href: '/threats', devOnly: true },
+  { label: 'Documents', icon: BookText, href: '/documents' },
   { label: 'Tools', icon: Box, href: '/tools' },
   { label: 'Code Audit', icon: ShieldCheck, href: '/code-audit' },
   { label: 'Debugger', icon: Bug, href: '/debugger', devOnly: true },
   { label: 'Regression', icon: FlaskConical, href: '/regression', devOnly: true },
+  { label: 'APIs Collection', icon: List, href: '/api-collection', devOnly: true }
 ];
 
 export const mainNavItems = import.meta.env.PROD
@@ -37,10 +40,17 @@ export const mainNavItems = import.meta.env.PROD
 
 export const allCategories: NavCategory[] = [
   {
+    label: 'Overview',
+    icon: Home,
+    items: [
+      { label: 'Overview', icon: Home, href: '/' },
+    ],
+  },
+  {
     label: 'Recon',
     icon: SquareLibrary,
     items: [
-      { label: 'Live Traffic', icon: ArrowUpDown, href: '/' },
+      { label: 'Live Traffic', icon: ArrowUpDown, href: '/live-traffic' },
       { label: 'Intercept', icon: PauseCircle, href: '/intercept' },
       { label: 'Repeater', icon: RotateCw, href: '/repeater' },
       { label: 'Invoker', icon: Hexagon, href: '/invoker' },
@@ -66,18 +76,21 @@ export const allCategories: NavCategory[] = [
     ],
   },
   {
-    label: 'Code',
-    icon: Binary,
+    label: 'Build',
+    icon: Cat,
+    devOnly: true,
     items: [
       { label: 'Code', icon: Binary, href: '/playground', devOnly: true },
-      { label: 'Code Audit', icon: ShieldCheck, href: '/code-audit' },
+      { label: 'Code Audit', icon: ShieldCheck, href: '/code-audit', devOnly: true },
+      { label: 'APIs Collection', icon: List, href: '/api-collection', devOnly: true }
+
     ],
   },
 ];
 
 export const navCategories = import.meta.env.PROD
   ? allCategories.map((cat) => ({
-      ...cat,
-      items: cat.items.filter((item) => !item.devOnly),
-    }))
+    ...cat,
+    items: cat.items.filter((item) => !item.devOnly),
+  }))
   : allCategories;

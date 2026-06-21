@@ -2,97 +2,92 @@ import { useEffect, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { MonacoLanguageClient } from 'monaco-languageclient';
 import { toSocket, WebSocketMessageReader, WebSocketMessageWriter } from 'vscode-ws-jsonrpc';
-import { MonacoVscodeApiWrapper } from 'monaco-languageclient/vscodeApiWrapper';
 
+// Module-level singletons so the LSP client survives re-renders
 let globalClient: MonacoLanguageClient | null = null;
-let apiWrapperStarted = false;
+let globalWs: WebSocket | null = null;
+let startingUp = false;
 
 export function useMonacoLsp(activeLanguage: string) {
   const [isLspActive, setIsLspActive] = useState(false);
 
   useEffect(() => {
-    // Only initialize LSP if the active document is Rust and there isn't an active client already
-    if (activeLanguage !== 'rust') {
-      return;
-    }
+    // Only activate LSP for Rust files
+    if (activeLanguage !== 'rust') return;
 
-    if (globalClient) {
+    // Already running — nothing to do
+    if (globalClient || startingUp) {
       setIsLspActive(true);
       return;
     }
 
     let isMounted = true;
-    let ws: WebSocket | null = null;
+    startingUp = true;
 
     const startLsp = async () => {
       try {
-        // 1. Get the dynamic LSP port from the Tauri backend
+        // 1. Ask Tauri for the LSP bridge port
         const port = await invoke<number>('get_lsp_port');
-        if (!isMounted) return;
+        if (!isMounted) { startingUp = false; return; }
 
-        // 2. Start VS Code API services once
-        if (!apiWrapperStarted) {
-          const apiWrapper = new MonacoVscodeApiWrapper({
-            $type: 'classic',
-            logLevel: 2, // Info
-          });
-          await apiWrapper.start();
-          apiWrapperStarted = true;
-        }
-
-        if (!isMounted) return;
-
-        // 3. Connect to the local LSP WebSocket proxy
-        ws = new WebSocket(`ws://127.0.0.1:${port}`);
+        // 2. Open a WebSocket to the Tauri LSP bridge
+        const ws = new WebSocket(`ws://127.0.0.1:${port}`);
+        globalWs = ws;
 
         ws.onopen = () => {
-          if (!isMounted) {
-            ws?.close();
-            return;
-          }
+          if (!isMounted) { ws.close(); startingUp = false; return; }
 
-          const socket = toSocket(ws!);
+          // 3. Wire up the JSON-RPC transports
+          const socket = toSocket(ws);
           const reader = new WebSocketMessageReader(socket);
           const writer = new WebSocketMessageWriter(socket);
 
+          // 4. Create and start the Monaco Language Client
           const client = new MonacoLanguageClient({
             name: 'Rust Language Client',
             clientOptions: {
               documentSelector: ['rust'],
               errorHandler: {
-                error: () => ({ action: 1 /* Continue */ }),
-                closed: () => ({ action: 2 /* DoNotRestart */ }),
+                // ErrorAction.Continue = 1, CloseAction.DoNotRestart = 2
+                error: () => ({ action: 1 }),
+                closed: () => ({ action: 2 }),
               },
             },
             messageTransports: { reader, writer },
           });
 
-          client.start();
+          void client.start();
           globalClient = client;
-          setIsLspActive(true);
+          startingUp = false;
 
+          if (isMounted) setIsLspActive(true);
+
+          // Clean up when the connection closes
           reader.onClose(() => {
-            if (globalClient === client) {
-              globalClient = null;
-            }
-            setIsLspActive(false);
+            globalClient = null;
+            globalWs = null;
+            if (isMounted) setIsLspActive(false);
           });
         };
 
         ws.onerror = (err) => {
           console.error('[Monaco LSP] WebSocket error:', err);
+          startingUp = false;
         };
 
         ws.onclose = () => {
           if (globalClient) {
-            globalClient.stop();
+            void globalClient.stop();
             globalClient = null;
           }
-          setIsLspActive(false);
+          globalWs = null;
+          startingUp = false;
+          if (isMounted) setIsLspActive(false);
         };
 
       } catch (err) {
         console.error('[Monaco LSP] Failed to start LSP client:', err);
+        startingUp = false;
       }
     };
 

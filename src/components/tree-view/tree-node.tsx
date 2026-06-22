@@ -1,5 +1,3 @@
-'use client';
-
 import type { MouseEvent } from 'react';
 import { useState } from 'react';
 import { ChevronDown, ChevronRight, FileText, Lock, LockOpen } from 'lucide-react';

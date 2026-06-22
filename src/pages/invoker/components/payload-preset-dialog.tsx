@@ -1,5 +1,3 @@
-'use client';
-
 import * as React from 'react';
 import { FileText, Folder, Search } from 'lucide-react';
 

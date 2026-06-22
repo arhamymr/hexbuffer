@@ -1,5 +1,3 @@
-'use client';
-
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { TextEditor } from '@/components/ui/text-editor';

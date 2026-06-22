@@ -1,6 +1,3 @@
-'use client';
-
-import * as React from 'react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,136 +14,82 @@ import { DocumentTemplateDialog } from './components/document-template-dialog';
 import { DocumentsToolbar } from './components/documents-toolbar';
 import { DocumentsWorkspace } from './components/documents-workspace';
 import { useDocumentsPage } from './hooks/use-documents-page';
-import { type MarkdownEditorMode } from './types';
 
 export function DocumentsPage() {
-  const [markdownMode, setMarkdownMode] = React.useState<MarkdownEditorMode>('code');
-  const {
-    tabs,
-    activeDocumentId,
-    setActiveDocumentId,
-    addDocument,
-    openTemplateDialog,
-    isTemplateDialogOpen,
-    setIsTemplateDialogOpen,
-    closeDocument,
-    activeDocument,
-    renameDocument,
-    updateTitle,
-    removeCustomSection,
-    reorderCustomSections,
-    updateCustomSection,
-    undoCustomSectionChange,
-    redoCustomSectionChange,
-    canUndoCustomSection,
-    canRedoCustomSection,
-    deleteApiEntry,
-    addApiEntry,
-    updateApiEntryRaw,
-    apiEditError,
-    apiResponse,
-    isFetchingApi,
-    apiFetchError,
-    fetchSelectedApi,
-    activeFileId,
-    openFileIds,
-    isApiFolderOpen,
-    setIsApiFolderOpen,
-    openFile,
-    closeFile,
-    openApiEntry,
-    activeApiEntry,
-    activeCustomSection,
-    activeLabel,
-    isCustomSectionFile,
-    documentPendingDelete,
-    documentIdPendingDelete,
-    cancelDocumentDelete,
-    confirmDocumentDelete,
-    isCustomSectionDialogOpen,
-    setIsCustomSectionDialogOpen,
-    handleAddCustomSection,
-    customSectionPendingRename,
-    setCustomSectionPendingRename,
-    handleRenameCustomSection,
-    exporting,
-    handleExportPdf,
-  } = useDocumentsPage();
+  const page = useDocumentsPage();
 
-  if (!activeDocument) {
+  if (!page.activeDocument) {
     return null;
   }
 
   return (
     <>
       <TabbedPageLayout
-        tabs={tabs}
-        activeTabId={activeDocumentId}
-        onTabChange={setActiveDocumentId}
-        onTabAdd={openTemplateDialog}
-        onTabRename={renameDocument}
-        onTabClose={closeDocument}
+        tabs={page.tabs}
+        activeTabId={page.activeDocumentId}
+        onTabChange={page.setActiveDocumentId}
+        onTabAdd={page.openTemplateDialog}
+        onTabRename={page.renameDocument}
+        onTabClose={page.closeDocument}
         className="flex min-h-0 h-full flex-1 flex-col"
         contentClassName="flex-1 rounded-lg border min-h-0 overflow-hidden bg-background"
       >
         <div className="flex h-full min-h-0 flex-col">
           <DocumentsToolbar
-            activeDocument={activeDocument}
-            exporting={exporting}
-            canPreviewMarkdown={isCustomSectionFile}
-            markdownMode={markdownMode}
-            canUndoMarkdown={isCustomSectionFile && canUndoCustomSection}
-            canRedoMarkdown={isCustomSectionFile && canRedoCustomSection}
-            onExportPdf={handleExportPdf}
-            onMarkdownModeChange={setMarkdownMode}
-            onUndoMarkdown={undoCustomSectionChange}
-            onRedoMarkdown={redoCustomSectionChange}
-            onTitleChange={updateTitle}
+            activeDocument={page.activeDocument}
+            exporting={page.exporting}
+            canPreviewMarkdown={page.isCustomSectionFile}
+            markdownMode={page.markdownMode}
+            canUndoMarkdown={page.isCustomSectionFile && page.canUndoCustomSection}
+            canRedoMarkdown={page.isCustomSectionFile && page.canRedoCustomSection}
+            onExportPdf={page.handleExportPdf}
+            onMarkdownModeChange={page.setMarkdownMode}
+            onUndoMarkdown={page.undoCustomSectionChange}
+            onRedoMarkdown={page.redoCustomSectionChange}
+            onTitleChange={page.updateTitle}
           />
           <DocumentsWorkspace
-            activeDocument={activeDocument}
-            activeFileId={activeFileId}
-            openFileIds={openFileIds}
-            isApiFolderOpen={isApiFolderOpen}
-            activeApiEntry={activeApiEntry}
-            activeCustomSection={activeCustomSection}
-            activeLabel={activeLabel}
-            isCustomSectionFile={isCustomSectionFile}
-            apiResponse={apiResponse}
-            isFetchingApi={isFetchingApi}
-            apiFetchError={apiFetchError}
-            apiEditError={apiEditError}
-            markdownMode={markdownMode}
-            onApiFolderOpenChange={setIsApiFolderOpen}
-            onOpenFile={openFile}
-            onOpenApiEntry={openApiEntry}
-            onAddApiEntry={addApiEntry}
-            onDeleteApiEntry={deleteApiEntry}
-            onAddCustomSection={() => setIsCustomSectionDialogOpen(true)}
-            onRenameCustomSection={setCustomSectionPendingRename}
-            onRemoveCustomSection={removeCustomSection}
-            onReorderCustomSections={reorderCustomSections}
-            onCloseFile={closeFile}
-            onFetchSelectedApi={fetchSelectedApi}
-            onUpdateCustomSection={updateCustomSection}
-            onUpdateApiEntryRaw={updateApiEntryRaw}
+            activeDocument={page.activeDocument}
+            activeFileId={page.activeFileId}
+            openFileIds={page.openFileIds}
+            isApiFolderOpen={page.isApiFolderOpen}
+            activeApiEntry={page.activeApiEntry}
+            activeCustomSection={page.activeCustomSection}
+            activeLabel={page.activeLabel}
+            isCustomSectionFile={page.isCustomSectionFile}
+            apiResponse={page.apiResponse}
+            isFetchingApi={page.isFetchingApi}
+            apiFetchError={page.apiFetchError}
+            apiEditError={page.apiEditError}
+            markdownMode={page.markdownMode}
+            onApiFolderOpenChange={page.setIsApiFolderOpen}
+            onOpenFile={page.openFile}
+            onOpenApiEntry={page.openApiEntry}
+            onAddApiEntry={page.addApiEntry}
+            onDeleteApiEntry={page.deleteApiEntry}
+            onAddCustomSection={() => page.setIsCustomSectionDialogOpen(true)}
+            onRenameCustomSection={page.setCustomSectionPendingRename}
+            onRemoveCustomSection={page.removeCustomSection}
+            onReorderCustomSections={page.reorderCustomSections}
+            onCloseFile={page.closeFile}
+            onFetchSelectedApi={page.fetchSelectedApi}
+            onUpdateCustomSection={page.updateCustomSection}
+            onUpdateApiEntryRaw={page.updateApiEntryRaw}
           />
         </div>
       </TabbedPageLayout>
 
       <AlertDialog
-        open={documentIdPendingDelete !== null}
+        open={page.documentIdPendingDelete !== null}
         onOpenChange={(open) => {
-          if (!open) {
-            cancelDocumentDelete();
-          }
+          if (!open) page.cancelDocumentDelete();
         }}
       >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete document?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will delete {documentPendingDelete?.name ?? 'this document'} and its saved notes
+              This will delete {page.documentPendingDelete?.name ?? 'this document'} and its saved notes
               from Documents. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -154,7 +97,7 @@ export function DocumentsPage() {
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               variant="destructive"
-              onClick={confirmDocumentDelete}
+              onClick={page.confirmDocumentDelete}
             >
               Delete
             </AlertDialogAction>
@@ -163,28 +106,27 @@ export function DocumentsPage() {
       </AlertDialog>
 
       <CustomSectionDialog
-        open={isCustomSectionDialogOpen}
-        onOpenChange={setIsCustomSectionDialogOpen}
-        onAdd={handleAddCustomSection}
+        open={page.isCustomSectionDialogOpen}
+        onOpenChange={page.setIsCustomSectionDialogOpen}
+        onAdd={page.handleAddCustomSection}
       />
 
       <CustomSectionDialog
-        open={customSectionPendingRename !== null}
+        open={page.customSectionPendingRename !== null}
         onOpenChange={(open) => {
-          if (!open) {
-            setCustomSectionPendingRename(null);
-          }
+          if (!open) page.setCustomSectionPendingRename(null);
         }}
-        onAdd={handleRenameCustomSection}
-        initialValues={customSectionPendingRename}
+        onAdd={page.handleRenameCustomSection}
+        initialValues={page.customSectionPendingRename}
         mode="edit"
       />
 
       <DocumentTemplateDialog
-        open={isTemplateDialogOpen}
-        onOpenChange={setIsTemplateDialogOpen}
-        onSelectTemplate={addDocument}
+        open={page.isTemplateDialogOpen}
+        onOpenChange={page.setIsTemplateDialogOpen}
+        onSelectTemplate={page.addDocument}
       />
     </>
   );
 }
+

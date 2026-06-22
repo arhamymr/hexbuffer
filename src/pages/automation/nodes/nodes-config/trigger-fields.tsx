@@ -1,5 +1,3 @@
-'use client';
-
 import React from 'react';
 import { Globe, Info } from 'lucide-react';
 import { Input } from '@/components/ui/input';

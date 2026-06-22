@@ -1,5 +1,3 @@
-'use client';
-
 import { Plug, Unplug, Loader2, Circle, RotateCw, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {

@@ -1,5 +1,3 @@
-'use client';
-
 import { Clipboard } from 'lucide-react';
 import { HighlightedText } from '@/components/highlighted-text';
 import { Button } from '@/components/ui/button';

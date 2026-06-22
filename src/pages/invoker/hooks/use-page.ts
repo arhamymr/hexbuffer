@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { toast } from 'sonner';
 import { useInvokerStore } from '@/stores/invoker';
+import { useAppStore } from '@/stores/app';
 import { useShallow } from 'zustand/react/shallow';
 import {
   allPositionsHavePayloads,
@@ -10,6 +11,9 @@ import {
 } from '../types';
 
 export function useInvokerPage() {
+  const invokerSafetyAlertDismissed = useAppStore((s) => s.invokerSafetyAlertDismissed);
+  const setInvokerSafetyAlertDismissed = useAppStore((s) => s.setInvokerSafetyAlertDismissed);
+
   const {
     tabs,
     activeTabId,
@@ -137,5 +141,7 @@ export function useInvokerPage() {
     stopAttack,
     clearStartError,
     handleStartAttack,
+    invokerSafetyAlertDismissed,
+    setInvokerSafetyAlertDismissed,
   };
 }

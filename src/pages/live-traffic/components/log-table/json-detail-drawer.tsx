@@ -1,5 +1,3 @@
-"use client";
-
 import { Drawer, DrawerContent } from '@/components/ui/drawer';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import type { ApiCall } from '@/types';

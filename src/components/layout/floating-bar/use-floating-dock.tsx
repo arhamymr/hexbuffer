@@ -1,5 +1,3 @@
-'use client';
-
 import * as React from 'react';
 import { relaunch } from '@tauri-apps/plugin-process';
 import { toast } from 'sonner';

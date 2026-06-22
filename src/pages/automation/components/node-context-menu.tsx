@@ -1,5 +1,3 @@
-'use client';
-
 import React from 'react';
 import { Trash2, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';

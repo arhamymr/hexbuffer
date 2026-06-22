@@ -1,40 +1,14 @@
-'use client';
-
 import { useState } from 'react';
 import { TabbedPageLayout } from '@/components/tabs-layout/tabbed-page-layout';
-import type { PageTabItem } from '@/components/tabs-layout/types';
 import { cn } from '@/lib/utils';
 import { useInspectorPage } from './hooks/use-inspector-page';
 import { InspectorView } from './components/inspector-view';
 import { BrowserPanel } from './components/browser-panel';
+import { TOP_LEVEL_TABS, BROWSER_TAB_ID } from './constants';
 import type { InspectorTopTab } from './types';
 
-const TOP_LEVEL_TABS: PageTabItem[] = [
-  { id: 'browser', name: 'Browser', closable: false },
-  { id: 'inspector', name: 'Inspector', closable: false },
-];
-
-const BROWSER_TAB_ID = 'inspector-browser-tab';
-
 export function InspectorPage() {
-  const {
-    isConnected,
-    isConnecting,
-    isResetting,
-    sidebarOpen,
-    setSidebarOpen,
-    activeTab,
-    setActiveTab,
-    activeProxyPort,
-    selectedLogId,
-    selectedLog,
-    selectedNetwork,
-    handleSelectLog,
-    handleConnect,
-    handleDisconnect,
-    handleReset,
-  } = useInspectorPage();
-
+  const page = useInspectorPage();
   const [topTab, setTopTab] = useState<InspectorTopTab>('inspector');
 
   return (
@@ -63,24 +37,25 @@ export function InspectorPage() {
           )}
         >
           <InspectorView
-            isConnected={isConnected}
-            isConnecting={isConnecting}
-            isResetting={isResetting}
-            sidebarOpen={sidebarOpen}
-            setSidebarOpen={setSidebarOpen}
-            activeTab={activeTab}
-            setActiveTab={setActiveTab}
-            activeProxyPort={activeProxyPort}
-            selectedLogId={selectedLogId}
-            selectedLog={selectedLog}
-            selectedNetwork={selectedNetwork}
-            onSelectLog={handleSelectLog}
-            onConnect={handleConnect}
-            onDisconnect={handleDisconnect}
-            onReset={handleReset}
+            isConnected={page.isConnected}
+            isConnecting={page.isConnecting}
+            isResetting={page.isResetting}
+            sidebarOpen={page.sidebarOpen}
+            setSidebarOpen={page.setSidebarOpen}
+            activeTab={page.activeTab}
+            setActiveTab={page.setActiveTab}
+            activeProxyPort={page.activeProxyPort}
+            selectedLogId={page.selectedLogId}
+            selectedLog={page.selectedLog}
+            selectedNetwork={page.selectedNetwork}
+            onSelectLog={page.handleSelectLog}
+            onConnect={page.handleConnect}
+            onDisconnect={page.handleDisconnect}
+            onReset={page.handleReset}
           />
         </div>
       </div>
     </TabbedPageLayout>
   );
 }
+

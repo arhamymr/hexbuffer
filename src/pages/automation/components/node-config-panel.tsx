@@ -1,5 +1,3 @@
-'use client';
-
 import { X, Trash2, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAutomationStore } from '@/stores/automation';

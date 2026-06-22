@@ -1,5 +1,3 @@
-'use client';
-
 import { Copy, AlertTriangle, Info, AlertCircle, Bug, Terminal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ConsoleLevelBadge } from '@/components/status-badge';

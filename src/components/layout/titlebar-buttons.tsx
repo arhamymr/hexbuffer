@@ -1,5 +1,3 @@
-'use client'
-
 import { useTitlebarButtons } from './hooks/use-titlebar-buttons';
 
 const baseClass = "flex size-3 items-center justify-center rounded-full transition-all duration-200 cursor-pointer hover:scale-110"

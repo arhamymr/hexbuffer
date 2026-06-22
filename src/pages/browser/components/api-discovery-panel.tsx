@@ -1,5 +1,3 @@
-'use client';
-
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import type { DiscoveredApi } from '@/stores/browser-automation';

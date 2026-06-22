@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { useApiCollectionStore } from '@/stores/api-collection';
 import { runScriptSandbox } from '../lib/script-sandbox';
@@ -142,6 +142,42 @@ export function useApiCollection() {
     }
   }, [store.activeRequest, getActiveVariables, expandVariables, store.activeContextId, store.contexts]);
 
+  // ── UI state ──
+  const [contextsDialogOpen, setContextsDialogOpen] = useState(false);
+  const [sidebarExpanded, setSidebarExpanded] = useState(true);
+
+  // Load all initial data from DB on mount
+  useEffect(() => {
+    void store.fetchFromDb();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Tab handlers ──
+  const handleTabRename = useCallback(async (id: string, newName: string) => {
+    await store.renameStash(id, newName);
+  }, [store]);
+
+  const handleTabAdd = useCallback(async () => {
+    const nextNum = store.stashes.length + 1;
+    const name = `Collection ${nextNum}`;
+    await store.createStash(name);
+  }, [store]);
+
+  const handleTabClose = useCallback(async (id: string) => {
+    const stash = store.stashes.find((s) => s.id === id);
+    if (stash && confirm(`Are you sure you want to delete the collection "${stash.name}" and all its API requests?`)) {
+      await store.deleteStash(id);
+    }
+  }, [store]);
+
+  const handleCreateInitialRequest = useCallback(async () => {
+    if (store.activeStashId) {
+      await store.createEndpoint(store.activeStashId, 'New Request');
+    }
+  }, [store]);
+
+  // Map stashes to PageTabItem format
+  const pageTabs = store.stashes.map((s) => ({ id: s.id, name: s.name }));
+
   return {
     stashes: store.stashes,
     activeStashId: store.activeStashId,
@@ -157,5 +193,14 @@ export function useApiCollection() {
     activeContextId: store.activeContextId,
     setActiveContextId: store.setActiveContextId,
     chronicleLogs: store.chronicleLogs,
+    pageTabs,
+    contextsDialogOpen,
+    setContextsDialogOpen,
+    sidebarExpanded,
+    setSidebarExpanded,
+    handleTabRename,
+    handleTabAdd,
+    handleTabClose,
+    handleCreateInitialRequest,
   };
 }

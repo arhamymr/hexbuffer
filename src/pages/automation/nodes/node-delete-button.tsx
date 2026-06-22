@@ -1,5 +1,3 @@
-'use client';
-
 import { Trash2 } from 'lucide-react';
 import { useReactFlow } from '@xyflow/react';
 import { cn } from '@/lib/utils';

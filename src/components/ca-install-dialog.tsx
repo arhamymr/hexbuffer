@@ -1,5 +1,3 @@
-'use client';
-
 import { useState, useCallback, useEffect } from 'react';
 import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
 import { AlertTriangle, Globe, KeyRound, Loader2, Settings } from 'lucide-react';

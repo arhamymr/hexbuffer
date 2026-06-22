@@ -1,5 +1,3 @@
-'use client';
-
 import { useState } from 'react';
 import { X, Trash } from 'lucide-react';
 import { CrawlStatusBadge } from '@/components/status-badge';

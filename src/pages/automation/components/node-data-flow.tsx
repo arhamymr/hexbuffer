@@ -1,5 +1,3 @@
-'use client';
-
 import React from 'react';
 import { ArrowDown, ArrowRight, ChevronDown, ChevronRight } from 'lucide-react';
 import type { NodeRuntimeState } from '@/stores/automation';
@@ -28,7 +26,7 @@ function typeLabel(type: DataSchemaField['type']): string {
 
 function FieldRow({ field }: { field: DataSchemaField }) {
   return (
-    <div className="flex items-start gap-2 py-1.5 border-b border-border/40 last:border-b-0">
+    <div className="flex items-start gap-2 py-1.5 border-b  last:border-b-0">
       <span className={`shrink-0 rounded px-1 py-px text-[9px] font-mono font-medium ${typeColor(field.type)} bg-muted/60`}>
         {typeLabel(field.type)}
       </span>

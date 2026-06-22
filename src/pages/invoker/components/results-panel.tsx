@@ -1,5 +1,3 @@
-'use client';
-
 import { Badge } from '@/components/ui/badge';
 import { useInvokerStore } from '@/stores/invoker';
 import { formatPayloadValues, getResultUrl } from '../lib/utils';

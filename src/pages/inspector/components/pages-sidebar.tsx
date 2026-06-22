@@ -1,5 +1,3 @@
-'use client';
-
 import { useMemo, useState } from 'react';
 import { Globe, LayoutGrid, Search, XCircle } from 'lucide-react';
 import { Input } from '@/components/ui/input';

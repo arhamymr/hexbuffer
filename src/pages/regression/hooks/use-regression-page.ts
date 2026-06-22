@@ -1,7 +1,7 @@
 import React from 'react';
 import { useRegressionStore } from '@/stores/regression';
 import { useShallow } from 'zustand/react/shallow';
-import type { TestCase } from '../types';
+import type { StepResult, TestCase } from '../types';
 import type { PageTabItem } from '@/components/tabs-layout/types';
 
 interface RegressionTab {
@@ -27,6 +27,7 @@ export function useRegressionPage() {
     saveTestCase,
     deleteTestCase,
     runTest,
+    runSingleStep,
     loadRuns,
     clearLogs,
   } = useRegressionStore(
@@ -40,6 +41,7 @@ export function useRegressionPage() {
       saveTestCase: s.saveTestCase,
       deleteTestCase: s.deleteTestCase,
       runTest: s.runTest,
+      runSingleStep: s.runSingleStep,
       loadRuns: s.loadRuns,
       clearLogs: s.clearLogs,
     }))
@@ -295,6 +297,58 @@ export function useRegressionPage() {
     [runTest],
   );
 
+  // Derived state that index.tsx previously computed inline
+  const isRunning = activeRun?.status === 'running' || activeRun?.status === 'queued';
+  const activeTabTestCase =
+    activeTab?.editingCase ||
+    testCases.find((tc) => tc.id === activeTab?.testCaseId) ||
+    null;
+  const activeTestName = activeTabTestCase?.testName || 'Regression tests';
+  const activeTestCases = testCases.filter((tc) => tc.testName === activeTestName);
+  const activeTabRunCount = activeTab?.testCaseId ? runs[activeTab.testCaseId]?.length || 0 : 0;
+  const enabledCount = testCases.filter((tc) => tc.enabled).length;
+  const activeTestEnabledCount = activeTestCases.filter((tc) => tc.enabled).length;
+
+  // Single-step execution state
+  const [runningStepIndex, setRunningStepIndex] = React.useState<number | null>(null);
+  const [singleStepResults, setSingleStepResults] = React.useState<Record<number, StepResult>>({});
+
+  const handleRunStep = React.useCallback(
+    async (stepIndex: number) => {
+      if (!activeTabTestCase) return;
+      setRunningStepIndex(stepIndex);
+      try {
+        const result = await runSingleStep(activeTabTestCase.id, stepIndex);
+        if (result) {
+          setSingleStepResults((prev) => ({ ...prev, [stepIndex]: result }));
+        }
+      } finally {
+        setRunningStepIndex(null);
+      }
+    },
+    [activeTabTestCase, runSingleStep],
+  );
+
+  const handleRunAllInActiveTest = React.useCallback(async () => {
+    const runnableCases = activeTestCases.filter((tc) => tc.enabled && tc.steps.length > 0);
+    for (const tc of runnableCases) {
+      await runTest(tc.id);
+    }
+  }, [activeTestCases, runTest]);
+
+  // Enriched internal tabs for rendering
+  const enrichedInternalTabs = React.useMemo(
+    () =>
+      tabs.map((tab) => {
+        const tabTestCase =
+          tab.editingCase || testCases.find((c) => c.id === tab.testCaseId) || null;
+        const tabRuns = tab.testCaseId ? runs[tab.testCaseId] || [] : [];
+        const latestRun = tabRuns.length > 0 ? tabRuns[0] : null;
+        return { ...tab, tabTestCase, tabRuns, latestRun };
+      }),
+    [tabs, testCases, runs],
+  );
+
   return {
     testCases,
     totalRuns,
@@ -305,9 +359,11 @@ export function useRegressionPage() {
     logs,
     clearLogs,
     handleAddTab,
+    activeTab,
     editingCase: activeTab?.editingCase ?? null,
     isNew: activeTab?.isNew ?? false,
     internalTabs: tabs,
+    enrichedInternalTabs,
     tabs: pageTabs,
     activeTabId: activeTabId || '',
     handleCreate,
@@ -316,10 +372,22 @@ export function useRegressionPage() {
     handleDraftChange,
     handleDelete,
     handleRun,
+    handleRunStep,
+    handleRunAllInActiveTest,
     handleCancelEdit,
     openTestCase,
     handleCloseTab,
     handleRenameTab,
     setActiveTabId,
+    // Derived state
+    isRunning,
+    activeTabTestCase,
+    activeTestName,
+    activeTestCases,
+    activeTabRunCount,
+    enabledCount,
+    activeTestEnabledCount,
+    runningStepIndex,
+    singleStepResults,
   };
 }

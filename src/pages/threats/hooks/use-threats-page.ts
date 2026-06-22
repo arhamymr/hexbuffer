@@ -242,10 +242,9 @@ export function useThreatsPage() {
     }
   }, [selectedSampleId]);
 
-  return {
-    tabs: THREAT_TABS,
-    activeTabId,
-    setActiveTabId,
+  const analyzing = runningSampleId === selectedSampleId;
+
+  const workspaceProps = {
     samples,
     selectedSample,
     selectedSampleId,
@@ -253,7 +252,7 @@ export function useThreatsPage() {
     analysis,
     analysisLogs,
     loading,
-    analyzing: runningSampleId === selectedSampleId,
+    analyzing,
     runGhidra,
     setRunGhidra,
     yaraRulesPath,
@@ -264,5 +263,13 @@ export function useThreatsPage() {
     handleDeleteSample,
     handleChooseYaraRules,
     handleImportSample,
+  };
+
+  return {
+    tabs: THREAT_TABS,
+    activeTabId,
+    setActiveTabId,
+    workspaceProps,
+    ...workspaceProps,
   };
 }

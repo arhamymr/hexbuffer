@@ -1,5 +1,3 @@
-'use client';
-
 import { useCallback, useEffect, useMemo } from 'react';
 import { useListenerStore } from '@/stores/listener';
 import { useShallow } from 'zustand/react/shallow';

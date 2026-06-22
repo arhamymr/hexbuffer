@@ -1,5 +1,3 @@
-'use client';
-
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import type { BrowserSnapshot } from '@/stores/browser-automation';

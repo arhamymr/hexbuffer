@@ -1,5 +1,3 @@
-'use client';
-
 import { Label } from '@/components/ui/label';
 import { TextEditor } from '@/components/ui/text-editor';
 import { useRequestPanel } from './hooks/use-request-panel';

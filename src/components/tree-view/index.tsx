@@ -1,5 +1,3 @@
-'use client';
-
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Empty, EmptyDescription, EmptyTitle } from '@/components/ui/empty';
 import { cn } from '@/lib/utils';

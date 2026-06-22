@@ -4,7 +4,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { sendRepeaterRequest } from '@/pages/repeater/api';
 import { parseRawHttpRequest } from '@/lib/http-message';
 import { type DocumentTemplateId } from '../constants';
-import { type ReconDocument, type CustomSection } from '../types';
+import { type ReconDocument, type CustomSection, type MarkdownEditorMode } from '../types';
 import { type RepeaterResponse } from '@/pages/repeater/types';
 import { exportDocumentToPdf } from '../lib/export-document';
 import {
@@ -47,6 +47,8 @@ function getEmptySectionHistory(): CustomSectionHistory {
 }
 
 export function useDocumentsPage() {
+  const [markdownMode, setMarkdownMode] = React.useState<MarkdownEditorMode>('code');
+
   const {
     documents,
     activeDocumentId,
@@ -596,6 +598,8 @@ export function useDocumentsPage() {
   );
 
   return {
+    markdownMode,
+    setMarkdownMode,
     tabs: documents.map((document) => ({
       id: document.id,
       name: document.title.trim() || document.name,

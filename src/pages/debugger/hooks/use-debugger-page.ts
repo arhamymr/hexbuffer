@@ -1,6 +1,4 @@
-'use client';
-
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
 import { listen } from '@tauri-apps/api/event';
 import { useDebuggerStore, type DebuggerEntry } from '@/stores/debugger';
 import { useShallow } from 'zustand/react/shallow';
@@ -137,6 +135,15 @@ export function useDebuggerPage() {
     [entries, selectedEntryId]
   );
 
+  const [copyPayload, setCopyPayload] = useState<(() => void) | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = useCallback(() => {
+    copyPayload?.();
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  }, [copyPayload]);
+
   return {
     entries: filteredEntries,
     selectedEntry,
@@ -146,5 +153,9 @@ export function useDebuggerPage() {
     togglePaused,
     setSearch,
     clearEntries,
+    copyPayload,
+    setCopyPayload,
+    copied,
+    handleCopy,
   };
 }

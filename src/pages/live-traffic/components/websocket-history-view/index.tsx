@@ -1,5 +1,3 @@
-'use client';
-
 import { useState } from 'react';
 
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';

@@ -1,5 +1,3 @@
-'use client';
-
 import * as React from 'react';
 import { Target, Play, Pause, ArrowLeftRight, ShieldCheck, ShieldOff, SendHorizonal, Square, RotateCcw, Loader2, Hammer, RefreshCw, FolderX } from 'lucide-react';
 import { useHistoryQueryStore } from '@/pages/live-traffic/state/history-query-store';

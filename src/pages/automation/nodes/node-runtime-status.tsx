@@ -1,5 +1,3 @@
-'use client';
-
 import { AlertCircle, CheckCircle2, Database, Loader2, SkipForward, type LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAutomationStore, type NodeRuntimeState } from '@/stores/automation';

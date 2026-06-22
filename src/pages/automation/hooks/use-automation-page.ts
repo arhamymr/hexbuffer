@@ -3,6 +3,9 @@ import { useAutomationStore } from '@/stores/automation';
 import type { PageTabItem } from '@/components/tabs-layout/types';
 import { getWorkflowReadiness } from '../lib/workflow-readiness';
 import { isWorkflowProcessing } from '../lib/workflow-runtime';
+import type { Node } from '@xyflow/react';
+import type { AutomationNodeType, AutomationNodeData } from '../types';
+import type { WorkflowCanvasBridge } from './use-workflow-canvas';
 
 export function useAutomationPage() {
   const workflows = useAutomationStore((s) => s.workflows);
@@ -15,6 +18,39 @@ export function useAutomationPage() {
   const workflowRuntimeById = useAutomationStore((s) => s.workflowRuntimeById);
 
   const [templatesOpen, setTemplatesOpen] = React.useState(false);
+  const [showExecutionLog, setShowExecutionLog] = React.useState(true);
+  const [selectedNode, setSelectedNode] = React.useState<Node<AutomationNodeData> | null>(null);
+
+  const addNodeAtCenterRef = React.useRef<((nodeType: AutomationNodeType) => void) | null>(null);
+  const persistRef = React.useRef<(() => void) | null>(null);
+  const bridgeRef = React.useRef<WorkflowCanvasBridge | null>(null);
+
+  const onSelectedNodeChange = React.useCallback(
+    (node: Node<AutomationNodeData> | null) => setSelectedNode(node),
+    [],
+  );
+
+  const handleNodeUpdate = React.useCallback(
+    (nodeId: string, data: AutomationNodeData) => {
+      bridgeRef.current?.updateNodeData(nodeId, data);
+    },
+    [],
+  );
+
+  const handleNodeDelete = React.useCallback(
+    (nodeId: string) => {
+      bridgeRef.current?.deleteNode(nodeId);
+    },
+    [],
+  );
+
+  const handleRun = React.useCallback(() => {
+    bridgeRef.current?.onRun();
+  }, []);
+
+  const handleClearSelection = React.useCallback(() => {
+    bridgeRef.current?.clearSelection();
+  }, []);
 
   // Auto-create first workflow if none exist; also ensure activeWorkflowId is valid
   React.useEffect(() => {
@@ -75,5 +111,16 @@ export function useAutomationPage() {
     isRunning: workflows.some((wf) => isWorkflowProcessing(wf.id, workflowRuntimeById)),
     templatesOpen,
     onTemplatesOpenChange: setTemplatesOpen,
+    showExecutionLog,
+    setShowExecutionLog,
+    selectedNode,
+    onSelectedNodeChange,
+    handleNodeUpdate,
+    handleNodeDelete,
+    handleRun,
+    handleClearSelection,
+    addNodeAtCenterRef,
+    persistRef,
+    bridgeRef,
   };
 }

@@ -1,5 +1,3 @@
-'use client';
-
 import { convertFileSrc } from '@tauri-apps/api/core';
 import { useCallback, useState } from 'react';
 import { Copy, ExternalLink, FileCode2, ImageIcon, Loader2, Maximize2, Star } from 'lucide-react';

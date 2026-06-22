@@ -1,5 +1,3 @@
-'use client';
-
 import { useMemo } from 'react';
 import { AlertTriangle, CircleDot, CircleStop, FileCheck2, ShieldBan, Loader } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';

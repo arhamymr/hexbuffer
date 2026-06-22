@@ -1,4 +1,3 @@
-import * as React from 'react';
 import { Alert, AlertDescription, AlertAction } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import {
@@ -7,38 +6,14 @@ import {
   ResizablePanelGroup,
 } from '@/components/ui/resizable';
 import { TabbedPageLayout } from '@/components/tabs-layout/tabbed-page-layout';
-import { useAppStore } from '@/stores/app';
-import { toast } from 'sonner';
+import { useProxyStart } from '@/hooks/use-proxy-start';
 import { InterceptQueuePanel } from './components/queue-panel';
 import { InterceptRequestPanel } from './components/request-panel';
 import { useInterceptPage } from './hooks/use-intercept-page';
-import { useInterceptStore } from './state/intercept-store';
 
 export function InterceptPage() {
-  useInterceptPage();
-  const proxyStatus = useAppStore((state) => state.proxyStatus);
-  const startProxy = useAppStore((state) => state.startProxy);
-  const tabs = useInterceptStore((state) => state.tabs);
-  const activeTabId = useInterceptStore((state) => state.activeTabId);
-  const setActiveTabId = useInterceptStore((state) => state.setActiveTabId);
-  const addTab = useInterceptStore((state) => state.addTab);
-  const renameTab = useInterceptStore((state) => state.renameTab);
-  const closeTab = useInterceptStore((state) => state.closeTab);
-  const closeTabsToLeft = useInterceptStore((state) => state.closeTabsToLeft);
-  const closeTabsToRight = useInterceptStore((state) => state.closeTabsToRight);
-  const [isStarting, setIsStarting] = React.useState(false);
-
-  const handleStartProxy = async () => {
-    setIsStarting(true);
-    try {
-      await startProxy();
-      toast.success('Proxy started');
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Failed to start proxy');
-    } finally {
-      setIsStarting(false);
-    }
-  };
+  const page = useInterceptPage();
+  const { proxyStatus, isStarting, handleStartProxy } = useProxyStart();
 
   return (
     <>
@@ -60,18 +35,17 @@ export function InterceptPage() {
             </AlertAction>
           </Alert>
         </div>
-
       )}
 
       <TabbedPageLayout
-        tabs={tabs}
-        activeTabId={activeTabId}
-        onTabChange={setActiveTabId}
-        onTabAdd={addTab}
-        onTabRename={renameTab}
-        onTabClose={(tabId) => void closeTab(tabId)}
-        onCloseTabsToLeft={(tabId) => void closeTabsToLeft(tabId)}
-        onCloseTabsToRight={(tabId) => void closeTabsToRight(tabId)}
+        tabs={page.tabs}
+        activeTabId={page.activeTabId}
+        onTabChange={page.setActiveTabId}
+        onTabAdd={page.addTab}
+        onTabRename={page.renameTab}
+        onTabClose={(tabId) => void page.closeTab(tabId)}
+        onCloseTabsToLeft={(tabId) => void page.closeTabsToLeft(tabId)}
+        onCloseTabsToRight={(tabId) => void page.closeTabsToRight(tabId)}
         className="flex min-h-0 h-full flex-1 flex-col"
         contentClassName="flex-1 rounded-lg border min-h-0 overflow-hidden"
       >
@@ -90,3 +64,4 @@ export function InterceptPage() {
     </>
   );
 }
+

@@ -1,5 +1,3 @@
-'use client';
-
 import { useInvokerStore } from '@/stores/invoker';
 
 export function InvokerProgress() {

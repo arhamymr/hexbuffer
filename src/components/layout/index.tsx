@@ -1,5 +1,3 @@
-'use client';
-
 import * as React from 'react';
 import { AppFooter } from '@/components/layout/footer';
 import { TopNav } from './top-nav';

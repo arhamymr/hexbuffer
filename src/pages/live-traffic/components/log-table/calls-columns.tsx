@@ -1,5 +1,3 @@
-'use client';
-
 import { useCallback, useState, useRef, memo, useMemo, type MouseEvent } from "react";
 import { ArrowDown, ArrowUp, AlertTriangle, Send, EllipsisVertical, Copy, Plus, Trash2, FilePlus2, Pin, PinOff } from "lucide-react";
 import {

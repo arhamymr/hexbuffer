@@ -4,10 +4,15 @@ import { useTabState } from '@/components/tabs-layout/use-tab-state';
 import type { PageTabItem } from '@/components/tabs-layout/types';
 import { useDocumentsStore } from '@/stores/documents';
 import { useTargetStore } from '@/stores/target';
+import { useFloatingBarUiStore } from '@/stores/floating-bar-ui';
 import { toast } from 'sonner';
 import { useHistoryQuery } from './use-history-query';
 import { usePinnedRequestsStore } from '../state/pinned-requests-store';
 import { useGroupsStore } from '../state/groups-store';
+import { closeTargetSelector } from '@/triggers';
+import { ContextMenuItem } from '@/components/ui/context-menu';
+import { HttpHistoryView } from '../components/http-history-view';
+import { WebSocketHistoryView } from '../components/websocket-history-view';
 
 export type HistoryMode = 'http' | 'websocket';
 const ALL_HISTORY_TAB_ID = 'all-scope';
@@ -146,6 +151,35 @@ export function useHttpHistoryPage() {
     toast.success('Sent scope to active document');
   }, [activeTargets]);
 
+  // ── Target selector ──
+  const isTargetSelectorOpen = useFloatingBarUiStore((s) => s.isTargetSelectorOpen);
+
+  // ── Context menu ──
+  const renderTabContextMenuItems = React.useCallback((tab: { id: string }) => {
+    if (tab.id === 'all-scope') return null;
+    if (tab.id.startsWith('group:')) {
+      const groupId = tab.id.slice(6);
+      return (
+        <ContextMenuItem onClick={() => { deleteGroup(groupId); setActiveTabId('all-scope'); }} variant="destructive">
+          Clear Group
+        </ContextMenuItem>
+      );
+    }
+    return (
+      <ContextMenuItem onClick={() => sendScopeToDocuments(tab.id)}>
+        Send scope to Documents
+      </ContextMenuItem>
+    );
+  }, [sendScopeToDocuments, deleteGroup, setActiveTabId]);
+
+  // ── History view memoization ──
+  const historyView = React.useMemo(() =>
+    historyMode === 'http'
+      ? <HttpHistoryView isPinnedTabActive={isPinnedTabActive} isGroupTabActive={isGroupTabActive} activeGroupId={activeGroupId} />
+      : <WebSocketHistoryView />,
+    [historyMode, isPinnedTabActive, isGroupTabActive, activeGroupId]
+  );
+
   return {
     tabs,
     activeTabId,
@@ -161,5 +195,9 @@ export function useHttpHistoryPage() {
     activeGroupId,
     isGroupDialogOpen,
     setIsGroupDialogOpen,
+    isTargetSelectorOpen,
+    closeTargetSelector,
+    renderTabContextMenuItems,
+    historyView,
   };
 }

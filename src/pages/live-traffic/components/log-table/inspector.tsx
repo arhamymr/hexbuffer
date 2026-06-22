@@ -1,5 +1,3 @@
-'use client';
-
 import { useState, memo } from 'react';
 import { TextEditor } from '@/components/ui/text-editor';
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from '@/components/ui/table';

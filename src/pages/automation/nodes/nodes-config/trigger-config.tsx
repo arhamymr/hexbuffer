@@ -1,5 +1,3 @@
-'use client';
-
 import React from 'react';
 import { AlertTriangle, Clock, Globe, Filter, Play, Trash2, Network, Radio, ScanLine } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';

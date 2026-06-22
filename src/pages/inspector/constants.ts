@@ -1,6 +1,16 @@
-import type { ConsoleFilterLevel, InspectorTab } from './types';
+import type { ConsoleFilterLevel, InspectorTab, InspectorTopTab } from './types';
+import type { PageTabItem } from '@/components/tabs-layout/types';
 
 export const DEFAULT_DEBUGGING_PORT = 9222;
+
+export const TOP_LEVEL_TABS: PageTabItem[] = [
+  { id: 'browser', name: 'Browser', closable: false },
+  { id: 'inspector', name: 'Inspector', closable: false },
+];
+
+export const BROWSER_TAB_ID = 'inspector-browser-tab';
+
+export const DEFAULT_TOP_TAB: InspectorTopTab = 'inspector';
 
 export const TABS: ReadonlyArray<{ id: InspectorTab; label: string }> = [
   { id: 'console', label: 'Console' },

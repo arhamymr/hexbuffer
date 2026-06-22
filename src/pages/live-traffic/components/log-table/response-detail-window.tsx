@@ -1,5 +1,3 @@
-'use client';
-
 import { useEffect, useState, useMemo } from 'react';
 import { fetchHistoryDetail } from '../../services/history-service';
 import { adaptProxyRecordToApiCall } from '../../hooks/use-history-table';

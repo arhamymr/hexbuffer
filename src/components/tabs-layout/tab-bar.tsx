@@ -1,5 +1,3 @@
-'use client';
-
 import { useCallback, type MouseEvent, type ReactNode } from 'react';
 import { AlertTriangle, CheckCircle2, Loader2, Plus, X } from 'lucide-react';
 import {

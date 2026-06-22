@@ -1,5 +1,3 @@
-'use client';
-
 import type { ReactNode } from 'react';
 import { Tabs } from '@/components/ui/tabs';
 import { PageTabBar } from './tab-bar';

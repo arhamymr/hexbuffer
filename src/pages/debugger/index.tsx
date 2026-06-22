@@ -1,6 +1,3 @@
-'use client';
-
-import { useMemo, useState, useCallback } from 'react';
 import {
   ResizableHandle,
   ResizablePanel,
@@ -24,107 +21,10 @@ import {
   Check,
 } from 'lucide-react';
 import { useDebuggerPage } from './hooks/use-debugger-page';
-import type { DebuggerEntry } from '@/stores/debugger';
-
-const EVENT_COLORS: Record<string, string> = {
-  // Crawl events
-  session_started: 'bg-blue-500/10 text-blue-600 border-blue-500/30',
-  session_finished: 'bg-green-500/10 text-green-600 border-green-500/30',
-  session_failed: 'bg-red-500/10 text-red-600 border-red-500/30',
-  page_discovered: 'bg-purple-500/10 text-purple-600 border-purple-500/30',
-  page_visited: 'bg-indigo-500/10 text-indigo-600 border-indigo-500/30',
-  insight_created: 'bg-amber-500/10 text-amber-600 border-amber-500/30',
-  log_created: 'bg-slate-500/10 text-slate-600 border-slate-500/30',
-  human_input_requested: 'bg-orange-500/10 text-orange-600 border-orange-500/30',
-  // Chat events
-  chat_action: 'bg-cyan-500/10 text-cyan-600 border-cyan-500/30',
-  human_selection_required: 'bg-rose-500/10 text-rose-600 border-rose-500/30',
-};
-
-function formatTimestamp(iso: string): string {
-  try {
-    return new Date(iso).toLocaleTimeString('en-US', {
-      hour12: false,
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-      fractionalSecondDigits: 3,
-    });
-  } catch {
-    return iso;
-  }
-}
-
-function EventRow({
-  entry,
-  isSelected,
-  onClick,
-}: {
-  entry: DebuggerEntry;
-  isSelected: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <div
-      className={cn(
-        'flex items-start gap-2 py-1.5 px-2 border-b border-border cursor-pointer text-xs transition-colors',
-        isSelected ? 'bg-accent' : 'hover:bg-muted/50'
-      )}
-      onClick={onClick}
-    >
-      <span className="text-muted-foreground text-[10px] font-mono shrink-0 w-[84px]">
-        {formatTimestamp(entry.timestamp)}
-      </span>
-
-      <span className="shrink-0 mt-px">
-        {entry.direction === 'input' ? (
-          <ArrowRight className="size-3 text-blue-500" />
-        ) : (
-          <ArrowLeft className="size-3 text-emerald-500" />
-        )}
-      </span>
-
-      <Badge
-        variant="outline"
-        className={cn(
-          'text-[10px] px-1 py-0 h-4 shrink-0',
-          EVENT_COLORS[entry.eventType] ?? ''
-        )}
-      >
-        {entry.label}
-      </Badge>
-
-      <span className="truncate flex-1 min-w-0">{entry.summary}</span>
-    </div>
-  );
-}
-
-function JsonViewer({ data, onCopyRef }: { data: unknown; onCopyRef?: (fn: () => void) => void }) {
-  const text = useMemo(() => {
-    try {
-      return JSON.stringify(data, null, 2);
-    } catch {
-      return String(data);
-    }
-  }, [data]);
-
-  const copyPayload = useCallback(() => {
-    navigator.clipboard.writeText(text).catch(() => {});
-  }, [text]);
-
-  // Expose copy function to parent via ref-style callback
-  useMemo(() => {
-    onCopyRef?.(copyPayload);
-  }, [onCopyRef, copyPayload]);
-
-  return (
-    <ScrollArea className="h-full">
-      <pre className="p-3 text-xs font-mono whitespace-pre-wrap break-all text-muted-foreground leading-relaxed">
-        {text}
-      </pre>
-    </ScrollArea>
-  );
-}
+import { EventRow } from './components/event-row';
+import { JsonViewer } from './components/json-viewer';
+import { EVENT_COLORS } from './constants';
+import { formatTimestamp } from './lib/format-timestamp';
 
 export function DebuggerPage() {
   const {
@@ -136,16 +36,11 @@ export function DebuggerPage() {
     togglePaused,
     setSearch,
     clearEntries,
+    setCopyPayload,
+    copied,
+    handleCopy,
+    copyPayload,
   } = useDebuggerPage();
-
-  const [copyPayload, setCopyPayload] = useState<(() => void) | null>(null);
-  const [copied, setCopied] = useState(false);
-
-  const handleCopy = useCallback(() => {
-    copyPayload?.();
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
-  }, [copyPayload]);
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-background">
@@ -153,17 +48,11 @@ export function DebuggerPage() {
         <div className="flex items-center gap-2">
           <Bug className="size-4 text-muted-foreground" />
           <span className="text-sm font-medium">Workflow Debugger</span>
-          <Badge
-            variant="secondary"
-            className="text-[10px] px-1.5 py-0 h-4"
-          >
+          <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4">
             {entries.length}
           </Badge>
           {paused && (
-            <Badge
-              variant="outline"
-              className="text-[10px] px-1.5 py-0 h-4 border-amber-500/50 text-amber-600"
-            >
+            <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 border-amber-500/50 text-amber-600">
               Paused
             </Badge>
           )}
@@ -186,11 +75,7 @@ export function DebuggerPage() {
             onClick={togglePaused}
             className={paused ? 'border-amber-500/50 text-amber-600' : ''}
           >
-            {paused ? (
-              <Play className="size-3.5 mr-1" />
-            ) : (
-              <Pause className="size-3.5 mr-1" />
-            )}
+            {paused ? <Play className="size-3.5 mr-1" /> : <Pause className="size-3.5 mr-1" />}
             {paused ? 'Resume' : 'Pause'}
           </Button>
 
@@ -222,12 +107,9 @@ export function DebuggerPage() {
                 {entries.length === 0 ? (
                   <div className="flex flex-col items-center justify-center h-full gap-2 text-muted-foreground p-6">
                     <Bug className="size-8 opacity-30" />
-                    <p className="text-xs text-center">
-                      Waiting for workflow events...
-                    </p>
+                    <p className="text-xs text-center">Waiting for workflow events...</p>
                     <p className="text-[10px] opacity-60 text-center">
-                      Start a browser crawl or send a chat message to see I/O
-                      data.
+                      Start a browser crawl or send a chat message to see I/O data.
                     </p>
                   </div>
                 ) : (
@@ -256,24 +138,12 @@ export function DebuggerPage() {
                   <>
                     <Badge
                       variant="outline"
-                      className={cn(
-                        'text-[10px] px-1 py-0 h-4',
-                        EVENT_COLORS[selectedEntry.eventType] ?? ''
-                      )}
+                      className={cn('text-[10px] px-1 py-0 h-4', EVENT_COLORS[selectedEntry.eventType] ?? '')}
                     >
                       {selectedEntry.label}
                     </Badge>
-                    <span
-                      className={cn(
-                        'text-[10px] ml-auto',
-                        selectedEntry.direction === 'input'
-                          ? 'text-blue-500'
-                          : 'text-emerald-500'
-                      )}
-                    >
-                      {selectedEntry.direction === 'input'
-                        ? 'INPUT'
-                        : 'OUTPUT'}
+                    <span className={cn('text-[10px] ml-auto', selectedEntry.direction === 'input' ? 'text-blue-500' : 'text-emerald-500')}>
+                      {selectedEntry.direction === 'input' ? 'INPUT' : 'OUTPUT'}
                     </span>
                     <Button
                       variant="ghost"
@@ -282,11 +152,7 @@ export function DebuggerPage() {
                       onClick={handleCopy}
                       disabled={!copyPayload}
                     >
-                      {copied ? (
-                        <Check className="size-3 text-green-500" />
-                      ) : (
-                        <Copy className="size-3" />
-                      )}
+                      {copied ? <Check className="size-3 text-green-500" /> : <Copy className="size-3" />}
                     </Button>
                   </>
                 )}
@@ -296,27 +162,13 @@ export function DebuggerPage() {
                 {selectedEntry ? (
                   <div className="flex-1 min-h-0 flex flex-col">
                     <div className="px-3 py-1.5 border-b bg-muted/20 text-[10px] text-muted-foreground flex items-center gap-2 shrink-0">
-                      <span>
-                        {formatTimestamp(selectedEntry.timestamp)}
-                      </span>
-                      <span className="truncate">
-                        {selectedEntry.summary}
-                      </span>
+                      <span>{formatTimestamp(selectedEntry.timestamp)}</span>
+                      <span className="truncate">{selectedEntry.summary}</span>
                     </div>
 
                     <div className="px-3 py-1.5 border-b bg-muted/10 text-[10px] text-muted-foreground flex items-center gap-2 shrink-0">
-                      <span>
-                        Event:{' '}
-                        <code className="bg-muted px-1 rounded">
-                          {selectedEntry.eventType}
-                        </code>
-                      </span>
-                      <span>
-                        Direction:{' '}
-                        <code className="bg-muted px-1 rounded">
-                          {selectedEntry.direction}
-                        </code>
-                      </span>
+                      <span>Event: <code className="bg-muted px-1 rounded">{selectedEntry.eventType}</code></span>
+                      <span>Direction: <code className="bg-muted px-1 rounded">{selectedEntry.direction}</code></span>
                     </div>
 
                     <div className="flex-1 min-h-0">
@@ -326,9 +178,7 @@ export function DebuggerPage() {
                 ) : (
                   <div className="flex flex-col items-center justify-center h-full gap-2 text-muted-foreground p-6">
                     <ArrowRightLeft className="size-8 opacity-30" />
-                    <p className="text-xs">
-                      Select an event to inspect its payload
-                    </p>
+                    <p className="text-xs">Select an event to inspect its payload</p>
                   </div>
                 )}
               </div>
@@ -339,3 +189,4 @@ export function DebuggerPage() {
     </div>
   );
 }
+

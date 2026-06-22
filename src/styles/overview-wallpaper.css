@@ -1,0 +1,17 @@
+.os-desktop-wallpaper {
+  background-color: var(--background);
+  background-image: 
+    radial-gradient(at 0% 0%, hsla(135, 100%, 39%, 0.12) 0px, transparent 60%),
+    radial-gradient(at 50% 0%, hsla(260, 85%, 45%, 0.12) 0px, transparent 60%),
+    radial-gradient(at 100% 100%, hsla(135, 100%, 39%, 0.10) 0px, transparent 60%),
+    radial-gradient(at 0% 100%, hsla(260, 85%, 45%, 0.10) 0px, transparent 60%);
+  transition: background-color 0.3s ease;
+}
+.dark .os-desktop-wallpaper {
+  background-color: #07080c;
+  background-image: 
+    radial-gradient(at 0% 0%, hsla(135, 100%, 39%, 0.18) 0px, transparent 65%),
+    radial-gradient(at 50% 0%, hsla(260, 85%, 45%, 0.18) 0px, transparent 65%),
+    radial-gradient(at 100% 100%, hsla(135, 100%, 39%, 0.15) 0px, transparent 65%),
+    radial-gradient(at 0% 100%, hsla(260, 85%, 45%, 0.15) 0px, transparent 65%);
+}

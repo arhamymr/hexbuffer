@@ -1,5 +1,3 @@
-'use client';
-
 import * as React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Loader2, Pause } from 'lucide-react';

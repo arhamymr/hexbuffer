@@ -1,5 +1,3 @@
-'use client';
-
 import { Button } from '@/components/ui/button';
 import { Alert, AlertAction, AlertDescription } from '@/components/ui/alert';
 import {
@@ -7,7 +5,6 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
 } from '@/components/ui/resizable';
-import { useAppStore } from '@/stores/app';
 import { InfoIcon } from 'lucide-react';
 import { TabbedPageLayout } from '@/components/tabs-layout/tabbed-page-layout';
 import { InvokerConfigDialog } from './components/invoker-config';
@@ -19,31 +16,15 @@ import { InvokerResultsPanel } from './components/results-panel';
 import { useInvokerPage } from './hooks/use-page';
 
 export function InvokerPage() {
-  const invokerSafetyAlertDismissed = useAppStore(
-    (state) => state.invokerSafetyAlertDismissed
-  );
-  const setInvokerSafetyAlertDismissed = useAppStore(
-    (state) => state.setInvokerSafetyAlertDismissed
-  );
-  const {
-    tabs,
-    activeTabId,
-    setActiveTabId,
-    renameTab,
-    closeTab,
-    activeTab,
-    isRunning,
-    progress,
-    startBlockedReason,
-  } = useInvokerPage();
+  const page = useInvokerPage();
 
-  if (!activeTab) {
+  if (!page.activeTab) {
     return null;
   }
 
   return (
     <>
-      {!invokerSafetyAlertDismissed && (
+      {!page.invokerSafetyAlertDismissed && (
         <div className='p-2'>
           <Alert variant="default" className="min-h-12 shrink-0 border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-500/50 dark:bg-amber-500/10 dark:text-amber-200">
             <InfoIcon className='!text-amber-600' />
@@ -54,22 +35,21 @@ export function InvokerPage() {
               <Button
                 variant="outline"
                 aria-label="Dismiss safety notice"
-                onClick={() => setInvokerSafetyAlertDismissed(true)}
+                onClick={() => page.setInvokerSafetyAlertDismissed(true)}
               >
                 Dismiss
               </Button>
             </AlertAction>
           </Alert>
         </div>
-
       )}
 
       <TabbedPageLayout
-        tabs={tabs}
-        activeTabId={activeTabId}
-        onTabChange={setActiveTabId}
-        onTabRename={renameTab}
-        onTabClose={closeTab}
+        tabs={page.tabs}
+        activeTabId={page.activeTabId}
+        onTabChange={page.setActiveTabId}
+        onTabRename={page.renameTab}
+        onTabClose={page.closeTab}
         contentClassName="flex-1 border rounded-lg overflow-hidden bg-background min-h-0"
       >
         <div className="flex h-full min-h-0 flex-col">
@@ -80,9 +60,8 @@ export function InvokerPage() {
             <ResizablePanel defaultSize={50} minSize={20}>
               <div className="flex min-h-0 flex-col h-full">
                 <InvokerProgress />
-
                 <div className="min-h-0 flex-1 p-2">
-                  <InvokerConfigDialog isRunning={isRunning} progress={progress} startBlockedReason={startBlockedReason} />
+                  <InvokerConfigDialog isRunning={page.isRunning} progress={page.progress} startBlockedReason={page.startBlockedReason} />
                 </div>
               </div>
             </ResizablePanel>
@@ -91,7 +70,6 @@ export function InvokerPage() {
               <div className="flex min-h-0 flex-col h-full">
                 <div className="flex min-h-0 flex-1 flex-col p-2">
                   <InvokerFilters />
-
                   <div className="min-h-0 flex-1">
                     <InvokerResultsPanel />
                   </div>
@@ -101,11 +79,10 @@ export function InvokerPage() {
           </ResizablePanelGroup>
 
           <InvokerResultDrawer />
-
           <InvokerPayloadDialog />
         </div>
       </TabbedPageLayout>
     </>
-
   );
 }
+

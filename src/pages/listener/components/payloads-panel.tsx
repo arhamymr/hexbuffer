@@ -1,5 +1,3 @@
-'use client';
-
 import { useState } from 'react';
 import { Copy, MoreHorizontal, Plus, Archive, Trash2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';

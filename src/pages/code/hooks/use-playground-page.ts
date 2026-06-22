@@ -19,6 +19,7 @@ import {
 } from '../types';
 import { toast } from 'sonner';
 import { open as openDialog } from '@tauri-apps/plugin-dialog';
+import { useGlobalTerminalStore } from '@/stores/global-terminal';
 
 export function usePlaygroundPage() {
   const {
@@ -559,6 +560,56 @@ export function usePlaygroundPage() {
     },
     [setActiveEditorPath],
   );
+
+  // ── Write build output to the global footer terminal ──
+  const writeStore = useGlobalTerminalStore((s) => s.writeln);
+  const lastBuildOutputRef = useRef('');
+
+  useEffect(() => {
+    if (isBuilding) {
+      const lastEntry = buildHistory.length > 0 ? buildHistory[buildHistory.length - 1] : null;
+      const cmd = lastEntry?.command ?? '';
+      const key = `building:${cmd}`;
+      if (key === lastBuildOutputRef.current) return;
+      lastBuildOutputRef.current = key;
+      writeStore(`\x1b[1;34m$ ${cmd}\x1b[0m`);
+      writeStore('\x1b[90m...\x1b[0m');
+      return;
+    }
+
+    const out = buildOutput;
+    if (!out) return;
+
+    const lastEntry = buildHistory.length > 0 ? buildHistory[buildHistory.length - 1] : null;
+    const cmd = lastEntry?.command ?? '';
+    const key = `${cmd}:${out.stdout}:${out.stderr}:${out.exitCode}`;
+    if (key === lastBuildOutputRef.current) return;
+    lastBuildOutputRef.current = key;
+
+    writeStore(`\x1b[1;34m$ ${cmd}\x1b[0m`);
+
+    if (out.stdout) {
+      const lines = out.stdout.replace(/\r\n/g, '\n').split('\n');
+      for (const line of lines) {
+        writeStore(`\x1b[37m${line}\x1b[0m`);
+      }
+    }
+
+    if (out.stderr) {
+      const color = out.success ? '\x1b[33m' : '\x1b[31m';
+      const lines = out.stderr.replace(/\r\n/g, '\n').split('\n');
+      for (const line of lines) {
+        writeStore(`${color}${line}\x1b[0m`);
+      }
+    }
+
+    if (!out.stdout && !out.stderr) {
+      writeStore('\x1b[90m(no output)\x1b[0m');
+    }
+
+    const exitColor = out.success ? '\x1b[32m' : '\x1b[31m';
+    writeStore(`${exitColor}→ exit code: ${out.exitCode}\x1b[0m`);
+  }, [buildOutput, isBuilding, buildHistory, writeStore]);
 
   // ── Return ──
 

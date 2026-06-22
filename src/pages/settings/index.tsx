@@ -1,5 +1,3 @@
-'use client';
-
 import { SettingsLayout } from './components/settings-layout';
 import { useSettingsPage } from './hooks/use-settings-page';
 

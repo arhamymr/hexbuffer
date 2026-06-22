@@ -1,5 +1,3 @@
-'use client';
-
 import { TextEditor } from '@/components/ui/text-editor';
 import { Label } from '@/components/ui/label';
 

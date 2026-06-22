@@ -1,8 +1,7 @@
-'use client';
-
 import { useEffect, useMemo } from 'react';
 import { listen } from '@tauri-apps/api/event';
-import { useBrowserAutomationStore } from '@/stores/browser-automation';
+import { useAppStore } from '@/stores/app';
+import { useBrowserAutomationStore, type ActionLogEntry } from '@/stores/browser-automation';
 import { useShallow } from 'zustand/react/shallow';
 import { buildCrawlTree } from '../lib/crawl-data';
 import type {
@@ -21,6 +20,9 @@ export function useBrowserAutomationPage() {
     renameTab,
     closeTab,
     overview,
+    updateSetup,
+    saveConfig,
+    clearLogs,
     loadPersistedSessions,
     applySessionStarted,
     applySessionUpdated,
@@ -37,6 +39,9 @@ export function useBrowserAutomationPage() {
       renameTab: s.renameTab,
       closeTab: s.closeTab,
       overview: s.overview,
+      updateSetup: s.updateSetup,
+      saveConfig: s.saveConfig,
+      clearLogs: s.clearLogs,
       loadPersistedSessions: s.loadPersistedSessions,
       applySessionStarted: s.applySessionStarted,
       applySessionUpdated: s.applySessionUpdated,
@@ -166,6 +171,28 @@ export function useBrowserAutomationPage() {
     return pages.filter((page) => page.interesting && page.status !== 'queued');
   }, [pages]);
 
+  // Safety alert state from app store
+  const browserAutomationSafetyAlertDismissed = useAppStore(
+    (state) => state.browserAutomationSafetyAlertDismissed
+  );
+  const setBrowserAutomationSafetyAlertDismissed = useAppStore(
+    (state) => state.setBrowserAutomationSafetyAlertDismissed
+  );
+
+  // Derive status and isRunning from active tab session
+  const status = activeTab?.session?.status ?? 'idle';
+  const isRunning = status === 'running';
+
+  // Transform logs into ActionLogEntry format for the panel
+  const actionLogs = useMemo(() => {
+    const tabLogs = activeTab?.logs ?? [];
+    return tabLogs.map((l) => ({
+      timestamp: new Date(l.createdAt),
+      type: (l.type === 'session' || l.type === 'policy' || l.type === 'human' ? 'command' : l.type === 'error' ? 'error' : l.type === 'ai' ? 'ai' : 'result') as ActionLogEntry['type'],
+      message: l.message,
+    }));
+  }, [activeTab?.logs]);
+
   return {
     tabs: tabs.map((tab) => ({ id: tab.id, name: tab.name })),
     activeTabId,
@@ -179,5 +206,14 @@ export function useBrowserAutomationPage() {
     filteredLogs,
     interestingPages,
     overview: overview(activeTab?.id),
+    // Absorbed from index.tsx
+    updateSetup,
+    saveConfig,
+    clearLogs,
+    status,
+    isRunning,
+    actionLogs,
+    browserAutomationSafetyAlertDismissed,
+    setBrowserAutomationSafetyAlertDismissed,
   };
 }

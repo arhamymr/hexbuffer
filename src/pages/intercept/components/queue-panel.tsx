@@ -1,5 +1,3 @@
-'use client';
-
 import { ArrowLeft, ArrowRight, Flag, PauseCircle, Play, Plus, ShieldOff, Trash2 } from 'lucide-react';
 import {
   ContextMenu,

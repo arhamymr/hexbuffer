@@ -1,6 +1,3 @@
-'use client';
-
-import { motion, AnimatePresence } from 'motion/react';
 import {
   Loader2,
   MessageSquare,
@@ -33,7 +30,6 @@ export function AppSidebar() {
         ref={dock.dockRef}
         className={cn(
           'fixed bottom-4 left-1/2 z-50 flex items-center gap-2',
-          !dock.dragging && 'transition-transform duration-300 ease-out',
           dock.dragging && 'cursor-grabbing select-none',
         )}
         style={{
@@ -43,15 +39,8 @@ export function AppSidebar() {
         {/* Page-specific action buttons dock */}
         <DockPageButtons />
 
-        {/* Main dock wrapper with animated border beam */}
-        <AnimatePresence>
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 16 }}
-            transition={{ duration: 0.6, ease: [0.23, 1, 0.32, 1] }}
-            className="relative p-[1px] rounded-md overflow-hidden flex items-center justify-center"
-          >
+        {/* Main dock wrapper */}
+        <div className="relative p-[1px] rounded-md overflow-hidden flex items-center justify-center">
           {/* Glowing border beam */}
           <div className="absolute top-1/2 left-1/2 aspect-square w-[300%] h-[300%] bg-border-beam animate-border-beam pointer-events-none" />
 
@@ -201,8 +190,7 @@ export function AppSidebar() {
         </div>
 
           </div>{/* end main dock inner content */}
-          </motion.div>{/* end main dock wrapper */}
-        </AnimatePresence>
+        </div>{/* end main dock wrapper */}
       </div>{/* end wrapper */}
 
       {/* Update confirmation dialog */}

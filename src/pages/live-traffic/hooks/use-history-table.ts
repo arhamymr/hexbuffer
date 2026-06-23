@@ -4,7 +4,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ProxyLogSummary, ProxyRecord, ApiCall } from '@/types';
 
 import { fetchHistorySummaries } from '../services/history-service';
-import { useHistoryQuery } from './use-history-query';
+import { useHistoryQueryStore } from '../state/history-query-store';
+import { useShallow } from 'zustand/react/shallow';
+import { buildHistoryQuery, hasActiveHistoryFilters } from '../state/build-history-query';
 
 function buildUrlParts(uri: string) {
   let urlObj: URL | null = null;
@@ -103,18 +105,47 @@ interface UseHistoryTableOptions {
 
 export function useHistoryTable({ isStreamPaused = false }: UseHistoryTableOptions = {}) {
   const {
-    query,
-    hasActiveFilters,
-    refreshKey,
-    sortOrder,
     filter,
+    activeScope,
+    sortOrder,
     page,
-    selectedCallId,
+    perPage,
     isStreamManuallyPaused,
+    refreshKey,
     setPage,
     setSortOrder,
     setSelectedCallId,
-  } = useHistoryQuery();
+  } = useHistoryQueryStore(
+    useShallow((state) => ({
+      filter: state.filter,
+      activeScope: state.activeScope,
+      sortOrder: state.sortOrder,
+      page: state.page,
+      perPage: state.perPage,
+      isStreamManuallyPaused: state.isStreamManuallyPaused,
+      refreshKey: state.refreshKey,
+      setPage: state.setPage,
+      setSortOrder: state.setSortOrder,
+      setSelectedCallId: state.setSelectedCallId,
+    }))
+  );
+
+  const query = useMemo(
+    () =>
+      buildHistoryQuery({
+        filter,
+        activeScope,
+        sortOrder,
+        page,
+        perPage,
+      }),
+    [filter, activeScope, sortOrder, page, perPage]
+  );
+
+  const hasActiveFilters = useMemo(
+    () => hasActiveHistoryFilters({ filter, activeScope }),
+    [filter, activeScope]
+  );
   const isHistoryStreamPaused = isStreamPaused || isStreamManuallyPaused;
 
   const [calls, setCalls] = useState<ApiCall[]>([]);
@@ -274,11 +305,11 @@ export function useHistoryTable({ isStreamPaused = false }: UseHistoryTableOptio
         ...prev,
         total: Math.max(0, prev.total - 1),
       }));
-      if (selectedCallId === id) {
+      if (useHistoryQueryStore.getState().selectedCallId === id) {
         setSelectedCallId(null);
       }
     },
-    [selectedCallId, setSelectedCallId]
+    [setSelectedCallId]
   );
 
   return {
@@ -297,6 +328,5 @@ export function useHistoryTable({ isStreamPaused = false }: UseHistoryTableOptio
     toggleSortOrder,
     setSelectedCallId,
     removeCallLocally,
-    selectedCallId,
   };
 }

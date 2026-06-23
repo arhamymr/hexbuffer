@@ -11,7 +11,7 @@ export function ScratchpadWidget() {
   };
 
   return (
-    <div className="p-2 rounded-md border bg-card/30 dark:bg-card/10 backdrop-blur-md flex flex-col gap-2">
+    <div className="p-2 rounded-md border bg-background/30 dark:bg-background/10 backdrop-blur-md flex flex-col gap-2">
       <div className="flex items-center gap-1.5">
         <StickyNote className="size-3.5 text-primary" />
         <span className="text-[10px] font-mono font-bold tracking-wider text-muted-foreground uppercase">Scratchpad</span>

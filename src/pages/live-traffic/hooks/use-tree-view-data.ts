@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { matchesScope } from '@/lib/utils';
 import type { TreePath } from '@/pages/live-traffic/api';
 import { useHistoryTree } from '@/pages/live-traffic/hooks/use-history-tree';
-import { useHistoryQuery } from '@/pages/live-traffic/hooks/use-history-query';
+import { useHistoryQueryStore } from '@/pages/live-traffic/state/history-query-store';
 import type { TreeNodeData } from '@/components/tree-view';
 
 function buildDisplayUrl(host: string, path: string): string {
@@ -67,7 +67,7 @@ function stripDefaultPortFromUrl(url: string): string {
 
 export function useTreeViewData() {
   const { treeData, isLoading, loadError } = useHistoryTree();
-  const { activeScope } = useHistoryQuery();
+  const activeScope = useHistoryQueryStore((state) => state.activeScope);
 
   const nodes = useMemo(
     () =>

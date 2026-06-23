@@ -9,7 +9,6 @@ pub mod inspector;
 pub mod intercept;
 pub mod intruder;
 pub mod license;
-pub mod packet_capture;
 pub mod playground;
 pub mod proxy;
 pub mod regression;

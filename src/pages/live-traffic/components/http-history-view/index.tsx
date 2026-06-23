@@ -2,7 +2,7 @@ import { useRef, useState, useCallback } from 'react';
 import { LogEntryBurpView } from '../log-table/log-entry-view';
 import { TrafficTable } from '../log-table/calls-columns';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
-import { useHistoryQuery } from '@/pages/live-traffic/hooks/use-history-query';
+import { useHistoryQueryStore } from '@/pages/live-traffic/state/history-query-store';
 
 interface HttpHistoryViewProps {
   isPinnedTabActive?: boolean;
@@ -11,7 +11,7 @@ interface HttpHistoryViewProps {
 }
 
 export function HttpHistoryView({ isPinnedTabActive = false, isGroupTabActive = false, activeGroupId = null }: HttpHistoryViewProps) {
-  const { selectedCallId } = useHistoryQuery();
+  const selectedCallId = useHistoryQueryStore((state) => state.selectedCallId);
   const [isDragging, setIsDragging] = useState(false);
   const isDraggingRef = useRef(false);
 

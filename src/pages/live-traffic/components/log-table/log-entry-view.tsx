@@ -23,7 +23,7 @@ import {
 import { TextEditor } from '@/components/ui/text-editor';
 import { buildRawHttpRequest, buildRawHttpResponse, formatJsonBody } from '@/lib/http-message';
 import { useHistoryDetail } from '@/pages/live-traffic/hooks/use-history-detail';
-import { useHistoryQuery } from '@/pages/live-traffic/hooks/use-history-query';
+import { useHistoryQueryStore } from '@/pages/live-traffic/state/history-query-store';
 import { InspectorSection, buildHeadersList, buildParamsList } from './inspector';
 import { parseCookieHeader } from './cookie-display';
 import { formatBytes } from './utils';
@@ -48,7 +48,7 @@ function isJsonContent(headers: Record<string, string>, body: string | null): bo
 
 export function LogEntryBurpView() {
   const { selectedCallId, call, isLoading, loadError } = useHistoryDetail();
-  const { setSelectedCallId } = useHistoryQuery();
+  const setSelectedCallId = useHistoryQueryStore((state) => state.setSelectedCallId);
   const [viewMode, setViewMode] = useState<DetailViewMode>('text');
   const navigate = useNavigate();
 

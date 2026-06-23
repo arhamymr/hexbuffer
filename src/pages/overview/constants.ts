@@ -14,7 +14,6 @@ export const FEATURE_DESCRIPTIONS: Record<string, string> = {
   'Code': 'Run and test custom code scripts in a sandbox environment.',
   'Invoker': 'Generate client-side requests, perform attacks, and trigger endpoints.',
   'Repeater': 'Modify HTTP requests, reissue them, and analyze responses side-by-side.',
-  'Threats': 'View active threat intelligence, rule matches, and signature alerts.',
   'Documents': 'Create markdown documents, API definitions, and manage target scopes.',
   'Tools': 'Access encoders, decoders, hashes, and other payload helper utilities.',
   'Code Audit': 'Scan source code folders for potential vulnerabilities and bugs.',

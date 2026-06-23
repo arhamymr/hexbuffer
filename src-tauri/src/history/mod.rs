@@ -8,7 +8,6 @@ use crate::{
     },
     commands::browser::{AIInsight, ActivityLog, CrawlPage, CrawlSession},
     db::repository::{Database, DocumentRecord, PaginatedResponse, TreeNode},
-    packet_capture::types::{PacketCaptureRecord, PacketConnectionRecord, StoredPacketRecord},
     proxy::state::{
         ProxyFilter, ProxyRecord, WebSocketConnectionRecord, WebSocketFilter,
         WebSocketMessageRecord,
@@ -52,20 +51,6 @@ pub struct WebSocketConnectionDetail {
     pub messages: Vec<WebSocketMessageRecord>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct StoredPacketSummary {
-    pub id: String,
-    pub packet_number: u64,
-    pub timestamp: f64,
-    pub source_ip: String,
-    pub destination_ip: String,
-    pub protocol: String,
-    pub source_port: Option<u16>,
-    pub destination_port: Option<u16>,
-    pub packet_length: usize,
-    pub info: String,
-}
 
 pub struct HistoryBridge {
     db: Database,
@@ -148,11 +133,6 @@ impl HistoryBridge {
             .map_err(|e| e.to_string())
     }
 
-    pub fn insert_packet_capture(&self, capture: &PacketCaptureRecord) -> Result<(), String> {
-        self.db
-            .insert_packet_capture(capture)
-            .map_err(|e| e.to_string())
-    }
 
     pub fn upsert_threat_sample(&self, sample: &ThreatSample) -> Result<(), String> {
         self.db
@@ -228,45 +208,6 @@ impl HistoryBridge {
         }))
     }
 
-    pub fn finish_packet_capture(&self, capture_id: &str, ended_at: &str) -> Result<(), String> {
-        self.db
-            .finish_packet_capture(capture_id, ended_at)
-            .map_err(|e| e.to_string())
-    }
-
-    pub fn insert_captured_packet(
-        &self,
-        packet: &StoredPacketRecord,
-        connection: &PacketConnectionRecord,
-    ) -> Result<(), String> {
-        self.db
-            .insert_captured_packet(packet, connection)
-            .map_err(|e| e.to_string())
-    }
-
-    pub fn get_packets_paginated(
-        &self,
-        capture_id: &str,
-        page: u32,
-        per_page: u32,
-    ) -> Result<PaginatedResponse<StoredPacketSummary>, String> {
-        let result = self
-            .db
-            .get_packets_paginated(capture_id, page, per_page)
-            .map_err(|e| e.to_string())?;
-
-        Ok(PaginatedResponse {
-            data: result
-                .data
-                .into_iter()
-                .map(StoredPacketSummary::from)
-                .collect(),
-            total: result.total,
-            page: result.page,
-            per_page: result.per_page,
-            has_more: result.has_more,
-        })
-    }
 
     pub fn get_documents(&self) -> Result<Vec<DocumentRecord>, String> {
         self.db.get_documents().map_err(|e| e.to_string())
@@ -751,19 +692,3 @@ impl From<WebSocketConnectionRecord> for WebSocketConnectionSummary {
     }
 }
 
-impl From<StoredPacketRecord> for StoredPacketSummary {
-    fn from(record: StoredPacketRecord) -> Self {
-        Self {
-            id: record.id,
-            packet_number: record.packet_number,
-            timestamp: record.timestamp,
-            source_ip: record.source_ip,
-            destination_ip: record.destination_ip,
-            protocol: record.protocol,
-            source_port: record.source_port,
-            destination_port: record.destination_port,
-            packet_length: record.packet_length,
-            info: record.info,
-        }
-    }
-}

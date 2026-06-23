@@ -43,9 +43,6 @@ const DebuggerPage = React.lazy(() =>
 const AutomationPage = React.lazy(() =>
   import("@/pages/automation").then((m) => ({ default: m.AutomationPage }))
 );
-const ThreatsPage = React.lazy(() =>
-  import("@/pages/threats").then((m) => ({ default: m.ThreatsPage }))
-);
 const RegressionPage = React.lazy(() =>
   import("@/pages/regression").then((m) => ({ default: m.RegressionPage }))
 );
@@ -89,7 +86,6 @@ function AppRoutes() {
           <Route path="/documents" element={<DocumentsPage />} />
           <Route path="/api-collection" element={<ApiCollectionPage />} />
           <Route path="/automation" element={<AutomationPage />} />
-          <Route path="/threats" element={<ThreatsPage />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/regression" element={<RegressionPage />} />
           <Route path="/code-audit" element={<CodeAuditPage />} />

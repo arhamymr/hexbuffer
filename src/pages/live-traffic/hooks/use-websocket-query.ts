@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
-import { useHistoryQuery } from './use-history-query';
+import { useHistoryQueryStore } from '../state/history-query-store';
+import { useShallow } from 'zustand/react/shallow';
 
 export interface WebSocketHistoryQuery {
   page: number;
@@ -12,7 +13,14 @@ export interface WebSocketHistoryQuery {
 }
 
 export function useWebSocketQuery() {
-  const { filter, activeScope, page, perPage } = useHistoryQuery();
+  const { filter, activeScope, page, perPage } = useHistoryQueryStore(
+    useShallow((state) => ({
+      filter: state.filter,
+      activeScope: state.activeScope,
+      page: state.page,
+      perPage: state.perPage,
+    }))
+  );
 
   const query = useMemo<WebSocketHistoryQuery>(
     () => ({

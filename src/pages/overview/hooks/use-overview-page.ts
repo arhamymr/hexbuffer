@@ -9,9 +9,6 @@ export function useOverviewPage() {
   const searchQuery = useNavStore((s) => s.overviewSearchQuery);
   const setSearchQuery = useNavStore((s) => s.setOverviewSearchQuery);
 
-  const [wallpaperType, setWallpaperType] = React.useState(() => localStorage.getItem('desktop-wallpaper-type') ?? 'gradient');
-  const [wallpaperUrl, setWallpaperUrl] = React.useState(() => localStorage.getItem('desktop-wallpaper-url') ?? '');
-
   // Get all unique navigation items, filter out 'Overview', apply environment check and query matching
   const displayItems = React.useMemo(() => {
     const baseItems = allNavItems.filter((item) => item.label !== 'Overview');
@@ -30,24 +27,6 @@ export function useOverviewPage() {
     });
   }, [searchQuery]);
 
-  const wallpaperBackgroundStyle = React.useMemo<React.CSSProperties>(() => {
-    if (wallpaperType === 'image' && wallpaperUrl) {
-      return {
-        backgroundImage: `url("${wallpaperUrl}")`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat',
-      };
-    }
-    if (wallpaperType === 'solid' && wallpaperUrl) {
-      return {
-        backgroundColor: wallpaperUrl,
-        backgroundImage: 'none',
-      };
-    }
-    return {};
-  }, [wallpaperType, wallpaperUrl]);
-
   const handleItemClick = (href: string) => {
     navigate(href);
   };
@@ -59,12 +38,7 @@ export function useOverviewPage() {
   return {
     searchQuery,
     setSearchQuery,
-    wallpaperType,
-    setWallpaperType,
-    wallpaperUrl,
-    setWallpaperUrl,
     displayItems,
-    wallpaperBackgroundStyle,
     handleItemClick,
     handleClearSearch,
   };

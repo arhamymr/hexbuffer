@@ -6,15 +6,6 @@ import { getCaCert, saveCaCert, trustInterceptCa } from '@/pages/live-traffic/ap
 import { useUpdater } from '@/hooks/use-updater';
 import { DEFAULT_PROXY_PORT, MAX_PROXY_PORT, MIN_PROXY_PORT, isValidProxyPort, useAppStore } from '@/stores/app';
 import { useBrowserAutomationStore } from '@/stores/browser-automation';
-import {
-  deleteYaraRulePack,
-  getThreatsSettings,
-  importYaraRulePack,
-  saveThreatsSettings,
-  updateYaraRulePack,
-  validateGhidraHeadless,
-} from '@/pages/threats/api';
-import type { GhidraValidationResult, ThreatSettings } from '@/pages/threats/types';
 import { AI_MODEL_OPTIONS_BY_PROVIDER } from '../constants';
 
 export interface AiSettings {
@@ -64,9 +55,6 @@ export function useSettingsPage() {
   const [providerKeyStatus, setProviderKeyStatus] = React.useState<AiKeyStatus>({});
   const [storageInfo, setStorageInfo] = React.useState<StorageInfo | null>(null);
   const [resettingLocalData, setResettingLocalData] = React.useState(false);
-  const [threatSettings, setThreatSettings] = React.useState<ThreatSettings>({ yaraRulePacks: [] });
-  const [threatSettingsSaving, setThreatSettingsSaving] = React.useState(false);
-  const [ghidraValidation, setGhidraValidation] = React.useState<GhidraValidationResult | null>(null);
   const proxyDefaultPort = useAppStore((state) => state.proxyDefaultPort);
   const proxyPort = useAppStore((state) => state.proxyPort);
   const proxyStatus = useAppStore((state) => state.proxyStatus);
@@ -150,14 +138,6 @@ export function useSettingsPage() {
       .then(setStorageInfo)
       .catch((error) => {
         console.error('Failed to load storage info:', error);
-      });
-  }, []);
-
-  React.useEffect(() => {
-    getThreatsSettings()
-      .then((settings) => setThreatSettings({ ...settings, yaraRulePacks: settings.yaraRulePacks ?? [] }))
-      .catch((error) => {
-        console.error('Failed to load Threats settings:', error);
       });
   }, []);
 
@@ -315,94 +295,6 @@ export function useSettingsPage() {
       toast.error(error instanceof Error ? error.message : `Failed to save proxy port: ${error}`);
     }
   }, [proxyPortDraft, proxyStatus, saveProxyDefaultPort]);
-
-  const updateThreatSettings = React.useCallback((updates: Partial<ThreatSettings>) => {
-    setThreatSettings((current) => ({ ...current, ...updates }));
-    setGhidraValidation(null);
-  }, []);
-
-  const handleImportYaraRulePack = React.useCallback(async () => {
-    try {
-      const filePath = await open({
-        title: 'Import YARA Rule Pack',
-        multiple: false,
-        filters: [
-          {
-            name: 'YARA Rules',
-            extensions: ['yar', 'yara', 'txt'],
-          },
-        ],
-      });
-
-      if (!filePath || Array.isArray(filePath)) {
-        return;
-      }
-
-      const saved = await importYaraRulePack(filePath);
-      setThreatSettings({ ...saved, yaraRulePacks: saved.yaraRulePacks ?? [] });
-      toast.success('YARA rule pack imported');
-    } catch (error) {
-      console.error('Failed to import YARA rule pack:', error);
-      toast.error(`Failed to import YARA rule pack: ${error}`);
-    }
-  }, []);
-
-  const handleToggleYaraRulePack = React.useCallback(async (id: string, enabled: boolean) => {
-    try {
-      const saved = await updateYaraRulePack(id, enabled);
-      setThreatSettings({ ...saved, yaraRulePacks: saved.yaraRulePacks ?? [] });
-    } catch (error) {
-      console.error('Failed to update YARA rule pack:', error);
-      toast.error(`Failed to update YARA rule pack: ${error}`);
-    }
-  }, []);
-
-  const handleDeleteYaraRulePack = React.useCallback(async (id: string) => {
-    try {
-      const saved = await deleteYaraRulePack(id);
-      setThreatSettings({ ...saved, yaraRulePacks: saved.yaraRulePacks ?? [] });
-      toast.success('YARA rule pack deleted');
-    } catch (error) {
-      console.error('Failed to delete YARA rule pack:', error);
-      toast.error(`Failed to delete YARA rule pack: ${error}`);
-    }
-  }, []);
-
-  const handleSaveThreatSettings = React.useCallback(async () => {
-    try {
-      setThreatSettingsSaving(true);
-      const saved = await saveThreatsSettings(threatSettings);
-      setThreatSettings(saved);
-      toast.success('Threats settings saved');
-    } catch (error) {
-      console.error('Failed to save Threats settings:', error);
-      toast.error(`Failed to save Threats settings: ${error}`);
-    } finally {
-      setThreatSettingsSaving(false);
-    }
-  }, [threatSettings]);
-
-  const handleValidateGhidra = React.useCallback(async () => {
-    const path = threatSettings.ghidraHeadlessPath?.trim();
-    if (!path) {
-      toast.error('Enter an analyzeHeadless path first');
-      return;
-    }
-
-    try {
-      const result = await validateGhidraHeadless(path);
-      setGhidraValidation(result);
-      if (result.valid) {
-        toast.success(result.message);
-      } else {
-        toast.error(result.message);
-      }
-    } catch (error) {
-      console.error('Failed to validate Ghidra:', error);
-      toast.error(`Failed to validate Ghidra: ${error}`);
-    }
-  }, [threatSettings.ghidraHeadlessPath]);
-
   const handleResetProxyDefaultPort = React.useCallback(async () => {
     try {
       const activePort = await saveProxyDefaultPort(DEFAULT_PROXY_PORT);
@@ -432,25 +324,16 @@ export function useSettingsPage() {
     installingCa,
     handleDownloadCert,
     handleInstallMacCert,
-    handleImportYaraRulePack,
     handleClearAiApiKey,
-    handleDeleteYaraRulePack,
     handleResetLocalData,
     handleResetProxyDefaultPort,
     handleSaveProxyDefaultPort,
-    handleSaveThreatSettings,
     handleSaveAiSettings,
-    handleToggleYaraRulePack,
-    handleValidateGhidra,
     setProxyPortDraft,
     storageInfo,
-    threatSettings,
-    threatSettingsSaving,
-    ghidraValidation,
     providerKeyStatus,
     updateAiProvider,
     updateAiSettings,
-    updateThreatSettings,
     updateAvailable,
     updateChecking,
     updateDownloading,

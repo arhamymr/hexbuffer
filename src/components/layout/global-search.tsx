@@ -13,75 +13,14 @@ import { setBrowserSearch } from '@/triggers';
 // GlobalSearch Component
 // ---------------------------------------------------------------------------
 
-export function GlobalSearch() {
-  const { pathname } = useLocation();
+interface SearchInputProps {
+  value: string;
+  onChange: (val: string) => void;
+  placeholder: string;
+}
+
+function SearchInput({ value, onChange, placeholder }: SearchInputProps) {
   const inputRef = React.useRef<HTMLInputElement>(null);
-
-  // Pages where global search should be hidden
-  const hiddenPaths = [
-    '/intercept', '/repeater',
-    '/automation', '/regression',
-    '/playground', '/threats', '/debugger', '/tools', '/documents',
-  ];
-  const isHidden = hiddenPaths.some((p) => pathname.startsWith(p));
-
-  const isOverview = pathname === '/';
-  const isLiveTraffic = pathname === '/live-traffic';
-  const isBrowserAutomation = pathname.startsWith('/browser-automation');
-  const isInvoker = pathname.startsWith('/invoker');
-
-  // Overview Search: read/write the nav store
-  const overviewSearch = useNavStore((s) => s.overviewSearchQuery);
-  const setOverviewSearch = useNavStore((s) => s.setOverviewSearchQuery);
-
-  // Live Traffic: read/write the filter store directly
-  const liveSearch = useHistoryQueryStore((s) => s.filter.search);
-  const liveSetSearch = useHistoryQueryStore((s) => s.setSearch);
-
-  // Browser Automation: read via store, write via trigger
-  const browserSearch = useBrowserAutomationStore((s) => s.getActiveTab()?.search ?? '');
-
-  // Invoker: read/write the active tab's filterSearch
-  const invokerSearch = useInvokerStore((s) => s.tabs.find((t) => t.id === s.activeTabId)?.filterSearch ?? '');
-  const invokerSetSearch = useInvokerStore((s) => s.setFilterSearch);
-
-  // For non-routed pages, maintain local state
-  const [query, setQuery] = React.useState('');
-
-  const placeholder = isOverview
-    ? 'Search features…'
-    : isLiveTraffic
-      ? 'Search URL, host, method, body…'
-      : isBrowserAutomation
-        ? 'Search pages, logs, insights…'
-        : isInvoker
-          ? 'Search status or payload…'
-          : 'Search pages…';
-
-  const value = isOverview
-    ? overviewSearch
-    : isLiveTraffic
-      ? liveSearch
-      : isBrowserAutomation
-        ? browserSearch
-        : isInvoker
-          ? invokerSearch
-          : query;
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const next = e.target.value;
-    if (isOverview) {
-      setOverviewSearch(next);
-    } else if (isLiveTraffic) {
-      liveSetSearch(next);
-    } else if (isBrowserAutomation) {
-      setBrowserSearch(next);
-    } else if (isInvoker) {
-      invokerSetSearch(next);
-    } else {
-      setQuery(next);
-    }
-  };
 
   // Global "/" keyboard shortcut
   React.useEffect(() => {
@@ -100,8 +39,6 @@ export function GlobalSearch() {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  if (isHidden) return null;
-
   return (
     <div className="relative flex items-center mx-2">
       <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground pointer-events-none" />
@@ -109,7 +46,7 @@ export function GlobalSearch() {
         ref={inputRef}
         type="text"
         value={value}
-        onChange={handleChange}
+        onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         className={cn(
           'h-7 w-44 rounded-md border border-input bg-transparent pl-7 pr-2',
@@ -120,4 +57,199 @@ export function GlobalSearch() {
       />
     </div>
   );
+}
+
+function OverviewSearch() {
+  const overviewSearch = useNavStore((s) => s.overviewSearchQuery);
+  const setOverviewSearch = useNavStore((s) => s.setOverviewSearchQuery);
+
+  const [localVal, setLocalVal] = React.useState(overviewSearch);
+  const debounceRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  React.useEffect(() => {
+    setLocalVal(overviewSearch);
+  }, [overviewSearch]);
+
+  const handleChange = (val: string) => {
+    setLocalVal(val);
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+    }
+    debounceRef.current = setTimeout(() => {
+      setOverviewSearch(val);
+    }, 200);
+  };
+
+  React.useEffect(() => {
+    return () => {
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+      }
+    };
+  }, []);
+
+  return (
+    <SearchInput
+      value={localVal}
+      onChange={handleChange}
+      placeholder="Search features…"
+    />
+  );
+}
+
+function LiveTrafficSearch() {
+  const liveSearch = useHistoryQueryStore((s) => s.filter.search);
+  const liveSetSearch = useHistoryQueryStore((s) => s.setSearch);
+
+  const [localVal, setLocalVal] = React.useState(liveSearch);
+  const debounceRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  React.useEffect(() => {
+    setLocalVal(liveSearch);
+  }, [liveSearch]);
+
+  const handleChange = (val: string) => {
+    setLocalVal(val);
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+    }
+    debounceRef.current = setTimeout(() => {
+      liveSetSearch(val);
+    }, 200);
+  };
+
+  React.useEffect(() => {
+    return () => {
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+      }
+    };
+  }, []);
+
+  return (
+    <SearchInput
+      value={localVal}
+      onChange={handleChange}
+      placeholder="Search URL, host, method, body…"
+    />
+  );
+}
+
+function BrowserAutomationSearch() {
+  const browserSearch = useBrowserAutomationStore(
+    (s) => (s.tabs.find((t) => t.id === s.activeTabId) ?? s.tabs[0] ?? null)?.search ?? ''
+  );
+
+  const [localVal, setLocalVal] = React.useState(browserSearch);
+  const debounceRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  React.useEffect(() => {
+    setLocalVal(browserSearch);
+  }, [browserSearch]);
+
+  const handleChange = (val: string) => {
+    setLocalVal(val);
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+    }
+    debounceRef.current = setTimeout(() => {
+      setBrowserSearch(val);
+    }, 200);
+  };
+
+  React.useEffect(() => {
+    return () => {
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+      }
+    };
+  }, []);
+
+  return (
+    <SearchInput
+      value={localVal}
+      onChange={handleChange}
+      placeholder="Search pages, logs, insights…"
+    />
+  );
+}
+
+function InvokerSearch() {
+  const invokerSearch = useInvokerStore(
+    (s) => s.tabs.find((t) => t.id === s.activeTabId)?.filterSearch ?? ''
+  );
+  const invokerSetSearch = useInvokerStore((s) => s.setFilterSearch);
+
+  const [localVal, setLocalVal] = React.useState(invokerSearch);
+  const debounceRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  React.useEffect(() => {
+    setLocalVal(invokerSearch);
+  }, [invokerSearch]);
+
+  const handleChange = (val: string) => {
+    setLocalVal(val);
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+    }
+    debounceRef.current = setTimeout(() => {
+      invokerSetSearch(val);
+    }, 200);
+  };
+
+  React.useEffect(() => {
+    return () => {
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+      }
+    };
+  }, []);
+
+  return (
+    <SearchInput
+      value={localVal}
+      onChange={handleChange}
+      placeholder="Search status or payload…"
+    />
+  );
+}
+
+function DefaultSearch() {
+  const [localVal, setLocalVal] = React.useState('');
+  return (
+    <SearchInput
+      value={localVal}
+      onChange={setLocalVal}
+      placeholder="Search pages…"
+    />
+  );
+}
+
+export function GlobalSearch() {
+  const { pathname } = useLocation();
+
+  // Pages where global search should be hidden
+  const hiddenPaths = [
+    '/intercept', '/repeater',
+    '/automation', '/regression',
+    '/playground', '/threats', '/debugger', '/tools', '/documents',
+  ];
+  const isHidden = hiddenPaths.some((p) => pathname.startsWith(p));
+
+  if (isHidden) return null;
+
+  if (pathname === '/') {
+    return <OverviewSearch />;
+  }
+  if (pathname === '/live-traffic') {
+    return <LiveTrafficSearch />;
+  }
+  if (pathname.startsWith('/browser-automation')) {
+    return <BrowserAutomationSearch />;
+  }
+  if (pathname.startsWith('/invoker')) {
+    return <InvokerSearch />;
+  }
+
+  return <DefaultSearch />;
 }

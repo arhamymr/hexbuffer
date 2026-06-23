@@ -6,7 +6,7 @@ import { useDocumentsStore } from '@/stores/documents';
 import { useTargetStore } from '@/stores/target';
 import { useFloatingBarUiStore } from '@/stores/floating-bar-ui';
 import { toast } from 'sonner';
-import { useHistoryQuery } from './use-history-query';
+import { useHistoryQueryStore } from '../state/history-query-store';
 import { usePinnedRequestsStore } from '../state/pinned-requests-store';
 import { useGroupsStore } from '../state/groups-store';
 import { closeTargetSelector } from '@/triggers';
@@ -42,7 +42,7 @@ export function useHttpHistoryPage() {
 
   const targets = useTargetStore((state) => state.targets);
   const removeActiveTab = useTargetStore((state) => state.removeActiveTab);
-  const { setActiveScope } = useHistoryQuery();
+  const setActiveScope = useHistoryQueryStore((state) => state.setActiveScope);
   const pinnedIds = usePinnedRequestsStore((state) => state.pinnedIds);
   const unpinAll = usePinnedRequestsStore((state) => state.unpinAll);
   const pinnedCount = pinnedIds.length;

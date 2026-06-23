@@ -4,10 +4,10 @@ import type { ApiCall } from '@/types';
 
 import { fetchHistoryDetail } from '../services/history-service';
 import { adaptProxyRecordToApiCall } from './use-history-table';
-import { useHistoryQuery } from './use-history-query';
+import { useHistoryQueryStore } from '../state/history-query-store';
 
 export function useHistoryDetail() {
-  const { selectedCallId } = useHistoryQuery();
+  const selectedCallId = useHistoryQueryStore((state) => state.selectedCallId);
   const [call, setCall] = useState<ApiCall | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);

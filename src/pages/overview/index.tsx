@@ -1,30 +1,20 @@
 import { useOverviewPage } from './hooks/use-overview-page';
 import { ClockWidget } from './components/clock-widget';
 import { ProxyWidget } from './components/proxy-widget';
-import { WallpaperWidget } from './components/wallpaper-widget';
 import { ScratchpadWidget } from './components/scratchpad-widget';
 import { DesktopIconItem } from './components/desktop-icon-item';
 import { Button } from '@/components/ui/button';
 import { ShieldAlert } from 'lucide-react';
-import '@/styles/overview-wallpaper.css';
 
 export function OverviewPage() {
   const {
-    wallpaperType,
-    setWallpaperType,
-    wallpaperUrl,
-    setWallpaperUrl,
     displayItems,
-    wallpaperBackgroundStyle,
     handleItemClick,
     handleClearSearch,
   } = useOverviewPage();
 
   return (
-    <div
-      className="os-desktop-wallpaper flex flex-col h-full min-h-0 overflow-y-auto scrollbar-thin transition-colors duration-300"
-      style={wallpaperBackgroundStyle}
-    >
+    <div className="bg-background flex flex-col h-full min-h-0 overflow-y-auto scrollbar-thin">
       <div className="mx-auto w-full px-6 py-6 flex flex-col md:flex-row gap-6 items-start">
         <div className="flex-1 min-w-0">
           {displayItems.length > 0 ? (
@@ -59,12 +49,6 @@ export function OverviewPage() {
         <div className="w-full md:w-64 lg:w-72 shrink-0 flex flex-col gap-4">
           <ClockWidget />
           <ProxyWidget />
-          <WallpaperWidget
-            wallpaperType={wallpaperType}
-            setWallpaperType={setWallpaperType}
-            wallpaperUrl={wallpaperUrl}
-            setWallpaperUrl={setWallpaperUrl}
-          />
           <ScratchpadWidget />
         </div>
       </div>

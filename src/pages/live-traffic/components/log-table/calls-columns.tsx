@@ -25,6 +25,7 @@ import { StatusBadge, MethodBadge } from "@/components/status-badge";
 import { LogEntryContextMenu } from "./log-context-menu";
 import type { ApiCall } from '@/types';
 import { useHistoryTable } from '@/pages/live-traffic/hooks/use-history-table';
+import { useHistoryQueryStore } from '@/pages/live-traffic/state/history-query-store';
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useLogEntryActions } from '@/pages/live-traffic/hooks/use-log-entry-actions';
@@ -171,6 +172,8 @@ export const TrafficTable = memo(function TrafficTable({
 }) {
   const tableContainerRef = useRef<HTMLDivElement>(null);
   const [isContextMenuOpen, setIsContextMenuOpen] = useState(false);
+  const selectedCallId = useHistoryQueryStore((state) => state.selectedCallId);
+  const setSelectedCallId = useHistoryQueryStore((state) => state.setSelectedCallId);
   const {
     calls,
     pagination,
@@ -185,9 +188,7 @@ export const TrafficTable = memo(function TrafficTable({
     loadMore,
     handleRefresh,
     toggleSortOrder,
-    setSelectedCallId,
     removeCallLocally,
-    selectedCallId,
   } = useHistoryTable({ isStreamPaused: isContextMenuOpen });
 
   const pinnedIds = usePinnedRequestsStore((s) => s.pinnedIds);

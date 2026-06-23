@@ -14,7 +14,7 @@ use hexbuffer::commands::repeater::WsRepeaterState;
 use hexbuffer::commands::threats::ThreatAnalysisState;
 use hexbuffer::{
     AiBrowserState, BrowserProcessState, CollaboratorPollingState, HistoryBridge,
-    PacketCaptureState, PortScanState, ProxyState, SqliScanState,
+    PortScanState, ProxyState, SqliScanState,
 };
 
 /// Append a timestamped line to both stderr and /tmp/hexbuffer.log
@@ -66,7 +66,6 @@ fn main() {
             app.manage(Mutex::new(ProxyState::new()));
             app.manage(IntruderState::default());
             app.manage(PortScanState::default());
-            app.manage(PacketCaptureState::default());
             app.manage(BrowserProcessState::default());
             app.manage(AiBrowserState::default());
             app.manage(SqliScanState::new());
@@ -286,13 +285,6 @@ fn main() {
             hexbuffer::commands::intruder::stop_intruder_attack,
             hexbuffer::port_scanner::scan_ports,
             hexbuffer::port_scanner::stop_port_scan,
-            hexbuffer::commands::packet_capture::list_capture_interfaces,
-            hexbuffer::commands::packet_capture::configure_capture_network,
-            hexbuffer::commands::packet_capture::prepare_packet_capture_permissions,
-            hexbuffer::commands::packet_capture::start_packet_capture,
-            hexbuffer::commands::packet_capture::stop_packet_capture,
-            hexbuffer::commands::packet_capture::get_packet_capture_status,
-            hexbuffer::commands::packet_capture::get_packets_paginated,
             hexbuffer::ai::get_ai_settings,
             hexbuffer::ai::get_ai_key_status,
             hexbuffer::ai::set_ai_api_key,
@@ -503,6 +495,9 @@ fn show_main_window(app: tauri::AppHandle) -> Result<(), String> {
 /// in tao 0.35.2 on macOS (tao/src/platform_impl/macos/window.rs:936).
 #[tauri::command]
 fn safe_start_dragging(window: tauri::Window) -> Result<(), String> {
+    if window.is_fullscreen().unwrap_or(false) {
+        return Ok(());
+    }
     std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| window.start_dragging()))
         .map_err(|_| "drag failed".to_string())?
         .map_err(|e| e.to_string())

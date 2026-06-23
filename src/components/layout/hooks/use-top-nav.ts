@@ -43,12 +43,17 @@ export function useTopNav() {
   }, []);
 
   const handleMouseDown = React.useCallback((event: React.MouseEvent<HTMLElement>) => {
-    if (event.buttons === 1) {
-      setIsDraggingWindow(true);
-      invoke('safe_start_dragging').catch(() => {
-        // guarded by Rust catch_unwind — will not panic the process
-      });
+    if (event.buttons !== 1) return;
+
+    const target = event.target as HTMLElement;
+    if (target.closest('a, button, input, select, textarea, [role="button"], [role="link"]')) {
+      return;
     }
+
+    setIsDraggingWindow(true);
+    invoke('safe_start_dragging').catch(() => {
+      // guarded by Rust catch_unwind — will not panic the process
+    });
   }, []);
 
   const stopDraggingWindow = React.useCallback(() => {

@@ -6,7 +6,7 @@ import { createDefaultAttackConfig, findRequestPayloadPositions } from '@/pages/
 import { useInvokerStore } from '@/stores/invoker';
 import { useDocumentsStore } from '@/stores/documents';
 import { useBrowserAutomationStore } from '@/stores/browser-automation';
-import { useHistoryQuery } from '@/pages/live-traffic/hooks/use-history-query';
+import { useHistoryQueryStore } from '@/pages/live-traffic/state/history-query-store';
 import { adaptProxyRecordToApiCall } from '@/pages/live-traffic/hooks/use-history-table';
 import { useRepeaterStore } from '@/stores/repeater';
 import { buildHttpCurlCommand, buildRawHttpRequest } from '@/lib/http-message';
@@ -27,7 +27,7 @@ function buildAutomationTargetUrl(request: ApiCall) {
 }
 
 export function useLogEntryActions(call: ApiCall, onDelete?: (id: string) => void) {
-  const { triggerRefresh } = useHistoryQuery();
+  const triggerRefresh = useHistoryQueryStore((state) => state.triggerRefresh);
   const togglePin = usePinnedRequestsStore((s) => s.togglePin);
   const isPinned = usePinnedRequestsStore((s) => s.isPinned);
   const pinned = isPinned(call.id);

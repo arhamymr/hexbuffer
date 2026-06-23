@@ -3,7 +3,6 @@ pub mod chat_sessions;
 pub mod collaborator;
 pub mod api_collection;
 pub mod documents;
-pub mod packet_capture;
 pub mod proxy_logs;
 pub mod regression;
 pub mod threats;
@@ -35,7 +34,6 @@ impl Database {
         conn.execute_batch(crate::db::schema::CREATE_HTTP_LOGS_TABLE)?;
         conn.execute_batch(crate::db::schema::CREATE_WEBSOCKET_TABLES)?;
         conn.execute_batch(crate::db::schema::CREATE_DOCUMENTS_TABLE)?;
-        conn.execute_batch(crate::db::schema::CREATE_PACKET_CAPTURE_TABLES)?;
         conn.execute_batch(crate::db::schema::CREATE_THREAT_TABLES)?;
         conn.execute_batch(crate::db::schema::CREATE_AI_BROWSER_TABLES)?;
         conn.execute_batch(crate::db::schema::CREATE_COLLABORATOR_TABLES)?;

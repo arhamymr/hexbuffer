@@ -1,7 +1,53 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-APP_NAME="hexbuffer"
+APP_NAME="security-suite"
+DISPLAY_NAME="hexbuffer Security Suite"
+LATEST_JSON_NAME="latest.json"
+
+usage() {
+  cat <<EOF
+Usage:
+  ./scripts/install.sh                 Install security-suite (default)
+  ./scripts/install.sh --app devhub    Install developer-hub (Code + API Collection)
+  ./scripts/install.sh --help          Show this help
+EOF
+}
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --app)
+      if [ -z "${2:-}" ]; then
+        echo "Missing value for $1"
+        usage
+        exit 1
+      fi
+      if [ "$2" = "devhub" ] || [ "$2" = "developer-hub" ]; then
+        APP_NAME="developer-hub"
+        DISPLAY_NAME="hexbuffer Developer Hub"
+        LATEST_JSON_NAME="latest-devhub.json"
+      elif [ "$2" = "security" ] || [ "$2" = "security-suite" ]; then
+        APP_NAME="security-suite"
+        DISPLAY_NAME="hexbuffer Security Suite"
+        LATEST_JSON_NAME="latest.json"
+      else
+        echo "Unknown app: $2 (must be 'security-suite' or 'developer-hub')"
+        exit 1
+      fi
+      shift 2
+      ;;
+    --help|-h|help)
+      usage
+      exit 0
+      ;;
+    *)
+      echo "Unknown argument: $1"
+      usage
+      exit 1
+      ;;
+  esac
+done
+
 BASE_URL="${OXBUFFER_RELEASES_URL:-https://dist.0xbuffer.com}"
 BASE_URL="${BASE_URL%/}"
 
@@ -50,7 +96,7 @@ verify_checksum() {
 }
 
 TMP_DIR="$(mktemp -d)"
-LATEST_PATH="$TMP_DIR/latest.json"
+LATEST_PATH="$TMP_DIR/$LATEST_JSON_NAME"
 
 cleanup() {
   # macOS mount cleanup (MOUNT_DIR may or may not exist)
@@ -61,12 +107,12 @@ cleanup() {
 }
 trap cleanup EXIT
 
-echo "Resolving latest $APP_NAME version..."
-curl -fsSL "$BASE_URL/latest.json" -o "$LATEST_PATH"
+echo "Resolving latest $DISPLAY_NAME version..."
+curl -fsSL "$BASE_URL/$LATEST_JSON_NAME" -o "$LATEST_PATH"
 
 VERSION="$(awk -F'"' '/"version"[[:space:]]*:/ {print $4; exit}' "$LATEST_PATH")"
 if [[ ! "$VERSION" =~ ^[A-Za-z0-9._-]+$ ]]; then
-  echo "Invalid version in latest.json"
+  echo "Invalid version in $LATEST_JSON_NAME"
   exit 1
 fi
 
@@ -94,7 +140,7 @@ install_macos() {
   local DMG_PATH="$TMP_DIR/$DMG_NAME"
   local CHECKSUM_PATH="$TMP_DIR/$DMG_NAME.sha256"
 
-  echo "Downloading $APP_NAME $VERSION for macOS $ARCH..."
+  echo "Downloading $DISPLAY_NAME $VERSION for macOS $ARCH..."
   curl -fL "$BASE_URL/$DMG_NAME" -o "$DMG_PATH"
   curl -fL "$BASE_URL/$DMG_NAME.sha256" -o "$CHECKSUM_PATH"
 
@@ -113,14 +159,14 @@ install_macos() {
 
   local TARGET_APP="$INSTALL_DIR/$APP_NAME.app"
 
-  echo "Installing $APP_NAME to $INSTALL_DIR..."
+  echo "Installing $DISPLAY_NAME to $INSTALL_DIR..."
   if [ -w "$INSTALL_DIR" ]; then
     ditto "$APP_PATH" "$TARGET_APP"
   else
     sudo ditto "$APP_PATH" "$TARGET_APP"
   fi
 
-  echo "$APP_NAME installed successfully."
+  echo "$DISPLAY_NAME installed successfully."
   echo "Open it with: open \"$TARGET_APP\""
 }
 
@@ -147,7 +193,7 @@ install_linux() {
   local APPIMAGE_PATH="$TMP_DIR/$APPIMAGE_NAME"
   local CHECKSUM_PATH="$TMP_DIR/$APPIMAGE_NAME.sha256"
 
-  echo "Downloading $APP_NAME $VERSION for Linux $ARCH..."
+  echo "Downloading $DISPLAY_NAME $VERSION for Linux $ARCH..."
   curl -fL "$BASE_URL/$APPIMAGE_NAME" -o "$APPIMAGE_PATH"
   curl -fL "$BASE_URL/$APPIMAGE_NAME.sha256" -o "$CHECKSUM_PATH"
 
@@ -156,7 +202,7 @@ install_linux() {
   mkdir -p "$INSTALL_DIR"
   local TARGET_APPIMAGE="$INSTALL_DIR/$APPIMAGE_NAME"
 
-  echo "Installing $APP_NAME to $INSTALL_DIR..."
+  echo "Installing $DISPLAY_NAME to $INSTALL_DIR..."
   cp "$APPIMAGE_PATH" "$TARGET_APPIMAGE"
   chmod +x "$TARGET_APPIMAGE"
 
@@ -170,16 +216,16 @@ install_linux() {
   mkdir -p "$DESKTOP_DIR"
   cat > "$DESKTOP_FILE" <<EOF
 [Desktop Entry]
-Name=hexbuffer
-Comment=Security reconnaissance and proxy tool
+Name=$DISPLAY_NAME
+Comment=Cyber tools suite
 Exec=$TARGET_APPIMAGE
-Icon=hexbuffer
+Icon=$APP_NAME
 Type=Application
 Categories=Development;Security;
 Terminal=false
 EOF
 
-  echo "$APP_NAME installed successfully."
+  echo "$DISPLAY_NAME installed successfully."
   echo "Run it with: $SYMLINK"
   echo "Or find it in your application menu."
 }
@@ -195,7 +241,7 @@ case "$OS" in
     ;;
   *)
     echo "Unsupported platform: $OS"
-    echo "hexbuffer install script supports macOS and Linux."
+    echo "$DISPLAY_NAME install script supports macOS and Linux."
     exit 1
     ;;
 esac

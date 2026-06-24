@@ -4,7 +4,7 @@ import { BrowserRouter } from "react-router-dom";
 import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { ThemeProvider } from "@/components/theme-provider";
-import { AppLayout } from "@/components/layout";
+import { AppLayout } from "@/layout";
 import { Toaster } from "@/components/ui/sonner";
 import { Settings } from "@/pages/settings";
 import { ResponseDetailWindow } from "@/pages/live-traffic/components/log-table/response-detail-window";

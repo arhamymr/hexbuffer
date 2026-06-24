@@ -28,9 +28,7 @@ const ToolsPage = React.lazy(() =>
 const DocumentsPage = React.lazy(() =>
   import("@/pages/documents").then((m) => ({ default: m.DocumentsPage }))
 );
-const ApiCollectionPage = React.lazy(() =>
-  import("@/pages/api-collection").then((m) => ({ default: m.ApiCollectionPage }))
-);
+
 const BrowserAutomationPage = React.lazy(() =>
   import("@/pages/browser").then((m) => ({ default: m.BrowserAutomationPage }))
 );
@@ -46,12 +44,7 @@ const AutomationPage = React.lazy(() =>
 const RegressionPage = React.lazy(() =>
   import("@/pages/regression").then((m) => ({ default: m.RegressionPage }))
 );
-const CodeAuditPage = React.lazy(() =>
-  import("@/pages/code-audit").then((m) => ({ default: m.CodeAuditPage }))
-);
-const PlaygroundPage = React.lazy(() =>
-  import("@/pages/code").then((m) => ({ default: m.PlaygroundPage }))
-);
+
 
 function AutomationEventWatchers() {
   React.useEffect(() => {
@@ -84,12 +77,11 @@ function AppRoutes() {
           <Route path="/debugger" element={<DebuggerPage />} />
           <Route path="/tools" element={<ToolsPage />} />
           <Route path="/documents" element={<DocumentsPage />} />
-          <Route path="/api-collection" element={<ApiCollectionPage />} />
+
           <Route path="/automation" element={<AutomationPage />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/regression" element={<RegressionPage />} />
-          <Route path="/code-audit" element={<CodeAuditPage />} />
-          <Route path="/playground" element={<PlaygroundPage />} />
+
         </Routes>
       </React.Suspense>
     </>

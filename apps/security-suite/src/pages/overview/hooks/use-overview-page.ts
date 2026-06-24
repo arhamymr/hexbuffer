@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { allNavItems } from '@/components/layout/constants';
+import { allNavItems } from '@/layout/constants';
 import { useNavStore } from '@/stores/nav';
 import { FEATURE_DESCRIPTIONS } from '../constants';
 

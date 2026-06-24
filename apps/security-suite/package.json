@@ -1,17 +1,18 @@
 {
-  "name": "hexbuffer",
+  "name": "security-suite",
   "private": true,
-  "version": "2026.0.44",
+  "version": "2026.0.45",
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "tauri": "tauri",
     "dev:clean": "lsof -ti:1420 | xargs kill -9 2>/dev/null || true && vite",
     "build": "vite build",
-    "sidecars:build": "node sidecars/download-rust-analyzer.mjs && node sidecars/build-sidecars.mjs",
-    "ra:download": "node sidecars/download-rust-analyzer.mjs",
+    "sidecars:build": "node ../../sidecars/download-rust-analyzer.mjs && node ../../sidecars/build-sidecars.mjs",
+    "ra:download": "node ../../sidecars/download-rust-analyzer.mjs",
     "preview": "vite preview",
-    "fix:packet-permissions": "bash scripts/fix-packet-capture-permissions.sh",
-    "deploy": "bash ./scripts/deploy.sh"
+    "fix:packet-permissions": "bash ../../scripts/fix-packet-capture-permissions.sh",
+    "deploy": "bash ../../scripts/deploy.sh"
   },
   "dependencies": {
     "@ai-sdk/deepseek": "^2.0.35",

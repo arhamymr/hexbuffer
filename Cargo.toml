@@ -1,0 +1,7 @@
+[workspace]
+members = [
+    "apps/developer-hub/src-tauri",
+    "apps/security-suite/src-tauri",
+    "packages/rust-backend"
+]
+resolver = "2"

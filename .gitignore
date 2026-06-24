@@ -30,3 +30,7 @@ chrome
 .env
 
 reference
+.pnpm-store
+target
+target-tauri
+binaries

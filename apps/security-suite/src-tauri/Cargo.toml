@@ -1,6 +1,6 @@
 [package]
-name = "hexbuffer"
-version = "2026.0.44"
+name = "security-suite"
+version = "2026.0.45"
 description = "Proxy App"
 authors = ["Arham"]
 edition = "2021"
@@ -9,6 +9,7 @@ edition = "2021"
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
+hexbuffer = { package = "shared-rust-core", path = "../../../packages/rust-backend" }
 tauri = { version = "2", features = ["protocol-asset", "macos-private-api", "unstable", "devtools", "tray-icon"] }
 tauri-plugin-opener = "2"
 tauri-plugin-dialog = "2"

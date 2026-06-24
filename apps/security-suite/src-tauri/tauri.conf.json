@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "hexbuffer",
-  "version": "2026.0.44",
-  "identifier": "com.hexbuffer",
+  "productName": "security-suite",
+  "version": "2026.0.45",
+  "identifier": "com.hexbuffer.security",
   "build": {
     "beforeDevCommand": "pnpm sidecars:build && pnpm dev:clean",
     "devUrl": "http://localhost:1420",
@@ -15,7 +15,7 @@
     "windows": [
       {
         "label": "main",
-        "title": "hexbuffer",
+        "title": "hexbuffer Security Suite",
         "decorations": false,
         "transparent": true,
         "visible": false,
@@ -26,7 +26,7 @@
       {
         "label": "splashscreen",
         "url": "/splashscreen.html",
-        "title": "hexbuffer",
+        "title": "hexbuffer Security Suite",
         "decorations": false,
         "transparent": true,
         "resizable": false,
@@ -65,8 +65,7 @@
       }
     },
     "externalBin": [
-      "binaries/ai-engine",
-      "binaries/rust-analyzer"
+      "binaries/ai-engine"
     ],
     "resources": [
       "resources/ghidra/*"

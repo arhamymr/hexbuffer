@@ -8,8 +8,8 @@ import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const require = createRequire(import.meta.url);
-const binariesDir = path.join(root, 'src-tauri', 'binaries');
-const pkgCacheDir = path.join(root, 'src-tauri', '.pkg-cache');
+const binariesDir = path.join(root, 'apps', 'security-suite', 'src-tauri', 'binaries');
+const pkgCacheDir = path.join(root, 'apps', 'security-suite', 'src-tauri', '.pkg-cache');
 
 function run(command, args, options = {}) {
   execFileSync(command, args, {

@@ -1,0 +1,13 @@
+{
+  "name": "hexbuffer-workspace",
+  "private": true,
+  "scripts": {
+    "dev:security": "pnpm --filter security-suite run tauri dev",
+    "dev:devhub": "pnpm --filter developer-hub run tauri dev",
+    "build:security": "pnpm --filter security-suite run tauri build",
+    "build:devhub": "pnpm --filter developer-hub run tauri build"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2"
+  }
+}

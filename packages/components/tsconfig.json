@@ -18,7 +18,7 @@
     "jsx": "react-jsx",
     "paths": {
       "@/*": [
-        "../../apps/security-suite/src/*"
+        "../../apps/hexbuffer/src/*"
       ]
     },
     "strictNullChecks": true

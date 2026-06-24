@@ -1,0 +1,501 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:is(.dark *));
+
+/* ===== Tailwind v4 tokens → map ke CSS vars (shadcn) ===== */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  --font-sans: 'Geist', 'Geist Fallback', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: 'Geist Mono', 'Geist Mono Fallback', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+  --color-brand: var(--brand);
+  --color-highlight: var(--highlight);
+}
+
+:root {
+  --background: oklch(1 0 0);
+  --foreground: oklch(27.274% 0.00003 271.152);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: #00c950;
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+  --chart-1: oklch(0.87 0 0);
+  --chart-2: oklch(0.556 0 0);
+  --chart-3: oklch(0.439 0 0);
+  --chart-4: oklch(0.371 0 0);
+  --chart-5: oklch(0.269 0 0);
+  --radius: 0.625rem;
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
+}
+
+.dark {
+  --background: oklch(28.768% 0.00227 146.187);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: #00c950;
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.556 0 0);
+  --chart-1: oklch(0.87 0 0);
+  --chart-2: oklch(0.556 0 0);
+  --chart-3: oklch(0.439 0 0);
+  --chart-4: oklch(0.371 0 0);
+  --chart-5: oklch(0.269 0 0);
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.556 0 0);
+}
+
+@layer utilities {
+
+  /* force Tailwind's font-sans to follow your CSS var */
+  .font-sans {
+    font-family: var(--font-sans) !important;
+  }
+
+  .font-serif {
+    font-family: var(--font-serif, var(--font-sans)) !important;
+  }
+
+  .font-mono {
+    font-family: var(--font-mono, var(--font-sans)) !important;
+  }
+
+  /* convenience: one class to ensure the subtree uses the var even if no font-* class present */
+  .typo {
+    font-family: var(--font-sans);
+  }
+
+  /* Slow pulse animation for hero gradients */
+  @keyframes pulse-slow {
+
+    0%,
+    100% {
+      opacity: 0.2;
+    }
+
+    50% {
+      opacity: 0.3;
+    }
+  }
+
+  .animate-pulse-slow {
+    animation: pulse-slow 8s ease-in-out infinite;
+  }
+
+  /* Ripple effect animation */
+  @keyframes ripple {
+    0% {
+      transform: scale(0);
+      opacity: 0.4;
+    }
+    100% {
+      transform: scale(1);
+      opacity: 0;
+    }
+  }
+
+  .animate-ripple {
+    animation: ripple 0.6s ease-out forwards;
+  }
+
+  @keyframes triangle-pulse {
+    0%,
+    100% {
+      transform: scale(1);
+    }
+
+    45% {
+      transform: scale(1.08);
+    }
+  }
+
+  @keyframes triangle-solid {
+    0%,
+    38%,
+    100% {
+      opacity: 1;
+      transform: rotate(0deg) scale(1);
+    }
+
+    50%,
+    88% {
+      opacity: 0;
+      transform: rotate(8deg) scale(0.88);
+    }
+  }
+
+  @keyframes triangle-dashed {
+    0%,
+    38%,
+    100% {
+      opacity: 0;
+      transform: rotate(-8deg) scale(0.88);
+    }
+
+    50%,
+    88% {
+      opacity: 1;
+      transform: rotate(0deg) scale(1);
+    }
+  }
+
+  @keyframes nav-blink {
+    0% {
+      background-position: 200% center;
+    }
+    100% {
+      background-position: 0% center;
+    }
+  }
+
+  .animate-nav-blink {
+    background-image: linear-gradient(120deg, #22c55e 0%, #22c55e 35%, #dcfce7 50%, #22c55e 65%, #22c55e 100%);
+    background-size: 200% auto;
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: nav-blink 1.5s linear infinite;
+  }
+
+  @keyframes accordion-down {
+    from {
+      height: 0;
+    }
+    to {
+      height: var(--radix-accordion-content-height);
+    }
+  }
+
+  @keyframes accordion-up {
+    from {
+      height: var(--radix-accordion-content-height);
+    }
+    to {
+      height: 0;
+    }
+  }
+
+  .animate-accordion-down {
+    animation: accordion-down 0.18s ease-out;
+  }
+
+  .animate-accordion-up {
+    animation: accordion-up 0.18s ease-out;
+  }
+
+  @keyframes slide-out-right {
+    to {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+  }
+
+  .animate-slide-out-right {
+    animation: slide-out-right 1s ease-in forwards;
+  }
+
+  /* Hero gradient backgrounds */
+  .hero-gradient-bg {
+    background: linear-gradient(to bottom right, rgba(0, 201, 80, 0.2), transparent, rgba(59, 130, 246, 0.2));
+  }
+
+  .hero-gradient-orb-1 {
+    background: radial-gradient(circle, rgba(0, 201, 80, 0.4), rgba(0, 201, 80, 0.2), transparent);
+  }
+
+  .hero-gradient-orb-2 {
+    background: radial-gradient(circle, rgba(59, 130, 246, 0.3), rgba(59, 130, 246, 0.15), transparent);
+  }
+
+  .hero-gradient-orb-3 {
+    background: radial-gradient(circle, rgba(0, 201, 80, 0.25), rgba(0, 201, 80, 0.1), transparent);
+  }
+
+  /* Window resize handles */
+  .resize-handle-bottom,
+  .resize-handle-top,
+  .resize-handle-left,
+  .resize-handle-right,
+  .resize-handle-corner {
+    transition: background-color 0.2s;
+  }
+
+  .resize-handle-bottom:hover,
+  .resize-handle-top:hover {
+    background-color: rgba(59, 130, 246, 0.5);
+  }
+
+  .resize-handle-left:hover,
+  .resize-handle-right:hover {
+    background-color: rgba(59, 130, 246, 0.5);
+  }
+
+  .resize-handle-corner:hover {
+    background-color: rgba(59, 130, 246, 0.7);
+    border-radius: 2px;
+  }
+
+  .title-bar {
+    -webkit-app-region: drag;
+  }
+
+  .title-bar button,
+  .title-bar a {
+    -webkit-app-region: no-drag;
+  }
+}
+
+/* ---break---  */
+
+/* ===== Automation Flow — unlayered to beat ReactFlow defaults ===== */
+.automation-flow {
+  --xy-connectionline-stroke: #00c950;
+  --xy-minimap-background-color: var(--background);
+  --xy-minimap-mask-background-color: color-mix(in oklch, var(--muted) 60%, transparent);
+  --xy-minimap-node-background-color: var(--muted);
+}
+
+.automation-flow .react-flow__pane {
+  cursor: default;
+}
+
+.automation-flow-pan-mode .automation-flow .react-flow__pane {
+  cursor: grab;
+}
+
+.automation-flow-pan-mode .automation-flow .react-flow__pane:active {
+  cursor: grabbing;
+}
+
+.automation-flow .react-flow__edge-path {
+  stroke: var(--primary);
+  stroke-width: 1;
+  opacity: 1;
+}
+
+.automation-flow .react-flow__edge.selected .react-flow__edge-path,
+.automation-flow .react-flow__edge:focus .react-flow__edge-path {
+  stroke: var(--primary);
+  stroke-width: 2;
+}
+
+.automation-flow .react-flow__connection-path {
+  stroke: #00c950;
+  stroke-width: 3;
+}
+
+/* ===== Regression Flow ===== */
+.regression-flow {
+  --xy-minimap-background-color: var(--background);
+  --xy-minimap-mask-background-color: color-mix(in oklch, var(--muted) 60%, transparent);
+  --xy-minimap-node-background-color: var(--muted);
+}
+
+.regression-flow .react-flow__pane {
+  cursor: default;
+}
+
+.regression-flow .react-flow__edge-path {
+  stroke: var(--primary);
+  stroke-width: 1.5;
+  opacity: 1;
+}
+
+.regression-flow .react-flow__node {
+  font-family: inherit;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    @apply text-foreground;
+    background: transparent !important;
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+    overflow: hidden;
+    background: transparent !important;
+  }
+
+  /* Custom Scrollbar Styles */
+  /* Webkit browsers (Chrome, Safari, Edge) */
+  ::-webkit-scrollbar {
+    width: 12px;
+    height: 0;
+  }
+
+  ::-webkit-scrollbar:horizontal {
+    height: 0;
+    display: none;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: var(--background);
+    border-radius: 10px;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--muted);
+    border-radius: 10px;
+    border: 2px solid var(--background);
+    transition: background 0.2s ease;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--primary);
+  }
+
+  ::-webkit-scrollbar-thumb:active {
+    background: var(--primary);
+  }
+
+  /* Firefox */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--muted) var(--background);
+  }
+
+  /* Thin scrollbar variant for specific elements */
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    border: 1px solid var(--background);
+  }
+
+  /* Hide scrollbar variant */
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  /* Animated border beam effect */
+  @keyframes border-beam {
+    from {
+      transform: translate(-50%, -50%) rotate(0deg);
+    }
+    to {
+      transform: translate(-50%, -50%) rotate(360deg);
+    }
+  }
+
+  .animate-border-beam {
+    animation: border-beam 6s linear infinite;
+  }
+
+  .bg-border-beam {
+    background: conic-gradient(
+      from 0deg,
+      transparent 0deg,
+      transparent 260deg,
+      var(--primary) 300deg,
+      transparent 340deg,
+      transparent 360deg
+    );
+  }
+}
+
+/* ===== MDXEditor dark mode overrides ===== */
+/* MDXEditor's second Radix definition (lines 1821+ in its style.css) pins
+   --slate-*, --blue-*, etc. to light values via :root. The dark variant
+   uses CSS module class _dark_6j9u9_1 which never appears in the DOM.
+   This block overrides the editor-specific variables for dark mode. */
+.dark .mdxeditor {
+  --basePageBg: var(--background);
+  --baseBase: var(--background);
+  --baseBgSubtle: var(--muted);
+  --baseBg: var(--muted);
+  --baseBgHover: oklch(1 0 0 / 0.08);
+  --baseBgActive: oklch(1 0 0 / 0.05);
+  --baseLine: var(--border);
+  --baseBorder: var(--border);
+  --baseBorderHover: oklch(1 0 0 / 0.2);
+  --baseSolid: var(--muted-foreground);
+  --baseSolidHover: var(--foreground);
+  --baseText: var(--foreground);
+  --baseTextContrast: var(--foreground);
+  --accentSolid: #0090ff;
+  --accentSolidHover: #3b9eff;
+  --accentText: #70b8ff;
+  --accentTextContrast: #c2e6ff;
+  --admonitionTipBg: oklch(0.2 0.03 200);
+  --admonitionTipBorder: oklch(0.35 0.06 200);
+  --admonitionInfoBg: oklch(0.2 0.03 145);
+  --admonitionInfoBorder: oklch(0.35 0.06 145);
+  --admonitionCautionBg: oklch(0.2 0.03 85);
+  --admonitionCautionBorder: oklch(0.35 0.06 85);
+  --admonitionDangerBg: oklch(0.2 0.04 20);
+  --admonitionDangerBorder: oklch(0.35 0.08 20);
+  --admonitionNoteBg: var(--muted);
+  --admonitionNoteBorder: var(--border);
+}

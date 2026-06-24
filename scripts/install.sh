@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-APP_NAME="security-suite"
-DISPLAY_NAME="hexbuffer Security Suite"
+APP_NAME="hexbuffer"
+DISPLAY_NAME="hexbuffer"
 LATEST_JSON_NAME="latest.json"
 
 usage() {
   cat <<EOF
 Usage:
-  ./scripts/install.sh                 Install security-suite (default)
+  ./scripts/install.sh                 Install hexbuffer (default)
   ./scripts/install.sh --app devhub    Install developer-hub (Code + API Collection)
   ./scripts/install.sh --help          Show this help
 EOF
@@ -26,12 +26,12 @@ while [ $# -gt 0 ]; do
         APP_NAME="developer-hub"
         DISPLAY_NAME="hexbuffer Developer Hub"
         LATEST_JSON_NAME="latest-devhub.json"
-      elif [ "$2" = "security" ] || [ "$2" = "security-suite" ]; then
-        APP_NAME="security-suite"
-        DISPLAY_NAME="hexbuffer Security Suite"
+      elif [ "$2" = "hexbuffer" ]; then
+        APP_NAME="hexbuffer"
+        DISPLAY_NAME="hexbuffer"
         LATEST_JSON_NAME="latest.json"
       else
-        echo "Unknown app: $2 (must be 'security-suite' or 'developer-hub')"
+        echo "Unknown app: $2 (must be 'hexbuffer' or 'developer-hub')"
         exit 1
       fi
       shift 2

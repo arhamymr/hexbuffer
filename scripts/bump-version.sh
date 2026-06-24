@@ -24,7 +24,7 @@ echo "$NEW_VERSION" > "$ROOT/VERSION"
 PKG_FILES=(
   "$ROOT/package.json"
   "$ROOT/apps/developer-hub/package.json"
-  "$ROOT/apps/security-suite/package.json"
+  "$ROOT/apps/hexbuffer/package.json"
 )
 
 for pkg_path in "${PKG_FILES[@]}"; do
@@ -41,7 +41,7 @@ done
 # Update Cargo.toml files
 CARGO_FILES=(
   "$ROOT/apps/developer-hub/src-tauri/Cargo.toml"
-  "$ROOT/apps/security-suite/src-tauri/Cargo.toml"
+  "$ROOT/apps/hexbuffer/src-tauri/Cargo.toml"
 )
 
 for cargo_path in "${CARGO_FILES[@]}"; do
@@ -57,7 +57,7 @@ done
 # Update tauri.conf.json files
 TAURI_FILES=(
   "$ROOT/apps/developer-hub/src-tauri/tauri.conf.json"
-  "$ROOT/apps/security-suite/src-tauri/tauri.conf.json"
+  "$ROOT/apps/hexbuffer/src-tauri/tauri.conf.json"
 )
 
 for tauri_path in "${TAURI_FILES[@]}"; do

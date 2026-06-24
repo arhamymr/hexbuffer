@@ -1,0 +1,180 @@
+use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
+use std::process::Child;
+use std::sync::{atomic::AtomicBool, Arc, Mutex};
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CrawlConfig {
+    pub target_url: String,
+    pub strategy: Option<String>,
+    pub max_depth: u32,
+    pub max_pages: u32,
+    pub same_domain_only: bool,
+    pub exclude_paths: Option<String>,
+    pub request_delay_ms: u64,
+    pub timeout_ms: u64,
+    pub enable_ai_insights: bool,
+    pub network_settle_ms: Option<u64>,
+    #[serde(default = "default_true")]
+    pub capture_screenshots: bool,
+    #[serde(default = "default_true")]
+    pub capture_rendered_html: bool,
+    pub resume_from_url: Option<String>,
+    pub human_input_fields: Option<std::collections::HashMap<String, String>>,
+    #[serde(default = "default_true")]
+    pub headless: bool,
+}
+
+fn default_true() -> bool {
+    true
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CrawlSession {
+    pub id: String,
+    pub target_url: String,
+    pub status: String,
+    pub strategy: String,
+    pub max_depth: u32,
+    pub max_pages: u32,
+    pub started_at: Option<String>,
+    pub finished_at: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CrawlPage {
+    pub id: String,
+    pub session_id: String,
+    pub url: String,
+    pub title: Option<String>,
+    pub status: String,
+    pub depth: u32,
+    pub parent_url: Option<String>,
+    pub http_status: Option<u16>,
+    pub links_found: u32,
+    pub forms_found: u32,
+    pub discovered_at: String,
+    pub visited_at: Option<String>,
+    pub ai_summary: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub ai_used_for_analysis: Option<bool>,
+    pub interesting: Option<bool>,
+    pub screenshot_path: Option<String>,
+    pub rendered_html_path: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AIInsight {
+    pub id: String,
+    pub session_id: String,
+    pub page_id: Option<String>,
+    pub severity: String,
+    pub r#type: String,
+    pub title: String,
+    pub description: String,
+    pub url: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub ai_used_for_analysis: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub analysis_source: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub analysis_tool_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub analysis_tool_name: Option<String>,
+    pub reviewed: bool,
+    pub created_at: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ActivityLog {
+    pub id: String,
+    pub session_id: String,
+    pub level: String,
+    pub r#type: String,
+    pub message: String,
+    pub url: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub ai_used_for_analysis: Option<bool>,
+    pub created_at: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub extra: Option<serde_json::Value>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub human_input_request: Option<serde_json::Value>,
+}
+
+#[derive(Default, Clone)]
+pub struct AiBrowserState {
+    pub(crate) sessions: Arc<Mutex<HashMap<String, CrawlSession>>>,
+    pub(crate) pages: Arc<Mutex<HashMap<String, Vec<CrawlPage>>>>,
+    pub(crate) insights: Arc<Mutex<HashMap<String, Vec<AIInsight>>>>,
+    pub(crate) logs: Arc<Mutex<HashMap<String, Vec<ActivityLog>>>>,
+    pub(crate) children: Arc<Mutex<HashMap<String, HashMap<String, Arc<Mutex<Child>>>>>>,
+    pub(crate) cancellations: Arc<Mutex<HashMap<String, HashMap<String, Arc<AtomicBool>>>>>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct SidecarMessage {
+    #[serde(rename = "type")]
+    pub message_type: String,
+    pub id: Option<String>,
+    pub session_id: Option<String>,
+    pub page_id: Option<String>,
+    pub url: Option<String>,
+    pub parent_url: Option<String>,
+    pub title: Option<String>,
+    pub status: Option<String>,
+    pub depth: Option<u32>,
+    pub http_status: Option<u16>,
+    pub links_found: Option<u32>,
+    pub forms_found: Option<u32>,
+    pub discovered_at: Option<String>,
+    pub visited_at: Option<String>,
+    pub ai_summary: Option<String>,
+    pub ai_used_for_analysis: Option<bool>,
+    pub analysis_source: Option<String>,
+    pub analysis_tool_id: Option<String>,
+    pub analysis_tool_name: Option<String>,
+    pub interesting: Option<bool>,
+    pub screenshot_path: Option<String>,
+    pub rendered_html_path: Option<String>,
+    pub level: Option<String>,
+    pub log_type: Option<String>,
+    pub insight_type: Option<String>,
+    pub severity: Option<String>,
+    pub message: Option<String>,
+    pub description: Option<String>,
+    pub reason: Option<String>,
+    pub human_input_request_id: Option<String>,
+    pub requested_fields: Option<Vec<String>>,
+    pub safe_actions: Option<Vec<String>>,
+    pub extra: Option<serde_json::Value>,
+    pub created_at: Option<String>,
+    pub finished_at: Option<String>,
+    // Workflow passthrough fields
+    #[serde(default, rename = "workflowId")]
+    pub workflow_id: Option<String>,
+    #[serde(default, rename = "stepId")]
+    pub step_id: Option<String>,
+    #[serde(default)]
+    pub name: Option<String>,
+    #[serde(default, rename = "durationMs")]
+    pub duration_ms: Option<f64>,
+    #[serde(default)]
+    pub error: Option<String>,
+    #[serde(default, rename = "stepIndex")]
+    pub step_index: Option<u32>,
+    #[serde(default, rename = "startedAt")]
+    pub started_at: Option<String>,
+    #[serde(default, rename = "completedAt")]
+    pub completed_at: Option<String>,
+    #[serde(default, rename = "failedAt")]
+    pub failed_at: Option<String>,
+    #[serde(default, rename = "contentLength")]
+    pub content_length: Option<usize>,
+}

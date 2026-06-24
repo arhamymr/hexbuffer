@@ -7,7 +7,7 @@ cd "$ROOT"
 usage() {
   cat <<EOF
 Usage:
-  ./scripts/build.sh                 Build/upload security-suite (default)
+  ./scripts/build.sh                 Build/upload hexbuffer (default)
   ./scripts/build.sh --app devhub    Build/upload developer-hub (Code + API Collection)
   ./scripts/build.sh --help          Show this help
   ./scripts/build.sh 2026.1.1        Bump to exact version, then build/upload
@@ -19,7 +19,7 @@ Usage:
 EOF
 }
 
-APP_NAME="security-suite"
+APP_NAME="hexbuffer"
 REQUESTED_VERSION=""
 AUTO_BUMP=false
 FORCE_BUILD=false
@@ -37,10 +37,10 @@ while [ $# -gt 0 ]; do
       fi
       if [ "$2" = "devhub" ] || [ "$2" = "developer-hub" ]; then
         APP_NAME="developer-hub"
-      elif [ "$2" = "security" ] || [ "$2" = "security-suite" ]; then
-        APP_NAME="security-suite"
+      elif [ "$2" = "hexbuffer" ]; then
+        APP_NAME="hexbuffer"
       else
-        echo "Unknown app: $2 (must be 'security-suite' or 'developer-hub')"
+        echo "Unknown app: $2 (must be 'hexbuffer' or 'developer-hub')"
         exit 1
       fi
       shift 2
@@ -246,11 +246,10 @@ has_newer_build_inputs() {
     "$ROOT/pnpm-lock.yaml" \
     "$ROOT/$APP_PATH/src" \
     "$ROOT/$APP_PATH/src-tauri/Cargo.toml" \
-    "$ROOT/$APP_PATH/src-tauri/Cargo.lock" \
+    "$ROOT/Cargo.lock" \
     "$ROOT/$APP_PATH/src-tauri/tauri.conf.json" \
     "$ROOT/$APP_PATH/src-tauri/src" \
     "$ROOT/$APP_PATH/src-tauri/icons" \
-    "$ROOT/packages/shared-rust-core/src" \
     -newer "$artifact" 2>/dev/null | head -1)" ]
 }
 

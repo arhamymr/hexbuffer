@@ -1,5 +1,5 @@
 [package]
-name = "developer-hub"
+name = "proton"
 version = "2026.0.45"
 description = "Proxy App"
 authors = ["Arham"]

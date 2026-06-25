@@ -4,9 +4,9 @@
   "version": "2026.0.45",
   "identifier": "com.hexbuffer.security",
   "build": {
-    "beforeDevCommand": "pnpm sidecars:build && pnpm dev:clean",
+    "beforeDevCommand": "pnpm dev:clean",
     "devUrl": "http://localhost:1420",
-    "beforeBuildCommand": "pnpm sidecars:build && pnpm build",
+    "beforeBuildCommand": "pnpm build",
     "frontendDist": "../dist"
   },
   "app": {
@@ -64,9 +64,7 @@
         "type": "downloadBootstrapper"
       }
     },
-    "externalBin": [
-      "binaries/ai-engine"
-    ],
+    "externalBin": [],
     "resources": [
       "resources/ghidra/*"
     ],

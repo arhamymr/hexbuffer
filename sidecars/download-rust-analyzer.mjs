@@ -17,7 +17,7 @@ import { createWriteStream } from 'node:fs';
 import { pipeline } from 'node:stream/promises';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const binariesDir = path.join(root, 'apps', 'developer-hub', 'src-tauri', 'binaries');
+const binariesDir = path.join(root, 'apps', 'proton', 'src-tauri', 'binaries');
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 

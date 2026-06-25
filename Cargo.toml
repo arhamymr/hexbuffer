@@ -1,6 +1,6 @@
 [workspace]
 members = [
-    "apps/developer-hub/src-tauri",
-    "apps/hexbuffer/src-tauri"
+    "apps/hexbuffer/src-tauri",
+    "apps/proton/src-tauri"
 ]
 resolver = "2"

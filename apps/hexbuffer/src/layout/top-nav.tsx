@@ -13,7 +13,7 @@ import { useBrowserSessionEvents } from './hooks/use-browser-session-events';
 import { useAutomationStore } from '@/stores/automation';
 import { useBrowserAutomationStore } from '@/stores/browser-automation';
 import { useAppSettingsStore } from '@/stores/app-settings-store';
-import { Separator } from '../ui/separator';
+import { Separator } from "@/components/ui/separator";
 import { GlobalSearch } from './global-search';
 
 type CrawlStatusKey = 'automation-running' | 'browser-running' | 'browser-paused';

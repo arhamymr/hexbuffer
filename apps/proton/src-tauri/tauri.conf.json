@@ -1,12 +1,12 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "developer-hub",
+  "productName": "proton",
   "version": "2026.0.45",
   "identifier": "com.hexbuffer.devhub",
   "build": {
-    "beforeDevCommand": "pnpm sidecars:build && pnpm dev:clean",
+    "beforeDevCommand": "pnpm dev:clean",
     "devUrl": "http://localhost:1420",
-    "beforeBuildCommand": "pnpm sidecars:build && pnpm build",
+    "beforeBuildCommand": "pnpm build",
     "frontendDist": "../dist"
   },
   "app": {

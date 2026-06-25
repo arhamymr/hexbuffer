@@ -14,7 +14,7 @@ import { Link } from 'react-router-dom';
 
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { LicenseModal } from '../../license-modal';
+import { LicenseModal } from '@/components/license-modal';
 import { useSidebarNav } from './use-floating-nav';
 import { useSidebarDock } from './use-floating-dock';
 import { DockPageButtons } from './dock-page-buttons';

@@ -12,7 +12,7 @@ importers:
         specifier: ^2
         version: 2.11.2
 
-  apps/developer-hub:
+  apps/proton:
     dependencies:
       '@ai-sdk/deepseek':
         specifier: ^2.0.35
@@ -367,7 +367,7 @@ importers:
         specifier: ^7.0.4
         version: 7.3.3(@types/node@25.9.1)(jiti@2.7.0)(lightningcss@1.32.0)
 
-  apps/security-suite:
+  apps/hexbuffer:
     dependencies:
       '@ai-sdk/deepseek':
         specifier: ^2.0.35
@@ -721,6 +721,8 @@ importers:
       vite:
         specifier: ^7.0.4
         version: 7.3.3(@types/node@25.9.1)(jiti@2.7.0)(lightningcss@1.32.0)
+
+  packages/components: {}
 
 packages:
 

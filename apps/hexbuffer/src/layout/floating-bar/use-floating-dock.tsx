@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 
 import { useGlobalTerminalStore } from '@/stores/global-terminal';
 import { useChatboxStore } from '@/stores/chatbox';
-import { useTheme } from '../../theme-provider';
+import { useTheme } from '@/components/theme-provider';
 import { useLicenseStore } from '@/stores/license';
 import { useUpdater } from '@/hooks/use-updater';
 import { ManualUpdateCommand } from '@/pages/settings/components/manual-update-command';

@@ -2,7 +2,7 @@ import * as React from 'react';
 import { getEffectiveProxyPort, useAppStore } from '@/stores/app';
 import { proxyStatusLabel } from './utils';
 import { ProxyStatusIndicator } from './proxy-status';
-import pkg from '../../../../package.json';
+import pkg from '../../../package.json';
 
 export function AppFooter() {
   const proxyStatus = useAppStore((state) => state.proxyStatus);

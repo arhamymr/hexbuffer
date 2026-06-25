@@ -3,9 +3,9 @@
   "private": true,
   "scripts": {
     "dev:hexbuffer": "pnpm --filter hexbuffer run tauri dev",
-    "dev:devhub": "pnpm --filter developer-hub run tauri dev",
+    "dev:proton": "pnpm --filter proton run tauri dev",
     "build:hexbuffer": "pnpm --filter hexbuffer run tauri build",
-    "build:devhub": "pnpm --filter developer-hub run tauri build"
+    "build:proton": "pnpm --filter proton run tauri build"
   },
   "devDependencies": {
     "@tauri-apps/cli": "^2"

@@ -1,5 +1,7 @@
 export type JwtAlgorithm = 'HS256' | 'HS384' | 'HS512';
 
+export type JwtMode = 'decode' | 'generate';
+
 export type JwtVulnerabilitySeverity = 'critical' | 'high' | 'medium' | 'low' | 'info';
 
 export interface JwtDecoded {

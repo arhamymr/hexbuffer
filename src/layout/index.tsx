@@ -1,6 +1,5 @@
 import * as React from 'react';
 import { AppFooter } from '@/layout/footer';
-import { TopNav } from './top-nav';
 import { AIAssistantPane } from './assistant';
 import { useAppLayout } from './hooks/use-app-layout';
 import { useInspectorStore } from '@/stores/inspector';
@@ -46,7 +45,6 @@ export function AppLayout({ children }: { children?: React.ReactNode }) {
 
   return (
     <div className="flex h-screen flex-col border bg-background">
-      <TopNav />
       <div className="min-h-0 flex-1">
         <ResizablePanelGroup
           key={isChatboxOpen ? 'with-chatbox' : 'without-chatbox'}

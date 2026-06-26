@@ -62,6 +62,7 @@ const actionLabels: Record<string, string> = {
   get_proxy_summary: 'Loading proxy summary',
   list_proxy_hosts: 'Listing proxy hosts',
   request_human_selection: 'Asking for your input',
+  request_intent_clarification: 'Clarifying your request',
 };
 
 let trackedActions: TrackedAction[] = [];

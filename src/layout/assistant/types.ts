@@ -53,6 +53,20 @@ export interface HumanSelectionRequest {
   createdAt: string;
 }
 
+export interface IntentCategory {
+  id: string;
+  label: string;
+  description?: string;
+}
+
+export interface IntentClarificationRequest {
+  id: string;
+  question: string;
+  categories: IntentCategory[];
+  originalMessage: string;
+  createdAt: string;
+}
+
 export interface ChatSession {
   id: string;
   title: string;

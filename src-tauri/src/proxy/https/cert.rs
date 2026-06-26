@@ -4,15 +4,16 @@ use rcgen::{
 };
 use std::fs;
 use std::path::PathBuf;
-use std::sync::OnceLock;
+use std::sync::{OnceLock, RwLock};
 
 static CA_ROOT: OnceLock<PathBuf> = OnceLock::new();
+static CA_CERTS_CACHE: RwLock<Option<CaCerts>> = RwLock::new(None);
 
 pub fn init_ca_dir(app_data_dir: PathBuf) {
     CA_ROOT.get_or_init(|| app_data_dir.join(".hexbuffer"));
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct CaCerts {
     pub cert_pem: String,
     pub key_pem: String,
@@ -34,9 +35,14 @@ fn get_ca_key_path() -> PathBuf {
     get_ca_dir().join("ca-key.pem")
 }
 
-pub fn get_ca_certs() -> &'static CaCerts {
-    static CA_CERTS: OnceLock<CaCerts> = OnceLock::new();
-    CA_CERTS.get_or_init(|| load_or_generate_ca().expect("Failed to load or generate CA"))
+pub fn get_ca_certs() -> CaCerts {
+    if let Some(cached) = CA_CERTS_CACHE.read().unwrap().as_ref() {
+        return cached.clone();
+    }
+
+    let certs = load_or_generate_ca().expect("Failed to load or generate CA");
+    *CA_CERTS_CACHE.write().unwrap() = Some(certs.clone());
+    certs
 }
 
 fn load_or_generate_ca() -> Result<CaCerts, Box<dyn std::error::Error>> {
@@ -95,12 +101,12 @@ fn generate_ca(
 
 pub fn export_ca_cert_pem() -> Result<Vec<u8>, Box<dyn std::error::Error>> {
     let ca = get_ca_certs();
-    Ok(ca.cert_pem.as_bytes().to_vec())
+    Ok(ca.cert_pem.into_bytes())
 }
 
 pub fn get_ca_cert_pem() -> Result<String, Box<dyn std::error::Error>> {
     let ca = get_ca_certs();
-    Ok(ca.cert_pem.clone())
+    Ok(ca.cert_pem)
 }
 
 pub fn create_hudsucker_authority() -> Result<RcgenAuthority, Box<dyn std::error::Error>> {
@@ -125,6 +131,10 @@ pub fn regenerate_ca() -> Result<(), Box<dyn std::error::Error>> {
     fs::remove_file(&key_path).ok();
 
     let _ca = generate_ca(&cert_path, &key_path)?;
+
+    // Invalidate the in-memory cache so subsequent reads load the new cert from disk
+    *CA_CERTS_CACHE.write().unwrap() = None;
+
     Ok(())
 }
 

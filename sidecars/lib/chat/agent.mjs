@@ -29,6 +29,7 @@ import {
   navigateToDef,
   requestHumanSelectionDef,
 } from './tools/index.mjs';
+import { classifyIntent, TASK_CATEGORIES } from './intent-classifier.mjs';
 
 const CHAT_AGENT_ID = 'hexbuffer-chat-agent';
 
@@ -103,6 +104,43 @@ export async function runChat() {
   const redactedContext = runRedactionWorkflow(context).redactedValue;
 
   const toolContext = createToolContext({ redactedContext });
+
+  // ── Intent classification ───────────────────────────────────────────
+  const classification = await classifyIntent(messages);
+
+  if (classification.intent === 'ambiguous') {
+    const categories = (classification.suggestedCategories || TASK_CATEGORIES.map((c) => c.id))
+      .map((id) => TASK_CATEGORIES.find((c) => c.id === id))
+      .filter(Boolean);
+
+    emit({
+      type: 'chat_action',
+      action: 'request_intent_clarification',
+      payload: {
+        question: classification.clarificationQuestion || 'I need a bit more context — what would you like me to help with?',
+        categories,
+        originalMessage: messages[messages.length - 1]?.content || '',
+      },
+      createdAt: new Date().toISOString(),
+    });
+
+    const clarMsg = 'I need a bit more context — what would you like me to help with? Select a task below and I\'ll get started.';
+    emit({
+      type: 'chat_finished',
+      provider,
+      model,
+      content: clarMsg,
+      createdAt: new Date().toISOString(),
+    });
+
+    emit({
+      type: 'workflow_finished',
+      workflowId: `wf-chat-${Date.now()}`,
+      durationMs: 0,
+      finishedAt: new Date().toISOString(),
+    });
+    return;
+  }
 
   const createChatAgent = () => createAgent({
     id: CHAT_AGENT_ID,

@@ -2,7 +2,7 @@ import * as React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Loader2, Pause } from 'lucide-react';
 
-import { navCategories, type NavCategory } from '../constants';
+import { mainNavItems, type NavItem } from '../constants';
 import { useNavStore } from '@/stores/nav';
 import { useAppSettingsStore } from '@/stores/app-settings-store';
 import { useAutomationStore } from '@/stores/automation';
@@ -36,16 +36,26 @@ export function useSidebarNav() {
 
   const blinkingItems = useNavStore((state) => state.blinkingItems);
   const hiddenNavItems = useAppSettingsStore((s) => s.hiddenNavItems);
+  const pinnedNavItems = useAppSettingsStore((s) => s.pinnedNavItems);
+  const togglePinNavItem = useAppSettingsStore((s) => s.togglePinNavItem);
 
-  const visibleCategories = React.useMemo(
-    () => navCategories
-      .map((cat) => ({
-        ...cat,
-        items: cat.items.filter((item) => !hiddenNavItems.includes(item.href)),
-      }))
-      .filter((cat) => cat.items.length > 0),
+  const visibleNavItems = React.useMemo(
+    () => mainNavItems.filter((item) => !hiddenNavItems.includes(item.href)),
     [hiddenNavItems],
   );
+
+  const MAX_DOCK_ITEMS = 10;
+
+  const dockNavItems = React.useMemo(() => {
+    // Overview always appears first (if visible), then pinned items, max 10
+    const overview = visibleNavItems.find((item) => item.href === '/');
+    const pinned = pinnedNavItems
+      .filter((href) => href !== '/')
+      .map((href) => visibleNavItems.find((item) => item.href === href))
+      .filter((item): item is NavItem => item != null);
+    const items = overview ? [overview, ...pinned] : pinned;
+    return items.slice(0, MAX_DOCK_ITEMS);
+  }, [visibleNavItems, pinnedNavItems]);
 
   React.useEffect(() => {
     if (hiddenNavItems.includes(pathname)) {
@@ -70,16 +80,19 @@ export function useSidebarNav() {
     [isAutomationRunning, crawlerStatus],
   );
 
-  const isCategoryActive = React.useCallback(
-    (cat: NavCategory) => cat.items.some((item) => pathname === item.href),
+  const isNavItemActive = React.useCallback(
+    (item: NavItem) => pathname === item.href,
     [pathname],
   );
 
   return {
     pathname,
     blinkingItems,
-    visibleCategories,
-    isCategoryActive,
+    visibleNavItems,
+    dockNavItems,
+    pinnedNavItems,
+    togglePinNavItem,
+    isNavItemActive,
     getNavStatus,
   };
 }

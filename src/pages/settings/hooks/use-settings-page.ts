@@ -2,7 +2,7 @@ import * as React from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { open, save } from '@tauri-apps/plugin-dialog';
 import { toast } from 'sonner';
-import { getCaCert, saveCaCert, trustInterceptCa } from '@/pages/live-traffic/api';
+import { getCaCert, regenerateCaCert, saveCaCert, trustInterceptCa } from '@/pages/live-traffic/api';
 import { useUpdater } from '@/hooks/use-updater';
 import { DEFAULT_PROXY_PORT, MAX_PROXY_PORT, MIN_PROXY_PORT, isValidProxyPort, useAppStore } from '@/stores/app';
 import { useBrowserAutomationStore } from '@/stores/browser-automation';
@@ -49,6 +49,7 @@ const LEGACY_AI_KEY_MIGRATION_ATTEMPTED_KEY = 'hexbuffer-ai-keys-migration-attem
 export function useSettingsPage() {
   const [downloading, setDownloading] = React.useState(false);
   const [installingCa, setInstallingCa] = React.useState(false);
+  const [regeneratingCa, setRegeneratingCa] = React.useState(false);
   const [aiSettings, setAiSettings] = React.useState<AiSettings>(DEFAULT_AI_SETTINGS);
   const [aiSettingsLoading, setAiSettingsLoading] = React.useState(true);
   const [aiSettingsSaving, setAiSettingsSaving] = React.useState(false);
@@ -215,6 +216,19 @@ export function useSettingsPage() {
     }
   }, []);
 
+  const handleRegenerateCert = React.useCallback(async () => {
+    try {
+      setRegeneratingCa(true);
+      await regenerateCaCert();
+      toast.success('CA certificate regenerated. You may need to re-install it in your browsers.');
+    } catch (error) {
+      console.error('Failed to regenerate CA certificate:', error);
+      toast.error(`Failed to regenerate certificate: ${error}`);
+    } finally {
+      setRegeneratingCa(false);
+    }
+  }, []);
+
   const updateAiProvider = React.useCallback((provider: string) => {
     const models = AI_MODEL_OPTIONS_BY_PROVIDER[provider] ?? [];
 
@@ -322,8 +336,10 @@ export function useSettingsPage() {
     resettingLocalData,
     downloading,
     installingCa,
+    regeneratingCa,
     handleDownloadCert,
     handleInstallMacCert,
+    handleRegenerateCert,
     handleClearAiApiKey,
     handleResetLocalData,
     handleResetProxyDefaultPort,

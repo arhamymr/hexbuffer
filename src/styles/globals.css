@@ -450,7 +450,7 @@
   }
 
   .animate-border-beam {
-    animation: border-beam 6s linear infinite;
+    animation: border-beam 10s linear infinite;
   }
 
   .bg-border-beam {

@@ -42,6 +42,7 @@ import {
 } from '@/components/ai-elements/task';
 import { ChatSessionList } from './components/chat-session-list';
 import { HumanSelectionCard } from './components/human-selection-card';
+import { IntentClarificationCard } from './components/intent-clarification-card';
 import { SuggestionBar } from './components/suggestion-bar';
 import { useAiChatPane } from './hooks/use-ai-chat-pane';
 import { getMessageText, getReasoningParts, hasContent, providerLabel } from './lib/message-utils';
@@ -77,6 +78,9 @@ function AIAssistantPaneContent({ onClose }: { onClose?: () => void }) {
     pendingSelection,
     dismissSelection,
     submitSelection,
+    pendingClarification,
+    dismissClarification,
+    submitClarification,
     requestedFieldLabels,
   } = useAiChatPane();
 
@@ -240,6 +244,19 @@ function AIAssistantPaneContent({ onClose }: { onClose?: () => void }) {
                     </Message>
                   ) : null}
 
+                  {/* Intent clarification card */}
+                  {pendingClarification ? (
+                    <Message from="assistant">
+                      <MessageContent>
+                        <IntentClarificationCard
+                          request={pendingClarification}
+                          onSubmit={submitClarification}
+                          onDismiss={dismissClarification}
+                        />
+                      </MessageContent>
+                    </Message>
+                  ) : null}
+
                   {/* Loading shimmer while waiting for assistant response */}
                   {status === 'submitted' ? (
                     <Message from="assistant">
@@ -344,7 +361,9 @@ function AIAssistantPaneContent({ onClose }: { onClose?: () => void }) {
                       ? `Enter ${requestedFieldLabels} to resume crawl…`
                       : pendingSelection
                         ? 'Select an option above or type a message…'
-                        : 'Message AI…'
+                        : pendingClarification
+                          ? 'Select a task above to clarify your intent…'
+                          : 'Message AI…'
                   }
                 />
               </PromptInputBody>

@@ -8,7 +8,7 @@ import { usePromptInputController } from '@/components/ai-elements/prompt-input'
 import { useBrowserAutomationStore } from '@/stores/browser-automation';
 import { DASHBOARD_DEFAULT_AI_MODEL } from '../constants';
 import { DashboardSettingsChatTransport } from '../lib/dashboard-chat-transport';
-import type { ChatMessageRecord, CrawlCompletedEvent, CrawlHumanInputRequest, DashboardAiSettings, DashboardChatMessage, HumanSelectionRequest } from '../types';
+import type { ChatMessageRecord, CrawlCompletedEvent, CrawlHumanInputRequest, DashboardAiSettings, DashboardChatMessage, HumanSelectionRequest, IntentClarificationRequest } from '../types';
 
 const DEFAULT_AI_SETTINGS: DashboardAiSettings = {
   provider: 'deepseek',
@@ -135,9 +135,11 @@ export function useDashboardPage({ sessionId, setMessagesRef, onSaveMessages }: 
   const [aiSettingsLoading, setAiSettingsLoading] = useState(true);
   const [pendingCrawlInput, setPendingCrawlInput] = useState<CrawlHumanInputRequest | null>(null);
   const [pendingSelection, setPendingSelection] = useState<HumanSelectionRequest | null>(null);
+  const [pendingClarification, setPendingClarification] = useState<IntentClarificationRequest | null>(null);
   const aiSettingsRef = useRef(aiSettings);
   const crawlInputRef = useRef<CrawlHumanInputRequest | null>(null);
   const selectionRef = useRef<HumanSelectionRequest | null>(null);
+  const clarificationRef = useRef<IntentClarificationRequest | null>(null);
   const processedSessionIdsRef = useRef(new Set<string>());
   const promptController = usePromptInputController();
   const inputBeingConsumedRef = useRef(false);
@@ -153,6 +155,10 @@ export function useDashboardPage({ sessionId, setMessagesRef, onSaveMessages }: 
   useEffect(() => {
     selectionRef.current = pendingSelection;
   }, [pendingSelection]);
+
+  useEffect(() => {
+    clarificationRef.current = pendingClarification;
+  }, [pendingClarification]);
 
   // Listen for crawl human input requests from the backend
   useEffect(() => {
@@ -175,6 +181,21 @@ export function useDashboardPage({ sessionId, setMessagesRef, onSaveMessages }: 
 
     listen<HumanSelectionRequest>('ai-chat:human-selection-required', (event) => {
       setPendingSelection(event.payload);
+    }).then((fn) => {
+      unlisten = fn;
+    });
+
+    return () => {
+      unlisten?.();
+    };
+  }, []);
+
+  // Listen for intent clarification requests from the AI chat engine
+  useEffect(() => {
+    let unlisten: (() => void) | undefined;
+
+    listen<IntentClarificationRequest>('ai-chat:intent-clarification-required', (event) => {
+      setPendingClarification(event.payload);
     }).then((fn) => {
       unlisten = fn;
     });
@@ -362,6 +383,33 @@ export function useDashboardPage({ sessionId, setMessagesRef, onSaveMessages }: 
     setPendingSelection(null);
   }, []);
 
+  const submitClarification = useCallback(async (selectedCategoryId: string) => {
+    const request = clarificationRef.current;
+    if (!request) return;
+
+    setPendingClarification(null);
+
+    // Find the selected category label
+    const category = request.categories.find((c) => c.id === selectedCategoryId);
+    const categoryLabel = category?.label ?? selectedCategoryId;
+
+    // Construct a message that gives the full agent context
+    const clarificationText = `[Task: ${categoryLabel}] Original request: "${request.originalMessage}"`;
+
+    await sendMessage(
+      { text: clarificationText, files: [] },
+      {
+        body: {
+          aiSettings: aiSettingsRef.current,
+        },
+      },
+    );
+  }, [sendMessage]);
+
+  const dismissClarification = useCallback(() => {
+    setPendingClarification(null);
+  }, []);
+
   const handleSubmit = useCallback(async ({ text, files }: PromptInputMessage) => {
     if (!text.trim()) {
       return;
@@ -423,5 +471,8 @@ export function useDashboardPage({ sessionId, setMessagesRef, onSaveMessages }: 
     pendingSelection,
     dismissSelection,
     submitSelection,
+    pendingClarification,
+    dismissClarification,
+    submitClarification,
   };
 }

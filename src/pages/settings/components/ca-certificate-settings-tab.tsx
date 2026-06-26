@@ -1,4 +1,4 @@
-import { DownloadIcon, KeyRoundIcon, ShieldCheckIcon } from 'lucide-react';
+import { DownloadIcon, KeyRoundIcon, RefreshCwIcon, ShieldCheckIcon } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -21,6 +21,8 @@ export function CaCertificateSettingsTab({ settings }: CaCertificateSettingsTabP
     handleDownloadCert,
     handleInstallMacCert,
     installingCa,
+    handleRegenerateCert,
+    regeneratingCa,
   } = settings;
   const SecurityNoticeIcon = SECURITY_NOTICE_ICON;
 
@@ -55,6 +57,10 @@ export function CaCertificateSettingsTab({ settings }: CaCertificateSettingsTabP
               <Button variant="outline" onClick={handleDownloadCert} disabled={downloading} className="w-fit">
                 <DownloadIcon className="mr-2 size-4" />
                 {downloading ? 'Saving...' : 'Save CA Certificate'}
+              </Button>
+              <Button variant="outline" onClick={handleRegenerateCert} disabled={regeneratingCa} className="w-fit">
+                <RefreshCwIcon className="mr-2 size-4" />
+                {regeneratingCa ? 'Regenerating...' : 'Regenerate CA'}
               </Button>
             </div>
             <p className="text-xs text-muted-foreground">

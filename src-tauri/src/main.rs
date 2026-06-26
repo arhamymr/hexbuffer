@@ -294,6 +294,7 @@ fn main() {
             hexbuffer::ai::suggest_invoker_markers,
             hexbuffer::commands::cert::get_ca_cert,
             hexbuffer::commands::cert::save_ca_cert,
+            hexbuffer::commands::cert::regenerate_ca_cert,
             hexbuffer::commands::storage::get_storage_info,
             hexbuffer::commands::storage::clear_browser_automation_artifacts,
             hexbuffer::commands::storage::reset_local_data,

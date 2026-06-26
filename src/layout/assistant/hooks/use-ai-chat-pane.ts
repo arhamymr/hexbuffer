@@ -36,6 +36,9 @@ export function useAiChatPane() {
     pendingSelection,
     dismissSelection,
     submitSelection,
+    pendingClarification,
+    dismissClarification,
+    submitClarification,
   } = useDashboardPage({
     sessionId: activeSessionId,
     setMessagesRef,
@@ -90,6 +93,9 @@ export function useAiChatPane() {
     pendingSelection,
     dismissSelection,
     submitSelection,
+    pendingClarification,
+    dismissClarification,
+    submitClarification,
     requestedFieldLabels,
   };
 }

@@ -146,6 +146,10 @@ export async function getCaCert(): Promise<string> {
   return invokeTauri<string>('get_ca_cert');
 }
 
+export async function regenerateCaCert(): Promise<void> {
+  return invokeTauri('regenerate_ca_cert');
+}
+
 export async function saveCaCert(path: string, content: string): Promise<void> {
   return invokeTauri('save_ca_cert', { path, content });
 }

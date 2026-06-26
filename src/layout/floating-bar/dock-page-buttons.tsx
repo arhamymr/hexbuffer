@@ -17,7 +17,7 @@ export function DockPageButtons() {
       {hasVisible && (
         <motion.div
           key="dock-page-buttons"
-          className="relative p-[1px] rounded-lg overflow-hidden flex items-center justify-center"
+          className="relative p-[1px] rounded-lg overflow-hidden flex items-center justify-center border"
           initial={{ opacity: 0, y: 12, scale: 0.88 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: 10, scale: 0.88 }}

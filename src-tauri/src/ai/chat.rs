@@ -218,6 +218,18 @@ fn run_ai_chat_engine(
                         });
                         let _ = app.emit("ai-chat:human-selection-required", &selection);
                     }
+                    // For intent clarification requests, emit a dedicated event so the
+                    // chat UI can show a clarification card with task-category buttons.
+                    if action == "request_intent_clarification" {
+                        let clarification = serde_json::json!({
+                            "id": format!("ic-{}", uuid::Uuid::new_v4()),
+                            "question": payload.get("question").cloned().unwrap_or_default(),
+                            "categories": payload.get("categories").cloned().unwrap_or(serde_json::json!([])),
+                            "originalMessage": payload.get("originalMessage").cloned().unwrap_or_default(),
+                            "createdAt": &created_at,
+                        });
+                        let _ = app.emit("ai-chat:intent-clarification-required", &clarification);
+                    }
                     let result = execute_chat_action(app, &action, &payload);
                     actions.push(AiChatAction {
                         action,
@@ -374,6 +386,13 @@ fn execute_chat_action(_app: &AppHandle, action: &str, payload: &Value) -> Strin
                 "Presented selection \"{}\" with {} options",
                 question, count
             )
+        }
+        "request_intent_clarification" => {
+            let question = payload
+                .get("question")
+                .and_then(|v| v.as_str())
+                .unwrap_or("unknown");
+            format!("Asked for clarification: {}", question)
         }
         other => format!("Unknown action: {}", other),
     }

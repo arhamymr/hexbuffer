@@ -265,7 +265,7 @@ export const TrafficTable = memo(function TrafficTable({
     {
       accessorKey: "method",
       header: "Method",
-      size: 90,
+      size: 120,
       cell: ({ row }) => (
         <div className="flex gap-2">
           <MethodBadge method={row.original.method} />

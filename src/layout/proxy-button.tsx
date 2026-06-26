@@ -8,7 +8,7 @@ export function ProxyButton() {
   const { canToggle, isConnected, onToggleProxy, title } = useProxyButton();
 
   return (
-    <div className="group flex items-center gap-2" title={title}>
+    <div className="group flex items-center gap-2 pl-2" title={title}>
       <Badge
         variant={'secondary'}
         className={cn(
@@ -25,7 +25,7 @@ export function ProxyButton() {
         </span>
       </Badge>
       <Button
-        variant="outline"
+        variant={isConnected ? "destructive" : "outline"}
         size="xs"
         onClick={() => onToggleProxy(!isConnected)}
         disabled={!canToggle}

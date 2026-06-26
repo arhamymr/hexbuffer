@@ -1,6 +1,6 @@
 import { Asterisk } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { Switch } from '@/components/ui/switch';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useProxyButton } from './hooks/use-proxy-button';
 
@@ -24,12 +24,15 @@ export function ProxyButton() {
           {isConnected ? 'Proxy On' : 'Proxy Off'}
         </span>
       </Badge>
-      <Switch
-        checked={isConnected}
-        onCheckedChange={onToggleProxy}
+      <Button
+        variant="outline"
+        size="xs"
+        onClick={() => onToggleProxy(!isConnected)}
         disabled={!canToggle}
-        className="cursor-pointer"
-      />
+        className="h-6 text-[10px] px-2 cursor-pointer"
+      >
+        {isConnected ? 'Stop' : 'Start'}
+      </Button>
     </div>
   );
 }

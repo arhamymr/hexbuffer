@@ -6,7 +6,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeftRight, Copy, Trash2 } from 'lucide-react';
 import CryptoJS from 'crypto-js';
-import type { CodecType } from '../types';
+import type { CodecType } from './types';
 
 type CodecMode = 'encode' | 'decode';
 
@@ -88,7 +88,7 @@ function convert(input: string, activeType: CodecType, mode: CodecMode): CodecRe
   return decoderFunctions[activeType](input);
 }
 
-export function EncoderDecoderTool() {
+export function EncoderPage() {
   const [input, setInput] = React.useState('');
   const [activeType, setActiveType] = React.useState<CodecType>('url');
   const [mode, setMode] = React.useState<CodecMode>('encode');

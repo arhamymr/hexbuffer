@@ -22,26 +22,26 @@ const RepeaterPage = React.lazy(() =>
 const InterceptPage = React.lazy(() =>
   import("@/pages/intercept").then((m) => ({ default: m.InterceptPage }))
 );
-const ToolsOverviewPage = React.lazy(() =>
-  import("@/pages/tools").then((m) => ({ default: m.ToolsOverviewPage }))
-);
 const EncoderPage = React.lazy(() =>
-  import("@/pages/tools/pages/encoder-page").then((m) => ({ default: m.EncoderPage }))
+  import("@/pages/encoder").then((m) => ({ default: m.EncoderPage }))
 );
 const HashPage = React.lazy(() =>
-  import("@/pages/tools/pages/hash-page").then((m) => ({ default: m.HashPage }))
+  import("@/pages/hash").then((m) => ({ default: m.HashPage }))
 );
 const ComparerPage = React.lazy(() =>
-  import("@/pages/tools/pages/comparer-page").then((m) => ({ default: m.ComparerPage }))
+  import("@/pages/comparer").then((m) => ({ default: m.ComparerPage }))
 );
 const PortScannerPage = React.lazy(() =>
-  import("@/pages/tools/pages/port-scanner-page").then((m) => ({ default: m.PortScannerPage }))
+  import("@/pages/port-scanner").then((m) => ({ default: m.PortScannerPage }))
 );
 const JwtPage = React.lazy(() =>
-  import("@/pages/tools/pages/jwt-page").then((m) => ({ default: m.JwtPage }))
+  import("@/pages/jwt").then((m) => ({ default: m.JwtPage }))
 );
 const XssGeneratorPage = React.lazy(() =>
-  import("@/pages/tools/pages/xss-generator-page").then((m) => ({ default: m.XssGeneratorPage }))
+  import("@/pages/xss-generator").then((m) => ({ default: m.XssGeneratorPage }))
+);
+const SqlInjectionPage = React.lazy(() =>
+  import("@/pages/sql-injection").then((m) => ({ default: m.SqlInjectionPage }))
 );
 const DocumentsPage = React.lazy(() =>
   import("@/pages/documents").then((m) => ({ default: m.DocumentsPage }))
@@ -93,13 +93,13 @@ function AppRoutes() {
           <Route path="/browser" element={<BrowserAutomationPage />} />
           <Route path="/listener" element={<ListenerPage />} />
           <Route path="/debugger" element={<DebuggerPage />} />
-          <Route path="/tools" element={<ToolsOverviewPage />} />
-          <Route path="/tools/codec" element={<EncoderPage />} />
-          <Route path="/tools/hash" element={<HashPage />} />
-          <Route path="/tools/compare" element={<ComparerPage />} />
-          <Route path="/tools/ports" element={<PortScannerPage />} />
-          <Route path="/tools/jwt" element={<JwtPage />} />
-          <Route path="/tools/xss" element={<XssGeneratorPage />} />
+          <Route path="/encoder" element={<EncoderPage />} />
+          <Route path="/hash" element={<HashPage />} />
+          <Route path="/comparer" element={<ComparerPage />} />
+          <Route path="/port-scanner" element={<PortScannerPage />} />
+          <Route path="/jwt" element={<JwtPage />} />
+          <Route path="/xss-generator" element={<XssGeneratorPage />} />
+          <Route path="/sql-injection" element={<SqlInjectionPage />} />
           <Route path="/documents" element={<DocumentsPage />} />
 
           <Route path="/automation" element={<AutomationPage />} />

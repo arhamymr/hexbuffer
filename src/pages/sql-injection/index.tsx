@@ -44,7 +44,7 @@ const SEVERITY_COLORS = {
   low: 'border-blue-500/20 text-blue-500 bg-blue-500/5',
 };
 
-export function SqlInjectionTool() {
+export function SqlInjectionPage() {
   const [url, setUrl] = React.useState('');
   const [method, setMethod] = React.useState<'GET' | 'POST'>('GET');
   const [headers, setHeaders] = React.useState<Array<[string, string]>>([['Content-Type', 'application/x-www-form-urlencoded']]);

@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { FEATURE_DESCRIPTIONS, FEATURE_IMAGES } from '../constants';
+import { FEATURE_DESCRIPTIONS, FEATURE_IMAGES, FEATURE_ICONS } from '../constants';
 
 const CONTAINER_SIZE = "size-24";
 const INNER_SIZE = "size-[72px]";
@@ -16,6 +16,8 @@ interface DesktopIconItemProps {
 }
 
 export function DesktopIconItem({ href, label, icon: IconComp, devOnly, onClick }: DesktopIconItemProps) {
+  const CustomIcon = FEATURE_ICONS[label];
+
   return (
     <div
       onClick={() => onClick(href)}
@@ -32,7 +34,11 @@ export function DesktopIconItem({ href, label, icon: IconComp, devOnly, onClick 
         </div>
       ) : (
         <div className={`flex items-center justify-center ${INNER_SIZE} rounded bg-muted/40 dark:bg-white/[0.03] group-hover:bg-primary/10 transition-all duration-200`}>
-          <IconComp className={`${ICON_SIZE} text-muted-foreground group-hover:text-primary transition-colors duration-200`} />
+          {CustomIcon ? (
+            <CustomIcon className={`${ICON_SIZE} text-muted-foreground group-hover:text-primary transition-colors duration-200`} />
+          ) : (
+            <IconComp className={`${ICON_SIZE} text-muted-foreground group-hover:text-primary transition-colors duration-200`} />
+          )}
         </div>
       )}
 

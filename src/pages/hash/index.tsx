@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/select';
 import { Copy, Trash2 } from 'lucide-react';
 import CryptoJS from 'crypto-js';
-import type { HashType } from '../types';
+import type { HashType } from './types';
 
 const hashOptions: { value: HashType; label: string; cryptoMethod: string }[] = [
   { value: 'md5', label: 'MD5', cryptoMethod: 'MD5' },
@@ -28,7 +28,7 @@ const hashOptions: { value: HashType; label: string; cryptoMethod: string }[] = 
   { value: 'ripemd160', label: 'RIPEMD-160', cryptoMethod: 'RIPEMD160' },
 ];
 
-export function HashTool() {
+export function HashPage() {
   const [input, setInput] = React.useState('');
   const [activeType, setActiveType] = React.useState<HashType>('sha256');
   const [output, setOutput] = React.useState('');

@@ -232,7 +232,8 @@ export function GlobalSearch() {
   const hiddenPaths = [
     '/intercept', '/repeater',
     '/automation', '/regression',
-    '/threats', '/debugger', '/tools', '/documents',
+    '/threats', '/debugger', '/documents',
+    '/encoder', '/hash', '/comparer', '/port-scanner', '/jwt', '/xss-generator', '/sql-injection',
   ];
   const isHidden = hiddenPaths.some((p) => pathname.startsWith(p));
 

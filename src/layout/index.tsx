@@ -45,7 +45,7 @@ export function AppLayout({ children }: { children?: React.ReactNode }) {
   }, [setTerminalHandle]);
 
   return (
-    <div className="flex h-screen flex-col rounded-md border bg-background">
+    <div className="flex h-screen flex-col border bg-background">
       <TopNav />
       <div className="min-h-0 flex-1">
         <ResizablePanelGroup

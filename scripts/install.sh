@@ -8,34 +8,13 @@ LATEST_JSON_NAME="latest.json"
 usage() {
   cat <<EOF
 Usage:
-  ./scripts/install.sh                 Install hexbuffer (default)
-  ./scripts/install.sh --app devhub    Install developer-hub (Code + API Collection)
+  ./scripts/install.sh                 Install hexbuffer
   ./scripts/install.sh --help          Show this help
 EOF
 }
 
 while [ $# -gt 0 ]; do
   case "$1" in
-    --app)
-      if [ -z "${2:-}" ]; then
-        echo "Missing value for $1"
-        usage
-        exit 1
-      fi
-      if [ "$2" = "devhub" ] || [ "$2" = "developer-hub" ]; then
-        APP_NAME="developer-hub"
-        DISPLAY_NAME="hexbuffer Developer Hub"
-        LATEST_JSON_NAME="latest-devhub.json"
-      elif [ "$2" = "hexbuffer" ]; then
-        APP_NAME="hexbuffer"
-        DISPLAY_NAME="hexbuffer"
-        LATEST_JSON_NAME="latest.json"
-      else
-        echo "Unknown app: $2 (must be 'hexbuffer' or 'developer-hub')"
-        exit 1
-      fi
-      shift 2
-      ;;
     --help|-h|help)
       usage
       exit 0

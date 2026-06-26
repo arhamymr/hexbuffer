@@ -6,8 +6,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeftRight, Copy, Trash2 } from 'lucide-react';
 import { diffLines, diffWords, diffChars, type Change } from 'diff';
-
-type DiffMode = 'lines' | 'words' | 'chars';
+import type { DiffMode } from './types';
 
 const diffFunctions: Record<DiffMode, (a: string, b: string) => Change[]> = {
   lines: (a, b) => diffLines(a, b, { ignoreNewlineAtEof: true }),
@@ -31,7 +30,7 @@ function buildUnifiedText(parts: Change[]): string {
     .join('');
 }
 
-export function ComparerTool() {
+export function ComparerPage() {
   const [valueA, setValueA] = React.useState('');
   const [valueB, setValueB] = React.useState('');
   const [diffMode, setDiffMode] = React.useState<DiffMode>('lines');

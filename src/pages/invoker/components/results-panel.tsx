@@ -2,9 +2,11 @@ import { Badge } from '@/components/ui/badge';
 import { useInvokerStore } from '@/stores/invoker';
 import { formatPayloadValues, getResultUrl } from '../lib/utils';
 import { useInvokerFilters } from '../hooks/use-filters';
+import { Button } from '@/components/ui/button';
+import { Trash2 } from 'lucide-react';
 
 export function InvokerResultsPanel() {
-  const { filteredResults } = useInvokerFilters();
+  const { filteredResults, resultsCount, clearResults } = useInvokerFilters();
   const isRunning = useInvokerStore((s) => {
     const tab = s.tabs.find((t) => t.id === s.activeTabId);
     return tab?.isRunning ?? false;
@@ -16,9 +18,13 @@ export function InvokerResultsPanel() {
   const setSelectedResult = useInvokerStore((s) => s.setSelectedResult);
 
   return (
-    <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-lg border bg-background">
-      <div className="bg-muted/50 px-3 py-2 border-b">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-sm border bg-background">
+      <div className="flex justify-between items-center bg-muted/50 px-3 py-2 border-b">
         <span className="text-sm font-medium">Results ({filteredResults.length})</span>
+         <Button variant="outline" onClick={clearResults} disabled={resultsCount === 0}>
+        <Trash2 className="h-4 w-4 mr-1" />
+        Clear
+      </Button>
       </div>
       <div className="min-h-0 flex-1 overflow-auto">
         <table className="w-full text-sm">

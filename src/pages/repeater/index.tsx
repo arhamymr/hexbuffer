@@ -1,8 +1,3 @@
-import {
-  ResizableHandle,
-  ResizablePanel,
-  ResizablePanelGroup,
-} from '@/components/ui/resizable';
 import { TabbedPageLayout } from '@/components/tabs-layout/tabbed-page-layout';
 import { RepeaterRequestPanel } from './components/RepeaterRequestPanel';
 import { RepeaterResponsePanel } from './components/RepeaterResponsePanel';
@@ -45,27 +40,23 @@ export function RepeaterPage() {
           onUpdate={updateTab}
         />
       ) : (
-        <ResizablePanelGroup
-          orientation="horizontal"
-          className="flex-1 min-h-0"
-        >
-          <ResizablePanel defaultSize={50} minSize={20}>
+        <div className="flex-1 min-h-0 flex">
+          <div className="flex-1 min-w-0">
             <RepeaterRequestPanel
               rawRequest={activeTab.request.raw}
               isLoading={activeTab.isLoading}
               onRawRequestChange={updateRawRequest}
               onSend={sendRequest}
             />
-          </ResizablePanel>
-          <ResizableHandle withHandle />
-          <ResizablePanel defaultSize={50} minSize={20}>
+          </div>
+          <div className="flex-1 min-w-0 border-l">
             <RepeaterResponsePanel
               response={activeTab.response}
               isLoading={activeTab.isLoading}
               error={activeTab.error}
             />
-          </ResizablePanel>
-        </ResizablePanelGroup>
+          </div>
+        </div>
       )}
     </TabbedPageLayout>
   );

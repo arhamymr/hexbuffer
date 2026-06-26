@@ -99,10 +99,10 @@ export function TopNav() {
     >
       <div className="flex w-full items-center justify-between h-8.5 px-4">
         <div className='flex min-w-0 flex-1 items-center align-center gap-4'>
-          <TitlebarButtons />
-          <div className='h-5'>
+          {/* <TitlebarButtons /> */}
+          {/* <div className='h-5'>
             <Separator orientation="vertical" className="h-6" />
-          </div>
+          </div> */}
           <Link to="/" className="group flex items-center gap-1 no-underline">
             <TriangleLogo />
             <p className={cn(
@@ -171,13 +171,13 @@ export function TopNav() {
         <div className="flex shrink-0 items-center gap-2 h-5 bg-background pl-2">
           <ProxyButton />
           <OpenBrowserButton />
-          <div
+          {/* <div
             className='flex h-8 w-8 shrink-0 items-center justify-center text-muted-foreground cursor-grab'
             title="Drag window"
             onMouseDown={handleMouseDown}
           >
             <GripHorizontal className="size-5" />
-          </div>
+          </div> */}
         </div>
       </div>
     </header>

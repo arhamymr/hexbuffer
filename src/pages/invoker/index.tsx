@@ -3,7 +3,6 @@ import { Alert, AlertAction, AlertDescription } from '@/components/ui/alert';
 import { InfoIcon } from 'lucide-react';
 import { TabbedPageLayout } from '@/components/tabs-layout/tabbed-page-layout';
 import { InvokerConfigDialog } from './components/invoker-config';
-import { InvokerFilters } from './components/filters';
 import { InvokerPayloadDialog } from './components/payload-dialog';
 import { InvokerProgress } from './components/progress';
 import { InvokerResultDrawer } from './components/result-drawer';
@@ -57,7 +56,6 @@ export function InvokerPage() {
             </div>
             <div className="flex-1 flex min-h-0 flex-col h-full">
               <div className="flex min-h-0 flex-1 flex-col p-2">
-                <InvokerFilters />
                 <div className="min-h-0 flex-1">
                   <InvokerResultsPanel />
                 </div>

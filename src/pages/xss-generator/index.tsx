@@ -8,7 +8,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Copy, Trash2, Zap } from 'lucide-react';
-import type { XssPayloadCategory, XssPayload, XssEncodingType } from '../types';
+import type { XssPayloadCategory, XssPayload, XssEncodingType } from './types';
 
 // ── Constants ─────────────────────────────────────────────
 
@@ -126,7 +126,7 @@ const ENCODING_FUNCTIONS: Record<XssEncodingType, (s: string) => string> = {
 
 // ── Main Component ────────────────────────────────────────
 
-export function XssGeneratorTool() {
+export function XssGeneratorPage() {
   const [activeCategory, setActiveCategory] = React.useState<XssPayloadCategory>('reflected');
   const [basePayload, setBasePayload] = React.useState('');
   const [encodings, setEncodings] = React.useState<Set<XssEncodingType>>(new Set());

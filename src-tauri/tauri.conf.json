@@ -16,7 +16,7 @@
       {
         "label": "main",
         "title": "hexbuffer",
-        "decorations": false,
+        "decorations": true,
         "transparent": true,
         "visible": false,
         "maximized": true,

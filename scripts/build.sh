@@ -7,8 +7,7 @@ cd "$ROOT"
 usage() {
   cat <<EOF
 Usage:
-  ./scripts/build.sh                 Build/upload hexbuffer (default)
-  ./scripts/build.sh --app devhub    Build/upload developer-hub (Code + API Collection)
+  ./scripts/build.sh                 Build/upload hexbuffer
   ./scripts/build.sh --help          Show this help
   ./scripts/build.sh 2026.1.1        Bump to exact version, then build/upload
   ./scripts/build.sh --bump          Auto-increment patch version, then build/upload
@@ -19,7 +18,6 @@ Usage:
 EOF
 }
 
-APP_NAME="hexbuffer"
 REQUESTED_VERSION=""
 AUTO_BUMP=false
 FORCE_BUILD=false
@@ -29,22 +27,6 @@ ALL=false
 
 while [ $# -gt 0 ]; do
   case "$1" in
-    --app)
-      if [ -z "${2:-}" ]; then
-        echo "Missing value for $1"
-        usage
-        exit 1
-      fi
-      if [ "$2" = "devhub" ] || [ "$2" = "developer-hub" ]; then
-        APP_NAME="developer-hub"
-      elif [ "$2" = "hexbuffer" ]; then
-        APP_NAME="hexbuffer"
-      else
-        echo "Unknown app: $2 (must be 'hexbuffer' or 'developer-hub')"
-        exit 1
-      fi
-      shift 2
-      ;;
     --all)
       ALL=true
       FORCE_BUILD=true
@@ -97,11 +79,6 @@ while [ $# -gt 0 ]; do
   esac
 done
 
-APP_PATH="apps/$APP_NAME"
-LATEST_JSON_NAME="latest.json"
-if [ "$APP_NAME" = "developer-hub" ]; then
-  LATEST_JSON_NAME="latest-devhub.json"
-fi
 
 if [ -f "$ROOT/.env" ]; then
   set -a; source "$ROOT/.env"; set +a
@@ -186,7 +163,7 @@ detect_platform() {
 
 PLATFORM=$(detect_platform)
 
-SRC_DIR="$APP_PATH/src-tauri/target/release/bundle"
+SRC_DIR="src-tauri/target/release/bundle"
 BUNDLE_DIR=""
 BUNDLE_EXT=""
 INSTALLER_DIR=""
@@ -241,21 +218,20 @@ has_newer_build_inputs() {
   fi
 
   [ -n "$(find \
-    "$ROOT/VERSION" \
-    "$ROOT/$APP_PATH/package.json" \
+    "$ROOT/package.json" \
     "$ROOT/pnpm-lock.yaml" \
-    "$ROOT/$APP_PATH/src" \
-    "$ROOT/$APP_PATH/src-tauri/Cargo.toml" \
+    "$ROOT/src" \
+    "$ROOT/src-tauri/Cargo.toml" \
     "$ROOT/Cargo.lock" \
-    "$ROOT/$APP_PATH/src-tauri/tauri.conf.json" \
-    "$ROOT/$APP_PATH/src-tauri/src" \
-    "$ROOT/$APP_PATH/src-tauri/icons" \
+    "$ROOT/src-tauri/tauri.conf.json" \
+    "$ROOT/src-tauri/src" \
+    "$ROOT/src-tauri/icons" \
     -newer "$artifact" 2>/dev/null | head -1)" ]
 }
 
 windows_bundle_dir_for_target() {
   local rust_target="$1"
-  echo "$APP_PATH/src-tauri/target/${rust_target}/release/bundle/nsis"
+  echo "src-tauri/target/${rust_target}/release/bundle/nsis"
 }
 
 windows_runner_args() {
@@ -272,8 +248,8 @@ build_windows() {
   local runner_args
   runner_args=$(windows_runner_args)
 
-  echo "Cross-compiling Tauri Windows app (x86_64) for $APP_NAME..."
-  pnpm --filter "$APP_NAME" run tauri build $runner_args --target x86_64-pc-windows-msvc --bundles nsis
+  echo "Cross-compiling Tauri Windows app (x86_64) for hexbuffer..."
+  pnpm run tauri build $runner_args --target x86_64-pc-windows-msvc --bundles nsis
 
   echo "Windows build complete."
 }
@@ -289,8 +265,8 @@ build_windows_all() {
     rust_target="${entry%%:*}"
     updater_platform="${entry#*:}"
 
-    echo "Building Tauri Windows app for ${updater_platform} (${rust_target}) for $APP_NAME..."
-    pnpm --filter "$APP_NAME" run tauri build $runner_args --target "$rust_target" --bundles nsis
+    echo "Building Tauri Windows app for ${updater_platform} (${rust_target}) for hexbuffer..."
+    pnpm run tauri build $runner_args --target "$rust_target" --bundles nsis
   done
 
   echo "Windows builds complete."
@@ -301,8 +277,8 @@ build_all() {
   pnpm install
 
   # ── Native platform build ─────────────────────────────────────────
-  echo "Building native platform ($PLATFORM) for $APP_NAME..."
-  pnpm --filter "$APP_NAME" run tauri build --bundles "$BUNDLE_TYPES"
+  echo "Building native platform ($PLATFORM) for hexbuffer..."
+  pnpm run tauri build --bundles "$BUNDLE_TYPES"
   echo "Native build complete."
 
   # ── Windows cross-compile ─────────────────────────────────────────
@@ -315,8 +291,8 @@ build_all() {
       rust_target="${entry%%:*}"
       updater_platform="${entry#*:}"
 
-      echo "Cross-compiling Windows app for ${updater_platform} (${rust_target}) for $APP_NAME..."
-      pnpm --filter "$APP_NAME" run tauri build $runner_args --target "$rust_target" --bundles nsis
+      echo "Cross-compiling Windows app for ${updater_platform} (${rust_target}) for hexbuffer..."
+      pnpm run tauri build $runner_args --target "$rust_target" --bundles nsis
     done
     echo "Windows builds complete."
   else
@@ -348,12 +324,12 @@ else
   fi
 
   if $ARTIFACTS_EXIST && ! $ARTIFACTS_STALE && ! $FORCE_BUILD; then
-    echo -e "${GREEN}Artifacts for $APP_NAME v${VERSION} already exist — skipping build.${NC}"
+    echo -e "${GREEN}Artifacts for hexbuffer v${VERSION} already exist — skipping build.${NC}"
   else
     if $FORCE_BUILD; then
-      echo "Version bump requested; building fresh artifacts for $APP_NAME v${VERSION}..."
+      echo "Version bump requested; building fresh artifacts for hexbuffer v${VERSION}..."
     elif $ARTIFACTS_STALE; then
-      echo "Build inputs changed since the existing updater artifact; rebuilding fresh artifacts for $APP_NAME v${VERSION}..."
+      echo "Build inputs changed since the existing updater artifact; rebuilding fresh artifacts for hexbuffer v${VERSION}..."
     fi
 
     echo "Installing dependencies..."
@@ -362,8 +338,8 @@ else
     # Ensure Windows target is available (needed by some dependencies even on non-Windows)
     ensure_rust_target x86_64-pc-windows-msvc
 
-    echo "Building Tauri desktop app for $APP_NAME..."
-    pnpm --filter "$APP_NAME" run tauri build --bundles "$BUNDLE_TYPES"
+    echo "Building Tauri desktop app for hexbuffer..."
+    pnpm run tauri build --bundles "$BUNDLE_TYPES"
 
     echo "Build complete."
   fi
@@ -517,7 +493,7 @@ elif $ALL; then
   # Upload native platform artifacts
   INSTALLER_NAME_OVERRIDE=""
   if [ "$(uname -s)" = "Darwin" ]; then
-    INSTALLER_NAME_OVERRIDE="${APP_NAME}_${VERSION}_${PLATFORM#darwin-}.dmg"
+    INSTALLER_NAME_OVERRIDE="hexbuffer_${VERSION}_${PLATFORM#darwin-}.dmg"
   fi
   upload_platform_artifacts "$PLATFORM" "$BUNDLE_DIR" "$BUNDLE_EXT" "$INSTALLER_DIR" "$INSTALLER_GLOB" "$LATEST_JSON" "$INSTALLER_NAME_OVERRIDE"
 
@@ -536,7 +512,7 @@ elif $ALL; then
 else
   INSTALLER_NAME_OVERRIDE=""
   if [ "$(uname -s)" = "Darwin" ]; then
-    INSTALLER_NAME_OVERRIDE="${APP_NAME}_${VERSION}_${PLATFORM#darwin-}.dmg"
+    INSTALLER_NAME_OVERRIDE="hexbuffer_${VERSION}_${PLATFORM#darwin-}.dmg"
   fi
 
   upload_platform_artifacts "$PLATFORM" "$BUNDLE_DIR" "$BUNDLE_EXT" "$INSTALLER_DIR" "$INSTALLER_GLOB" "$LATEST_JSON" "$INSTALLER_NAME_OVERRIDE"

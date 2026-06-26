@@ -11,7 +11,6 @@ usage() {
   cat <<EOF
 Usage:
   pnpm run deploy                         Auto-increment patch version, then build/upload
-  pnpm run deploy -- --app devhub         Build/upload Developer Hub
   pnpm run deploy -- --help               Show this help
   pnpm run deploy -- --bump               Auto-increment patch version, then build/upload
   pnpm run deploy -- --version 2026.1.1   Bump to exact version, then build/upload

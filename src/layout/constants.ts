@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, ArrowUpDown, Box, Bug, PauseCircle, RotateCw, LoaderPinwheel, Hexagon, FlaskConical, Binary, AppWindow, BookText, SquareLibrary, Radar, ShieldCheck, Cat, List } from 'lucide-react';
+import { Home, ArrowUpDown, Box, Bug, PauseCircle, RotateCw, LoaderPinwheel, Hexagon, FlaskConical, Binary, AppWindow, BookText, SquareLibrary, Radar, Database, ShieldCheck, Cat, KeyRound, Fingerprint, GitCompare, Network, Zap, List } from 'lucide-react';
 
 export interface NavItem {
   label: string;
@@ -26,7 +26,14 @@ export const allNavItems: NavItem[] = [
   { label: 'Invoker', icon: Hexagon, href: '/invoker' },
   { label: 'Repeater', icon: RotateCw, href: '/repeater' },
   { label: 'Documents', icon: BookText, href: '/documents' },
-  { label: 'Tools', icon: Box, href: '/tools' },
+  
+  { label: 'Encoder / Decoder', icon: Binary, href: '/encoder' },
+  { label: 'Hash', icon: Fingerprint, href: '/hash' },
+  { label: 'Comparer', icon: GitCompare, href: '/comparer' },
+  { label: 'Port Scanner', icon: Network, href: '/port-scanner' },
+  { label: 'JWT', icon: KeyRound, href: '/jwt' },
+  { label: 'XSS Generator', icon: Zap, href: '/xss-generator' },
+  { label: 'SQL Injection', icon: Database, href: '/sql-injection' },
 
   { label: 'Debugger', icon: Bug, href: '/debugger', devOnly: true },
   { label: 'Regression', icon: FlaskConical, href: '/regression', devOnly: true },
@@ -69,7 +76,13 @@ export const allCategories: NavCategory[] = [
     icon: Radar,
     items: [
       { label: 'Debugger', icon: Bug, href: '/debugger', devOnly: true },
-      { label: 'Tools', icon: Box, href: '/tools' },
+      { label: 'Encoder', icon: Binary, href: '/encoder' },
+      { label: 'Hash', icon: Fingerprint, href: '/hash' },
+      { label: 'Comparer', icon: GitCompare, href: '/comparer' },
+      { label: 'Port Scanner', icon: Network, href: '/port-scanner' },
+      { label: 'JWT', icon: KeyRound, href: '/jwt' },
+      { label: 'XSS Generator', icon: Zap, href: '/xss-generator' },
+      { label: 'SQL Injection', icon: Database, href: '/sql-injection' },
       { label: 'Documents', icon: BookText, href: '/documents' },
     ],
   },

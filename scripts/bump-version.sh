@@ -20,11 +20,9 @@ echo "bumping $CURRENT → $NEW_VERSION"
 
 echo "$NEW_VERSION" > "$ROOT/VERSION"
 
-# Update package.json files
+# Update package.json
 PKG_FILES=(
   "$ROOT/package.json"
-  "$ROOT/apps/developer-hub/package.json"
-  "$ROOT/apps/hexbuffer/package.json"
 )
 
 for pkg_path in "${PKG_FILES[@]}"; do
@@ -38,10 +36,9 @@ for pkg_path in "${PKG_FILES[@]}"; do
   fi
 done
 
-# Update Cargo.toml files
+# Update Cargo.toml
 CARGO_FILES=(
-  "$ROOT/apps/developer-hub/src-tauri/Cargo.toml"
-  "$ROOT/apps/hexbuffer/src-tauri/Cargo.toml"
+  "$ROOT/src-tauri/Cargo.toml"
 )
 
 for cargo_path in "${CARGO_FILES[@]}"; do
@@ -54,10 +51,9 @@ for cargo_path in "${CARGO_FILES[@]}"; do
   fi
 done
 
-# Update tauri.conf.json files
+# Update tauri.conf.json
 TAURI_FILES=(
-  "$ROOT/apps/developer-hub/src-tauri/tauri.conf.json"
-  "$ROOT/apps/hexbuffer/src-tauri/tauri.conf.json"
+  "$ROOT/src-tauri/tauri.conf.json"
 )
 
 for tauri_path in "${TAURI_FILES[@]}"; do

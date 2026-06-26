@@ -22,7 +22,7 @@ import {
   Info,
   Key,
 } from 'lucide-react';
-import type { JwtAlgorithm, JwtDecoded, JwtVulnerability, JwtVulnerabilitySeverity } from '../types';
+import type { JwtAlgorithm, JwtDecoded, JwtVulnerability, JwtVulnerabilitySeverity } from './types';
 
 // ── Types ─────────────────────────────────────────────────
 
@@ -231,6 +231,66 @@ async function signJwt(
 
 // ── Sub-components ────────────────────────────────────────
 
+function ColorizedJwtInput({
+  value,
+  onChange,
+  placeholder,
+}: {
+  value: string;
+  onChange: (val: string) => void;
+  placeholder: string;
+}) {
+  const textareaRef = React.useRef<HTMLTextAreaElement>(null);
+  const highlightRef = React.useRef<HTMLDivElement>(null);
+
+  const handleScroll = () => {
+    if (textareaRef.current && highlightRef.current) {
+      highlightRef.current.scrollTop = textareaRef.current.scrollTop;
+      highlightRef.current.scrollLeft = textareaRef.current.scrollLeft;
+    }
+  };
+
+  const colorized = React.useMemo(() => {
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+    const parts = trimmed.split('.');
+    if (parts.length !== 3) {
+      return <span>{trimmed}</span>;
+    }
+    return (
+      <>
+        <span style={{ color: '#ef4444' }}>{parts[0]}</span>
+        <span style={{ color: '#d4d4d8' }}>.</span>
+        <span style={{ color: '#a855f7' }}>{parts[1]}</span>
+        <span style={{ color: '#d4d4d8' }}>.</span>
+        <span style={{ color: '#06b6d4' }}>{parts[2]}</span>
+      </>
+    );
+  }, [value]);
+
+  return (
+    <div className="relative min-h-0 flex-1">
+      <div
+        ref={highlightRef}
+        aria-hidden
+        className="absolute inset-0 p-3 font-mono text-xs whitespace-pre-wrap break-all overflow-auto pointer-events-none"
+      >
+        {colorized ?? <span className="text-muted-foreground">{placeholder}</span>}
+      </div>
+      <textarea
+        ref={textareaRef}
+        className="relative min-h-0 h-full w-full resize-none rounded-none border-0 font-mono text-xs shadow-none focus-visible:ring-0 bg-transparent p-3"
+        style={{ color: 'transparent', caretColor: 'hsl(var(--foreground))' }}
+        placeholder={placeholder}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        onScroll={handleScroll}
+        spellCheck={false}
+      />
+    </div>
+  );
+}
+
 function VulnerabilityCard({ vuln }: { vuln: JwtVulnerability }) {
   const config = SEVERITY_CONFIG[vuln.severity];
   const Icon = config.icon;
@@ -288,7 +348,7 @@ function DecodedSection({
 
 // ── Main Component ────────────────────────────────────────
 
-export function JwtTool() {
+export function JwtPage() {
   const [mode, setMode] = React.useState<JwtMode>('decode');
 
   // Decode state
@@ -458,11 +518,10 @@ export function JwtTool() {
                     <span className="text-[10px] text-muted-foreground hidden sm:inline">Paste token to decode</span>
                   </div>
                 </div>
-                <Textarea
-                  className="min-h-0 flex-1 resize-none rounded-none border-0 font-mono text-xs shadow-none focus-visible:ring-0 bg-transparent p-3"
+                <ColorizedJwtInput
                   placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
                   value={tokenInput}
-                  onChange={(e) => setTokenInput(e.target.value)}
+                  onChange={setTokenInput}
                 />
               </div>
 

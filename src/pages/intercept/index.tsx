@@ -1,10 +1,5 @@
 import { Alert, AlertDescription, AlertAction } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import {
-  ResizableHandle,
-  ResizablePanel,
-  ResizablePanelGroup,
-} from '@/components/ui/resizable';
 import { TabbedPageLayout } from '@/components/tabs-layout/tabbed-page-layout';
 import { useProxyStart } from '@/hooks/use-proxy-start';
 import { InterceptQueuePanel } from './components/queue-panel';
@@ -49,16 +44,13 @@ export function InterceptPage() {
         className="flex min-h-0 h-full flex-1 flex-col"
         contentClassName="flex-1 rounded-lg border min-h-0 overflow-hidden"
       >
-        <div className="h-full min-h-0">
-          <ResizablePanelGroup orientation="horizontal" className="min-h-0">
-            <ResizablePanel defaultSize={50} minSize={20}>
-              <InterceptRequestPanel />
-            </ResizablePanel>
-            <ResizableHandle withHandle />
-            <ResizablePanel defaultSize={50} minSize={20}>
-              <InterceptQueuePanel />
-            </ResizablePanel>
-          </ResizablePanelGroup>
+        <div className="h-full min-h-0 flex">
+          <div className="flex-1 min-w-0">
+            <InterceptRequestPanel />
+          </div>
+          <div className="flex-1 min-w-0 border-l">
+            <InterceptQueuePanel />
+          </div>
         </div>
       </TabbedPageLayout>
     </>

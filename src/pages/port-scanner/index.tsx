@@ -10,7 +10,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Copy, Download, Info, Play, Radar, Square, Trash2 } from 'lucide-react';
-import type { PortScanResult } from '../types';
+import type { PortScanResult } from './types';
 
 const PORT_PRESETS = {
   quick: '21,22,25,53,80,110,143,443,445,587,993,995,3306,3389,5432,6379,8080,8443',
@@ -25,7 +25,7 @@ type ProgressEvent =
   | { type: 'Complete' }
   | { type: 'Cancelled' };
 
-export function PortScannerTool() {
+export function PortScannerPage() {
   const [target, setTarget] = React.useState('');
   const [preset, setPreset] = React.useState<PortPreset>('quick');
   const [ports, setPorts] = React.useState(PORT_PRESETS.quick);

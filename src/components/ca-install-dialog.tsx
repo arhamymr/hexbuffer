@@ -31,6 +31,7 @@ export function CaInstallDialog() {
       setInstalling(true);
       const message = await invoke<string>('trust_intercept_ca');
       toast.success(message);
+      setOpen(false);
     } catch (error) {
       console.error('Failed to install CA certificate:', error);
       toast.error(`Failed to install certificate: ${error}`);

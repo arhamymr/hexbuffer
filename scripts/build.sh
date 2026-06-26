@@ -9,6 +9,7 @@ usage() {
 Usage:
   ./scripts/build.sh                 Build/upload hexbuffer
   ./scripts/build.sh --help          Show this help
+  ./scripts/build.sh --upload        Upload existing artifacts (skip build)
   ./scripts/build.sh 2026.1.1        Bump to exact version, then build/upload
   ./scripts/build.sh --bump          Auto-increment patch version, then build/upload
   ./scripts/build.sh --version 2026.1.1
@@ -25,8 +26,14 @@ WINDOWS=false
 WINDOWS_ALL=false
 ALL=false
 
+UPLOAD_ONLY=false
+
 while [ $# -gt 0 ]; do
   case "$1" in
+    --upload)
+      UPLOAD_ONLY=true
+      shift
+      ;;
     --all)
       ALL=true
       FORCE_BUILD=true
@@ -99,6 +106,10 @@ if $WINDOWS || $WINDOWS_ALL || $ALL; then
   esac
 fi
 
+if $UPLOAD_ONLY; then
+  echo "Upload-only mode — skipping build."
+fi
+
 ensure_rust_target() {
   local target="$1"
   if ! rustup target list --installed 2>/dev/null | grep -q "$target"; then
@@ -163,7 +174,7 @@ detect_platform() {
 
 PLATFORM=$(detect_platform)
 
-SRC_DIR="src-tauri/target/release/bundle"
+SRC_DIR="target/release/bundle"
 BUNDLE_DIR=""
 BUNDLE_EXT=""
 INSTALLER_DIR=""
@@ -231,7 +242,7 @@ has_newer_build_inputs() {
 
 windows_bundle_dir_for_target() {
   local rust_target="$1"
-  echo "src-tauri/target/${rust_target}/release/bundle/nsis"
+  echo "target/${rust_target}/release/bundle/nsis"
 }
 
 windows_runner_args() {
@@ -300,6 +311,7 @@ build_all() {
   fi
 }
 
+if ! $UPLOAD_ONLY; then
 if $WINDOWS_ALL; then
   build_windows_all
 elif $WINDOWS; then
@@ -343,7 +355,8 @@ else
 
     echo "Build complete."
   fi
-fi
+fi  # end of build cascade
+fi  # end of !UPLOAD_ONLY
 
 # ── Upload to Cloudflare R2 ──────────────────────────────────────────
 
@@ -475,6 +488,7 @@ r2_cp "$ROOT/scripts/install.sh" "s3://${R2_BUCKET}/install.sh"
 # ── Update latest.json ───────────────────────────────────────────────
 
 LATEST_JSON="/tmp/hexbuffer_latest.json"
+LATEST_JSON_NAME="latest.json"
 
 echo "[upload] downloading existing latest.json..."
 r2_cat "s3://${R2_BUCKET}/${LATEST_JSON_NAME}" > "$LATEST_JSON" || echo '{}' > "$LATEST_JSON"

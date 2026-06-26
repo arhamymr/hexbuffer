@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { X, Trash } from 'lucide-react';
+import { X, Trash, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { CrawlStatusBadge } from '@/components/status-badge';
 import { Button } from '@/components/ui/button';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import {
   AlertDialog,
-  AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
@@ -35,6 +35,7 @@ export function LogFilters({
   historyMode: historyModeProp,
 }: LogFiltersProps) {
   const [clearDialogOpen, setClearDialogOpen] = useState(false);
+  const [isClearing, setIsClearing] = useState(false);
   const isStreamManuallyPaused = useHistoryQueryStore((s) => s.isStreamManuallyPaused);
 
   const historyMode = historyModeProp ?? (typeof window !== 'undefined' ? (localStorage.getItem('history-mode') as 'http' | 'websocket' | null) ?? 'http' : 'http');
@@ -56,10 +57,21 @@ export function LogFilters({
   const setFilter = onFilterChange ?? useHistoryQueryStore.getState().setFilter;
   const filter = filterProp ?? storeFilter;
   const clearFilters = onClearFilters ?? storeClearFilters;
+  
   const clearCalls = clearCallsProp ?? (async () => {
-    await clearHistoryLogs();
-    storeSetSelectedCallId(null);
-    triggerRefresh();
+    setIsClearing(true);
+    try {
+      await clearHistoryLogs();
+      storeSetSelectedCallId(null);
+      triggerRefresh();
+      await new Promise((r) => setTimeout(r, 3000));
+      toast.success('History cleared successfully');
+    } catch {
+      toast.error('Failed to clear history');
+    } finally {
+      setIsClearing(false);
+      setClearDialogOpen(false);
+    }
   });
 
   const hasActiveFilters =
@@ -142,8 +154,21 @@ export function LogFilters({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction variant="destructive" onClick={clearCalls}>Clear All</AlertDialogAction>
+            <AlertDialogCancel disabled={isClearing}>Cancel</AlertDialogCancel>
+            <Button
+              variant="destructive"
+              disabled={isClearing}
+              onClick={clearCalls}
+            >
+              {isClearing ? (
+                <>
+                  <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                'Clear All'
+              )}
+            </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

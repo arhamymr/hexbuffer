@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTheme } from '@/components/theme-provider';
 import type * as Monaco from 'monaco-editor';
 
@@ -49,6 +49,102 @@ function loadMonaco() {
   return monacoPromise;
 }
 
+/** Heuristic content-type detection for syntax highlighting. */
+function detectLanguage(content: string): string | null {
+  const t = content.trim();
+  if (!t) return null;
+
+  // --- JSON ---
+  if (/^\s*[\[{]/.test(t) && !/^\s*<\?(xml|php)/i.test(t)) {
+    // Quick structural check: must contain "key": or be array of objects
+    if (
+      /"\w+"\s*:/.test(t) ||
+      /^\s*\[\s*[\[{]/.test(t) ||
+      /^\s*\{\s*"\w+"\s*:/.test(t)
+    ) {
+      return 'json';
+    }
+  }
+
+  // --- XML ---
+  if (/^\s*<\?xml/i.test(t)) return 'xml';
+
+  // --- HTML ---
+  if (
+    /^\s*<!DOCTYPE\s+html/i.test(t) ||
+    /^\s*<(html|head|body|div|span|p|a|img|table|ul|ol|li|form|input|button|script|link|meta|style)\b/i.test(t)
+  ) {
+    return 'html';
+  }
+
+  // --- Markdown ---
+  if (
+    /^#{1,6}\s/m.test(t) ||
+    /\*\*[^*]+\*\*/.test(t) ||
+    /^\[.+\]\(.+\)/m.test(t) ||
+    /^>\s/m.test(t) ||
+    /^\s*[-*]\s/m.test(t)
+  ) {
+    return 'markdown';
+  }
+
+  // --- CSS ---
+  if (/[.#@]\w[\w-]*\s*\{/.test(t) && /[\w-]+\s*:\s*[^;]+;/.test(t)) {
+    return 'css';
+  }
+
+  // --- SQL ---
+  if (/^\s*(SELECT|INSERT\s+INTO|UPDATE|DELETE\s+FROM|CREATE\s+(TABLE|INDEX|VIEW)|ALTER\s+TABLE|DROP\s+(TABLE|VIEW))\b/i.test(t)) {
+    return 'sql';
+  }
+
+  // --- Python ---
+  if (
+    /^\s*(def\s+\w+\s*\(|class\s+\w+[:(]|import\s+\w+|from\s+\w+\s+import|if\s+__name__\s*==\s*['"]__main__['"])\b/m.test(t) ||
+    /^\s*print\(/.test(t)
+  ) {
+    return 'python';
+  }
+
+  // --- YAML ---
+  if (/^\s*[\w-]+\s*:\s*(\[|\||$)/m.test(t) && !/["{};]/.test(t)) {
+    return 'yaml';
+  }
+
+  // --- TypeScript (before JS — more specific) ---
+  if (
+    /:\s*(string|number|boolean|void|any|never|unknown|Readonly|Promise|Array|Record|Map|Set)\b/.test(t) ||
+    /\binterface\s+\w+\s*[\{<]/.test(t) ||
+    /\btype\s+\w+\s*=/.test(t) ||
+    /\benum\s+\w+\s*\{/.test(t)
+  ) {
+    return 'typescript';
+  }
+
+  // --- JavaScript ---
+  if (
+    /\b(const|let|var)\s+\w+/.test(t) ||
+    /\bfunction\s+\w+\s*\(/.test(t) ||
+    /=>\s*[\{[]/.test(t) ||
+    /\b(import|export|require)\s*[\{('"]/.test(t) ||
+    /\bclass\s+\w+/.test(t)
+  ) {
+    return 'javascript';
+  }
+
+  // --- GraphQL ---
+  if (/^\s*(query|mutation|subscription)\s+\w*[\s{(]/i.test(t)) {
+    return 'graphql';
+  }
+
+  // --- Shell ---
+  if (/^\s*#!/.test(t) || /^\s*(curl|npm|pnpm|yarn|git|docker|cargo|echo|export)\s/i.test(t)) {
+    return 'shell';
+  }
+
+  return null;
+}
+
 export interface MonacoDiffEditorProps {
   originalValue?: string;
   modifiedValue?: string;
@@ -74,6 +170,12 @@ export function MonacoDiffEditor({
   const diffEditorRef = useRef<MonacoDiffEditorInstance | null>(null);
   const originalModelRef = useRef<MonacoTextModel | null>(null);
   const modifiedModelRef = useRef<MonacoTextModel | null>(null);
+
+  // Auto-detect language when not explicitly provided
+  const effectiveLanguage = useMemo(() => {
+    if (language) return language;
+    return detectLanguage(originalValue || modifiedValue || '') ?? undefined;
+  }, [language, originalValue, modifiedValue]);
 
   useEffect(() => {
     let isMounted = true;
@@ -145,8 +247,8 @@ export function MonacoDiffEditor({
     }
 
     // Create new models with values
-    const originalModel = monacoApi.editor.createModel(originalValue, language || undefined, originalUri);
-    const modifiedModel = monacoApi.editor.createModel(modifiedValue, language || undefined, modifiedUri);
+    const originalModel = monacoApi.editor.createModel(originalValue, effectiveLanguage, originalUri);
+    const modifiedModel = monacoApi.editor.createModel(modifiedValue, effectiveLanguage, modifiedUri);
 
     originalModelRef.current = originalModel;
     modifiedModelRef.current = modifiedModel;
@@ -155,11 +257,11 @@ export function MonacoDiffEditor({
       original: originalModel,
       modified: modifiedModel,
     });
-  }, [monacoApi, originalValue, modifiedValue, language, originalPath, modifiedPath]);
+  }, [monacoApi, originalValue, modifiedValue, effectiveLanguage, originalPath, modifiedPath]);
 
   useEffect(() => {
     diffEditorRef.current?.updateOptions(options ?? {});
   }, [options]);
 
-  return <div ref={containerRef} className={className ?? 'h-full w-full'} />;
+  return <div ref={containerRef} className={className ?? 'h-full w-full'} style={{ width: '100%', height: '100%' }} />;
 }

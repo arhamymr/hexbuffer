@@ -15,8 +15,9 @@ export function JwtPage() {
       : !page.genHeader && !page.genPayload && !page.generatedToken;
 
   return (
-    <div className="flex h-full min-h-0 flex-col bg-background">
-      {/* Toolbar */}
+    <div  className="bg-background h-full p-2">
+      <div className="flex h-full min-h-0 flex-col border rounded-md overflow-hidden">
+ {/* Toolbar */}
       <div className="flex h-10 shrink-0 items-center justify-between border-b bg-muted/40 px-3 gap-2">
         <div className="flex items-center gap-2">
           <ButtonGroup>
@@ -136,6 +137,8 @@ export function JwtPage() {
           />
         )}
       </main>
+      </div>
+     
     </div>
   );
 }

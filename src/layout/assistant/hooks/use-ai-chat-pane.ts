@@ -1,14 +1,22 @@
 import type { UIMessage } from '@ai-sdk/react';
-import { useRef, useState, useEffect, useCallback } from 'react';
+import { useRef, useState, useEffect, useCallback, useMemo } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useChatSessions } from './use-chat-sessions';
 import { useDashboardPage } from './use-dashboard-page';
 import { useAiChatActions } from '@/hooks/use-ai-chat-actions';
 import { useTrackedActions, clearTrackedActions } from '@/lib/ai-chat-actions';
 import { AI_MODEL_OPTIONS_BY_PROVIDER } from '@/pages/settings/constants';
+import { allNavItems } from '@/layout/constants';
 
 export function useAiChatPane() {
   const setMessagesRef = useRef<((messages: UIMessage<unknown>[]) => void) | null>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
+  const location = useLocation();
+
+  const currentPage = useMemo(() => {
+    const match = allNavItems.find((item) => item.href === location.pathname);
+    return match?.label ?? null;
+  }, [location.pathname]);
 
   const {
     sessions,
@@ -43,6 +51,7 @@ export function useAiChatPane() {
     sessionId: activeSessionId,
     setMessagesRef,
     onSaveMessages: saveMessages,
+    currentPage,
   });
 
   const providerDisplay = 'DeepSeek';
@@ -97,5 +106,6 @@ export function useAiChatPane() {
     dismissClarification,
     submitClarification,
     requestedFieldLabels,
+    currentPage,
   };
 }

@@ -35,7 +35,7 @@
 }
 
 :root {
-  --background: oklch(1 0 0);
+  --background: oklch(97.911% 0.01832 103.497);
   --foreground: oklch(27.274% 0.00003 271.152);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.145 0 0);
@@ -450,7 +450,8 @@
   }
 
   .animate-border-beam {
-    animation: border-beam 10s linear infinite;
+    animation: border-beam 20s linear infinite;
+    opacity: 0.5;
   }
 
   .bg-border-beam {
@@ -459,7 +460,7 @@
       transparent 0deg,
       transparent 260deg,
       var(--primary) 300deg,
-      transparent 340deg,
+      transparent 320deg,
       transparent 360deg
     );
   }

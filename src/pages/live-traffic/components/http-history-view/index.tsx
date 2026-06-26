@@ -40,29 +40,29 @@ export function HttpHistoryView({ isPinnedTabActive = false, isGroupTabActive = 
     </div>
   );
 
-  if (!selectedCallId) {
-    return table;
-  }
-
   return (
     <ResizablePanelGroup
       orientation="vertical"
       id="http-history-view"
       className="h-full min-w-0"
     >
-      <ResizablePanel id="http-history-table" defaultSize={60} minSize={20} className="min-w-0">
+      <ResizablePanel id="http-history-table" defaultSize={selectedCallId ? 60 : 100} minSize={20} className="min-w-0">
         {table}
       </ResizablePanel>
-      <ResizableHandle
-        withHandle
-        onPointerDown={handlePointerDown}
-      />
-      <ResizablePanel id="http-history-detail" defaultSize={40} minSize={15} className="bg-muted">
-        {/* overflow-hidden: let LogEntryBurpView's inner panels manage scrolling */}
-        <div className="h-full overflow-hidden" style={coverStyle}>
-          <LogEntryBurpView />
-        </div>
-      </ResizablePanel>
+      {selectedCallId && (
+        <>
+          <ResizableHandle
+            withHandle
+            onPointerDown={handlePointerDown}
+          />
+          <ResizablePanel id="http-history-detail" defaultSize={40} minSize={15} className="bg-muted">
+            {/* overflow-hidden: let LogEntryBurpView's inner panels manage scrolling */}
+            <div className="h-full overflow-hidden" style={coverStyle}>
+              <LogEntryBurpView />
+            </div>
+          </ResizablePanel>
+        </>
+      )}
     </ResizablePanelGroup>
   );
 }

@@ -20,6 +20,7 @@ const DEFAULT_AI_SETTINGS: DashboardAiSettings = {
 interface PromptInputMessage {
   text: string;
   files: FileUIPart[];
+  mentionedPages?: { label: string; href: string }[];
 }
 
 function parseCredentialInput(
@@ -128,9 +129,10 @@ interface UseDashboardPageOptions {
   sessionId: string | null;
   setMessagesRef: React.MutableRefObject<((messages: UIMessage<unknown>[]) => void) | null>;
   onSaveMessages?: (sessionId: string, messages: ChatMessageRecord[]) => void;
+  currentPage?: string | null;
 }
 
-export function useDashboardPage({ sessionId, setMessagesRef, onSaveMessages }: UseDashboardPageOptions) {
+export function useDashboardPage({ sessionId, setMessagesRef, onSaveMessages, currentPage }: UseDashboardPageOptions) {
   const [aiSettings, setAiSettings] = useState<DashboardAiSettings>(DEFAULT_AI_SETTINGS);
   const [aiSettingsLoading, setAiSettingsLoading] = useState(true);
   const [pendingCrawlInput, setPendingCrawlInput] = useState<CrawlHumanInputRequest | null>(null);
@@ -143,6 +145,7 @@ export function useDashboardPage({ sessionId, setMessagesRef, onSaveMessages }: 
   const processedSessionIdsRef = useRef(new Set<string>());
   const promptController = usePromptInputController();
   const inputBeingConsumedRef = useRef(false);
+  const currentPageRef = useRef(currentPage);
 
   useEffect(() => {
     aiSettingsRef.current = aiSettings;
@@ -159,6 +162,10 @@ export function useDashboardPage({ sessionId, setMessagesRef, onSaveMessages }: 
   useEffect(() => {
     clarificationRef.current = pendingClarification;
   }, [pendingClarification]);
+
+  useEffect(() => {
+    currentPageRef.current = currentPage ?? null;
+  }, [currentPage]);
 
   // Listen for crawl human input requests from the backend
   useEffect(() => {
@@ -410,10 +417,20 @@ export function useDashboardPage({ sessionId, setMessagesRef, onSaveMessages }: 
     setPendingClarification(null);
   }, []);
 
-  const handleSubmit = useCallback(async ({ text, files }: PromptInputMessage) => {
+  const handleSubmit = useCallback(async ({ text, files, mentionedPages }: PromptInputMessage) => {
     if (!text.trim()) {
       return;
     }
+
+    // Build context prefix from current page and mentioned pages
+    const contextParts: string[] = [];
+    if (currentPageRef.current) {
+      contextParts.push(`[Current page: ${currentPageRef.current}]`);
+    }
+    if (mentionedPages && mentionedPages.length > 0) {
+      contextParts.push(`[Referenced pages: ${mentionedPages.map((p) => p.label).join(', ')}]`);
+    }
+    const contextPrefix = contextParts.length > 0 ? contextParts.join('\n') + '\n\n' : '';
 
     // If there's a pending credential request, try to parse credentials from the text
     const pendingRequest = crawlInputRef.current;
@@ -436,7 +453,7 @@ export function useDashboardPage({ sessionId, setMessagesRef, onSaveMessages }: 
 
     clearError();
     await sendMessage(
-      { text, files },
+      { text: contextPrefix + text, files },
       {
         body: {
           aiSettings: aiSettingsRef.current,

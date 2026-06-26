@@ -4,7 +4,6 @@ import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
 import { FileText, Table2, EllipsisVertical, ExternalLink, Send, Crosshair, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -22,7 +21,7 @@ import { useHistoryQueryStore } from '@/pages/live-traffic/state/history-query-s
 import { InspectorSection, buildHeadersList, buildParamsList } from './inspector';
 import { parseCookieHeader } from './cookie-display';
 import { formatBytes } from './utils';
-import { MethodBadge } from '@/components/status-badge';
+import { MethodBadge, StatusBadge } from '@/components/status-badge';
 import { useRepeaterStore } from '@/stores/repeater';
 import { useInvokerStore } from '@/stores/invoker';
 import { createDefaultAttackConfig, findRequestPayloadPositions } from '@/pages/invoker/types';
@@ -124,12 +123,6 @@ export function LogEntryBurpView() {
     }, { prettyJsonBody: true })
     : '', [call]);
 
-  const statusVariant = useMemo(() =>
-    call?.response_status && call.response_status >= 200 && call.response_status < 300
-      ? 'default'
-      : call?.response_status && call.response_status >= 400
-        ? 'destructive'
-        : 'secondary', [call?.response_status]);
   const requestHeaders = useMemo(() => buildHeadersList(call?.headers ?? {}), [call?.headers]);
   const requestCookies = useMemo(() => parseCookieHeader(call?.headers['cookie']), [call?.headers]);
   const requestParams = useMemo(() => buildParamsList(call?.query_params ?? {}), [call?.query_params]);
@@ -214,10 +207,9 @@ export function LogEntryBurpView() {
         <div className="bg-muted h-10 px-3 py-2 border-b flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium">Response</span>
-            {call.response_status && (
-              <Badge variant={statusVariant} className="text-xs">
-                {call.response_status} {call.response_status_text}
-              </Badge>
+            <StatusBadge status={call.response_status} />
+            {call.response_status_text && (
+              <span className="text-xs text-muted-foreground">{call.response_status_text}</span>
             )}
           </div>
           <div className='flex gap-2 items-center'>

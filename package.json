@@ -1,7 +1,7 @@
 {
   "name": "hexbuffer",
   "private": true,
-  "version": "2026.0.45",
+  "version": "2026.0.48",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -24,6 +24,7 @@
     "@codemirror/lang-cpp": "^6.0.3",
     "@codemirror/lang-html": "^6.4.11",
     "@codemirror/lang-javascript": "^6.2.5",
+    "@codemirror/lang-json": "^6.0.2",
     "@codemirror/lang-markdown": "^6.5.0",
     "@codemirror/lang-rust": "^6.0.2",
     "@codemirror/language": "^6.12.3",

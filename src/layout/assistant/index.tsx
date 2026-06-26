@@ -1,4 +1,6 @@
 import { Bot, CheckCircleIcon, ChevronDownIcon, CircleIcon, Loader2Icon, PanelLeftClose, PanelLeftOpen, ShieldAlert, Triangle, X, XCircleIcon } from 'lucide-react';
+import { useCallback } from 'react';
+import type { FileUIPart } from 'ai';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -19,6 +21,7 @@ import {
   PromptInput,
   PromptInputBody,
   PromptInputFooter,
+  PromptInputHeader,
   PromptInputProvider,
   PromptInputSelect,
   PromptInputSelectContent,
@@ -44,7 +47,10 @@ import { ChatSessionList } from './components/chat-session-list';
 import { HumanSelectionCard } from './components/human-selection-card';
 import { IntentClarificationCard } from './components/intent-clarification-card';
 import { SuggestionBar } from './components/suggestion-bar';
+import { PageMentionChip } from './components/page-mention-chip';
+import { PageMentionPopover } from './components/page-mention-popover';
 import { useAiChatPane } from './hooks/use-ai-chat-pane';
+import { usePageMentions } from './hooks/use-page-mentions';
 import { getMessageText, getReasoningParts, hasContent, providerLabel } from './lib/message-utils';
 import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
@@ -82,7 +88,33 @@ function AIAssistantPaneContent({ onClose }: { onClose?: () => void }) {
     dismissClarification,
     submitClarification,
     requestedFieldLabels,
+    currentPage,
   } = useAiChatPane();
+
+  const {
+    mentionedPages,
+    mentionState,
+    filteredPages,
+    highlightedIndex,
+    onTextareaChange,
+    onTextareaSelect,
+    onTextareaKeyDown,
+    selectPage,
+    removeMentionedPage,
+    clearMentionedPages,
+  } = usePageMentions();
+
+  // Wrap handleSubmit to include mentioned pages and clear them after
+  const wrappedHandleSubmit = useCallback(
+    async (message: { text: string; files: FileUIPart[] }) => {
+      await handleSubmit({
+        ...message,
+        mentionedPages: mentionedPages.map((p) => ({ label: p.label, href: p.href })),
+      });
+      clearMentionedPages();
+    },
+    [handleSubmit, mentionedPages, clearMentionedPages],
+  );
 
   return (
     <aside className="flex h-full min-h-0 flex-col overflow-hidden bg-background">
@@ -106,6 +138,11 @@ function AIAssistantPaneContent({ onClose }: { onClose?: () => void }) {
             )}
           </Button>
         </div>
+        {currentPage && (
+          <span className="text-xs text-muted-foreground font-medium truncate max-w-[140px]">
+            {currentPage}
+          </span>
+        )}
         {onClose && (
           <Button
             variant="ghost"
@@ -352,20 +389,42 @@ function AIAssistantPaneContent({ onClose }: { onClose?: () => void }) {
 
           {/* Prompt input */}
           <div className="shrink-0 border-t p-2 bg-muted">
-            <PromptInput onSubmit={handleSubmit} className='bg-background overflow-hidden max-w-xl mx-auto '>
+            <PromptInput onSubmit={wrappedHandleSubmit} className='bg-background overflow-hidden max-w-xl mx-auto '>
+              {mentionedPages.length > 0 && (
+                <PromptInputHeader>
+                  {mentionedPages.map((page) => (
+                    <PageMentionChip
+                      key={page.href}
+                      item={page}
+                      onRemove={() => removeMentionedPage(page.href)}
+                    />
+                  ))}
+                </PromptInputHeader>
+              )}
               <PromptInputBody>
-                <PromptInputTextarea
-                  className="min-h-12"
-                  placeholder={
-                    pendingCrawlInput
-                      ? `Enter ${requestedFieldLabels} to resume crawl…`
-                      : pendingSelection
-                        ? 'Select an option above or type a message…'
-                        : pendingClarification
-                          ? 'Select a task above to clarify your intent…'
-                          : 'Message AI…'
-                  }
-                />
+                <div className="relative">
+                  <PromptInputTextarea
+                    className="min-h-12"
+                    placeholder={
+                      pendingCrawlInput
+                        ? `Enter ${requestedFieldLabels} to resume crawl…`
+                        : pendingSelection
+                          ? 'Select an option above or type a message…'
+                          : pendingClarification
+                            ? 'Select a task above to clarify your intent…'
+                            : 'Message AI… (use @ to mention a page)'
+                    }
+                    onChange={onTextareaChange}
+                    onSelect={onTextareaSelect}
+                    onKeyDown={onTextareaKeyDown}
+                  />
+                  <PageMentionPopover
+                    isOpen={mentionState.isOpen}
+                    filteredPages={filteredPages}
+                    highlightedIndex={highlightedIndex}
+                    onSelect={selectPage}
+                  />
+                </div>
               </PromptInputBody>
               <PromptInputFooter>
                 <PromptInputTools>

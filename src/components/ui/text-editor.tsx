@@ -7,6 +7,7 @@ import { tags as t } from '@lezer/highlight';
 import { useTheme } from '@/components/theme-provider';
 import type { Extension } from '@codemirror/state';
 import { javascript } from '@codemirror/lang-javascript';
+import { json } from '@codemirror/lang-json';
 
 // ---------------------------------------------------------------------------
 // Theme definitions
@@ -114,6 +115,7 @@ export interface TextEditorProps {
   height?: string | number;
   path?: string;
   className?: string;
+  language?: 'javascript' | 'json';
 }
 
 export function TextEditor({
@@ -123,6 +125,7 @@ export function TextEditor({
   options,
   height = '100%',
   className,
+  language = 'javascript',
 }: TextEditorProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
@@ -140,13 +143,15 @@ export function TextEditor({
   useEffect(() => {
     if (!containerRef.current) return;
 
+    const langExt = language === 'json' ? json() : javascript();
+
     const view = new EditorView({
       parent: containerRef.current,
       state: EditorState.create({
         doc: value ?? '',
         extensions: [
           basicSetup,
-          javascript(),
+          langExt,
           EditorView.lineWrapping,
           // Layout: fill container, scroll, enable native text selection
           EditorView.theme({
@@ -184,7 +189,7 @@ export function TextEditor({
       view.destroy();
       viewRef.current = null;
     };
-  }, [theme]);
+  }, [theme, language]);
 
   // Sync external value changes
   useEffect(() => {

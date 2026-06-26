@@ -1,5 +1,5 @@
+import * as React from 'react';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import {
@@ -10,6 +10,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { TextEditor } from '@/components/ui/text-editor';
 import { Copy, Key } from 'lucide-react';
 import type { JwtAlgorithm } from '../types';
 import { ALGORITHM_OPTIONS } from '../constants';
@@ -45,6 +46,24 @@ export function JwtGenerateView({
   onGenerate,
   onCopy,
 }: JwtGenerateViewProps) {
+  const colorizedToken = React.useMemo(() => {
+    const trimmed = generatedToken.trim();
+    if (!trimmed) return null;
+    const parts = trimmed.split('.');
+    if (parts.length !== 3) {
+      return <span>{trimmed}</span>;
+    }
+    return (
+      <>
+        <span className="text-red-500">{parts[0]}</span>
+        <span className="text-muted-foreground">.</span>
+        <span className="text-purple-500">{parts[1]}</span>
+        <span className="text-muted-foreground">.</span>
+        <span className="text-cyan-400">{parts[2]}</span>
+      </>
+    );
+  }, [generatedToken]);
+
   return (
     <section className="grid h-full min-h-0 grid-cols-1 lg:grid-cols-2">
       {/* Left: Config */}
@@ -65,20 +84,24 @@ export function JwtGenerateView({
               <Label className="text-xs font-semibold text-muted-foreground">
                 Header (JSON)
               </Label>
-              <Textarea
-                className="min-h-[80px] font-mono text-xs p-2.5 bg-muted/5 focus-visible:ring-1"
+              <TextEditor
                 value={genHeader}
-                onChange={(e) => setGenHeader(e.target.value)}
+                language="json"
+                onChange={(v) => setGenHeader(v ?? '')}
+                height={200}
+                className="rounded-md border border-input overflow-hidden"
               />
             </div>
             <div className="space-y-1">
               <Label className="text-xs font-semibold text-muted-foreground">
                 Payload (JSON)
               </Label>
-              <Textarea
-                className="min-h-[120px] font-mono text-xs p-2.5 bg-muted/5 focus-visible:ring-1"
+              <TextEditor
                 value={genPayload}
-                onChange={(e) => setGenPayload(e.target.value)}
+                language="json"
+                onChange={(v) => setGenPayload(v ?? '')}
+                height={240}
+                className="rounded-md border border-input overflow-hidden"
               />
             </div>
             <div className="flex items-end gap-3 pt-1">
@@ -153,12 +176,11 @@ export function JwtGenerateView({
             <Copy className="h-3 w-3" />
           </Button>
         </div>
-        <Textarea
-          className="min-h-0 flex-1 resize-none rounded-none border-0 font-mono text-xs shadow-none focus-visible:ring-0 bg-transparent p-3"
-          placeholder="Generated JWT token will appear here..."
-          value={generatedToken}
-          readOnly
-        />
+        <div className="min-h-0 flex-1 overflow-auto p-3 font-mono text-xs whitespace-pre-wrap break-all">
+          {colorizedToken ?? (
+            <span className="text-muted-foreground">Generated JWT token will appear here...</span>
+          )}
+        </div>
       </div>
     </section>
   );

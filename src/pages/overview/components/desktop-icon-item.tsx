@@ -1,11 +1,11 @@
 import * as React from 'react';
 import { FEATURE_DESCRIPTIONS, FEATURE_IMAGES, FEATURE_ICONS } from '../constants';
 
-const CONTAINER_SIZE = "size-24";
-const INNER_SIZE = "size-[72px]";
-const IMG_SIZE = "size-[50px]";
-const ICON_SIZE = "size-9";
-const TEXT_SIZE = "text-[11px]";
+const CONTAINER_SIZE = "size-20";
+const INNER_SIZE = "size-[56px]";
+const IMG_SIZE = "size-[40px]";
+const ICON_SIZE = "size-7";
+const TEXT_SIZE = "text-[10px]";
 
 interface DesktopIconItemProps {
   href: string;

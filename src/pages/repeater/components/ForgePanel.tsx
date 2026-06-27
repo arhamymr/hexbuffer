@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useApiCollectionStore } from '@/stores/api-collection';
+import { useCollectionsStore, type KeyValuePair } from '@/stores/collections';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { TextEditor } from '@/components/ui/text-editor';
@@ -13,16 +13,14 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Trash2, Plus, Play, Save, CheckCircle, XCircle } from 'lucide-react';
-import type { KeyValuePair } from '../types';
+import { Trash2, Plus, Play, CheckCircle, XCircle } from 'lucide-react';
 
 interface ForgePanelProps {
   onSend: () => void;
-  onSave: () => void;
 }
 
-export function ForgePanel({ onSend, onSave }: ForgePanelProps) {
-  const store = useApiCollectionStore();
+export function ForgePanel({ onSend }: ForgePanelProps) {
+  const store = useCollectionsStore();
   const req = store.activeRequest;
 
   const [activeReqTab, setActiveReqTab] = useState('params');
@@ -121,7 +119,12 @@ export function ForgePanel({ onSend, onSave }: ForgePanelProps) {
     }
   };
 
-  const activeEndpoint = store.stashEndpoints.find((e) => e.id === store.activeEndpointId);
+  const activeEndpointId = store.selectedNodeId?.startsWith('ep-')
+    ? store.selectedNodeId.slice(3)
+    : null;
+  const activeEndpoint = activeEndpointId
+    ? store.endpoints.find((e) => e.id === activeEndpointId)
+    : null;
 
   return (
     <div className="flex flex-col h-full min-h-0 space-y-4 p-4">
@@ -152,10 +155,6 @@ export function ForgePanel({ onSend, onSave }: ForgePanelProps) {
 
         <Button onClick={onSend} disabled={req.isLoading}>
           <Play className="h-4 w-4 mr-2" /> Send
-        </Button>
-
-        <Button variant="outline" onClick={onSave} title="Save changes to Collection">
-          <Save className="h-4 w-4 mr-2" /> Save
         </Button>
       </div>
 

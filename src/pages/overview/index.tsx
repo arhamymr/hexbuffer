@@ -2,6 +2,7 @@ import { useOverviewPage } from './hooks/use-overview-page';
 import { ClockWidget } from './components/clock-widget';
 import { ProxyWidget } from './components/proxy-widget';
 import { ScratchpadWidget } from './components/scratchpad-widget';
+import { CollectionsWidget } from './components/collections-widget';
 import { DesktopIconItem } from './components/desktop-icon-item';
 import { Button } from '@/components/ui/button';
 import { ShieldAlert } from 'lucide-react';
@@ -48,6 +49,7 @@ export function OverviewPage() {
 
         <div className="w-full md:w-64 lg:w-72 shrink-0 flex flex-col gap-4">
           <ClockWidget />
+          <CollectionsWidget />
           <ProxyWidget />
           <ScratchpadWidget />
         </div>

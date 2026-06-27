@@ -9,25 +9,23 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { useApiCollectionStore } from '@/stores/api-collection';
+import {
+  useCollectionsStore,
+  type ContextRecord,
+  type KeyValuePair,
+} from '@/stores/collections';
 import { Plus, Trash2, Edit2 } from 'lucide-react';
-import type { ContextRecord } from '../types';
 
 interface ContextsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-interface VariableItem {
-  key: string;
-  value: string;
-}
-
 export function ContextsDialog({ open, onOpenChange }: ContextsDialogProps) {
-  const store = useApiCollectionStore();
+  const store = useCollectionsStore();
   const [editingContext, setEditingContext] = useState<ContextRecord | null>(null);
   const [name, setName] = useState('');
-  const [variables, setVariables] = useState<VariableItem[]>([]);
+  const [variables, setVariables] = useState<KeyValuePair[]>([]);
   const [isCreating, setIsCreating] = useState(false);
 
   useEffect(() => {
@@ -39,7 +37,7 @@ export function ContextsDialog({ open, onOpenChange }: ContextsDialogProps) {
 
   const handleStartCreate = () => {
     setName('');
-    setVariables([{ key: '', value: '' }]);
+    setVariables([{ key: '', value: '', enabled: true }]);
     setIsCreating(true);
     setEditingContext(null);
   };
@@ -47,7 +45,12 @@ export function ContextsDialog({ open, onOpenChange }: ContextsDialogProps) {
   const handleStartEdit = (ctx: ContextRecord) => {
     setName(ctx.name);
     try {
-      setVariables(JSON.parse(ctx.variables));
+      const parsed = JSON.parse(ctx.variables);
+      setVariables(
+        Array.isArray(parsed)
+          ? parsed.map((v: KeyValuePair) => ({ ...v, enabled: true }))
+          : []
+      );
     } catch {
       setVariables([]);
     }
@@ -56,7 +59,7 @@ export function ContextsDialog({ open, onOpenChange }: ContextsDialogProps) {
   };
 
   const handleAddVar = () => {
-    setVariables([...variables, { key: '', value: '' }]);
+    setVariables([...variables, { key: '', value: '', enabled: true }]);
   };
 
   const handleRemoveVar = (index: number) => {
@@ -72,7 +75,6 @@ export function ContextsDialog({ open, onOpenChange }: ContextsDialogProps) {
   const handleSave = async () => {
     if (!name.trim()) return;
 
-    // Filter empty keys
     const filteredVars = variables.filter((v) => v.key.trim() !== '');
 
     if (isCreating) {

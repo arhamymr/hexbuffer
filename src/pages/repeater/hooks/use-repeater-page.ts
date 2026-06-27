@@ -1,8 +1,9 @@
 import * as React from 'react';
 import { useRepeaterStore } from '@/stores/repeater';
 import { useShallow } from 'zustand/react/shallow';
-import { parseRawHttpRequest } from '@/lib/http-message';
+import { parseRawHttpRequest, buildRawHttpRequest } from '@/lib/http-message';
 import { sendRepeaterRequest } from '../api';
+import { sendCraftRequest as triggerSendCraftRequest } from '@/triggers/repeater/craft';
 import { type ParsedRepeaterRequest, type RepeaterTab } from '../types';
 
 export function useRepeaterPage() {
@@ -25,6 +26,7 @@ export function useRepeaterPage() {
       closeTab: s.closeTab,
       closeTabsToLeft: s.closeTabsToLeft,
       closeTabsToRight: s.closeTabsToRight,
+      addEmptyHttpTab: s.addEmptyHttpTab,
     }))
   );
 
@@ -97,6 +99,34 @@ export function useRepeaterPage() {
     }
   }, [activeTab, updateActiveTab, updateTab]);
 
+  // ── Craft Mode: Send Request (delegates to trigger) ──
+
+  const sendCraftRequest = React.useCallback(async () => {
+    await triggerSendCraftRequest();
+  }, []);
+
+  // ── Load endpoint into repeater tab ──
+
+  const loadEndpointIntoActiveTab = React.useCallback(
+    (endpoint: { method: string; url: string; headers?: Record<string, string>; body?: string }) => {
+      if (!activeTabId) return;
+      const raw = buildRawHttpRequest({
+        method: endpoint.method,
+        url: endpoint.url,
+        headers: endpoint.headers || {},
+        body: endpoint.body || '',
+      });
+      updateActiveTab((tab) => ({
+        ...tab,
+        request: {
+          raw,
+          url: endpoint.url,
+        },
+      }));
+    },
+    [activeTabId, updateActiveTab]
+  );
+
   return {
     tabs: tabs.map((tab) => ({ id: tab.id, name: tab.name })),
     activeTabId,
@@ -106,9 +136,13 @@ export function useRepeaterPage() {
     closeTabsToLeft,
     closeTabsToRight,
     activeTab,
+    addEmptyHttpTab,
     updateTab: updateActiveTab,
     updateUrl,
     updateRawRequest,
     sendRequest,
+    // Craft mode
+    sendCraftRequest,
+    loadEndpointIntoActiveTab,
   };
 }

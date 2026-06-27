@@ -1,0 +1,89 @@
+import * as React from 'react';
+import { useNavigate } from 'react-router-dom';
+import { FolderHeart, ArrowRight } from 'lucide-react';
+import { useCollectionsStore, type StashRecord, type StashEndpointRecord } from '@/stores/collections';
+import { useRepeaterStore } from '@/stores/repeater';
+
+// ── Helpers ──
+
+/** Collect all descendant stash IDs (including self) for counting nested endpoints. */
+function collectStashIds(stashId: string, allStashes: StashRecord[]): Set<string> {
+  const ids = new Set<string>([stashId]);
+  const children = allStashes.filter((s) => s.parentId === stashId);
+  for (const child of children) {
+    for (const childId of collectStashIds(child.id, allStashes)) {
+      ids.add(childId);
+    }
+  }
+  return ids;
+}
+
+/** Count endpoints belonging to any stash in the tree rooted at `rootStashId`. */
+function countEndpoints(
+  rootStashId: string,
+  allStashes: StashRecord[],
+  endpoints: StashEndpointRecord[],
+): number {
+  const stashIds = collectStashIds(rootStashId, allStashes);
+  return endpoints.filter((ep) => stashIds.has(ep.stashId)).length;
+}
+
+// ── Component ──
+
+export function CollectionsWidget() {
+  const navigate = useNavigate();
+  const { stashes, endpoints, isHydrated, fetchFromDb } = useCollectionsStore();
+  const addCollectionTab = useRepeaterStore((s) => s.addCollectionTab);
+
+  // Hydrate on mount
+  React.useEffect(() => {
+    if (!isHydrated) fetchFromDb();
+  }, [isHydrated, fetchFromDb]);
+
+  const rootStashes = React.useMemo(
+    () => stashes.filter((s) => !s.parentId),
+    [stashes],
+  );
+
+  const handleClick = (stash: StashRecord) => {
+    addCollectionTab(stash.id, stash.name);
+    navigate('/repeater');
+  };
+
+  return (
+    <div className="p-2 rounded-md border  bg-muted backdrop-blur-md flex flex-col gap-2">
+      <span className="text-[10px] font-mono font-bold tracking-wider text-muted-foreground uppercase">
+        Collections
+      </span>
+
+      {rootStashes.length === 0 ? (
+        <p className="text-[11px] text-muted-foreground italic px-0.5">
+          {isHydrated ? 'No collections yet' : 'Loading…'}
+        </p>
+      ) : (
+        <ul className="flex flex-col gap-px">
+          {rootStashes.map((stash) => {
+            const epCount = countEndpoints(stash.id, stashes, endpoints);
+            return (
+              <li key={stash.id}>
+                <button
+                  onClick={() => handleClick(stash)}
+                  className="w-full flex items-center gap-2 px-1.5 py-1 rounded-sm text-left hover:bg-muted/40 transition-colors group"
+                >
+                  <FolderHeart className="size-3.5 shrink-0 text-blue-500" />
+                  <span className="text-[11px] font-medium truncate flex-1">
+                    {stash.name}
+                  </span>
+                  <span className="text-[10px] text-muted-foreground shrink-0 tabular-nums">
+                    {epCount}
+                  </span>
+                  <ArrowRight className="size-3 shrink-0 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  );
+}

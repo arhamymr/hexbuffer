@@ -36,7 +36,7 @@ export interface WsRepeaterMessage {
   timestamp: string;
 }
 
-export type RepeaterTabMode = 'http' | 'websocket';
+export type RepeaterTabMode = 'http' | 'websocket' | 'collection';
 
 export interface RepeaterTab {
   id: string;
@@ -50,6 +50,9 @@ export interface RepeaterTab {
   response: RepeaterResponse | null;
   isLoading: boolean;
   error: string | null;
+  // For collection tabs only
+  collectionId?: string;
+  collectionName?: string;
 }
 
 export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'HEAD' | 'OPTIONS' | 'TRACE' | 'CONNECT';
@@ -116,6 +119,26 @@ export function createWsRepeaterTab(
       url: wsRequest.url,
     },
     wsRequest,
+    wsConnectionId: null,
+    wsConnected: false,
+    wsMessages: [],
+    response: null,
+    isLoading: false,
+    error: null,
+  };
+}
+
+export function createCollectionTab(stashId: string, name: string): RepeaterTab {
+  return {
+    id: `collection-tab-${stashId}`,
+    name,
+    mode: 'collection',
+    request: {
+      raw: '',
+      url: '',
+    },
+    collectionId: stashId,
+    collectionName: name,
     wsConnectionId: null,
     wsConnected: false,
     wsMessages: [],

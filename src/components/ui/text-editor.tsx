@@ -8,6 +8,7 @@ import { useTheme } from '@/components/theme-provider';
 import type { Extension } from '@codemirror/state';
 import { javascript } from '@codemirror/lang-javascript';
 import { json } from '@codemirror/lang-json';
+import { markdown } from '@codemirror/lang-markdown';
 
 // ---------------------------------------------------------------------------
 // Theme definitions
@@ -115,7 +116,7 @@ export interface TextEditorProps {
   height?: string | number;
   path?: string;
   className?: string;
-  language?: 'javascript' | 'json';
+  language?: 'javascript' | 'json' | 'markdown';
 }
 
 export function TextEditor({
@@ -143,7 +144,12 @@ export function TextEditor({
   useEffect(() => {
     if (!containerRef.current) return;
 
-    const langExt = language === 'json' ? json() : javascript();
+    const langMap: Record<string, () => Extension> = {
+      javascript,
+      json,
+      markdown: () => markdown(),
+    };
+    const langExt = (langMap[language] ?? langMap.javascript)();
 
     const view = new EditorView({
       parent: containerRef.current,

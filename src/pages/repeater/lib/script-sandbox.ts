@@ -1,4 +1,4 @@
-import type { TestResult } from '../types';
+import type { TestResult } from '@/stores/collections';
 
 interface SandboxRequest {
   url: string;

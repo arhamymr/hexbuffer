@@ -59,7 +59,14 @@ export {
 } from './browser';
 export type { TriggerScanOptions, SubmitCrawlInputOptions } from './browser';
 
-export { sendToRepeater, sendRequest as sendRepeaterRequest } from './repeater';
+export {
+  sendToRepeater,
+  sendRequest as sendRepeaterRequest,
+  sendCraftRequest,
+  saveActiveEndpoint as saveCraftEndpoint,
+  convertRepeaterToCraft,
+  convertCraftToRepeater,
+} from './repeater';
 export type { SendToRepeaterOptions } from './repeater';
 
 export { writeDocument } from './documents';

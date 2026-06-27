@@ -5,6 +5,7 @@ import {
   createDefaultRepeaterTab,
   createRepeaterTabFromRequest,
   createWsRepeaterTab,
+  createCollectionTab,
   type RepeaterRequest,
   type RepeaterWsRequest,
   type RepeaterTab,
@@ -19,7 +20,9 @@ interface RepeaterState {
   updateTab: (id: string, updater: (tab: RepeaterTab) => RepeaterTab) => void;
   renameTab: (id: string, name: string) => void;
   addRequestTab: (request: RepeaterRequest) => string;
+  addEmptyHttpTab: () => string;
   addWsTab: (wsRequest: RepeaterWsRequest) => string;
+  addCollectionTab: (stashId: string, name: string) => string;
   closeTab: (id: string) => void;
   closeTabsToLeft: (id: string) => void;
   closeTabsToRight: (id: string) => void;
@@ -68,6 +71,19 @@ export const useRepeaterStore = create<RepeaterState>()(
 
         return newTab.id;
       },
+      addEmptyHttpTab: () => {
+        const state = useRepeaterStore.getState();
+        const nextNumber = state.nextRequestTabNumber;
+        const newTab = createDefaultRepeaterTab(nextNumber);
+
+        set((s) => ({
+          tabs: [...s.tabs, newTab],
+          activeTabId: newTab.id,
+          nextRequestTabNumber: s.nextRequestTabNumber + 1,
+        }));
+
+        return newTab.id;
+      },
       addWsTab: (wsRequest) => {
         const { nextWsTabNumber } = useRepeaterStore.getState();
         const newTab = createWsRepeaterTab(wsRequest, nextWsTabNumber);
@@ -78,6 +94,22 @@ export const useRepeaterStore = create<RepeaterState>()(
           nextWsTabNumber: state.nextWsTabNumber + 1,
         }));
 
+        return newTab.id;
+      },
+      addCollectionTab: (stashId, name) => {
+        const existingTab = useRepeaterStore.getState().tabs.find(
+          (t) => t.id === `collection-tab-${stashId}`
+        );
+        if (existingTab) {
+          set({ activeTabId: existingTab.id });
+          return existingTab.id;
+        }
+
+        const newTab = createCollectionTab(stashId, name);
+        set((s) => ({
+          tabs: [...s.tabs, newTab],
+          activeTabId: newTab.id,
+        }));
         return newTab.id;
       },
       closeTab: (id) =>

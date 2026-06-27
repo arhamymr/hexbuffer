@@ -100,7 +100,7 @@ export function AppLayout({ children }: { children?: React.ReactNode }) {
         </ResizablePanelGroup>
       </div>
       <AppSidebar />
-      <AppFooter />
+      {/* <AppFooter /> */}
     </div>
   );
 }

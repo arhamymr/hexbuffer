@@ -98,7 +98,7 @@ export async function importCollectionsFromFile(): Promise<ImportResult | null> 
   const stashes = collections.stashes as unknown[];
   const endpoints = collections.endpoints as unknown[];
 
-  // Validate each stash
+  // Validate each stash + normalize parentId to null
   for (let i = 0; i < stashes.length; i++) {
     const s = stashes[i] as Record<string, unknown>;
     if (typeof s.id !== 'string' || !s.id) {
@@ -109,6 +109,13 @@ export async function importCollectionsFromFile(): Promise<ImportResult | null> 
       toast.error(`Invalid stash at index ${i}: missing "name"`);
       return null;
     }
+    // Force flat structure: all stashes must be root-level
+    if (s.parentId !== null && s.parentId !== undefined) {
+      toast.error(`Invalid stash "${s.name || s.id}": nested collections are not supported. All collections must be root-level.`);
+      return null;
+    }
+    // Normalize to null
+    (s as unknown as StashRecord).parentId = null;
   }
 
   // Build stash ID set for cross-reference validation

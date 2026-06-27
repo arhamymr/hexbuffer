@@ -120,36 +120,6 @@ function defaultActiveRequest(): ActiveRequestState {
 
 // ── Store ──
 
-/** Topological sort: root stashes (parentId === null) first, then children. */
-function topologicalSortStashes(stashes: StashRecord[]): StashRecord[] {
-  const sorted: StashRecord[] = [];
-  const remaining = [...stashes];
-  const insertedIds = new Set<string>();
-
-  // Keep iterating until all inserted or no progress
-  while (remaining.length > 0) {
-    const insertedThisRound: StashRecord[] = [];
-    for (let i = remaining.length - 1; i >= 0; i--) {
-      const st = remaining[i];
-      if (st.parentId === null || insertedIds.has(st.parentId)) {
-        insertedThisRound.push(st);
-        remaining.splice(i, 1);
-      }
-    }
-    if (insertedThisRound.length === 0) {
-      // Remaining stashes have unresolvable parents — fall back to inserting them anyway
-      sorted.push(...remaining);
-      break;
-    }
-    sorted.push(...insertedThisRound);
-    for (const st of insertedThisRound) {
-      insertedIds.add(st.id);
-    }
-  }
-
-  return sorted;
-}
-
 interface CollectionsState {
   // Persisted data
   stashes: StashRecord[];
@@ -175,10 +145,10 @@ interface CollectionsState {
   // Stash CRUD
   setSelectedNodeId: (id: string | null) => void;
   setActiveContextId: (id: string | null) => void;
-  createStash: (name: string, parentId?: string | null) => Promise<string>;
+  createStash: (name: string) => Promise<string>;
   renameStash: (id: string, name: string) => Promise<void>;
   deleteStash: (id: string) => Promise<void>;
-  moveStash: (id: string, newParentId: string | null, newSortOrder?: number) => Promise<void>;
+  moveStash: (id: string, newSortOrder?: number) => Promise<void>;
 
   // Endpoint CRUD
   setActiveEndpointId: (id: string) => void;
@@ -255,12 +225,12 @@ export const useCollectionsStore = create<CollectionsState>()(
     setActiveContextId: (id) => set({ activeContextId: id }),
 
     // ── Stash CRUD ──
-    createStash: async (name, parentId = null) => {
+    createStash: async (name) => {
       const now = timestampNow();
       const stash: StashRecord = {
         id: generateId(),
         name,
-        parentId: parentId ?? null,
+        parentId: null,
         sortOrder: 0,
         createdAt: now,
         updatedAt: now,
@@ -293,7 +263,7 @@ export const useCollectionsStore = create<CollectionsState>()(
 
     deleteStash: async (id) => {
       set((s) => ({
-        stashes: s.stashes.filter((st) => st.id !== id && st.parentId !== id),
+        stashes: s.stashes.filter((st) => st.id !== id),
         endpoints: s.endpoints.filter((ep) => ep.stashId !== id),
       }));
       try {
@@ -303,25 +273,12 @@ export const useCollectionsStore = create<CollectionsState>()(
       }
     },
 
-    moveStash: async (id, newParentId, newSortOrder) => {
-      // Cycle prevention: cannot move a stash into its own descendant
-      const state = get();
-      const wouldBeCycle = (ancestorId: string | null, targetId: string): boolean => {
-        if (!ancestorId) return false;
-        if (ancestorId === id) return true;
-        const parent = state.stashes.find((s) => s.id === ancestorId);
-        return parent ? wouldBeCycle(parent.parentId, targetId) : false;
-      };
-      if (newParentId && wouldBeCycle(newParentId, id)) {
-        console.error('Cannot move a folder into its own descendant');
-        return;
-      }
-
+    moveStash: async (id, newSortOrder) => {
       const now = timestampNow();
       set((s) => ({
         stashes: s.stashes.map((st) =>
           st.id === id
-            ? { ...st, parentId: newParentId, sortOrder: newSortOrder ?? st.sortOrder, updatedAt: now }
+            ? { ...st, parentId: null, sortOrder: newSortOrder ?? st.sortOrder, updatedAt: now } as StashRecord
             : st
         ),
       }));
@@ -627,10 +584,8 @@ export const useCollectionsStore = create<CollectionsState>()(
       let stashesImported = 0;
       let endpointsImported = 0;
 
-      // Topological sort: root stashes (parentId === null) first, then children
-      const sortedStashes = topologicalSortStashes(stashes);
-
-      for (const st of sortedStashes) {
+      // All stashes are root-level; insert in order
+      for (const st of stashes) {
         try {
           await invoke('save_stash', { record: st });
           stashesImported++;

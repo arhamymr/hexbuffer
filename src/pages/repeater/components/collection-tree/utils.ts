@@ -7,7 +7,7 @@ export interface FlatNode {
   originalId: string;  // the raw id without prefix
   parentId: string | null;
   depth: number;
-  kind: 'collection' | 'folder' | 'endpoint';
+  kind: 'collection' | 'endpoint';
   label: string;
   description?: string;
   method?: string;
@@ -26,8 +26,9 @@ export type DropAction =
 // ── Flatten ──
 
 /**
- * Flatten the tree of stashes + endpoints into a visible-only flat list.
- * Only children of expanded nodes are included. Sorted by sortOrder.
+ * Flatten the two-level tree of collections → endpoints into a visible-only flat list.
+ * All stashes are root-level (parentId is always null). Only endpoints of expanded
+ * collections are included. Sorted by sortOrder.
  */
 export function flattenVisibleTree(
   stashes: StashRecord[],
@@ -36,62 +37,50 @@ export function flattenVisibleTree(
 ): FlatNode[] {
   const result: FlatNode[] = [];
 
-  function buildFlat(parentId: string | null, depth: number) {
-    const children = stashes
-      .filter((s) => s.parentId === parentId)
-      .sort((a, b) => a.sortOrder - b.sortOrder);
+  const sortedStashes = [...stashes].sort((a, b) => a.sortOrder - b.sortOrder);
 
-    for (const stash of children) {
-      const nodeId = `stash-${stash.id}`;
-      const kind = stash.parentId ? ('folder' as const) : ('collection' as const);
+  for (const stash of sortedStashes) {
+    const nodeId = `stash-${stash.id}`;
 
-      result.push({
-        id: nodeId,
-        originalId: stash.id,
-        parentId: stash.parentId,
-        depth,
-        kind,
-        label: stash.name,
-        stash,
-      });
+    result.push({
+      id: nodeId,
+      originalId: stash.id,
+      parentId: null,
+      depth: 0,
+      kind: 'collection' as const,
+      label: stash.name,
+      stash,
+    });
 
-      // Only descend into children if expanded
-      if (expandedIds.has(nodeId)) {
-        // Child stashes
-        buildFlat(stash.id, depth + 1);
+    // Only show endpoints if this collection is expanded
+    if (expandedIds.has(nodeId)) {
+      const childEndpoints = endpoints
+        .filter((ep) => ep.stashId === stash.id)
+        .sort((a, b) => a.sortOrder - b.sortOrder);
 
-        // Child endpoints
-        const childEndpoints = endpoints
-          .filter((ep) => ep.stashId === stash.id)
-          .sort((a, b) => a.sortOrder - b.sortOrder);
-
-        for (const ep of childEndpoints) {
-          result.push({
-            id: `ep-${ep.id}`,
-            originalId: ep.id,
-            parentId: stash.id,
-            depth: depth + 1,
-            kind: 'endpoint' as const,
-            label: ep.name,
-            description: ep.url || 'No URL set',
-            method: ep.method,
-            url: ep.url,
-            endpoint: ep,
-          });
-        }
+      for (const ep of childEndpoints) {
+        result.push({
+          id: `ep-${ep.id}`,
+          originalId: ep.id,
+          parentId: stash.id,
+          depth: 1,
+          kind: 'endpoint' as const,
+          label: ep.name,
+          description: ep.url || 'No URL set',
+          method: ep.method,
+          url: ep.url,
+          endpoint: ep,
+        });
       }
     }
   }
-
-  // Start from root — stashes with no parent
-  buildFlat(null, 0);
 
   return result;
 }
 
 // ── Collision Detection ──
 
-const REPARENT_ZONE_RATIO = 0.5;   // middle 50% = reparent (for folders)
+const REPARENT_ZONE_RATIO = 0.5;   // middle 50% = reparent (for collections)
 const EDGE_ZONE_RATIO = 0.25;       // top/bottom 25% = reorder
 
 /**
@@ -124,31 +113,11 @@ export function computeDropResult(
     return { action: 'reorder-after', afterId: overId };
   }
 
-  // Middle zone: reparent if target is a folder/collection, otherwise insert after
-  if (overNode.kind === 'collection' || overNode.kind === 'folder') {
+  // Middle zone: reparent if target is a collection, otherwise insert after
+  if (overNode.kind === 'collection') {
     return { action: 'reparent', parentId: overNode.originalId };
   }
 
   // For endpoints, default to insert after
   return { action: 'reorder-after', afterId: overId };
-}
-
-// ── Cycle Detection ──
-
-/**
- * Check whether ancestorId is an ancestor of childId in the stash hierarchy.
- * Used to prevent moving a folder into its own descendant.
- */
-export function isAncestor(
-  stashes: StashRecord[],
-  childId: string,
-  potentialAncestorId: string,
-): boolean {
-  let currentId: string | null = potentialAncestorId;
-  while (currentId) {
-    if (currentId === childId) return true;
-    const parent = stashes.find((s) => s.id === currentId);
-    currentId = parent?.parentId ?? null;
-  }
-  return false;
 }

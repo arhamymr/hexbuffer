@@ -42,7 +42,7 @@ export function AppLauncher() {
             <button
               type="button"
               className={cn(
-                'flex size-7 items-center justify-center rounded-sm text-muted-foreground transition-all hover:bg-muted/80 hover:text-foreground hover:scale-125',
+                'flex size-7 items-center justify-center rounded-sm text-muted-foreground transition-all hover:bg-muted/80 hover:text-foreground cursor-pointer',
                 open && 'bg-primary/15 text-primary',
               )}
             >

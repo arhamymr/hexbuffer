@@ -52,6 +52,7 @@ export async function sendToCollection(options: SendToCollectionOptions): Promis
     bodyType: endpointData.body ? 'raw' : 'none',
     preScript: null,
     testScript: null,
+    sortOrder: 0,
     createdAt: now,
     updatedAt: now,
   };

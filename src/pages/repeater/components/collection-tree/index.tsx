@@ -2,11 +2,13 @@ import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react'
 import {
   DndContext,
   DragOverlay,
-  closestCenter,
+  closestCorners,
   PointerSensor,
   KeyboardSensor,
   useSensor,
   useSensors,
+  useDroppable,
+  MeasuringStrategy,
   type DragEndEvent,
   type DragStartEvent,
   type DragOverEvent,
@@ -34,7 +36,7 @@ import {
   type StashEndpointRecord,
 } from '@/stores/collections';
 import { useRepeaterStore } from '@/stores/repeater';
-import { Plus, Edit2, Download, Upload } from 'lucide-react';
+import { Plus, Edit2, Download, Upload, FileCode } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { exportCollectionsToFile, importCollectionsFromFile } from '@/pages/repeater/lib/collection-io';
@@ -43,9 +45,68 @@ import { InlineCreate } from './inline-create';
 import {
   flattenVisibleTree,
   computeDropResult,
-  isAncestor,
   type FlatNode,
 } from './utils';
+
+// ── Empty State + Drop Zone for expanded empty collections ──
+
+function CollectionDropZone({ stashId, isActive, isDragging, onAddChild }: { stashId: string; isActive: boolean; isDragging: boolean; onAddChild: (parentId: string) => void }) {
+  const droppableId = `dropzone-${stashId}`;
+  const { setNodeRef, isOver } = useDroppable({
+    id: droppableId,
+    data: { stashId, kind: 'drop-zone' },
+  });
+
+  const showVisual = isDragging && (isActive || isOver);
+
+  return (
+    <div
+      ref={setNodeRef}
+      id={droppableId}
+      className={cn(
+        'mx-2 rounded-sm transition-all duration-200 ease-out',
+        // Active drop target
+        showVisual
+          ? 'h-9 my-0.5 border border-dashed flex items-center justify-center ' +
+            (isOver
+              ? 'border-primary bg-primary/5 scale-[1.01]'
+              : 'border-muted-foreground/20')
+          // Dragging but not target — minimal strip for collision detection
+          : isDragging
+            ? 'h-1 my-0 border border-transparent'
+            // Idle empty state — visible message
+            : 'h-16 my-1 flex flex-col items-center justify-center gap-1.5',
+      )}
+    >
+      {/* Active drop target label */}
+      {showVisual && (
+        <span className="text-[10px] text-muted-foreground/40">
+          Drop here
+        </span>
+      )}
+
+      {/* Idle empty state */}
+      {!isDragging && (
+        <>
+          <FileCode className="h-4 w-4 text-muted-foreground/20" />
+          <span className="text-[10px] text-muted-foreground/40">
+            No endpoints yet
+          </span>
+          <button
+            type="button"
+            className="text-[10px] text-muted-foreground/50 hover:text-primary/70 transition-colors underline underline-offset-2"
+            onClick={(e) => {
+              e.stopPropagation();
+              onAddChild(stashId);
+            }}
+          >
+            Create one now
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
 
 // ── Component ──
 
@@ -54,16 +115,14 @@ export function CollectionsTree() {
   const repeaterStore = useRepeaterStore();
 
   // ── State ──
-  const [expandedIds, setExpandedIds] = useState<Set<string>>(() => {
-    // Auto-expand root collections on first mount
-    const roots = store.stashes.filter((s) => !s.parentId);
-    return new Set(roots.map((s) => `stash-${s.id}`));
-  });
-  const [inlineCreate, setInlineCreate] = useState<{ parentId: string; type: 'folder' | 'endpoint' } | null>(null);
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(() => new Set());
+  const [inlineCreate, setInlineCreate] = useState<{ parentId: string; type: 'endpoint' } | null>(null);
   const [renameTarget, setRenameTarget] = useState<{ id: string; name: string } | null>(null);
   const [renameValue, setRenameValue] = useState('');
   const [dragActiveId, setDragActiveId] = useState<string | null>(null);
   const [dragOverId, setDragOverId] = useState<string | null>(null);
+  const hoverExpandTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hoverExpandTargetRef = useRef<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<FlatNode | null>(null);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [pendingImport, setPendingImport] = useState<{
@@ -92,24 +151,27 @@ export function CollectionsTree() {
 
   const activeNode = dragActiveId ? flatNodeMap.get(dragActiveId) ?? null : null;
 
-  // ── Reordered display list during drag ──
-  // When dragging, shift items so the active item appears where the over item is.
-  // This gives live visual feedback as the user drags.
-  const displayNodes = useMemo(() => {
-    if (!dragActiveId || !dragOverId || dragActiveId === dragOverId) {
-      return flatNodes;
-    }
-    const activeIndex = flatNodes.findIndex((n) => n.id === dragActiveId);
-    const overIndex = flatNodes.findIndex((n) => n.id === dragOverId);
-    if (activeIndex === -1 || overIndex === -1) return flatNodes;
+  // ── Sortable item IDs (stable — only changes when flatNodes changes) ──
+  const flatNodeIds = useMemo(
+    () => flatNodes.map((n) => n.id),
+    [flatNodes],
+  );
 
-    const reordered = [...flatNodes];
-    const [moved] = reordered.splice(activeIndex, 1);
-    // Insert before the over item (adjusting for removal shift)
-    const insertAt = overIndex > activeIndex ? overIndex - 1 : overIndex;
-    reordered.splice(insertAt, 0, moved);
-    return reordered;
-  }, [flatNodes, dragActiveId, dragOverId]);
+  // ── Non-empty stash IDs (for drop-zone rendering) ──
+  const nonEmptyStashIds = useMemo(() => {
+    const set = new Set<string>();
+    for (const ep of store.endpoints) set.add(ep.stashId);
+    return set;
+  }, [store.endpoints]);
+
+  // ── Endpoint count per stash ──
+  const stashEndpointCounts = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const ep of store.endpoints) {
+      map.set(ep.stashId, (map.get(ep.stashId) ?? 0) + 1);
+    }
+    return map;
+  }, [store.endpoints]);
 
   // ── Expand/Collapse ──
   const handleToggleExpand = useCallback((id: string) => {
@@ -141,14 +203,14 @@ export function CollectionsTree() {
   );
 
   // ── Inline Create ──
-  const handleAddChild = useCallback((parentId: string, type: 'folder' | 'endpoint') => {
+  const handleAddChild = useCallback((parentId: string, _type: 'endpoint') => {
     // Make sure parent is expanded
     setExpandedIds((prev) => {
       const next = new Set(prev);
       next.add(`stash-${parentId}`);
       return next;
     });
-    setInlineCreate({ parentId, type });
+    setInlineCreate({ parentId, type: 'endpoint' });
     setRenameTarget(null);
   }, []);
 
@@ -158,9 +220,7 @@ export function CollectionsTree() {
         setInlineCreate(null);
         return;
       }
-      if (inlineCreate.type === 'folder') {
-        await store.createStash(name.trim(), inlineCreate.parentId);
-      } else if (inlineCreate.type === 'endpoint') {
+      if (inlineCreate.type === 'endpoint') {
         await store.createEndpoint(inlineCreate.parentId, name.trim());
       }
       setInlineCreate(null);
@@ -271,68 +331,166 @@ export function CollectionsTree() {
   const handleDragStart = useCallback((event: DragStartEvent) => {
     setDragActiveId(event.active.id as string);
     setDragOverId(null);
-  }, []);
-
-  const handleDragOver = useCallback((event: DragOverEvent) => {
-    if (event.over) {
-      setDragOverId(event.over.id as string);
+    // Clear any stale hover-expand timer
+    if (hoverExpandTimerRef.current) {
+      clearTimeout(hoverExpandTimerRef.current);
+      hoverExpandTimerRef.current = null;
+      hoverExpandTargetRef.current = null;
     }
   }, []);
+
+  // Auto-expand collapsed collections on drag hover
+  const handleDragOver = useCallback(
+    (event: DragOverEvent) => {
+      const { over } = event;
+      const overId = over ? (over.id as string) : null;
+      setDragOverId(overId);
+
+      if (!overId) {
+        // Pointer left all droppables — clear timer
+        if (hoverExpandTimerRef.current) {
+          clearTimeout(hoverExpandTimerRef.current);
+          hoverExpandTimerRef.current = null;
+          hoverExpandTargetRef.current = null;
+        }
+        return;
+      }
+
+      const overNode = flatNodeMap.get(overId);
+      if (!overNode || overNode.kind !== 'collection') {
+        // Not hovering a collection — clear timer
+        if (hoverExpandTimerRef.current) {
+          clearTimeout(hoverExpandTimerRef.current);
+          hoverExpandTimerRef.current = null;
+          hoverExpandTargetRef.current = null;
+        }
+        return;
+      }
+
+      // Already expanded — nothing to do
+      if (expandedIds.has(overNode.id)) return;
+
+      // Same collapsed collection still being hovered — keep timer
+      if (hoverExpandTargetRef.current === overNode.id) return;
+
+      // New collapsed collection — start/restart timer
+      if (hoverExpandTimerRef.current) {
+        clearTimeout(hoverExpandTimerRef.current);
+      }
+      hoverExpandTargetRef.current = overNode.id;
+      hoverExpandTimerRef.current = setTimeout(() => {
+        setExpandedIds((prev) => {
+          const next = new Set(prev);
+          next.add(overNode.id);
+          return next;
+        });
+        hoverExpandTimerRef.current = null;
+        hoverExpandTargetRef.current = null;
+      }, 800);
+    },
+    [flatNodeMap, expandedIds],
+  );
 
   const handleDragEnd = useCallback(
     (event: DragEndEvent) => {
       const { active, over } = event;
-      setDragActiveId(null);
+
+      // Clean up hover-expand timer
+      if (hoverExpandTimerRef.current) {
+        clearTimeout(hoverExpandTimerRef.current);
+        hoverExpandTimerRef.current = null;
+        hoverExpandTargetRef.current = null;
+      }
       setDragOverId(null);
 
-      if (!over || active.id === over.id) return;
+      if (!over || active.id === over.id) {
+        setDragActiveId(null);
+        return;
+      }
 
       const activeId = active.id as string;
       const overId = over.id as string;
-      const pointerY = pointerPos.current?.y ?? null;
 
-      // Get the over element's rect for zone detection
+      const activeFlatNode = flatNodeMap.get(activeId);
+      if (!activeFlatNode) {
+        setDragActiveId(null);
+        return;
+      }
+
+      // ── Handle drop-zone for empty collections ──
+      if (overId.startsWith('dropzone-')) {
+        const targetStashId = overId.slice('dropzone-'.length);
+        if (activeFlatNode.kind === 'endpoint' && activeFlatNode.parentId !== targetStashId) {
+          store.moveEndpoint(activeFlatNode.originalId, targetStashId, 0);
+        }
+        setDragActiveId(null);
+        return;
+      }
+
+      const pointerY = pointerPos.current?.y ?? null;
       const overEl = document.getElementById(overId);
       const rect = overEl?.getBoundingClientRect() ?? null;
 
-      if (!rect || pointerY === null) return;
+      if (!rect) {
+        setDragActiveId(null);
+        return;
+      }
 
-      const result = computeDropResult(flatNodes, activeId, overId, pointerY, rect);
-      if (!result) return;
+      // Fallback: if pointer position is unavailable, use center of over rect
+      const effectivePointerY = pointerY ?? (rect.top + rect.height / 2);
 
-      const activeFlatNode = flatNodeMap.get(activeId);
+      const result = computeDropResult(flatNodes, activeId, overId, effectivePointerY, rect);
+      if (!result) {
+        setDragActiveId(null);
+        return;
+      }
+
       const overFlatNode = flatNodeMap.get(overId);
-      if (!activeFlatNode || !overFlatNode) return;
+      if (!overFlatNode) {
+        setDragActiveId(null);
+        return;
+      }
 
       if (result.action === 'reparent') {
         if (activeFlatNode.kind === 'endpoint') {
-          // Move endpoint to a different folder
           const newParentId = result.parentId;
-          if (activeFlatNode.parentId === newParentId) return;
-          store.moveEndpoint(activeFlatNode.originalId, newParentId, 0);
+          if (activeFlatNode.parentId !== newParentId) {
+            store.moveEndpoint(activeFlatNode.originalId, newParentId, 0);
+          }
+        }
+        // Collection dropped on collection — NOP (all root-level)
+        setDragActiveId(null);
+        return;
+      }
+
+      if (result.action === 'reorder-before' || result.action === 'reorder-after') {
+        const targetId = result.action === 'reorder-before' ? result.beforeId : result.afterId;
+        const targetNode = flatNodeMap.get(targetId);
+        if (!targetNode) {
+          setDragActiveId(null);
           return;
         }
 
-        // Stash reparent
-        const newParentId = result.parentId;
-
-        // Cycle prevention
-        if (isAncestor(store.stashes, activeFlatNode.originalId, newParentId)) return;
-
-        // Don't reparent to same parent
-        if (activeFlatNode.parentId === newParentId) return;
-
-        store.moveStash(activeFlatNode.originalId, newParentId);
-      } else if (result.action === 'reorder-before' || result.action === 'reorder-after') {
-        const targetId = result.action === 'reorder-before' ? result.beforeId : result.afterId;
-        const targetNode = flatNodeMap.get(targetId);
-        if (!targetNode) return;
-
-        // Endpoint reorder: only allow reordering among endpoints in the same parent
+        // ── Endpoint reorder ──
         if (activeFlatNode.kind === 'endpoint') {
-          if (targetNode.kind !== 'endpoint') return;
-          if (activeFlatNode.parentId !== targetNode.parentId) return;
+          if (targetNode.kind === 'collection') {
+            // Boundary case: endpoint dropped near a collection — reparent into it
+            if (activeFlatNode.parentId !== targetNode.originalId) {
+              store.moveEndpoint(activeFlatNode.originalId, targetNode.originalId, 0);
+            }
+            setDragActiveId(null);
+            return;
+          }
 
+          // targetNode.kind === 'endpoint'
+          // Cross-collection drop: move to the target endpoint's collection
+          if (activeFlatNode.parentId !== targetNode.parentId) {
+            store.moveEndpoint(activeFlatNode.originalId, targetNode.parentId!, 0);
+            setDragActiveId(null);
+            return;
+          }
+
+          // Same-collection reorder
           const siblingEndpoints = flatNodes.filter(
             (n) =>
               n.parentId === targetNode.parentId &&
@@ -351,20 +509,23 @@ export function CollectionsTree() {
           }
           reordered.splice(targetIndex, 0, activeFlatNode);
 
-          for (let i = 0; i < reordered.length; i++) {
-            store.moveEndpoint(reordered[i].originalId, reordered[i].parentId!, i);
-          }
+          reordered.forEach((node, idx) => {
+            store.moveEndpoint(node.originalId, node.parentId!, idx);
+          });
+          setDragActiveId(null);
           return;
         }
 
-        // Stash reorder
-        if (targetNode.kind === 'endpoint') return;
+        // ── Stash reorder ──
+        if (targetNode.kind === 'endpoint') {
+          setDragActiveId(null);
+          return;
+        }
 
-        // Collect all sibling stashes at the same level
         const siblingStashes = flatNodes.filter(
           (n) =>
             n.parentId === targetNode.parentId &&
-            (n.kind === 'collection' || n.kind === 'folder') &&
+            n.kind === 'collection' &&
             n.id !== activeId,
         );
 
@@ -372,7 +533,6 @@ export function CollectionsTree() {
         let targetIndex = siblingStashes.findIndex((n) => n.id === targetId);
         if (result.action === 'reorder-after') targetIndex += 1;
 
-        // Rebuild sort orders by inserting active at target position
         const reordered = [...siblingStashes];
         if (activeIndex >= 0) {
           reordered.splice(activeIndex, 1);
@@ -380,11 +540,14 @@ export function CollectionsTree() {
         }
         reordered.splice(targetIndex, 0, activeFlatNode);
 
-        // Update sortOrder for each sibling
-        for (let i = 0; i < reordered.length; i++) {
-          store.moveStash(reordered[i].originalId, reordered[i].parentId, i);
-        }
+        reordered.forEach((node, idx) => {
+          store.moveStash(node.originalId, idx);
+        });
+        setDragActiveId(null);
+        return;
       }
+
+      setDragActiveId(null);
     },
     [flatNodes, flatNodeMap, store],
   );
@@ -429,7 +592,7 @@ export function CollectionsTree() {
                 setRenameTarget(null);
                 setInlineCreate(null);
                 // Create a root-level collection with a temp name
-                store.createStash('New Collection', null);
+                store.createStash('New Collection');
               }}
             >
               <Plus className="h-3.5 w-3.5" />
@@ -472,16 +635,21 @@ export function CollectionsTree() {
       <div className="flex-1 min-h-0 overflow-auto pt-1 pb-2">
         <DndContext
           sensors={sensors}
-          collisionDetection={closestCenter}
+          collisionDetection={closestCorners}
+          measuring={{
+            droppable: {
+              strategy: MeasuringStrategy.WhileDragging,
+            },
+          }}
           onDragStart={handleDragStart}
           onDragOver={handleDragOver}
           onDragEnd={handleDragEnd}
         >
           <SortableContext
-            items={displayNodes.map((n) => n.id)}
+            items={flatNodeIds}
             strategy={verticalListSortingStrategy}
           >
-            {displayNodes.length === 0 ? (
+            {flatNodes.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-center px-4">
                 <p className="text-xs font-medium text-muted-foreground">No Collections</p>
                 <p className="text-[11px] text-muted-foreground mt-1">
@@ -489,7 +657,7 @@ export function CollectionsTree() {
                 </p>
               </div>
             ) : (
-              displayNodes.map((node) => {
+              flatNodes.map((node) => {
                 // Check if inline create should appear directly after this node's parent
                 // We inline it as a child by checking if the parent id matches
                 const isInlineCreateParent = inlineCreate && inlineCreate.parentId === node.originalId;
@@ -504,12 +672,27 @@ export function CollectionsTree() {
                       isExpanded={expandedIds.has(node.id)}
                       isDragOver={isNodeDragOver}
                       dropAction={null}
+                      endpointCount={stashEndpointCounts.get(node.originalId) ?? 0}
                       onSelect={handleSelectNode}
                       onToggleExpand={handleToggleExpand}
                       onAddChild={handleAddChild}
                       onRename={handleRename}
                       onDelete={handleDelete}
                     />
+                    {/* Drop zone for empty expanded collections — only visible when nearest target */}
+                    {node.kind === 'collection' &&
+                      expandedIds.has(node.id) &&
+                      !nonEmptyStashIds.has(node.originalId) && (
+                        <CollectionDropZone
+                          stashId={node.originalId}
+                          isActive={
+                            dragActiveId !== null &&
+                            dragOverId === `dropzone-${node.originalId}`
+                          }
+                          isDragging={dragActiveId !== null}
+                          onAddChild={(parentId) => handleAddChild(parentId, 'endpoint')}
+                        />
+                      )}
                     {/* Inline create input appears right after the parent node */}
                     {isInlineCreateParent && (
                       <InlineCreate
@@ -555,12 +738,12 @@ export function CollectionsTree() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              {deleteTarget?.kind === 'endpoint' ? 'Delete endpoint?' : 'Delete folder?'}
+              {deleteTarget?.kind === 'endpoint' ? 'Delete endpoint?' : 'Delete collection?'}
             </AlertDialogTitle>
             <AlertDialogDescription>
               {deleteTarget?.kind === 'endpoint'
                 ? `"${deleteTarget.label}" will be permanently deleted.`
-                : `"${deleteTarget?.label}" and all its contents will be permanently deleted. This action cannot be undone.`
+                : `"${deleteTarget?.label}" and all its endpoints will be permanently deleted. This action cannot be undone.`
               }
             </AlertDialogDescription>
           </AlertDialogHeader>

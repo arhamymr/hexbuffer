@@ -241,8 +241,8 @@ export function useLogEntryActions(call: ApiCall, onDelete?: (id: string) => voi
   }, [call.host, call.path]);
 
   const handleHighlightHost = useCallback((color: string) => {
-    useHighlightStore.getState().highlightHost(call.host, color);
-  }, [call.host]);
+    useHighlightStore.getState().highlightHost(call.host, call.path, color);
+  }, [call.host, call.path]);
 
   return {
     pinned,

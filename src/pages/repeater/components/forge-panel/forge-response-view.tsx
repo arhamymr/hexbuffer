@@ -1,10 +1,10 @@
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Button } from '@/components/ui/button';
+import { ButtonGroup } from '@/components/ui/button-group';
 import { TextEditor } from '@/components/ui/text-editor';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { buttonGroupVariants } from '@/components/ui/button-group';
-import { cn } from '@/lib/utils';
 import { CheckCircle, XCircle } from 'lucide-react';
 import type { ForgeResponse, TestResult } from '@/stores/collections';
+import { cn } from '@/lib/utils';
 
 interface ForgeResponseViewProps {
   isLoading: boolean;
@@ -81,85 +81,95 @@ export function ForgeResponseView({
           </div>
 
           {/* Response body & details tab */}
-          <Tabs value={activeResTab} onValueChange={onResTabChange} className="flex-1 flex flex-col min-h-0 mt-2">
-            <TabsList className={cn(buttonGroupVariants({ orientation: "horizontal" }), "shrink-0 w-full h-auto p-0 mb-2")}>
-              {['pretty', 'raw', 'headers', 'testResults'].map((t) => (
-                <TabsTrigger
+          <div className="flex-1 flex flex-col min-h-0 mt-2">
+            <ButtonGroup orientation="horizontal" className="shrink-0 w-full h-auto p-0 mb-2">
+              {(['pretty', 'raw', 'headers', 'testResults'] as const).map((t) => (
+                <Button
                   key={t}
-                  value={t}
-                  className="rounded-md border data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:border-primary data-[state=active]:shadow-none px-4 py-2 capitalize text-xs"
+                  variant="outline"
+                  size="sm"
+                  className={cn('text-xs', activeResTab === t && 'text-primary')}
+                  onClick={() => onResTabChange(t)}
                 >
                   {t === 'testResults' ? 'Test Results' : t}
-                </TabsTrigger>
+                </Button>
               ))}
-            </TabsList>
+            </ButtonGroup>
 
-            <TabsContent value="pretty" className="flex-1 min-h-0 mt-2">
-              <div className="h-full border rounded-md overflow-hidden bg-background">
-                <TextEditor value={getFormattedBody()} options={{ readOnly: true }} />
-              </div>
-            </TabsContent>
-
-            <TabsContent value="raw" className="flex-1 min-h-0 mt-2">
-              <div className="h-full border rounded-md overflow-hidden bg-background">
-                <TextEditor value={response.body} options={{ readOnly: true }} />
-              </div>
-            </TabsContent>
-
-            <TabsContent value="headers" className="flex-1 min-h-0 mt-2">
-              <ScrollArea className="h-full">
-                <div className="space-y-1 text-xs font-mono">
-                  {Object.entries(response.headers).map(([key, value]) => (
-                    <div key={key} className="flex border-b py-1">
-                      <span className="w-1/3 text-muted-foreground font-semibold truncate pr-2">
-                        {key}
-                      </span>
-                      <span className="w-2/3 text-foreground break-all">{value}</span>
-                    </div>
-                  ))}
+            {activeResTab === 'pretty' && (
+              <div className="flex-1 min-h-0 mt-2">
+                <div className="h-full border rounded-md overflow-hidden bg-background">
+                  <TextEditor value={getFormattedBody()} options={{ readOnly: true }} />
                 </div>
-              </ScrollArea>
-            </TabsContent>
+              </div>
+            )}
 
-            <TabsContent value="testResults" className="flex-1 min-h-0 mt-2">
-              <ScrollArea className="h-full">
-                <div className="space-y-2 pr-2">
-                  {testResults.map((tr, index) => (
-                    <div
-                      key={index}
-                      className={`p-2 border rounded-md flex items-center justify-between text-xs ${
-                        tr.passed
-                          ? 'bg-emerald-500/5 border-emerald-500/20'
-                          : 'bg-destructive/5 border-destructive/20'
-                      }`}
-                    >
-                      <div className="flex items-center space-x-2">
-                        {tr.passed ? (
-                          <CheckCircle className="h-4 w-4 text-emerald-500 shrink-0" />
-                        ) : (
-                          <XCircle className="h-4 w-4 text-destructive shrink-0" />
-                        )}
-                        <span className="font-semibold">{tr.name}</span>
+            {activeResTab === 'raw' && (
+              <div className="flex-1 min-h-0 mt-2">
+                <div className="h-full border rounded-md overflow-hidden bg-background">
+                  <TextEditor value={response.body} options={{ readOnly: true }} />
+                </div>
+              </div>
+            )}
+
+            {activeResTab === 'headers' && (
+              <div className="flex-1 min-h-0 mt-2">
+                <ScrollArea className="h-full">
+                  <div className="space-y-1 text-xs font-mono">
+                    {Object.entries(response.headers).map(([key, value]) => (
+                      <div key={key} className="flex border-b py-1">
+                        <span className="w-1/3 text-muted-foreground font-semibold truncate pr-2">
+                          {key}
+                        </span>
+                        <span className="w-2/3 text-foreground break-all">{value}</span>
                       </div>
-                      {!tr.passed && tr.message && (
-                        <span className="text-[10px] text-destructive font-mono">{tr.message}</span>
-                      )}
-                    </div>
-                  ))}
-                  {testScript && testResults.length === 0 && (
-                    <div className="text-center text-xs text-muted-foreground py-8">
-                      Scripts did not output any assertion checks. Use `pm.test` inside scripts to register assertions.
-                    </div>
-                  )}
-                  {!testScript && (
-                    <div className="text-center text-xs text-muted-foreground py-8">
-                      No test scripts defined for this request.
-                    </div>
-                  )}
-                </div>
-              </ScrollArea>
-            </TabsContent>
-          </Tabs>
+                    ))}
+                  </div>
+                </ScrollArea>
+              </div>
+            )}
+
+            {activeResTab === 'testResults' && (
+              <div className="flex-1 min-h-0 mt-2">
+                <ScrollArea className="h-full">
+                  <div className="space-y-2 pr-2">
+                    {testResults.map((tr, index) => (
+                      <div
+                        key={index}
+                        className={`p-2 border rounded-md flex items-center justify-between text-xs ${
+                          tr.passed
+                            ? 'bg-emerald-500/5 border-emerald-500/20'
+                            : 'bg-destructive/5 border-destructive/20'
+                        }`}
+                      >
+                        <div className="flex items-center space-x-2">
+                          {tr.passed ? (
+                            <CheckCircle className="h-4 w-4 text-emerald-500 shrink-0" />
+                          ) : (
+                            <XCircle className="h-4 w-4 text-destructive shrink-0" />
+                          )}
+                          <span className="font-semibold">{tr.name}</span>
+                        </div>
+                        {!tr.passed && tr.message && (
+                          <span className="text-[10px] text-destructive font-mono">{tr.message}</span>
+                        )}
+                      </div>
+                    ))}
+                    {testScript && testResults.length === 0 && (
+                      <div className="text-center text-xs text-muted-foreground py-8">
+                        Scripts did not output any assertion checks. Use `pm.test` inside scripts to register assertions.
+                      </div>
+                    )}
+                    {!testScript && (
+                      <div className="text-center text-xs text-muted-foreground py-8">
+                        No test scripts defined for this request.
+                      </div>
+                    )}
+                  </div>
+                </ScrollArea>
+              </div>
+            )}
+          </div>
         </div>
       );
     }

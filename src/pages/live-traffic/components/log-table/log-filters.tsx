@@ -175,23 +175,29 @@ export function LogFilters({
       {Object.keys(highlightedHosts).length > 0 && (
         <div className="flex items-center gap-1.5 mt-1 flex-wrap">
           <span className="text-[10px] text-muted-foreground shrink-0">Highlights:</span>
-          {Object.entries(highlightedHosts).map(([host, color]) => (
-            <span
-              key={host}
-              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded border text-[10px]"
-              style={{ backgroundColor: `${color}15`, borderColor: `${color}40`, color }}
-            >
-              <span className="size-1.5 rounded-full shrink-0" style={{ backgroundColor: color }} />
-              <span className="max-w-[200px] truncate">{host}</span>
-              <button
-                className="ml-0.5 opacity-60 hover:opacity-100 shrink-0"
-                onClick={() => removeHighlight(host)}
-                title="Remove highlight"
+          {Object.entries(highlightedHosts).map(([key, color]) => {
+            const separatorIdx = key.indexOf('|');
+            const host = separatorIdx >= 0 ? key.slice(0, separatorIdx) : key;
+            const path = separatorIdx >= 0 ? key.slice(separatorIdx + 1) : '';
+            const display = path ? `${host}${path}` : host;
+            return (
+              <span
+                key={key}
+                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded border text-[10px]"
+                style={{ backgroundColor: `${color}15`, borderColor: `${color}40`, color }}
               >
-                <X className="size-3" />
-              </button>
-            </span>
-          ))}
+                <span className="size-1.5 rounded-full shrink-0" style={{ backgroundColor: color }} />
+                <span className="max-w-[200px] truncate">{display}</span>
+                <button
+                  className="ml-0.5 opacity-60 hover:opacity-100 shrink-0"
+                  onClick={() => removeHighlight(host, path)}
+                  title="Remove highlight"
+                >
+                  <X className="size-3" />
+                </button>
+              </span>
+            );
+          })}
         </div>
       )}
 

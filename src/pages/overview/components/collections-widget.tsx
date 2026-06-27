@@ -6,26 +6,12 @@ import { useRepeaterStore } from '@/stores/repeater';
 
 // ── Helpers ──
 
-/** Collect all descendant stash IDs (including self) for counting nested endpoints. */
-function collectStashIds(stashId: string, allStashes: StashRecord[]): Set<string> {
-  const ids = new Set<string>([stashId]);
-  const children = allStashes.filter((s) => s.parentId === stashId);
-  for (const child of children) {
-    for (const childId of collectStashIds(child.id, allStashes)) {
-      ids.add(childId);
-    }
-  }
-  return ids;
-}
-
-/** Count endpoints belonging to any stash in the tree rooted at `rootStashId`. */
+/** Count endpoints belonging to a stash. */
 function countEndpoints(
-  rootStashId: string,
-  allStashes: StashRecord[],
+  stashId: string,
   endpoints: StashEndpointRecord[],
 ): number {
-  const stashIds = collectStashIds(rootStashId, allStashes);
-  return endpoints.filter((ep) => stashIds.has(ep.stashId)).length;
+  return endpoints.filter((ep) => ep.stashId === stashId).length;
 }
 
 // ── Component ──
@@ -63,7 +49,7 @@ export function CollectionsWidget() {
       ) : (
         <ul className="flex flex-col gap-px">
           {rootStashes.map((stash) => {
-            const epCount = countEndpoints(stash.id, stashes, endpoints);
+            const epCount = countEndpoints(stash.id, endpoints);
             return (
               <li key={stash.id}>
                 <button

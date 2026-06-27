@@ -22,12 +22,16 @@ export const HIGHLIGHT_COLOR_LABELS: Record<string, string> = {
   '#a855f7': 'Purple',
 };
 
-interface HighlightState {
-  highlightedHosts: Record<string, string>; // host -> color
+function makeKey(host: string, path: string): string {
+  return `${host.trim().toLowerCase()}|${(path ?? '').trim()}`;
+}
 
-  highlightHost: (host: string, color: string) => void;
-  removeHighlight: (host: string) => void;
-  getHighlightColor: (host: string) => string | undefined;
+interface HighlightState {
+  highlightedHosts: Record<string, string>; // "host|path" -> color
+
+  highlightHost: (host: string, path: string, color: string) => void;
+  removeHighlight: (host: string, path: string) => void;
+  getHighlightColor: (host: string, path: string) => string | undefined;
 }
 
 export const useHighlightStore = create<HighlightState>()(
@@ -35,53 +39,54 @@ export const useHighlightStore = create<HighlightState>()(
     (set, get) => ({
       highlightedHosts: {},
 
-      highlightHost: (host: string, color: string) => {
+      highlightHost: (host: string, path: string, color: string) => {
         const { highlightedHosts } = get();
-        const normalizedHost = host.trim().toLowerCase();
+        const key = makeKey(host, path);
 
-        if (!normalizedHost) return;
+        if (!key || key === '|') return;
 
-        const currentColor = highlightedHosts[normalizedHost];
+        const currentColor = highlightedHosts[key];
 
         // Toggle: if same color, remove highlight
         if (currentColor === color) {
-          const { [normalizedHost]: _, ...rest } = highlightedHosts;
+          const { [key]: _, ...rest } = highlightedHosts;
           set({ highlightedHosts: rest });
-          toast.success(`Removed highlight from ${normalizedHost}`);
+          toast.success(`Removed highlight from ${host}${path ? ` ${path}` : ''}`);
           return;
         }
 
-        // New host and max reached
+        // New entry and max reached
         if (!currentColor && Object.keys(highlightedHosts).length >= MAX_HIGHLIGHTS) {
           toast.warning(`Maximum ${MAX_HIGHLIGHTS} highlights reached. Remove a highlight first.`);
           return;
         }
 
         set({
-          highlightedHosts: { ...highlightedHosts, [normalizedHost]: color },
+          highlightedHosts: { ...highlightedHosts, [key]: color },
         });
 
         const label = HIGHLIGHT_COLOR_LABELS[color] || color;
+        const display = `${host}${path ? ` ${path}` : ''}`;
         toast.success(
           currentColor
-            ? `Changed ${normalizedHost} highlight to ${label}`
-            : `Highlighted ${normalizedHost} with ${label}`
+            ? `Changed ${display} highlight to ${label}`
+            : `Highlighted ${display} with ${label}`
         );
       },
 
-      removeHighlight: (host: string) => {
-        const normalizedHost = host.trim().toLowerCase();
-        if (!normalizedHost) return;
+      removeHighlight: (host: string, path: string) => {
+        const key = makeKey(host, path);
+        if (!key || key === '|') return;
         set((state) => {
-          const { [normalizedHost]: _, ...rest } = state.highlightedHosts;
+          const { [key]: _, ...rest } = state.highlightedHosts;
           return { highlightedHosts: rest };
         });
-        toast.success(`Removed highlight from ${normalizedHost}`);
+        toast.success(`Removed highlight from ${host}${path ? ` ${path}` : ''}`);
       },
 
-      getHighlightColor: (host: string) => {
-        const normalizedHost = host?.trim().toLowerCase() ?? '';
-        return get().highlightedHosts[normalizedHost];
+      getHighlightColor: (host: string, path: string) => {
+        const key = makeKey(host ?? '', path ?? '');
+        return get().highlightedHosts[key];
       },
     }),
     { name: 'hexbuffer-highlights' }

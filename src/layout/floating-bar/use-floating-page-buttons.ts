@@ -7,9 +7,9 @@ import { openTargetSelector, toggleStreamPause, toggleHistoryMode } from '@/trig
 import { toggleInterceptEnabled, forwardPaused } from '@/triggers';
 import { toggleBrowserCrawl, stopBrowserCrawl, startBrowserCrawl } from '@/triggers';
 import { startInvokerUiAttack, stopInvokerUiAttack } from '@/triggers';
-import { sendRepeaterRequest } from '@/triggers';
+import { sendCraftRequest } from '@/triggers/repeater/craft';
 import { useInvokerStore } from '@/stores/invoker';
-import { useRepeaterStore } from '@/stores/repeater';
+import { useCollectionsStore } from '@/stores/collections';
 
 export interface PageButton {
   key: string;
@@ -33,8 +33,7 @@ export function useFloatingPageButtons(pathname: string): PageButton[] {
   const browserActiveTabId = useBrowserAutomationStore((s) => s.activeTabId);
   const invokerTabs = useInvokerStore((s) => s.tabs);
   const invokerActiveTabId = useInvokerStore((s) => s.activeTabId);
-  const repeaterTabs = useRepeaterStore((s) => s.tabs);
-  const repeaterActiveTabId = useRepeaterStore((s) => s.activeTabId);
+  const collectionsActiveReq = useCollectionsStore((s) => s.activeRequest);
 
   const [historyMode, setHistoryMode] = React.useState<'http' | 'websocket'>(() =>
     localStorage.getItem('history-mode') === 'websocket' ? 'websocket' : 'http'
@@ -184,17 +183,16 @@ export function useFloatingPageButtons(pathname: string): PageButton[] {
     }
 
     if (pathname === '/repeater') {
-      const repeaterTab = repeaterTabs.find((t) => t.id === repeaterActiveTabId);
-      const repeaterLoading = repeaterTab?.isLoading ?? false;
+      const craftLoading = collectionsActiveReq.isLoading;
 
       return [
         {
           key: 'repeater-send',
-          icon: repeaterLoading ? Loader2 : SendHorizonal,
+          icon: craftLoading ? Loader2 : SendHorizonal,
           label: 'Send',
           showLabel: true,
           isActive: false,
-          onClick: () => { void sendRepeaterRequest(); },
+          onClick: () => { void sendCraftRequest(); },
           visible: true,
           variant: 'primary',
         },
@@ -203,5 +201,5 @@ export function useFloatingPageButtons(pathname: string): PageButton[] {
 
     return [];
 
-  }, [pathname, isPaused, historyMode, interceptStatus, interceptRequests, interceptActiveTabId, interceptSelectedId, interceptIsBusy, browserTabs, browserActiveTabId, invokerTabs, invokerActiveTabId, repeaterTabs, repeaterActiveTabId]);
+  }, [pathname, isPaused, historyMode, interceptStatus, interceptRequests, interceptActiveTabId, interceptSelectedId, interceptIsBusy, browserTabs, browserActiveTabId, invokerTabs, invokerActiveTabId, collectionsActiveReq]);
 }

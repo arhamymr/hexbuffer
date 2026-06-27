@@ -14,7 +14,7 @@ import {
   type ContextRecord,
   type KeyValuePair,
 } from '@/stores/collections';
-import { Plus, Trash2, Edit2 } from 'lucide-react';
+import { Plus, Trash2, Edit2, Copy } from 'lucide-react';
 
 interface ContextsDialogProps {
   open: boolean;
@@ -96,16 +96,29 @@ export function ContextsDialog({ open, onOpenChange }: ContextsDialogProps) {
     }
   };
 
+  const handleDuplicate = async (ctx: ContextRecord) => {
+    let vars: KeyValuePair[] = [];
+    try {
+      const parsed = JSON.parse(ctx.variables);
+      vars = Array.isArray(parsed)
+        ? parsed.map((v: KeyValuePair) => ({ ...v, enabled: true }))
+        : [];
+    } catch {
+      vars = [];
+    }
+    await store.createContext(`Copy of ${ctx.name}`, vars);
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col p-6">
+      <DialogContent className="h-full max-h-[70vh] sm:max-w-[820px] flex flex-col p-2">
         <DialogHeader>
           <DialogTitle>Manage Environment Contexts</DialogTitle>
         </DialogHeader>
 
-        <div className="flex-1 min-h-0 grid grid-cols-5 gap-6 mt-4">
+        <div className="flex-1 min-h-0 grid grid-cols-5 gap-2 mt-4">
           {/* Sidebar list */}
-          <div className="col-span-2 border-r pr-4 flex flex-col min-h-0">
+          <div className="col-span-2 border-r pr-2 flex flex-col min-h-0">
             <Button size="sm" className="w-full mb-3" onClick={handleStartCreate}>
               <Plus className="h-4 w-4 mr-2" /> New Environment
             </Button>
@@ -119,7 +132,7 @@ export function ContextsDialog({ open, onOpenChange }: ContextsDialogProps) {
                     }`}
                     onClick={() => handleStartEdit(ctx)}
                   >
-                    <span className="truncate flex-1 pr-2">{ctx.name}</span>
+                    <span className="truncate text-sm flex-1 pr-2">{ctx.name}</span>
                     <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       <Button
                         size="icon"
@@ -131,6 +144,17 @@ export function ContextsDialog({ open, onOpenChange }: ContextsDialogProps) {
                         }}
                       >
                         <Edit2 className="h-3 w-3" />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDuplicate(ctx);
+                        }}
+                      >
+                        <Copy className="h-3 w-3" />
                       </Button>
                       <Button
                         size="icon"
@@ -158,7 +182,7 @@ export function ContextsDialog({ open, onOpenChange }: ContextsDialogProps) {
           {/* Edit Form */}
           <div className="col-span-3 flex flex-col min-h-0">
             {isCreating || editingContext ? (
-              <div className="flex flex-col h-full min-h-0 space-y-4">
+              <div className="flex flex-col h-full min-h-0 space-y-2">
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                     Environment Name
@@ -179,7 +203,7 @@ export function ContextsDialog({ open, onOpenChange }: ContextsDialogProps) {
                       <Plus className="h-3.5 w-3.5 mr-1" /> Add Row
                     </Button>
                   </div>
-
+                 
                   <ScrollArea className="flex-1 border rounded-md p-2">
                     <div className="space-y-2">
                       {variables.map((item, index) => (
@@ -213,6 +237,12 @@ export function ContextsDialog({ open, onOpenChange }: ContextsDialogProps) {
                       )}
                     </div>
                   </ScrollArea>
+                   <p className="text-[11px] text-muted-foreground/70 leading-relaxed">
+                    Reference variables in request URLs or headers using{" "}
+                    <code className="font-mono bg-muted px-1 rounded text-[11px]">{"{{variable_key}}"}</code>{" "}
+                    syntax.
+                  </p>
+
                 </div>
 
                 <DialogFooter className="pt-2 border-t">

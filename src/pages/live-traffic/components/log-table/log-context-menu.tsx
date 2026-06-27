@@ -53,7 +53,7 @@ export const LogEntryContextMenu = memo(function LogEntryContextMenu({
     handleHighlightHost,
   } = useLogEntryActions(call, onDelete);
 
-  const highlightColor = useHighlightStore((s) => s.getHighlightColor(call.host));
+  const highlightColor = useHighlightStore((s) => s.getHighlightColor(call.host, call.path));
   const removeHighlight = useHighlightStore((s) => s.removeHighlight);
 
   return (
@@ -172,7 +172,7 @@ export const LogEntryContextMenu = memo(function LogEntryContextMenu({
                 <ContextMenuSeparator />
                 <ContextMenuItem
                   className='text-xs py-1 px-1.5'
-                  onClick={() => removeHighlight(call.host)}
+                  onClick={() => removeHighlight(call.host, call.path)}
                 >
                   Remove Highlight
                 </ContextMenuItem>

@@ -28,7 +28,7 @@ export function JwtDecodeView({
     <div className="flex h-full min-h-0 flex-col">
       <section className="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-2">
         {/* Left: Token Input */}
-        <div className="flex min-h-0 flex-col border-b bg-background lg:border-b-0 lg:border-r">
+        <div className="flex min-h-0 flex-col bg-background lg:border-b-0 lg:border-r">
           <div className="flex h-8 shrink-0 items-center justify-between border-b bg-muted/10 px-3">
             <div className="flex items-baseline gap-2">
               <span className="text-[11px] font-semibold uppercase text-muted-foreground tracking-wider">

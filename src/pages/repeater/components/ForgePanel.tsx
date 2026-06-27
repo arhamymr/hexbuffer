@@ -3,11 +3,7 @@ import { ForgeRequestBar } from './forge-panel/forge-request-bar';
 import { ForgeRequestTabs } from './forge-panel/forge-request-tabs';
 import { ForgeResponseView } from './forge-panel/forge-response-view';
 
-interface ForgePanelProps {
-  onSend: () => void;
-}
-
-export function ForgePanel({ onSend }: ForgePanelProps) {
+export function ForgePanel() {
   const {
     req,
     queryParams,
@@ -34,13 +30,11 @@ export function ForgePanel({ onSend }: ForgePanelProps) {
   } = useForgePanel();
 
   return (
-    <div className="flex flex-col h-full min-h-0 space-y-4 p-4">
+    <div className="flex flex-col h-full min-h-0 space-y-2 p-2">
       <ForgeRequestBar
         method={req.method}
         url={req.url}
-        isLoading={req.isLoading}
         activeEndpoint={activeEndpoint}
-        onSend={onSend}
         onMethodChange={handleMethodChange}
         onUrlChange={handleUrlChange}
       />

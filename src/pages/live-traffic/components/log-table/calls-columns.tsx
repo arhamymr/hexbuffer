@@ -64,7 +64,7 @@ const CallActionCell = memo(function CallActionCell({ call, onNewGroup }: { call
     handleHighlightHost,
   } = useLogEntryActions(call);
 
-  const highlightColor = useHighlightStore((s) => s.getHighlightColor(call.host));
+  const highlightColor = useHighlightStore((s) => s.getHighlightColor(call.host, call.path));
   const removeHighlight = useHighlightStore((s) => s.removeHighlight);
 
   return (
@@ -185,7 +185,7 @@ const CallActionCell = memo(function CallActionCell({ call, onNewGroup }: { call
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   className="text-xs"
-                  onClick={() => removeHighlight(call.host)}
+                  onClick={() => removeHighlight(call.host, call.path)}
                 >
                   Remove Highlight
                 </DropdownMenuItem>
@@ -369,7 +369,7 @@ export const TrafficTable = memo(function TrafficTable({
               />
             ))}
             <BrowserIcon userAgent={row.original.user_agent} />
-            <span className="truncate min-w-0" style={{ direction: 'rtl', textAlign: 'left', color: getHighlightColor(row.original.host) || undefined }}>
+            <span className="truncate min-w-0" style={{ direction: 'rtl', textAlign: 'left', color: getHighlightColor(row.original.host, row.original.path) || undefined }}>
               <HighlightedText
                 text={displayUrl}
                 query={(table.options.meta as { searchQuery?: string } | undefined)?.searchQuery ?? ""}

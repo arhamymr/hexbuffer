@@ -4,7 +4,7 @@ import { Plus } from 'lucide-react';
 
 export interface InlineCreateProps {
   depth: number;
-  type: 'folder' | 'endpoint';
+  type: 'endpoint';
   onSubmit: (name: string) => void;
   onCancel: () => void;
 }
@@ -17,7 +17,7 @@ export function InlineCreate({ depth, type, onSubmit, onCancel }: InlineCreatePr
     inputRef.current?.focus();
   }, []);
 
-  const placeholder = type === 'folder' ? 'Folder name...' : 'Endpoint name...';
+  const placeholder = 'Endpoint name...';
 
   const handleSubmit = () => {
     const name = inputRef.current?.value.trim();
@@ -65,7 +65,7 @@ export function InlineCreate({ depth, type, onSubmit, onCancel }: InlineCreatePr
         <button
           type="submit"
           className="flex h-5 w-5 shrink-0 items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground"
-          title={`Create ${type}`}
+          title="Create endpoint"
         >
           <Plus className="h-3 w-3" />
         </button>

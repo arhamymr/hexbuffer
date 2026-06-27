@@ -23,9 +23,10 @@ export interface TreeNodeRowProps {
   isExpanded: boolean;
   isDragOver: boolean;
   dropAction: DropAction | null;
+  endpointCount: number;
   onSelect: (node: FlatNode) => void;
   onToggleExpand: (id: string) => void;
-  onAddChild: (parentId: string, type: 'folder' | 'endpoint') => void;
+  onAddChild: (parentId: string, type: 'endpoint') => void;
   onRename: (node: FlatNode) => void;
   onDelete: (node: FlatNode) => void;
 }
@@ -38,6 +39,7 @@ export function TreeNodeRow({
   isExpanded,
   isDragOver,
   dropAction,
+  endpointCount,
   onSelect,
   onToggleExpand,
   onAddChild,
@@ -62,14 +64,12 @@ export function TreeNodeRow({
     opacity: isDragging ? 0.4 : undefined,
   };
 
-  const isFolder = node.kind === 'collection' || node.kind === 'folder';
+  const isCollection = node.kind === 'collection';
   const isEndpoint = node.kind === 'endpoint';
-  const Icon = isEndpoint ? FileCode : node.kind === 'collection' ? FolderHeart : FileCode;
+  const Icon = isEndpoint ? FileCode : FolderHeart;
   const iconClass = isEndpoint
     ? 'text-gray-500'
-    : node.kind === 'collection'
-    ? 'text-blue-500'
-    : 'text-amber-500';
+    : 'text-blue-500';
 
   // Drop indicator classes
   const showBeforeLine = dropAction?.action === 'reorder-before';
@@ -95,10 +95,16 @@ export function TreeNodeRow({
           isDragOver && showInsideHighlight && 'bg-primary/10 ring-1 ring-primary/30',
         )}
         style={{ paddingLeft: `${node.depth * 16 + 4}px` }}
-        onClick={() => onSelect(node)}
+        onClick={() => {
+          // Endpoints: select as usual
+          if (isEndpoint) {
+            onSelect(node);
+          }
+          // Collections: clicking row toggles expand (override for chevron handled separately)
+        }}
       >
         {/* Expand/Collapse Chevron */}
-        {isFolder ? (
+        {isCollection ? (
           <button
             type="button"
             className="flex h-4 w-4 flex-shrink-0 items-center justify-center text-muted-foreground hover:text-foreground"
@@ -116,15 +122,41 @@ export function TreeNodeRow({
           <span className="w-4 flex-shrink-0" />
         )}
 
-        {/* Icon */}
-        <Icon className={cn('h-3.5 w-3.5 flex-shrink-0', iconClass)} />
+        {/* Icon — clickable for collections to toggle expand */}
+        <Icon
+          className={cn(
+            'h-3.5 w-3.5 flex-shrink-0',
+            iconClass,
+            isCollection && 'cursor-pointer hover:scale-110 transition-transform',
+          )}
+          onClick={(e) => {
+            if (isCollection) {
+              e.stopPropagation();
+              onToggleExpand(node.id);
+            }
+          }}
+        />
 
         {/* Label */}
-        <div className="min-w-0 flex-1">
+        <div
+          className={cn('min-w-0 flex-1', isCollection && 'cursor-pointer')}
+          onClick={(e) => {
+            if (isCollection) {
+              e.stopPropagation();
+              onToggleExpand(node.id);
+            }
+          }}
+        >
           <div className="flex min-w-0 items-center gap-1.5">
             <span className={cn('truncate text-xs', isEndpoint && 'font-mono')}>
               {node.label}
             </span>
+            {/* Endpoint count badge for collections */}
+            {isCollection && endpointCount > 0 && (
+              <span className="shrink-0 text-[10px] leading-none text-muted-foreground/60 tabular-nums">
+                {endpointCount}
+              </span>
+            )}
             {/* Method badge for endpoints */}
             {isEndpoint && node.method && (
               <span
@@ -147,16 +179,16 @@ export function TreeNodeRow({
 
         {/* Inline actions — visible on row hover */}
         <div className="flex items-center gap-0.5 opacity-0 group-hover/tree-row:opacity-100 transition-opacity shrink-0 pr-1">
-          {/* Add child — only for folders */}
-          {isFolder && (
+          {/* Add child — only for collections */}
+          {isCollection && (
             <>
               <button
                 type="button"
                 className="flex h-5 w-5 items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground"
-                title="New Folder"
+                title="New Endpoint"
                 onClick={(e) => {
                   e.stopPropagation();
-                  onAddChild(node.originalId, 'folder');
+                  onAddChild(node.originalId, 'endpoint');
                 }}
               >
                 <Plus className="h-3 w-3" />
@@ -164,8 +196,8 @@ export function TreeNodeRow({
             </>
           )}
 
-          {/* Rename — folders/collections */}
-          {isFolder && (
+          {/* Rename — collections */}
+          {isCollection && (
             <button
               type="button"
               className="flex h-5 w-5 items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground"

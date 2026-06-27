@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Select,
@@ -11,7 +11,6 @@ import { useCollectionsStore } from '@/stores/collections';
 import { CollectionsTree } from './components/collection-tree';
 import { ForgePanel } from './components/ForgePanel';
 import { ContextsDialog } from './components/ContextsDialog';
-import { sendCraftRequest as triggerSendCraftRequest } from '@/triggers/repeater/craft';
 import { Settings2, FolderHeart } from 'lucide-react';
 
 export function RepeaterPage() {
@@ -22,10 +21,6 @@ export function RepeaterPage() {
   useEffect(() => {
     void collectionsStore.fetchFromDb();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const sendCraftRequest = useCallback(async () => {
-    await triggerSendCraftRequest();
-  }, []);
 
   const hasEndpoint = collectionsStore.selectedNodeId?.startsWith('ep-');
 
@@ -79,7 +74,7 @@ export function RepeaterPage() {
 
           {/* Forge Panel */}
           <div className="flex-1 min-h-0">
-            <ForgePanel onSend={sendCraftRequest} />
+            <ForgePanel />
           </div>
         </div>
       ) : (

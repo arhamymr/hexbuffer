@@ -6,27 +6,32 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Play } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface ForgeRequestBarProps {
   method: string;
   url: string;
-  isLoading: boolean;
   activeEndpoint: { id: string; name: string } | null;
-  onSend: () => void;
   onMethodChange: (method: string) => void;
   onUrlChange: (url: string) => void;
 }
 
 const METHODS = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS', 'HEAD'];
 
+const METHOD_COLORS: Record<string, string> = {
+  GET: 'text-green-500 dark:text-green-400',
+  POST: 'text-amber-500 dark:text-amber-400',
+  PUT: 'text-orange-500 dark:text-orange-400',
+  DELETE: 'text-red-500 dark:text-red-400',
+  PATCH: 'text-purple-500 dark:text-purple-400',
+  OPTIONS: 'text-cyan-500 dark:text-cyan-400',
+  HEAD: 'text-gray-500 dark:text-gray-400',
+};
+
 export function ForgeRequestBar({
   method,
   url,
-  isLoading,
   activeEndpoint,
-  onSend,
   onMethodChange,
   onUrlChange,
 }: ForgeRequestBarProps) {
@@ -35,11 +40,15 @@ export function ForgeRequestBar({
       <div className="flex space-x-2 shrink-0">
         <Select value={method} onValueChange={onMethodChange}>
           <SelectTrigger className="w-28 font-semibold">
-            <SelectValue />
+            {method ? (
+              <span className={METHOD_COLORS[method]}>{method}</span>
+            ) : (
+              <SelectValue />
+            )}
           </SelectTrigger>
           <SelectContent>
             {METHODS.map((m) => (
-              <SelectItem key={m} value={m} className="font-semibold">
+              <SelectItem key={m} value={m} className={cn('font-semibold', METHOD_COLORS[m])}>
                 {m}
               </SelectItem>
             ))}
@@ -48,14 +57,10 @@ export function ForgeRequestBar({
 
         <Input
           placeholder="Enter request URL (e.g. https://api.example.com/v1/users)"
-          className="flex-1 font-mono text-sm"
+          className="flex-1 text-sm"
           value={url}
           onChange={(e) => onUrlChange(e.target.value)}
         />
-
-        <Button onClick={onSend} disabled={isLoading}>
-          <Play className="h-4 w-4 mr-2" /> Send
-        </Button>
       </div>
 
       {activeEndpoint && (

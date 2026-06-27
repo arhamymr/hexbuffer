@@ -9,9 +9,11 @@ import {
   ContextMenuSubTrigger,
   ContextMenuSubContent,
 } from '@/components/ui/context-menu';
-import { Copy, Plus, Trash2, Send, FilePlus2, Pin, PinOff } from 'lucide-react';
+import { Copy, Plus, Trash2, Send, FilePlus2, Pin, PinOff, Ban, Palette } from 'lucide-react';
 import type { ApiCall } from '@/types';
 import { useLogEntryActions } from '@/pages/live-traffic/hooks/use-log-entry-actions';
+import { useHighlightStore, HIGHLIGHT_COLORS, HIGHLIGHT_COLOR_LABELS } from '@/pages/live-traffic/state/highlight-store';
+import { CollectionPickerSubmenu } from '@/triggers/repeater/collection-picker-submenu';
 
 interface LogEntryContextMenuProps {
   call: ApiCall;
@@ -41,11 +43,18 @@ export const LogEntryContextMenu = memo(function LogEntryContextMenu({
     handleAddToScope,
     handleOpenInInvoker,
     handleOpenInRepeater,
+    handleSendToCollection,
     handleSendToIntercept,
     handleOpenInBrowserAutomation,
     handleSaveToDocuments,
     handleDelete,
+    handleBlacklistHost,
+    handleBlacklistHostAndPath,
+    handleHighlightHost,
   } = useLogEntryActions(call, onDelete);
+
+  const highlightColor = useHighlightStore((s) => s.getHighlightColor(call.host));
+  const removeHighlight = useHighlightStore((s) => s.removeHighlight);
 
   return (
     <ContextMenu onOpenChange={onOpenChange}>
@@ -125,9 +134,10 @@ export const LogEntryContextMenu = memo(function LogEntryContextMenu({
         <ContextMenuItem onClick={handleOpenInInvoker} className='text-xs py-1 px-1.5'>
           <Send className="mr-1.5 size-3" /> Send to Invoker
         </ContextMenuItem>
-        <ContextMenuItem onClick={handleOpenInRepeater} className='text-xs py-1 px-1.5'>
-          <Send className="mr-1.5 size-3" /> Send to Repeater
-        </ContextMenuItem>
+        <CollectionPickerSubmenu
+          variant="context"
+          onSelect={(stashId) => { void handleSendToCollection(stashId); }}
+        />
         <ContextMenuItem onClick={handleSendToIntercept} className='text-xs py-1 px-1.5'>
           <Send className="mr-1.5 size-3" /> Send to Intercept
         </ContextMenuItem>
@@ -139,6 +149,43 @@ export const LogEntryContextMenu = memo(function LogEntryContextMenu({
         </ContextMenuItem> */}
         <ContextMenuItem onClick={handleSaveToDocuments} className='text-xs py-1 px-1.5'>
           <FilePlus2 className="mr-1.5 size-3" /> Save to Documents
+        </ContextMenuItem>
+        <ContextMenuSeparator />
+        <ContextMenuSub>
+          <ContextMenuSubTrigger className='text-xs py-1 px-1.5'>
+            <Palette className="mr-1.5 size-3" /> Highlight
+          </ContextMenuSubTrigger>
+          <ContextMenuSubContent>
+            {HIGHLIGHT_COLORS.map((color) => (
+              <ContextMenuItem
+                key={color}
+                className='text-xs py-1 px-1.5'
+                onClick={() => handleHighlightHost(color)}
+              >
+                <span className="mr-1.5 size-2 rounded-full" style={{ backgroundColor: color }} />
+                {HIGHLIGHT_COLOR_LABELS[color] || color}
+                {highlightColor === color && <span className="ml-auto text-muted-foreground">✓</span>}
+              </ContextMenuItem>
+            ))}
+            {highlightColor && (
+              <>
+                <ContextMenuSeparator />
+                <ContextMenuItem
+                  className='text-xs py-1 px-1.5'
+                  onClick={() => removeHighlight(call.host)}
+                >
+                  Remove Highlight
+                </ContextMenuItem>
+              </>
+            )}
+          </ContextMenuSubContent>
+        </ContextMenuSub>
+        <ContextMenuSeparator />
+        <ContextMenuItem onClick={handleBlacklistHost} className='text-xs py-1 px-1.5'>
+          <Ban className="mr-1.5 size-3" /> Blacklist Host
+        </ContextMenuItem>
+        <ContextMenuItem onClick={handleBlacklistHostAndPath} className='text-xs py-1 px-1.5'>
+          <Ban className="mr-1.5 size-3" /> Blacklist Host + Path
         </ContextMenuItem>
         <ContextMenuSeparator />
         <ContextMenuItem onClick={handleDelete} variant="destructive" className='text-xs py-1 px-1.5'>

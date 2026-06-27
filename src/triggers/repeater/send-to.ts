@@ -7,6 +7,11 @@ export interface SendToRepeaterOptions {
   logId: string;
 }
 
+/**
+ * @deprecated Use {@link sendToCollection} from './send-to-collection' instead.
+ * The new function allows selecting a target collection and saves the API call
+ * as an endpoint within that collection, which integrates with the collection tab workspace.
+ */
 export async function sendToRepeater(options: SendToRepeaterOptions): Promise<void> {
   const { logId } = options;
   if (!logId) return;

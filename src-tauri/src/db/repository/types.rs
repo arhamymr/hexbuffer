@@ -67,6 +67,8 @@ pub struct StashRecord {
     pub id: String,
     pub name: String,
     pub parent_id: Option<String>,
+    #[serde(default)]
+    pub sort_order: Option<i32>,
     pub created_at: String,
     pub updated_at: String,
 }
@@ -84,6 +86,8 @@ pub struct StashEndpointRecord {
     pub body_type: Option<String>,
     pub pre_script: Option<String>,
     pub test_script: Option<String>,
+    #[serde(default)]
+    pub sort_order: Option<i32>,
     pub created_at: String,
     pub updated_at: String,
 }

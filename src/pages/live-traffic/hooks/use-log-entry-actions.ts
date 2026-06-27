@@ -16,6 +16,9 @@ import { useNavStore } from '@/stores/nav';
 import { useInterceptStore } from '@/pages/intercept/state/intercept-store';
 import { usePinnedRequestsStore } from '@/pages/live-traffic/state/pinned-requests-store';
 import { useGroupsStore } from '@/pages/live-traffic/state/groups-store';
+import { useBlacklistStore } from '@/pages/live-traffic/state/blacklist-store';
+import { useHighlightStore } from '@/pages/live-traffic/state/highlight-store';
+import { sendToCollection } from '@/triggers/repeater/send-to-collection';
 
 function buildAutomationTargetUrl(request: ApiCall) {
   try {
@@ -145,6 +148,27 @@ export function useLogEntryActions(call: ApiCall, onDelete?: (id: string) => voi
     }
   }, [call.id]);
 
+  const handleSendToCollection = useCallback(async (stashId: string) => {
+    try {
+      const detail = await fetchHistoryDetail(call.id);
+      const request = adaptProxyRecordToApiCall(detail);
+      await sendToCollection({
+        stashId,
+        stashName: '',
+        endpointData: {
+          name: `${request.method} ${request.path || request.url}`,
+          method: request.method,
+          url: request.url,
+          headers: request.headers,
+          body: request.request_body || null,
+        },
+      });
+    } catch (error) {
+      console.error('Failed to send to collection:', error);
+      toast.error('Failed to send to collection');
+    }
+  }, [call.id]);
+
   const handleSendToIntercept = useCallback(() => {
     const host = call.host?.trim();
     if (!host) {
@@ -208,6 +232,18 @@ export function useLogEntryActions(call: ApiCall, onDelete?: (id: string) => voi
     }
   }, [call.id, onDelete, triggerRefresh, removeRequestFromAllGroups]);
 
+  const handleBlacklistHost = useCallback(() => {
+    useBlacklistStore.getState().addRule(call.host);
+  }, [call.host]);
+
+  const handleBlacklistHostAndPath = useCallback(() => {
+    useBlacklistStore.getState().addRule(call.host, call.path);
+  }, [call.host, call.path]);
+
+  const handleHighlightHost = useCallback((color: string) => {
+    useHighlightStore.getState().highlightHost(call.host, color);
+  }, [call.host]);
+
   return {
     pinned,
     groups,
@@ -221,9 +257,13 @@ export function useLogEntryActions(call: ApiCall, onDelete?: (id: string) => voi
     handleAddToScope,
     handleOpenInInvoker,
     handleOpenInRepeater,
+    handleSendToCollection,
     handleSendToIntercept,
     handleOpenInBrowserAutomation,
     handleSaveToDocuments,
     handleDelete,
+    handleBlacklistHost,
+    handleBlacklistHostAndPath,
+    handleHighlightHost,
   };
 }

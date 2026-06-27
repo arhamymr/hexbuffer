@@ -7,15 +7,16 @@ impl Database {
     pub fn get_stashes(&self) -> SqlResult<Vec<StashRecord>> {
         let conn = self.conn.lock().unwrap();
         let mut stmt = conn.prepare(
-            "SELECT id, name, parent_id, created_at, updated_at FROM stashes ORDER BY name ASC"
+            "SELECT id, name, parent_id, sort_order, created_at, updated_at FROM stashes ORDER BY sort_order ASC, name ASC"
         )?;
         let rows = stmt.query_map([], |row| {
             Ok(StashRecord {
                 id: row.get(0)?,
                 name: row.get(1)?,
                 parent_id: row.get(2)?,
-                created_at: row.get(3)?,
-                updated_at: row.get(4)?,
+                sort_order: row.get(3)?,
+                created_at: row.get(4)?,
+                updated_at: row.get(5)?,
             })
         })?;
         rows.collect()
@@ -24,13 +25,14 @@ impl Database {
     pub fn upsert_stash(&self, record: &StashRecord) -> SqlResult<()> {
         let conn = self.conn.lock().unwrap();
         conn.execute(
-            r#"INSERT INTO stashes (id, name, parent_id, created_at, updated_at)
-               VALUES (?1, ?2, ?3, ?4, ?5)
+            r#"INSERT INTO stashes (id, name, parent_id, sort_order, created_at, updated_at)
+               VALUES (?1, ?2, ?3, ?4, ?5, ?6)
                ON CONFLICT(id) DO UPDATE SET
                    name = excluded.name,
                    parent_id = excluded.parent_id,
+                   sort_order = excluded.sort_order,
                    updated_at = excluded.updated_at"#,
-            params![record.id, record.name, record.parent_id, record.created_at, record.updated_at],
+            params![record.id, record.name, record.parent_id, record.sort_order, record.created_at, record.updated_at],
         )?;
         Ok(())
     }
@@ -45,8 +47,8 @@ impl Database {
     pub fn get_stash_endpoints(&self) -> SqlResult<Vec<StashEndpointRecord>> {
         let conn = self.conn.lock().unwrap();
         let mut stmt = conn.prepare(
-            "SELECT id, stash_id, name, method, url, headers, body, body_type, pre_script, test_script, created_at, updated_at 
-             FROM stash_endpoints ORDER BY created_at ASC"
+            "SELECT id, stash_id, name, method, url, headers, body, body_type, pre_script, test_script, sort_order, created_at, updated_at 
+             FROM stash_endpoints ORDER BY sort_order ASC, created_at ASC"
         )?;
         let rows = stmt.query_map([], |row| {
             Ok(StashEndpointRecord {
@@ -60,8 +62,9 @@ impl Database {
                 body_type: row.get(7)?,
                 pre_script: row.get(8)?,
                 test_script: row.get(9)?,
-                created_at: row.get(10)?,
-                updated_at: row.get(11)?,
+                sort_order: row.get(10)?,
+                created_at: row.get(11)?,
+                updated_at: row.get(12)?,
             })
         })?;
         rows.collect()
@@ -70,8 +73,8 @@ impl Database {
     pub fn upsert_stash_endpoint(&self, record: &StashEndpointRecord) -> SqlResult<()> {
         let conn = self.conn.lock().unwrap();
         conn.execute(
-            r#"INSERT INTO stash_endpoints (id, stash_id, name, method, url, headers, body, body_type, pre_script, test_script, created_at, updated_at)
-               VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)
+            r#"INSERT INTO stash_endpoints (id, stash_id, name, method, url, headers, body, body_type, pre_script, test_script, sort_order, created_at, updated_at)
+               VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)
                ON CONFLICT(id) DO UPDATE SET
                    stash_id = excluded.stash_id,
                    name = excluded.name,
@@ -82,11 +85,12 @@ impl Database {
                    body_type = excluded.body_type,
                    pre_script = excluded.pre_script,
                    test_script = excluded.test_script,
+                   sort_order = excluded.sort_order,
                    updated_at = excluded.updated_at"#,
             params![
                 record.id, record.stash_id, record.name, record.method, record.url,
                 record.headers, record.body, record.body_type, record.pre_script,
-                record.test_script, record.created_at, record.updated_at
+                record.test_script, record.sort_order, record.created_at, record.updated_at
             ],
         )?;
         Ok(())

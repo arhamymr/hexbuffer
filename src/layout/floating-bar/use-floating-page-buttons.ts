@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Target, Play, Pause, ArrowLeftRight, ShieldCheck, ShieldOff, SendHorizonal, Square, RotateCcw, Loader2, Save, FlaskConical, RotateCw } from 'lucide-react';
+import { Target, Play, Pause, ArrowLeftRight, ShieldCheck, ShieldOff, SendHorizonal, Square, RotateCcw, Loader2 } from 'lucide-react';
 import { useHistoryQueryStore } from '@/pages/live-traffic/state/history-query-store';
 import { useInterceptStore } from '@/pages/intercept/state/intercept-store';
 import { useBrowserAutomationStore } from '@/stores/browser-automation';
@@ -7,10 +7,9 @@ import { openTargetSelector, toggleStreamPause, toggleHistoryMode } from '@/trig
 import { toggleInterceptEnabled, forwardPaused } from '@/triggers';
 import { toggleBrowserCrawl, stopBrowserCrawl, startBrowserCrawl } from '@/triggers';
 import { startInvokerUiAttack, stopInvokerUiAttack } from '@/triggers';
-import { sendRepeaterRequest, sendCraftRequest, saveCraftEndpoint, convertRepeaterToCraft, convertCraftToRepeater } from '@/triggers';
+import { sendRepeaterRequest } from '@/triggers';
 import { useInvokerStore } from '@/stores/invoker';
 import { useRepeaterStore } from '@/stores/repeater';
-import { useCollectionsStore } from '@/stores/collections';
 
 export interface PageButton {
   key: string;
@@ -36,8 +35,7 @@ export function useFloatingPageButtons(pathname: string): PageButton[] {
   const invokerActiveTabId = useInvokerStore((s) => s.activeTabId);
   const repeaterTabs = useRepeaterStore((s) => s.tabs);
   const repeaterActiveTabId = useRepeaterStore((s) => s.activeTabId);
-  const collectionsMode = useCollectionsStore((s) => s.mode);
-  const collectionsActiveReq = useCollectionsStore((s) => s.activeRequest);
+
   const [historyMode, setHistoryMode] = React.useState<'http' | 'websocket'>(() =>
     localStorage.getItem('history-mode') === 'websocket' ? 'websocket' : 'http'
   );
@@ -188,42 +186,7 @@ export function useFloatingPageButtons(pathname: string): PageButton[] {
     if (pathname === '/repeater') {
       const repeaterTab = repeaterTabs.find((t) => t.id === repeaterActiveTabId);
       const repeaterLoading = repeaterTab?.isLoading ?? false;
-      const craftLoading = collectionsActiveReq.isLoading;
 
-      if (collectionsMode === 'craft') {
-        return [
-          {
-            key: 'craft-send',
-            icon: craftLoading ? Loader2 : SendHorizonal,
-            label: 'Send',
-            showLabel: true,
-            isActive: false,
-            onClick: () => { void sendCraftRequest(); },
-            visible: true,
-            variant: 'primary',
-          },
-          {
-            key: 'craft-save',
-            icon: Save,
-            label: 'Save',
-            showLabel: true,
-            isActive: false,
-            onClick: () => { void saveCraftEndpoint(); },
-            visible: true,
-          },
-          {
-            key: 'craft-to-repeater',
-            icon: RotateCw,
-            label: 'Open in Repeater',
-            showLabel: true,
-            isActive: false,
-            onClick: () => { convertCraftToRepeater(); },
-            visible: true,
-          },
-        ];
-      }
-
-      // Repeater mode
       return [
         {
           key: 'repeater-send',
@@ -235,19 +198,10 @@ export function useFloatingPageButtons(pathname: string): PageButton[] {
           visible: true,
           variant: 'primary',
         },
-        {
-          key: 'repeater-to-craft',
-          icon: FlaskConical,
-          label: 'Open in Craft',
-          showLabel: true,
-          isActive: false,
-          onClick: () => { convertRepeaterToCraft(); },
-          visible: true,
-        },
       ];
     }
 
     return [];
 
-  }, [pathname, isPaused, historyMode, interceptStatus, interceptRequests, interceptActiveTabId, interceptSelectedId, interceptIsBusy, browserTabs, browserActiveTabId, invokerTabs, invokerActiveTabId, repeaterTabs, repeaterActiveTabId, collectionsMode, collectionsActiveReq]);
+  }, [pathname, isPaused, historyMode, interceptStatus, interceptRequests, interceptActiveTabId, interceptSelectedId, interceptIsBusy, browserTabs, browserActiveTabId, invokerTabs, invokerActiveTabId, repeaterTabs, repeaterActiveTabId]);
 }

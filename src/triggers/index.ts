@@ -61,13 +61,16 @@ export type { TriggerScanOptions, SubmitCrawlInputOptions } from './browser';
 
 export {
   sendToRepeater,
+  sendToCollection,
   sendRequest as sendRepeaterRequest,
   sendCraftRequest,
   saveActiveEndpoint as saveCraftEndpoint,
   convertRepeaterToCraft,
   convertCraftToRepeater,
+  CollectionPickerSubmenu,
+  useCollectionPicker,
 } from './repeater';
-export type { SendToRepeaterOptions } from './repeater';
+export type { SendToRepeaterOptions, SendToCollectionOptions, CollectionNode } from './repeater';
 
 export { writeDocument } from './documents';
 export type { WriteDocumentOptions } from './documents';

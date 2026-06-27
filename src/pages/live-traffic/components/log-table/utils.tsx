@@ -1,7 +1,7 @@
 import type { ApiCall } from '@/types';
 import { buildHttpCurlCommand } from '@/lib/http-message';
 
-export const METHOD_FILTERS = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD'] as const;
+export const METHOD_FILTERS = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'] as const;
 
 export const STATUS_FILTERS = [
   { label: '2xx', min: 200, max: 299 },

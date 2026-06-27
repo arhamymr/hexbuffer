@@ -7,6 +7,7 @@ export interface StashRecord {
   id: string;
   name: string;
   parentId: string | null;
+  sortOrder: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -22,6 +23,7 @@ export interface StashEndpointRecord {
   bodyType: string | null; // 'none' | 'raw' | 'json' | 'form-data'
   preScript: string | null;
   testScript: string | null;
+  sortOrder: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -118,6 +120,36 @@ function defaultActiveRequest(): ActiveRequestState {
 
 // ── Store ──
 
+/** Topological sort: root stashes (parentId === null) first, then children. */
+function topologicalSortStashes(stashes: StashRecord[]): StashRecord[] {
+  const sorted: StashRecord[] = [];
+  const remaining = [...stashes];
+  const insertedIds = new Set<string>();
+
+  // Keep iterating until all inserted or no progress
+  while (remaining.length > 0) {
+    const insertedThisRound: StashRecord[] = [];
+    for (let i = remaining.length - 1; i >= 0; i--) {
+      const st = remaining[i];
+      if (st.parentId === null || insertedIds.has(st.parentId)) {
+        insertedThisRound.push(st);
+        remaining.splice(i, 1);
+      }
+    }
+    if (insertedThisRound.length === 0) {
+      // Remaining stashes have unresolvable parents — fall back to inserting them anyway
+      sorted.push(...remaining);
+      break;
+    }
+    sorted.push(...insertedThisRound);
+    for (const st of insertedThisRound) {
+      insertedIds.add(st.id);
+    }
+  }
+
+  return sorted;
+}
+
 interface CollectionsState {
   // Persisted data
   stashes: StashRecord[];
@@ -146,11 +178,13 @@ interface CollectionsState {
   createStash: (name: string, parentId?: string | null) => Promise<string>;
   renameStash: (id: string, name: string) => Promise<void>;
   deleteStash: (id: string) => Promise<void>;
+  moveStash: (id: string, newParentId: string | null, newSortOrder?: number) => Promise<void>;
 
   // Endpoint CRUD
   setActiveEndpointId: (id: string) => void;
   createEndpoint: (stashId: string, name: string) => Promise<string>;
   deleteEndpoint: (id: string) => Promise<void>;
+  moveEndpoint: (id: string, newStashId: string, newSortOrder?: number) => Promise<void>;
   saveActiveEndpoint: () => Promise<void>;
   updateActiveRequest: (
     updater: (req: ActiveRequestState) => Partial<ActiveRequestState>
@@ -173,6 +207,13 @@ interface CollectionsState {
 
   // Forge send
   sendForgeRequest: (payload: ForgeRequestPayload) => Promise<ForgeResponse>;
+
+  // Import / Export
+  clearAllCollections: () => Promise<void>;
+  batchImportCollections: (
+    stashes: StashRecord[],
+    endpoints: StashEndpointRecord[],
+  ) => Promise<{ stashesImported: number; endpointsImported: number; errors: string[] }>;
 }
 
 export const useCollectionsStore = create<CollectionsState>()(
@@ -220,6 +261,7 @@ export const useCollectionsStore = create<CollectionsState>()(
         id: generateId(),
         name,
         parentId: parentId ?? null,
+        sortOrder: 0,
         createdAt: now,
         updatedAt: now,
       };
@@ -258,6 +300,38 @@ export const useCollectionsStore = create<CollectionsState>()(
         await invoke('delete_stash', { id });
       } catch (e) {
         console.error('Failed to delete stash:', e);
+      }
+    },
+
+    moveStash: async (id, newParentId, newSortOrder) => {
+      // Cycle prevention: cannot move a stash into its own descendant
+      const state = get();
+      const wouldBeCycle = (ancestorId: string | null, targetId: string): boolean => {
+        if (!ancestorId) return false;
+        if (ancestorId === id) return true;
+        const parent = state.stashes.find((s) => s.id === ancestorId);
+        return parent ? wouldBeCycle(parent.parentId, targetId) : false;
+      };
+      if (newParentId && wouldBeCycle(newParentId, id)) {
+        console.error('Cannot move a folder into its own descendant');
+        return;
+      }
+
+      const now = timestampNow();
+      set((s) => ({
+        stashes: s.stashes.map((st) =>
+          st.id === id
+            ? { ...st, parentId: newParentId, sortOrder: newSortOrder ?? st.sortOrder, updatedAt: now }
+            : st
+        ),
+      }));
+      const updated = get().stashes.find((s) => s.id === id);
+      if (updated) {
+        try {
+          await invoke('save_stash', { record: updated });
+        } catch (e) {
+          console.error('Failed to move stash:', e);
+        }
       }
     },
 
@@ -309,6 +383,7 @@ export const useCollectionsStore = create<CollectionsState>()(
         bodyType: 'none',
         preScript: null,
         testScript: null,
+        sortOrder: 0,
         createdAt: now,
         updatedAt: now,
       };
@@ -333,6 +408,25 @@ export const useCollectionsStore = create<CollectionsState>()(
         await invoke('delete_stash_endpoint', { id });
       } catch (e) {
         console.error('Failed to delete endpoint:', e);
+      }
+    },
+
+    moveEndpoint: async (id, newStashId, newSortOrder) => {
+      const now = timestampNow();
+      set((s) => ({
+        endpoints: s.endpoints.map((ep) =>
+          ep.id === id
+            ? { ...ep, stashId: newStashId, sortOrder: newSortOrder ?? ep.sortOrder, updatedAt: now }
+            : ep
+        ),
+      }));
+      const updated = get().endpoints.find((e) => e.id === id);
+      if (updated) {
+        try {
+          await invoke('save_stash_endpoint', { record: updated });
+        } catch (e) {
+          console.error('Failed to move endpoint:', e);
+        }
       }
     },
 
@@ -474,6 +568,100 @@ export const useCollectionsStore = create<CollectionsState>()(
     // ── Forge Send ──
     sendForgeRequest: async (payload) => {
       return invoke<ForgeResponse>('send_forge_request', { request: payload });
+    },
+
+    // ── Import / Export ──
+    clearAllCollections: async () => {
+      const state = get();
+      const errors: string[] = [];
+
+      // Delete all endpoints
+      for (const ep of state.endpoints) {
+        try {
+          await invoke('delete_stash_endpoint', { id: ep.id });
+        } catch (e) {
+          console.error(`Failed to delete endpoint ${ep.id}:`, e);
+          errors.push(String(e));
+        }
+      }
+
+      // Delete all stashes
+      for (const st of state.stashes) {
+        try {
+          await invoke('delete_stash', { id: st.id });
+        } catch (e) {
+          console.error(`Failed to delete stash ${st.id}:`, e);
+          errors.push(String(e));
+        }
+      }
+
+      set({ stashes: [], endpoints: [] });
+
+      if (errors.length > 0) {
+        console.warn('Errors during clear:', errors);
+      }
+    },
+
+    batchImportCollections: async (stashes, endpoints) => {
+      // Clear existing data first
+      const state = get();
+
+      // Delete all endpoints first (FK-like dependency on stashes)
+      for (const ep of state.endpoints) {
+        try {
+          await invoke('delete_stash_endpoint', { id: ep.id });
+        } catch (e) {
+          console.error(`Failed to delete endpoint during import:`, e);
+        }
+      }
+
+      for (const st of state.stashes) {
+        try {
+          await invoke('delete_stash', { id: st.id });
+        } catch (e) {
+          console.error(`Failed to delete stash during import:`, e);
+        }
+      }
+
+      const errors: string[] = [];
+      let stashesImported = 0;
+      let endpointsImported = 0;
+
+      // Topological sort: root stashes (parentId === null) first, then children
+      const sortedStashes = topologicalSortStashes(stashes);
+
+      for (const st of sortedStashes) {
+        try {
+          await invoke('save_stash', { record: st });
+          stashesImported++;
+        } catch (e) {
+          console.error(`Failed to import stash ${st.id}:`, e);
+          errors.push(`Stash "${st.name}": ${String(e)}`);
+        }
+      }
+
+      for (const ep of endpoints) {
+        try {
+          await invoke('save_stash_endpoint', { record: ep });
+          endpointsImported++;
+        } catch (e) {
+          console.error(`Failed to import endpoint ${ep.id}:`, e);
+          errors.push(`Endpoint "${ep.name}": ${String(e)}`);
+        }
+      }
+
+      // Reload from DB to get consistent state
+      try {
+        const [freshStashes, freshEndpoints] = await Promise.all([
+          invoke<StashRecord[]>('get_stashes'),
+          invoke<StashEndpointRecord[]>('get_stash_endpoints'),
+        ]);
+        set({ stashes: freshStashes, endpoints: freshEndpoints });
+      } catch (e) {
+        console.error('Failed to reload after import:', e);
+      }
+
+      return { stashesImported, endpointsImported, errors };
     },
   }),
 );

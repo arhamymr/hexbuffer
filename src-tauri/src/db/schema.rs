@@ -322,6 +322,7 @@ CREATE TABLE IF NOT EXISTS stashes (
     id TEXT PRIMARY KEY,
     name TEXT NOT NULL,
     parent_id TEXT,
+    sort_order INTEGER NOT NULL DEFAULT 0,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
 );
@@ -337,6 +338,7 @@ CREATE TABLE IF NOT EXISTS stash_endpoints (
     body_type TEXT,
     pre_script TEXT,
     test_script TEXT,
+    sort_order INTEGER NOT NULL DEFAULT 0,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL,
     FOREIGN KEY(stash_id) REFERENCES stashes(id) ON DELETE CASCADE

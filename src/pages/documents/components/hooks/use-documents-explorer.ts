@@ -9,6 +9,7 @@ import { createDefaultAttackConfig, findRequestPayloadPositions } from '@/pages/
 import { type SavedApiEntry } from '../../types';
 import { type DragEndEvent } from '@dnd-kit/react';
 import { isSortable } from '@dnd-kit/react/sortable';
+import { sendToCollection } from '@/triggers/repeater/send-to-collection';
 
 interface UseDocumentsExplorerProps {
   onReorderCustomSections: (fromIndex: number, toIndex: number) => void;
@@ -71,6 +72,20 @@ export function useDocumentsExplorer({ onReorderCustomSections }: UseDocumentsEx
     toast.success('Sent to Repeater');
   }, [navigate]);
 
+  const handleSendToCollection = React.useCallback((entry: SavedApiEntry, stashId: string) => {
+    void sendToCollection({
+      stashId,
+      stashName: '',
+      endpointData: {
+        name: `${entry.method} ${entry.path || entry.url}`,
+        method: entry.method,
+        url: entry.url,
+        headers: entry.headers,
+        body: entry.requestBody || null,
+      },
+    });
+  }, []);
+
   const handleDragEnd = React.useCallback(
     (event: DragEndEvent) => {
       const { source, target } = event.operation;
@@ -89,6 +104,7 @@ export function useDocumentsExplorer({ onReorderCustomSections }: UseDocumentsEx
     handleCopyUrl,
     handleOpenInInvoker,
     handleOpenInRepeater,
+    handleSendToCollection,
     handleDragEnd,
   };
 }

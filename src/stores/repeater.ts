@@ -11,7 +11,7 @@ import {
   type RepeaterTab,
 } from '@/pages/repeater/types';
 
-interface RepeaterState {
+export interface RepeaterState {
   tabs: RepeaterTab[];
   activeTabId: string;
   nextRequestTabNumber: number;

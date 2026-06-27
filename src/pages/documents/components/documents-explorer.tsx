@@ -26,6 +26,7 @@ import { useSortable, isSortable } from '@dnd-kit/react/sortable';
 import { type ReconDocument, type SavedApiEntry, type CustomSection } from '../types';
 import { type EditorFileId } from '../lib/editor-files';
 import { useDocumentsExplorer } from './hooks/use-documents-explorer';
+import { CollectionPickerSubmenu } from '@/triggers/repeater/collection-picker-submenu';
 
 interface DocumentsExplorerProps {
   activeDocument: ReconDocument;
@@ -133,6 +134,7 @@ interface ApiRequestRowProps {
   onCopyUrl: (entry: SavedApiEntry) => void;
   onOpenInInvoker: (entry: SavedApiEntry) => void;
   onOpenInRepeater: (entry: SavedApiEntry) => void;
+  onSendToCollection: (entry: SavedApiEntry, stashId: string) => void;
   onDeleteApiEntry: (entryId: string) => void;
 }
 
@@ -144,6 +146,7 @@ function ApiRequestRow({
   onCopyUrl,
   onOpenInInvoker,
   onOpenInRepeater,
+  onSendToCollection,
   onDeleteApiEntry,
 }: ApiRequestRowProps) {
   return (
@@ -180,6 +183,10 @@ function ApiRequestRow({
         <ContextMenuItem onClick={() => onOpenInRepeater(entry)} className="text-xs">
           <Send className="mr-2 h-4 w-4" /> Send to Repeater
         </ContextMenuItem>
+        <CollectionPickerSubmenu
+          variant="context"
+          onSelect={(stashId) => onSendToCollection(entry, stashId)}
+        />
         <ContextMenuSeparator />
         <ContextMenuItem
           onClick={() => onDeleteApiEntry(entry.id)}
@@ -212,6 +219,7 @@ export function DocumentsExplorer({
     handleCopyUrl,
     handleOpenInInvoker,
     handleOpenInRepeater,
+    handleSendToCollection,
     handleDragEnd,
   } = useDocumentsExplorer({ onReorderCustomSections });
 
@@ -319,6 +327,7 @@ export function DocumentsExplorer({
                         onCopyUrl={handleCopyUrl}
                         onOpenInInvoker={handleOpenInInvoker}
                         onOpenInRepeater={handleOpenInRepeater}
+                        onSendToCollection={handleSendToCollection}
                         onDeleteApiEntry={onDeleteApiEntry}
                       />
                     );

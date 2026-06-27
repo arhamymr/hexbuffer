@@ -75,6 +75,18 @@ impl Database {
             "removed_built_in_sections",
             "TEXT NOT NULL DEFAULT '[]'",
         )?;
+        Self::ensure_column(
+            &conn,
+            "stashes",
+            "sort_order",
+            "INTEGER NOT NULL DEFAULT 0",
+        )?;
+        Self::ensure_column(
+            &conn,
+            "stash_endpoints",
+            "sort_order",
+            "INTEGER NOT NULL DEFAULT 0",
+        )?;
         Ok(())
     }
 

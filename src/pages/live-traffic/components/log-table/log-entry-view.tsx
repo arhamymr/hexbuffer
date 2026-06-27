@@ -25,6 +25,8 @@ import { MethodBadge, StatusBadge } from '@/components/status-badge';
 import { useRepeaterStore } from '@/stores/repeater';
 import { useInvokerStore } from '@/stores/invoker';
 import { createDefaultAttackConfig, findRequestPayloadPositions } from '@/pages/invoker/types';
+import { sendToCollection } from '@/triggers/repeater/send-to-collection';
+import { CollectionPickerSubmenu } from '@/triggers/repeater/collection-picker-submenu';
 
 type DetailViewMode = 'text' | 'table';
 
@@ -82,6 +84,21 @@ export function LogEntryBurpView() {
     navigate('/repeater');
     toast.success('Sent to Repeater');
   }, [call, navigate]);
+
+  const handleSendToCollection = useCallback((stashId: string) => {
+    if (!call) return;
+    void sendToCollection({
+      stashId,
+      stashName: '',
+      endpointData: {
+        name: `${call.method} ${call.path || call.url}`,
+        method: call.method,
+        url: call.url,
+        headers: call.headers,
+        body: call.request_body || null,
+      },
+    });
+  }, [call]);
 
   const handleSendToInvoker = useCallback(() => {
     if (!call) return;
@@ -235,6 +252,10 @@ export function LogEntryBurpView() {
                 <DropdownMenuItem onClick={handleSendToRepeater} className="text-xs">
                   <Send className="mr-2 h-4 w-4" /> Send to Repeater
                 </DropdownMenuItem>
+                <CollectionPickerSubmenu
+                  variant="dropdown"
+                  onSelect={handleSendToCollection}
+                />
                 <DropdownMenuItem onClick={handleSendToInvoker} className="text-xs">
                   <Crosshair className="mr-2 h-4 w-4" /> Send to Invoker
                 </DropdownMenuItem>

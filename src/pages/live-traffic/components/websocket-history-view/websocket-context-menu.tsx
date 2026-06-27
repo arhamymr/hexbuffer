@@ -10,6 +10,8 @@ import { toast } from 'sonner';
 import { useRepeaterStore } from '@/stores/repeater';
 import { buildRawHttpRequest } from '@/lib/http-message';
 import { deleteWebSocketConnection, fetchWebSocketDetail } from '@/pages/live-traffic/services/history-service';
+import { sendToCollection } from '@/triggers/repeater/send-to-collection';
+import { CollectionPickerSubmenu } from '@/triggers/repeater/collection-picker-submenu';
 
 interface WebSocketContextMenuProps {
   connectionId: string;
@@ -57,6 +59,29 @@ export function WebSocketContextMenu({
     }
   };
 
+  const handleSendToCollection = async (stashId: string) => {
+    try {
+      const detail = await fetchWebSocketDetail(connectionId);
+      const headers = detail.connection.handshake_request_headers || {};
+      const url = connectionUrl || detail.connection.url || '';
+
+      await sendToCollection({
+        stashId,
+        stashName: '',
+        endpointData: {
+          name: `WS ${connectionPath || url}`,
+          method: 'GET',
+          url,
+          headers,
+          body: null,
+        },
+      });
+    } catch (error) {
+      console.error('Failed to send WebSocket to collection:', error);
+      toast.error('Failed to send WebSocket to collection');
+    }
+  };
+
   const handleDelete = async () => {
     try {
       await deleteWebSocketConnection(connectionId);
@@ -76,6 +101,10 @@ export function WebSocketContextMenu({
         <ContextMenuItem onClick={handleOpenInRepeater} className="text-xs">
           <Send className="mr-2 h-4 w-4" /> Send to Repeater
         </ContextMenuItem>
+        <CollectionPickerSubmenu
+          variant="context"
+          onSelect={(stashId) => { void handleSendToCollection(stashId); }}
+        />
         <ContextMenuItem onClick={handleDelete} variant="destructive" className="text-xs">
           <Trash2 className="mr-2 h-4 w-4" /> Delete
         </ContextMenuItem>

@@ -1,5 +1,5 @@
 import { useCallback, useState, useRef, memo, useMemo, type MouseEvent } from "react";
-import { ArrowDown, ArrowUp, AlertTriangle, Send, EllipsisVertical, Copy, Plus, Trash2, FilePlus2, Pin, PinOff } from "lucide-react";
+import { ArrowDown, ArrowUp, AlertTriangle, Send, EllipsisVertical, Copy, Plus, Trash2, FilePlus2, Pin, PinOff, Ban, Palette } from "lucide-react";
 import {
   flexRender,
   getCoreRowModel,
@@ -32,6 +32,9 @@ import { useLogEntryActions } from '@/pages/live-traffic/hooks/use-log-entry-act
 import { usePinnedRequestsStore } from '@/pages/live-traffic/state/pinned-requests-store';
 import { useGroupsStore } from '@/pages/live-traffic/state/groups-store';
 import type { GroupDefinition } from '@/pages/live-traffic/state/groups-store';
+import { useBlacklistStore } from '@/pages/live-traffic/state/blacklist-store';
+import { useHighlightStore, HIGHLIGHT_COLORS, HIGHLIGHT_COLOR_LABELS } from '@/pages/live-traffic/state/highlight-store';
+import { CollectionPickerSubmenu } from '@/triggers/repeater/collection-picker-submenu';
 import { HistoryLoadingState } from "../history-loading-state";
 import { BrowserIcon } from "./browser-icon";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -51,11 +54,18 @@ const CallActionCell = memo(function CallActionCell({ call, onNewGroup }: { call
     handleAddToScope,
     handleOpenInInvoker,
     handleOpenInRepeater,
+    handleSendToCollection,
     handleSendToIntercept,
     handleOpenInBrowserAutomation,
     handleSaveToDocuments,
     handleDelete,
+    handleBlacklistHost,
+    handleBlacklistHostAndPath,
+    handleHighlightHost,
   } = useLogEntryActions(call);
+
+  const highlightColor = useHighlightStore((s) => s.getHighlightColor(call.host));
+  const removeHighlight = useHighlightStore((s) => s.removeHighlight);
 
   return (
     <DropdownMenu>
@@ -140,9 +150,10 @@ const CallActionCell = memo(function CallActionCell({ call, onNewGroup }: { call
         <DropdownMenuItem onClick={handleOpenInInvoker} className="text-xs">
           <Send className="mr-2 size-3" /> Send to Invoker
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={handleOpenInRepeater} className="text-xs">
-          <Send className="mr-2 size-3" /> Send to Repeater
-        </DropdownMenuItem>
+        <CollectionPickerSubmenu
+          variant="dropdown"
+          onSelect={(stashId) => { void handleSendToCollection(stashId); }}
+        />
         <DropdownMenuItem onClick={handleSendToIntercept} className="text-xs">
           <Send className="mr-2 size-3" /> Send to Intercept
         </DropdownMenuItem>
@@ -151,6 +162,43 @@ const CallActionCell = memo(function CallActionCell({ call, onNewGroup }: { call
         </DropdownMenuItem>
         <DropdownMenuItem onClick={handleSaveToDocuments} className="text-xs">
           <FilePlus2 className="mr-2 size-4" /> Save to Documents
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuSub>
+          <DropdownMenuSubTrigger className="text-xs">
+            <Palette className="mr-2 size-3" /> Highlight
+          </DropdownMenuSubTrigger>
+          <DropdownMenuSubContent>
+            {HIGHLIGHT_COLORS.map((color) => (
+              <DropdownMenuItem
+                key={color}
+                className="text-xs"
+                onClick={() => handleHighlightHost(color)}
+              >
+                <span className="mr-2 size-2 rounded-full" style={{ backgroundColor: color }} />
+                {HIGHLIGHT_COLOR_LABELS[color] || color}
+                {highlightColor === color && <span className="ml-auto text-muted-foreground">✓</span>}
+              </DropdownMenuItem>
+            ))}
+            {highlightColor && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  className="text-xs"
+                  onClick={() => removeHighlight(call.host)}
+                >
+                  Remove Highlight
+                </DropdownMenuItem>
+              </>
+            )}
+          </DropdownMenuSubContent>
+        </DropdownMenuSub>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={handleBlacklistHost} className="text-xs">
+          <Ban className="mr-2 size-3" /> Blacklist Host
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={handleBlacklistHostAndPath} className="text-xs">
+          <Ban className="mr-2 size-3" /> Blacklist Host + Path
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleDelete} variant="destructive" className="text-xs">
@@ -201,6 +249,12 @@ export const TrafficTable = memo(function TrafficTable({
   const cachedCalls = useGroupsStore((s) => s.cachedCalls);
   const getGroupsForRequest = useGroupsStore((s) => s.getGroupsForRequest);
 
+  const blacklistRules = useBlacklistStore((s) => s.rules);
+  const isBlacklisted = useBlacklistStore((s) => s.isBlacklisted);
+
+  const highlightedHosts = useHighlightStore((s) => s.highlightedHosts);
+  const getHighlightColor = useHighlightStore((s) => s.getHighlightColor);
+
   const [groupDialogCall, setGroupDialogCall] = useState<ApiCall | null>(null);
   const [isGroupDialogOpen, setIsGroupDialogOpen] = useState(false);
 
@@ -242,6 +296,12 @@ export const TrafficTable = memo(function TrafficTable({
     if (isPinnedTabActive) return pinned;
     return [...pinned, ...unpinned];
   }, [calls, isPinnedTabActive, isGroupTabActive, activeGroupId, pinnedSet, pinnedIds, pinnedCalls, groupRequestIds, cachedCalls]);
+
+  // Apply blacklist filtering on top of the tab-specific filter
+  const visibleCalls = useMemo(() => {
+    if (blacklistRules.length === 0) return filteredCalls;
+    return filteredCalls.filter((call) => !isBlacklisted(call));
+  }, [filteredCalls, blacklistRules.length, isBlacklisted]);
 
   const removeCallLocallyWithUnpin = useCallback(
     (id: string) => {
@@ -309,7 +369,7 @@ export const TrafficTable = memo(function TrafficTable({
               />
             ))}
             <BrowserIcon userAgent={row.original.user_agent} />
-            <span className="truncate min-w-0" style={{ direction: 'rtl', textAlign: 'left' }}>
+            <span className="truncate min-w-0" style={{ direction: 'rtl', textAlign: 'left', color: getHighlightColor(row.original.host) || undefined }}>
               <HighlightedText
                 text={displayUrl}
                 query={(table.options.meta as { searchQuery?: string } | undefined)?.searchQuery ?? ""}
@@ -374,7 +434,7 @@ export const TrafficTable = memo(function TrafficTable({
       size: 36,
       cell: ({ row }) => <CallActionCell call={row.original} onNewGroup={handleNewGroup} />,
     },
-  ], [pinnedSet, getGroupsForRequest, handleNewGroup, groups, groupRequestIds]);
+  ], [pinnedSet, getGroupsForRequest, handleNewGroup, groups, groupRequestIds, highlightedHosts, getHighlightColor]);
 
   const trafficTableSkeletonWidths = ["70%", "85%", "80%", "95%", "60%", "55%", "75%", "40%"];
 
@@ -421,7 +481,7 @@ export const TrafficTable = memo(function TrafficTable({
 
   const totalPages = Math.max(1, Math.ceil(pagination.total / pagination.perPage));
   const table = useReactTable({
-    data: filteredCalls,
+    data: visibleCalls,
     columns: columns,
     getCoreRowModel: getCoreRowModel(),
     getRowId: (row) => row.id,
@@ -474,7 +534,7 @@ export const TrafficTable = memo(function TrafficTable({
     );
   }
 
-  if (calls.length === 0 && !isLoading) {
+  if (visibleCalls.length === 0 && !isLoading) {
     return (
       <Empty>
         <EmptyTitle>
@@ -589,7 +649,7 @@ export const TrafficTable = memo(function TrafficTable({
       <div className="flex items-center justify-between gap-3 p-1 border-t">
         <div className="flex items-center gap-3 text-xs text-muted-foreground">
           <span>
-            Showing {filteredCalls.length} of {pagination.total} request{pagination.total === 1 ? '' : 's'}
+            Showing {visibleCalls.length} of {pagination.total} request{pagination.total === 1 ? '' : 's'}
           </span>
           <span>
             {pagination.page}/{totalPages} page

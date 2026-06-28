@@ -46,8 +46,8 @@ export const FEATURE_ICONS: Record<string, ComponentType<{ className?: string }>
   'Comparer': GitDiffIcon,
   'Port Scanner': NetworkIcon,
   'JWT': KeyIcon,
-  'XSS Generator': LightningIcon,
-  'SQL Injection': DatabaseIcon,
+  'XSS': LightningIcon,
+  'SQL Inject': DatabaseIcon,
   'Debugger': BugIcon,
   'Regression': FlaskIcon,
 };

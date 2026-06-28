@@ -200,12 +200,11 @@ export function useFloatingPageButtons(pathname: string): PageButton[] {
     }
 
     if (pathname === '/repeater') {
-      const craftLoading = collectionsActiveReq.isLoading;
       const buttons: PageButton[] = [
         {
           key: 'repeater-send',
-          icon: craftLoading ? SpinnerGapIcon : PaperPlaneTiltIcon,
-          label: 'PaperPlaneTiltIcon',
+          icon: PaperPlaneTiltIcon,
+          label: 'Send',
           showLabel: true,
           isActive: false,
           onClick: () => { void sendCraftRequest(); },

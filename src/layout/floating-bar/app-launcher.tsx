@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { SquaresFourIcon, PushPinSimpleIcon, PushPinSimpleSlashIcon } from '@phosphor-icons/react';
 import { toast } from 'sonner';
@@ -20,6 +20,7 @@ import {
 } from '@/components/ui/popover';
 import { mainNavItems } from '../constants';
 import { useAppSettingsStore } from '@/stores/app-settings-store';
+import { Kbd } from '@/components/ui/kbd';
 
 export function AppLauncher() {
   const [open, setOpen] = useState(false);
@@ -33,6 +34,20 @@ export function AppLauncher() {
   const MAX_PINNED = 9;
   const pinnedCount = pinnedNavItems.length;
   const isAtMax = pinnedCount >= MAX_PINNED;
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && (e.key === ' ' || e.code === 'Space')) {
+        e.preventDefault();
+        setOpen((prev) => !prev);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  const isMac = typeof window !== 'undefined' && /Mac|iPod|iPhone|iPad/.test(navigator.userAgent);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -50,7 +65,12 @@ export function AppLauncher() {
             </button>
           </PopoverTrigger>
         </TooltipTrigger>
-        <TooltipContent side="top" sideOffset={12}>All Apps</TooltipContent>
+        <TooltipContent side="top" sideOffset={12} className="flex items-center gap-1.5">
+          <span>All Apps</span>
+          <Kbd className="text-[10px]">
+            {isMac ? '⌘Space' : 'Ctrl+Space'}
+          </Kbd>
+        </TooltipContent>
       </Tooltip>
 
       <PopoverContent

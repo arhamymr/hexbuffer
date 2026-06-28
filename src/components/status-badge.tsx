@@ -26,11 +26,11 @@ export type StatusBadgeValue = number | null | undefined;
 
 export function getStatusColor(status: StatusBadgeValue) {
   if (!status) return 'bg-gray-500';
-  if (status >= 200 && status < 300) return 'bg-green-600';
-  if (status >= 300 && status < 400) return 'bg-blue-600';
-  if (status >= 400 && status < 500) return 'bg-orange-600';
-  if (status >= 500) return 'bg-red-600';
-  return 'bg-gray-600';
+  if (status >= 200 && status < 300) return 'bg-green-500';
+  if (status >= 300 && status < 400) return 'bg-blue-500';
+  if (status >= 400 && status < 500) return 'bg-orange-500';
+  if (status >= 500) return 'bg-red-500';
+  return 'bg-gray-500';
 }
 
 export function StatusBadge({ status }: { status: StatusBadgeValue }) {
@@ -42,7 +42,7 @@ export function StatusBadge({ status }: { status: StatusBadgeValue }) {
     <Badge
       variant="outline"
       className={cn(
-        'text-[10px] px-1 py-0.5 rounded font-mono shadow-none border-none text-white font-semibold',
+        'text-[10px] px-1 py-0.5 rounded font-mono shadow-none border-none text-background font-semibold',
         colorClass
       )}
     >

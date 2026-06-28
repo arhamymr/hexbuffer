@@ -35,8 +35,8 @@ export const allNavItems: NavItem[] = [
   { label: 'Comparer', icon: GitDiffIcon, href: '/comparer' },
   { label: 'Port Scanner', icon: NetworkIcon, href: '/port-scanner' },
   { label: 'JWT', icon: KeyIcon, href: '/jwt' },
-  { label: 'XSS Generator', icon: LightningIcon, href: '/xss-generator' },
-  { label: 'SQL Injection', icon: DatabaseIcon, href: '/sql-injection' },
+  { label: 'XSS', icon: LightningIcon, href: '/xss-generator' },
+  { label: 'SQL Inject', icon: DatabaseIcon, href: '/sql-injection' },
 
   { label: 'Debugger', icon: BugIcon, href: '/debugger', devOnly: true },
   { label: 'Regression', icon: FlaskIcon, href: '/regression', devOnly: true },

@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronRight, Plus, X } from 'lucide-react';
+import { CaretDownIcon, CaretRightIcon, PlusIcon, XIcon } from '@phosphor-icons/react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -24,9 +24,9 @@ export function InterceptBypassPanel() {
         className="flex w-full items-center gap-1 px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted/50"
       >
         {open ? (
-          <ChevronDown className="h-3 w-3" />
+          <CaretDownIcon className="h-3 w-3" />
         ) : (
-          <ChevronRight className="h-3 w-3" />
+          <CaretRightIcon className="h-3 w-3" />
         )}
         Capture Hosts
         <Badge variant="secondary" className="ml-1 h-4 px-1 text-[10px]">
@@ -57,7 +57,7 @@ export function InterceptBypassPanel() {
                     className="ml-0.5 inline-flex h-4 w-4 items-center justify-center rounded-full hover:bg-muted-foreground/20"
                     aria-label={`Remove ${pattern}`}
                   >
-                    <X className="h-3 w-3" />
+                    <XIcon className="h-3 w-3" />
                   </button>
                 </Badge>
               ))}
@@ -77,7 +77,7 @@ export function InterceptBypassPanel() {
               className="h-7 flex-1 text-xs"
             />
             <Button variant="outline" className="h-7 shrink-0" onClick={handleAdd} disabled={!value.trim()}>
-              <Plus className="h-3 w-3" />
+              <PlusIcon className="h-3 w-3" />
               Add
             </Button>
           </div>

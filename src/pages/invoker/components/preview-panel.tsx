@@ -2,7 +2,7 @@ import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { TextEditor } from '@/components/ui/text-editor';
 import { buildRawHttpResponse } from '@/lib/http-message';
-import { AlertCircle } from 'lucide-react';
+import { WarningCircleIcon } from '@phosphor-icons/react';
 import { useInvokerStore } from '@/stores/invoker';
 import type { AttackResult } from '../types';
 import { formatPayloadValues, getResultUrl } from '../lib/utils';
@@ -107,7 +107,7 @@ export function InvokerPreviewPane() {
               )}
               {selectedResult.error && (
                 <div className="flex items-center gap-2 text-sm text-destructive">
-                  <AlertCircle className="h-4 w-4" />
+                  <WarningCircleIcon className="h-4 w-4" />
                   <span>{selectedResult.error}</span>
                 </div>
               )}

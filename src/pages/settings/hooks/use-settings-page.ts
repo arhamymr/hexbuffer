@@ -178,7 +178,7 @@ export function useSettingsPage() {
       setDownloading(true);
 
       const filePath = await save({
-        title: 'Save CA Certificate',
+        title: 'FloppyDisk CA Certificate',
         defaultPath: 'hexbuffer-ca.pem',
         filters: [
           {
@@ -258,7 +258,7 @@ export function useSettingsPage() {
         setProviderKeyStatus(nextKeyStatus);
       }
 
-      // Save provider/model settings to backend (without the key)
+      // FloppyDisk provider/model settings to backend (without the key)
       const settingsToSave = { ...aiSettings, apiKey: '' };
       const savedSettings = await invoke<AiSettings>('save_ai_settings', {
         settings: settingsToSave,

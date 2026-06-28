@@ -1,4 +1,4 @@
-import { Check, HelpCircle, X } from 'lucide-react';
+import { CheckIcon, QuestionIcon, XIcon } from '@phosphor-icons/react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -26,7 +26,7 @@ export function IntentClarificationCard({
     <div className="rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-sm">
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-center gap-2">
-          <HelpCircle className="h-4 w-4 shrink-0 text-amber-500" />
+          <QuestionIcon className="h-4 w-4 shrink-0 text-amber-500" />
           <span className="font-medium text-amber-600 dark:text-amber-400">
             Clarification Needed
           </span>
@@ -37,7 +37,7 @@ export function IntentClarificationCard({
           className="h-5 w-5 shrink-0"
           onClick={onDismiss}
         >
-          <X className="h-3 w-3" />
+          <XIcon className="h-3 w-3" />
         </Button>
       </div>
 
@@ -66,7 +66,7 @@ export function IntentClarificationCard({
                     : 'border-muted-foreground/40',
                 )}
               >
-                {isSelected && <Check className="h-3 w-3" />}
+                {isSelected && <CheckIcon className="h-3 w-3" />}
               </span>
               <div className="flex-1 min-w-0">
                 <span className="block font-medium text-xs">{category.label}</span>
@@ -88,7 +88,7 @@ export function IntentClarificationCard({
           disabled={!selected}
           className="gap-1.5"
         >
-          <Check className="h-3.5 w-3.5" />
+          <CheckIcon className="h-3.5 w-3.5" />
           Confirm
         </Button>
         <span className="text-xs text-muted-foreground">

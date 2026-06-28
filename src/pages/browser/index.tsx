@@ -1,4 +1,4 @@
-import { InfoIcon } from 'lucide-react';
+import { Info } from '@phosphor-icons/react';
 import { AiInsightsPanel } from './components/insight-panel';
 import { ActionLogPanel } from './components/ActionLogPanel';
 import { CrawlSetupScreen } from './components/setup-screen';
@@ -48,7 +48,7 @@ export function BrowserAutomationPage() {
       {!page.browserAutomationSafetyAlertDismissed && (
         <div className="p-2">
           <Alert variant="default" className="min-h-12 mb-0 shrink-0 border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-500/50 dark:bg-amber-500/10 dark:text-amber-200">
-            <InfoIcon className="!text-amber-600 shrink-0" />
+            <Info className="!text-amber-600 shrink-0" />
             <AlertDescription className="text-amber-600">
               The browser automation will interact with external websites. Only scan targets you own or are authorized to assess. Unauthorized scanning may violate terms of service or applicable laws.
             </AlertDescription>

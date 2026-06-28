@@ -88,8 +88,8 @@ export const ACTION_NODE_PROFILES: Partial<Record<AutomationNodeType, NodeProfil
       input: HTTP_CONTEXT_INPUT,
       output: [
         ...ACTION_OUTPUT_BASE,
-        { key: 'webhookStatus', label: 'Webhook Status', type: 'number', description: 'HTTP status from webhook delivery' },
-        { key: 'webhookResponse', label: 'Response', type: 'string', description: 'Webhook response body' },
+        { key: 'webhookStatus', label: 'WebhooksLogo Status', type: 'number', description: 'HTTP status from webhook delivery' },
+        { key: 'webhookResponse', label: 'Response', type: 'string', description: 'WebhooksLogo response body' },
       ],
     },
   },

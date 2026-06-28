@@ -1,5 +1,5 @@
 import React from 'react';
-import { Play, CheckCircle2, XCircle, Loader2, Clock, AlertTriangle, PlayCircle } from 'lucide-react';
+import { PlayIcon, CheckCircleIcon, XCircleIcon, SpinnerGapIcon, ClockIcon, WarningCircleIcon, PlayCircleIcon } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
@@ -42,7 +42,7 @@ export function TestRunner({
   if (!testCase) {
     return (
       <div className="flex flex-col items-center justify-center h-full text-center p-6">
-        <Play className="size-8 text-muted-foreground/30 mb-2" />
+        <PlayIcon className="size-8 text-muted-foreground/30 mb-2" />
         <p className="text-sm text-muted-foreground">Select a test case to run</p>
       </div>
     );
@@ -55,7 +55,7 @@ export function TestRunner({
 
   // Map the test case steps with results
   const stepStatuses = testCase.steps.map((step, i) => {
-    // Check for single-step results first
+    // CheckIcon for single-step results first
     const singleResult = singleStepResults[i];
     if (singleResult) {
       return { ...step, status: singleResult.status, error: singleResult.error || null, durationMs: singleResult.durationMs || 0 };
@@ -90,12 +90,12 @@ export function TestRunner({
           >
             {isRunningForThis ? (
               <>
-                <Loader2 className="size-3.5 animate-spin" />
+                <SpinnerGapIcon className="size-3.5 animate-spin" />
                 Running...
               </>
             ) : (
               <>
-                <Play className="size-3.5" />
+                <PlayIcon className="size-3.5" />
                 Run Test
               </>
             )}
@@ -128,13 +128,13 @@ export function TestRunner({
                 {/* Status icon */}
                 <div className="shrink-0">
                   {isRunning || isSingleRunning ? (
-                    <Loader2 className="size-4 text-blue-500 animate-spin" />
+                    <SpinnerGapIcon className="size-4 text-blue-500 animate-spin" />
                   ) : isPassed ? (
-                    <CheckCircle2 className="size-4 text-green-500" />
+                    <CheckCircleIcon className="size-4 text-green-500" />
                   ) : isFailed ? (
-                    <XCircle className="size-4 text-red-500" />
+                    <XCircleIcon className="size-4 text-red-500" />
                   ) : (
-                    <Clock className="size-4 text-muted-foreground/40" />
+                    <ClockIcon className="size-4 text-muted-foreground/40" />
                   )}
                 </div>
 
@@ -159,7 +159,7 @@ export function TestRunner({
                   {/* Error message */}
                   {isFailed && step.error && (
                     <div className="mt-1 flex items-start gap-1 text-[11px] text-red-600 dark:text-red-400">
-                      <AlertTriangle className="size-3 shrink-0 mt-0.5" />
+                      <WarningCircleIcon className="size-3 shrink-0 mt-0.5" />
                       <span className="line-clamp-2">{step.error}</span>
                     </div>
                   )}
@@ -174,7 +174,7 @@ export function TestRunner({
                     onClick={() => onRunStep(i)}
                     title={`Run step ${i + 1}`}
                   >
-                    <PlayCircle className="size-3.5 text-muted-foreground hover:text-blue-500" />
+                    <PlayCircleIcon className="size-3.5 text-muted-foreground hover:text-blue-500" />
                   </Button>
                 )}
 

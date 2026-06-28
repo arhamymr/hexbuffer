@@ -10,6 +10,6 @@ export function BrowserAutomationSearch() {
   const { localVal, handleChange } = useDebouncedSearch(browserSearch, setBrowserSearch);
 
   return (
-    <SearchInput value={localVal} onChange={handleChange} placeholder="Search pages, logs, insights…" />
+    <SearchInput value={localVal} onChange={handleChange} placeholder="MagnifyingGlass pages, logs, insights…" />
   );
 }

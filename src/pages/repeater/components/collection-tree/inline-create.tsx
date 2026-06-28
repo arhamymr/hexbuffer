@@ -1,6 +1,6 @@
 import React, { useRef, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
-import { Plus } from 'lucide-react';
+import { PlusIcon } from '@phosphor-icons/react';
 
 export interface InlineCreateProps {
   depth: number;
@@ -67,7 +67,7 @@ export function InlineCreate({ depth, type, onSubmit, onCancel }: InlineCreatePr
           className="flex h-5 w-5 shrink-0 items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground"
           title="Create endpoint"
         >
-          <Plus className="h-3 w-3" />
+          <PlusIcon className="h-3 w-3" />
         </button>
       </form>
     </div>

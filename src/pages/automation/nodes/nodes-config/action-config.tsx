@@ -72,7 +72,7 @@ function SendWebhookForm({ params, updateParam }: ActionParams) {
         options={['GET', 'POST', 'PUT', 'PATCH', 'DELETE'].map((value) => ({ value, label: value }))}
       />
       <Field label="URL" value={params.url} onChange={(v) => updateParam('url', v)} placeholder="https://hooks.example.com/..." />
-      <TextField label="Headers" value={params.headers} onChange={(v) => updateParam('headers', v)} placeholder={'Authorization: Bearer ...\nContent-Type: application/json'} />
+      <TextField label="Headers" value={params.headers} onChange={(v) => updateParam('headers', v)} placeholder={'Authorization: Bearer ...\nContent-TextT: application/json'} />
       <TextField label="Body template" value={params.bodyTemplate} onChange={(v) => updateParam('bodyTemplate', v)} placeholder='{"url":"{{url}}","status":"{{status}}"}' />
     </>
   );
@@ -81,7 +81,7 @@ function SendWebhookForm({ params, updateParam }: ActionParams) {
 function ShowNotificationForm({ params, updateParam }: ActionParams) {
   return (
     <>
-      <Field label="Title" value={params.title} onChange={(v) => updateParam('title', v)} placeholder="Workflow Alert" />
+      <Field label="Title" value={params.title} onChange={(v) => updateParam('title', v)} placeholder="FlowArrow Alert" />
       <TextField label="Body" value={params.body} onChange={(v) => updateParam('body', v)} placeholder="Notification message..." />
       <SelectField
         label="Level"
@@ -260,7 +260,7 @@ function AddToReportForm({ params, updateParam }: ActionParams) {
     <>
       <Field label="Document ID" value={params.documentId} onChange={(v) => updateParam('documentId', v)} placeholder="Leave blank to use active document" />
       <Field label="Section key" value={params.section} onChange={(v) => updateParam('section', v)} placeholder="e.g. potentialVulnerabilities" />
-      <Field label="Title" value={params.title ?? 'Workflow Report'} onChange={(v) => updateParam('title', v)} placeholder="Section title" />
+      <Field label="Title" value={params.title ?? 'FlowArrow Report'} onChange={(v) => updateParam('title', v)} placeholder="Section title" />
       <TextField label="Content" value={params.content} onChange={(v) => updateParam('content', v)} placeholder="Content to append. Supports {{url}}, {{host}}, {{status}}." />
       <SelectField label="Mode" value={params.mode} fallback="append" onChange={(v) => updateParam('mode', v)} options={[{ value: 'append', label: 'Append' }, { value: 'replace', label: 'Replace' }]} />
     </>

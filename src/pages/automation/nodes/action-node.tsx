@@ -1,27 +1,27 @@
 import React from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import {
-  RefreshCw,
-  Sparkles,
-  Bug,
-  FileText,
-  Webhook,
+  ArrowClockwiseIcon,
+  SparkleIcon,
+  BugIcon,
+  FileTextIcon,
+  WebhooksLogo,
   Bell,
-  Terminal,
-  ScanLine,
+  TerminalIcon,
+  ScanIcon,
   Plug,
-  Shield,
-  Zap,
-  Code,
+  ShieldIcon,
+  LightningIcon,
+  CodeIcon,
   Hash,
-  Download,
-  FilePlus,
-  FileCode,
-  Network,
-  Square,
-  Grip,
-  AlertTriangle,
-} from 'lucide-react';
+  DownloadIcon,
+  FilePlusIcon,
+  FileCodeIcon,
+  NetworkIcon,
+  SquareIcon,
+  DotsSixIcon,
+  WarningCircleIcon,
+} from '@phosphor-icons/react';
 import { cn } from '@/lib/utils';
 import {
   Tooltip,
@@ -43,30 +43,30 @@ import { NodeCardMenu } from './node-card-menu';
 import { NodeRuntimeStatus, useNodeRuntimeStatus } from './node-runtime-status';
 import type { AutomationNodeData } from '../types';
 
-const iconMap: Record<string, typeof Sparkles> = {
-  RefreshCw,
-  Sparkles,
-  Bug,
-  FileText,
-  Webhook,
+const iconMap: Record<string, typeof SparkleIcon> = {
+  ArrowClockwiseIcon,
+  SparkleIcon,
+  BugIcon,
+  FileTextIcon,
+  WebhooksLogo,
   Bell,
-  Terminal,
-  ScanLine,
+  TerminalIcon,
+  ScanIcon,
   Plug,
-  Shield,
-  Zap,
-  Code,
+  ShieldIcon,
+  LightningIcon,
+  CodeIcon,
   Hash,
-  Download,
-  FilePlus,
-  FileCode,
-  Network,
-  Square,
+  DownloadIcon,
+  FilePlusIcon,
+  FileCodeIcon,
+  NetworkIcon,
+  SquareIcon,
 };
 
 function ActionNodeComponent({ id, data, selected }: NodeProps) {
   const nodeData = data as unknown as AutomationNodeData;
-  const Icon = iconMap[nodeData.iconName] || Sparkles;
+  const Icon = iconMap[nodeData.iconName] || SparkleIcon;
   const runtime = useNodeRuntimeStatus(id);
   const isExecuting = runtime?.status === 'running';
   const warning = getAutomationNodeWarning(nodeData, runtime);
@@ -96,7 +96,7 @@ function ActionNodeComponent({ id, data, selected }: NodeProps) {
       />
 
       <div className="flex items-center gap-2 px-3 py-2.5">
-        <Grip className="size-3.5 shrink-0 text-muted-foreground/30 opacity-80 group-hover:opacity-100 transition-opacity" />
+        <DotsSixIcon className="size-3.5 shrink-0 text-muted-foreground/30 opacity-80 group-hover:opacity-100 transition-opacity" />
      
         <div className={cn('flex size-7 items-center justify-center rounded-md', CATEGORY_ICON_BG.action)}>
           <Icon className={cn('size-3.5', CATEGORY_ICON_TEXT.action)} />
@@ -106,7 +106,7 @@ function ActionNodeComponent({ id, data, selected }: NodeProps) {
           <p className="truncate text-[10px] text-muted-foreground">Action</p>
         </div>
         {warning && (
-          <AlertTriangle
+          <WarningCircleIcon
             className="size-3.5 shrink-0 text-amber-500"
             aria-label={warning}
           />

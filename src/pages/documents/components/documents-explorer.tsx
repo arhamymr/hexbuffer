@@ -1,18 +1,18 @@
 import React from 'react';
 import {
-  ChevronDown,
-  Copy,
-  ExternalLink,
-  FileText,
-  Folder,
+  CaretDownIcon,
+  CopyIcon,
+  ArrowSquareOutIcon,
+  FileTextIcon,
+  FolderIcon,
   FolderOpen,
-  GripVertical,
-  Pencil,
-  Plus,
-  Send,
-  Server,
-  Trash2,
-} from 'lucide-react';
+  DotsSixVerticalIcon,
+  PencilIcon,
+  PlusIcon,
+  PaperPlaneTiltIcon,
+  HardDrivesIcon,
+  TrashIcon,
+} from '@phosphor-icons/react';
 import { cn } from '@/lib/utils';
 import {
   ContextMenu,
@@ -77,17 +77,17 @@ function ReportFileRow({
             isActive && 'bg-muted text-foreground'
           )}
         >
-          <GripVertical className="h-3.5 w-3.5 shrink-0 cursor-grab text-muted-foreground/50 active:cursor-grabbing" />
-          <FileText className="h-4 w-4 text-muted-foreground" />
+          <DotsSixVerticalIcon className="h-3.5 w-3.5 shrink-0 cursor-grab text-muted-foreground/50 active:cursor-grabbing" />
+          <FileTextIcon className="h-4 w-4 text-muted-foreground" />
           <span className="truncate">{section.title.toLowerCase()}.md</span>
         </button>
       </ContextMenuTrigger>
       <ContextMenuContent>
         <ContextMenuItem onClick={() => onOpenFile(fileId)} className="text-xs">
-          <FileText className="mr-2 size-3" /> Open
+          <FileTextIcon className="mr-2 size-3" /> Open
         </ContextMenuItem>
         <ContextMenuItem onClick={() => onRenameCustomSection(section)} className="text-xs">
-          <Pencil className="mr-2 size-3" /> Rename file
+          <PencilIcon className="mr-2 size-3" /> Rename file
         </ContextMenuItem>
         <ContextMenuSeparator />
         <ContextMenuItem
@@ -95,7 +95,7 @@ function ReportFileRow({
           variant="destructive"
           className="text-xs"
         >
-          <Trash2 className="mr-2 size-3" /> Delete file
+          <TrashIcon className="mr-2 size-3" /> Delete file
         </ContextMenuItem>
       </ContextMenuContent>
     </ContextMenu>
@@ -161,27 +161,27 @@ function ApiRequestRow({
           )}
           title={entry.url}
         >
-          <Server className="h-3.5 w-3.5 text-muted-foreground" />
+          <HardDrivesIcon className="h-3.5 w-3.5 text-muted-foreground" />
           <span className="truncate font-mono">{entry.path}</span>
         </button>
       </ContextMenuTrigger>
       <ContextMenuContent>
         <ContextMenuItem onClick={() => onOpenApiEntry(entry.id)} className="text-xs">
-          <FileText className="mr-2 size-3" /> Open
+          <FileTextIcon className="mr-2 size-3" /> Open
         </ContextMenuItem>
         <ContextMenuSeparator />
         <ContextMenuItem onClick={() => onCopyCurlCommand(entry)} className="text-xs">
-          <Copy className="mr-2 size-3" /> Copy as curl command (bash)
+          <CopyIcon className="mr-2 size-3" /> CopyIcon as curl command (bash)
         </ContextMenuItem>
         <ContextMenuItem onClick={() => onCopyUrl(entry)} className="text-xs">
-          <Copy className="mr-2 size-3" /> Copy URL
+          <CopyIcon className="mr-2 size-3" /> CopyIcon URL
         </ContextMenuItem>
         <ContextMenuSeparator />
         <ContextMenuItem onClick={() => onOpenInInvoker(entry)} className="text-xs">
-          <ExternalLink className="mr-2 h-4 w-4" /> Open in Invoker
+          <ArrowSquareOutIcon className="mr-2 h-4 w-4" /> Open in Invoker
         </ContextMenuItem>
         <ContextMenuItem onClick={() => onOpenInRepeater(entry)} className="text-xs">
-          <Send className="mr-2 h-4 w-4" /> Send to Repeater
+          <PaperPlaneTiltIcon className="mr-2 h-4 w-4" /> PaperPlaneTiltIcon to Repeater
         </ContextMenuItem>
         <CollectionPickerSubmenu
           variant="context"
@@ -193,7 +193,7 @@ function ApiRequestRow({
           variant="destructive"
           className="text-xs"
         >
-          <Trash2 className="mr-2 h-4 w-4" /> Delete
+          <TrashIcon className="mr-2 h-4 w-4" /> Delete
         </ContextMenuItem>
       </ContextMenuContent>
     </ContextMenu>
@@ -252,7 +252,7 @@ export function DocumentsExplorer({
             onClick={onAddCustomSection}
             className="flex h-7 w-full items-center gap-2 rounded px-2 text-left text-xs text-muted-foreground hover:bg-muted hover:text-foreground"
           >
-            <Plus className="h-4 w-4" />
+            <PlusIcon className="h-4 w-4" />
             <span className="truncate">add file</span>
           </button>
 
@@ -269,7 +269,7 @@ export function DocumentsExplorer({
                   activeFileId === 'api' && 'bg-muted text-foreground'
                 )}
               >
-                <ChevronDown
+                <CaretDownIcon
                   className={cn(
                     'h-3.5 w-3.5 text-muted-foreground transition-transform',
                     !isApiFolderOpen && '-rotate-90'
@@ -278,14 +278,14 @@ export function DocumentsExplorer({
                 {isApiFolderOpen ? (
                   <FolderOpen className="h-4 w-4 text-muted-foreground" />
                 ) : (
-                  <Folder className="h-4 w-4 text-muted-foreground" />
+                  <FolderIcon className="h-4 w-4 text-muted-foreground" />
                 )}
                 <span className="truncate">api</span>
               </button>
             </ContextMenuTrigger>
             <ContextMenuContent>
               <ContextMenuItem onClick={onAddApiEntry} className="text-xs">
-                <Plus className="mr-2 size-3" /> New request
+                <PlusIcon className="mr-2 size-3" /> New request
               </ContextMenuItem>
             </ContextMenuContent>
           </ContextMenu>
@@ -300,7 +300,7 @@ export function DocumentsExplorer({
                     onClick={onAddApiEntry}
                     className="flex h-7 items-center gap-2 rounded text-xs hover:text-foreground"
                   >
-                    <Plus className="size-3" />
+                    <PlusIcon className="size-3" />
                     <span>new request</span>
                   </button>
                 </div>
@@ -311,7 +311,7 @@ export function DocumentsExplorer({
                     onClick={onAddApiEntry}
                     className="flex h-7 w-full items-center gap-2 rounded px-2 text-left text-xs text-muted-foreground hover:bg-muted hover:text-foreground"
                   >
-                    <Plus className="h-3.5 w-3.5" />
+                    <PlusIcon className="h-3.5 w-3.5" />
                     <span className="truncate">new request</span>
                   </button>
                   {activeDocument.apiEntries.map((entry) => {
@@ -344,8 +344,8 @@ export function DocumentsExplorer({
               );
               return (
                 <div className="flex h-7 items-center gap-2 px-2 text-xs">
-                  <GripVertical className="h-3.5 w-3.5 shrink-0 text-muted-foreground/50" />
-                  <FileText className="h-4 w-4 text-muted-foreground" />
+                  <DotsSixVerticalIcon className="h-3.5 w-3.5 shrink-0 text-muted-foreground/50" />
+                  <FileTextIcon className="h-4 w-4 text-muted-foreground" />
                   <span className="truncate">{section?.title.toLowerCase() ?? String(source.id)}.md</span>
                 </div>
               );

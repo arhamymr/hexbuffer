@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { StickyNote, Maximize2, Minimize2 } from 'lucide-react';
+import { NoteIcon, ArrowsOutIcon, ArrowsInIcon } from '@phosphor-icons/react';
 import { TextEditor } from '@/components/ui/text-editor';
 
 export function ScratchpadWidget() {
@@ -32,7 +32,7 @@ export function ScratchpadWidget() {
             className="p-0.5 rounded hover:bg-muted/50 text-muted-foreground hover:text-foreground transition-colors"
             title="Expand scratchpad"
           >
-            <Maximize2 className="size-3" />
+            <ArrowsOutIcon className="size-3" />
           </button>
         </div>
         <div className="h-34 overflow-hidden rounded-sm border">
@@ -52,7 +52,7 @@ export function ScratchpadWidget() {
           >
             <div className="flex items-center justify-between px-3 py-2 border-b bg-muted/30 shrink-0">
               <div className="flex items-center gap-1.5">
-                <StickyNote className="size-3.5 text-muted-foreground" />
+                <NoteIcon className="size-3.5 text-muted-foreground" />
                 <span className="text-[11px] font-mono font-bold tracking-wider text-muted-foreground uppercase">Scratchpad</span>
               </div>
               <button
@@ -60,7 +60,7 @@ export function ScratchpadWidget() {
                 className="p-1 rounded hover:bg-muted/50 text-muted-foreground hover:text-foreground transition-colors"
                 title="Collapse scratchpad"
               >
-                <Minimize2 className="size-3.5" />
+                <ArrowsInIcon className="size-3.5" />
               </button>
             </div>
             <div className="flex-1 min-h-0">

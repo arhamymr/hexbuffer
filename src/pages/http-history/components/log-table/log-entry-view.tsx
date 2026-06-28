@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
-import { FileText, Table2, EllipsisVertical, ExternalLink, Send, Crosshair, X } from 'lucide-react';
+import { FileTextIcon, TableIcon, DotsThreeVerticalIcon, ArrowSquareOutIcon, PaperPlaneTiltIcon, CrosshairIcon, XIcon } from '@phosphor-icons/react';
 import { toast } from 'sonner';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from '@/components/ui/button';
@@ -233,31 +233,31 @@ export function LogEntryBurpView() {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="h-7 w-7">
-                  <EllipsisVertical className="h-4 w-4" />
+                  <DotsThreeVerticalIcon className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuItem onClick={() => setViewMode(viewMode === 'table' ? 'text' : 'table')} className="text-xs">
                   {viewMode === 'table' ? (
-                    <><FileText className="mr-2 h-4 w-4" /> Toggle Doc</>
+                    <><FileTextIcon className="mr-2 h-4 w-4" /> Toggle Doc</>
                   ) : (
-                    <><Table2 className="mr-2 h-4 w-4" /> Toggle Table</>
+                    <><TableIcon className="mr-2 h-4 w-4" /> Toggle TableIcon</>
                   )}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleOpenInNewWindow} disabled={!call.response_status} className="text-xs">
-                  <ExternalLink className="mr-2 h-4 w-4" /> Open in New Window
+                  <ArrowSquareOutIcon className="mr-2 h-4 w-4" /> Open in New Window
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleSendToRepeater} className="text-xs">
-                  <Send className="mr-2 h-4 w-4" /> Send to Repeater
+                  <PaperPlaneTiltIcon className="mr-2 h-4 w-4" /> PaperPlaneTiltIcon to Repeater
                 </DropdownMenuItem>
                 <CollectionPickerSubmenu
                   variant="dropdown"
                   onSelect={handleSendToCollection}
                 />
                 <DropdownMenuItem onClick={handleSendToInvoker} className="text-xs">
-                  <Crosshair className="mr-2 h-4 w-4" /> Send to Invoker
+                  <CrosshairIcon className="mr-2 h-4 w-4" /> PaperPlaneTiltIcon to Invoker
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -267,7 +267,7 @@ export function LogEntryBurpView() {
               className="h-6 w-6 text-destructive hover:text-destructive"
               onClick={() => setSelectedCallId(null)}
             >
-              <X className="h-3.5 w-3.5" />
+              <XIcon className="h-3.5 w-3.5" />
             </Button>
           </div>
 

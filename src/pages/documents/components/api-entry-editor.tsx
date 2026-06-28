@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Loader2 } from 'lucide-react';
+import { SpinnerGapIcon } from '@phosphor-icons/react';
 import { Badge } from '@/components/ui/badge';
 import {
   ResizableHandle,
@@ -81,7 +81,7 @@ export function ApiEntryEditor({
           <div className="min-h-0 flex-1">
             {isLoading ? (
               <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <SpinnerGapIcon className="mr-2 h-4 w-4 animate-spin" />
                 Sending request...
               </div>
             ) : error ? (

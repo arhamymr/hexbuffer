@@ -2,7 +2,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAutomationStore } from '@/stores/automation';
-import { AlertTriangle, Trash2, Pencil, Check, X, Loader2, OctagonX, Pause, Play, PauseCircle } from 'lucide-react';
+import { WarningCircleIcon, TrashIcon, PencilIcon, CheckIcon, XIcon, SpinnerGapIcon, OctagonIcon, PauseIcon, PlayIcon, PauseCircleIcon } from '@phosphor-icons/react';
 import { getWorkflowReadiness } from '../lib/workflow-readiness';
 
 export function WorkflowToolbar() {
@@ -83,10 +83,10 @@ export function WorkflowToolbar() {
             }}
           />
           <Button variant="ghost" onClick={confirmEdit}>
-            <Check className="size-3.5" />
+            <CheckIcon className="size-3.5" />
           </Button>
           <Button variant="ghost" onClick={cancelEdit}>
-            <X className="size-3.5" />
+            <XIcon className="size-3.5" />
           </Button>
         </div>
       ) : (
@@ -95,7 +95,7 @@ export function WorkflowToolbar() {
             {workflow.name}
           </span>
           <Button variant="ghost" className="h-6 w-6 p-0" onClick={startEdit}>
-            <Pencil className="size-3" />
+            <PencilIcon className="size-3" />
           </Button>
         </div>
       )}
@@ -103,17 +103,17 @@ export function WorkflowToolbar() {
       <div className="ml-auto flex items-center gap-2">
         {hasLiveTrafficTrigger && !workflow.enabled ? (
           <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-            <PauseCircle className="size-3 text-amber-500" />
+            <PauseCircleIcon className="size-3 text-amber-500" />
             <span className="font-medium text-amber-500">Listening Paused</span>
           </div>
         ) : isThisWorkflowRunning ? (
           <div className="flex items-center gap-1.5 text-[10px]">
-            <Loader2 className="size-3 animate-spin text-emerald-400" />
+            <SpinnerGapIcon className="size-3 animate-spin text-emerald-400" />
             <span className="text-emerald-400 font-medium">Running</span>
           </div>
         ) : !readiness.ready ? (
           <div className="flex min-w-0 items-center gap-1.5 text-[10px]" title={readiness.reason ?? undefined}>
-            <AlertTriangle className="size-3 shrink-0 text-amber-500" />
+            <WarningCircleIcon className="size-3 shrink-0 text-amber-500" />
             <span className="max-w-56 truncate font-medium text-amber-500">
               {readiness.reason ?? 'Needs action'}
             </span>
@@ -132,7 +132,7 @@ export function WorkflowToolbar() {
             onClick={handleAbort}
             title="Abort this workflow run"
           >
-            <OctagonX className="mr-1 size-3.5" />
+            <OctagonIcon className="mr-1 size-3.5" />
             Abort
           </Button>
         )}
@@ -142,14 +142,14 @@ export function WorkflowToolbar() {
             size="xs"
             className="h-7"
             onClick={handleToggleListening}
-            title={workflow.enabled ? 'Pause live-traffic listening' : 'Start live-traffic listening'}
+            title={workflow.enabled ? 'PauseIcon live-traffic listening' : 'Start live-traffic listening'}
           >
             {workflow.enabled ? (
-              <Pause className="mr-1 size-3.5" />
+              <PauseIcon className="mr-1 size-3.5" />
             ) : (
-              <Play className="mr-1 size-3.5" />
+              <PlayIcon className="mr-1 size-3.5" />
             )}
-            {workflow.enabled ? 'Pause Listening' : 'Start Listening'}
+            {workflow.enabled ? 'PauseIcon Listening' : 'Start Listening'}
           </Button>
         )}
         <Button
@@ -158,7 +158,7 @@ export function WorkflowToolbar() {
           className="h-7 text-destructive hover:text-destructive"
           onClick={handleDelete}
         >
-          <Trash2 className="size-3.5" />
+          <TrashIcon className="size-3.5" />
         </Button>
       </div>
     </div>

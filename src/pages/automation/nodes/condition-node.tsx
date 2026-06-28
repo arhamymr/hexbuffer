@@ -1,6 +1,6 @@
 import React from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
-import { AlertTriangle, SquareFunction, Grip } from 'lucide-react';
+import { WarningCircleIcon, FunctionIcon, DotsSixIcon } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils';
 import {
   Tooltip,
@@ -65,16 +65,16 @@ function ConditionNodeComponent({ id, data, selected }: NodeProps) {
       />
 
       <div className="flex items-center gap-2 px-3 py-2.5">
-        <Grip className="size-3.5 shrink-0 text-muted-foreground/30 opacity-80 group-hover:opacity-100 transition-opacity" />
+        <DotsSixIcon className="size-3.5 shrink-0 text-muted-foreground/30 opacity-80 group-hover:opacity-100 transition-opacity" />
         <div className={cn('flex size-7 items-center justify-center rounded-md', CATEGORY_ICON_BG.condition)}>
-          <SquareFunction className={cn('size-3.5', CATEGORY_ICON_TEXT.condition)} />
+          <FunctionIcon className={cn('size-3.5', CATEGORY_ICON_TEXT.condition)} />
         </div>
         <div className="min-w-0 flex-1">
           <p className="truncate text-xs">{nodeData.label}</p>
           <p className="truncate text-[10px] text-muted-foreground">Condition</p>
         </div>
         {warning && (
-          <AlertTriangle
+          <WarningCircleIcon
             className="size-3.5 shrink-0 text-amber-500"
             aria-label={warning}
           />

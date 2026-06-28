@@ -147,7 +147,7 @@ export const TRIGGER_NODE_PROFILES: Partial<Record<AutomationNodeType, NodeProfi
         { key: 'path', label: 'Path', type: 'string', description: 'WebSocket endpoint path' },
         { key: 'host', label: 'Host', type: 'string', description: 'WebSocket endpoint host' },
         { key: 'direction', label: 'Direction', type: 'string', description: 'sent or received' },
-        { key: 'messageType', label: 'Message Type', type: 'string', description: 'text, binary, ping, pong, or close' },
+        { key: 'messageType', label: 'Message TextT', type: 'string', description: 'text, binary, ping, pong, or close' },
         { key: 'payloadSize', label: 'Payload Size', type: 'number', description: 'Payload size in bytes' },
         { key: 'timestamp', label: 'Timestamp', type: 'string', description: 'When the message arrived' },
       ],

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, Trash, Loader2 } from 'lucide-react';
+import { XIcon, TrashIcon, SpinnerGapIcon } from '@phosphor-icons/react';
 import { toast } from 'sonner';
 import { CrawlStatusBadge } from '@/components/status-badge';
 import { Button } from '@/components/ui/button';
@@ -136,14 +136,14 @@ export function LogFilters({
 
           {hasActiveFilters && (
             <Button variant="destructive" size="sm" className="h-6 shrink-0" onClick={clearFilters}>
-              <X className="h-4 w-4 mr-1" />
+              <XIcon className="h-4 w-4 mr-1" />
               Clear
             </Button>
           )}
 
 
           <Button variant="ghost" size="sm" onClick={() => setClearDialogOpen(true)} className="text-xs !text-red-500 shrink-0">
-            <Trash className="size-3 mb-0.5" />
+            <TrashIcon className="size-3 mb-0.5" />
             Clear All History
           </Button>
         </div>
@@ -165,7 +165,7 @@ export function LogFilters({
                 onClick={() => removeBlacklistRule(rule.id)}
                 title="Remove blacklist rule"
               >
-                <X className="size-3" />
+                <XIcon className="size-3" />
               </button>
             </span>
           ))}
@@ -193,7 +193,7 @@ export function LogFilters({
                   onClick={() => removeHighlight(host, path)}
                   title="Remove highlight"
                 >
-                  <X className="size-3" />
+                  <XIcon className="size-3" />
                 </button>
               </span>
             );
@@ -218,7 +218,7 @@ export function LogFilters({
             >
               {isClearing ? (
                 <>
-                  <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+                  <SpinnerGapIcon className="mr-1 h-4 w-4 animate-spin" />
                   Deleting...
                 </>
               ) : (

@@ -85,7 +85,7 @@ export function ListenerInteractions({
           <table className="w-full text-xs">
             <thead className="sticky top-0 bg-muted/50">
               <tr className="border-b">
-                <th className="px-3 py-1.5 text-left font-medium">Type</th>
+                <th className="px-3 py-1.5 text-left font-medium">TextT</th>
                 <th className="px-3 py-1.5 text-left font-medium">Source IP</th>
                 <th className="px-3 py-1.5 text-left font-medium">Method</th>
                 <th className="px-3 py-1.5 text-left font-medium">Path</th>

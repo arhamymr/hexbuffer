@@ -1,4 +1,4 @@
-import { Code2Icon, ExternalLinkIcon, Triangle } from 'lucide-react';
+import { CodeIcon, ArrowSquareOutIcon, TriangleIcon } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { PROFILE_LINKS } from '../constants';
@@ -8,7 +8,7 @@ export function AboutSettingsTab() {
     <>
       <div className="space-y-2">
         <div className="flex items-center gap-2 text-sm font-medium text-green-500 dark:text-green-400">
-          <Triangle className="size-4" />
+          <TriangleIcon className="size-4" />
           About hexbuffer
         </div>
         <p className="max-w-2xl text-sm text-muted-foreground">
@@ -19,7 +19,7 @@ export function AboutSettingsTab() {
       <Card>
         <CardHeader>
           <div className="flex items-center gap-2">
-            <Code2Icon className="size-5 text-primary" />
+            <CodeIcon className="size-5 text-primary" />
             <CardTitle>Arham</CardTitle>
           </div>
           <CardDescription>Software Developer</CardDescription>
@@ -36,7 +36,7 @@ export function AboutSettingsTab() {
                 <a href={href} target="_blank" rel="noreferrer">
                   <Icon className="size-4" />
                   {label}
-                  <ExternalLinkIcon className="size-3" />
+                  <ArrowSquareOutIcon className="size-3" />
                 </a>
               </Button>
             ))}

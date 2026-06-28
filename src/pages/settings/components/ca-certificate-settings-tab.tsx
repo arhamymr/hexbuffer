@@ -1,4 +1,4 @@
-import { DownloadIcon, KeyRoundIcon, RefreshCwIcon, ShieldCheckIcon } from 'lucide-react';
+import { DownloadSimpleIcon, KeyIcon, ArrowClockwiseIcon, ShieldCheckIcon } from '@phosphor-icons/react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -44,22 +44,22 @@ export function CaCertificateSettingsTab({ settings }: CaCertificateSettingsTabP
             <CardTitle>CA Certificate</CardTitle>
           </div>
           <CardDescription>
-            Download or install the CA certificate for external browsers and apps
+            DownloadIcon or install the CA certificate for external browsers and apps
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex flex-col gap-2">
             <div className="flex flex-wrap gap-2">
               <Button onClick={handleInstallMacCert} disabled={installingCa} className="w-fit">
-                <KeyRoundIcon className="mr-2 size-4" />
+                <KeyIcon className="mr-2 size-4" />
                 {installingCa ? 'Installing...' : 'Install to macOS Keychain'}
               </Button>
               <Button variant="outline" onClick={handleDownloadCert} disabled={downloading} className="w-fit">
-                <DownloadIcon className="mr-2 size-4" />
-                {downloading ? 'Saving...' : 'Save CA Certificate'}
+                <DownloadSimpleIcon className="mr-2 size-4" />
+                {downloading ? 'Saving...' : 'FloppyDiskIcon CA Certificate'}
               </Button>
               <Button variant="outline" onClick={handleRegenerateCert} disabled={regeneratingCa} className="w-fit">
-                <RefreshCwIcon className="mr-2 size-4" />
+                <ArrowClockwiseIcon className="mr-2 size-4" />
                 {regeneratingCa ? 'Regenerating...' : 'Regenerate CA'}
               </Button>
             </div>

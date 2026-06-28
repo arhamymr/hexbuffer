@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { CheckIcon, ClipboardIcon, TerminalIcon } from 'lucide-react';
+import { CheckIcon, ClipboardIcon, TerminalIcon } from '@phosphor-icons/react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { copyText } from '@/lib/clipboard';
@@ -47,7 +47,7 @@ export function ManualUpdateCommand({ className, message }: ManualUpdateCommandP
           ) : (
             <ClipboardIcon className="mr-2 size-4" />
           )}
-          {copied ? 'Copied' : 'Copy'}
+          {copied ? 'Copied' : 'CopyIcon'}
         </Button>
       </div>
     </div>

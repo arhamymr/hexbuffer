@@ -1,4 +1,4 @@
-import { Activity, Clock, Globe, Shield, Wifi } from 'lucide-react';
+import { PulseIcon, ClockIcon, GlobeIcon, ShieldIcon, WifiHighIcon } from '@phosphor-icons/react';
 import type { ComponentType } from 'react';
 import { Card } from '@/components/ui/card';
 import type { ListenerDashboardStats } from '../types';
@@ -10,17 +10,17 @@ interface ListenerMetricsProps {
 export function ListenerMetrics({ stats }: ListenerMetricsProps) {
   return (
     <div className="grid shrink-0 grid-cols-2 gap-2 border-b bg-background p-2 md:grid-cols-4 lg:grid-cols-7">
-      <MetricCard label="Active Payloads" value={stats.activePayloads} icon={Shield} />
-      <MetricCard label="Interactions Today" value={stats.interactionsToday} icon={Activity} />
-      <MetricCard label="DNS Events" value={stats.dnsEvents} icon={Globe} />
-      <MetricCard label="HTTP Events" value={stats.httpEvents} icon={Wifi} />
-      <MetricCard label="HTTPS Events" value={stats.httpsEvents} icon={Wifi} />
+      <MetricCard label="Active Payloads" value={stats.activePayloads} icon={ShieldIcon} />
+      <MetricCard label="Interactions Today" value={stats.interactionsToday} icon={PulseIcon} />
+      <MetricCard label="DNS Events" value={stats.dnsEvents} icon={GlobeIcon} />
+      <MetricCard label="HTTP Events" value={stats.httpEvents} icon={WifiHighIcon} />
+      <MetricCard label="HTTPS Events" value={stats.httpsEvents} icon={WifiHighIcon} />
       <MetricCard
         label="Last Callback"
         value={stats.lastCallback ? formatRelative(stats.lastCallback) : 'Never'}
-        icon={Clock}
+        icon={ClockIcon}
       />
-      <MetricCard label="Connected Servers" value={stats.connectedServers} icon={Wifi} />
+      <MetricCard label="Connected Servers" value={stats.connectedServers} icon={WifiHighIcon} />
     </div>
   );
 }

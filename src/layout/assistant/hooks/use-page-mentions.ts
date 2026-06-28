@@ -50,7 +50,7 @@ export function usePageMentions() {
     [],
   );
 
-  // Filter pages by query, exclude already-mentioned
+  // Funnel pages by query, exclude already-mentioned
   const filteredPages = useMemo(() => {
     if (!mentionState.isOpen) return [];
     const q = mentionState.query.toLowerCase();

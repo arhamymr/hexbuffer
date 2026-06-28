@@ -70,10 +70,10 @@ export function useAutomationPage() {
           name: wf.name,
           status:
             isWorkflowProcessing(wf.id, workflowRuntimeById)
-              ? { kind: 'running' as const, label: 'Workflow is processing' }
+              ? { kind: 'running' as const, label: 'FlowArrow is processing' }
               : !readiness.ready
-                ? { kind: 'needs-action' as const, label: readiness.reason ?? 'Workflow needs action' }
-                : { kind: 'ready' as const, label: 'Workflow is ready' },
+                ? { kind: 'needs-action' as const, label: readiness.reason ?? 'FlowArrow needs action' }
+                : { kind: 'ready' as const, label: 'FlowArrow is ready' },
         };
       }),
     [workflows, workflowRuntimeById]

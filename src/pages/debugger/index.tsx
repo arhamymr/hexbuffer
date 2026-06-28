@@ -9,17 +9,17 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import {
-  Search,
-  Pause,
-  Play,
-  Trash2,
-  ArrowRightLeft,
-  ArrowLeft,
-  ArrowRight,
-  Bug,
-  Copy,
-  Check,
-} from 'lucide-react';
+  MagnifyingGlassIcon,
+  PauseIcon,
+  PlayIcon,
+  TrashIcon,
+  ArrowsLeftRightIcon,
+  ArrowLeftIcon,
+  ArrowRightIcon,
+  BugIcon,
+  CopyIcon,
+  CheckIcon,
+} from '@phosphor-icons/react';
 import { useDebuggerPage } from './hooks/use-debugger-page';
 import { EventRow } from './components/event-row';
 import { JsonViewer } from './components/json-viewer';
@@ -46,7 +46,7 @@ export function DebuggerPage() {
     <div className="flex h-full min-h-0 flex-col bg-background">
       <header className="bg-muted px-3 py-2 border-b flex items-center justify-between gap-3 shrink-0">
         <div className="flex items-center gap-2">
-          <Bug className="size-4 text-muted-foreground" />
+          <BugIcon className="size-4 text-muted-foreground" />
           <span className="text-sm font-medium">Workflow Debugger</span>
           <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4">
             {entries.length}
@@ -60,10 +60,10 @@ export function DebuggerPage() {
 
         <div className="flex items-center gap-2">
           <div className="relative w-52">
-            <Search className="absolute left-2 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+            <MagnifyingGlassIcon className="absolute left-2 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
             <Input
               className="pl-7 h-7 text-xs bg-background"
-              placeholder="Filter events..."
+              placeholder="FunnelIcon events..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -75,12 +75,12 @@ export function DebuggerPage() {
             onClick={togglePaused}
             className={paused ? 'border-amber-500/50 text-amber-600' : ''}
           >
-            {paused ? <Play className="size-3.5 mr-1" /> : <Pause className="size-3.5 mr-1" />}
-            {paused ? 'Resume' : 'Pause'}
+            {paused ? <PlayIcon className="size-3.5 mr-1" /> : <PauseIcon className="size-3.5 mr-1" />}
+            {paused ? 'Resume' : 'PauseIcon'}
           </Button>
 
           <Button variant="outline" onClick={clearEntries}>
-            <Trash2 className="size-3.5 mr-1" />
+            <TrashIcon className="size-3.5 mr-1" />
             Clear
           </Button>
         </div>
@@ -91,14 +91,14 @@ export function DebuggerPage() {
           <ResizablePanel defaultSize={45} minSize={25}>
             <div className="flex h-full flex-col min-h-0 border-r">
               <div className="px-2 py-1 border-b flex items-center gap-2 text-[10px] text-muted-foreground shrink-0">
-                <ArrowRightLeft className="size-3" />
+                <ArrowsLeftRightIcon className="size-3" />
                 <span>Event Timeline</span>
                 <span className="flex gap-1 ml-auto">
                   <span className="flex items-center gap-0.5">
-                    <ArrowRight className="size-2.5 text-blue-500" /> in
+                    <ArrowRightIcon className="size-2.5 text-blue-500" /> in
                   </span>
                   <span className="flex items-center gap-0.5">
-                    <ArrowLeft className="size-2.5 text-emerald-500" /> out
+                    <ArrowLeftIcon className="size-2.5 text-emerald-500" /> out
                   </span>
                 </span>
               </div>
@@ -106,7 +106,7 @@ export function DebuggerPage() {
               <ScrollArea className="flex-1">
                 {entries.length === 0 ? (
                   <div className="flex flex-col items-center justify-center h-full gap-2 text-muted-foreground p-6">
-                    <Bug className="size-8 opacity-30" />
+                    <BugIcon className="size-8 opacity-30" />
                     <p className="text-xs text-center">Waiting for workflow events...</p>
                     <p className="text-[10px] opacity-60 text-center">
                       Start a browser crawl or send a chat message to see I/O data.
@@ -152,7 +152,7 @@ export function DebuggerPage() {
                       onClick={handleCopy}
                       disabled={!copyPayload}
                     >
-                      {copied ? <Check className="size-3 text-green-500" /> : <Copy className="size-3" />}
+                      {copied ? <CheckIcon className="size-3 text-green-500" /> : <CopyIcon className="size-3" />}
                     </Button>
                   </>
                 )}
@@ -177,7 +177,7 @@ export function DebuggerPage() {
                   </div>
                 ) : (
                   <div className="flex flex-col items-center justify-center h-full gap-2 text-muted-foreground p-6">
-                    <ArrowRightLeft className="size-8 opacity-30" />
+                    <ArrowsLeftRightIcon className="size-8 opacity-30" />
                     <p className="text-xs">Select an event to inspect its payload</p>
                   </div>
                 )}

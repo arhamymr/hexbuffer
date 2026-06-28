@@ -1,5 +1,5 @@
 import { type Column } from "@tanstack/react-table";
-import { ArrowDown, ArrowUp, ChevronsUpDown, EyeOff } from "lucide-react";
+import { ArrowDownIcon, ArrowUpIcon, CaretUpDownIcon, EyeSlashIcon } from '@phosphor-icons/react';
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -36,26 +36,26 @@ export function DataTableColumnHeader<TData, TValue>({
           >
             <span>{title}</span>
             {column.getIsSorted() === "desc" ? (
-              <ArrowDown />
+              <ArrowDownIcon />
             ) : column.getIsSorted() === "asc" ? (
-              <ArrowUp />
+              <ArrowUpIcon />
             ) : (
-              <ChevronsUpDown />
+              <CaretUpDownIcon />
             )}
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start">
           <DropdownMenuItem onClick={() => column.toggleSorting(false)}>
-            <ArrowUp />
+            <ArrowUpIcon />
             Asc
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => column.toggleSorting(true)}>
-            <ArrowDown />
+            <ArrowDownIcon />
             Desc
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={() => column.toggleVisibility(false)}>
-            <EyeOff />
+            <EyeSlashIcon />
             Hide
           </DropdownMenuItem>
         </DropdownMenuContent>

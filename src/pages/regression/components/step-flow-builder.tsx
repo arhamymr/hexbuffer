@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowDown, ArrowUp, Trash2, X } from 'lucide-react';
+import { ArrowDownIcon, ArrowUpIcon, TrashIcon, XIcon } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import {
@@ -156,7 +156,7 @@ export function StepFlowBuilder({ steps, onStepsChange, onAddStep, emptyActions 
               onClick={() => setSelectedStepIndex(null)}
               title="Close properties"
             >
-              <X className="size-3.5" />
+              <XIcon className="size-3.5" />
             </Button>
           )}
         </div>
@@ -165,7 +165,7 @@ export function StepFlowBuilder({ steps, onStepsChange, onAddStep, emptyActions 
           <ScrollArea className="min-h-0 flex-1">
             <div className="space-y-4 p-3">
               <div className="space-y-1.5">
-                <Label className="text-xs">Step Type</Label>
+                <Label className="text-xs">Step TextTIcon</Label>
                 <Select value={selectedStep.kind} onValueChange={(value) => handleSelectedKindChange(value as StepKind)}>
                   <SelectTrigger size="sm" className="w-full">
                     {React.createElement(STEP_KIND_ICONS[selectedStep.kind], {
@@ -196,7 +196,7 @@ export function StepFlowBuilder({ steps, onStepsChange, onAddStep, emptyActions 
                   disabled={selectedStepIndex === 0}
                   onClick={() => handleStepMove(selectedStepIndex, selectedStepIndex - 1)}
                 >
-                  <ArrowUp className="size-3.5" />
+                  <ArrowUpIcon className="size-3.5" />
                   Move Up
                 </Button>
                 <Button
@@ -205,7 +205,7 @@ export function StepFlowBuilder({ steps, onStepsChange, onAddStep, emptyActions 
                   disabled={selectedStepIndex === steps.length - 1}
                   onClick={() => handleStepMove(selectedStepIndex, selectedStepIndex + 1)}
                 >
-                  <ArrowDown className="size-3.5" />
+                  <ArrowDownIcon className="size-3.5" />
                   Move Down
                 </Button>
               </div>
@@ -216,7 +216,7 @@ export function StepFlowBuilder({ steps, onStepsChange, onAddStep, emptyActions 
                 className={cn('w-full justify-center text-muted-foreground hover:text-destructive')}
                 onClick={() => handleStepRemove(selectedStepIndex)}
               >
-                <Trash2 className="size-3.5" />
+                <TrashIcon className="size-3.5" />
                 Remove Step
               </Button>
             </div>

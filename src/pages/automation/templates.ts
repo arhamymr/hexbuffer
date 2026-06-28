@@ -61,7 +61,7 @@ export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
     id: 'live-traffic-alert',
     name: 'Live Traffic Alert',
     description: 'Monitor live traffic and alert when server errors (5xx) are detected',
-    icon: 'Zap',
+    icon: 'Lightning',
     category: 'monitoring',
     nodes: [
       { type: 'trigger:live-traffic-captured', position: { x: 100, y: 150 } },
@@ -74,7 +74,7 @@ export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
         type: 'action:show-notification',
         position: { x: 660, y: 80 },
         configOverrides: {
-          params: { title: 'Server Error Detected', body: 'A 5xx response was captured' },
+          params: { title: 'HardDrives Error Detected', body: 'A 5xx response was captured' },
         } as Partial<NodeConfig>,
       },
       { type: 'action:send-to-repeater', position: { x: 660, y: 240 } },
@@ -133,7 +133,7 @@ export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
   {
     id: 'port-scan-notify',
     name: 'Port Scan Alert',
-    description: 'Send alerts when web ports (80, 443) are discovered during scanning',
+    description: 'PaperPlaneTilt alerts when web ports (80, 443) are discovered during scanning',
     icon: 'Radio',
     category: 'security',
     nodes: [
@@ -286,7 +286,7 @@ export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
     id: 'crawl-error-capture',
     name: 'Crawl Error Capture',
     description: 'Capture crawl page errors, notify the tester, and export the crawl payload',
-    icon: 'ScanLine',
+    icon: 'Scan',
     category: 'crawl',
     nodes: [
       { type: 'trigger:browser-page-crawled', position: { x: 100, y: 150 } },
@@ -319,8 +319,8 @@ export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
   {
     id: 'intercept-review',
     name: 'Smart Intercept Review',
-    description: 'Filter intercepted API requests and send them to repeater for manual analysis',
-    icon: 'Search',
+    description: 'Funnel intercepted API requests and send them to repeater for manual analysis',
+    icon: 'MagnifyingGlass',
     category: 'general',
     nodes: [
       { type: 'trigger:intercept-request', position: { x: 100, y: 150 } },

@@ -8,12 +8,12 @@ import { cn } from "@/lib/utils";
 import type { DynamicToolUIPart, ToolUIPart } from "ai";
 import {
   CheckCircleIcon,
-  ChevronDownIcon,
+  CaretDownIcon,
   CircleIcon,
   ClockIcon,
   WrenchIcon,
   XCircleIcon,
-} from "lucide-react";
+} from '@phosphor-icons/react';
 import type { ComponentProps, ReactNode } from "react";
 import { isValidElement } from "react";
 
@@ -93,7 +93,7 @@ export const ToolHeader = ({
         <span className="font-medium text-sm">{title ?? derivedName}</span>
         {getStatusBadge(state)}
       </div>
-      <ChevronDownIcon className="size-4 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
+      <CaretDownIcon className="size-4 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
     </CollapsibleTrigger>
   );
 };

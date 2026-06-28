@@ -7,7 +7,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import type { Tool } from "ai";
-import { Triangle } from "lucide-react";
+import { TriangleIcon } from '@phosphor-icons/react';
 
 import type { ComponentProps } from "react";
 import { memo } from "react";
@@ -38,7 +38,7 @@ export const AgentHeader = memo(
       {...props}
     >
       <div className="flex items-center gap-2">
-        <Triangle className="size-4 text-muted-foreground" />
+        <TriangleIcon className="size-4 text-muted-foreground" />
         <span className="font-medium text-sm">{name}</span>
         {model && (
           <Badge className="font-mono text-xs" variant="secondary">

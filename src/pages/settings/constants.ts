@@ -1,11 +1,11 @@
-import { AlertTriangleIcon, GitBranchIcon, InfoIcon, MessageCircleIcon } from 'lucide-react';
+import { WarningCircleIcon, GitBranchIcon, InfoIcon, ChatCircleIcon } from '@phosphor-icons/react';
 
 export const INSTALLATION_GUIDES = [
   {
     id: 'chrome-windows',
     title: 'Chrome / Edge (Windows)',
     steps: [
-      'Save the CA certificate above to a location you can find',
+      'FloppyDiskIcon the CA certificate above to a location you can find',
       'Open Chrome and go to Settings → Privacy and security',
       'Click "Manage certificates"',
       'Go to the "Authorities" tab',
@@ -18,12 +18,12 @@ export const INSTALLATION_GUIDES = [
     id: 'chrome-mac',
     title: 'Chrome / Edge (macOS)',
     steps: [
-      'Save the CA certificate above to a location you can find',
+      'FloppyDiskIcon the CA certificate above to a location you can find',
       'Open Chrome and go to Settings → Privacy and security → Security',
       'Scroll down and click "Manage certificates"',
       'Click "Import" in the dialog that appears',
       'Select the saved hexbuffer-ca.pem file',
-      'Check "Trust for SSL/TLS websites" when prompted',
+      'CheckIcon "Trust for SSL/TLS websites" when prompted',
       'Click "OK" and restart your browser',
     ],
   },
@@ -31,12 +31,12 @@ export const INSTALLATION_GUIDES = [
     id: 'firefox',
     title: 'Firefox (All Platforms)',
     steps: [
-      'Save the CA certificate above to a location you can find',
+      'FloppyDiskIcon the CA certificate above to a location you can find',
       'Open Firefox and go to Options → Privacy & Security',
       'Scroll to "Certificates" section and click "View Certificates"',
       'Click "Authorities" tab',
       'Click "Import" and select the saved hexbuffer-ca.pem file',
-      'Check "Trust this CA to identify websites"',
+      'CheckIcon "Trust this CA to identify websites"',
       'Click "OK" and restart Firefox',
     ],
   },
@@ -44,7 +44,7 @@ export const INSTALLATION_GUIDES = [
     id: 'safari',
     title: 'Safari (macOS)',
     steps: [
-      'Save the CA certificate above to a location you can find',
+      'FloppyDiskIcon the CA certificate above to a location you can find',
       'Open Safari → Preferences → Privacy',
       'Click "Manage Websites" then "Certificates"',
       'Import the saved hexbuffer-ca.pem file',
@@ -57,7 +57,7 @@ export const INSTALLATION_GUIDES = [
     id: 'ios',
     title: 'iOS (iPhone / iPad)',
     steps: [
-      'Save the CA certificate on your device (Files app recommended)',
+      'FloppyDiskIcon the CA certificate on your device (Files app recommended)',
       'Go to Settings → General → VPN & Device Management',
       'Tap the downloaded profile to install it',
       'Go to Settings → General → About → Certificate Trust Settings',
@@ -72,7 +72,7 @@ export const INSTALLATION_GUIDES = [
     id: 'android',
     title: 'Android',
     steps: [
-      'Save the CA certificate to your device',
+      'FloppyDiskIcon the CA certificate to your device',
       'Go to Settings → Security → Advanced → Encryption & credentials',
       'Tap "Install a certificate" → "CA certificate"',
       'Select the saved hexbuffer-ca.pem file',
@@ -104,7 +104,7 @@ export const HOW_IT_WORKS = [
     body: 'The proxy decrypts, inspects, and re-encrypts traffic. Your browser sees a valid certificate and shows the padlock.',
   },
   {
-    title: '5. Privacy Note',
+    title: '5. Privacy NoteIcon',
     body: 'Only traffic passing through hexbuffer proxy is intercepted. Your browsing outside the proxy remains private.',
   },
 ];
@@ -138,7 +138,7 @@ export const TROUBLESHOOTING_GUIDES = [
   },
 ];
 
-export const SECURITY_NOTICE_ICON = AlertTriangleIcon;
+export const SECURITY_NOTICE_ICON = WarningCircleIcon;
 
 export const AI_PROVIDER_OPTIONS = [
   { id: 'deepseek', label: 'DeepSeek' },
@@ -159,7 +159,7 @@ export const PROFILE_LINKS = [
   {
     label: 'Threads',
     href: 'https://www.threads.com/@arhamymr',
-    Icon: MessageCircleIcon,
+    Icon: ChatCircleIcon,
   },
   {
     label: 'GitHub',

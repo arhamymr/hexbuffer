@@ -30,12 +30,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
-  ChevronLeft,
-  ChevronRight,
-  ChevronsLeft,
-  ChevronsRight,
-  Settings2,
-} from "lucide-react";
+  CaretLeftIcon,
+  CaretRightIcon,
+  CaretDoubleLeftIcon,
+  CaretDoubleRightIcon,
+  GearSixIcon,
+} from '@phosphor-icons/react';
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -110,7 +110,7 @@ export function DataTable<TData, TValue>({
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" className="ml-auto">
-                <Settings2 className="mr-2 h-4 w-4" />
+                <GearSixIcon className="mr-2 h-4 w-4" />
                 View
               </Button>
             </DropdownMenuTrigger>
@@ -153,9 +153,9 @@ export function DataTable<TData, TValue>({
                       {header.isPlaceholder
                         ? null
                         : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
                     </TableHead>
                   );
                 })}
@@ -233,7 +233,7 @@ export function DataTable<TData, TValue>({
               disabled={!table.getCanPreviousPage()}
             >
               <span className="sr-only">Go to first page</span>
-              <ChevronsLeft />
+              <CaretDoubleLeftIcon />
             </Button>
             <Button
               variant="outline"
@@ -243,7 +243,7 @@ export function DataTable<TData, TValue>({
               disabled={!table.getCanPreviousPage()}
             >
               <span className="sr-only">Go to previous page</span>
-              <ChevronLeft />
+              <CaretLeftIcon />
             </Button>
             <Button
               variant="outline"
@@ -253,7 +253,7 @@ export function DataTable<TData, TValue>({
               disabled={!table.getCanNextPage()}
             >
               <span className="sr-only">Go to next page</span>
-              <ChevronRight />
+              <CaretRightIcon />
             </Button>
             <Button
               variant="outline"
@@ -263,7 +263,7 @@ export function DataTable<TData, TValue>({
               disabled={!table.getCanNextPage()}
             >
               <span className="sr-only">Go to last page</span>
-              <ChevronsRight />
+              <CaretDoubleRightIcon />
             </Button>
           </div>
         </div>

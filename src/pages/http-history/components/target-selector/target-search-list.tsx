@@ -1,6 +1,6 @@
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Pencil, Search } from 'lucide-react';
+import { PencilIcon, MagnifyingGlassIcon } from '@phosphor-icons/react';
 import type { Target } from '@/types';
 
 interface TargetSearchListProps {
@@ -26,9 +26,9 @@ export function TargetSearchList({
     <div className="space-y-3">
       {showSearch && (
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search targets..."
+            placeholder="MagnifyingGlassIcon targets..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-9"
@@ -67,7 +67,7 @@ export function TargetSearchList({
                   aria-label={`Edit ${target.name}`}
                   onClick={() => onEditTarget(target)}
                 >
-                  <Pencil className="h-3.5 w-3.5" />
+                  <PencilIcon className="h-3.5 w-3.5" />
                 </Button>
               </div>
             ))}

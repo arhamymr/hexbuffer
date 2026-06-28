@@ -1,6 +1,6 @@
 import { useAppStore } from '@/stores/app';
 import { Button } from '@/components/ui/button';
-import { Server, Loader2 } from 'lucide-react';
+import { HardDrivesIcon, SpinnerGapIcon } from '@phosphor-icons/react';
 
 export function ProxyWidget() {
   const {
@@ -25,7 +25,7 @@ export function ProxyWidget() {
     <div className="p-2 rounded-md border bg-muted backdrop-blur-md flex flex-col gap-3 select-none">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-1.5">
-          <span className="text-[10px] font-mono font-bold tracking-wider text-muted-foreground uppercase">Proxy Server</span>
+          <span className="text-[10px] font-mono font-bold tracking-wider text-muted-foreground uppercase">Proxy HardDrivesIcon</span>
         </div>
         {proxyStatus === 'connected' && (
           <span className="relative flex h-1.5 w-1.5">
@@ -60,7 +60,7 @@ export function ProxyWidget() {
           className="h-6 px-2.5 text-[10px] font-medium shrink-0"
         >
           {proxyStatus === 'starting' || proxyStatus === 'stopping' ? (
-            <Loader2 className="size-3 animate-spin" />
+            <SpinnerGapIcon className="size-3 animate-spin" />
           ) : proxyStatus === 'connected' ? (
             'Stop'
           ) : (

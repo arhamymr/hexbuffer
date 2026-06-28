@@ -1,4 +1,4 @@
-import { Database, Table2 } from 'lucide-react';
+import { DatabaseIcon, Table } from '@phosphor-icons/react';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
@@ -35,7 +35,7 @@ export function ExtractionTab({
   if (databases.length === 0 && !isRunning) {
     return (
       <div className="h-full flex flex-col items-center justify-center gap-2 text-muted-foreground">
-        <Database className="h-8 w-8 text-muted-foreground/55" />
+        <DatabaseIcon className="h-8 w-8 text-muted-foreground/55" />
         <p className="text-xs">No data extracted yet. Vulnerabilities enable extraction.</p>
       </div>
     );
@@ -43,7 +43,7 @@ export function ExtractionTab({
 
   return (
     <div className="flex-1 min-h-0 flex">
-      {/* Database Column */}
+      {/* DatabaseIcon Column */}
       <div className="w-48 border-r flex flex-col">
         <div className="p-2 border-b bg-muted/10 shrink-0">
           <span className="text-[10px] font-bold uppercase text-muted-foreground tracking-wider">
@@ -61,7 +61,7 @@ export function ExtractionTab({
                   onSelectTable(null);
                 }}
               >
-                <Database className="h-3 w-3 mr-1.5 text-muted-foreground shrink-0" />
+                <DatabaseIcon className="h-3 w-3 mr-1.5 text-muted-foreground shrink-0" />
                 <span className="truncate">{db.name}</span>
               </button>
             ))}
@@ -84,7 +84,7 @@ export function ExtractionTab({
                 className={`w-full text-left px-3 py-1.5 text-xs hover:bg-muted/40 flex items-center transition-colors ${selectedTable === table.name ? 'bg-muted/70 font-semibold' : ''}`}
                 onClick={() => onSelectTable(table.name)}
               >
-                <Table2 className="h-3 w-3 mr-1.5 text-muted-foreground shrink-0" />
+                <Table className="h-3 w-3 mr-1.5 text-muted-foreground shrink-0" />
                 <span className="truncate flex-1">{table.name}</span>
                 <Badge
                   variant="secondary"

@@ -5,7 +5,7 @@ import {
   getSmoothStepPath,
   type EdgeProps,
 } from '@xyflow/react';
-import { X } from 'lucide-react';
+import { XIcon } from '@phosphor-icons/react';
 
 export function DeletableEdge({
   id,
@@ -48,7 +48,7 @@ export function DeletableEdge({
           aria-label="Delete wire"
           onClick={handleDelete}
         >
-          <X className="size-3" />
+          <XIcon className="size-3" />
         </button>
       </EdgeLabelRenderer>
     </>

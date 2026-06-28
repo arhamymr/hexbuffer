@@ -1,4 +1,4 @@
-import { AlertTriangle } from 'lucide-react';
+import { WarningCircleIcon } from '@phosphor-icons/react';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -31,7 +31,7 @@ export function VulnerabilitiesTab({
   if (vulnerabilities.length === 0 && !isRunning) {
     return (
       <div className="h-full flex flex-col items-center justify-center gap-2 text-muted-foreground">
-        <AlertTriangle className="h-8 w-8 text-muted-foreground/55" />
+        <WarningCircleIcon className="h-8 w-8 text-muted-foreground/55" />
         <p className="text-xs">No vulnerabilities found. Configure target and start scan.</p>
       </div>
     );
@@ -124,7 +124,7 @@ export function VulnerabilitiesTab({
               </div>
               <div>
                 <Label className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider block">
-                  Fingerprint
+                  FingerprintIcon
                 </Label>
                 <p className="font-mono text-[10px] bg-muted/10 p-1 rounded break-all">
                   {selectedVulnData.fingerprint}

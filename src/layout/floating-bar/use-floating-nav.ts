@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Loader2, Pause } from 'lucide-react';
+import { SpinnerGapIcon, PauseIcon } from '@phosphor-icons/react';
 
 import { mainNavItems, type NavItem } from '../constants';
 import { useNavStore } from '@/stores/nav';
@@ -10,10 +10,10 @@ import { useBrowserAutomationStore } from '@/stores/browser-automation';
 
 export type CrawlStatusKey = 'automation-running' | 'browser-running' | 'browser-paused';
 
-export const STATUS_CONFIG: Record<CrawlStatusKey, { icon: typeof Loader2 | typeof Pause; className: string }> = {
-  'automation-running': { icon: Loader2, className: 'size-3 animate-spin text-primary' },
-  'browser-running': { icon: Loader2, className: 'size-3 animate-spin text-primary' },
-  'browser-paused': { icon: Pause, className: 'size-3 text-amber-500' },
+export const STATUS_CONFIG: Record<CrawlStatusKey, { icon: typeof SpinnerGapIcon | typeof PauseIcon; className: string }> = {
+  'automation-running': { icon: SpinnerGapIcon, className: 'size-3 animate-spin text-primary' },
+  'browser-running': { icon: SpinnerGapIcon, className: 'size-3 animate-spin text-primary' },
+  'browser-paused': { icon: PauseIcon, className: 'size-3 text-amber-500' },
 };
 
 export function resolveNavStatus(

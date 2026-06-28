@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Plus, RefreshCw, Trash2 } from 'lucide-react';
+import { PlusIcon, ArrowClockwiseIcon, TrashIcon } from '@phosphor-icons/react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -29,7 +29,7 @@ const serverFormSchema = z.object({
   url: z
     .string()
     .trim()
-    .min(1, 'Server URL is required.')
+    .min(1, 'HardDrivesIcon URL is required.')
     .refine((value) => {
       try {
         const url = new URL(value);
@@ -114,13 +114,13 @@ export function ListenerSettings({
         <Dialog open={dialogOpen} onOpenChange={handleDialogOpenChange}>
           <DialogTrigger asChild>
             <Button variant="outline" className="h-7 gap-1 text-xs">
-              <Plus className="h-3 w-3" />
-              Add Server
+              <PlusIcon className="h-3 w-3" />
+              Add HardDrivesIcon
             </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Add Listener Server</DialogTitle>
+              <DialogTitle>Add Listener HardDrivesIcon</DialogTitle>
             </DialogHeader>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(handleAdd)} className="space-y-3">
@@ -146,7 +146,7 @@ export function ListenerSettings({
                   name="url"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-xs">Server URL</FormLabel>
+                      <FormLabel className="text-xs">HardDrivesIcon URL</FormLabel>
                       <FormControl>
                         <Input
                           {...field}
@@ -163,7 +163,7 @@ export function ListenerSettings({
                   name="apiKey"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-xs">API Key</FormLabel>
+                      <FormLabel className="text-xs">API KeyIcon</FormLabel>
                       <FormControl>
                         <Input
                           {...field}
@@ -212,7 +212,7 @@ export function ListenerSettings({
                   </div>
                   <p className="truncate font-mono text-[10px] text-muted-foreground">{s.url}</p>
                   <p className="font-mono text-[10px] text-muted-foreground">
-                    Key: {s.apiKey.slice(0, 4)}••••••
+                    KeyIcon: {s.apiKey.slice(0, 4)}••••••
                   </p>
                   <div className="flex gap-2 pt-1">
                     <Button
@@ -221,17 +221,17 @@ export function ListenerSettings({
                       onClick={() => handleCheck(s.id)}
                       disabled={checking === s.id}
                     >
-                      <RefreshCw
+                      <ArrowClockwiseIcon
                         className={`h-3 w-3 ${checking === s.id ? 'animate-spin' : ''}`}
                       />
-                      Check
+                      CheckIcon
                     </Button>
                     <Button
                       variant="destructive"
                       className="h-7 gap-1 text-[10px]"
                       onClick={() => onDeleteServer(s.id)}
                     >
-                      <Trash2 className="h-3 w-3" />
+                      <TrashIcon className="h-3 w-3" />
                       Delete
                     </Button>
                   </div>

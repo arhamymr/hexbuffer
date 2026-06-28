@@ -91,7 +91,7 @@ export function CustomSectionDialog({
             Cancel
           </Button>
           <Button onClick={handleAdd} disabled={!title.trim()}>
-            {mode === 'edit' ? 'Save File' : 'Add File'}
+            {mode === 'edit' ? 'FloppyDisk File' : 'Add File'}
           </Button>
         </DialogFooter>
       </DialogContent>

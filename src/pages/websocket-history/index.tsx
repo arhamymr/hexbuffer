@@ -5,7 +5,7 @@ import { useWebSocketHistoryPage } from "./hooks/use-websocket-history-page";
 import { useWebSocketHistoryQueryStore } from "./state/query-store";
 import { clearWebSocketLogs } from "./services/history-service";
 import { toast } from "sonner";
-import { Trash } from "lucide-react";
+import { TrashIcon } from '@phosphor-icons/react';
 import { Button } from "@/components/ui/button";
 
 export function WebSocketHistoryPage() {
@@ -35,7 +35,7 @@ export function WebSocketHistoryPage() {
       >
         <div className="bg-muted p-1 px-2 flex justify-between items-center border-b">
           <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider pl-1">
-            WebSocket History
+            WebSocket
           </span>
           <Button
             variant="ghost"
@@ -43,7 +43,7 @@ export function WebSocketHistoryPage() {
             onClick={handleClearAll}
             className="text-xs !text-red-500 shrink-0 h-6"
           >
-            <Trash className="size-3 mr-1" />
+            <TrashIcon className="size-3 mr-1" />
             Clear All Connections
           </Button>
         </div>

@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Alert, AlertAction, AlertDescription } from '@/components/ui/alert';
-import { InfoIcon } from 'lucide-react';
+import { Info } from '@phosphor-icons/react';
 import { TabbedPageLayout } from '@/components/tabs-layout/tabbed-page-layout';
 import { InvokerConfigDialog } from './components/invoker-config';
 import { InvokerPayloadDialog } from './components/payload-dialog';
@@ -21,7 +21,7 @@ export function InvokerPage() {
       {!page.invokerSafetyAlertDismissed && (
         <div className='p-2'>
           <Alert variant="default" className="min-h-12 shrink-0 border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-500/50 dark:bg-amber-500/10 dark:text-amber-200">
-            <InfoIcon className='!text-amber-600' />
+            <Info className='!text-amber-600' />
             <AlertDescription className='text-amber-600'>
               Only run invoker tests against systems you own or are explicitly authorized to assess. Unauthorized attempts can be illegal and may trigger account lockouts.
             </AlertDescription>

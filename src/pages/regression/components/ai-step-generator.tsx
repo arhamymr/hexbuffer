@@ -1,6 +1,6 @@
 import React from 'react';
 import { invoke } from '@tauri-apps/api/core';
-import { Sparkles, Loader2, AlertCircle, Info, Target, CheckCircle2, Circle, ArrowRight } from 'lucide-react';
+import { SparkleIcon, SpinnerGapIcon, WarningCircleIcon, Info, TargetIcon, CheckCircleIcon, CircleIcon, ArrowRightIcon } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
@@ -108,43 +108,43 @@ const GOAL_PATTERNS: Array<{
   buttonPatterns: RegExp[];
   label: string;
 }> = [
-  {
-    keywords: ['login', 'log in', 'sign in', 'signin', 'authenticate'],
-    fieldPatterns: [/email/i, /username/i, /user/i, /login/i],
-    buttonPatterns: [/login/i, /sign.?in/i, /submit/i, /continue/i],
-    label: 'Login / Authentication',
-  },
-  {
-    keywords: ['register', 'sign up', 'signup', 'create account'],
-    fieldPatterns: [/email/i, /username/i, /password/i, /confirm/i, /name/i],
-    buttonPatterns: [/sign.?up/i, /register/i, /create/i, /submit/i],
-    label: 'Registration / Sign Up',
-  },
-  {
-    keywords: ['search', 'find', 'lookup', 'query', 'look for'],
-    fieldPatterns: [/search/i, /query/i, /q/i, /keyword/i, /find/i],
-    buttonPatterns: [/search/i, /find/i, /go/i, /submit/i],
-    label: 'Search',
-  },
-  {
-    keywords: ['contact', 'message', 'inquiry', 'support', 'help'],
-    fieldPatterns: [/name/i, /email/i, /subject/i, /message/i, /phone/i],
-    buttonPatterns: [/submit/i, /send/i, /contact/i],
-    label: 'Contact / Support Form',
-  },
-  {
-    keywords: ['checkout', 'cart', 'buy', 'purchase', 'order', 'payment'],
-    fieldPatterns: [/card/i, /name/i, /address/i, /email/i, /zip/i, /cvv/i, /expir/i],
-    buttonPatterns: [/checkout/i, /buy/i, /order/i, /pay/i, /submit/i],
-    label: 'Checkout / Payment',
-  },
-  {
-    keywords: ['subscribe', 'newsletter', 'mailing list', 'notifications'],
-    fieldPatterns: [/email/i, /name/i],
-    buttonPatterns: [/subscribe/i, /sign.?up/i, /join/i],
-    label: 'Newsletter / Subscribe',
-  },
-];
+    {
+      keywords: ['login', 'log in', 'sign in', 'signin', 'authenticate'],
+      fieldPatterns: [/email/i, /username/i, /user/i, /login/i],
+      buttonPatterns: [/login/i, /sign.?in/i, /submit/i, /continue/i],
+      label: 'Login / Authentication',
+    },
+    {
+      keywords: ['register', 'sign up', 'signup', 'create account'],
+      fieldPatterns: [/email/i, /username/i, /password/i, /confirm/i, /name/i],
+      buttonPatterns: [/sign.?up/i, /register/i, /create/i, /submit/i],
+      label: 'Registration / Sign Up',
+    },
+    {
+      keywords: ['search', 'find', 'lookup', 'query', 'look for'],
+      fieldPatterns: [/search/i, /query/i, /q/i, /keyword/i, /find/i],
+      buttonPatterns: [/search/i, /find/i, /go/i, /submit/i],
+      label: 'MagnifyingGlassIcon',
+    },
+    {
+      keywords: ['contact', 'message', 'inquiry', 'support', 'help'],
+      fieldPatterns: [/name/i, /email/i, /subject/i, /message/i, /phone/i],
+      buttonPatterns: [/submit/i, /send/i, /contact/i],
+      label: 'Contact / Support Form',
+    },
+    {
+      keywords: ['checkout', 'cart', 'buy', 'purchase', 'order', 'payment'],
+      fieldPatterns: [/card/i, /name/i, /address/i, /email/i, /zip/i, /cvv/i, /expir/i],
+      buttonPatterns: [/checkout/i, /buy/i, /order/i, /pay/i, /submit/i],
+      label: 'Checkout / Payment',
+    },
+    {
+      keywords: ['subscribe', 'newsletter', 'mailing list', 'notifications'],
+      fieldPatterns: [/email/i, /name/i],
+      buttonPatterns: [/subscribe/i, /sign.?up/i, /join/i],
+      label: 'Newsletter / Subscribe',
+    },
+  ];
 
 function matchGoalsToElements(
   goals: string,
@@ -480,14 +480,14 @@ export function AiStepGenerator({ targetUrl, onStepsGenerated }: AiStepGenerator
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button variant="outline" className="gap-1.5">
-          <Sparkles className="size-3.5" />
+          <SparkleIcon className="size-3.5" />
           Generate with AI
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Sparkles className="size-4" />
+            <SparkleIcon className="size-4" />
             AI Step Generator
           </DialogTitle>
           <DialogDescription>
@@ -498,9 +498,9 @@ export function AiStepGenerator({ targetUrl, onStepsGenerated }: AiStepGenerator
         </DialogHeader>
 
         <div className="space-y-4">
-          {/* Target URL (read-only) */}
+          {/* TargetIcon URL (read-only) */}
           <div className="space-y-1.5">
-            <Label className="text-xs">Target URL</Label>
+            <Label className="text-xs">TargetIcon URL</Label>
             <Input
               value={targetUrl || '(no URL set in test case)'}
               readOnly
@@ -521,7 +521,7 @@ export function AiStepGenerator({ targetUrl, onStepsGenerated }: AiStepGenerator
                   return (
                     <React.Fragment key={s}>
                       {i > 0 && (
-                        <ArrowRight
+                        <ArrowRightIcon
                           className={cn(
                             'size-3 shrink-0',
                             isPast ? 'text-green-400' : 'text-muted-foreground/30'
@@ -537,11 +537,11 @@ export function AiStepGenerator({ targetUrl, onStepsGenerated }: AiStepGenerator
                         )}
                       >
                         {isActive ? (
-                          <Loader2 className="size-3 animate-spin" />
+                          <SpinnerGapIcon className="size-3 animate-spin" />
                         ) : isPast ? (
-                          <CheckCircle2 className="size-3" />
+                          <CheckCircleIcon className="size-3" />
                         ) : (
-                          <Circle className="size-3" />
+                          <CircleIcon className="size-3" />
                         )}
                         {STAGE_LABELS[s]}
                       </div>
@@ -576,7 +576,7 @@ export function AiStepGenerator({ targetUrl, onStepsGenerated }: AiStepGenerator
                   : 'text-muted-foreground hover:text-foreground'
               )}
             >
-              <Target className="size-3.5" />
+              <TargetIcon className="size-3.5" />
               Goals
             </button>
             <button
@@ -588,7 +588,7 @@ export function AiStepGenerator({ targetUrl, onStepsGenerated }: AiStepGenerator
                   : 'text-muted-foreground hover:text-foreground'
               )}
             >
-              <Sparkles className="size-3.5" />
+              <SparkleIcon className="size-3.5" />
               Scenario
             </button>
           </div>
@@ -625,14 +625,14 @@ export function AiStepGenerator({ targetUrl, onStepsGenerated }: AiStepGenerator
           {/* ── Stage indicators ──────────────────────────────── */}
           {stage === 'scraping' && (
             <div className="flex items-center gap-2 rounded-md bg-blue-50 dark:bg-blue-950/30 p-3 text-sm">
-              <Loader2 className="size-4 text-blue-500 animate-spin shrink-0" />
+              <SpinnerGapIcon className="size-4 text-blue-500 animate-spin shrink-0" />
               <span className="text-blue-700 dark:text-blue-400">Scanning target page…</span>
             </div>
           )}
 
           {stage === 'matching' && (
             <div className="flex items-center gap-2 rounded-md bg-purple-50 dark:bg-purple-950/30 p-3 text-sm">
-              <Loader2 className="size-4 text-purple-500 animate-spin shrink-0" />
+              <SpinnerGapIcon className="size-4 text-purple-500 animate-spin shrink-0" />
               <span className="text-purple-700 dark:text-purple-400">
                 Analyzing page elements for your goals…
               </span>
@@ -643,7 +643,7 @@ export function AiStepGenerator({ targetUrl, onStepsGenerated }: AiStepGenerator
           {stage === 'generating' && mode === 'goals' && matchedElements.length > 0 && (
             <div className="rounded-md bg-green-50 dark:bg-green-950/20 p-3 space-y-2">
               <div className="flex items-center gap-2">
-                <CheckCircle2 className="size-4 text-green-500 shrink-0" />
+                <CheckCircleIcon className="size-4 text-green-500 shrink-0" />
                 <p className="text-sm text-green-700 dark:text-green-400 font-medium">
                   Goals matched — {matchScore === 100 ? 'all goals found' : `${matchedElements.length} goal(s) matched`}
                 </p>
@@ -655,7 +655,7 @@ export function AiStepGenerator({ targetUrl, onStepsGenerated }: AiStepGenerator
               ))}
               {unmatchedGoals.length > 0 && (
                 <div className="flex items-start gap-1.5 text-xs text-yellow-600 dark:text-yellow-400 ml-6">
-                  <AlertCircle className="size-3 shrink-0 mt-0.5" />
+                  <WarningCircleIcon className="size-3 shrink-0 mt-0.5" />
                   <span>{unmatchedGoals.length} goal(s) had no direct matches — AI will attempt best-effort</span>
                 </div>
               )}
@@ -678,7 +678,7 @@ export function AiStepGenerator({ targetUrl, onStepsGenerated }: AiStepGenerator
           {/* Scrape error */}
           {scrapeError && (
             <div className="flex items-start gap-2 rounded-md bg-yellow-50 dark:bg-yellow-950/20 p-3 text-sm">
-              <AlertCircle className="size-4 text-yellow-500 shrink-0 mt-0.5" />
+              <WarningCircleIcon className="size-4 text-yellow-500 shrink-0 mt-0.5" />
               <div>
                 <p className="text-yellow-700 dark:text-yellow-400 font-medium">Could not scan target page</p>
                 <p className="text-yellow-600/70 dark:text-yellow-400/70 text-xs mt-0.5">
@@ -691,7 +691,7 @@ export function AiStepGenerator({ targetUrl, onStepsGenerated }: AiStepGenerator
           {/* Done stage */}
           {stage === 'done' && (
             <div className="flex items-center gap-2 rounded-md bg-green-50 dark:bg-green-950/20 p-3 text-sm">
-              <CheckCircle2 className="size-4 text-green-500 shrink-0" />
+              <CheckCircleIcon className="size-4 text-green-500 shrink-0" />
               <span className="text-green-700 dark:text-green-400">
                 {generatedStepCount} step{generatedStepCount !== 1 ? 's' : ''} generated successfully
               </span>
@@ -701,7 +701,7 @@ export function AiStepGenerator({ targetUrl, onStepsGenerated }: AiStepGenerator
           {/* Error */}
           {error && (
             <div className="flex items-start gap-2 rounded-md bg-destructive/10 p-3 text-sm text-destructive">
-              <AlertCircle className="size-4 shrink-0 mt-0.5" />
+              <WarningCircleIcon className="size-4 shrink-0 mt-0.5" />
               <p>{error}</p>
             </div>
           )}
@@ -718,12 +718,12 @@ export function AiStepGenerator({ targetUrl, onStepsGenerated }: AiStepGenerator
           >
             {isRunning ? (
               <>
-                <Loader2 className="size-3.5 animate-spin" />
+                <SpinnerGapIcon className="size-3.5 animate-spin" />
                 {STAGE_LABELS[stage]}…
               </>
             ) : (
               <>
-                <Target className="size-3.5" />
+                <TargetIcon className="size-3.5" />
                 {mode === 'goals' ? 'Generate from Goals' : 'Generate Steps'}
               </>
             )}

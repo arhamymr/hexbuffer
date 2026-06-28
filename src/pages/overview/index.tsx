@@ -5,7 +5,7 @@ import { ScratchpadWidget } from './components/scratchpad-widget';
 import { CollectionsWidget } from './components/collections-widget';
 import { DesktopIconItem } from './components/desktop-icon-item';
 import { Button } from '@/components/ui/button';
-import { ShieldAlert } from 'lucide-react';
+import { ShieldWarningIcon } from '@phosphor-icons/react';
 
 export function OverviewPage() {
   const {
@@ -33,7 +33,7 @@ export function OverviewPage() {
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center py-16 px-4 rounded-lg border border-dashed border-border/80 bg-muted/20 backdrop-blur-sm">
-              <ShieldAlert className="size-8 text-muted-foreground mb-3" />
+              <ShieldWarningIcon className="size-8 text-muted-foreground mb-3" />
               <p className="text-sm font-medium text-foreground">No features matched your search</p>
               <p className="text-xs text-muted-foreground mt-1">Try searching for another keyword or clear the search input.</p>
               <Button
@@ -41,7 +41,7 @@ export function OverviewPage() {
                 onClick={handleClearSearch}
                 className="mt-2 text-xs font-semibold text-primary hover:underline h-auto p-0"
               >
-                Clear Search
+                Clear MagnifyingGlassIcon
               </Button>
             </div>
           )}

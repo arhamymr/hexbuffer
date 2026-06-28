@@ -1,4 +1,4 @@
-import { Asterisk } from 'lucide-react';
+import { AsteriskIcon } from '@phosphor-icons/react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -16,9 +16,9 @@ export function ProxyButton() {
           "h-6 px-1.5 text-xs transition-all rounded-md duration-300 group-hover:px-2 gap-0")}
       >
         {isConnected ? (
-          <Asterisk className="!size-4 shrink-0 animate-pulse animate-spin [animation-duration:1.2s] fill-current text-green-500" />
+          <AsteriskIcon className="!size-4 shrink-0 animate-pulse animate-spin [animation-duration:1.2s] fill-current text-green-500" />
         ) : (
-          <Asterisk className="!size-4 shrink-0" />
+          <AsteriskIcon className="!size-4 shrink-0" />
         )}
         <span className="max-w-0 overflow-hidden whitespace-nowrap opacity-0 transition-all duration-300 group-hover:ml-1 group-hover:max-w-17 group-hover:opacity-100">
           {isConnected ? 'Proxy On' : 'Proxy Off'}

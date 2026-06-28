@@ -1,6 +1,6 @@
 import React from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
-import { ArrowDown, ArrowUp, Grip, Trash2 } from 'lucide-react';
+import { ArrowDownIcon, ArrowUpIcon, DotsSixIcon, TrashIcon } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { TestStep } from '../types';
@@ -67,7 +67,7 @@ function StepNodeComponent({ data, selected }: NodeProps) {
       )}
 
       <div className="flex items-center gap-2 px-3 py-2.5">
-        <Grip className="size-3.5 shrink-0 text-muted-foreground/30 opacity-80 transition-opacity group-hover:opacity-100" />
+        <DotsSixIcon className="size-3.5 shrink-0 text-muted-foreground/30 opacity-80 transition-opacity group-hover:opacity-100" />
         <div className="flex size-8 shrink-0 items-center justify-center rounded-md border bg-muted text-muted-foreground">
           <Icon className="size-4" />
         </div>
@@ -101,7 +101,7 @@ function StepNodeComponent({ data, selected }: NodeProps) {
               if (canMoveUp) onMove(index, index - 1);
             }}
           >
-            <ArrowUp className="size-3.5" />
+            <ArrowUpIcon className="size-3.5" />
           </Button>
           <Button
             type="button"
@@ -115,7 +115,7 @@ function StepNodeComponent({ data, selected }: NodeProps) {
               if (canMoveDown) onMove(index, index + 1);
             }}
           >
-            <ArrowDown className="size-3.5" />
+            <ArrowDownIcon className="size-3.5" />
           </Button>
           <Button
             type="button"
@@ -128,7 +128,7 @@ function StepNodeComponent({ data, selected }: NodeProps) {
               onRemove(index);
             }}
           >
-            <Trash2 className="size-3.5" />
+            <TrashIcon className="size-3.5" />
           </Button>
         </div>
       </div>

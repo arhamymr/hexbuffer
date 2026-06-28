@@ -1,4 +1,4 @@
-import { RotateCcwIcon, MenuIcon } from 'lucide-react';
+import { ArrowCounterClockwiseIcon, ListIcon } from '@phosphor-icons/react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,7 +18,7 @@ export function NavSettingsCard() {
     <Card>
       <CardHeader>
         <div className="flex items-center gap-2">
-          <MenuIcon className="size-5 text-primary" />
+          <ListIcon className="size-5 text-primary" />
           <CardTitle>Navigation</CardTitle>
         </div>
         <CardDescription>
@@ -58,7 +58,7 @@ export function NavSettingsCard() {
             onClick={resetHiddenNavItems}
             disabled={!hasHiddenItems}
           >
-            <RotateCcwIcon className="mr-2 size-4" />
+            <ArrowCounterClockwiseIcon className="mr-2 size-4" />
             Reset Navigation
           </Button>
           <p className="text-xs text-muted-foreground">

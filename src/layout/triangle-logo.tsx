@@ -1,4 +1,4 @@
-import { Triangle, TriangleDashed } from "lucide-react";
+import { TriangleIcon, TriangleDashedIcon } from '@phosphor-icons/react';
 
 import { cn } from "@/lib/utils";
 import { useTriangleLogo } from "./hooks/use-triangle-logo";
@@ -40,14 +40,14 @@ export function TriangleLogo({ size = "medium", className }: PulseTriangleProps)
       )}
       aria-hidden="true"
     >
-      <Triangle
+      <TriangleIcon
         className={cn(
           pulseTriangleIconBase,
           isConnected && pulseTriangleSolidAnimation,
           sizeClass
         )}
       />
-      <TriangleDashed
+      <TriangleDashedIcon
         className={cn(
           pulseTriangleIconBase,
           isConnected && pulseTriangleDashedAnimation,

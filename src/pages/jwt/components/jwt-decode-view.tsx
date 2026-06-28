@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Copy } from 'lucide-react';
+import { CopyIcon } from '@phosphor-icons/react';
 import type { JwtDecoded, JwtVulnerability } from '../types';
 import { ColorizedJwtInput } from './colorized-jwt-input';
 import { DecodedSection } from './decoded-section';
@@ -70,7 +70,7 @@ export function JwtDecodeView({
               disabled={!decoded}
               className="h-6 w-6 text-muted-foreground hover:text-foreground"
             >
-              <Copy className="h-3 w-3" />
+              <CopyIcon className="h-3 w-3" />
             </Button>
           </div>
 

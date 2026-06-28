@@ -1,7 +1,7 @@
 import * as ResizablePrimitive from "react-resizable-panels"
 
 import { cn } from "@/lib/utils"
-import { GripHorizontal, GripVertical } from "lucide-react"
+import { DotsSixIcon, DotsSixVerticalIcon } from '@phosphor-icons/react'
 
 function ResizablePanelGroup({
   className,
@@ -42,10 +42,10 @@ function ResizableHandle({
       {withHandle && (
         <div className="z-10 flex h-6 w-4 shrink-0 items-center justify-center rounded-sm border border-border bg-card">
           <div className="[aria-orientation=horizontal>*]:hidden block h-3 w-3 text-muted-foreground ([aria-orientation=horizontal]>*)::before:content-[' ']">
-            <GripVertical className="h-3 w-3" />
+            <DotsSixVerticalIcon className="h-3 w-3" />
           </div>
           <div className="[aria-orientation=horizontal>*]:block hidden h-3 w-3 text-muted-foreground">
-            <GripHorizontal className="h-3 w-3" />
+            <DotsSixIcon className="h-3 w-3" />
           </div>
         </div>
       )}

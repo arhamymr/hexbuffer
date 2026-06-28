@@ -5,7 +5,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { TextEditor } from "@/components/ui/text-editor";
-import { Trash2, Plus } from "lucide-react";
+import { TrashIcon, PlusIcon } from '@phosphor-icons/react';
 import type { KeyValuePair, ActiveRequestState } from "@/stores/collections";
 import { cn } from "@/lib/utils";
 import { ColorizedUrlInput } from "@/components/ui/select-env-input";
@@ -38,7 +38,7 @@ function KeyValueEditor({
           {noun}
         </span>
         <Button variant="ghost" size="sm" className="h-7 px-2" onClick={onAdd}>
-          <Plus className="h-3.5 w-3.5 mr-1" /> Add
+          <PlusIcon className="h-3.5 w-3.5 mr-1" /> Add
         </Button>
       </div>
       {items.map((item, index) => (
@@ -68,7 +68,7 @@ function KeyValueEditor({
             className="w-4 mr-4 text-muted-foreground hover:text-destructive shrink-0"
             onClick={() => onRemove(index)}
           >
-            <Trash2 className="h-4 w-4" />
+            <TrashIcon className="h-4 w-4" />
           </Button>
         </div>
       ))}

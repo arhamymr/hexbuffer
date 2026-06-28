@@ -11,27 +11,27 @@ import { cn } from '@/lib/utils';
 import { useAutomationStore } from '@/stores/automation';
 import { WORKFLOW_TEMPLATES, type WorkflowTemplate } from '../templates';
 import {
-  Activity,
+  PulseIcon,
   Bell,
-  Bug,
-  Clock,
-  Code,
-  Download,
-  FileCode,
-  FileText,
-  Filter,
-  Globe,
+  BugIcon,
+  ClockIcon,
+  CodeIcon,
+  DownloadIcon,
+  FileCodeIcon,
+  FileTextIcon,
+  FunnelIcon,
+  GlobeIcon,
   Hash,
-  Network,
-  Plus,
-  Radio,
-  ScanLine,
-  Search,
-  Shield,
-  Sparkles,
-  type LucideIcon,
-  Zap,
-} from 'lucide-react';
+  NetworkIcon,
+  PlusIcon,
+  RadioIcon,
+  ScanIcon,
+  MagnifyingGlassIcon,
+  ShieldIcon,
+  SparkleIcon,
+  type Icon,
+  LightningIcon,
+} from '@phosphor-icons/react';
 
 const CATEGORY_LABELS: Record<WorkflowTemplate['category'], string> = {
   monitoring: 'Monitoring',
@@ -42,25 +42,25 @@ const CATEGORY_LABELS: Record<WorkflowTemplate['category'], string> = {
 
 const CATEGORY_ORDER: WorkflowTemplate['category'][] = ['monitoring', 'security', 'crawl', 'general'];
 
-const TEMPLATE_ICONS: Record<string, LucideIcon> = {
-  Activity,
+const TEMPLATE_ICONS: Record<string, Icon> = {
+  PulseIcon,
   Bell,
-  Bug,
-  Clock,
-  Code,
-  Download,
-  FileCode,
-  FileText,
-  Filter,
-  Globe,
+  BugIcon,
+  ClockIcon,
+  CodeIcon,
+  DownloadIcon,
+  FileCodeIcon,
+  FileTextIcon,
+  FunnelIcon,
+  GlobeIcon,
   Hash,
-  Network,
-  Radio,
-  ScanLine,
-  Search,
-  Shield,
-  Sparkles,
-  Zap,
+  NetworkIcon,
+  RadioIcon,
+  ScanIcon,
+  MagnifyingGlassIcon,
+  ShieldIcon,
+  SparkleIcon,
+  LightningIcon,
 };
 
 interface TemplatesDialogProps {
@@ -110,7 +110,7 @@ export function TemplatesDialog({ open, onOpenChange }: TemplatesDialogProps) {
             )}
           >
             <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-muted">
-              <Plus className="size-5 text-muted-foreground" />
+              <PlusIcon className="size-5 text-muted-foreground" />
             </div>
             <div className="min-w-0">
               <p className="text-sm font-medium">Blank Workflow</p>
@@ -128,7 +128,7 @@ export function TemplatesDialog({ open, onOpenChange }: TemplatesDialogProps) {
               </h3>
               <div className="grid gap-2">
                 {group.templates.map((template) => {
-                  const Icon = TEMPLATE_ICONS[template.icon] ?? Zap;
+                  const Icon = TEMPLATE_ICONS[template.icon] ?? LightningIcon;
 
                   return (
                     <button

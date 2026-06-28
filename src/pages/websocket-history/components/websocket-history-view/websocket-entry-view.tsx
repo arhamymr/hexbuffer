@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Search } from 'lucide-react';
+import { MagnifyingGlassIcon } from '@phosphor-icons/react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Empty, EmptyDescription, EmptyTitle } from '@/components/ui/empty';
 import { Input } from '@/components/ui/input';
@@ -150,19 +150,19 @@ export function WebSocketEntryView({ selectedConnectionId }: WebSocketEntryViewP
 
           {/* Messages Toolbar Filters */}
           <div className="flex flex-wrap items-center gap-3">
-            {/* Search Input */}
+            {/* MagnifyingGlassIcon Input */}
             <div className="relative flex-1 min-w-[120px]">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3 text-muted-foreground" />
+              <MagnifyingGlassIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3 text-muted-foreground" />
               <Input
                 type="text"
-                placeholder="Search messages..."
+                placeholder="MagnifyingGlassIcon messages..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-7 pr-2 h-7 text-xs bg-background"
               />
             </div>
 
-            {/* Direction Filter Toggles */}
+            {/* Direction FunnelIcon Toggles */}
             <div className="flex items-center border rounded h-7 overflow-hidden bg-background divide-x">
               <button
                 type="button"

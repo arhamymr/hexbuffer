@@ -1,4 +1,4 @@
-import { FolderHeart, Send, Loader2, FolderOpen } from 'lucide-react';
+import { FolderStarIcon, PaperPlaneTiltIcon, SpinnerGapIcon, FolderOpenIcon } from '@phosphor-icons/react';
 import React, { useMemo } from 'react';
 import {
   DropdownMenuSub,
@@ -74,13 +74,13 @@ export function CollectionPickerSubmenu({
   return (
     <Sub>
       <SubTrigger className="text-xs py-1 px-1.5" disabled={disabled}>
-        <Send className="mr-1.5 size-3" />
-        Send to Repeater
+        <PaperPlaneTiltIcon className="mr-1.5 size-3" />
+        PaperPlaneTiltIcon to Repeater
       </SubTrigger>
       <SubContent>
         {!isHydrated ? (
           <Item className="text-xs py-1 px-1.5" disabled>
-            <Loader2 className="mr-1.5 size-3 animate-spin" />
+            <SpinnerGapIcon className="mr-1.5 size-3 animate-spin" />
             Loading workspaces...
           </Item>
         ) : workspaces.length === 0 ? (
@@ -95,7 +95,7 @@ export function CollectionPickerSubmenu({
             return (
               <Sub key={ws.id}>
                 <SubTrigger className="text-xs py-1 px-1.5">
-                  <FolderOpen className="mr-1.5 size-3" />
+                  <FolderOpenIcon className="mr-1.5 size-3" />
                   {ws.name}
                 </SubTrigger>
                 <SubContent>
@@ -104,7 +104,7 @@ export function CollectionPickerSubmenu({
                       className="text-xs py-1 px-1.5 font-medium text-primary"
                       onClick={() => handleCreateAndSelect(ws.id)}
                     >
-                      <FolderHeart className="mr-1.5 size-3" />
+                      <FolderStarIcon className="mr-1.5 size-3" />
                       new collection
                     </Item>
                   ) : (
@@ -114,7 +114,7 @@ export function CollectionPickerSubmenu({
                         className="text-xs py-1 px-1.5"
                         onClick={() => onSelect(node.id)}
                       >
-                        <Send className="mr-1.5 size-3" />
+                        <PaperPlaneTiltIcon className="mr-1.5 size-3" />
                         {node.name}
                       </Item>
                     ))

@@ -180,7 +180,7 @@ export function useRegressionPage() {
     });
   }, []);
 
-  // Save: persist and convert tab to viewing mode
+  // FloppyDisk: persist and convert tab to viewing mode
   const handleSave = React.useCallback(
     async (tc: TestCase) => {
       const saved = await saveTestCase(tc);

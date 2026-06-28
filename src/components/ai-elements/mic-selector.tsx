@@ -13,7 +13,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { ChevronsUpDownIcon } from "lucide-react";
+import { CaretUpDownIcon } from '@phosphor-icons/react';
 import type { ComponentProps, ReactNode } from "react";
 import {
   createContext,
@@ -236,7 +236,7 @@ export const MicSelectorTrigger = ({
     <PopoverTrigger asChild>
       <Button variant="outline" {...props} ref={ref}>
         {children}
-        <ChevronsUpDownIcon
+        <CaretUpDownIcon
           className="shrink-0 text-muted-foreground"
           size={16}
         />

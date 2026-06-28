@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import type { KeyboardEvent } from 'react';
-import { CheckCircle2, ScanEye } from 'lucide-react';
+import { CheckCircleIcon, ScanSmileyIcon } from '@phosphor-icons/react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -172,7 +172,7 @@ export function AiInsightsPanel({
               <AccordionItem value="interesting-pages" className="max-w-full overflow-hidden rounded-md border">
                 <AccordionTrigger className="w-full max-w-full gap-2 overflow-hidden px-2 py-2 text-xs font-semibold uppercase text-muted-foreground hover:bg-muted/50 hover:no-underline">
                   <span className="flex max-w-full flex-1 items-center gap-2 overflow-hidden">
-                    <ScanEye className="size-3.5 shrink-0" />
+                    <ScanSmileyIcon className="size-3.5 shrink-0" />
                     <span className="max-w-full break-words">Interesting Pages ({interestingPages.length})</span>
                   </span>
                 </AccordionTrigger>
@@ -239,7 +239,7 @@ export function AiInsightsPanel({
                         </span>
                         {insight.reviewed && (
                           <Badge variant="outline" className="h-5 shrink-0 border-emerald-500/25 px-1.5 text-[10px] text-emerald-700 dark:text-emerald-300">
-                            <CheckCircle2 className="h-3 w-3" />
+                            <CheckCircleIcon className="h-3 w-3" />
                             Reviewed
                           </Badge>
                         )}
@@ -270,7 +270,7 @@ export function AiInsightsPanel({
                             toggleInsightReviewed(insight.id);
                           }}
                         >
-                          <CheckCircle2 className="h-3.5 w-3.5" />
+                          <CheckCircleIcon className="h-3.5 w-3.5" />
                           {insight.reviewed ? 'Unreview' : 'Review'}
                         </Button>
                       </div>

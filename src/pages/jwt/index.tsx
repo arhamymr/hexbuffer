@@ -1,6 +1,6 @@
 import { ButtonGroup } from '@/components/ui/button-group';
 import { Button } from '@/components/ui/button';
-import { Copy, Trash2 } from 'lucide-react';
+import { CopyIcon, TrashIcon } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils';
 import { useJwtPage } from './hooks/use-jwt-page';
 import { JwtDecodeView } from './components/jwt-decode-view';
@@ -68,8 +68,8 @@ export function JwtPage() {
                 disabled={!page.tokenInput}
                 className="h-7 text-xs gap-1 px-2"
               >
-                <Copy className="h-3 w-3" />
-                Copy Token
+                <CopyIcon className="h-3 w-3" />
+                CopyIcon Token
               </Button>
               <Button
                 variant="ghost"
@@ -78,7 +78,7 @@ export function JwtPage() {
                 disabled={!page.tokenInput}
                 className="h-7 w-7 text-muted-foreground hover:text-foreground"
               >
-                <Trash2 className="h-3.5 w-3.5" />
+                <TrashIcon className="h-3.5 w-3.5" />
               </Button>
             </>
           )}
@@ -91,8 +91,8 @@ export function JwtPage() {
                 disabled={!page.generatedToken}
                 className="h-7 text-xs gap-1 px-2"
               >
-                <Copy className="h-3 w-3" />
-                Copy Token
+                <CopyIcon className="h-3 w-3" />
+                CopyIcon Token
               </Button>
               <Button
                 variant="ghost"
@@ -101,7 +101,7 @@ export function JwtPage() {
                 disabled={isEmpty}
                 className="h-7 w-7 text-muted-foreground hover:text-foreground"
               >
-                <Trash2 className="h-3.5 w-3.5" />
+                <TrashIcon className="h-3.5 w-3.5" />
               </Button>
             </>
           )}

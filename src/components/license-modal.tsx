@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { openUrl } from '@tauri-apps/plugin-opener';
-import { CheckCircle2, ExternalLink, KeyRound, Loader2, ShoppingBag } from 'lucide-react';
+import { CheckCircleIcon, ArrowSquareOutIcon, SpinnerGapIcon, ShoppingBagIcon } from '@phosphor-icons/react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -79,13 +79,13 @@ export function LicenseModal({ open, onOpenChange }: LicenseModalProps) {
             <div className="rounded-lg border border-green-500/20 bg-green-500/5 p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <CheckCircle2 className="size-4 text-green-600 dark:text-green-400" />
+                  <CheckCircleIcon className="size-4 text-green-600 dark:text-green-400" />
                   <span className="text-sm font-medium">License active — never expires</span>
                 </div>
                 <Badge className="bg-green-600 text-white hover:bg-green-700">Lifetime</Badge>
               </div>
               <p className="mt-2 font-mono text-xs text-muted-foreground">
-                Key: {licenseKey ? maskKey(licenseKey) : '—'}
+                KeyIcon: {licenseKey ? maskKey(licenseKey) : '—'}
               </p>
             </div>
           ) : (
@@ -100,9 +100,9 @@ export function LicenseModal({ open, onOpenChange }: LicenseModalProps) {
                 className="mt-3 w-full"
                 onClick={handleBuyLicense}
               >
-                <ShoppingBag className="size-4" />
+                <ShoppingBagIcon className="size-4" />
                 Buy License
-                <ExternalLink className="size-3" />
+                <ArrowSquareOutIcon className="size-3" />
               </Button>
             </div>
           )}
@@ -134,7 +134,7 @@ export function LicenseModal({ open, onOpenChange }: LicenseModalProps) {
                   disabled={!keyValid || activating}
                 >
                   {activating ? (
-                    <Loader2 className="size-4 animate-spin" />
+                    <SpinnerGapIcon className="size-4 animate-spin" />
                   ) : (
                     'Activate'
                   )}

@@ -37,7 +37,7 @@ export const CATEGORY_HANDLE: Record<NodeCategory, string> = {
   action: '!bg-emerald-500 !border-background hover:!bg-emerald-600',
 };
 
-export const DEFAULT_WORKFLOW_NAME = 'Untitled Workflow';
+export const DEFAULT_WORKFLOW_NAME = 'Untitled FlowArrow';
 
 let nodeCounter = 0;
 

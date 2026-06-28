@@ -67,13 +67,13 @@ export const createExecutionSlice = (
   runWorkflow: async (workflowId: string, context?: WorkflowContext) => {
     const workflow = get().workflows.find((w) => w.id === workflowId);
     if (!workflow) {
-      toast.error('Workflow is unavailable');
+      toast.error('FlowArrow is unavailable');
       return;
     }
 
     const readiness = getWorkflowReadiness(workflow);
     if (!readiness.ready) {
-      const message = readiness.reason ?? 'Workflow needs action before running';
+      const message = readiness.reason ?? 'FlowArrow needs action before running';
       toast.error(message);
       get().appendExecutionLog({ workflowId, level: 'error', message });
       return;
@@ -107,7 +107,7 @@ export const createExecutionSlice = (
         });
       }
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error || 'Workflow failed');
+      const message = error instanceof Error ? error.message : String(error || 'FlowArrow failed');
       toast.error(message);
       get().appendExecutionLog({ workflowId, level: 'error', message });
     }
@@ -129,7 +129,7 @@ export const createExecutionSlice = (
         workflowId,
         timestamp,
         level: 'warning',
-        message: `Workflow aborted: ${reason}`,
+        message: `FlowArrow aborted: ${reason}`,
       };
       const nodeRuntimeById = Object.fromEntries(
         Object.entries(state.nodeRuntimeById).map(([nodeId, runtime]) => [
@@ -138,7 +138,7 @@ export const createExecutionSlice = (
             ? {
                 ...runtime,
                 status: 'skipped' as const,
-                message: `Workflow aborted: ${reason}`,
+                message: `FlowArrow aborted: ${reason}`,
                 updatedAt: timestamp,
               }
             : runtime,

@@ -137,7 +137,7 @@ export function useWebSocketDetail(selectedConnectionId: string | null) {
 
   const filteredMessages = useMemo(() => {
     return messages.filter((msg) => {
-      // 1. Direction Filter
+      // 1. Direction Funnel
       if (directionFilter !== 'all' && msg.direction !== directionFilter) {
         return false;
       }
@@ -164,7 +164,7 @@ export function useWebSocketDetail(selectedConnectionId: string | null) {
         }
       }
 
-      // 3. Search query
+      // 3. MagnifyingGlass query
       if (searchQuery.trim()) {
         const query = searchQuery.toLowerCase();
         return msg.payload.toLowerCase().includes(query);

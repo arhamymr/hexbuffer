@@ -24,7 +24,7 @@ export function useSqliPage() {
   const [url, setUrl] = useState('');
   const [method, setMethod] = useState<'GET' | 'POST'>('GET');
   const [headers, setHeaders] = useState<Array<[string, string]>>([
-    ['Content-Type', 'application/x-www-form-urlencoded'],
+    ['Content-TextT', 'application/x-www-form-urlencoded'],
   ]);
   const [parameters, setParameters] = useState<SqliParam[]>([]);
   const [newParamName, setNewParamName] = useState('');

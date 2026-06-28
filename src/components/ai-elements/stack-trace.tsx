@@ -7,11 +7,11 @@ import {
 } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
 import {
-  AlertTriangleIcon,
+  WarningCircleIcon,
   CheckIcon,
-  ChevronDownIcon,
+  CaretDownIcon,
   CopyIcon,
-} from "lucide-react";
+} from '@phosphor-icons/react';
 import type { ComponentProps } from "react";
 import {
   createContext,
@@ -240,7 +240,7 @@ export const StackTraceError = memo(
       )}
       {...props}
     >
-      <AlertTriangleIcon className="size-4 shrink-0 text-destructive" />
+      <WarningCircleIcon className="size-4 shrink-0 text-destructive" />
       {children}
     </div>
   )
@@ -321,7 +321,7 @@ export const StackTraceCopyButton = memo(
 
     const copyToClipboard = useCallback(async () => {
       if (typeof window === "undefined" || !navigator?.clipboard?.writeText) {
-        onError?.(new Error("Clipboard API not available"));
+        onError?.(new Error("ClipboardIcon API not available"));
         return;
       }
 
@@ -371,7 +371,7 @@ export const StackTraceExpandButton = memo(
         className={cn("flex size-7 items-center justify-center", className)}
         {...props}
       >
-        <ChevronDownIcon
+        <CaretDownIcon
           className={cn(
             "size-4 text-muted-foreground transition-transform",
             isOpen ? "rotate-180" : "rotate-0"

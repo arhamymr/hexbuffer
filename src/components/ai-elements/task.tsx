@@ -6,19 +6,19 @@ import {
 import { cn } from "@/lib/utils";
 import {
   CheckCircleIcon,
-  ChevronDownIcon,
+  CaretDownIcon,
   CircleIcon,
-  Loader2Icon,
-  SearchIcon,
+  SpinnerGapIcon,
+  MagnifyingGlassIcon,
   XCircleIcon,
-} from "lucide-react";
+} from '@phosphor-icons/react';
 import type { ComponentProps, ReactNode } from "react";
 
 export type TaskStatus = "pending" | "in_progress" | "completed" | "error";
 
 const statusIcons: Record<TaskStatus, ReactNode> = {
   pending: <CircleIcon className="size-3.5 text-muted-foreground" />,
-  in_progress: <Loader2Icon className="size-3.5 animate-spin text-blue-500" />,
+  in_progress: <SpinnerGapIcon className="size-3.5 animate-spin text-blue-500" />,
   completed: <CheckCircleIcon className="size-3.5 text-green-500" />,
   error: <XCircleIcon className="size-3.5 text-red-500" />,
 };
@@ -107,7 +107,7 @@ export const TaskTrigger = ({
             {completed}/{total}
           </span>
         ) : null}
-        <ChevronDownIcon className="size-4 transition-transform group-data-[state=open]:rotate-180" />
+        <CaretDownIcon className="size-4 transition-transform group-data-[state=open]:rotate-180" />
       </div>
     )}
   </CollapsibleTrigger>

@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import Ansi from "ansi-to-react";
-import { CheckIcon, CopyIcon, TerminalIcon, Trash2Icon } from "lucide-react";
+import { CheckIcon, CopyIcon, TerminalIcon, TrashIcon } from '@phosphor-icons/react';
 import type { ComponentProps, HTMLAttributes } from "react";
 import {
   createContext,
@@ -56,7 +56,7 @@ export const TerminalTitle = ({
     {...props}
   >
     <TerminalIcon className="size-4" />
-    {children ?? "Terminal"}
+    {children ?? "TerminalIcon"}
   </div>
 );
 
@@ -115,7 +115,7 @@ export const TerminalCopyButton = ({
 
   const copyToClipboard = useCallback(async () => {
     if (typeof window === "undefined" || !navigator?.clipboard?.writeText) {
-      onError?.(new Error("Clipboard API not available"));
+      onError?.(new Error("ClipboardIcon API not available"));
       return;
     }
 
@@ -176,7 +176,7 @@ export const TerminalClearButton = ({
       variant="ghost"
       {...props}
     >
-      {children ?? <Trash2Icon size={14} />}
+      {children ?? <TrashIcon size={14} />}
     </Button>
   );
 };
@@ -225,7 +225,7 @@ export type TerminalProps = HTMLAttributes<HTMLDivElement> & {
   onClear?: () => void;
 };
 
-export const Terminal = ({
+export const TerminalIcon = ({
   output,
   isStreaming = false,
   autoScroll = true,

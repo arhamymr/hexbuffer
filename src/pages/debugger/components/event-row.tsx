@@ -1,6 +1,6 @@
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { ArrowLeft, ArrowRight } from 'lucide-react';
+import { ArrowLeftIcon, ArrowRightIcon } from '@phosphor-icons/react';
 import type { DebuggerEntry } from '@/stores/debugger';
 import { EVENT_COLORS } from '../constants';
 import { formatTimestamp } from '../lib/format-timestamp';
@@ -28,9 +28,9 @@ export function EventRow({
 
       <span className="shrink-0 mt-px">
         {entry.direction === 'input' ? (
-          <ArrowRight className="size-3 text-blue-500" />
+          <ArrowRightIcon className="size-3 text-blue-500" />
         ) : (
-          <ArrowLeft className="size-3 text-emerald-500" />
+          <ArrowLeftIcon className="size-3 text-emerald-500" />
         )}
       </span>
 

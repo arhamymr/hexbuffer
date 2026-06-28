@@ -18,7 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Plus, Trash2, Loader2 } from 'lucide-react';
+import { PlusIcon, TrashIcon, SpinnerGapIcon } from '@phosphor-icons/react';
 import type { Target } from '@/types';
 
 interface ScopeTableProps {
@@ -131,7 +131,7 @@ export function ScopeTable({ targets, onTargetsUpdated }: ScopeTableProps) {
           <span>Subdomain</span>
         </label>
         <Button onClick={handleAddDomain} disabled={!newDomain.trim() || !selectedTargetId || loading}>
-          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+          {loading ? <SpinnerGapIcon className="h-4 w-4 animate-spin" /> : <PlusIcon className="h-4 w-4" />}
         </Button>
         <Select value={selectedTargetId} onValueChange={setSelectedTargetId}>
           <SelectTrigger className="w-[140px] h-8">
@@ -179,7 +179,7 @@ export function ScopeTable({ targets, onTargetsUpdated }: ScopeTableProps) {
                       onClick={() => handleRemoveDomain(entry.targetId, entry.domain, entry.isWildcard)}
                       disabled={loading}
                     >
-                      <Trash2 className="h-3 w-3 text-destructive" />
+                      <TrashIcon className="h-3 w-3 text-destructive" />
                     </Button>
                   </TableCell>
                 </TableRow>

@@ -1,4 +1,4 @@
-import { X } from 'lucide-react';
+import { XIcon } from '@phosphor-icons/react';
 import type { NavItem } from '@/layout/constants';
 
 interface PageMentionChipProps {
@@ -23,7 +23,7 @@ export function PageMentionChip({ item, onRemove }: PageMentionChipProps) {
         }}
         className="ml-0.5 rounded-sm p-0.5 hover:bg-muted-foreground/20 transition-colors"
       >
-        <X className="size-3" />
+        <XIcon className="size-3" />
       </button>
     </span>
   );

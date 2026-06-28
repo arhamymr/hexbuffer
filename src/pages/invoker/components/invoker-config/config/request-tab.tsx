@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { invoke } from '@tauri-apps/api/core';
-import { Astroid, Info, Loader2, Sparkles, Target } from 'lucide-react';
+import { AsteriskIcon, Info, SpinnerGapIcon, SparkleIcon, TargetIcon } from '@phosphor-icons/react';
 import type { EditorView } from '@codemirror/view';
 
 import { Badge } from '@/components/ui/badge';
@@ -288,9 +288,9 @@ export function RequestTab() {
                 disabled={isRunning || autoMarkLoading}
               >
                 {autoMarkLoading ? (
-                  <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+                  <SpinnerGapIcon className="mr-1 h-4 w-4 animate-spin" />
                 ) : (
-                  <Astroid className="mr-1 h-4 w-4" />
+                  <AsteriskIcon className="mr-1 h-4 w-4" />
                 )}
                 Auto
               </Button>
@@ -301,7 +301,7 @@ export function RequestTab() {
                 onClick={markRawRequestTarget}
                 disabled={isRunning}
               >
-                <Target className="mr-1 h-4 w-4" />
+                <TargetIcon className="mr-1 h-4 w-4" />
                 Mark
               </Button>
             </ButtonGroup>

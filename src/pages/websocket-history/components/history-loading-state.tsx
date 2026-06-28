@@ -1,4 +1,4 @@
-import { Spinner } from '@/components/ui/spinner';
+import { SpinnerIcon } from '@/components/ui/spinner';
 import { Skeleton } from '@/components/ui/skeleton';
 
 interface HistoryLoadingStateProps {
@@ -18,7 +18,7 @@ export function HistoryLoadingState({ label, columns }: HistoryLoadingStateProps
         ))}
       </div>
       <div className="flex items-center gap-2 border-b px-3 py-2 text-xs text-muted-foreground">
-        <Spinner className="size-3.5" />
+        <SpinnerIcon className="size-3.5" />
         <span>{label}</span>
       </div>
       <div className="space-y-1 p-2">

@@ -1,7 +1,7 @@
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ArrowLeftRight, Copy, Trash2 } from 'lucide-react';
+import { ArrowsLeftRightIcon, CopyIcon, TrashIcon } from '@phosphor-icons/react';
 import type { CodecType, CodecMode } from '../types';
 import { CODEC_LABELS } from '../constants';
 
@@ -53,15 +53,15 @@ export function EncoderToolbar({
 
       <div className="flex items-center gap-1.5">
         <Button variant="outline" size="sm" onClick={onSwap} className="h-7 text-xs gap-1 px-2">
-          <ArrowLeftRight className="h-3 w-3" />
+          <ArrowsLeftRightIcon className="h-3 w-3" />
           Swap
         </Button>
         <Button variant="outline" size="sm" onClick={onCopy} disabled={!output} className="h-7 text-xs gap-1 px-2">
-          <Copy className="h-3 w-3" />
-          Copy Output
+          <CopyIcon className="h-3 w-3" />
+          CopyIcon Output
         </Button>
         <Button variant="ghost" size="icon" onClick={onClear} disabled={isEmpty} className="h-7 w-7 text-muted-foreground hover:text-foreground">
-          <Trash2 className="h-3.5 w-3.5" />
+          <TrashIcon className="h-3.5 w-3.5" />
         </Button>
       </div>
     </div>

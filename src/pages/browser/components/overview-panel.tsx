@@ -1,4 +1,4 @@
-import { Activity, AlertCircle, Clock, Eye, FileText, Globe, Layers, ShieldOff, Timer } from 'lucide-react';
+import { PulseIcon, WarningCircleIcon, ClockIcon, EyeIcon, FileTextIcon, GlobeIcon, StackIcon, ShieldSlashIcon, TimerIcon } from '@phosphor-icons/react';
 import { formatDuration } from '../lib/crawl-data';
 import type { CrawlOverview } from '../types';
 
@@ -6,16 +6,16 @@ interface CrawlOverviewPanelProps {
   overview: CrawlOverview;
 }
 
-const metricIcons: Record<string, typeof Activity> = {
-  Status: Activity,
-  Visited: Eye,
-  Discovered: Globe,
-  Queued: Clock,
-  Depth: Layers,
-  Errors: AlertCircle,
-  Blocked: ShieldOff,
-  Forms: FileText,
-  Duration: Timer,
+const metricIcons: Record<string, typeof PulseIcon> = {
+  Status: PulseIcon,
+  Visited: EyeIcon,
+  Discovered: GlobeIcon,
+  Queued: ClockIcon,
+  Depth: StackIcon,
+  Errors: WarningCircleIcon,
+  Blocked: ShieldSlashIcon,
+  Forms: FileTextIcon,
+  Duration: TimerIcon,
 };
 
 export function CrawlOverviewPanel({ overview }: CrawlOverviewPanelProps) {
@@ -40,7 +40,7 @@ export function CrawlOverviewPanel({ overview }: CrawlOverviewPanelProps) {
 
       <div className="grid content-start gap-y-2 overflow-auto p-3 text-xs text-muted-foreground">
         {metrics.map((metric) => {
-          const Icon = metricIcons[metric.label] ?? Activity;
+          const Icon = metricIcons[metric.label] ?? PulseIcon;
           return (
             <div key={metric.label} className="grid grid-cols-[1fr_auto] gap-3">
               <span className="inline-flex items-center gap-1.5">

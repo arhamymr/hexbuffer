@@ -1,6 +1,6 @@
 import type { MouseEvent } from 'react';
 import { useState } from 'react';
-import { ChevronDown, ChevronRight, FileText, Lock, LockOpen } from 'lucide-react';
+import { CaretDownIcon, CaretRightIcon, FileTextIcon, LockIcon, LockOpenIcon } from '@phosphor-icons/react';
 import { HighlightedText } from '@/components/highlighted-text';
 import { cn } from '@/lib/utils';
 import type { TreeNodeData } from './types';
@@ -32,11 +32,11 @@ function getNodeIcon<TMeta>(node: TreeNodeData<TMeta>) {
 
   if (node.type === 'host') {
     return isHttpsHost(node)
-      ? { Icon: Lock, colorClassName: 'text-emerald-500' }
-      : { Icon: LockOpen, colorClassName: 'text-red-500' };
+      ? { Icon: LockIcon, colorClassName: 'text-emerald-500' }
+      : { Icon: LockOpenIcon, colorClassName: 'text-red-500' };
   }
 
-  return { Icon: FileText, colorClassName: 'text-gray-500' };
+  return { Icon: FileTextIcon, colorClassName: 'text-gray-500' };
 }
 
 export function TreeNode<TMeta = unknown>({
@@ -100,9 +100,9 @@ export function TreeNode<TMeta = unknown>({
             aria-label={isExpanded ? `Collapse ${node.label}` : `Expand ${node.label}`}
           >
             {isExpanded ? (
-              <ChevronDown className="size-4" />
+              <CaretDownIcon className="size-4" />
             ) : (
-              <ChevronRight className="size-4" />
+              <CaretRightIcon className="size-4" />
             )}
           </button>
         ) : (

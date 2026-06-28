@@ -1,4 +1,4 @@
-import { X, Trash2, Info } from 'lucide-react';
+import { XIcon, TrashIcon, Info } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
 import { useAutomationStore } from '@/stores/automation';
 import {
@@ -67,7 +67,7 @@ export function NodeConfigPanel({ node, onClose, onUpdate, onDelete, onRun }: No
               onClick={() => onDelete(node.id)}
               aria-label="Delete node"
             >
-              <Trash2 className="size-3.5" />
+              <TrashIcon className="size-3.5" />
             </Button>
           )}
           <Button
@@ -77,7 +77,7 @@ export function NodeConfigPanel({ node, onClose, onUpdate, onDelete, onRun }: No
             onClick={onClose}
             aria-label="Close"
           >
-            <X className="size-3.5" />
+            <XIcon className="size-3.5" />
           </Button>
         </div>
       </div>
@@ -163,7 +163,7 @@ export function NodeConfigPanel({ node, onClose, onUpdate, onDelete, onRun }: No
                 <p className="text-xs font-mono text-muted-foreground break-all select-all">{node.id}</p>
               </div>
               <div className="space-y-1.5">
-                <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Type</span>
+                <span className="text-[10px] uppercase tracking-wider text-muted-foreground">TextTIcon</span>
                 <p className="text-xs font-mono text-muted-foreground break-all">{data.nodeType}</p>
               </div>
               <div className="space-y-1.5">

@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Copy } from 'lucide-react';
+import { CopyIcon } from '@phosphor-icons/react';
 import type { XssEncodingType } from '../types';
 import { ENCODING_LABELS, ENCODING_ORDER } from '../constants';
 
@@ -108,7 +108,7 @@ export function PayloadBuilderPanel({
                 disabled={!encodedOutput}
                 className="h-6 w-6 text-muted-foreground hover:text-foreground"
               >
-                <Copy className="h-3 w-3" />
+                <CopyIcon className="h-3 w-3" />
               </Button>
             </div>
             <Textarea

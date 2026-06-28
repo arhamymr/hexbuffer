@@ -6,7 +6,7 @@ import { parseHostWhitelist } from '@/triggers/live-traffic/captured';
 
 const PAGE_CRAWLED_TRIGGER_TYPE = 'trigger:browser-page-crawled';
 
-/* ── Filter matching ── */
+/* ── Funnel matching ── */
 
 function matchesPageCrawledTrigger(page: CrawlPage, config: TriggerConfig): boolean {
   if (config.triggerType !== PAGE_CRAWLED_TRIGGER_TYPE) return false;
@@ -87,7 +87,7 @@ function buildPageCrawledContext(page: CrawlPage, triggerNodeId?: string): Workf
   };
 }
 
-/* ── Workflow discovery ── */
+/* ── FlowArrow discovery ── */
 
 function getPageCrawledWorkflows(workflows: WorkflowDef[]): WorkflowDef[] {
   return workflows.filter((w) => {
@@ -143,7 +143,7 @@ export function startPageCrawledWatcher(): Promise<void> | null {
         });
       }
       void store.runWorkflow(workflow.id, context).catch((error) => {
-        const message = error instanceof Error ? error.message : String(error || 'Workflow failed');
+        const message = error instanceof Error ? error.message : String(error || 'FlowArrow failed');
         if (triggerNode.id) {
           store.setNodeRuntimeStatus(triggerNode.id, {
             workflowId: workflow.id,

@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button';
-import { PanelBottomClose, PanelBottomOpen } from 'lucide-react';
+import { LayoutIcon, LayoutIcon } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils';
 
 interface ExecutionLogToggleProps {
@@ -21,9 +21,9 @@ export function ExecutionLogToggle({ showExecutionLog, onToggle }: ExecutionLogT
       title={showExecutionLog ? 'Hide execution log' : 'Show execution log'}
     >
       {showExecutionLog ? (
-        <PanelBottomClose className="size-3.5" />
+        <LayoutIcon className="size-3.5" />
       ) : (
-        <PanelBottomOpen className="size-3.5" />
+        <LayoutIcon className="size-3.5" />
       )}
     </Button>
   );

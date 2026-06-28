@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
-import { Copy, Check } from 'lucide-react';
+import { CopyIcon, CheckIcon } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import type { WebSocketMessage } from '@/pages/websocket-history/hooks/use-websocket-detail';
@@ -14,7 +14,7 @@ interface WebSocketMessageCardProps {
 export function WebSocketMessageCard({ message, formatDateTime }: WebSocketMessageCardProps) {
   const [copied, setCopied] = useState(false);
 
-  // Check if payload is valid JSON and pretty print it
+  // CheckIcon if payload is valid JSON and pretty print it
   const jsonPayload = useMemo(() => {
     if (!message.payload) return null;
     const trimmed = message.payload.trim();
@@ -125,9 +125,9 @@ export function WebSocketMessageCard({ message, formatDateTime }: WebSocketMessa
           variant="ghost"
           onClick={handleCopy}
           className="size-5 ml-1 text-muted-foreground hover:text-foreground shrink-0"
-          title="Copy payload"
+          title="CopyIcon payload"
         >
-          {copied ? <Check className="size-3 text-green-600" /> : <Copy className="size-3" />}
+          {copied ? <CheckIcon className="size-3 text-green-600" /> : <CopyIcon className="size-3" />}
         </Button>
       </div>
       <pre className="p-3 text-[11px] font-mono whitespace-pre-wrap break-all max-h-60 overflow-auto bg-muted/5 text-foreground leading-relaxed selection:bg-primary/20">

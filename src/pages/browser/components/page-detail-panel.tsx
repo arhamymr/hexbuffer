@@ -1,6 +1,6 @@
 import { convertFileSrc } from '@tauri-apps/api/core';
 import { useCallback, useState } from 'react';
-import { Copy, ExternalLink, FileCode2, ImageIcon, Loader2, Maximize2, Star } from 'lucide-react';
+import { CopyIcon, ArrowSquareOutIcon, FileCodeIcon, ImageIcon, SpinnerGapIcon, ArrowsOutIcon, StarIcon } from '@phosphor-icons/react';
 import { readTextFile } from '@tauri-apps/plugin-fs';
 import { InterestingBadge } from '@/components/status-badge';
 import { HighlightedText } from '@/components/highlighted-text';
@@ -56,11 +56,11 @@ function ArtifactActions({ label, path, onView }: { label: string; path?: string
       <div className="flex gap-1.5">
         {onView && (
           <Button variant="outline" onClick={onView}>
-            <Maximize2 className="h-3.5 w-3.5" />
+            <ArrowsOutIcon className="h-3.5 w-3.5" />
           </Button>
         )}
         <Button variant="outline" onClick={() => copyText(path)}>
-          <Copy className="h-3.5 w-3.5" />
+          <CopyIcon className="h-3.5 w-3.5" />
         </Button>
       </div>
     </div>
@@ -185,16 +185,16 @@ export function PageDetailPanel({ page, searchQuery = '' }: PageDetailPanelProps
       <div className="shrink-0 border-t p-2">
         <div className="flex gap-1.5">
           <Button variant="outline" onClick={handleOpenPage}>
-            <ExternalLink className="h-3.5 w-3.5" />
+            <ArrowSquareOutIcon className="h-3.5 w-3.5" />
           </Button>
           <Button variant="outline" onClick={handleCopyUrl}>
-            <Copy className="h-3.5 w-3.5" />
+            <CopyIcon className="h-3.5 w-3.5" />
           </Button>
           <Button
             variant={page.interesting ? 'secondary' : 'outline'}
             onClick={() => markPageInteresting(page.id)}
           >
-            <Star className="h-3.5 w-3.5" />
+            <StarIcon className="h-3.5 w-3.5" />
             {page.interesting ? 'Saved' : 'Mark'}
           </Button>
         </div>
@@ -226,7 +226,7 @@ export function PageDetailPanel({ page, searchQuery = '' }: PageDetailPanelProps
           </DialogHeader>
           {htmlLoading ? (
             <div className="flex flex-1 items-center justify-center">
-              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              <SpinnerGapIcon className="h-6 w-6 animate-spin text-muted-foreground" />
             </div>
           ) : (
             <Tabs defaultValue="source" className="flex flex-1 flex-col min-h-0">

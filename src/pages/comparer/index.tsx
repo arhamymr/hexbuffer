@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { MonacoDiffEditor } from '@/components/ui/monaco-diff-editor';
-import { Copy } from 'lucide-react';
+import { CopyIcon } from '@phosphor-icons/react';
 import { toast } from 'sonner';
 import { useComparerPage } from './hooks/use-comparer-page';
 
@@ -28,8 +28,8 @@ export function ComparerPage() {
             disabled={!page.valueA}
             className="h-6 text-[11px] gap-1 px-2"
           >
-            <Copy className="h-3 w-3" />
-            Copy A
+            <CopyIcon className="h-3 w-3" />
+            CopyIcon A
           </Button>
           <Button
             variant="ghost"
@@ -38,8 +38,8 @@ export function ComparerPage() {
             disabled={!page.valueB}
             className="h-6 text-[11px] gap-1 px-2"
           >
-            <Copy className="h-3 w-3" />
-            Copy B
+            <CopyIcon className="h-3 w-3" />
+            CopyIcon B
           </Button>
         </div>
       </div>

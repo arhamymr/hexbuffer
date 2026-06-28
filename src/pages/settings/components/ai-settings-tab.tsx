@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { AlertTriangleIcon, CheckIcon, EyeIcon, EyeOffIcon, SaveIcon, XIcon } from 'lucide-react';
+import { WarningCircleIcon, CheckIcon, EyeIcon, EyeSlashIcon, FloppyDiskIcon, XIcon } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -106,7 +106,7 @@ export function AiSettingsTab({ settings }: AiSettingsTabProps) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="ai-api-key">{selectedProviderLabel} API Key</Label>
+            <Label htmlFor="ai-api-key">{selectedProviderLabel} API KeyIcon</Label>
             <div className="relative">
               <Input
                 id="ai-api-key"
@@ -127,7 +127,7 @@ export function AiSettingsTab({ settings }: AiSettingsTabProps) {
                 className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-muted-foreground hover:text-foreground"
                 tabIndex={-1}
               >
-                {showApiKey ? <EyeOffIcon className="size-4" /> : <EyeIcon className="size-4" />}
+                {showApiKey ? <EyeSlashIcon className="size-4" /> : <EyeIcon className="size-4" />}
               </button>
             </div>
             <p className="text-xs text-muted-foreground">
@@ -145,7 +145,7 @@ export function AiSettingsTab({ settings }: AiSettingsTabProps) {
             />
             <span className="min-w-0 space-y-1">
               <span className="flex items-center gap-2 text-sm font-medium">
-                <AlertTriangleIcon className="size-4 text-amber-600 dark:text-amber-400" />
+                <WarningCircleIcon className="size-4 text-amber-600 dark:text-amber-400" />
                 Allow third-party AI data sharing
               </span>
               <span className="block text-xs leading-relaxed text-muted-foreground">
@@ -168,8 +168,8 @@ export function AiSettingsTab({ settings }: AiSettingsTabProps) {
               onClick={handleSaveAiSettings}
               disabled={aiSettingsLoading || aiSettingsSaving || !canSaveAiSettings}
             >
-              <SaveIcon className="mr-2 size-4" />
-              {aiSettingsSaving ? 'Saving...' : 'Save AI Settings'}
+              <FloppyDiskIcon className="mr-2 size-4" />
+              {aiSettingsSaving ? 'Saving...' : 'Saving AI Settings'}
             </Button>
             <Button
               size="xs"
@@ -177,7 +177,7 @@ export function AiSettingsTab({ settings }: AiSettingsTabProps) {
               onClick={handleClearAiApiKey}
               disabled={aiSettingsLoading || aiSettingsSaving || !aiSettings.hasApiKey}
             >
-              Clear API Key
+              Clear API KeyIcon
             </Button>
           </div>
 
@@ -196,7 +196,7 @@ export function AiSettingsTab({ settings }: AiSettingsTabProps) {
                       {saved ? (
                         <>
                           <CheckIcon className="size-3.5" />
-                          Key saved
+                          KeyIcon saved
                         </>
                       ) : (
                         <>

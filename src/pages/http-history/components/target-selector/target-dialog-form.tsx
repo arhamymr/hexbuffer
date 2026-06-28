@@ -17,7 +17,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { useTargetStore } from '@/stores/target';
-import { Trash2 } from 'lucide-react';
+import { TrashIcon } from '@phosphor-icons/react';
 import type { Target } from '@/types';
 
 interface TargetDialogFormProps {
@@ -211,7 +211,7 @@ export function TargetDialogForm({ target, onCancel, onSaved }: TargetDialogForm
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button type="button" variant="destructive" className="gap-2">
-                <Trash2 className="h-4 w-4" />
+                <TrashIcon className="h-4 w-4" />
                 Delete
               </Button>
             </AlertDialogTrigger>
@@ -240,7 +240,7 @@ export function TargetDialogForm({ target, onCancel, onSaved }: TargetDialogForm
             Cancel
           </Button>
           <Button type="button" disabled={isSubmitting} onClick={() => void saveTarget()}>
-            {target ? 'Save Changes' : 'Create Target'}
+            {target ? 'FloppyDiskIcon Changes' : 'Create Target'}
           </Button>
         </div>
       </DialogFooter>

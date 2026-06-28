@@ -1,4 +1,4 @@
-import { AlertCircle, CheckCircle2, Database, Loader2, SkipForward, type LucideIcon } from 'lucide-react';
+import { WarningCircleIcon, CheckCircleIcon, DatabaseIcon, SpinnerGapIcon, SkipForwardIcon, type Icon } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils';
 import { useAutomationStore, type NodeRuntimeState } from '@/stores/automation';
 
@@ -7,24 +7,24 @@ interface NodeRuntimeStatusProps {
   accentClassName: string;
 }
 
-const statusStyles: Record<NodeRuntimeState['status'], { icon: LucideIcon; className: string; label: string }> = {
+const statusStyles: Record<NodeRuntimeState['status'], { icon: Icon; className: string; label: string }> = {
   running: {
-    icon: Loader2,
+    icon: SpinnerGapIcon,
     className: 'text-primary',
     label: 'Running',
   },
   success: {
-    icon: CheckCircle2,
+    icon: CheckCircleIcon,
     className: 'text-emerald-500',
     label: 'Completed',
   },
   error: {
-    icon: AlertCircle,
+    icon: WarningCircleIcon,
     className: 'text-red-500',
     label: 'Error',
   },
   skipped: {
-    icon: SkipForward,
+    icon: SkipForwardIcon,
     className: 'text-amber-500',
     label: 'Skipped',
   },
@@ -67,7 +67,7 @@ export function NodeRuntimeStatus({ runtime, accentClassName }: NodeRuntimeStatu
       </div>
       {hasInputData && (
         <div className="mt-1 flex items-center gap-1.5 text-[10px] text-muted-foreground">
-          <Database className="size-3 shrink-0" />
+          <DatabaseIcon className="size-3 shrink-0" />
           <span className="shrink-0 font-medium">Received</span>
           <span className="min-w-0 truncate font-mono">
             {formatPayloadPreview(runtime.inputData)}

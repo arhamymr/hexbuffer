@@ -1,11 +1,11 @@
 import * as React from 'react';
 import {
-  ChevronDown,
-  ChevronUp,
-  PanelBottomClose,
-  Search,
-  X,
-} from 'lucide-react';
+  CaretDownIcon,
+  CaretUpIcon,
+  LayoutIcon,
+  MagnifyingGlassIcon,
+  XIcon,
+} from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -108,7 +108,7 @@ export const TerminalPanel = React.forwardRef<
     <div className="flex h-full w-full flex-col">
       <div className={cn('flex h-7 shrink-0 items-center gap-1 border-b px-1', toolbarBg, toolbarBorder)}>
         <div className="flex min-w-0 flex-1 items-center px-2 text-xs font-medium text-muted-foreground">
-          Terminal
+          TerminalIcon
         </div>
 
         {isSearchOpen && (
@@ -131,8 +131,8 @@ export const TerminalPanel = React.forwardRef<
                 }
                 if (event.key === 'Escape') closeSearch();
               }}
-              placeholder="Search"
-              aria-label="Search terminal output"
+              placeholder="MagnifyingGlassIcon"
+              aria-label="MagnifyingGlassIcon terminal output"
             />
             <Button
               type="button"
@@ -142,7 +142,7 @@ export const TerminalPanel = React.forwardRef<
               onClick={() => searchActiveTerminal('previous')}
               aria-label="Previous match"
             >
-              <ChevronUp className="size-3.5" />
+              <CaretUpIcon className="size-3.5" />
             </Button>
             <Button
               type="button"
@@ -152,7 +152,7 @@ export const TerminalPanel = React.forwardRef<
               onClick={() => searchActiveTerminal('next')}
               aria-label="Next match"
             >
-              <ChevronDown className="size-3.5" />
+              <CaretDownIcon className="size-3.5" />
             </Button>
             <Button
               type="button"
@@ -162,7 +162,7 @@ export const TerminalPanel = React.forwardRef<
               onClick={closeSearch}
               aria-label="Close search"
             >
-              <X className="size-3.5" />
+              <XIcon className="size-3.5" />
             </Button>
           </div>
         )}
@@ -176,12 +176,12 @@ export const TerminalPanel = React.forwardRef<
                 size="icon-sm"
                 className={cn('size-6 shrink-0 rounded-sm', btnMuted, btnHover)}
                 onClick={() => setIsSearchOpen(true)}
-                aria-label="Search terminal"
+                aria-label="MagnifyingGlassIcon terminal"
               >
-                <Search className="size-3.5" />
+                <MagnifyingGlassIcon className="size-3.5" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="bottom">Search Terminal</TooltipContent>
+            <TooltipContent side="bottom">MagnifyingGlassIcon TerminalIcon</TooltipContent>
           </Tooltip>
         )}
 
@@ -195,10 +195,10 @@ export const TerminalPanel = React.forwardRef<
               onClick={handleClosePanel}
               aria-label="Close terminal panel"
             >
-              <PanelBottomClose className="size-3.5" />
+              <LayoutIcon className="size-3.5" />
             </Button>
           </TooltipTrigger>
-          <TooltipContent side="bottom">Close Terminal Panel</TooltipContent>
+          <TooltipContent side="bottom">Close TerminalIcon Panel</TooltipContent>
         </Tooltip>
       </div>
 

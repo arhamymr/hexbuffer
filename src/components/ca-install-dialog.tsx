@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
 import { invoke } from '@tauri-apps/api/core';
-import { AlertTriangle, Globe, KeyRound, Loader2, Settings } from 'lucide-react';
+import { SpinnerGapIcon, GearIcon, KeyIcon } from '@phosphor-icons/react';
 import { toast } from 'sonner';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -81,7 +81,7 @@ export function CaInstallDialog() {
           </AlertDescription>
         </Alert>
 
-       <Alert variant="default" className="min-h-11 items-center shrink-0 border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-500/50 dark:bg-amber-500/10 dark:text-amber-200">
+        <Alert variant="default" className="min-h-11 items-center shrink-0 border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-500/50 dark:bg-amber-500/10 dark:text-amber-200">
           <AlertDescription>
             Use <b>Open Browser </b>for ready-to-go interception, or install the CA from here when you need external
             traffic capture.
@@ -90,11 +90,11 @@ export function CaInstallDialog() {
 
         <DialogFooter>
           <Button variant="outline" onClick={openSettings}>
-            <Settings className="size-4" />
+            <GearIcon className="size-4" />
             Open Settings
           </Button>
           <Button onClick={handleInstall} disabled={installing}>
-            {installing ? <Loader2 className="size-4 animate-spin" /> : <KeyRound className="size-4" />}
+            {installing ? <SpinnerGapIcon className="size-4 animate-spin" /> : <KeyIcon className="size-4" />}
             {installing ? 'Installing...' : 'Install CA'}
           </Button>
         </DialogFooter>

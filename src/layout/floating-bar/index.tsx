@@ -1,15 +1,15 @@
 import {
-  Loader2,
-  MessageSquare,
+  SpinnerGapIcon,
+  ChatTextIcon,
   Moon,
-  Settings,
+  GearSixIcon,
   Sun,
-  TerminalSquare,
-  ArrowUp,
-  Gem,
-  Grip,
-  MoreHorizontal,
-} from "lucide-react";
+  TerminalIcon,
+  ArrowUpIcon,
+  DiamondIcon,
+  DotsSixIcon,
+  DotsThreeIcon,
+} from '@phosphor-icons/react';
 import { useRef } from "react";
 import { Link } from "react-router-dom";
 import {
@@ -97,7 +97,7 @@ function SortableDockItem({
           }
         >
           {/* Drag grip indicator — visible on hover */}
-          <Grip className="absolute -top-1.5 left-1/2 -translate-x-1/2 size-2.5 text-muted-foreground/30 opacity-0 transition-opacity group-hover/dock-item:opacity-100" />
+          <DotsSixIcon className="absolute -top-1.5 left-1/2 -translate-x-1/2 size-2.5 text-muted-foreground/30 opacity-0 transition-opacity group-hover/dock-item:opacity-100" />
           {item.iconImage ? (
             <img
               src={item.iconImage}
@@ -252,7 +252,7 @@ export function AppSidebar() {
 
             <div className="mx-1 h-5 w-px bg-border" />
 
-            {/* Terminal */}
+            {/* TerminalIcon */}
             <Tooltip>
               <TooltipTrigger asChild>
                 <button
@@ -263,11 +263,11 @@ export function AppSidebar() {
                   )}
                   onClick={dock.toggleTerminal}
                 >
-                  <TerminalSquare className="size-4" />
+                  <TerminalIcon className="size-4" />
                 </button>
               </TooltipTrigger>
               <TooltipContent side="top" sideOffset={12}>
-                {dock.isTerminalOpen ? "Close Terminal" : "Open Terminal"}
+                {dock.isTerminalOpen ? "Close TerminalIcon" : "Open TerminalIcon"}
               </TooltipContent>
             </Tooltip>
 
@@ -282,7 +282,7 @@ export function AppSidebar() {
                   )}
                   onClick={dock.toggleChatbox}
                 >
-                  <MessageSquare className="size-4" />
+                  <ChatTextIcon className="size-4" />
                 </button>
               </TooltipTrigger>
               <TooltipContent side="top" sideOffset={12}>
@@ -303,9 +303,9 @@ export function AppSidebar() {
                     disabled={dock.updateDownloading}
                   >
                     {dock.updateDownloading ? (
-                      <Loader2 className="size-4 animate-spin" />
+                      <SpinnerGapIcon className="size-4 animate-spin" />
                     ) : (
-                      <ArrowUp className="size-4" />
+                      <ArrowUpIcon className="size-4" />
                     )}
                     <span className="absolute -bottom-0.5 right-0.5 flex size-2">
                       <span className="absolute inline-flex size-full animate-ping rounded-full bg-green-400 opacity-75" />
@@ -327,17 +327,17 @@ export function AppSidebar() {
                 type="button"
                 className="flex size-7 shrink-0 items-center justify-center rounded-sm text-muted-foreground transition-all hover:bg-muted/80 hover:text-foreground hover:scale-110"
               >
-                <MoreHorizontal className="size-4" />
+                <DotsThreeIcon className="size-4" />
               </button>
 
               <div className="flex max-w-0 items-center gap-1 overflow-hidden opacity-0 transition-all duration-200 ease-out group-hover:max-w-[140px] group-hover:opacity-100">
-                {/* Settings */}
+                {/* GearSixIcon */}
                 <button
                   type="button"
                   className="flex size-7 shrink-0 items-center justify-center rounded-sm text-muted-foreground transition-all hover:bg-muted/80 hover:text-foreground hover:scale-110"
                   onClick={dock.openSettings}
                 >
-                  <Settings className="size-4" />
+                  <GearSixIcon className="size-4" />
                 </button>
 
                 {/* Theme */}
@@ -360,9 +360,9 @@ export function AppSidebar() {
                   onClick={() => dock.setLicenseModalOpen(true)}
                 >
                   {dock.licenseStatus === "lifetime" ? (
-                    <Gem className="text-red-500 size-4" />
+                    <DiamondIcon className="text-red-500 size-4" />
                   ) : (
-                    <Gem className="text-yellow-500 size-4" />
+                    <DiamondIcon className="text-yellow-500 size-4" />
                   )}
                 </button>
               </div>
@@ -375,7 +375,7 @@ export function AppSidebar() {
               className="mr-0.5 flex cursor-grab items-center px-0.5 text-muted-foreground/50 hover:text-muted-foreground active:cursor-grabbing"
               onMouseDown={dock.handleMouseDown}
             >
-              <Grip className="size-4" />
+              <DotsSixIcon className="size-4" />
             </div>
           </div>
           {/* end main dock inner content */}

@@ -7,7 +7,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Radar } from 'lucide-react';
+import { BroadcastIcon } from '@phosphor-icons/react';
 import type { PortScanResult } from '../types';
 
 interface ResultsTableProps {
@@ -19,7 +19,7 @@ export function ResultsTable({ openResults, hasResults }: ResultsTableProps) {
   if (!hasResults) {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-2 text-muted-foreground">
-        <Radar className="h-8 w-8 text-muted-foreground/60 animate-pulse" />
+        <BroadcastIcon className="h-8 w-8 text-muted-foreground/60 animate-pulse" />
         <p className="text-xs">No open ports found</p>
       </div>
     );

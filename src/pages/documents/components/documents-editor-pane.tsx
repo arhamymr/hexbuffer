@@ -1,4 +1,4 @@
-import { Loader2, Play } from 'lucide-react';
+import { SpinnerGapIcon, PlayIcon } from '@phosphor-icons/react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -78,9 +78,9 @@ export function DocumentsEditorPane({
               disabled={isFetchingApi}
             >
               {isFetchingApi ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
+                <SpinnerGapIcon className="h-4 w-4 animate-spin" />
               ) : (
-                <Play className="h-4 w-4" />
+                <PlayIcon className="h-4 w-4" />
               )}
               Fetch
             </Button>

@@ -204,7 +204,7 @@ export function useSidebarDock() {
       ? `Downloaded ${formatBytes(downloadProgress.downloadedBytes)}`
       : 'Preparing...';
 
-  // ── Settings window ─────────────────────────────────────────────────────
+  // ── GearSix window ─────────────────────────────────────────────────────
   const openSettings = React.useCallback(async () => {
     try {
       const { WebviewWindow } = await import('@tauri-apps/api/webviewWindow');
@@ -215,7 +215,7 @@ export function useSidebarDock() {
       }
       new WebviewWindow('settings', {
         url: '/?window=settings',
-        title: 'hexbuffer - Settings',
+        title: 'hexbuffer - GearSix',
         width: 700,
         height: 600,
         decorations: true,
@@ -256,7 +256,7 @@ export function useSidebarDock() {
     position,
     dragging,
     handleMouseDown,
-    // Settings
+    // GearSix
     openSettings,
   };
 }

@@ -1,4 +1,4 @@
-import { RotateCcwIcon, WorkflowIcon } from 'lucide-react';
+import { ArrowCounterClockwiseIcon, FlowArrowIcon } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -74,7 +74,7 @@ export function AutomationSettingsTab() {
     <Card>
       <CardHeader>
         <div className="flex items-center gap-2">
-          <WorkflowIcon className="size-5 text-primary" />
+          <FlowArrowIcon className="size-5 text-primary" />
           <CardTitle>Automation Runtime</CardTitle>
         </div>
         <CardDescription>
@@ -132,7 +132,7 @@ export function AutomationSettingsTab() {
             onClick={resetAutomationSettings}
             disabled={isDefault}
           >
-            <RotateCcwIcon className="mr-2 size-4" />
+            <ArrowCounterClockwiseIcon className="mr-2 size-4" />
             Reset Automation Settings
           </Button>
           <p className="text-xs text-muted-foreground">

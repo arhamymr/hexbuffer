@@ -51,14 +51,14 @@ function getNodeIssue(node: AutomationNode): string | null {
     const params = actionConfig.params ?? {};
     switch (actionConfig.actionType) {
       case 'action:send-to-repeater':
-        return isBlank(params.tabName) ? 'Send to Repeater action needs a tab name' : null;
+        return isBlank(params.tabName) ? 'PaperPlaneTilt to Repeater action needs a tab name' : null;
       case 'action:ai-analyze':
         return isBlank(params.prompt) ? 'AI Analyze action needs a prompt' : null;
       case 'action:create-finding':
         if (isBlank(params.title)) return 'Create Finding action needs a title';
         return isBlank(params.description) ? 'Create Finding action needs a description' : null;
       case 'action:send-webhook':
-        return isBlank(params.url) ? 'Webhook action needs a URL' : null;
+        return isBlank(params.url) ? 'WebhooksLogo action needs a URL' : null;
       case 'action:show-notification':
         return isBlank(params.title) ? 'Notification action needs a title' : null;
       case 'action:run-script':
@@ -89,7 +89,7 @@ function getNodeIssue(node: AutomationNode): string | null {
 }
 
 export function getWorkflowReadiness(workflow: Pick<WorkflowDef, 'nodes' | 'edges'> | null | undefined): WorkflowReadiness {
-  if (!workflow) return { ready: false, reason: 'Workflow is unavailable' };
+  if (!workflow) return { ready: false, reason: 'FlowArrow is unavailable' };
 
   const nodes = (workflow.nodes ?? []) as AutomationNode[];
   const edges = workflow.edges ?? [];

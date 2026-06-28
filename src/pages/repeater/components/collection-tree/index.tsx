@@ -35,7 +35,7 @@ import {
   type StashRecord,
   type StashEndpointRecord,
 } from '@/stores/collections';
-import { Plus, Edit2, Download, Upload, FileCode } from 'lucide-react';
+import { PlusIcon, PencilSimpleIcon, DownloadIcon, UploadIcon, FileCodeIcon } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { exportCollectionsToFile, importCollectionsFromFile } from '@/pages/repeater/lib/collection-io';
@@ -581,7 +581,7 @@ export function CollectionsTree({ workspaceId }: { workspaceId: string }) {
               title="Export Collections"
               onClick={() => { void handleExport(); }}
             >
-              <Download className="h-3.5 w-3.5" />
+              <DownloadIcon className="h-3.5 w-3.5" />
             </Button>
             <Button
               variant="ghost"
@@ -590,7 +590,7 @@ export function CollectionsTree({ workspaceId }: { workspaceId: string }) {
               title="Import Collections"
               onClick={handleImportClick}
             >
-              <Upload className="h-3.5 w-3.5" />
+              <UploadIcon className="h-3.5 w-3.5" />
             </Button>
             <Button
               variant="ghost"
@@ -604,7 +604,7 @@ export function CollectionsTree({ workspaceId }: { workspaceId: string }) {
                 useCollectionsStore.getState().createStash('New Collection', workspaceId);
               }}
             >
-              <Plus className="h-3.5 w-3.5" />
+              <PlusIcon className="h-3.5 w-3.5" />
             </Button>
           </div>
         </div>
@@ -634,7 +634,7 @@ export function CollectionsTree({ workspaceId }: { workspaceId: string }) {
               placeholder="Rename..."
             />
             <Button type="submit" size="icon" className="h-7 w-7 shrink-0">
-              <Edit2 className="h-3 w-3" />
+              <PencilSimpleIcon className="h-3 w-3" />
             </Button>
           </form>
         )}
@@ -667,7 +667,7 @@ export function CollectionsTree({ workspaceId }: { workspaceId: string }) {
               </div>
             ) : (
               flatNodes.map((node) => {
-                // Check if inline create should appear directly after this node's parent
+                // CheckIcon if inline create should appear directly after this node's parent
                 // We inline it as a child by checking if the parent id matches
                 const isInlineCreateParent = inlineCreate && inlineCreate.parentId === node.originalId;
                 const isNodeDragOver = false;

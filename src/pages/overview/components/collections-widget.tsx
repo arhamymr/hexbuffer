@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FolderHeart, ArrowRight } from 'lucide-react';
+import { FolderStarIcon, ArrowRightIcon } from '@phosphor-icons/react';
 import { useCollectionsStore, type StashRecord, type StashEndpointRecord } from '@/stores/collections';
 import { useRepeaterStore } from '@/stores/repeater';
 
@@ -56,14 +56,14 @@ export function CollectionsWidget() {
                   onClick={() => handleClick(stash)}
                   className="w-full flex items-center gap-2 px-1.5 py-1 rounded-sm text-left hover:bg-muted/40 transition-colors group"
                 >
-                  <FolderHeart className="size-3.5 shrink-0 text-blue-500" />
+                  <FolderStarIcon className="size-3.5 shrink-0 text-blue-500" />
                   <span className="text-[11px] font-medium truncate flex-1">
                     {stash.name}
                   </span>
                   <span className="text-[10px] text-muted-foreground shrink-0 tabular-nums">
                     {epCount}
                   </span>
-                  <ArrowRight className="size-3 shrink-0 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <ArrowRightIcon className="size-3 shrink-0 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
                 </button>
               </li>
             );

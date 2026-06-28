@@ -1,4 +1,4 @@
-import { MessageSquarePlus, Trash2 } from 'lucide-react';
+import { ChatCircleDotsIcon, TrashIcon } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { ChatSession } from '../types';
@@ -30,7 +30,7 @@ export function ChatSessionList({
           onClick={onCreate}
           title="New chat"
         >
-          <MessageSquarePlus className="h-3.5 w-3.5" />
+          <ChatCircleDotsIcon className="h-3.5 w-3.5" />
         </Button>
       </div>
 
@@ -69,7 +69,7 @@ export function ChatSessionList({
                     }}
                     title="Delete chat"
                   >
-                    <Trash2 className="h-3 w-3" />
+                    <TrashIcon className="h-3 w-3" />
                   </Button>
                 </div>
               );

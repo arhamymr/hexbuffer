@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { FileText, Folder, Search } from 'lucide-react';
+import { FileTextIcon, FolderIcon, MagnifyingGlassIcon } from '@phosphor-icons/react';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -106,7 +106,7 @@ export function InvokerPayloadPresetDialog({
                     selectedCategory === category && 'bg-background shadow-sm'
                   )}
                 >
-                  <Folder className="size-4 text-muted-foreground" />
+                  <FolderIcon className="size-4 text-muted-foreground" />
                   <span className="truncate">{category}</span>
                 </button>
               ))}
@@ -115,11 +115,11 @@ export function InvokerPayloadPresetDialog({
 
           <div className="border-r p-2">
             <div className="relative mb-2">
-              <Search className="pointer-events-none absolute left-2 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+              <MagnifyingGlassIcon className="pointer-events-none absolute left-2 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
               <Input
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
-                placeholder="Search presets"
+                placeholder="MagnifyingGlassIcon presets"
                 className="h-8 pl-7 text-xs"
               />
             </div>
@@ -136,7 +136,7 @@ export function InvokerPayloadPresetDialog({
                     )}
                   >
                     <div className="flex items-center gap-2">
-                      <FileText className="size-4 text-muted-foreground" />
+                      <FileTextIcon className="size-4 text-muted-foreground" />
                       <span className="truncate text-sm font-medium">{payload.name}</span>
                     </div>
                     <div className="mt-1 text-xs text-muted-foreground">

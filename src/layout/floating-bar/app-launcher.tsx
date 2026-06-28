@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LayoutGrid, Pin, PinOff } from 'lucide-react';
+import { SquaresFourIcon, PushPinSimpleIcon, PushPinSimpleSlashIcon } from '@phosphor-icons/react';
 import { toast } from 'sonner';
 
 import { cn } from '@/lib/utils';
@@ -46,7 +46,7 @@ export function AppLauncher() {
                 open && 'bg-primary/15 text-primary',
               )}
             >
-              <LayoutGrid className="size-4" />
+              <SquaresFourIcon className="size-4" />
             </button>
           </PopoverTrigger>
         </TooltipTrigger>
@@ -99,12 +99,12 @@ export function AppLauncher() {
                           ? 'text-green-500'
                           : 'text-muted-foreground/30 hover:text-muted-foreground',
                       )}
-                      aria-label={isPinned ? `Unpin ${item.label}` : `Pin ${item.label}`}
+                      aria-label={isPinned ? `Unpin ${item.label}` : `PushPinSimpleIcon ${item.label}`}
                     >
                       {isPinned ? (
-                        <Pin className="size-3.5" />
+                        <PushPinSimpleIcon className="size-3.5" />
                       ) : (
-                        <PinOff className="size-3.5" />
+                        <PushPinSimpleSlashIcon className="size-3.5" />
                       )}
                     </div>
                     {item.iconImage ? (

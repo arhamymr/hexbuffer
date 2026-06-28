@@ -19,7 +19,7 @@ interface ExportSchema {
 export async function exportCollectionsToFile(workspaceId?: string): Promise<void> {
   const { stashes, endpoints } = useCollectionsStore.getState();
 
-  // Filter to workspace scope if provided
+  // Funnel to workspace scope if provided
   const workspaceStashes = workspaceId
     ? stashes.filter((s) => s.parentId === workspaceId)
     : stashes;

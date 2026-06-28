@@ -3,7 +3,7 @@ import { useInvokerStore } from '@/stores/invoker';
 import { formatPayloadValues, getResultUrl } from '../lib/utils';
 import { useInvokerFilters } from '../hooks/use-filters';
 import { Button } from '@/components/ui/button';
-import { Trash2 } from 'lucide-react';
+import { TrashIcon } from '@phosphor-icons/react';
 
 export function InvokerResultsPanel() {
   const { filteredResults, resultsCount, clearResults } = useInvokerFilters();
@@ -22,7 +22,7 @@ export function InvokerResultsPanel() {
       <div className="flex justify-between items-center bg-muted/50 px-3 py-2 border-b">
         <span className="text-sm font-medium">Results ({filteredResults.length})</span>
          <Button variant="outline" onClick={clearResults} disabled={resultsCount === 0}>
-        <Trash2 className="h-4 w-4 mr-1" />
+        <TrashIcon className="h-4 w-4 mr-1" />
         Clear
       </Button>
       </div>

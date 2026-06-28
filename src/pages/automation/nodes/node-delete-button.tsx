@@ -1,4 +1,4 @@
-import { Trash2 } from 'lucide-react';
+import { TrashIcon } from '@phosphor-icons/react';
 import { useReactFlow } from '@xyflow/react';
 import { cn } from '@/lib/utils';
 
@@ -31,7 +31,7 @@ export function NodeDeleteButton({ nodeId, selected }: NodeDeleteButtonProps) {
       )}
       title="Delete node"
     >
-      <Trash2 className="size-2.5" />
+      <TrashIcon className="size-2.5" />
     </button>
   );
 }

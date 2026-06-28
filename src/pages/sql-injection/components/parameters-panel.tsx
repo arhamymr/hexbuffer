@@ -2,7 +2,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Trash2 } from 'lucide-react';
+import { TrashIcon } from '@phosphor-icons/react';
 import type { SqliParam } from '../types';
 
 interface ParametersPanelProps {
@@ -71,7 +71,7 @@ export function ParametersPanel({
                 onClick={() => onRemoveParameter(param.name)}
                 className="h-6 w-6 text-muted-foreground hover:text-foreground"
               >
-                <Trash2 className="h-3 w-3" />
+                <TrashIcon className="h-3 w-3" />
               </Button>
             </div>
           ))}

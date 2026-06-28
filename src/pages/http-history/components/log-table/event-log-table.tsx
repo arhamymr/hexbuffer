@@ -1,4 +1,4 @@
-import { Clipboard } from 'lucide-react';
+import { ClipboardIcon } from '@phosphor-icons/react';
 import { HighlightedText } from '@/components/highlighted-text';
 import { Button } from '@/components/ui/button';
 import { Empty, EmptyDescription, EmptyTitle } from '@/components/ui/empty';
@@ -52,7 +52,7 @@ export function EventLogTable<TLog extends EventLogRow>({
               Level
             </th>
             <th className="w-[120px] px-3 py-1 text-left text-xs font-medium text-muted-foreground">
-              Type
+              TextTIcon
             </th>
             <th className="px-3 py-1 text-left text-xs font-medium text-muted-foreground">
               Message

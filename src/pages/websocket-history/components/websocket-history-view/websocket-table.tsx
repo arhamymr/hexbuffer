@@ -86,7 +86,7 @@ export function WebSocketTable({ selectedConnectionId, onSelectConnection }: Web
             <th className="text-left text-xs font-medium text-muted-foreground px-3 py-1 w-[150px]">Host</th>
             <th className="text-left text-xs font-medium text-muted-foreground px-3 py-1 flex-1">Path</th>
             <th className="text-right text-xs font-medium text-muted-foreground px-3 py-1 w-[70px]">Messages</th>
-            <th className="text-left text-xs font-medium text-muted-foreground px-3 py-1 w-[80px]">Activity</th>
+            <th className="text-left text-xs font-medium text-muted-foreground px-3 py-1 w-[80px]">Pulse</th>
           </tr>
         </thead>
         <tbody>

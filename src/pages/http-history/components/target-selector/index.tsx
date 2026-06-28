@@ -8,7 +8,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { Plus, Target } from 'lucide-react';
+import { PlusIcon, TargetIcon } from '@phosphor-icons/react';
 import { TargetSearchList } from './target-search-list';
 import { TargetDialogForm } from './target-dialog-form';
 import { useTargetSelectorDialog } from './hooks';
@@ -44,8 +44,8 @@ export function TargetSelectorDialog({
       {!isExternallyControlled && (
         <DialogTrigger asChild>
           <Button>
-            <Target className="size-3" />
-            Manage Target
+            <TargetIcon className="size-3" />
+            Manage TargetIcon
           </Button>
         </DialogTrigger>
       )}
@@ -53,7 +53,7 @@ export function TargetSelectorDialog({
         {showCreateNew ? (
           <>
             <DialogHeader>
-              <DialogTitle>{editingTarget ? 'Edit Target' : 'Create New Target'}</DialogTitle>
+              <DialogTitle>{editingTarget ? 'Edit TargetIcon' : 'Create New TargetIcon'}</DialogTitle>
               <DialogDescription>
                 {editingTarget
                   ? 'Update this target and its scope patterns'
@@ -70,7 +70,7 @@ export function TargetSelectorDialog({
         ) : (
           <>
             <DialogHeader>
-              <DialogTitle>Add New Target</DialogTitle>
+              <DialogTitle>Add New TargetIcon</DialogTitle>
               <DialogDescription>
                 Select an existing target or create a new one
               </DialogDescription>
@@ -90,8 +90,8 @@ export function TargetSelectorDialog({
                 {filteredCount} target{filteredCount !== 1 ? 's' : ''}
               </span>
               <Button variant="outline" onClick={handleCreateNew} className="gap-2">
-                <Plus className="h-4 w-4" />
-                Create New Target
+                <PlusIcon className="h-4 w-4" />
+                Create New TargetIcon
               </Button>
             </DialogFooter>
           </>

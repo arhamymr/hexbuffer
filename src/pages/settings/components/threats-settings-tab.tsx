@@ -1,4 +1,4 @@
-import { CrosshairIcon, FilePlus2Icon, SaveIcon, ShieldCheckIcon, Trash2Icon } from 'lucide-react';
+import { CrosshairIcon, FilePlusIcon, FloppyDiskIcon, ShieldCheckIcon, TrashIcon } from '@phosphor-icons/react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -58,8 +58,8 @@ export function ThreatsSettingsTab({ settings }: ThreatsSettingsTabProps) {
             Validate
           </Button>
           <Button onClick={handleSaveThreatSettings} disabled={threatSettingsSaving}>
-            <SaveIcon className="mr-2 size-4" />
-            {threatSettingsSaving ? 'Saving...' : 'Save'}
+            <FloppyDiskIcon className="mr-2 size-4" />
+            {threatSettingsSaving ? 'Saving...' : 'FloppyDiskIcon'}
           </Button>
         </div>
 
@@ -72,7 +72,7 @@ export function ThreatsSettingsTab({ settings }: ThreatsSettingsTabProps) {
               </p>
             </div>
             <Button variant="outline" onClick={handleImportYaraRulePack}>
-              <FilePlus2Icon className="mr-2 size-4" />
+              <FilePlusIcon className="mr-2 size-4" />
               Import Rules
             </Button>
           </div>
@@ -104,7 +104,7 @@ export function ThreatsSettingsTab({ settings }: ThreatsSettingsTabProps) {
                       onClick={() => handleDeleteYaraRulePack(pack.id)}
                       aria-label={`Delete ${pack.name}`}
                     >
-                      <Trash2Icon className="size-4" />
+                      <TrashIcon className="size-4" />
                     </Button>
                   </div>
                 ))}

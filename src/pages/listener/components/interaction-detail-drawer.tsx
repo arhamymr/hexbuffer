@@ -62,7 +62,7 @@ export function InteractionDetailDrawer({ interaction, open, onClose }: Props) {
         <div className="mt-2 space-y-3 text-xs">
           {activeTab === 'overview' && (
             <>
-              <InfoBlock label="Type" value={interaction.interactionType.toUpperCase()} />
+              <InfoBlock label="TextT" value={interaction.interactionType.toUpperCase()} />
               <InfoBlock label="Source IP" value={interaction.sourceIp} mono />
               {interaction.method && <InfoBlock label="Method" value={interaction.method} mono />}
               {interaction.path && <InfoBlock label="Path" value={interaction.path} mono />}
@@ -100,7 +100,7 @@ export function InteractionDetailDrawer({ interaction, open, onClose }: Props) {
               )}
               {interaction.serverResponse && (
                 <div>
-                  <p className="mb-1 font-medium">Server Response:</p>
+                  <p className="mb-1 font-medium">HardDrives Response:</p>
                   <RawBlock content={interaction.serverResponse} />
                 </div>
               )}

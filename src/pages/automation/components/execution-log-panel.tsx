@@ -1,14 +1,14 @@
 import React from 'react';
 import {
-  Play,
-  CheckCircle,
-  AlertCircle,
-  AlertTriangle,
+  PlayIcon,
+  CheckCircleIcon,
+  WarningCircleIcon,
+  WarningCircleIcon,
   Info,
-  Trash2,
-  ChevronDown,
-  ChevronRight,
-} from 'lucide-react';
+  TrashIcon,
+  CaretDownIcon,
+  CaretRightIcon,
+} from '@phosphor-icons/react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import {
@@ -18,9 +18,9 @@ import {
 
 const levelIcons: Record<ExecutionLog['level'], typeof Info> = {
   info: Info,
-  success: CheckCircle,
-  error: AlertCircle,
-  warning: AlertTriangle,
+  success: CheckCircleIcon,
+  error: WarningCircleIcon,
+  warning: WarningCircleIcon,
 };
 
 const levelStyles: Record<ExecutionLog['level'], string> = {
@@ -101,16 +101,16 @@ export function ExecutionLogPanel({ workflowId }: ExecutionLogPanelProps) {
           className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground"
           onClick={() => setCollapsed(!collapsed)}
         >
-          <ChevronDown
+          <CaretDownIcon
             className={cn(
               'size-3.5 transition-transform',
               collapsed && '-rotate-90'
             )}
           />
           {isWorkflowRunning ? (
-            <Play className="size-3 text-primary animate-pulse" />
+            <PlayIcon className="size-3 text-primary animate-pulse" />
           ) : (
-            <Play className="size-3 text-muted-foreground" />
+            <PlayIcon className="size-3 text-muted-foreground" />
           )}
           <span>Execution Log</span>
           <span className="ml-1 text-[10px] text-muted-foreground">
@@ -126,7 +126,7 @@ export function ExecutionLogPanel({ workflowId }: ExecutionLogPanelProps) {
               onClick={() => clearLogs(workflowId ?? undefined)}
               title="Clear this workflow log"
             >
-              <Trash2 className="size-3" />
+              <TrashIcon className="size-3" />
             </Button>
           )}
         </div>
@@ -163,9 +163,9 @@ export function ExecutionLogPanel({ workflowId }: ExecutionLogPanelProps) {
                           aria-label={isExpanded ? 'Collapse data' : 'Expand data'}
                         >
                           {isExpanded ? (
-                            <ChevronDown className="size-3" />
+                            <CaretDownIcon className="size-3" />
                           ) : (
-                            <ChevronRight className="size-3" />
+                            <CaretRightIcon className="size-3" />
                           )}
                         </button>
                       ) : (

@@ -1,5 +1,5 @@
 import { ColumnDef } from "@tanstack/react-table";
-import { ExternalLink, Plus } from "lucide-react";
+import { ArrowSquareOutIcon, PlusIcon } from '@phosphor-icons/react';
 import { Button } from "@/components/ui/button";
 import { ProxyConnection } from "@/types";
 
@@ -78,12 +78,12 @@ export const connectionsColumns: (
               target="_blank"
               rel="noopener noreferrer"
             >
-              <ExternalLink className="h-3 w-3" />
+              <ArrowSquareOutIcon className="h-3 w-3" />
             </a>
           </Button>
           <div className="relative group">
             <Button variant="ghost" className="h-5 w-5 p-0">
-              <Plus className="h-3 w-3" />
+              <PlusIcon className="h-3 w-3" />
             </Button>
             <div className="absolute right-0 top-full mt-1 z-10 hidden group-hover:block">
               <div className="bg-popover border rounded-md shadow-md p-2 text-xs space-y-1 min-w-[120px]">
@@ -92,7 +92,7 @@ export const connectionsColumns: (
                   onClick={() => onAddToNewTarget(conn.host)}
                   disabled={loading}
                 >
-                  New Target
+                  New TargetIcon
                 </button>
                 <button
                   className="w-full text-left px-2 py-1 rounded hover:bg-accent"

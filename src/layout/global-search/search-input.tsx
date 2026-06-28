@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Search } from 'lucide-react';
+import { MagnifyingGlassIcon } from '@phosphor-icons/react';
 
 import { cn } from '@/lib/utils';
 
@@ -31,7 +31,7 @@ export function SearchInput({ value, onChange, placeholder }: SearchInputProps) 
 
   return (
     <div className="relative flex items-center ">
-      <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground pointer-events-none" />
+      <MagnifyingGlassIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground pointer-events-none" />
       <input
         ref={inputRef}
         type="text"

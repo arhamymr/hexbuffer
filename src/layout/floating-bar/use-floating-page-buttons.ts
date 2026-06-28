@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Target, Play, Pause, ArrowLeftRight, ShieldCheck, ShieldOff, SendHorizonal, Square, RotateCcw, Loader2 } from 'lucide-react';
+import { TargetIcon, PlayIcon, PauseIcon, ArrowsLeftRightIcon, ShieldCheckIcon, ShieldSlashIcon, PaperPlaneTiltIcon, SquareIcon, ArrowCounterClockwiseIcon, SpinnerGapIcon } from '@phosphor-icons/react';
 import { useHttpHistoryQueryStore } from '@/pages/http-history/state/history-query-store';
 import { useWebSocketHistoryQueryStore } from '@/pages/websocket-history/state/query-store';
 import { useInterceptStore } from '@/pages/intercept/state/intercept-store';
@@ -57,16 +57,16 @@ export function useFloatingPageButtons(pathname: string): PageButton[] {
       return [
         {
           key: 'target-selector',
-          icon: Target,
-          label: 'Manage Target',
+          icon: TargetIcon,
+          label: 'Manage TargetIcon',
           isActive: false,
           onClick: openTargetSelector,
           visible: true,
         },
         {
           key: 'pause-resume',
-          icon: isHttpPaused ? Play : Pause,
-          label: isHttpPaused ? 'Resume' : 'Pause',
+          icon: isHttpPaused ? PlayIcon : PauseIcon,
+          label: isHttpPaused ? 'Resume' : 'PauseIcon',
           showLabel: true,
           isActive: isHttpPaused,
           onClick: toggleHttpPause,
@@ -79,16 +79,16 @@ export function useFloatingPageButtons(pathname: string): PageButton[] {
       return [
         {
           key: 'target-selector',
-          icon: Target,
-          label: 'Manage Target',
+          icon: TargetIcon,
+          label: 'Manage TargetIcon',
           isActive: false,
           onClick: openTargetSelector,
           visible: true,
         },
         {
           key: 'pause-resume',
-          icon: isWebSocketPaused ? Play : Pause,
-          label: isWebSocketPaused ? 'Resume' : 'Pause',
+          icon: isWebSocketPaused ? PlayIcon : PauseIcon,
+          label: isWebSocketPaused ? 'Resume' : 'PauseIcon',
           showLabel: true,
           isActive: isWebSocketPaused,
           onClick: toggleWebSocketPause,
@@ -104,7 +104,7 @@ export function useFloatingPageButtons(pathname: string): PageButton[] {
       return [
         {
           key: 'intercept-toggle',
-          icon: isEnabled ? ShieldCheck : ShieldOff,
+          icon: isEnabled ? ShieldCheckIcon : ShieldSlashIcon,
           label: isEnabled ? 'On' : 'Off',
           showLabel: true,
           isActive: isEnabled,
@@ -113,7 +113,7 @@ export function useFloatingPageButtons(pathname: string): PageButton[] {
         },
         {
           key: 'intercept-forward',
-          icon: SendHorizonal,
+          icon: PaperPlaneTiltIcon,
           label: 'Forward',
           showLabel: true,
           isActive: hasSelection && !interceptIsBusy,
@@ -136,7 +136,7 @@ export function useFloatingPageButtons(pathname: string): PageButton[] {
       return [
         {
           key: 'browser-start',
-          icon: Play,
+          icon: PlayIcon,
           label: 'Start',
           isActive: false,
           onClick: startBrowserCrawl,
@@ -145,15 +145,15 @@ export function useFloatingPageButtons(pathname: string): PageButton[] {
         },
         {
           key: 'browser-pause',
-          icon: Pause,
-          label: 'Pause',
+          icon: PauseIcon,
+          label: 'PauseIcon',
           isActive: false,
           onClick: toggleBrowserCrawl,
           visible: isRunning,
         },
         {
           key: 'browser-resume',
-          icon: RotateCcw,
+          icon: ArrowCounterClockwiseIcon,
           label: 'Resume',
           isActive: false,
           onClick: toggleBrowserCrawl,
@@ -161,7 +161,7 @@ export function useFloatingPageButtons(pathname: string): PageButton[] {
         },
         {
           key: 'browser-stop',
-          icon: Square,
+          icon: SquareIcon,
           label: 'Stop',
           isActive: false,
           onClick: stopBrowserCrawl,
@@ -177,7 +177,7 @@ export function useFloatingPageButtons(pathname: string): PageButton[] {
       return [
         {
           key: 'invoker-start',
-          icon: Play,
+          icon: PlayIcon,
           label: 'Start',
           showLabel: true,
           isActive: false,
@@ -187,7 +187,7 @@ export function useFloatingPageButtons(pathname: string): PageButton[] {
         },
         {
           key: 'invoker-stop',
-          icon: Square,
+          icon: SquareIcon,
           label: 'Stop',
           isActive: false,
           onClick: stopInvokerUiAttack,
@@ -203,8 +203,8 @@ export function useFloatingPageButtons(pathname: string): PageButton[] {
       return [
         {
           key: 'repeater-send',
-          icon: craftLoading ? Loader2 : SendHorizonal,
-          label: 'Send',
+          icon: craftLoading ? SpinnerGapIcon : PaperPlaneTiltIcon,
+          label: 'PaperPlaneTiltIcon',
           showLabel: true,
           isActive: false,
           onClick: () => { void sendCraftRequest(); },

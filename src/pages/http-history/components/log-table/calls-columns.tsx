@@ -1,5 +1,5 @@
 import { useCallback, useState, useRef, memo, useMemo, type MouseEvent } from "react";
-import { ArrowDown, ArrowUp, AlertTriangle, Send, EllipsisVertical, Copy, Plus, Trash2, FilePlus2, Pin, PinOff, Ban, Palette } from "lucide-react";
+import { ArrowDownIcon, ArrowUpIcon, WarningCircleIcon, PaperPlaneTiltIcon, DotsThreeVerticalIcon, CopyIcon, PlusIcon, TrashIcon, FilePlusIcon, PushPinSimpleIcon, PushPinSimpleSlashIcon, ProhibitIcon, PaletteIcon } from '@phosphor-icons/react';
 import {
   flexRender,
   getCoreRowModel,
@@ -72,32 +72,32 @@ const CallActionCell = memo(function CallActionCell({ call, onNewGroup }: { call
           className="flex items-center justify-center size-6 rounded hover:bg-muted-foreground/15 transition-colors"
           onClick={(e) => e.stopPropagation()}
         >
-          <EllipsisVertical className="size-3.5 text-muted-foreground" />
+          <DotsThreeVerticalIcon className="size-3.5 text-muted-foreground" />
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuItem onClick={handleCopyCurlCommand} className="text-xs">
-          <Copy className="mr-2 size-3" /> Copy as curl command (bash)
+          <CopyIcon className="mr-2 size-3" /> CopyIcon as curl command (bash)
         </DropdownMenuItem>
         <DropdownMenuItem onClick={handleCopyUrl} className="text-xs">
-          <Copy className="mr-2 size-3" /> Copy URL
+          <CopyIcon className="mr-2 size-3" /> CopyIcon URL
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleTogglePin} className="text-xs">
           {pinned
-            ? <><PinOff className="mr-2 size-3" /> Unpin</>
-            : <><Pin className="mr-2 size-3" /> Pin</>
+            ? <><PushPinSimpleSlashIcon className="mr-2 size-3" /> Unpin</>
+            : <><PushPinSimpleIcon className="mr-2 size-3" /> PushPinSimpleIcon</>
           }
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         {groups.length === 0 ? (
           <DropdownMenuItem onClick={handleQuickAddToGroup} className="text-xs">
-            <Plus className="mr-2 size-3" /> Add to Group
+            <PlusIcon className="mr-2 size-3" /> Add to Group
           </DropdownMenuItem>
         ) : (
           <DropdownMenuSub>
             <DropdownMenuSubTrigger className="text-xs">
-              <Plus className="mr-2 size-3" /> Add to Group
+              <PlusIcon className="mr-2 size-3" /> Add to Group
             </DropdownMenuSubTrigger>
             <DropdownMenuSubContent>
               {groups.map((g) => (
@@ -113,7 +113,7 @@ const CallActionCell = memo(function CallActionCell({ call, onNewGroup }: { call
               ))}
               <DropdownMenuSeparator />
               <DropdownMenuItem className="text-xs" onClick={() => onNewGroup?.(call)}>
-                <Plus className="mr-2 size-3" /> New Group…
+                <PlusIcon className="mr-2 size-3" /> New Group…
               </DropdownMenuItem>
             </DropdownMenuSubContent>
           </DropdownMenuSub>
@@ -143,28 +143,28 @@ const CallActionCell = memo(function CallActionCell({ call, onNewGroup }: { call
         )}
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleAddToScope} className="text-xs">
-          <Plus className="mr-2 size-3" /> Add to Target
+          <PlusIcon className="mr-2 size-3" /> Add to Target
         </DropdownMenuItem>
         <DropdownMenuItem onClick={handleOpenInInvoker} className="text-xs">
-          <Send className="mr-2 size-3" /> Send to Invoker
+          <PaperPlaneTiltIcon className="mr-2 size-3" /> PaperPlaneTiltIcon to Invoker
         </DropdownMenuItem>
         <CollectionPickerSubmenu
           variant="dropdown"
           onSelect={(stashId) => { void handleSendToCollection(stashId); }}
         />
         <DropdownMenuItem onClick={handleSendToIntercept} className="text-xs">
-          <Send className="mr-2 size-3" /> Send to Intercept
+          <PaperPlaneTiltIcon className="mr-2 size-3" /> PaperPlaneTiltIcon to Intercept
         </DropdownMenuItem>
         <DropdownMenuItem onClick={handleOpenInBrowserAutomation} className="text-xs">
-          <Send className="mr-2 size-3" /> Send to Automate Browser
+          <PaperPlaneTiltIcon className="mr-2 size-3" /> PaperPlaneTiltIcon to Automate Browser
         </DropdownMenuItem>
         <DropdownMenuItem onClick={handleSaveToDocuments} className="text-xs">
-          <FilePlus2 className="mr-2 size-4" /> Save to Documents
+          <FilePlusIcon className="mr-2 size-4" /> FloppyDiskIcon to Documents
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuSub>
           <DropdownMenuSubTrigger className="text-xs">
-            <Palette className="mr-2 size-3" /> Highlight
+            <PaletteIcon className="mr-2 size-3" /> Highlight
           </DropdownMenuSubTrigger>
           <DropdownMenuSubContent>
             {HIGHLIGHT_COLORS.map((color) => (
@@ -193,14 +193,14 @@ const CallActionCell = memo(function CallActionCell({ call, onNewGroup }: { call
         </DropdownMenuSub>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleBlacklistHost} className="text-xs">
-          <Ban className="mr-2 size-3" /> Blacklist Host
+          <ProhibitIcon className="mr-2 size-3" /> Blacklist Host
         </DropdownMenuItem>
         <DropdownMenuItem onClick={handleBlacklistHostAndPath} className="text-xs">
-          <Ban className="mr-2 size-3" /> Blacklist Host + Path
+          <ProhibitIcon className="mr-2 size-3" /> Blacklist Host + Path
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleDelete} variant="destructive" className="text-xs">
-          <Trash2 className="mr-2 size-3" /> Delete
+          <TrashIcon className="mr-2 size-3" /> Delete
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -330,7 +330,7 @@ export const TrafficTable = memo(function TrafficTable({
           <StatusBadge status={row.original.response_status} />
           {row.original.content_decoded && (
             <span title="Request body was decoded from gzip/br/deflate">
-              <AlertTriangle className="h-3 w-3 text-yellow-500" />
+              <WarningCircleIcon className="h-3 w-3 text-yellow-500" />
             </span>
           )}
         </div>
@@ -356,7 +356,7 @@ export const TrafficTable = memo(function TrafficTable({
         return (
           <div className="flex items-center gap-1.5 min-w-0">
             {pinnedSet.has(row.original.id) && (
-              <Pin className="size-3 text-amber-500 shrink-0" />
+              <PushPinSimpleIcon className="size-3 text-amber-500 shrink-0" />
             )}
             {requestGroups.map((g: GroupDefinition) => (
               <span
@@ -415,7 +415,7 @@ export const TrafficTable = memo(function TrafficTable({
     },
     {
       accessorKey: "response_content_type",
-      header: "MIME Type",
+      header: "MIME TextTIcon",
       size: 150,
       cell: ({ row, table }) => (
         <span className="text-xs text-muted-foreground truncate block">
@@ -544,7 +544,7 @@ export const TrafficTable = memo(function TrafficTable({
         </EmptyTitle>
         <EmptyDescription>
           {isPinnedTabActive
-            ? 'Right-click a request and select Pin to add it here (max 10).'
+            ? 'Right-click a request and select PushPinSimpleIcon to add it here (max 10).'
             : hasActiveFilters || hasScopedTab
               ? 'The database has traffic, but the current tab or filters may be hiding it. Switch to All History or clear the active filters.'
               : 'HTTP requests will appear here once captured.'}

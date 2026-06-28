@@ -11,7 +11,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { Plus } from 'lucide-react';
+import { PlusIcon } from '@phosphor-icons/react';
 
 interface TargetDialogProps {
   onTargetCreated: () => void;
@@ -49,12 +49,12 @@ export function TargetDialog({ onTargetCreated }: TargetDialogProps) {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button>
-          <Plus className="h-4 w-4" />
+          <PlusIcon className="h-4 w-4" />
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Create New Target</DialogTitle>
+          <DialogTitle>Create New TargetIcon</DialogTitle>
           <DialogDescription>
             Add a new target with scope patterns to monitor
           </DialogDescription>
@@ -104,7 +104,7 @@ export function TargetDialog({ onTargetCreated }: TargetDialogProps) {
             Cancel
           </Button>
           <Button onClick={handleCreate} disabled={!name.trim() || loading}>
-            Create Target
+            Create TargetIcon
           </Button>
         </DialogFooter>
       </DialogContent>

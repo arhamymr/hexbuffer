@@ -2,7 +2,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
-import { CheckIcon, CopyIcon, EyeIcon, EyeOffIcon } from "lucide-react";
+import { CheckIcon, CopyIcon, EyeIcon, EyeSlashIcon } from '@phosphor-icons/react';
 import type { ComponentProps, HTMLAttributes } from "react";
 import {
   createContext,
@@ -113,7 +113,7 @@ export const EnvironmentVariablesToggle = ({
   return (
     <div className={cn("flex items-center gap-2", className)}>
       <span className="text-muted-foreground text-xs">
-        {showValues ? <EyeIcon size={14} /> : <EyeOffIcon size={14} />}
+        {showValues ? <EyeIcon size={14} /> : <EyeSlashIcon size={14} />}
       </span>
       <Switch
         aria-label="Toggle value visibility"
@@ -273,7 +273,7 @@ export const EnvironmentVariableCopyButton = ({
 
   const copyToClipboard = useCallback(async () => {
     if (typeof window === "undefined" || !navigator?.clipboard?.writeText) {
-      onError?.(new Error("Clipboard API not available"));
+      onError?.(new Error("ClipboardIcon API not available"));
       return;
     }
 

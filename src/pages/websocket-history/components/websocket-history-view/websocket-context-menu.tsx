@@ -5,7 +5,7 @@ import {
   ContextMenuContent,
   ContextMenuItem,
 } from '@/components/ui/context-menu';
-import { Send, Trash2 } from 'lucide-react';
+import { PaperPlaneTiltIcon, TrashIcon } from '@phosphor-icons/react';
 import { toast } from 'sonner';
 import { useRepeaterStore } from '@/stores/repeater';
 import { buildRawHttpRequest } from '@/lib/http-message';
@@ -99,14 +99,14 @@ export function WebSocketContextMenu({
       </ContextMenuTrigger>
       <ContextMenuContent>
         <ContextMenuItem onClick={handleOpenInRepeater} className="text-xs">
-          <Send className="mr-2 h-4 w-4" /> Send to Repeater
+          <PaperPlaneTiltIcon className="mr-2 h-4 w-4" /> PaperPlaneTiltIcon to Repeater
         </ContextMenuItem>
         <CollectionPickerSubmenu
           variant="context"
           onSelect={(stashId) => { void handleSendToCollection(stashId); }}
         />
         <ContextMenuItem onClick={handleDelete} variant="destructive" className="text-xs">
-          <Trash2 className="mr-2 h-4 w-4" /> Delete
+          <TrashIcon className="mr-2 h-4 w-4" /> Delete
         </ContextMenuItem>
       </ContextMenuContent>
     </ContextMenu>

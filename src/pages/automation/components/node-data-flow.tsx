@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowDown, ArrowRight, ChevronDown, ChevronRight } from 'lucide-react';
+import { ArrowDownIcon, ArrowRightIcon, CaretDownIcon, CaretRightIcon } from '@phosphor-icons/react';
 import type { NodeRuntimeState } from '@/stores/automation';
 import type { AutomationNodeType } from '../types';
 import { getNodeDataSchema, type DataSchemaField } from '../lib/node-capabilities';
@@ -74,9 +74,9 @@ function RuntimeDataBlock({ title, data }: { title: string; data: unknown }) {
         onClick={() => setExpanded((value) => !value)}
       >
         {expanded ? (
-          <ChevronDown className="size-3 text-muted-foreground/60" />
+          <CaretDownIcon className="size-3 text-muted-foreground/60" />
         ) : (
-          <ChevronRight className="size-3 text-muted-foreground/60" />
+          <CaretRightIcon className="size-3 text-muted-foreground/60" />
         )}
         <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/80">
           {title}
@@ -118,7 +118,7 @@ export function NodeDataFlow({ nodeType, runtime }: NodeDataFlowProps) {
       {(hasBoth || isAction) && (
         <div>
           <div className="flex items-center gap-1.5 mb-1.5">
-            <ArrowRight className="size-3 text-muted-foreground/60" />
+            <ArrowRightIcon className="size-3 text-muted-foreground/60" />
             <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/80">
               Input
             </span>
@@ -138,9 +138,9 @@ export function NodeDataFlow({ nodeType, runtime }: NodeDataFlowProps) {
         <div>
           <div className="flex items-center gap-1.5 mb-1.5">
             {isTrigger ? (
-              <ArrowRight className="size-3 text-muted-foreground/60" />
+              <ArrowRightIcon className="size-3 text-muted-foreground/60" />
             ) : (
-              <ArrowDown className="size-3 text-muted-foreground/60" />
+              <ArrowDownIcon className="size-3 text-muted-foreground/60" />
             )}
             <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/80">
               Output

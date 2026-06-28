@@ -1,12 +1,12 @@
 import {
-  Asterisk,
+  AsteriskIcon,
   DatabaseIcon,
   NetworkIcon,
-  RefreshCwIcon,
-  RotateCcwIcon,
-  SaveIcon,
-  Trash2Icon,
-} from 'lucide-react';
+  ArrowClockwiseIcon,
+  ArrowCounterClockwiseIcon,
+  FloppyDiskIcon,
+  TrashIcon,
+} from '@phosphor-icons/react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -112,15 +112,15 @@ export function GeneralSettingsTab({ settings }: GeneralSettingsTabProps) {
               onClick={handleSaveProxyDefaultPort}
               disabled={!proxyPortIsChanged && !proxyRuntimeDiffers}
             >
-              <SaveIcon className="mr-2 size-4" />
-              Save Port
+              <FloppyDiskIcon className="mr-2 size-4" />
+              FloppyDiskIcon Port
             </Button>
             <Button
               variant="outline"
               onClick={handleResetProxyDefaultPort}
               disabled={proxyDefaultPort === proxyFactoryDefaultPort}
             >
-              <RotateCcwIcon className="mr-2 size-4" />
+              <ArrowCounterClockwiseIcon className="mr-2 size-4" />
               Reset Port
             </Button>
           </div>
@@ -130,7 +130,7 @@ export function GeneralSettingsTab({ settings }: GeneralSettingsTabProps) {
       <Card>
         <CardHeader>
           <CardTitle>Updates</CardTitle>
-          <CardDescription>Check for and install application updates</CardDescription>
+          <CardDescription>CheckIcon for and install application updates</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
           <p className="text-sm text-muted-foreground">
@@ -146,8 +146,8 @@ export function GeneralSettingsTab({ settings }: GeneralSettingsTabProps) {
               onClick={handleCheckForUpdates}
               disabled={updateChecking || updateDownloading}
             >
-              <RefreshCwIcon className={`mr-2 size-4 ${updateChecking ? 'animate-spin' : ''}`} />
-              {updateChecking ? 'Checking...' : 'Check for Updates'}
+              <ArrowClockwiseIcon className={`mr-2 size-4 ${updateChecking ? 'animate-spin' : ''}`} />
+              {updateChecking ? 'Checking...' : 'CheckIcon for Updates'}
             </Button>
             {updateAvailable && (
               <Button
@@ -155,7 +155,7 @@ export function GeneralSettingsTab({ settings }: GeneralSettingsTabProps) {
                 onClick={handleInstallUpdate}
                 disabled={updateDownloading}
               >
-                <Asterisk className={`mr-2 size-4 ${updateDownloading ? 'animate-spin' : ''}`} />
+                <AsteriskIcon className={`mr-2 size-4 ${updateDownloading ? 'animate-spin' : ''}`} />
                 {updateDownloading ? 'Installing...' : `Install v${updateVersion}`}
               </Button>
             )}
@@ -164,7 +164,7 @@ export function GeneralSettingsTab({ settings }: GeneralSettingsTabProps) {
             <p className="text-sm text-muted-foreground">{updateMessage}</p>
           )}
           {updateError && (
-            <ManualUpdateCommand message="Copy this command and run it manually in your terminal to update." />
+            <ManualUpdateCommand message="CopyIcon this command and run it manually in your terminal to update." />
           )}
         </CardContent>
       </Card>
@@ -179,7 +179,7 @@ export function GeneralSettingsTab({ settings }: GeneralSettingsTabProps) {
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="space-y-1">
-            <p className="text-sm font-medium">Database</p>
+            <p className="text-sm font-medium">DatabaseIcon</p>
             <p className="break-all rounded-md border bg-muted/40 px-3 py-2 font-mono text-xs text-muted-foreground">
               {storageInfo?.databasePath ?? 'Loading...'}
             </p>
@@ -200,7 +200,7 @@ export function GeneralSettingsTab({ settings }: GeneralSettingsTabProps) {
                   variant="destructive"
                   disabled={resettingLocalData}
                 >
-                  <Trash2Icon className="mr-2 size-4" />
+                  <TrashIcon className="mr-2 size-4" />
                   {resettingLocalData ? 'Resetting...' : 'Reset'}
                 </Button>
               </AlertDialogTrigger>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { MoreVertical } from 'lucide-react';
+import { DotsThreeVerticalIcon } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
 
 const OPEN_NODE_CONTEXT_MENU_EVENT = 'automation-open-node-context-menu';
@@ -55,7 +55,7 @@ export function NodeCardMenu({ nodeId, nodeLabel }: { nodeId: string; nodeLabel:
       onPointerDown={(event) => event.stopPropagation()}
       onClick={handleOpenMenu}
     >
-      <MoreVertical className="size-3.5" />
+      <DotsThreeVerticalIcon className="size-3.5" />
     </Button>
   );
 }

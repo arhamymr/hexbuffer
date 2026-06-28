@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Copy, MoreHorizontal, Plus, Archive, Trash2 } from 'lucide-react';
+import { CopyIcon, DotsThreeIcon, PlusIcon, ArchiveIcon, TrashIcon } from '@phosphor-icons/react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -79,7 +79,7 @@ export function ListenerPayloads({
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
             <Button variant="outline" className="h-7 gap-1 text-xs">
-              <Plus className="h-3 w-3" />
+              <PlusIcon className="h-3 w-3" />
               New Payload
             </Button>
           </DialogTrigger>
@@ -89,7 +89,7 @@ export function ListenerPayloads({
             </DialogHeader>
             <div className="space-y-3">
               <div>
-                <Label className="text-xs">Server</Label>
+                <Label className="text-xs">HardDrivesIcon</Label>
                 <Select value={serverId} onValueChange={setServerId}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select server" />
@@ -177,25 +177,25 @@ export function ListenerPayloads({
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" className="h-7 w-7">
-                          <MoreHorizontal className="h-3 w-3" />
+                          <DotsThreeIcon className="h-3 w-3" />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem
                           onClick={() => navigator.clipboard.writeText(p.payloadUrl)}
                         >
-                          <Copy className="mr-2 h-3 w-3" />
-                          Copy URL
+                          <CopyIcon className="mr-2 h-3 w-3" />
+                          CopyIcon URL
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => onArchivePayload(p.id)}>
-                          <Archive className="mr-2 h-3 w-3" />
-                          Archive
+                          <ArchiveIcon className="mr-2 h-3 w-3" />
+                          ArchiveIcon
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={() => onDeletePayload(p.id)}
                           className="text-destructive"
                         >
-                          <Trash2 className="mr-2 h-3 w-3" />
+                          <TrashIcon className="mr-2 h-3 w-3" />
                           Delete
                         </DropdownMenuItem>
                       </DropdownMenuContent>

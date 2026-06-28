@@ -1,4 +1,4 @@
-import type { LucideIcon } from 'lucide-react';
+import type { Icon } from '@phosphor-icons/react';
 import type { ReactNode } from 'react';
 
 export interface TreeNodeData<TMeta = unknown> {
@@ -12,7 +12,7 @@ export interface TreeNodeData<TMeta = unknown> {
   children: TreeNodeData<TMeta>[];
   count?: number;
   methods?: string[];
-  icon?: LucideIcon;
+  icon?: Icon;
   iconClassName?: string;
   badge?: ReactNode;
   meta?: TMeta;

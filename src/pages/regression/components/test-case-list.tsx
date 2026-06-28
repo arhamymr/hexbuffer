@@ -1,5 +1,5 @@
 import React from 'react';
-import { Plus, Trash2, Play, Pencil, FlaskConical, ChevronRight } from 'lucide-react';
+import { PlusIcon, TrashIcon, PlayIcon, PencilIcon, FlaskIcon, CaretRightIcon } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { TestCase } from '../types';
@@ -30,16 +30,16 @@ export function TestCaseList({
       <div className="flex items-center justify-between px-4 py-3 border-b">
         <h2 className="text-sm font-semibold">Test Cases</h2>
         <Button variant="ghost" onClick={onCreate} title="New test case">
-          <Plus className="size-4" />
+          <PlusIcon className="size-4" />
         </Button>
       </div>
       <div className="flex-1 overflow-y-auto">
         {testCases.length === 0 ? (
           <div className="p-4 text-center text-muted-foreground text-sm">
-            <FlaskConical className="size-8 mx-auto mb-2 opacity-40" />
+            <FlaskIcon className="size-8 mx-auto mb-2 opacity-40" />
             <p>No test cases yet</p>
             <Button variant="outline" className="mt-2" onClick={onCreate}>
-              <Plus className="size-3 mr-1" /> Create Test Case
+              <PlusIcon className="size-3 mr-1" /> Create Test Case
             </Button>
           </div>
         ) : (
@@ -52,7 +52,7 @@ export function TestCaseList({
               )}
               onClick={() => onSelect(tc.id)}
             >
-              <FlaskConical className="size-4 shrink-0 text-muted-foreground" />
+              <FlaskIcon className="size-4 shrink-0 text-muted-foreground" />
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium truncate">{tc.name}</p>
                 <p className="text-xs text-muted-foreground truncate">
@@ -68,7 +68,7 @@ export function TestCaseList({
                   disabled={isRunning}
                   title="Run test"
                 >
-                  <Play className="size-3.5" />
+                  <PlayIcon className="size-3.5" />
                 </Button>
                 <Button
                   variant="ghost"
@@ -77,7 +77,7 @@ export function TestCaseList({
                   onClick={(e) => { e.stopPropagation(); onEdit(tc); }}
                   title="Edit test case"
                 >
-                  <Pencil className="size-3.5" />
+                  <PencilIcon className="size-3.5" />
                 </Button>
                 <Button
                   variant="ghost"
@@ -86,10 +86,10 @@ export function TestCaseList({
                   onClick={(e) => { e.stopPropagation(); onDelete(tc.id); }}
                   title="Delete test case"
                 >
-                  <Trash2 className="size-3.5" />
+                  <TrashIcon className="size-3.5" />
                 </Button>
               </div>
-              <ChevronRight className="size-4 text-muted-foreground/40" />
+              <CaretRightIcon className="size-4 text-muted-foreground/40" />
             </div>
           ))
         )}

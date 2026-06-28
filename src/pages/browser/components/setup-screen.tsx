@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Settings2 } from 'lucide-react';
+import { GearSixIcon } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -19,7 +19,7 @@ import { Switch } from '@/components/ui/switch';
 import type { CrawlSetupConfig } from '../types';
 
 const formSchema = z.object({
-  targetUrl: z.string().min(1, 'Target URL is required.').refine((val) => {
+  targetUrl: z.string().min(1, 'TargetIcon URL is required.').refine((val) => {
     try {
       const url = new URL(val);
       return ['http:', 'https:'].includes(url.protocol);
@@ -111,7 +111,7 @@ export function CrawlSetupScreen({
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant="outline" disabled={disabled}>
-          <Settings2 className="h-4 w-4" />
+          <GearSixIcon className="h-4 w-4" />
           Config
         </Button>
       </DialogTrigger>
@@ -125,9 +125,9 @@ export function CrawlSetupScreen({
 
         <form onSubmit={handleSubmit(onSubmit as any)}>
           <div className="max-h-[68vh] space-y-4 overflow-auto pr-1">
-            {/* Target URL */}
+            {/* TargetIcon URL */}
             <div className="space-y-2">
-              <Label htmlFor="target-url">Target URL</Label>
+              <Label htmlFor="target-url">TargetIcon URL</Label>
               <Input
                 id="target-url"
                 className="font-mono"
@@ -185,7 +185,7 @@ export function CrawlSetupScreen({
                 {errors.timeoutMs && <p className="text-xs text-destructive">{errors.timeoutMs.message}</p>}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="network-settle">Network Settle (ms)</Label>
+                <Label htmlFor="network-settle">NetworkIcon Settle (ms)</Label>
                 <Input
                   id="network-settle"
                   type="number"
@@ -217,7 +217,7 @@ export function CrawlSetupScreen({
                 <div className="flex items-center justify-between gap-3">
                   <div className="space-y-1">
                     <Label htmlFor="capture-screenshots">Capture screenshots</Label>
-                    <p className="text-xs text-muted-foreground">Save a full-page PNG for each visited page.</p>
+                    <p className="text-xs text-muted-foreground">FloppyDiskIcon a full-page PNG for each visited page.</p>
                   </div>
                   <Switch
                     id="capture-screenshots"
@@ -229,7 +229,7 @@ export function CrawlSetupScreen({
                 <div className="flex items-center justify-between gap-3">
                   <div className="space-y-1">
                     <Label htmlFor="capture-rendered-html">Capture rendered HTML</Label>
-                    <p className="text-xs text-muted-foreground">Save the post-JS DOM after the page finishes loading.</p>
+                    <p className="text-xs text-muted-foreground">FloppyDiskIcon the post-JS DOM after the page finishes loading.</p>
                   </div>
                   <Switch
                     id="capture-rendered-html"
@@ -260,7 +260,7 @@ export function CrawlSetupScreen({
 
           <DialogFooter>
             <Button type="submit" disabled={disabled || !isValid}>
-              Save
+              FloppyDiskIcon
             </Button>
           </DialogFooter>
         </form>

@@ -1,5 +1,5 @@
 import { useCallback, type MouseEvent, type ReactNode } from 'react';
-import { AlertTriangle, CheckCircle2, Loader2, Plus, X } from 'lucide-react';
+import { WarningCircleIcon, CheckCircleIcon, SpinnerGapIcon, PlusIcon, XIcon } from '@phosphor-icons/react';
 import {
   ContextMenu,
   ContextMenuContent,
@@ -61,11 +61,11 @@ export function PageTabBar({
     const canClose = !tab.disabled && Boolean(onTabClose) && tab.closable !== false;
     const StatusIcon =
       tab.status?.kind === 'running'
-        ? Loader2
+        ? SpinnerGapIcon
         : tab.status?.kind === 'needs-action'
-          ? AlertTriangle
+          ? WarningCircleIcon
           : tab.status?.kind === 'ready'
-            ? CheckCircle2
+            ? CheckCircleIcon
             : null;
 
     return (
@@ -132,7 +132,7 @@ export function PageTabBar({
             onClick={(event) => closeTab(event, tab)}
             aria-label={`Delete ${tab.name}`}
           >
-            <X className="h-3.5 w-3.5" />
+            <XIcon className="h-3.5 w-3.5" />
           </button>
         )}
       </div>
@@ -211,7 +211,7 @@ export function PageTabBar({
               onClick={onTabAdd}
               aria-label="Add tab"
             >
-              <Plus className="h-3.5 w-3.5" />
+              <PlusIcon className="h-3.5 w-3.5" />
             </button>
           )}
         </div>

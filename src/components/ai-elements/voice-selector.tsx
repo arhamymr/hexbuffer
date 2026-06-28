@@ -17,19 +17,19 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Spinner } from "@/components/ui/spinner";
+import { SpinnerIcon } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
 import {
-  CircleSmallIcon,
-  MarsIcon,
-  MarsStrokeIcon,
-  NonBinaryIcon,
+  CircleIcon,
+  GenderMaleIcon,
+  GenderMaleIcon,
+  GenderNonbinaryIcon,
   PauseIcon,
   PlayIcon,
-  TransgenderIcon,
-  VenusAndMarsIcon,
-  VenusIcon,
-} from "lucide-react";
+  GenderTransgenderIcon,
+  GenderIntersexIcon,
+  GenderFemaleIcon,
+} from '@phosphor-icons/react';
 import type { ComponentProps, ReactNode } from "react";
 import { createContext, useCallback, useContext, useMemo } from "react";
 
@@ -200,31 +200,31 @@ export const VoiceSelectorGender = ({
 
   switch (value) {
     case "male": {
-      icon = <MarsIcon className="size-4" />;
+      icon = <GenderMaleIcon className="size-4" />;
       break;
     }
     case "female": {
-      icon = <VenusIcon className="size-4" />;
+      icon = <GenderFemaleIcon className="size-4" />;
       break;
     }
     case "transgender": {
-      icon = <TransgenderIcon className="size-4" />;
+      icon = <GenderTransgenderIcon className="size-4" />;
       break;
     }
     case "androgyne": {
-      icon = <MarsStrokeIcon className="size-4" />;
+      icon = <GenderMaleIcon className="size-4" />;
       break;
     }
     case "non-binary": {
-      icon = <NonBinaryIcon className="size-4" />;
+      icon = <GenderNonbinaryIcon className="size-4" />;
       break;
     }
     case "intersex": {
-      icon = <VenusAndMarsIcon className="size-4" />;
+      icon = <GenderIntersexIcon className="size-4" />;
       break;
     }
     default: {
-      icon = <CircleSmallIcon className="size-4" />;
+      icon = <CircleIcon className="size-4" />;
     }
   }
 
@@ -500,14 +500,14 @@ export const VoiceSelectorPreview = ({
   let icon = <PlayIcon className="size-3" />;
 
   if (loading) {
-    icon = <Spinner className="size-3" />;
+    icon = <SpinnerIcon className="size-3" />;
   } else if (playing) {
     icon = <PauseIcon className="size-3" />;
   }
 
   return (
     <Button
-      aria-label={playing ? "Pause preview" : "Play preview"}
+      aria-label={playing ? "PauseIcon preview" : "PlayIcon preview"}
       className={cn("size-6", className)}
       disabled={loading}
       onClick={handleClick}

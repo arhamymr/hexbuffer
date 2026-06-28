@@ -1,6 +1,6 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Copy, Trash2, Zap } from 'lucide-react';
+import { CopyIcon, TrashIcon, LightningIcon } from '@phosphor-icons/react';
 import { useXssGeneratorPage } from './hooks/use-xss-generator-page';
 import { PayloadLibraryPanel } from './components/payload-library-panel';
 import { PayloadBuilderPanel } from './components/payload-builder-panel';
@@ -16,7 +16,7 @@ export function XssGeneratorPage() {
       <div className="flex h-10 shrink-0 items-center justify-between border-b bg-muted/40 px-3 gap-2">
         <div className="flex items-center gap-2">
           <Badge variant="outline" className="font-normal text-[10px] py-px h-5 gap-1">
-            <Zap className="h-3 w-3 text-amber-500 fill-amber-500/20" />
+            <LightningIcon className="h-3 w-3 text-amber-500 fill-amber-500/20" />
             XSS Generator
           </Badge>
           <Badge variant="secondary" className="font-normal text-[10px] py-px h-5">
@@ -32,8 +32,8 @@ export function XssGeneratorPage() {
             disabled={!page.encodedOutput}
             className="h-7 text-xs gap-1 px-2"
           >
-            <Copy className="h-3 w-3" />
-            Copy Output
+            <CopyIcon className="h-3 w-3" />
+            CopyIcon Output
           </Button>
           <Button
             variant="ghost"
@@ -42,7 +42,7 @@ export function XssGeneratorPage() {
             disabled={isEmpty}
             className="h-7 w-7 text-muted-foreground hover:text-foreground"
           >
-            <Trash2 className="h-3.5 w-3.5" />
+            <TrashIcon className="h-3.5 w-3.5" />
           </Button>
         </div>
       </div>

@@ -1,4 +1,4 @@
-import { Check, ListChecks, X } from 'lucide-react';
+import { CheckIcon, ListChecksIcon, XIcon } from '@phosphor-icons/react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -44,7 +44,7 @@ export function HumanSelectionCard({
     <div className="rounded-md border border-blue-500/40 bg-blue-500/10 p-3 text-sm">
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-center gap-2">
-          <ListChecks className="h-4 w-4 shrink-0 text-blue-500" />
+          <ListChecksIcon className="h-4 w-4 shrink-0 text-blue-500" />
           <span className="font-medium text-blue-600 dark:text-blue-400">
             Selection Required
           </span>
@@ -55,7 +55,7 @@ export function HumanSelectionCard({
           className="h-5 w-5 shrink-0"
           onClick={onDismiss}
         >
-          <X className="h-3 w-3" />
+          <XIcon className="h-3 w-3" />
         </Button>
       </div>
 
@@ -86,7 +86,7 @@ export function HumanSelectionCard({
                       : 'border-muted-foreground/40 rounded-full',
                 )}
               >
-                {isSelected && <Check className="h-3 w-3" />}
+                {isSelected && <CheckIcon className="h-3 w-3" />}
               </span>
               <div className="flex-1 min-w-0">
                 <span className="block font-medium text-xs">{option.label}</span>
@@ -108,7 +108,7 @@ export function HumanSelectionCard({
           disabled={selected.size === 0}
           className="gap-1.5"
         >
-          <Check className="h-3.5 w-3.5" />
+          <CheckIcon className="h-3.5 w-3.5" />
           Confirm Selection
         </Button>
         <span className="text-xs text-muted-foreground">

@@ -1,4 +1,4 @@
-import { Bot, CheckCircleIcon, ChevronDownIcon, CircleIcon, Loader2Icon, PanelLeftClose, PanelLeftOpen, ShieldAlert, Triangle, X, XCircleIcon } from 'lucide-react';
+import { RobotIcon, CheckCircleIcon, CaretDownIcon, CircleIcon, SpinnerGapIcon, SidebarIcon, ShieldWarningIcon, TriangleIcon, XIcon, XCircleIcon } from '@phosphor-icons/react';
 import { useCallback } from 'react';
 import type { FileUIPart } from 'ai';
 import { Badge } from '@/components/ui/badge';
@@ -129,9 +129,9 @@ function AIAssistantPaneContent({ onClose }: { onClose?: () => void }) {
             title={sidebarCollapsed ? 'Show chats' : 'Hide chats'}
           >
             {sidebarCollapsed ? (
-              <PanelLeftOpen className="h-3.5 w-3.5" />
+              <SidebarIcon className="h-3.5 w-3.5" />
             ) : (
-              <PanelLeftClose className="h-3.5 w-3.5" />
+              <SidebarIcon className="h-3.5 w-3.5" />
             )}
             {sidebarCollapsed && sessions.length > 0 && (
               <span className="absolute right-0.5 top-0.5 h-2 w-2 rounded-full bg-green-500 ring-1 ring-background" />
@@ -156,7 +156,7 @@ function AIAssistantPaneContent({ onClose }: { onClose?: () => void }) {
             onClick={onClose}
             title="Close assistant"
           >
-            <X className="h-3.5 w-3.5" />
+            <XIcon className="h-3.5 w-3.5" />
           </Button>
         )}
       </div>
@@ -205,7 +205,7 @@ function AIAssistantPaneContent({ onClose }: { onClose?: () => void }) {
                         <MessageContent>
                           {label ? (
                             <div className="flex items-center gap-2">
-                              <Bot className="h-4 w-4 shrink-0" />
+                              <RobotIcon className="h-4 w-4 shrink-0" />
                               <Badge variant="outline" className="max-w-full truncate">
                                 {label}
                               </Badge>
@@ -241,7 +241,7 @@ function AIAssistantPaneContent({ onClose }: { onClose?: () => void }) {
                         <div className="rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-sm">
                           <div className="flex items-start justify-between gap-2">
                             <div className="flex items-center gap-2">
-                              <ShieldAlert className="h-4 w-4 shrink-0 text-amber-500" />
+                              <ShieldWarningIcon className="h-4 w-4 shrink-0 text-amber-500" />
                               <span className="font-medium text-amber-600 dark:text-amber-400">
                                 Crawler Paused — Credentials Required
                               </span>
@@ -252,7 +252,7 @@ function AIAssistantPaneContent({ onClose }: { onClose?: () => void }) {
                               className="h-5 w-5 shrink-0"
                               onClick={dismissCrawlInput}
                             >
-                              <X className="h-3 w-3" />
+                              <XIcon className="h-3 w-3" />
                             </Button>
                           </div>
                           <p className="mt-1.5 text-muted-foreground">
@@ -264,7 +264,7 @@ function AIAssistantPaneContent({ onClose }: { onClose?: () => void }) {
                             </p>
                           ) : null}
                           <p className="mt-2 text-xs text-muted-foreground">
-                            Type your {requestedFieldLabels} below to resume the crawl.
+                            TextTIcon your {requestedFieldLabels} below to resume the crawl.
                             <br />
                             Format: <code className="text-xs bg-muted px-1 rounded">field: value</code> (one per line)
                           </p>
@@ -308,9 +308,9 @@ function AIAssistantPaneContent({ onClose }: { onClose?: () => void }) {
                             <Task defaultOpen>
                               <TaskTrigger title="">
                                 <div className="flex w-full cursor-pointer items-center gap-2 text-muted-foreground text-sm transition-colors hover:text-foreground">
-                                  <Loader2Icon className="size-4 animate-spin text-blue-500" />
+                                  <SpinnerGapIcon className="size-4 animate-spin text-blue-500" />
                                   <p className="flex-1 text-sm">Running actions…</p>
-                                  <ChevronDownIcon className="size-4 transition-transform group-data-[state=open]:rotate-180" />
+                                  <CaretDownIcon className="size-4 transition-transform group-data-[state=open]:rotate-180" />
                                 </div>
                               </TaskTrigger>
                               <TaskContent>
@@ -318,7 +318,7 @@ function AIAssistantPaneContent({ onClose }: { onClose?: () => void }) {
                                   const Icon =
                                     ta.status === 'completed' ? CheckCircleIcon :
                                       ta.status === 'error' ? XCircleIcon :
-                                        ta.status === 'in_progress' ? Loader2Icon :
+                                        ta.status === 'in_progress' ? SpinnerGapIcon :
                                           CircleIcon;
                                   const iconColor =
                                     ta.status === 'completed' ? 'text-green-500' :
@@ -424,32 +424,32 @@ function AIAssistantPaneContent({ onClose }: { onClose?: () => void }) {
                     onKeyDown={onTextareaKeyDown}
                   />
                 </PromptInputBody>
-              <PromptInputFooter>
-                <PromptInputTools>
-                  <PromptInputSelect
-                    disabled={isStreaming || !!pendingCrawlInput}
-                    onValueChange={handleModelChange}
-                    value={model}
-                  >
-                    <PromptInputSelectTrigger className="border border-border">
-                      <ModelSelectorLogo provider="deepseek" className='size-4' />
-                      <PromptInputSelectValue />
-                    </PromptInputSelectTrigger>
-                    <PromptInputSelectContent>
-                      {modelOptions.map((option) => (
-                        <PromptInputSelectItem key={option} value={option}>
-                          {option}
-                        </PromptInputSelectItem>
-                      ))}
-                    </PromptInputSelectContent>
-                  </PromptInputSelect>
-                </PromptInputTools>
-                <PromptInputSubmit
-                  onStop={stop}
-                  status={status}
-                />
-              </PromptInputFooter>
-            </PromptInput>
+                <PromptInputFooter>
+                  <PromptInputTools>
+                    <PromptInputSelect
+                      disabled={isStreaming || !!pendingCrawlInput}
+                      onValueChange={handleModelChange}
+                      value={model}
+                    >
+                      <PromptInputSelectTrigger className="border border-border">
+                        <ModelSelectorLogo provider="deepseek" className='size-4' />
+                        <PromptInputSelectValue />
+                      </PromptInputSelectTrigger>
+                      <PromptInputSelectContent>
+                        {modelOptions.map((option) => (
+                          <PromptInputSelectItem key={option} value={option}>
+                            {option}
+                          </PromptInputSelectItem>
+                        ))}
+                      </PromptInputSelectContent>
+                    </PromptInputSelect>
+                  </PromptInputTools>
+                  <PromptInputSubmit
+                    onStop={stop}
+                    status={status}
+                  />
+                </PromptInputFooter>
+              </PromptInput>
               <PageMentionPopover
                 isOpen={mentionState.isOpen}
                 filteredPages={filteredPages}

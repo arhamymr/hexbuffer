@@ -8,6 +8,6 @@ export function HttpHistorySearch() {
   const { localVal, handleChange } = useDebouncedSearch(search, setSearch);
 
   return (
-    <SearchInput value={localVal} onChange={handleChange} placeholder="Search URL, host, method, body…" />
+    <SearchInput value={localVal} onChange={handleChange} placeholder="MagnifyingGlass URL, host, method, body…" />
   );
 }

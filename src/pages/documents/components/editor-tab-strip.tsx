@@ -1,4 +1,4 @@
-import { FileText, Server, X } from 'lucide-react';
+import { FileTextIcon, HardDrivesIcon, XIcon } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils';
 import { type ReconDocument } from '../types';
 import { getFileName, type EditorFileId } from '../lib/editor-files';
@@ -25,7 +25,7 @@ export function EditorTabStrip({
           ? activeDocument.apiEntries.find((entry) => fileId === `api:${entry.id}`) ?? null
           : null;
         const isActive = activeFileId === fileId;
-        const Icon = fileId.startsWith('api:') ? Server : FileText;
+        const Icon = fileId.startsWith('api:') ? HardDrivesIcon : FileTextIcon;
         const fileName = getFileName(fileId, apiEntry, activeDocument.customSections);
 
         return (
@@ -58,7 +58,7 @@ export function EditorTabStrip({
                 }
               }}
             >
-              <X className="h-3 w-3" />
+              <XIcon className="h-3 w-3" />
             </span>
           </button>
         );

@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Copy } from 'lucide-react';
+import { CopyIcon } from '@phosphor-icons/react';
 
 interface HashOutputPanelProps {
   output: string;
@@ -26,7 +26,7 @@ export function HashOutputPanel({ output, onCopy }: HashOutputPanelProps) {
           disabled={!output}
           className="h-6 w-6 text-muted-foreground hover:text-foreground"
         >
-          <Copy className="h-3 w-3" />
+          <CopyIcon className="h-3 w-3" />
         </Button>
       </div>
       <Textarea

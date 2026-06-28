@@ -1,5 +1,5 @@
 import React from 'react';
-import { ChevronDown, GripVertical, FileCode, FolderHeart, Plus, Trash2, Edit2 } from 'lucide-react';
+import { CaretDownIcon, DotsSixVerticalIcon, FileCodeIcon, FolderStarIcon, PlusIcon, TrashIcon, PencilSimpleIcon } from '@phosphor-icons/react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { cn } from '@/lib/utils';
@@ -66,7 +66,7 @@ export function TreeNodeRow({
 
   const isCollection = node.kind === 'collection';
   const isEndpoint = node.kind === 'endpoint';
-  const Icon = isEndpoint ? FileCode : FolderHeart;
+  const Icon = isEndpoint ? FileCodeIcon : FolderStarIcon;
   const iconClass = isEndpoint
     ? 'text-gray-500'
     : 'text-blue-500';
@@ -114,7 +114,7 @@ export function TreeNodeRow({
             }}
             aria-label="Toggle expand"
           >
-            <ChevronDown
+            <CaretDownIcon
               className={cn('size-3.5 transition-transform', !isExpanded && '-rotate-90')}
             />
           </button>
@@ -191,7 +191,7 @@ export function TreeNodeRow({
                   onAddChild(node.originalId, 'endpoint');
                 }}
               >
-                <Plus className="h-3 w-3" />
+                <PlusIcon className="h-3 w-3" />
               </button>
             </>
           )}
@@ -207,7 +207,7 @@ export function TreeNodeRow({
                 onRename(node);
               }}
             >
-              <Edit2 className="h-2.5 w-2.5" />
+              <PencilSimpleIcon className="h-2.5 w-2.5" />
             </button>
           )}
 
@@ -221,11 +221,11 @@ export function TreeNodeRow({
               onDelete(node);
             }}
           >
-            <Trash2 className="h-2.5 w-2.5" />
+            <TrashIcon className="h-2.5 w-2.5" />
           </button>
         </div>
 
-        {/* Grip Handle — drag trigger, visible on hover */}
+        {/* DotsSixIcon Handle — drag trigger, visible on hover */}
         <button
           type="button"
           className="flex h-5 w-4 flex-shrink-0 items-center justify-center rounded-sm text-muted-foreground/30 opacity-0 group-hover/tree-row:opacity-100 transition-opacity cursor-grab active:cursor-grabbing hover:text-muted-foreground touch-none"
@@ -233,7 +233,7 @@ export function TreeNodeRow({
           {...listeners}
           aria-label="Drag to reorder"
         >
-          <GripVertical className="h-3.5 w-3.5" />
+          <DotsSixVerticalIcon className="h-3.5 w-3.5" />
         </button>
       </div>
     </div>

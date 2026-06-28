@@ -1,5 +1,5 @@
 import React from 'react';
-import { Trash2, Settings } from 'lucide-react';
+import { TrashIcon, GearSixIcon } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils';
 
 interface NodeContextMenuState {
@@ -74,7 +74,7 @@ export function NodeContextMenu({ state, onClose, onDelete, onProperties }: Node
             onClose();
           }}
         >
-          <Settings className="size-3.5 text-muted-foreground" />
+          <GearSixIcon className="size-3.5 text-muted-foreground" />
           <span>Properties</span>
         </button>
 
@@ -89,7 +89,7 @@ export function NodeContextMenu({ state, onClose, onDelete, onProperties }: Node
             onClose();
           }}
         >
-          <Trash2 className="size-3.5" />
+          <TrashIcon className="size-3.5" />
           <span>Delete</span>
         </button>
       </div>

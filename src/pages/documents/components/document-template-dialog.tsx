@@ -1,4 +1,4 @@
-import { FileCode2, FilePenLine, FlaskConical, ShieldCheck } from 'lucide-react';
+import { FileCodeIcon, PencilLineIcon, FlaskIcon, ShieldCheckIcon } from '@phosphor-icons/react';
 import {
   Dialog,
   DialogContent,
@@ -21,11 +21,11 @@ interface DocumentTemplateDialogProps {
   onSelectTemplate: (templateId: DocumentTemplateId) => void;
 }
 
-const TEMPLATE_ICONS: Record<DocumentTemplateId, typeof FilePenLine> = {
-  developer: FileCode2,
-  qa: FlaskConical,
-  securityResearcher: ShieldCheck,
-  blank: FilePenLine,
+const TEMPLATE_ICONS: Record<DocumentTemplateId, typeof PencilLineIcon> = {
+  developer: FileCodeIcon,
+  qa: FlaskIcon,
+  securityResearcher: ShieldCheckIcon,
+  blank: PencilLineIcon,
 };
 
 function TemplateOption({

@@ -6,7 +6,7 @@ import {
   InputGroupText,
 } from "@/components/ui/input-group";
 import { cn } from "@/lib/utils";
-import { CheckIcon, CopyIcon } from "lucide-react";
+import { CheckIcon, CopyIcon } from '@phosphor-icons/react';
 import type { ComponentProps } from "react";
 import {
   createContext,
@@ -100,7 +100,7 @@ export const SnippetCopyButton = ({
 
   const copyToClipboard = useCallback(async () => {
     if (typeof window === "undefined" || !navigator?.clipboard?.writeText) {
-      onError?.(new Error("Clipboard API not available"));
+      onError?.(new Error("ClipboardIcon API not available"));
       return;
     }
 
@@ -130,11 +130,11 @@ export const SnippetCopyButton = ({
 
   return (
     <InputGroupButton
-      aria-label="Copy"
+      aria-label="CopyIcon"
       className={className}
       onClick={copyToClipboard}
       size="icon-sm"
-      title="Copy"
+      title="CopyIcon"
       {...props}
     >
       {children ?? <Icon className="size-3.5" size={14} />}

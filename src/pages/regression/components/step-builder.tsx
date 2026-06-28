@@ -1,5 +1,5 @@
 import React from 'react';
-import { Trash2, GripVertical } from 'lucide-react';
+import { TrashIcon, DotsSixVerticalIcon } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -39,13 +39,13 @@ export function StepBuilder({ step, index, onChange, onRemove, onMove, totalStep
   return (
     <div className="rounded-md border bg-card/50 p-3 group">
       <div className="flex items-start gap-3">
-        {/* Grip handle for drag reorder */}
+        {/* DotsSixIcon handle for drag reorder */}
         {onMove && (
           <button
             className="mt-1.5 cursor-grab text-muted-foreground/40 hover:text-muted-foreground active:cursor-grabbing shrink-0"
             title="Drag to reorder"
           >
-            <GripVertical className="size-4" />
+            <DotsSixVerticalIcon className="size-4" />
           </button>
         )}
 
@@ -83,7 +83,7 @@ export function StepBuilder({ step, index, onChange, onRemove, onMove, totalStep
               onClick={() => onRemove(index)}
               title="Remove step"
             >
-              <Trash2 className="size-3.5" />
+              <TrashIcon className="size-3.5" />
             </Button>
           </div>
 

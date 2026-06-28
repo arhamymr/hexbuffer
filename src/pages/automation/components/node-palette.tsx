@@ -1,33 +1,33 @@
 import React from 'react';
 import {
-  Play,
-  SquareFunction,
-  Sparkles,
-  Globe,
-  Clock,
-  Bug,
-  CheckCircle,
-  Filter,
-  RefreshCw,
-  FileText,
-  Webhook,
+  PlayIcon,
+  FunctionIcon,
+  SparkleIcon,
+  GlobeIcon,
+  ClockIcon,
+  BugIcon,
+  CheckCircleIcon,
+  FunnelIcon,
+  ArrowClockwiseIcon,
+  FileTextIcon,
+  WebhooksLogo,
   Bell,
-  Terminal,
-  ScanLine,
+  TerminalIcon,
+  ScanIcon,
   Plug,
-  Shield,
-  Zap,
-  Code,
+  ShieldIcon,
+  LightningIcon,
+  CodeIcon,
   Hash,
-  Download,
-  FilePlus,
-  FileCode,
-  Network,
-  Radio,
-  Activity,
-  Square,
-  Search,
-} from 'lucide-react';
+  DownloadIcon,
+  FilePlusIcon,
+  FileCodeIcon,
+  NetworkIcon,
+  RadioIcon,
+  PulseIcon,
+  SquareIcon,
+  MagnifyingGlassIcon,
+} from '@phosphor-icons/react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -47,38 +47,38 @@ import {
 } from '../constants';
 import type { AutomationNodeType, NodeCategory } from '../types';
 
-const categoryIcons: Record<NodeCategory, typeof Play> = {
-  trigger: Play,
-  condition: SquareFunction,
-  action: Sparkles,
+const categoryIcons: Record<NodeCategory, typeof PlayIcon> = {
+  trigger: PlayIcon,
+  condition: FunctionIcon,
+  action: SparkleIcon,
 };
 
-const iconMap: Record<string, typeof Play> = {
-  Play,
-  Globe,
-  Clock,
-  Bug,
-  CheckCircle,
-  Filter,
-  Sparkles,
-  RefreshCw,
-  FileText,
-  Webhook,
+const iconMap: Record<string, typeof PlayIcon> = {
+  PlayIcon,
+  GlobeIcon,
+  ClockIcon,
+  BugIcon,
+  CheckCircleIcon,
+  FunnelIcon,
+  SparkleIcon,
+  ArrowClockwiseIcon,
+  FileTextIcon,
+  WebhooksLogo,
   Bell,
-  Terminal,
-  ScanLine,
+  TerminalIcon,
+  ScanIcon,
   Plug,
-  Shield,
-  Zap,
-  Code,
+  ShieldIcon,
+  LightningIcon,
+  CodeIcon,
   Hash,
-  Download,
-  FilePlus,
-  FileCode,
-  Network,
-  Radio,
-  Activity,
-  Square,
+  DownloadIcon,
+  FilePlusIcon,
+  FileCodeIcon,
+  NetworkIcon,
+  RadioIcon,
+  PulseIcon,
+  SquareIcon,
 };
 
 interface NodePaletteProps {
@@ -113,7 +113,7 @@ export function NodePalette({ onAddNodeAtCenter, hasTriggerNode, onRemoveTrigger
     []
   );
 
-  // Filter nodes by search query
+  // FunnelIcon nodes by search query
   const filteredByCategory = React.useMemo(() => {
     if (!query) {
       return NODE_CATEGORY_GROUPS.map((g) => ({
@@ -145,10 +145,10 @@ export function NodePalette({ onAddNodeAtCenter, hasTriggerNode, onRemoveTrigger
       <div className="shrink-0 space-y-2 border-b px-3 py-2">
         <p className="text-xs font-semibold text-muted-foreground">Nodes</p>
         <div className="relative">
-          <Search className="absolute left-2 top-1/2 size-3 -translate-y-1/2 text-muted-foreground" />
+          <MagnifyingGlassIcon className="absolute left-2 top-1/2 size-3 -translate-y-1/2 text-muted-foreground" />
           <Input
             className="h-7 pl-7 text-xs"
-            placeholder="Search nodes..."
+            placeholder="MagnifyingGlassIcon nodes..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -158,7 +158,7 @@ export function NodePalette({ onAddNodeAtCenter, hasTriggerNode, onRemoveTrigger
       <ScrollArea className="w-full flex-1">
         {!hasResults ? (
           <div className="flex flex-col items-center gap-1.5 py-8 text-muted-foreground">
-            <Search className="size-4 opacity-40" />
+            <MagnifyingGlassIcon className="size-4 opacity-40" />
             <p className="text-[11px]">No nodes match "{search}"</p>
           </div>
         ) : (
@@ -193,7 +193,7 @@ export function NodePalette({ onAddNodeAtCenter, hasTriggerNode, onRemoveTrigger
                   <AccordionContent className="w-full overflow-visible pb-2">
                     <div className="w-full space-y-0.5">
                       {group.nodes.map((def) => {
-                        const Icon = iconMap[def.iconName] || Play;
+                        const Icon = iconMap[def.iconName] || PlayIcon;
                         const isTrigger = def.category === 'trigger';
                         const disabled = isTrigger && hasTriggerNode;
                         return (

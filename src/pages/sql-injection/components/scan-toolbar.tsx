@@ -1,4 +1,4 @@
-import { Download, Play, Square, Trash2 } from 'lucide-react';
+import { DownloadIcon, PlayIcon, SquareIcon, TrashIcon } from '@phosphor-icons/react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -142,7 +142,7 @@ export function ScanToolbar({
             disabled={vulnerabilitiesCount === 0}
             className="h-6 text-[11px] gap-1 px-2"
           >
-            <Download className="h-3 w-3" />
+            <DownloadIcon className="h-3 w-3" />
             JSON
           </Button>
           <Button
@@ -152,7 +152,7 @@ export function ScanToolbar({
             disabled={vulnerabilitiesCount === 0}
             className="h-6 text-[11px] gap-1 px-2"
           >
-            <Download className="h-3 w-3" />
+            <DownloadIcon className="h-3 w-3" />
             CSV
           </Button>
           <Button
@@ -162,7 +162,7 @@ export function ScanToolbar({
             disabled={vulnerabilitiesCount === 0 && databasesCount === 0}
             className="h-6 w-6 text-muted-foreground hover:text-foreground"
           >
-            <Trash2 className="h-3.5 w-3.5" />
+            <TrashIcon className="h-3.5 w-3.5" />
           </Button>
           <div className="h-4 w-px bg-border mx-0.5" />
           {isRunning ? (
@@ -172,7 +172,7 @@ export function ScanToolbar({
               onClick={onStop}
               className="h-6 text-[11px] gap-1 px-2.5"
             >
-              <Square className="h-3 w-3 fill-current" />
+              <SquareIcon className="h-3 w-3 fill-current" />
               Stop
             </Button>
           ) : (
@@ -182,7 +182,7 @@ export function ScanToolbar({
               disabled={!hasUrlAndParams}
               className="h-6 text-[11px] gap-1 px-2.5"
             >
-              <Play className="h-3 w-3 fill-current" />
+              <PlayIcon className="h-3 w-3 fill-current" />
               Start
             </Button>
           )}

@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Pin } from 'lucide-react';
+import { PushPinSimpleIcon } from '@phosphor-icons/react';
 import { useTabState } from '@/components/tabs-layout/use-tab-state';
 import type { PageTabItem } from '@/components/tabs-layout/types';
 import { useDocumentsStore } from '@/stores/documents';
@@ -36,9 +36,9 @@ export function useHttpHistoryPage() {
   );
   const tabs = React.useMemo<PageTabItem[]>(
     () => [
-      { id: ALL_HISTORY_TAB_ID, name: 'All History', closable: false },
+      { id: ALL_HISTORY_TAB_ID, name: 'All ClockCounterClockwiseIcon', closable: false },
       ...(pinnedCount > 0
-        ? [{ id: PINNED_TAB_ID, name: `Pinned (${pinnedCount})`, closable: true, indicator: React.createElement(Pin, { className: "size-3 text-amber-500" }) }]
+        ? [{ id: PINNED_TAB_ID, name: `Pinned (${pinnedCount})`, closable: true, indicator: React.createElement(PushPinSimpleIcon, { className: "size-3 text-amber-500" }) }]
         : []),
       ...activeTargets.map((target) => ({
         id: target.id,
@@ -104,12 +104,12 @@ export function useHttpHistoryPage() {
     const target = activeTargets.find((activeTarget) => activeTarget.id === targetId);
 
     if (!target) {
-      toast.error('Target scope is unavailable');
+      toast.error('TargetIcon scope is unavailable');
       return;
     }
 
     if (target.scope.length === 0) {
-      toast.error('Target has no scope patterns');
+      toast.error('TargetIcon has no scope patterns');
       return;
     }
 
@@ -129,7 +129,7 @@ export function useHttpHistoryPage() {
     toast.success('Sent scope to active document');
   }, [activeTargets]);
 
-  // ── Target selector ──
+  // ── TargetIcon selector ──
   const isTargetSelectorOpen = useFloatingBarUiStore((s) => s.isTargetSelectorOpen);
 
   // ── Context menu ──
@@ -145,12 +145,12 @@ export function useHttpHistoryPage() {
     }
     return (
       <ContextMenuItem onClick={() => sendScopeToDocuments(tab.id)}>
-        Send scope to Documents
+        PaperPlaneTiltIcon scope to Documents
       </ContextMenuItem>
     );
   }, [sendScopeToDocuments, deleteGroup, setActiveTabId]);
 
-  // ── History view memoization ──
+  // ── ClockCounterClockwiseIcon view memoization ──
   const historyView = React.useMemo(() => (
     <HttpHistoryView isPinnedTabActive={isPinnedTabActive} isGroupTabActive={isGroupTabActive} activeGroupId={activeGroupId} />
   ), [isPinnedTabActive, isGroupTabActive, activeGroupId]);

@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { AlertTriangle, CircleDot, CircleStop, FileCheck2, ShieldBan, Loader } from 'lucide-react';
+import { WarningCircleIcon, CircleIcon, StopCircleIcon, FileTextIcon, ShieldSlashIcon, SpinnerIcon } from '@phosphor-icons/react';
 import { Badge } from '@/components/ui/badge';
 import { TreeView, type TreeNodeData } from '@/components/tree-view';
 import { cn } from '@/lib/utils';
@@ -26,11 +26,11 @@ const statusStyles: Record<CrawlPageStatus, string> = {
 };
 
 const statusIcon = {
-  visited: FileCheck2,
-  queued: Loader,
-  current: CircleDot,
-  error: AlertTriangle,
-  blocked: ShieldBan,
+  visited: FileTextIcon,
+  queued: SpinnerIcon,
+  current: CircleIcon,
+  error: WarningCircleIcon,
+  blocked: ShieldSlashIcon,
 };
 
 const statusIconClassName: Record<CrawlPageStatus, string> = {
@@ -47,7 +47,7 @@ function formatCrawlTreeUrl(url: string) {
 
 function toTreeNode(node: CrawlTreeNode, crawlStopped: boolean): TreeNodeData<CrawlTreeMeta> {
   const showStopped = crawlStopped && node.status === 'queued';
-  const Icon = showStopped ? CircleStop : statusIcon[node.status];
+  const Icon = showStopped ? StopCircleIcon : statusIcon[node.status];
 
   return {
     id: node.id,

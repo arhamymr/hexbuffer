@@ -9,7 +9,7 @@ import {
   ContextMenuSubTrigger,
   ContextMenuSubContent,
 } from '@/components/ui/context-menu';
-import { Copy, Plus, Trash2, Send, FilePlus2, Pin, PinOff, Ban, Palette } from 'lucide-react';
+import { CopyIcon, PlusIcon, TrashIcon, PaperPlaneTiltIcon, FilePlusIcon, PushPinSimpleIcon, PushPinSimpleSlashIcon, ProhibitIcon, PaletteIcon } from '@phosphor-icons/react';
 import type { ApiCall } from '@/types';
 import { useLogEntryActions } from '@/pages/http-history/hooks/use-log-entry-actions';
 import { useHighlightStore, HIGHLIGHT_COLORS, HIGHLIGHT_COLOR_LABELS } from '@/pages/http-history/state/highlight-store';
@@ -63,27 +63,27 @@ export const LogEntryContextMenu = memo(function LogEntryContextMenu({
       </ContextMenuTrigger>
       <ContextMenuContent className="p-0.5">
         <ContextMenuItem onClick={handleCopyCurlCommand} className='text-xs py-1 px-1.5'>
-          <Copy className="mr-1.5 size-3" /> Copy as curl command (bash)
+          <CopyIcon className="mr-1.5 size-3" /> CopyIcon as curl command (bash)
         </ContextMenuItem>
         <ContextMenuItem onClick={handleCopyUrl} className='text-xs py-1 px-1.5'>
-          <Copy className="mr-1.5 size-3" /> Copy URL
+          <CopyIcon className="mr-1.5 size-3" /> CopyIcon URL
         </ContextMenuItem>
         <ContextMenuSeparator />
         <ContextMenuItem onClick={handleTogglePin} className='text-xs py-1 px-1.5'>
           {pinned
-            ? <><PinOff className="mr-1.5 size-3" /> Unpin</>
-            : <><Pin className="mr-1.5 size-3" /> Pin</>
+            ? <><PushPinSimpleSlashIcon className="mr-1.5 size-3" /> Unpin</>
+            : <><PushPinSimpleIcon className="mr-1.5 size-3" /> PushPinSimpleIcon</>
           }
         </ContextMenuItem>
         <ContextMenuSeparator />
         {groups.length === 0 ? (
           <ContextMenuItem onClick={handleQuickAddToGroup} className='text-xs py-1 px-1.5'>
-            <Plus className="mr-1.5 size-3" /> Add to Group
+            <PlusIcon className="mr-1.5 size-3" /> Add to Group
           </ContextMenuItem>
         ) : (
           <ContextMenuSub>
             <ContextMenuSubTrigger className='text-xs py-1 px-1.5'>
-              <Plus className="mr-1.5 size-3" /> Add to Group
+              <PlusIcon className="mr-1.5 size-3" /> Add to Group
             </ContextMenuSubTrigger>
             <ContextMenuSubContent>
               {groups.map((g) => (
@@ -99,7 +99,7 @@ export const LogEntryContextMenu = memo(function LogEntryContextMenu({
               ))}
               <ContextMenuSeparator />
               <ContextMenuItem className='text-xs py-1 px-1.5' onClick={() => onNewGroup?.(call)}>
-                <Plus className="mr-1.5 size-3" /> New Group…
+                <PlusIcon className="mr-1.5 size-3" /> New Group…
               </ContextMenuItem>
             </ContextMenuSubContent>
           </ContextMenuSub>
@@ -129,31 +129,31 @@ export const LogEntryContextMenu = memo(function LogEntryContextMenu({
         )}
         <ContextMenuSeparator />
         <ContextMenuItem onClick={handleAddToScope} className='text-xs py-1 px-1.5'>
-          <Plus className="mr-1.5 size-3" /> Add to Target
+          <PlusIcon className="mr-1.5 size-3" /> Add to Target
         </ContextMenuItem>
         <ContextMenuItem onClick={handleOpenInInvoker} className='text-xs py-1 px-1.5'>
-          <Send className="mr-1.5 size-3" /> Send to Invoker
+          <PaperPlaneTiltIcon className="mr-1.5 size-3" /> PaperPlaneTiltIcon to Invoker
         </ContextMenuItem>
         <CollectionPickerSubmenu
           variant="context"
           onSelect={(stashId) => { void handleSendToCollection(stashId); }}
         />
         <ContextMenuItem onClick={handleSendToIntercept} className='text-xs py-1 px-1.5'>
-          <Send className="mr-1.5 size-3" /> Send to Intercept
+          <PaperPlaneTiltIcon className="mr-1.5 size-3" /> PaperPlaneTiltIcon to Intercept
         </ContextMenuItem>
         <ContextMenuItem onClick={handleOpenInBrowserAutomation} className='text-xs py-1 px-1.5'>
-          <Send className="mr-1.5 size-3" /> Send to Automate Browser
+          <PaperPlaneTiltIcon className="mr-1.5 size-3" /> PaperPlaneTiltIcon to Automate Browser
         </ContextMenuItem>
         {/* <ContextMenuItem onClick={handleOpenInPromptInjection} className='text-xs'>
-          <Bot className="mr-2 size-4" /> Open in Prompt Injection
+          <RobotIcon className="mr-2 size-4" /> Open in Prompt Injection
         </ContextMenuItem> */}
         <ContextMenuItem onClick={handleSaveToDocuments} className='text-xs py-1 px-1.5'>
-          <FilePlus2 className="mr-1.5 size-3" /> Save to Documents
+          <FilePlusIcon className="mr-1.5 size-3" /> FloppyDiskIcon to Documents
         </ContextMenuItem>
         <ContextMenuSeparator />
         <ContextMenuSub>
           <ContextMenuSubTrigger className='text-xs py-1 px-1.5'>
-            <Palette className="mr-1.5 size-3" /> Highlight
+            <PaletteIcon className="mr-1.5 size-3" /> Highlight
           </ContextMenuSubTrigger>
           <ContextMenuSubContent>
             {HIGHLIGHT_COLORS.map((color) => (
@@ -182,14 +182,14 @@ export const LogEntryContextMenu = memo(function LogEntryContextMenu({
         </ContextMenuSub>
         <ContextMenuSeparator />
         <ContextMenuItem onClick={handleBlacklistHost} className='text-xs py-1 px-1.5'>
-          <Ban className="mr-1.5 size-3" /> Blacklist Host
+          <ProhibitIcon className="mr-1.5 size-3" /> Blacklist Host
         </ContextMenuItem>
         <ContextMenuItem onClick={handleBlacklistHostAndPath} className='text-xs py-1 px-1.5'>
-          <Ban className="mr-1.5 size-3" /> Blacklist Host + Path
+          <ProhibitIcon className="mr-1.5 size-3" /> Blacklist Host + Path
         </ContextMenuItem>
         <ContextMenuSeparator />
         <ContextMenuItem onClick={handleDelete} variant="destructive" className='text-xs py-1 px-1.5'>
-          <Trash2 className="mr-1.5 size-3" /> Delete
+          <TrashIcon className="mr-1.5 size-3" /> Delete
         </ContextMenuItem>
       </ContextMenuContent>
     </ContextMenu>

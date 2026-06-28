@@ -1,5 +1,5 @@
 import React from 'react';
-import { AlertTriangle, Clock, Globe, Filter, Play, Trash2, Network, Radio, ScanLine } from 'lucide-react';
+import { WarningCircleIcon, ClockIcon, GlobeIcon, FunnelIcon, PlayIcon, TrashIcon, NetworkIcon, RadioIcon, ScanIcon } from '@phosphor-icons/react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -93,7 +93,7 @@ export function TriggerConfigForm({ config, onChange, onRun }: TriggerConfigForm
         <div className="space-y-1.5">
           <Label className="text-[11px]">Cron schedule</Label>
           <div className="relative">
-            <Clock className="absolute left-2.5 top-1/2 size-3 -translate-y-1/2 text-muted-foreground" />
+            <ClockIcon className="absolute left-2.5 top-1/2 size-3 -translate-y-1/2 text-muted-foreground" />
             <Input
               className="h-7 pl-7 text-xs"
               value={config.schedule ?? ''}
@@ -115,8 +115,8 @@ export function TriggerConfigForm({ config, onChange, onRun }: TriggerConfigForm
             className="h-7 w-full text-xs"
             onClick={onRun}
           >
-            <Play className="size-3 mr-1" />
-            Run Workflow
+            <PlayIcon className="size-3 mr-1" />
+            Run FlowArrowIcon
           </Button>
         </div>
       )}
@@ -125,13 +125,13 @@ export function TriggerConfigForm({ config, onChange, onRun }: TriggerConfigForm
         <>
           <div className="border-t pt-3 space-y-3">
             <p className="text-[11px] font-medium text-muted-foreground">
-              <Filter className="size-3 inline mr-1" />
+              <FunnelIcon className="size-3 inline mr-1" />
               Traffic filter
             </p>
 
             {liveTrafficWarning && (
               <Alert className="border-amber-500/60 bg-amber-500/15 py-3 text-amber-800 shadow-sm shadow-amber-500/10 dark:text-amber-100">
-                <AlertTriangle className="size-5" />
+                <WarningCircleIcon className="size-5" />
                 <AlertTitle className="text-sm font-semibold">Host whitelist required</AlertTitle>
                 <AlertDescription className="text-xs text-amber-800/85 dark:text-amber-100/85">
                   {liveTrafficWarning} Add a specific host to keep capture strict and prevent unrelated traffic from entering the queue.
@@ -160,7 +160,7 @@ export function TriggerConfigForm({ config, onChange, onRun }: TriggerConfigForm
 
             <div className="space-y-1.5">
               <Label className="text-[11px]">
-                <Globe className="size-3 inline mr-1" />
+                <GlobeIcon className="size-3 inline mr-1" />
                 Host whitelist <span className="text-amber-500">*</span>
               </Label>
               <Textarea
@@ -216,7 +216,7 @@ export function TriggerConfigForm({ config, onChange, onRun }: TriggerConfigForm
         <>
           <div className="border-t pt-3 space-y-3">
             <p className="text-[11px] font-medium text-muted-foreground">
-              <Filter className="size-3 inline mr-1" />
+              <FunnelIcon className="size-3 inline mr-1" />
               Request filter
             </p>
             <HttpMethodFilter
@@ -243,7 +243,7 @@ export function TriggerConfigForm({ config, onChange, onRun }: TriggerConfigForm
         <>
           <div className="border-t pt-3 space-y-3">
             <p className="text-[11px] font-medium text-muted-foreground">
-              <Filter className="size-3 inline mr-1" />
+              <FunnelIcon className="size-3 inline mr-1" />
               Page filter
             </p>
             <HostWhitelistFilter
@@ -261,12 +261,12 @@ export function TriggerConfigForm({ config, onChange, onRun }: TriggerConfigForm
         </>
       )}
 
-      {/* ── Port Scan Result trigger ── */}
+      {/* ── Port ScanIcon Result trigger ── */}
       {isPortScanResult && (
         <>
           <div className="border-t pt-3 space-y-3">
             <p className="text-[11px] font-medium text-muted-foreground">
-              <Network className="size-3 inline mr-1" />
+              <NetworkIcon className="size-3 inline mr-1" />
               Port filter
             </p>
             <div className="space-y-1.5">
@@ -292,12 +292,12 @@ export function TriggerConfigForm({ config, onChange, onRun }: TriggerConfigForm
         <>
           <div className="border-t pt-3 space-y-3">
             <p className="text-[11px] font-medium text-muted-foreground">
-              <Radio className="size-3 inline mr-1" />
+              <RadioIcon className="size-3 inline mr-1" />
               Message filter
             </p>
             {websocketWarning && (
               <Alert className="border-amber-500/60 bg-amber-500/15 py-3 text-amber-800 shadow-sm shadow-amber-500/10 dark:text-amber-100">
-                <AlertTriangle className="size-5" />
+                <WarningCircleIcon className="size-5" />
                 <AlertTitle className="text-sm font-semibold">Host whitelist required</AlertTitle>
                 <AlertDescription className="text-xs text-amber-800/85 dark:text-amber-100/85">
                   {websocketWarning} Add a specific WebSocket host so unrelated sockets cannot enter the queue.
@@ -346,7 +346,7 @@ export function TriggerConfigForm({ config, onChange, onRun }: TriggerConfigForm
       {isInfoOnly && (
         <>
           <TriggerInfoPanel
-            icon={ScanLine}
+            icon={ScanIcon}
             description={helpText ?? NODE_TYPE_REGISTRY[tt]?.description ?? ''}
           />
         </>
@@ -383,7 +383,7 @@ function LiveTrafficHostList({
       <div className="flex items-center justify-between gap-2">
         <div className="min-w-0">
           <p className="text-[11px] font-medium text-muted-foreground">
-            <Globe className="size-3 inline mr-1" />
+            <GlobeIcon className="size-3 inline mr-1" />
             {title}
           </p>
           <p className="text-[10px] text-muted-foreground">
@@ -399,14 +399,14 @@ function LiveTrafficHostList({
             onClick={onClear}
             title={clearTitle}
           >
-            <Trash2 className="size-3" />
+            <TrashIcon className="size-3" />
           </Button>
         )}
       </div>
 
       {stats && stats.dropped > 0 && (
         <Alert className="border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-200">
-          <AlertTriangle className="size-4" />
+          <WarningCircleIcon className="size-4" />
           <AlertTitle className="text-xs">Live traffic queue is dropping requests</AlertTitle>
           <AlertDescription className="text-xs text-amber-700/80 dark:text-amber-200/80">
             Dropped {stats.dropped} oldest pending request{stats.dropped === 1 ? '' : 's'} for this trigger.

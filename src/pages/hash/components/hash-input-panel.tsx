@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Trash2 } from 'lucide-react';
+import { TrashIcon } from '@phosphor-icons/react';
 
 interface HashInputPanelProps {
   input: string;
@@ -28,7 +28,7 @@ export function HashInputPanel({ input, isEmpty, onInputChange, onClear }: HashI
           disabled={isEmpty}
           className="h-6 w-6 text-muted-foreground hover:text-foreground"
         >
-          <Trash2 className="h-3 w-3" />
+          <TrashIcon className="h-3 w-3" />
         </Button>
       </div>
       <Textarea

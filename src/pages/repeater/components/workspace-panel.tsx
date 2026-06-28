@@ -11,7 +11,7 @@ import { useCollectionsStore } from '@/stores/collections';
 import { CollectionsTree } from './collection-tree';
 import { ForgePanel } from './ForgePanel';
 import { ContextsDialog } from './ContextsDialog';
-import { Settings2, FolderHeart } from 'lucide-react';
+import { GearSixIcon, FolderStarIcon } from '@phosphor-icons/react';
 
 export function WorkspacePanel({ workspaceId }: { workspaceId: string }) {
   const selectedNodeId = useCollectionsStore((s) => s.selectedNodeId);
@@ -60,7 +60,7 @@ export function WorkspacePanel({ workspaceId }: { workspaceId: string }) {
                 onClick={() => setContextsDialogOpen(true)}
                 title="Manage Environments"
               >
-                <Settings2 className="h-4 w-4" />
+                <GearSixIcon className="h-4 w-4" />
               </Button>
             </div>
           </div>
@@ -72,7 +72,7 @@ export function WorkspacePanel({ workspaceId }: { workspaceId: string }) {
         </div>
       ) : (
         <div className="flex-1 flex flex-col items-center justify-center space-y-3 bg-muted/5">
-          <FolderHeart className="h-10 w-10 text-muted-foreground/30" />
+          <FolderStarIcon className="h-10 w-10 text-muted-foreground/30" />
           <div className="text-center space-y-1">
             <h3 className="font-semibold text-sm">No Request Selected</h3>
             <p className="text-xs text-muted-foreground max-w-xs">

@@ -80,13 +80,13 @@ export function useDebuggerPage() {
         ['ai-chat-action', 'chat_action', 'Chat Tool Call'],
         ['ai-chat:crawl-human-input-required', 'human_input_requested', 'Crawl Needs Input'],
         ['ai-chat:human-selection-required', 'human_selection_required', 'AI Selection Request'],
-        // Workflow lifecycle events (passthrough from sidecar)
-        ['ai-workflow:started', 'workflow_started', 'Workflow Started'],
-        ['ai-workflow:step_started', 'workflow_step_started', 'Workflow Step Started'],
-        ['ai-workflow:step_completed', 'workflow_step_completed', 'Workflow Step Completed'],
-        ['ai-workflow:step_failed', 'workflow_step_failed', 'Workflow Step Failed'],
-        ['ai-workflow:finished', 'workflow_finished', 'Workflow Finished'],
-        ['ai-workflow:failed', 'workflow_failed', 'Workflow Failed'],
+        // FlowArrow lifecycle events (passthrough from sidecar)
+        ['ai-workflow:started', 'workflow_started', 'FlowArrow Started'],
+        ['ai-workflow:step_started', 'workflow_step_started', 'FlowArrow Step Started'],
+        ['ai-workflow:step_completed', 'workflow_step_completed', 'FlowArrow Step Completed'],
+        ['ai-workflow:step_failed', 'workflow_step_failed', 'FlowArrow Step Failed'],
+        ['ai-workflow:finished', 'workflow_finished', 'FlowArrow Finished'],
+        ['ai-workflow:failed', 'workflow_failed', 'FlowArrow Failed'],
       ];
 
       for (const [channel, eventType, label] of eventDefs) {

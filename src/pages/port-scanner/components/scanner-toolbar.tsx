@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { Copy, Download, Info, Play, Square, Trash2 } from 'lucide-react';
+import { CopyIcon, DownloadIcon, Info, PlayIcon, SquareIcon, TrashIcon } from '@phosphor-icons/react';
 import type { PortPreset } from '../constants';
 import { PRESET_OPTIONS } from '../constants';
 
@@ -68,11 +68,11 @@ export function ScannerToolbar({
 }: ScannerToolbarProps) {
   return (
     <div className="flex flex-col border-b bg-muted/40 shrink-0">
-      {/* Settings Row */}
+      {/* GearSixIcon Row */}
       <div className="flex items-center gap-2 px-3 py-1.5 border-b bg-muted/10">
         <Input
           className="h-7 text-xs bg-background max-w-[280px]"
-          placeholder="Target host or CIDR (e.g. example.com)"
+          placeholder="TargetIcon host or CIDR (e.g. example.com)"
           value={target}
           onChange={(e) => onTargetChange(e.target.value)}
         />
@@ -167,8 +167,8 @@ export function ScannerToolbar({
             disabled={!hasResults}
             className="h-6 text-[11px] gap-1 px-2"
           >
-            <Copy className="h-3.5 w-3.5" />
-            Copy Ports
+            <CopyIcon className="h-3.5 w-3.5" />
+            CopyIcon Ports
           </Button>
           <Button
             variant="outline"
@@ -177,7 +177,7 @@ export function ScannerToolbar({
             disabled={!hasResults}
             className="h-6 text-[11px] gap-1 px-2"
           >
-            <Download className="h-3.5 w-3.5" />
+            <DownloadIcon className="h-3.5 w-3.5" />
             JSON
           </Button>
           <Button
@@ -187,7 +187,7 @@ export function ScannerToolbar({
             disabled={!hasResults}
             className="h-6 text-[11px] gap-1 px-2"
           >
-            <Download className="h-3.5 w-3.5" />
+            <DownloadIcon className="h-3.5 w-3.5" />
             CSV
           </Button>
           <Button
@@ -197,7 +197,7 @@ export function ScannerToolbar({
             disabled={resultsCount === 0}
             className="h-6 w-6 text-muted-foreground hover:text-foreground"
           >
-            <Trash2 className="h-3.5 w-3.5" />
+            <TrashIcon className="h-3.5 w-3.5" />
           </Button>
           <div className="h-4 w-px bg-border mx-0.5" />
           {isRunning ? (
@@ -207,7 +207,7 @@ export function ScannerToolbar({
               onClick={onStop}
               className="h-6 text-[11px] gap-1 px-2.5"
             >
-              <Square className="h-3 w-3 fill-current" />
+              <SquareIcon className="h-3 w-3 fill-current" />
               Stop
             </Button>
           ) : (
@@ -217,7 +217,7 @@ export function ScannerToolbar({
               disabled={!canScan}
               className="h-6 text-[11px] gap-1 px-2.5"
             >
-              <Play className="h-3 w-3 fill-current" />
+              <PlayIcon className="h-3 w-3 fill-current" />
               Start
             </Button>
           )}

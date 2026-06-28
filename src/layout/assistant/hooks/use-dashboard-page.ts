@@ -371,7 +371,7 @@ export function useDashboardPage({ sessionId, setMessagesRef, onSaveMessages, cu
 
     setPendingSelection(null);
 
-    // Send the selection as a regular chat message so the AI can continue
+    // PaperPlaneTilt the selection as a regular chat message so the AI can continue
     const selectedLabels = request.options
       .filter((o) => selectedValues.includes(o.value))
       .map((o) => o.label);

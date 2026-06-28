@@ -1,5 +1,5 @@
 import React from 'react';
-import { CheckCircle2, XCircle, Clock, ChevronRight, Sparkles, AlertTriangle, History } from 'lucide-react';
+import { CheckCircleIcon, XCircleIcon, ClockIcon, CaretRightIcon, SparkleIcon, WarningCircleIcon, ClockCounterClockwiseIcon } from '@phosphor-icons/react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -28,8 +28,8 @@ export function TestResults({ runs, onRun, isRunning }: TestResultsProps) {
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b bg-card shrink-0">
         <div className="flex items-center gap-2">
-          <History className="size-4 text-muted-foreground" />
-          <h2 className="text-sm font-semibold">Run History</h2>
+          <ClockCounterClockwiseIcon className="size-4 text-muted-foreground" />
+          <h2 className="text-sm font-semibold">Run ClockCounterClockwiseIcon</h2>
         </div>
         {runs.length > 0 && (
           <Badge variant="outline" className="text-[10px]">
@@ -40,7 +40,7 @@ export function TestResults({ runs, onRun, isRunning }: TestResultsProps) {
 
       {sortedRuns.length === 0 ? (
         <div className="flex flex-col items-center justify-center flex-1 text-center p-6">
-          <History className="size-8 text-muted-foreground/30 mb-2" />
+          <ClockCounterClockwiseIcon className="size-8 text-muted-foreground/30 mb-2" />
           <p className="text-sm text-muted-foreground">No runs yet</p>
           <p className="text-xs text-muted-foreground/70 mt-1">
             Run a test case to see results here
@@ -112,7 +112,7 @@ export function TestResults({ runs, onRun, isRunning }: TestResultsProps) {
               {selectedRun.error && (
                 <div className="rounded-md bg-destructive/10 p-3 text-sm">
                   <div className="flex items-start gap-2">
-                    <AlertTriangle className="size-4 text-destructive shrink-0 mt-0.5" />
+                    <WarningCircleIcon className="size-4 text-destructive shrink-0 mt-0.5" />
                     <p className="text-destructive text-xs">{selectedRun.error}</p>
                   </div>
                 </div>
@@ -136,13 +136,13 @@ export function TestResults({ runs, onRun, isRunning }: TestResultsProps) {
               >
                 {/* Status icon */}
                 {run.status === 'passed' ? (
-                  <CheckCircle2 className="size-4 text-green-500 shrink-0" />
+                  <CheckCircleIcon className="size-4 text-green-500 shrink-0" />
                 ) : run.status === 'failed' ? (
-                  <XCircle className="size-4 text-red-500 shrink-0" />
+                  <XCircleIcon className="size-4 text-red-500 shrink-0" />
                 ) : run.status === 'running' ? (
-                  <Clock className="size-4 text-blue-500 shrink-0" />
+                  <ClockIcon className="size-4 text-blue-500 shrink-0" />
                 ) : (
-                  <Clock className="size-4 text-muted-foreground shrink-0" />
+                  <ClockIcon className="size-4 text-muted-foreground shrink-0" />
                 )}
 
                 {/* Info */}
@@ -158,7 +158,7 @@ export function TestResults({ runs, onRun, isRunning }: TestResultsProps) {
                       {run.status}
                     </Badge>
                     {run.aiVerdict && (
-                      <Sparkles className="size-3 text-blue-400" />
+                      <SparkleIcon className="size-3 text-blue-400" />
                     )}
                   </div>
                   <div className="flex items-center gap-2 mt-0.5">
@@ -182,7 +182,7 @@ export function TestResults({ runs, onRun, isRunning }: TestResultsProps) {
                     : ''}
                 </span>
 
-                <ChevronRight className="size-3.5 text-muted-foreground/40 shrink-0" />
+                <CaretRightIcon className="size-3.5 text-muted-foreground/40 shrink-0" />
               </div>
             );
           })}
@@ -205,9 +205,9 @@ function StepResultRow({ result, index }: { result: StepResult; index: number })
         isFailed && 'bg-red-50 dark:bg-red-950/30'
       )}
     >
-      {isPassed && <CheckCircle2 className="size-3.5 text-green-500 shrink-0" />}
-      {isFailed && <XCircle className="size-3.5 text-red-500 shrink-0" />}
-      {!isPassed && !isFailed && <Clock className="size-3.5 text-muted-foreground/40 shrink-0" />}
+      {isPassed && <CheckCircleIcon className="size-3.5 text-green-500 shrink-0" />}
+      {isFailed && <XCircleIcon className="size-3.5 text-red-500 shrink-0" />}
+      {!isPassed && !isFailed && <ClockIcon className="size-3.5 text-muted-foreground/40 shrink-0" />}
 
       {Icon && <Icon className="size-3 text-muted-foreground shrink-0" />}
       <span className="text-xs flex-1 truncate">{STEP_KIND_LABELS[result.kind]}</span>
@@ -225,7 +225,7 @@ function AiVerdictCard({ verdict }: { verdict: AiVerdict }) {
   return (
     <div className="rounded-md border p-3 space-y-2">
       <div className="flex items-center gap-2">
-        <Sparkles className="size-3.5 text-blue-400" />
+        <SparkleIcon className="size-3.5 text-blue-400" />
         <span className="text-xs font-semibold">AI Verdict</span>
         <Badge
           variant={verdict.pass ? 'default' : 'destructive'}

@@ -1,4 +1,4 @@
-import { ArrowLeft, ArrowRight, Flag, PauseCircle, Play, Plus, ShieldOff, Trash2 } from 'lucide-react';
+import { ArrowLeftIcon, ArrowRightIcon, FlagIcon, PauseCircleIcon, PlayIcon, PlusIcon, ShieldSlashIcon, TrashIcon } from '@phosphor-icons/react';
 import {
   ContextMenu,
   ContextMenuContent,
@@ -35,7 +35,7 @@ export function InterceptQueuePanel() {
         <div className="mb-2 grid grid-cols-2 gap-2">
           <div className="rounded-md border bg-background p-2">
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <PauseCircle className="h-3.5 w-3.5" />
+              <PauseCircleIcon className="h-3.5 w-3.5" />
               Paused
             </div>
             <div className="mt-1 text-sm font-semibold">{activeRequests.length}</div>
@@ -43,7 +43,7 @@ export function InterceptQueuePanel() {
           </div>
           <div className="rounded-md border bg-background p-2">
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <Play className="h-3.5 w-3.5" />
+              <PlayIcon className="h-3.5 w-3.5" />
               Mode
             </div>
             <div className="mt-1 truncate text-sm font-medium">
@@ -84,7 +84,7 @@ export function InterceptQueuePanel() {
                           className="mt-0.5 inline-flex size-8 bg-background items-center justify-center rounded border font-mono text-[11px] text-muted-foreground"
                           title={direction === 'response' ? 'Response' : 'Request'}
                         >
-                          {direction === 'response' ? <ArrowLeft className='size-4' /> : <ArrowRight className='size-4' />}
+                          {direction === 'response' ? <ArrowLeftIcon className='size-4' /> : <ArrowRightIcon className='size-4' />}
                         </span>
                         <div>
                           <div className='flex flex-col items-start gap-1'>
@@ -119,7 +119,7 @@ export function InterceptQueuePanel() {
                         onClick={() => handleAddCaptureHost(host)}
                         className='text-xs'
                       >
-                        <Plus className="size-3.5" />
+                        <PlusIcon className="size-3.5" />
                         Capture this host
                       </ContextMenuItem>
                       <ContextMenuSeparator />
@@ -129,7 +129,7 @@ export function InterceptQueuePanel() {
                             onClick={() => handleInterceptResponse(request)}
                             className='text-xs'
                           >
-                            <Flag className="size-3.5" />
+                            <FlagIcon className="size-3.5" />
                             Intercept response
                           </ContextMenuItem>
                           <ContextMenuSeparator />
@@ -140,7 +140,7 @@ export function InterceptQueuePanel() {
                         variant="destructive"
                         className='text-xs'
                       >
-                        <Trash2 className="size-3.5" />
+                        <TrashIcon className="size-3.5" />
                         Drop
                       </ContextMenuItem>
                       <ContextMenuSeparator />
@@ -148,7 +148,7 @@ export function InterceptQueuePanel() {
                         onClick={() => handleDontCapture(request)}
                         className='text-xs'
                       >
-                        <ShieldOff className="size-3.5" />
+                        <ShieldSlashIcon className="size-3.5" />
                         Don't capture this host
                       </ContextMenuItem>
                     </ContextMenuContent>

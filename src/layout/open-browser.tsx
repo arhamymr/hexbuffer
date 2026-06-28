@@ -1,4 +1,4 @@
-import { Globe, Loader2 } from 'lucide-react';
+import { GlobeIcon, SpinnerGapIcon } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useOpenBrowserButton } from './hooks/use-open-browser-button';
@@ -25,9 +25,9 @@ export function OpenBrowserButton() {
       onMouseLeave={handleMouseLeave}
     >
       {isOpeningBrowser ? (
-        <Loader2 className="h-4 w-4 animate-spin shrink-0" />
+        <SpinnerGapIcon className="h-4 w-4 animate-spin shrink-0" />
       ) : (
-        <Globe className="h-4 w-4 shrink-0" />
+        <GlobeIcon className="h-4 w-4 shrink-0" />
       )}
       <span
         className={cn(

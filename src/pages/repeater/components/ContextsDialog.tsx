@@ -14,7 +14,7 @@ import {
   type ContextRecord,
   type KeyValuePair,
 } from '@/stores/collections';
-import { Plus, Trash2, Edit2, Copy } from 'lucide-react';
+import { PlusIcon, TrashIcon, PencilSimpleIcon, CopyIcon } from '@phosphor-icons/react';
 
 interface ContextsDialogProps {
   open: boolean;
@@ -106,7 +106,7 @@ export function ContextsDialog({ open, onOpenChange }: ContextsDialogProps) {
     } catch {
       vars = [];
     }
-    await store.createContext(`Copy of ${ctx.name}`, vars);
+    await store.createContext(`CopyIcon of ${ctx.name}`, vars);
   };
 
   return (
@@ -117,10 +117,10 @@ export function ContextsDialog({ open, onOpenChange }: ContextsDialogProps) {
         </DialogHeader>
 
         <div className="flex-1 min-h-0 grid grid-cols-5 gap-2 mt-4">
-          {/* Sidebar list */}
+          {/* SidebarIcon list */}
           <div className="col-span-2 border-r pr-2 flex flex-col min-h-0">
             <Button size="sm" className="w-full mb-3" onClick={handleStartCreate}>
-              <Plus className="h-4 w-4 mr-2" /> New Environment
+              <PlusIcon className="h-4 w-4 mr-2" /> New Environment
             </Button>
             <ScrollArea className="flex-1">
               <div className="space-y-1 pr-2">
@@ -143,7 +143,7 @@ export function ContextsDialog({ open, onOpenChange }: ContextsDialogProps) {
                           handleStartEdit(ctx);
                         }}
                       >
-                        <Edit2 className="h-3 w-3" />
+                        <PencilSimpleIcon className="h-3 w-3" />
                       </Button>
                       <Button
                         size="icon"
@@ -154,7 +154,7 @@ export function ContextsDialog({ open, onOpenChange }: ContextsDialogProps) {
                           handleDuplicate(ctx);
                         }}
                       >
-                        <Copy className="h-3 w-3" />
+                        <CopyIcon className="h-3 w-3" />
                       </Button>
                       <Button
                         size="icon"
@@ -165,7 +165,7 @@ export function ContextsDialog({ open, onOpenChange }: ContextsDialogProps) {
                           handleDelete(ctx.id);
                         }}
                       >
-                        <Trash2 className="h-3 w-3" />
+                        <TrashIcon className="h-3 w-3" />
                       </Button>
                     </div>
                   </div>
@@ -200,7 +200,7 @@ export function ContextsDialog({ open, onOpenChange }: ContextsDialogProps) {
                       Variables
                     </span>
                     <Button variant="outline" size="sm" className="h-7 px-2" onClick={handleAddVar}>
-                      <Plus className="h-3.5 w-3.5 mr-1" /> Add Row
+                      <PlusIcon className="h-3.5 w-3.5 mr-1" /> Add Row
                     </Button>
                   </div>
                  
@@ -226,7 +226,7 @@ export function ContextsDialog({ open, onOpenChange }: ContextsDialogProps) {
                             className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive"
                             onClick={() => handleRemoveVar(index)}
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <TrashIcon className="h-4 w-4" />
                           </Button>
                         </div>
                       ))}
@@ -253,7 +253,7 @@ export function ContextsDialog({ open, onOpenChange }: ContextsDialogProps) {
                     Cancel
                   </Button>
                   <Button onClick={handleSave} disabled={!name.trim()}>
-                    Save Environment
+                    FloppyDiskIcon Environment
                   </Button>
                 </DialogFooter>
               </div>

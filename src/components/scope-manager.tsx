@@ -9,7 +9,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { Settings } from 'lucide-react';
+import { GearSixIcon } from '@phosphor-icons/react';
 import { ScopeTable } from './scope-table';
 import type { Target } from '@/types';
 
@@ -30,7 +30,7 @@ export function ScopeManager({ target, targets, onScopeUpdated }: ScopeManagerPr
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant="outline">
-          <Settings className="mr-2 h-4 w-4" />
+          <GearSixIcon className="mr-2 h-4 w-4" />
           Manage Scope
         </Button>
       </DialogTrigger>
@@ -38,7 +38,7 @@ export function ScopeManager({ target, targets, onScopeUpdated }: ScopeManagerPr
         <DialogHeader>
           <DialogTitle>Scope Management</DialogTitle>
           <DialogDescription>
-            Manage scope domains for all targets. Check "Subdomain" to include *.domain.com patterns.
+            Manage scope domains for all targets. CheckIcon "Subdomain" to include *.domain.com patterns.
           </DialogDescription>
         </DialogHeader>
         <div className="py-4">

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, ArrowUpDown, Box, Bug, PauseCircle, RotateCw, LoaderPinwheel, Hexagon, FlaskConical, Binary, AppWindow, BookText, Database, ShieldCheck, Cat, KeyRound, Fingerprint, GitCompare, Network, Zap, List } from 'lucide-react';
+import { HouseIcon, ArrowsDownUpIcon, CubeIcon, BugIcon, PauseCircleIcon, ArrowsClockwiseIcon, PinwheelIcon, SwordIcon, FlaskIcon, BinaryIcon, AppWindowIcon, FileTextIcon, DatabaseIcon, ShieldCheckIcon, CatIcon, KeyIcon, FingerprintIcon, GitDiffIcon, NetworkIcon, LightningIcon, ListIcon } from '@phosphor-icons/react';
 
 import iconBrowser from '@/assets/feature/browser.png';
 import iconDocuments from '@/assets/feature/documents.png';
@@ -19,27 +19,27 @@ export interface NavItem {
 }
 
 export const allNavItems: NavItem[] = [
-  { label: 'Overview', icon: Home, href: '/' },
-  { label: 'HTTP History', icon: ArrowUpDown, iconImage: iconTerminal, href: '/http-history' },
-  { label: 'WebSocket History', icon: ArrowUpDown, iconImage: iconTerminal, href: '/websocket-history' },
-  { label: 'Workflow', icon: LoaderPinwheel, iconImage: iconWorkflow, href: '/automation', devOnly: true },
-  { label: 'Browser', icon: AppWindow, iconImage: iconBrowser, href: '/browser' },
-  { label: 'Intercept', icon: PauseCircle, href: '/intercept' },
+  { label: 'Overview', icon: HouseIcon, href: '/' },
+  { label: 'HTTP', icon: ArrowsDownUpIcon, iconImage: iconTerminal, href: '/http-history' },
+  { label: 'WebSocket', icon: ArrowsDownUpIcon, iconImage: iconTerminal, href: '/websocket-history' },
+  { label: 'Workflow', icon: PinwheelIcon, iconImage: iconWorkflow, href: '/automation', devOnly: true },
+  { label: 'Browser', icon: AppWindowIcon, iconImage: iconBrowser, href: '/browser' },
+  { label: 'Intercept', icon: PauseCircleIcon, href: '/intercept' },
 
-  { label: 'Invoker', icon: Hexagon, href: '/invoker' },
-  { label: 'Repeater', icon: RotateCw, iconImage: iconRepeater, href: '/repeater' },
-  { label: 'Documents', icon: BookText, iconImage: iconDocuments, href: '/documents' },
-  
-  { label: 'Encoder', icon: Binary, iconImage: iconBinary, href: '/encoder' },
-  { label: 'Hash', icon: Fingerprint, href: '/hash' },
-  { label: 'Comparer', icon: GitCompare, href: '/comparer' },
-  { label: 'Port Scanner', icon: Network, href: '/port-scanner' },
-  { label: 'JWT', icon: KeyRound, href: '/jwt' },
-  { label: 'XSS Generator', icon: Zap, href: '/xss-generator' },
-  { label: 'SQL Injection', icon: Database, href: '/sql-injection' },
+  { label: 'Invoker', icon: SwordIcon, href: '/invoker' },
+  { label: 'Repeater', icon: ArrowsClockwiseIcon, iconImage: iconRepeater, href: '/repeater' },
+  { label: 'Documents', icon: FileTextIcon, iconImage: iconDocuments, href: '/documents' },
 
-  { label: 'Debugger', icon: Bug, href: '/debugger', devOnly: true },
-  { label: 'Regression', icon: FlaskConical, href: '/regression', devOnly: true },
+  { label: 'Encoder', icon: BinaryIcon, iconImage: iconBinary, href: '/encoder' },
+  { label: 'Hash', icon: FingerprintIcon, href: '/hash' },
+  { label: 'Comparer', icon: GitDiffIcon, href: '/comparer' },
+  { label: 'Port Scanner', icon: NetworkIcon, href: '/port-scanner' },
+  { label: 'JWT', icon: KeyIcon, href: '/jwt' },
+  { label: 'XSS Generator', icon: LightningIcon, href: '/xss-generator' },
+  { label: 'SQL Injection', icon: DatabaseIcon, href: '/sql-injection' },
+
+  { label: 'Debugger', icon: BugIcon, href: '/debugger', devOnly: true },
+  { label: 'Regression', icon: FlaskIcon, href: '/regression', devOnly: true },
 
 ];
 

@@ -10,11 +10,11 @@ import {
   FileTextIcon,
   GlobeIcon,
   ImageIcon,
-  Music2Icon,
+  MusicNoteIcon,
   PaperclipIcon,
   VideoIcon,
   XIcon,
-} from "lucide-react";
+} from '@phosphor-icons/react';
 import type { ComponentProps, HTMLAttributes, ReactNode } from "react";
 import { createContext, useCallback, useContext, useMemo } from "react";
 
@@ -37,7 +37,7 @@ export type AttachmentMediaCategory =
 export type AttachmentVariant = "grid" | "inline" | "list";
 
 const mediaCategoryIcons: Record<AttachmentMediaCategory, typeof ImageIcon> = {
-  audio: Music2Icon,
+  audio: MusicNoteIcon,
   document: FileTextIcon,
   image: ImageIcon,
   source: GlobeIcon,

@@ -525,7 +525,7 @@ export const useCollectionsStore = create<CollectionsState>()(
       }
     },
 
-    // ── Forge Send ──
+    // ── Forge PaperPlaneTilt ──
     sendForgeRequest: async (payload) => {
       return invoke<ForgeResponse>('send_forge_request', { request: payload });
     },
@@ -535,7 +535,7 @@ export const useCollectionsStore = create<CollectionsState>()(
       const state = get();
       const errors: string[] = [];
 
-      // Filter to workspace scope if provided
+      // Funnel to workspace scope if provided
       const targetStashes = workspaceId
         ? state.stashes.filter((s) => s.parentId === workspaceId)
         : state.stashes;

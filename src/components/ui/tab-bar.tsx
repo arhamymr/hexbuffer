@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { X } from 'lucide-react';
+import { XIcon } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 
@@ -36,7 +36,7 @@ export function TabBar({
             onClick={onAddTab}
             className="h-7 px-2 shrink-0"
           >
-            <X className="h-3 w-3 mr-1 rotate-45" />
+            <XIcon className="h-3 w-3 mr-1 rotate-45" />
             {addTabLabel}
           </Button>
           <div className="h-6 w-px bg-border mx-1 shrink-0" />
@@ -102,7 +102,7 @@ function TabItem({ tab, method, isActive, onClick, onClose, canClose = true }: T
           onClick={onClose}
           className="shrink-0 hover:bg-muted rounded p-0.5"
         >
-          <X className="h-3.5 w-3.5" />
+          <XIcon className="h-3.5 w-3.5" />
         </div>
       )}
     </div>

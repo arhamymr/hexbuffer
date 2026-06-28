@@ -12,7 +12,7 @@ import {
   type Node,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { Plus } from 'lucide-react';
+import { PlusIcon } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
 import type { RegressionStepNodeData } from '../nodes/step-node';
 import type { TestStep } from '../types';
@@ -177,7 +177,7 @@ export function StepFlowCanvas({
         onClick={onAddStep}
         className="absolute bottom-3 left-3 z-10 gap-1 bg-background/90 backdrop-blur"
       >
-        <Plus className="size-3.5" />
+        <PlusIcon className="size-3.5" />
         Add Step
       </Button>
     </div>

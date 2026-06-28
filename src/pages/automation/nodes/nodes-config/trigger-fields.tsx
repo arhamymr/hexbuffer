@@ -1,5 +1,5 @@
 import React from 'react';
-import { Globe, Info } from 'lucide-react';
+import { GlobeIcon, Info } from '@phosphor-icons/react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -61,7 +61,7 @@ export function HostWhitelistFilter({
   return (
     <div className="space-y-1.5">
       <Label className="text-[11px]">
-        <Globe className="size-3 inline mr-1" />
+        <GlobeIcon className="size-3 inline mr-1" />
         Host whitelist
       </Label>
       <Textarea

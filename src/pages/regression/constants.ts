@@ -1,6 +1,6 @@
 import type { StepKind } from './types';
-import { ArrowRight, MousePointer, Type, Clock, Camera, Eye, FileText, Globe, Sparkles } from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
+import { ArrowRightIcon, CursorClickIcon, TextTIcon, ClockIcon, CameraIcon, EyeIcon, FileTextIcon, GlobeIcon, SparkleIcon } from '@phosphor-icons/react';
+import type { Icon } from '@phosphor-icons/react';
 
 export const STEP_KIND_LABELS: Record<StepKind, string> = {
   'navigate': 'Navigate',
@@ -14,23 +14,23 @@ export const STEP_KIND_LABELS: Record<StepKind, string> = {
   'ai-verify': 'AI Verify',
 };
 
-export const STEP_KIND_ICONS: Record<StepKind, LucideIcon> = {
-  'navigate': Globe,
-  'click': MousePointer,
-  'fill': Type,
-  'wait': Clock,
-  'screenshot': Camera,
-  'assert-visible': Eye,
-  'assert-text': FileText,
-  'assert-url': ArrowRight,
-  'ai-verify': Sparkles,
+export const STEP_KIND_ICONS: Record<StepKind, Icon> = {
+  'navigate': GlobeIcon,
+  'click': CursorClickIcon,
+  'fill': TextTIcon,
+  'wait': ClockIcon,
+  'screenshot': CameraIcon,
+  'assert-visible': EyeIcon,
+  'assert-text': FileTextIcon,
+  'assert-url': ArrowRightIcon,
+  'ai-verify': SparkleIcon,
 };
 
 export const STEP_KIND_DESCRIPTIONS: Record<StepKind, string> = {
   'navigate': 'Go to a URL',
   'click': 'Click an element by CSS selector',
-  'fill': 'Type into an input field',
-  'wait': 'Pause for a duration',
+  'fill': 'TextTIcon into an input field',
+  'wait': 'PauseIcon for a duration',
   'screenshot': 'Capture a full-page screenshot',
   'assert-visible': 'Verify an element is visible',
   'assert-text': 'Verify text appears on the page',
@@ -40,7 +40,7 @@ export const STEP_KIND_DESCRIPTIONS: Record<StepKind, string> = {
 
 export const AI_STEP_GENERATOR_PROMPT = `You are a QA test engineer. Generate browser test steps for the scenario below.
 
-Target URL: {targetUrl}
+TargetIcon URL: {targetUrl}
 Scenario: {scenario}
 {pageContext}
 Return ONLY valid JSON in this exact format:
@@ -70,7 +70,7 @@ Rules:
 
 export const AI_GOAL_STEP_PROMPT = `You are a QA test engineer. Generate browser test steps to achieve the goals below using ONLY elements that exist on the actual page.
 
-Target URL: {targetUrl}
+TargetIcon URL: {targetUrl}
 Goals to achieve:
 {goals}
 {pageContext}

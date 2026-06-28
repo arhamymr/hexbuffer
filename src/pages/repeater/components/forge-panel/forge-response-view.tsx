@@ -2,7 +2,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { ButtonGroup } from '@/components/ui/button-group';
 import { TextEditor } from '@/components/ui/text-editor';
-import { CheckCircle, XCircle } from 'lucide-react';
+import { CheckCircleIcon, XCircleIcon } from '@phosphor-icons/react';
 import type { ForgeResponse, TestResult } from '@/stores/collections';
 import { cn } from '@/lib/utils';
 
@@ -52,7 +52,7 @@ export function ForgeResponseView({
     if (error) {
       return (
         <div className="h-full flex flex-col items-center justify-center p-4 text-center">
-          <XCircle className="h-8 w-8 text-destructive mb-2" />
+          <XCircleIcon className="h-8 w-8 text-destructive mb-2" />
           <span className="text-sm font-semibold text-destructive">Execution Failed</span>
           <span className="text-xs text-muted-foreground max-w-md mt-1 font-mono bg-destructive/10 p-2 rounded border border-destructive/20">
             {error}
@@ -210,9 +210,9 @@ export function ForgeResponseView({
                       >
                         <div className="flex items-center space-x-2">
                           {tr.passed ? (
-                            <CheckCircle className="h-4 w-4 text-emerald-500 shrink-0" />
+                            <CheckCircleIcon className="h-4 w-4 text-emerald-500 shrink-0" />
                           ) : (
-                            <XCircle className="h-4 w-4 text-destructive shrink-0" />
+                            <XCircleIcon className="h-4 w-4 text-destructive shrink-0" />
                           )}
                           <span className="font-semibold">{tr.name}</span>
                         </div>
@@ -247,7 +247,7 @@ export function ForgeResponseView({
           No response received yet.
         </span>
         <span className="text-xs text-muted-foreground/60 max-w-[200px] mt-1">
-          Enter target URL and click Send to execute the endpoint.
+          Enter target URL and click PaperPlaneTiltIcon to execute the endpoint.
         </span>
       </div>
     );

@@ -13,7 +13,7 @@ import {
   GitCommitIcon,
   MinusIcon,
   PlusIcon,
-} from "lucide-react";
+} from '@phosphor-icons/react';
 import type { ComponentProps, HTMLAttributes } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -224,7 +224,7 @@ export const CommitCopyButton = ({
 
   const copyToClipboard = useCallback(async () => {
     if (typeof window === "undefined" || !navigator?.clipboard?.writeText) {
-      onError?.(new Error("Clipboard API not available"));
+      onError?.(new Error("ClipboardIcon API not available"));
       return;
     }
 

@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { TextEditor } from '@/components/ui/text-editor';
-import { Copy, Key } from 'lucide-react';
+import { CopyIcon, KeyIcon } from '@phosphor-icons/react';
 import type { JwtAlgorithm } from '../types';
 import { ALGORITHM_OPTIONS } from '../constants';
 
@@ -107,7 +107,7 @@ export function JwtGenerateView({
             <div className="flex items-end gap-3 pt-1">
               <div className="flex-1 space-y-1">
                 <Label className="text-xs font-semibold text-muted-foreground">
-                  Secret Key
+                  Secret KeyIcon
                 </Label>
                 <Input
                   className="h-8 font-mono text-xs bg-muted/5 focus-visible:ring-1"
@@ -143,7 +143,7 @@ export function JwtGenerateView({
               onClick={onGenerate}
               disabled={generating || !genSecret}
             >
-              <Key className="h-3.5 w-3.5" />
+              <KeyIcon className="h-3.5 w-3.5" />
               {generating ? 'Generating...' : 'Generate JWT'}
             </Button>
             {genError && (
@@ -173,7 +173,7 @@ export function JwtGenerateView({
             disabled={!generatedToken}
             className="h-6 w-6 text-muted-foreground hover:text-foreground"
           >
-            <Copy className="h-3 w-3" />
+            <CopyIcon className="h-3 w-3" />
           </Button>
         </div>
         <div className="min-h-0 flex-1 overflow-auto p-3 font-mono text-xs whitespace-pre-wrap break-all">

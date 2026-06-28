@@ -77,7 +77,7 @@ export function exportAnnotationsToMarkdown(annotations: Annotation[], level: Ou
   } else {
     annotations.forEach((a, i) => {
       lines.push(`## Annotation ${i + 1}`);
-      lines.push(`- **Type:** ${a.type}`);
+      lines.push(`- **TextT:** ${a.type}`);
       lines.push(`- **Intent:** ${a.intent}`);
       lines.push(`- **Severity:** ${a.severity}`);
       lines.push(`- **Description:** ${escapeMarkdown(a.description || '(none)')}`);

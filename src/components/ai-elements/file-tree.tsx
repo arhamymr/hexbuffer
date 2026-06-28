@@ -5,11 +5,11 @@ import {
 } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
 import {
-  ChevronRightIcon,
+  CaretRightIcon,
   FileIcon,
   FolderIcon,
   FolderOpenIcon,
-} from "lucide-react";
+} from '@phosphor-icons/react';
 import type { HTMLAttributes, ReactNode } from "react";
 import {
   createContext,
@@ -178,7 +178,7 @@ export const FileTreeFolder = ({
                 className="flex shrink-0 cursor-pointer items-center border-none bg-transparent p-0"
                 type="button"
               >
-                <ChevronRightIcon
+                <CaretRightIcon
                   className={cn(
                     "size-4 shrink-0 text-muted-foreground transition-transform",
                     isExpanded && "rotate-90"

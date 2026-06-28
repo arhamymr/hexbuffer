@@ -1,5 +1,5 @@
 import React from 'react';
-import { AlertCircle, Plus, Save, Settings2, X, FlaskConical } from 'lucide-react';
+import { WarningCircleIcon, PlusIcon, FloppyDiskIcon, GearSixIcon, XIcon, FlaskIcon } from '@phosphor-icons/react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -157,18 +157,18 @@ export function TestSuiteEditor({ testCase, isNew, onSave, onDraftChange, onCanc
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b bg-card shrink-0">
         <div className="flex items-center gap-2 min-w-0">
-          <FlaskConical className="size-4 text-muted-foreground shrink-0" />
+          <FlaskIcon className="size-4 text-muted-foreground shrink-0" />
           <h2 className="text-sm font-semibold truncate">
             {isNew ? 'New Test Case' : `Edit: ${name || testCase.name}`}
           </h2>
         </div>
         <div className="flex items-center gap-1.5">
           <Button variant="outline" onClick={() => setConfigOpen(true)} className="gap-1">
-            <Settings2 className="size-3.5" />
+            <GearSixIcon className="size-3.5" />
             Config
           </Button>
           <Button variant="ghost" onClick={onCancel} className="gap-1">
-            <X className="size-3.5" />
+            <XIcon className="size-3.5" />
             Cancel
           </Button>
           <Button
@@ -176,8 +176,8 @@ export function TestSuiteEditor({ testCase, isNew, onSave, onDraftChange, onCanc
             disabled={!canSave || isSaving}
             className="gap-1"
           >
-            <Save className="size-3.5" />
-            {isSaving ? 'Saving...' : 'Save'}
+            <FloppyDiskIcon className="size-3.5" />
+            {isSaving ? 'Saving...' : 'FloppyDiskIcon'}
           </Button>
         </div>
       </div>
@@ -187,7 +187,7 @@ export function TestSuiteEditor({ testCase, isNew, onSave, onDraftChange, onCanc
         <div className="space-y-3 p-4">
           {saveError && (
             <div className="flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
-              <AlertCircle className="mt-0.5 size-3.5 shrink-0" />
+              <WarningCircleIcon className="mt-0.5 size-3.5 shrink-0" />
               <span className="break-words">{saveError}</span>
             </div>
           )}
@@ -209,7 +209,7 @@ export function TestSuiteEditor({ testCase, isNew, onSave, onDraftChange, onCanc
                 onClick={handleAddStep}
                 className="gap-1"
               >
-                <Plus className="size-3.5" />
+                <PlusIcon className="size-3.5" />
                 Add Step
               </Button>
             </div>
@@ -222,7 +222,7 @@ export function TestSuiteEditor({ testCase, isNew, onSave, onDraftChange, onCanc
             emptyActions={
               <>
                 <Button variant="outline" onClick={handleAddStep} className="gap-1">
-                  <Plus className="size-3.5" />
+                  <PlusIcon className="size-3.5" />
                   Add Step
                 </Button>
                 <AiStepGenerator
@@ -247,7 +247,7 @@ export function TestSuiteEditor({ testCase, isNew, onSave, onDraftChange, onCanc
           <div className="space-y-4">
             {saveError && (
               <div className="flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
-                <AlertCircle className="mt-0.5 size-3.5 shrink-0" />
+                <WarningCircleIcon className="mt-0.5 size-3.5 shrink-0" />
                 <span className="break-words">{saveError}</span>
               </div>
             )}
@@ -279,7 +279,7 @@ export function TestSuiteEditor({ testCase, isNew, onSave, onDraftChange, onCanc
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-xs">Target URL</Label>
+              <Label className="text-xs">TargetIcon URL</Label>
               <Input
                 placeholder="https://example.com"
                 value={targetUrl}

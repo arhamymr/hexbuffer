@@ -45,9 +45,8 @@ function fallbackContent(aiSettings: DashboardAiSettings | undefined, error?: un
     return 'Enable third-party AI sharing in Settings before sending chat messages or app context to the configured AI provider.';
   }
 
-  return `I could not reach DeepSeek right now: ${
-    error instanceof Error ? error.message : String(error)
-  }`;
+  return `I could not reach DeepSeek right now: ${error instanceof Error ? error.message : String(error)
+    }`;
 }
 
 export class DashboardSettingsChatTransport implements ChatTransport<DashboardChatMessage> {

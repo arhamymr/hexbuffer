@@ -1,4 +1,4 @@
-import { Asterisk } from 'lucide-react';
+import { AsteriskIcon } from '@phosphor-icons/react';
 import { proxyStatusLabel } from './utils';
 
 interface ProxyStatusIndicatorProps {
@@ -26,7 +26,7 @@ export function ProxyStatusIndicator({
         }`}
       />
       <span className='flex items-center'>
-        Proxy: {proxyStatusLabel[proxyStatus]} | <Asterisk className='size-3' />:{activeProxyPort}
+        Proxy: {proxyStatusLabel[proxyStatus]} | <AsteriskIcon className='size-3' />:{activeProxyPort}
         {isDefaultPortChanged ? ' (configured port changed)' : ''}
       </span>
     </div>

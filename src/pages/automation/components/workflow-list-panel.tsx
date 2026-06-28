@@ -2,7 +2,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
-import { Plus, Workflow, ToggleLeft, ToggleRight } from 'lucide-react';
+import { PlusIcon, FlowArrowIcon, ToggleLeftIcon, ToggleRightIcon } from '@phosphor-icons/react';
 import { useAutomationStore } from '@/stores/automation';
 import { DEFAULT_WORKFLOW_NAME } from '../constants';
 import { TemplatesDialog } from './templates-dialog';
@@ -21,14 +21,14 @@ export function WorkflowListPanel() {
       <div className="flex items-center justify-between border-b px-3 py-2">
         <span className="text-xs font-semibold text-muted-foreground">Workflows</span>
         <Button variant="ghost" className="h-6 w-6 p-0" onClick={() => setTemplatesOpen(true)}>
-          <Plus className="size-3.5" />
+          <PlusIcon className="size-3.5" />
         </Button>
       </div>
 
       <ScrollArea className="flex-1">
         {workflows.length === 0 ? (
           <div className="flex flex-col items-center justify-center gap-2 p-6 text-muted-foreground">
-            <Workflow className="size-8 opacity-30" />
+            <FlowArrowIcon className="size-8 opacity-30" />
             <p className="text-[11px] text-center">No workflows yet</p>
             <Button variant="outline" onClick={() => setTemplatesOpen(true)}>
               Create your first workflow
@@ -47,7 +47,7 @@ export function WorkflowListPanel() {
                 )}
                 onClick={() => setActiveWorkflowId(wf.id)}
               >
-                <Workflow className="size-3.5 shrink-0 text-muted-foreground" />
+                <FlowArrowIcon className="size-3.5 shrink-0 text-muted-foreground" />
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-[11px] font-medium">
                     {wf.name || DEFAULT_WORKFLOW_NAME}
@@ -64,9 +64,9 @@ export function WorkflowListPanel() {
                   }}
                 >
                   {wf.enabled ? (
-                    <ToggleRight className="size-4 text-emerald-500" />
+                    <ToggleRightIcon className="size-4 text-emerald-500" />
                   ) : (
-                    <ToggleLeft className="size-4" />
+                    <ToggleLeftIcon className="size-4" />
                   )}
                 </button>
               </div>

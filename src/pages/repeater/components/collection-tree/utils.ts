@@ -5,7 +5,7 @@ import type { StashRecord, StashEndpointRecord } from '@/stores/collections';
 export interface FlatNode {
   id: string;          // "stash-xxx" or "ep-xxx"
   originalId: string;  // the raw id without prefix
-  parentId: string | null;
+  parentId: string | null;  // workspace ID for collections, stash ID for endpoints
   depth: number;
   kind: 'collection' | 'endpoint';
   label: string;
@@ -27,8 +27,8 @@ export type DropAction =
 
 /**
  * Flatten the two-level tree of collections → endpoints into a visible-only flat list.
- * All stashes are root-level (parentId is always null). Only endpoints of expanded
- * collections are included. Sorted by sortOrder.
+ * Stashes are scoped to a workspace via parentId (workspace ID). Only endpoints of
+ * expanded collections are included. Sorted by sortOrder.
  */
 export function flattenVisibleTree(
   stashes: StashRecord[],

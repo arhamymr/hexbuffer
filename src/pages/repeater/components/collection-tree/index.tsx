@@ -35,7 +35,6 @@ import {
   type StashRecord,
   type StashEndpointRecord,
 } from '@/stores/collections';
-import { useRepeaterStore } from '@/stores/repeater';
 import { Plus, Edit2, Download, Upload, FileCode } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -111,9 +110,11 @@ function CollectionDropZone({ stashId, isActive, isDragging, onAddChild }: { sta
 
 // ── Component ──
 
-export function CollectionsTree() {
-  const store = useCollectionsStore();
-  const repeaterStore = useRepeaterStore();
+export function CollectionsTree({ workspaceId }: { workspaceId: string }) {
+  // ── Zustand selectors (individual to avoid full-store re-renders) ──
+  const stashes = useCollectionsStore((s) => s.stashes);
+  const endpoints = useCollectionsStore((s) => s.endpoints);
+  const selectedNodeId = useCollectionsStore((s) => s.selectedNodeId);
 
   // ── State ──
   const [expandedIds, setExpandedIds] = useState<Set<string>>(() => new Set());
@@ -137,10 +138,16 @@ export function CollectionsTree() {
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
 
+  // ── Workspace-scoped stashes ──
+  const workspaceStashes = useMemo(
+    () => stashes.filter((s) => s.parentId === workspaceId),
+    [stashes, workspaceId],
+  );
+
   // ── Flat tree ──
   const flatNodes = useMemo(
-    () => flattenVisibleTree(store.stashes, store.endpoints, expandedIds),
-    [store.stashes, store.endpoints, expandedIds],
+    () => flattenVisibleTree(workspaceStashes, endpoints, expandedIds),
+    [workspaceStashes, endpoints, expandedIds],
   );
 
   // ── Lookup helpers ──
@@ -158,21 +165,24 @@ export function CollectionsTree() {
     [flatNodes],
   );
 
-  // ── Non-empty stash IDs (for drop-zone rendering) ──
+  // ── Non-empty stash IDs (for drop-zone rendering, workspace-scoped) ──
   const nonEmptyStashIds = useMemo(() => {
+    const stashIds = new Set(workspaceStashes.map((s) => s.id));
     const set = new Set<string>();
-    for (const ep of store.endpoints) set.add(ep.stashId);
+    for (const ep of endpoints) {
+      if (stashIds.has(ep.stashId)) set.add(ep.stashId);
+    }
     return set;
-  }, [store.endpoints]);
+  }, [endpoints, workspaceStashes]);
 
   // ── Endpoint count per stash ──
   const stashEndpointCounts = useMemo(() => {
     const map = new Map<string, number>();
-    for (const ep of store.endpoints) {
+    for (const ep of endpoints) {
       map.set(ep.stashId, (map.get(ep.stashId) ?? 0) + 1);
     }
     return map;
-  }, [store.endpoints]);
+  }, [endpoints]);
 
   // ── Expand/Collapse ──
   const handleToggleExpand = useCallback((id: string) => {
@@ -190,17 +200,16 @@ export function CollectionsTree() {
   // ── Selection ──
   const handleSelectNode = useCallback(
     (node: FlatNode) => {
-      store.setSelectedNodeId(node.id);
+      useCollectionsStore.getState().setSelectedNodeId(node.id);
       if (node.kind === 'endpoint' && node.endpoint) {
-        store.setActiveEndpointId(node.endpoint.id);
+        useCollectionsStore.getState().setActiveEndpointId(node.endpoint.id);
       }
       // When clicking a root collection, create/activate a collection tab
       if (node.kind === 'collection' && node.stash) {
-        repeaterStore.addCollectionTab(node.stash.id, node.stash.name);
-        store.setMode('craft');
+        useCollectionsStore.getState().setMode('craft');
       }
     },
-    [store, repeaterStore],
+    [],
   );
 
   // ── Inline Create ──
@@ -222,11 +231,11 @@ export function CollectionsTree() {
         return;
       }
       if (inlineCreate.type === 'endpoint') {
-        await store.createEndpoint(inlineCreate.parentId, name.trim());
+        await useCollectionsStore.getState().createEndpoint(inlineCreate.parentId, name.trim());
       }
       setInlineCreate(null);
     },
-    [inlineCreate, store],
+    [inlineCreate],
   );
 
   const handleCreateCancel = useCallback(() => {
@@ -248,11 +257,11 @@ export function CollectionsTree() {
     }
     const { id } = renameTarget;
     if (id.startsWith('stash-')) {
-      await store.renameStash(id.slice(6), renameValue.trim());
+      await useCollectionsStore.getState().renameStash(id.slice(6), renameValue.trim());
     }
     setRenameTarget(null);
     setRenameValue('');
-  }, [renameTarget, renameValue, store]);
+  }, [renameTarget, renameValue]);
 
   // ── Delete ──
   const handleDelete = useCallback((node: FlatNode) => {
@@ -264,12 +273,12 @@ export function CollectionsTree() {
   const handleDeleteConfirm = useCallback(async () => {
     if (!deleteTarget) return;
     if (deleteTarget.kind === 'endpoint') {
-      await store.deleteEndpoint(deleteTarget.originalId);
+      await useCollectionsStore.getState().deleteEndpoint(deleteTarget.originalId);
     } else {
-      await store.deleteStash(deleteTarget.originalId);
+      await useCollectionsStore.getState().deleteStash(deleteTarget.originalId);
     }
     setDeleteTarget(null);
-  }, [deleteTarget, store]);
+  }, [deleteTarget]);
 
   // ── Import / Export ──
   const handleExport = useCallback(async () => {
@@ -295,9 +304,10 @@ export function CollectionsTree() {
 
   const handleImportConfirm = useCallback(async () => {
     if (!pendingImport) return;
-    const summary = await store.batchImportCollections(
+    const summary = await useCollectionsStore.getState().batchImportCollections(
       pendingImport.stashes,
       pendingImport.endpoints,
+      workspaceId,
     );
     if (summary.errors.length > 0) {
       toast.warning(
@@ -310,7 +320,7 @@ export function CollectionsTree() {
     }
     setImportDialogOpen(false);
     setPendingImport(null);
-  }, [pendingImport, store]);
+  }, [pendingImport, workspaceId]);
 
   // ── DnD Handlers ──
 
@@ -422,7 +432,7 @@ export function CollectionsTree() {
       if (overId.startsWith('dropzone-')) {
         const targetStashId = overId.slice('dropzone-'.length);
         if (activeFlatNode.kind === 'endpoint' && activeFlatNode.parentId !== targetStashId) {
-          store.moveEndpoint(activeFlatNode.originalId, targetStashId, 0);
+          useCollectionsStore.getState().moveEndpoint(activeFlatNode.originalId, targetStashId, 0);
         }
         setDragActiveId(null);
         return;
@@ -456,7 +466,7 @@ export function CollectionsTree() {
         if (activeFlatNode.kind === 'endpoint') {
           const newParentId = result.parentId;
           if (activeFlatNode.parentId !== newParentId) {
-            store.moveEndpoint(activeFlatNode.originalId, newParentId, 0);
+            useCollectionsStore.getState().moveEndpoint(activeFlatNode.originalId, newParentId, 0);
           }
         }
         // Collection dropped on collection — NOP (all root-level)
@@ -477,7 +487,7 @@ export function CollectionsTree() {
           if (targetNode.kind === 'collection') {
             // Boundary case: endpoint dropped near a collection — reparent into it
             if (activeFlatNode.parentId !== targetNode.originalId) {
-              store.moveEndpoint(activeFlatNode.originalId, targetNode.originalId, 0);
+              useCollectionsStore.getState().moveEndpoint(activeFlatNode.originalId, targetNode.originalId, 0);
             }
             setDragActiveId(null);
             return;
@@ -486,7 +496,7 @@ export function CollectionsTree() {
           // targetNode.kind === 'endpoint'
           // Cross-collection drop: move to the target endpoint's collection
           if (activeFlatNode.parentId !== targetNode.parentId) {
-            store.moveEndpoint(activeFlatNode.originalId, targetNode.parentId!, 0);
+            useCollectionsStore.getState().moveEndpoint(activeFlatNode.originalId, targetNode.parentId!, 0);
             setDragActiveId(null);
             return;
           }
@@ -511,7 +521,7 @@ export function CollectionsTree() {
           reordered.splice(targetIndex, 0, activeFlatNode);
 
           reordered.forEach((node, idx) => {
-            store.moveEndpoint(node.originalId, node.parentId!, idx);
+            useCollectionsStore.getState().moveEndpoint(node.originalId, node.parentId!, idx);
           });
           setDragActiveId(null);
           return;
@@ -542,7 +552,7 @@ export function CollectionsTree() {
         reordered.splice(targetIndex, 0, activeFlatNode);
 
         reordered.forEach((node, idx) => {
-          store.moveStash(node.originalId, idx);
+          useCollectionsStore.getState().moveStash(node.originalId, idx);
         });
         setDragActiveId(null);
         return;
@@ -550,12 +560,10 @@ export function CollectionsTree() {
 
       setDragActiveId(null);
     },
-    [flatNodes, flatNodeMap, store],
+    [flatNodes, flatNodeMap],
   );
 
   // ── Render ──
-
-  const selectedNodeId = store.selectedNodeId;
 
   return (
     <div className="flex flex-col h-full min-h-0 bg-background">
@@ -571,7 +579,7 @@ export function CollectionsTree() {
               size="icon"
               className="h-6 w-6"
               title="Export Collections"
-              onClick={handleExport}
+              onClick={() => { void handleExport(); }}
             >
               <Download className="h-3.5 w-3.5" />
             </Button>
@@ -592,8 +600,8 @@ export function CollectionsTree() {
               onClick={() => {
                 setRenameTarget(null);
                 setInlineCreate(null);
-                // Create a root-level collection with a temp name
-                store.createStash('New Collection');
+                // Create a root-level collection scoped to this workspace
+                useCollectionsStore.getState().createStash('New Collection', workspaceId);
               }}
             >
               <Plus className="h-3.5 w-3.5" />

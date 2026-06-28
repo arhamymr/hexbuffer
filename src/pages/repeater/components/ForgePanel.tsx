@@ -68,6 +68,11 @@ export function ForgePanel() {
           activeResTab={activeResTab}
           onResTabChange={setActiveResTab}
           getFormattedBody={getFormattedBody}
+          requestMethod={req.method}
+          requestUrl={req.url}
+          requestHeaders={req.headers}
+          requestBody={req.body}
+          requestBodyType={req.bodyType}
         />
       </div>
     </div>

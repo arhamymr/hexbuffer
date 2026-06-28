@@ -8,7 +8,7 @@ import { TextEditor } from "@/components/ui/text-editor";
 import { Trash2, Plus } from "lucide-react";
 import type { KeyValuePair, ActiveRequestState } from "@/stores/collections";
 import { cn } from "@/lib/utils";
-import { ColorizedUrlInput } from "./colorized-url-input";
+import { ColorizedUrlInput } from "@/components/ui/select-env-input";
 
 // ── Shared key-value list editor ──
 

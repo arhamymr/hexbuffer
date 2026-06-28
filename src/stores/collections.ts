@@ -145,7 +145,7 @@ interface CollectionsState {
   // Stash CRUD
   setSelectedNodeId: (id: string | null) => void;
   setActiveContextId: (id: string | null) => void;
-  createStash: (name: string) => Promise<string>;
+  createStash: (name: string, workspaceId?: string) => Promise<string>;
   renameStash: (id: string, name: string) => Promise<void>;
   deleteStash: (id: string) => Promise<void>;
   moveStash: (id: string, newSortOrder?: number) => Promise<void>;
@@ -179,10 +179,11 @@ interface CollectionsState {
   sendForgeRequest: (payload: ForgeRequestPayload) => Promise<ForgeResponse>;
 
   // Import / Export
-  clearAllCollections: () => Promise<void>;
+  clearAllCollections: (workspaceId?: string) => Promise<void>;
   batchImportCollections: (
     stashes: StashRecord[],
     endpoints: StashEndpointRecord[],
+    workspaceId?: string,
   ) => Promise<{ stashesImported: number; endpointsImported: number; errors: string[] }>;
 }
 
@@ -225,12 +226,12 @@ export const useCollectionsStore = create<CollectionsState>()(
     setActiveContextId: (id) => set({ activeContextId: id }),
 
     // ── Stash CRUD ──
-    createStash: async (name) => {
+    createStash: async (name, workspaceId) => {
       const now = timestampNow();
       const stash: StashRecord = {
         id: generateId(),
         name,
-        parentId: null,
+        parentId: workspaceId ?? null,
         sortOrder: 0,
         createdAt: now,
         updatedAt: now,
@@ -275,13 +276,15 @@ export const useCollectionsStore = create<CollectionsState>()(
 
     moveStash: async (id, newSortOrder) => {
       const now = timestampNow();
+      const existing = get().stashes.find((st) => st.id === id);
       set((s) => ({
         stashes: s.stashes.map((st) =>
           st.id === id
-            ? { ...st, parentId: null, sortOrder: newSortOrder ?? st.sortOrder, updatedAt: now } as StashRecord
+            ? { ...st, sortOrder: newSortOrder ?? st.sortOrder, updatedAt: now } as StashRecord
             : st
         ),
       }));
+      // Persist: preserve the existing parentId (workspace scoping)
       const updated = get().stashes.find((s) => s.id === id);
       if (updated) {
         try {
@@ -528,12 +531,21 @@ export const useCollectionsStore = create<CollectionsState>()(
     },
 
     // ── Import / Export ──
-    clearAllCollections: async () => {
+    clearAllCollections: async (workspaceId) => {
       const state = get();
       const errors: string[] = [];
 
-      // Delete all endpoints
-      for (const ep of state.endpoints) {
+      // Filter to workspace scope if provided
+      const targetStashes = workspaceId
+        ? state.stashes.filter((s) => s.parentId === workspaceId)
+        : state.stashes;
+      const targetStashIds = new Set(targetStashes.map((s) => s.id));
+      const targetEndpoints = workspaceId
+        ? state.endpoints.filter((ep) => targetStashIds.has(ep.stashId))
+        : state.endpoints;
+
+      // Delete endpoints first (FK-like dependency on stashes)
+      for (const ep of targetEndpoints) {
         try {
           await invoke('delete_stash_endpoint', { id: ep.id });
         } catch (e) {
@@ -542,8 +554,8 @@ export const useCollectionsStore = create<CollectionsState>()(
         }
       }
 
-      // Delete all stashes
-      for (const st of state.stashes) {
+      // Delete stashes
+      for (const st of targetStashes) {
         try {
           await invoke('delete_stash', { id: st.id });
         } catch (e) {
@@ -552,42 +564,75 @@ export const useCollectionsStore = create<CollectionsState>()(
         }
       }
 
-      set({ stashes: [], endpoints: [] });
+      set((s) => ({
+        stashes: s.stashes.filter((st) => !targetStashIds.has(st.id)),
+        endpoints: s.endpoints.filter((ep) => !targetStashIds.has(ep.stashId)),
+      }));
 
       if (errors.length > 0) {
         console.warn('Errors during clear:', errors);
       }
     },
 
-    batchImportCollections: async (stashes, endpoints) => {
-      // Clear existing data first
+    batchImportCollections: async (stashes, endpoints, workspaceId) => {
+      // Clear workspace-scoped data first if workspaceId provided
       const state = get();
 
-      // Delete all endpoints first (FK-like dependency on stashes)
-      for (const ep of state.endpoints) {
-        try {
-          await invoke('delete_stash_endpoint', { id: ep.id });
-        } catch (e) {
-          console.error(`Failed to delete endpoint during import:`, e);
-        }
-      }
+      if (workspaceId) {
+        const targetStashes = state.stashes.filter((s) => s.parentId === workspaceId);
+        const targetStashIds = new Set(targetStashes.map((s) => s.id));
+        const targetEndpoints = state.endpoints.filter((ep) => targetStashIds.has(ep.stashId));
 
-      for (const st of state.stashes) {
-        try {
-          await invoke('delete_stash', { id: st.id });
-        } catch (e) {
-          console.error(`Failed to delete stash during import:`, e);
+        for (const ep of targetEndpoints) {
+          try {
+            await invoke('delete_stash_endpoint', { id: ep.id });
+          } catch (e) {
+            console.error(`Failed to delete endpoint during import:`, e);
+          }
         }
+
+        for (const st of targetStashes) {
+          try {
+            await invoke('delete_stash', { id: st.id });
+          } catch (e) {
+            console.error(`Failed to delete stash during import:`, e);
+          }
+        }
+
+        set((s) => ({
+          stashes: s.stashes.filter((st) => !targetStashIds.has(st.id)),
+          endpoints: s.endpoints.filter((ep) => !targetStashIds.has(ep.stashId)),
+        }));
+      } else {
+        // Global clear (legacy behavior)
+        for (const ep of state.endpoints) {
+          try {
+            await invoke('delete_stash_endpoint', { id: ep.id });
+          } catch (e) {
+            console.error(`Failed to delete endpoint during import:`, e);
+          }
+        }
+
+        for (const st of state.stashes) {
+          try {
+            await invoke('delete_stash', { id: st.id });
+          } catch (e) {
+            console.error(`Failed to delete stash during import:`, e);
+          }
+        }
+
+        set({ stashes: [], endpoints: [] });
       }
 
       const errors: string[] = [];
       let stashesImported = 0;
       let endpointsImported = 0;
 
-      // All stashes are root-level; insert in order
+      // Insert stashes (with workspaceId if provided)
       for (const st of stashes) {
+        const record = workspaceId ? { ...st, parentId: workspaceId } : st;
         try {
-          await invoke('save_stash', { record: st });
+          await invoke('save_stash', { record });
           stashesImported++;
         } catch (e) {
           console.error(`Failed to import stash ${st.id}:`, e);

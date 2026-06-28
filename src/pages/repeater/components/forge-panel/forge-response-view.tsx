@@ -15,6 +15,11 @@ interface ForgeResponseViewProps {
   activeResTab: string;
   onResTabChange: (tab: string) => void;
   getFormattedBody: () => string;
+  requestMethod: string;
+  requestUrl: string;
+  requestHeaders: { key: string; value: string; enabled: boolean }[];
+  requestBody: string;
+  requestBodyType: string;
 }
 
 export function ForgeResponseView({
@@ -26,6 +31,11 @@ export function ForgeResponseView({
   activeResTab,
   onResTabChange,
   getFormattedBody,
+  requestMethod,
+  requestUrl,
+  requestHeaders,
+  requestBody,
+  requestBodyType,
 }: ForgeResponseViewProps) {
   const renderContent = () => {
     if (isLoading) {
@@ -83,7 +93,7 @@ export function ForgeResponseView({
           {/* Response body & details tab */}
           <div className="flex-1 flex flex-col min-h-0 mt-2">
             <ButtonGroup orientation="horizontal" className="shrink-0 w-full h-auto p-0 mb-2">
-              {(['pretty', 'raw', 'headers', 'testResults'] as const).map((t) => (
+              {(['pretty', 'raw', 'headers', 'request', 'testResults'] as const).map((t) => (
                 <Button
                   key={t}
                   variant="outline"
@@ -124,6 +134,62 @@ export function ForgeResponseView({
                         <span className="w-2/3 text-foreground break-all">{value}</span>
                       </div>
                     ))}
+                  </div>
+                </ScrollArea>
+              </div>
+            )}
+
+            {activeResTab === 'request' && (
+              <div className="flex-1 min-h-0 mt-2 flex flex-col">
+                <ScrollArea className="h-full">
+                  <div className="space-y-3 pr-2">
+                    {/* Request line */}
+                    <div>
+                      <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">
+                        Request
+                      </span>
+                      <div className="mt-1 font-mono text-xs bg-muted/30 rounded px-2 py-1">
+                        <span className="font-semibold text-primary">{requestMethod}</span>{' '}
+                        <span className="text-foreground break-all">{requestUrl}</span>
+                      </div>
+                    </div>
+
+                    {/* Request headers */}
+                    <div>
+                      <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">
+                        Headers
+                      </span>
+                      <div className="mt-1 space-y-0.5 text-xs font-mono">
+                        {requestHeaders.filter((h) => h.enabled).length === 0 ? (
+                          <span className="text-muted-foreground italic">No headers</span>
+                        ) : (
+                          requestHeaders
+                            .filter((h) => h.enabled)
+                            .map((h, i) => (
+                              <div key={i} className="flex border-b border-muted/30 py-1">
+                                <span className="w-1/3 text-muted-foreground font-semibold truncate pr-2">
+                                  {h.key}
+                                </span>
+                                <span className="w-2/3 text-foreground break-all">
+                                  {h.value}
+                                </span>
+                              </div>
+                            ))
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Request body */}
+                    {requestBodyType !== 'none' && (
+                      <div className="flex-1 min-h-0 flex flex-col">
+                        <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider mb-1">
+                          Body ({requestBodyType})
+                        </span>
+                        <div className="flex-1 border rounded-md overflow-hidden bg-background min-h-[100px]">
+                          <TextEditor value={requestBody} options={{ readOnly: true }} />
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </ScrollArea>
               </div>

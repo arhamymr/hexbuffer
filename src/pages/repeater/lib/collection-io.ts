@@ -16,13 +16,22 @@ interface ExportSchema {
 
 // ── Export ──
 
-export async function exportCollectionsToFile(): Promise<void> {
+export async function exportCollectionsToFile(workspaceId?: string): Promise<void> {
   const { stashes, endpoints } = useCollectionsStore.getState();
+
+  // Filter to workspace scope if provided
+  const workspaceStashes = workspaceId
+    ? stashes.filter((s) => s.parentId === workspaceId)
+    : stashes;
+  const workspaceStashIds = new Set(workspaceStashes.map((s) => s.id));
+  const workspaceEndpoints = workspaceId
+    ? endpoints.filter((ep) => workspaceStashIds.has(ep.stashId))
+    : endpoints;
 
   const data: ExportSchema = {
     version: 1,
     exportedAt: new Date().toISOString(),
-    collections: { stashes, endpoints },
+    collections: { stashes: workspaceStashes, endpoints: workspaceEndpoints },
   };
 
   const savePath = await save({
@@ -35,7 +44,7 @@ export async function exportCollectionsToFile(): Promise<void> {
 
   await writeTextFile(savePath, JSON.stringify(data, null, 2));
   toast.success(
-    `Exported ${stashes.length} collection${stashes.length !== 1 ? 's' : ''} and ${endpoints.length} endpoint${endpoints.length !== 1 ? 's' : ''}`,
+    `Exported ${workspaceStashes.length} collection${workspaceStashes.length !== 1 ? 's' : ''} and ${workspaceEndpoints.length} endpoint${workspaceEndpoints.length !== 1 ? 's' : ''}`,
   );
 }
 
@@ -109,12 +118,7 @@ export async function importCollectionsFromFile(): Promise<ImportResult | null> 
       toast.error(`Invalid stash at index ${i}: missing "name"`);
       return null;
     }
-    // Force flat structure: all stashes must be root-level
-    if (s.parentId !== null && s.parentId !== undefined) {
-      toast.error(`Invalid stash "${s.name || s.id}": nested collections are not supported. All collections must be root-level.`);
-      return null;
-    }
-    // Normalize to null
+    // Allow parentId for workspace scoping; normalize to null for import (caller reassigns)
     (s as unknown as StashRecord).parentId = null;
   }
 

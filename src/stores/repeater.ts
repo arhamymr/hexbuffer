@@ -2,194 +2,218 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
 import {
-  createDefaultRepeaterTab,
-  createRepeaterTabFromRequest,
-  createWsRepeaterTab,
-  createCollectionTab,
+  createWorkspaceTab,
   type RepeaterRequest,
   type RepeaterWsRequest,
-  type RepeaterTab,
+  type WorkspaceTab,
 } from '@/pages/repeater/types';
+import { DEFAULT_WORKSPACE_NAME } from '@/pages/repeater/constants';
 
 export interface RepeaterState {
-  tabs: RepeaterTab[];
-  activeTabId: string;
-  nextRequestTabNumber: number;
-  nextWsTabNumber: number;
-  setActiveTabId: (id: string) => void;
-  updateTab: (id: string, updater: (tab: RepeaterTab) => RepeaterTab) => void;
-  renameTab: (id: string, name: string) => void;
-  addRequestTab: (request: RepeaterRequest) => string;
-  addEmptyHttpTab: () => string;
-  addWsTab: (wsRequest: RepeaterWsRequest) => string;
-  addCollectionTab: (stashId: string, name: string) => string;
-  closeTab: (id: string) => void;
+  // ── Workspaces ──
+  workspaces: WorkspaceTab[];
+  activeWorkspaceId: string;
+
+  // Workspace CRUD
+  createWorkspace: (name?: string) => string;
+  renameWorkspace: (id: string, name: string) => void;
+  deleteWorkspace: (id: string) => void;
+  setActiveWorkspaceId: (id: string) => void;
   closeTabsToLeft: (id: string) => void;
   closeTabsToRight: (id: string) => void;
+
+  // ── Backward-compat shims (used by triggers/external consumers) ──
+  /** @deprecated Use createWorkspace + populate forge panel instead. */
+  addRequestTab: (request: RepeaterRequest) => string;
+  /** @deprecated Use createWorkspace instead. */
+  addEmptyHttpTab: () => string;
+  /** @deprecated Use createWorkspace + populate forge panel instead. */
+  addWsTab: (wsRequest: RepeaterWsRequest) => string;
+  /** @deprecated Use createWorkspace or activate existing workspace instead. */
+  addCollectionTab: (stashId: string, name: string) => string;
+  /** @deprecated Use renameWorkspace instead. */
+  renameTab: (id: string, name: string) => void;
+  /** @deprecated No-op; forge panel manages its own request state. */
+  updateTab: () => void;
 }
 
-const initialTab = createDefaultRepeaterTab(1);
-
-function getNextRequestTabNumber(tabs: RepeaterTab[]): number {
-  const numericNames = tabs
-    .map((tab) => Number(tab.name))
-    .filter((name) => Number.isInteger(name) && name > 0);
-
-  return numericNames.length > 0 ? Math.max(...numericNames) + 1 : 1;
-}
-
-function getNextWsTabNumber(tabs: RepeaterTab[]): number {
-  const wsTabs = tabs.filter((tab) => tab.mode === 'websocket');
-  return wsTabs.length + 1;
+function getNextWorkspaceCounter(workspaces: WorkspaceTab[]): number {
+  let max = 0;
+  for (const ws of workspaces) {
+    const match = ws.name.match(/^Workspace (\d+)$/);
+    if (match) {
+      const num = parseInt(match[1], 10);
+      if (num > max) max = num;
+    }
+  }
+  return max + 1;
 }
 
 export const useRepeaterStore = create<RepeaterState>()(
   persist(
-    (set) => ({
-      tabs: [initialTab],
-      activeTabId: initialTab.id,
-      nextRequestTabNumber: 1,
-      nextWsTabNumber: 1,
-      setActiveTabId: (id) => set({ activeTabId: id }),
-      updateTab: (id, updater) =>
-        set((state) => ({
-          tabs: state.tabs.map((tab) => (tab.id === id ? updater(tab) : tab)),
-        })),
-      renameTab: (id, name) =>
-        set((state) => ({
-          tabs: state.tabs.map((tab) => (tab.id === id ? { ...tab, name } : tab)),
-        })),
-      addRequestTab: (request) => {
-        const { nextRequestTabNumber } = useRepeaterStore.getState();
-        const newTab = createRepeaterTabFromRequest(request, String(nextRequestTabNumber));
+    (set, get) => ({
+      workspaces: [],
+      activeWorkspaceId: '',
 
-        set((state) => ({
-          tabs: [...state.tabs, newTab],
-          activeTabId: newTab.id,
-          nextRequestTabNumber: state.nextRequestTabNumber + 1,
-        }));
+      // ── Workspace CRUD ──
 
-        return newTab.id;
-      },
-      addEmptyHttpTab: () => {
-        const state = useRepeaterStore.getState();
-        const nextNumber = state.nextRequestTabNumber;
-        const newTab = createDefaultRepeaterTab(nextNumber);
-
+      createWorkspace: (name) => {
+        const counter = getNextWorkspaceCounter(get().workspaces);
+        const ws = createWorkspaceTab(name, counter);
         set((s) => ({
-          tabs: [...s.tabs, newTab],
-          activeTabId: newTab.id,
-          nextRequestTabNumber: s.nextRequestTabNumber + 1,
+          workspaces: [...s.workspaces, ws],
+          activeWorkspaceId: ws.id,
         }));
-
-        return newTab.id;
+        return ws.id;
       },
-      addWsTab: (wsRequest) => {
-        const { nextWsTabNumber } = useRepeaterStore.getState();
-        const newTab = createWsRepeaterTab(wsRequest, nextWsTabNumber);
 
-        set((state) => ({
-          tabs: [...state.tabs, newTab],
-          activeTabId: newTab.id,
-          nextWsTabNumber: state.nextWsTabNumber + 1,
-        }));
-
-        return newTab.id;
-      },
-      addCollectionTab: (stashId, name) => {
-        const existingTab = useRepeaterStore.getState().tabs.find(
-          (t) => t.id === `collection-tab-${stashId}`
-        );
-        if (existingTab) {
-          set({ activeTabId: existingTab.id });
-          return existingTab.id;
-        }
-
-        const newTab = createCollectionTab(stashId, name);
+      renameWorkspace: (id, name) =>
         set((s) => ({
-          tabs: [...s.tabs, newTab],
-          activeTabId: newTab.id,
-        }));
-        return newTab.id;
-      },
-      closeTab: (id) =>
-        set((state) => {
-          const remainingTabs = state.tabs.filter((tab) => tab.id !== id);
+          workspaces: s.workspaces.map((w) =>
+            w.id === id ? { ...w, name } : w
+          ),
+        })),
 
-          if (remainingTabs.length === 0) {
-            const replacementTab = createDefaultRepeaterTab(1);
-            return {
-              tabs: [replacementTab],
-              activeTabId: replacementTab.id,
-            };
+      deleteWorkspace: (id) =>
+        set((s) => {
+          const remaining = s.workspaces.filter((w) => w.id !== id);
+          if (remaining.length === 0) {
+            // Don't delete the last workspace; keep app functional
+            return s;
           }
-
-          if (state.activeTabId !== id) {
-            return { tabs: remainingTabs };
-          }
-
-          const closedTabIndex = state.tabs.findIndex((tab) => tab.id === id);
-          const nextActiveTab = remainingTabs[Math.max(0, closedTabIndex - 1)] ?? remainingTabs[0];
-
+          const closedIdx = s.workspaces.findIndex((w) => w.id === id);
+          const nextActive =
+            remaining[Math.min(closedIdx, remaining.length - 1)] ?? remaining[0];
           return {
-            tabs: remainingTabs,
-            activeTabId: nextActiveTab.id,
+            workspaces: remaining,
+            activeWorkspaceId: nextActive.id,
           };
         }),
+
+      setActiveWorkspaceId: (id) => set({ activeWorkspaceId: id }),
+
       closeTabsToLeft: (id) =>
-        set((state) => {
-          const tabIndex = state.tabs.findIndex((tab) => tab.id === id);
-
-          if (tabIndex <= 0) {
-            return state;
-          }
-
-          const tabs = state.tabs.slice(tabIndex);
-          const activeTabId = tabs.some((tab) => tab.id === state.activeTabId)
-            ? state.activeTabId
+        set((s) => {
+          const idx = s.workspaces.findIndex((w) => w.id === id);
+          if (idx <= 0) return s;
+          const remaining = s.workspaces.slice(idx);
+          const stillActive = remaining.some((w) => w.id === s.activeWorkspaceId)
+            ? s.activeWorkspaceId
             : id;
-
-          return { tabs, activeTabId };
+          return { workspaces: remaining, activeWorkspaceId: stillActive };
         }),
+
       closeTabsToRight: (id) =>
-        set((state) => {
-          const tabIndex = state.tabs.findIndex((tab) => tab.id === id);
-
-          if (tabIndex === -1 || tabIndex === state.tabs.length - 1) {
-            return state;
-          }
-
-          const tabs = state.tabs.slice(0, tabIndex + 1);
-          const activeTabId = tabs.some((tab) => tab.id === state.activeTabId)
-            ? state.activeTabId
+        set((s) => {
+          const idx = s.workspaces.findIndex((w) => w.id === id);
+          if (idx < 0 || idx >= s.workspaces.length - 1) return s;
+          const remaining = s.workspaces.slice(0, idx + 1);
+          const stillActive = remaining.some((w) => w.id === s.activeWorkspaceId)
+            ? s.activeWorkspaceId
             : id;
-
-          return { tabs, activeTabId };
+          return { workspaces: remaining, activeWorkspaceId: stillActive };
         }),
+
+      // ── Backward-compat shims ──
+
+      addRequestTab: (_request) => {
+        const state = get();
+        let wsId = state.activeWorkspaceId;
+        if (!wsId || !state.workspaces.find((w) => w.id === wsId)) {
+          wsId = state.createWorkspace(DEFAULT_WORKSPACE_NAME);
+        }
+        return wsId;
+      },
+
+      addEmptyHttpTab: () => {
+        return get().createWorkspace(DEFAULT_WORKSPACE_NAME);
+      },
+
+      addWsTab: (_wsRequest) => {
+        const state = get();
+        let wsId = state.activeWorkspaceId;
+        if (!wsId || !state.workspaces.find((w) => w.id === wsId)) {
+          wsId = state.createWorkspace(DEFAULT_WORKSPACE_NAME);
+        }
+        return wsId;
+      },
+
+      addCollectionTab: (_stashId, _name) => {
+        const state = get();
+        let wsId = state.activeWorkspaceId;
+        if (!wsId || !state.workspaces.find((w) => w.id === wsId)) {
+          wsId = state.createWorkspace(DEFAULT_WORKSPACE_NAME);
+        } else {
+          set({ activeWorkspaceId: wsId });
+        }
+        return wsId;
+      },
+
+      renameTab: (id, name) => {
+        // Redirect to workspace rename if the ID looks like a workspace
+        const state = get();
+        if (state.workspaces.find((w) => w.id === id)) {
+          state.renameWorkspace(id, name);
+        }
+      },
+
+      updateTab: () => {
+        // No-op: forge panel manages its own request state now
+      },
     }),
     {
-      name: 'hexbuffer-repeater',
+      name: 'hexbuffer-repeater-v2',
       partialize: (state) => ({
-        tabs: state.tabs,
-        activeTabId: state.activeTabId,
-        nextRequestTabNumber: state.nextRequestTabNumber,
-        nextWsTabNumber: state.nextWsTabNumber,
+        workspaces: state.workspaces,
+        activeWorkspaceId: state.activeWorkspaceId,
       }),
       merge: (persistedState, currentState) => {
         const typedState = persistedState as Partial<RepeaterState> | undefined;
-        const persistedTabs = typedState?.tabs?.length ? typedState.tabs : currentState.tabs;
-        const persistedActiveTabId = typedState?.activeTabId;
-        const activeTabId = persistedTabs.some((tab) => tab.id === persistedActiveTabId)
-          ? persistedActiveTabId!
-          : persistedTabs[0].id;
+
+        // Detect old-format data (has 'tabs' array) and migrate
+        const oldState = persistedState as Record<string, unknown> | undefined;
+        if (oldState?.tabs && Array.isArray(oldState.tabs) && oldState.tabs.length > 0) {
+          const oldTabs = oldState.tabs as Array<{ id: string; name: string; mode?: string; collectionId?: string; collectionName?: string }>;
+          const migrated: WorkspaceTab[] = [];
+          const seen = new Set<string>();
+          for (const tab of oldTabs) {
+            let wsId: string;
+            let wsName: string;
+            if (tab.mode === 'collection' && tab.collectionId) {
+              wsId = tab.collectionId;
+              wsName = tab.collectionName || tab.name;
+            } else {
+              wsId = tab.id;
+              wsName = tab.name;
+            }
+            if (!seen.has(wsId)) {
+              seen.add(wsId);
+              migrated.push({ id: wsId, name: wsName });
+            }
+          }
+          if (migrated.length > 0) {
+            return {
+              ...currentState,
+              workspaces: migrated,
+              activeWorkspaceId: migrated[0].id,
+            };
+          }
+        }
+
+        const persistedWorkspaces = typedState?.workspaces?.length
+          ? typedState.workspaces
+          : currentState.workspaces;
+        const persistedActiveId = typedState?.activeWorkspaceId;
+        const activeWorkspaceId =
+          persistedActiveId && persistedWorkspaces.some((w) => w.id === persistedActiveId)
+            ? persistedActiveId
+            : persistedWorkspaces[0]?.id ?? '';
 
         return {
           ...currentState,
           ...typedState,
-          tabs: persistedTabs,
-          activeTabId,
-          nextRequestTabNumber: typedState?.nextRequestTabNumber ?? getNextRequestTabNumber(persistedTabs),
-          nextWsTabNumber: typedState?.nextWsTabNumber ?? getNextWsTabNumber(persistedTabs),
+          workspaces: persistedWorkspaces,
+          activeWorkspaceId,
         };
       },
     }

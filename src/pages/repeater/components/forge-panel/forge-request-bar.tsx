@@ -6,7 +6,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
-import { ColorizedUrlInput } from './colorized-url-input';
+import { ColorizedUrlInput } from '@/components/ui/select-env-input';
 
 interface ForgeRequestBarProps {
   method: string;

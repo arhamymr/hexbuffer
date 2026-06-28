@@ -36,8 +36,29 @@ export interface WsRepeaterMessage {
   timestamp: string;
 }
 
+export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'HEAD' | 'OPTIONS' | 'TRACE' | 'CONNECT';
+
+// ── Workspace Tab ──
+
+export interface WorkspaceTab {
+  id: string;
+  name: string;
+}
+
+export function createWorkspaceTab(name?: string, counter?: number): WorkspaceTab {
+  const num = counter ?? 1;
+  return {
+    id: `ws-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+    name: name || `Workspace ${num}`,
+  };
+}
+
+// ── Legacy tab types (kept for backward-compat in triggers/external consumers) ──
+
+/** @deprecated Use WorkspaceTab and the forge panel instead. */
 export type RepeaterTabMode = 'http' | 'websocket' | 'collection';
 
+/** @deprecated Use WorkspaceTab and the forge panel instead. */
 export interface RepeaterTab {
   id: string;
   name: string;
@@ -50,17 +71,15 @@ export interface RepeaterTab {
   response: RepeaterResponse | null;
   isLoading: boolean;
   error: string | null;
-  // For collection tabs only
   collectionId?: string;
   collectionName?: string;
 }
-
-export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'HEAD' | 'OPTIONS' | 'TRACE' | 'CONNECT';
 
 function createRepeaterTabId(): string {
   return `repeater-tab-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
 }
 
+/** @deprecated */
 export function createDefaultRepeaterTab(index: number): RepeaterTab {
   return {
     id: createRepeaterTabId(),
@@ -84,6 +103,7 @@ export function createDefaultRepeaterTab(index: number): RepeaterTab {
   };
 }
 
+/** @deprecated */
 export function createRepeaterTabFromRequest(request: RepeaterRequest, name: string): RepeaterTab {
   return {
     id: createRepeaterTabId(),
@@ -99,6 +119,7 @@ export function createRepeaterTabFromRequest(request: RepeaterRequest, name: str
   };
 }
 
+/** @deprecated */
 export function createWsRepeaterTab(
   wsRequest: RepeaterWsRequest,
   number: number,
@@ -128,6 +149,7 @@ export function createWsRepeaterTab(
   };
 }
 
+/** @deprecated */
 export function createCollectionTab(stashId: string, name: string): RepeaterTab {
   return {
     id: `collection-tab-${stashId}`,

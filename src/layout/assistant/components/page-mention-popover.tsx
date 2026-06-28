@@ -23,7 +23,7 @@ export function PageMentionPopover({
   if (!isOpen) return null;
 
   return (
-    <div className="absolute bottom-full left-0 mb-1 w-64 z-50 rounded-md border bg-popover shadow-md">
+    <div className="absolute top-full left-0 mt-1 w-64 z-50 rounded-md border bg-popover shadow-md max-h-48 overflow-y-auto">
       <Command>
         <CommandList>
           {filteredPages.length > 0 ? (

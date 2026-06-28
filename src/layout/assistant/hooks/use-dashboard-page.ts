@@ -5,6 +5,7 @@ import { listen } from '@tauri-apps/api/event';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { FileUIPart } from 'ai';
 import { usePromptInputController } from '@/components/ai-elements/prompt-input';
+import type { NavItem } from '@/layout/constants';
 import { useBrowserAutomationStore } from '@/stores/browser-automation';
 import { DASHBOARD_DEFAULT_AI_MODEL } from '../constants';
 import { DashboardSettingsChatTransport } from '../lib/dashboard-chat-transport';
@@ -129,7 +130,7 @@ interface UseDashboardPageOptions {
   sessionId: string | null;
   setMessagesRef: React.MutableRefObject<((messages: UIMessage<unknown>[]) => void) | null>;
   onSaveMessages?: (sessionId: string, messages: ChatMessageRecord[]) => void;
-  currentPage?: string | null;
+  currentPage?: NavItem | null;
 }
 
 export function useDashboardPage({ sessionId, setMessagesRef, onSaveMessages, currentPage }: UseDashboardPageOptions) {
@@ -425,7 +426,7 @@ export function useDashboardPage({ sessionId, setMessagesRef, onSaveMessages, cu
     // Build context prefix from current page and mentioned pages
     const contextParts: string[] = [];
     if (currentPageRef.current) {
-      contextParts.push(`[Current page: ${currentPageRef.current}]`);
+      contextParts.push(`[Current page: ${currentPageRef.current.label}]`);
     }
     if (mentionedPages && mentionedPages.length > 0) {
       contextParts.push(`[Referenced pages: ${mentionedPages.map((p) => p.label).join(', ')}]`);

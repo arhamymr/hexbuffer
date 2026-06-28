@@ -5,8 +5,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
+import { ColorizedUrlInput } from './colorized-url-input';
 
 interface ForgeRequestBarProps {
   method: string;
@@ -55,11 +55,11 @@ export function ForgeRequestBar({
           </SelectContent>
         </Select>
 
-        <Input
+        <ColorizedUrlInput
           placeholder="Enter request URL (e.g. https://api.example.com/v1/users)"
           className="flex-1 text-sm"
           value={url}
-          onChange={(e) => onUrlChange(e.target.value)}
+          onChange={onUrlChange}
         />
       </div>
 

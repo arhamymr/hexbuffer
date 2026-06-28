@@ -88,7 +88,7 @@ export function ForgeResponseView({
                   key={t}
                   variant="outline"
                   size="sm"
-                  className={cn('text-xs', activeResTab === t && 'text-primary')}
+                  className={cn('text-xs uppercase', activeResTab === t && 'text-primary')}
                   onClick={() => onResTabChange(t)}
                 >
                   {t === 'testResults' ? 'Test Results' : t}

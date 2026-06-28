@@ -139,9 +139,14 @@ function AIAssistantPaneContent({ onClose }: { onClose?: () => void }) {
           </Button>
         </div>
         {currentPage && (
-          <span className="text-xs text-muted-foreground font-medium truncate max-w-[140px]">
-            {currentPage}
-          </span>
+          <Badge variant="secondary" className="text-xs font-medium gap-1.5">
+            {currentPage.iconImage ? (
+              <img src={currentPage.iconImage} alt="" className="size-3 object-cover" />
+            ) : (
+              <currentPage.icon className="size-3" />
+            )}
+            {currentPage.label}
+          </Badge>
         )}
         {onClose && (
           <Button
@@ -389,20 +394,20 @@ function AIAssistantPaneContent({ onClose }: { onClose?: () => void }) {
 
           {/* Prompt input */}
           <div className="shrink-0 border-t p-2 bg-muted">
-            <PromptInput onSubmit={wrappedHandleSubmit} className='bg-background overflow-hidden max-w-xl mx-auto '>
-              {mentionedPages.length > 0 && (
-                <PromptInputHeader>
-                  {mentionedPages.map((page) => (
-                    <PageMentionChip
-                      key={page.href}
-                      item={page}
-                      onRemove={() => removeMentionedPage(page.href)}
-                    />
-                  ))}
-                </PromptInputHeader>
-              )}
-              <PromptInputBody>
-                <div className="relative">
+            <div className="relative max-w-xl mx-auto">
+              <PromptInput onSubmit={wrappedHandleSubmit} className='bg-background overflow-hidden'>
+                {mentionedPages.length > 0 && (
+                  <PromptInputHeader>
+                    {mentionedPages.map((page) => (
+                      <PageMentionChip
+                        key={page.href}
+                        item={page}
+                        onRemove={() => removeMentionedPage(page.href)}
+                      />
+                    ))}
+                  </PromptInputHeader>
+                )}
+                <PromptInputBody>
                   <PromptInputTextarea
                     className="min-h-12"
                     placeholder={
@@ -418,14 +423,7 @@ function AIAssistantPaneContent({ onClose }: { onClose?: () => void }) {
                     onSelect={onTextareaSelect}
                     onKeyDown={onTextareaKeyDown}
                   />
-                  <PageMentionPopover
-                    isOpen={mentionState.isOpen}
-                    filteredPages={filteredPages}
-                    highlightedIndex={highlightedIndex}
-                    onSelect={selectPage}
-                  />
-                </div>
-              </PromptInputBody>
+                </PromptInputBody>
               <PromptInputFooter>
                 <PromptInputTools>
                   <PromptInputSelect
@@ -452,6 +450,13 @@ function AIAssistantPaneContent({ onClose }: { onClose?: () => void }) {
                 />
               </PromptInputFooter>
             </PromptInput>
+              <PageMentionPopover
+                isOpen={mentionState.isOpen}
+                filteredPages={filteredPages}
+                highlightedIndex={highlightedIndex}
+                onSelect={selectPage}
+              />
+            </div>
           </div>
         </div>
       </div>

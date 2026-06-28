@@ -2,13 +2,13 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { TextEditor } from "@/components/ui/text-editor";
 import { Trash2, Plus } from "lucide-react";
 import type { KeyValuePair, ActiveRequestState } from "@/stores/collections";
 import { cn } from "@/lib/utils";
+import { ColorizedUrlInput } from "./colorized-url-input";
 
 // ── Shared key-value list editor ──
 
@@ -47,22 +47,25 @@ function KeyValueEditor({
             checked={item.enabled}
             onCheckedChange={() => onItemToggle(index)}
           />
-          <Input
-            placeholder="Name"
-            className="font-mono text-xs"
-            value={item.key}
-            onChange={(e) => onItemChange(index, "key", e.target.value)}
-          />
-          <Input
-            placeholder="Value"
-            className="font-mono text-xs"
-            value={item.value}
-            onChange={(e) => onItemChange(index, "value", e.target.value)}
-          />
+          <div className="flex w-full">
+            <ColorizedUrlInput
+              placeholder="Name"
+              className="font-mono rounded-none text-xs border-r-0"
+              value={item.key}
+              onChange={(v) => onItemChange(index, "key", v)}
+            />
+            <ColorizedUrlInput
+              placeholder="Value"
+              className="font-mono text-xs rounded-none"
+              value={item.value}
+              onChange={(v) => onItemChange(index, "value", v)}
+            />
+          </div>
+         
           <Button
             variant="ghost"
             size="icon"
-            className="w-8 text-muted-foreground hover:text-destructive shrink-0"
+            className="w-4 mr-4 text-muted-foreground hover:text-destructive shrink-0"
             onClick={() => onRemove(index)}
           >
             <Trash2 className="h-4 w-4" />

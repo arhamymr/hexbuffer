@@ -79,8 +79,8 @@ export function usePageMentions() {
   const onTextareaChange = useCallback(
     (e: ChangeEvent<HTMLTextAreaElement>) => {
       const value = e.currentTarget.value;
-      // Use the cursor position from the ref, or fallback to selectionStart
-      const cursor = cursorRef.current;
+      const cursor = e.currentTarget.selectionStart;
+      cursorRef.current = cursor;
       detectMention(value, cursor);
     },
     [detectMention],

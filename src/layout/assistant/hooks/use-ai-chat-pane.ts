@@ -6,16 +6,16 @@ import { useDashboardPage } from './use-dashboard-page';
 import { useAiChatActions } from '@/hooks/use-ai-chat-actions';
 import { useTrackedActions, clearTrackedActions } from '@/lib/ai-chat-actions';
 import { AI_MODEL_OPTIONS_BY_PROVIDER } from '@/pages/settings/constants';
-import { allNavItems } from '@/layout/constants';
+import { allNavItems, type NavItem } from '@/layout/constants';
 
 export function useAiChatPane() {
   const setMessagesRef = useRef<((messages: UIMessage<unknown>[]) => void) | null>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   const location = useLocation();
 
-  const currentPage = useMemo(() => {
+  const currentPage: NavItem | null = useMemo(() => {
     const match = allNavItems.find((item) => item.href === location.pathname);
-    return match?.label ?? null;
+    return match ?? null;
   }, [location.pathname]);
 
   const {

@@ -88,7 +88,8 @@ function CollectionDropZone({ stashId, isActive, isDragging, onAddChild }: { sta
       {/* Idle empty state */}
       {!isDragging && (
         <>
-          <FileCode className="h-4 w-4 text-muted-foreground/20" />
+          
+          
           <span className="text-[10px] text-muted-foreground/40">
             No endpoints yet
           </span>

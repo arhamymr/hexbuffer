@@ -154,6 +154,7 @@ interface CollectionsState {
   // Endpoint CRUD
   setActiveEndpointId: (id: string) => void;
   createEndpoint: (stashId: string, name: string) => Promise<string>;
+  renameEndpoint: (id: string, name: string) => Promise<void>;
   deleteEndpoint: (id: string) => Promise<void>;
   moveEndpoint: (id: string, newStashId: string, newSortOrder?: number) => Promise<void>;
   saveActiveEndpoint: () => Promise<void>;
@@ -359,6 +360,23 @@ export const useCollectionsStore = create<CollectionsState>()(
         activeRequest: defaultActiveRequest(),
       }));
       return endpoint.id;
+    },
+
+    renameEndpoint: async (id, name) => {
+      const now = timestampNow();
+      set((s) => ({
+        endpoints: s.endpoints.map((ep) =>
+          ep.id === id ? { ...ep, name, updatedAt: now } : ep
+        ),
+      }));
+      const updated = get().endpoints.find((ep) => ep.id === id);
+      if (updated) {
+        try {
+          await invoke('save_stash_endpoint', { record: updated });
+        } catch (e) {
+          console.error('Failed to rename endpoint:', e);
+        }
+      }
     },
 
     deleteEndpoint: async (id) => {

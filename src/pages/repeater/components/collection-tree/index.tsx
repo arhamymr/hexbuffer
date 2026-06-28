@@ -258,6 +258,8 @@ export function CollectionsTree({ workspaceId }: { workspaceId: string }) {
     const { id } = renameTarget;
     if (id.startsWith('stash-')) {
       await useCollectionsStore.getState().renameStash(id.slice(6), renameValue.trim());
+    } else if (id.startsWith('ep-')) {
+      await useCollectionsStore.getState().renameEndpoint(id.slice(3), renameValue.trim());
     }
     setRenameTarget(null);
     setRenameValue('');

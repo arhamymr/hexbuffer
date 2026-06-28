@@ -5,6 +5,12 @@ import { CSS } from '@dnd-kit/utilities';
 import { cn } from '@/lib/utils';
 import type { FlatNode, DropAction } from './utils';
 import { MethodBadge } from '@/components/status-badge';
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuTrigger,
+} from '@/components/ui/context-menu';
 
 // ── Props ──
 
@@ -79,150 +85,125 @@ export function TreeNodeRow({
         <div className="absolute -bottom-[1px] left-2 right-2 h-[2px] rounded-full bg-primary z-10" />
       )}
 
-      <div
-        className={cn(
-          'flex cursor-pointer items-center gap-1 rounded-sm py-0.5 transition-colors hover:bg-muted/50 group/tree-row',
-          isSelected && 'bg-muted',
-          isDragOver && showInsideHighlight && 'bg-primary/10 ring-1 ring-primary/30',
-        )}
-        style={{ paddingLeft: `${node.depth * 16 + 4}px` }}
-        onClick={() => {
-          // Endpoints: select as usual
-          if (isEndpoint) {
-            onSelect(node);
-          }
-          // Collections: clicking row toggles expand (override for chevron handled separately)
-        }}
-      >
-        {/* Expand/Collapse Chevron */}
-        {isCollection ? (
-          <button
-            type="button"
-            className="flex h-4 w-4 flex-shrink-0 items-center justify-center text-muted-foreground hover:text-foreground"
-            onClick={(e) => {
-              e.stopPropagation();
-              onToggleExpand(node.id);
+      <ContextMenu>
+        <ContextMenuTrigger asChild>
+          <div
+            className={cn(
+              'flex cursor-pointer items-center gap-1 rounded-sm py-0.5 transition-colors hover:bg-muted group/tree-row',
+              isSelected && 'bg-muted',
+              isDragOver && showInsideHighlight && 'bg-primary/30 ring-1 ring-primary/30',
+            )}
+            onClick={() => {
+              // Endpoints: select as usual
+              if (isEndpoint) {
+                onSelect(node);
+              }
+              // Collections: clicking row toggles expand (override for chevron handled separately)
             }}
-            aria-label="Toggle expand"
           >
-            <CaretDownIcon
-              className={cn('size-3.5 transition-transform', !isExpanded && '-rotate-90')}
-            />
-          </button>
-        ) : (
-          <span className="w-4 flex-shrink-0" />
-        )}
-
-        {/* Icon — clickable for collections to toggle expand */}
-        <Icon
-          className={cn(
-            'h-3.5 w-3.5 flex-shrink-0',
-            iconClass,
-            isCollection && 'cursor-pointer hover:scale-110 transition-transform',
-          )}
-          onClick={(e) => {
-            if (isCollection) {
-              e.stopPropagation();
-              onToggleExpand(node.id);
-            }
-          }}
-        />
-
-        {/* Label */}
-        <div
-          className={cn('min-w-0 flex-1', isCollection && 'cursor-pointer')}
-          onClick={(e) => {
-            if (isCollection) {
-              e.stopPropagation();
-              onToggleExpand(node.id);
-            }
-          }}
-        >
-          <div className="flex min-w-0 items-center gap-1.5">
-            <span className={cn('truncate text-xs', isEndpoint && 'font-mono')}>
-              {node.label}
-            </span>
-            {/* Endpoint count badge for collections */}
-            {isCollection && endpointCount > 0 && (
-              <span className="shrink-0 text-[10px] leading-none text-muted-foreground/60 tabular-nums">
-                {endpointCount}
-              </span>
-            )}
-            {/* Method badge for endpoints */}
-            {isEndpoint && node.method && (
-              <MethodBadge
-                method={node.method}
-                className="text-[9px] px-1 py-px"
-              />
-            )}
-          </div>
-          {/* URL description for endpoints */}
-          {node.description && isEndpoint && (
-            <div className="mt-0.5 truncate text-[11px] text-muted-foreground">
-              {node.description}
-            </div>
-          )}
-        </div>
-
-        {/* Inline actions — visible on row hover */}
-        <div className="flex items-center gap-0.5 opacity-0 group-hover/tree-row:opacity-100 transition-opacity shrink-0 pr-1">
-          {/* Add child — only for collections */}
-          {isCollection && (
-            <>
+            {/* Expand/Collapse Chevron */}
+            {isCollection ? (
               <button
                 type="button"
-                className="flex h-5 w-5 items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground"
-                title="New Endpoint"
+                className="flex h-4 w-4 flex-shrink-0 items-center justify-center text-muted-foreground hover:text-foreground"
                 onClick={(e) => {
                   e.stopPropagation();
-                  onAddChild(node.originalId, 'endpoint');
+                  onToggleExpand(node.id);
                 }}
+                aria-label="Toggle expand"
               >
-                <PlusIcon className="h-3 w-3" />
+                <CaretDownIcon
+                  className={cn('size-3.5 transition-transform', !isExpanded && '-rotate-90')}
+                />
               </button>
-            </>
-          )}
+            ) : (
+              <span className="w-4 flex-shrink-0" />
+            )}
 
-          {/* Rename — collections */}
-          {isCollection && (
-            <button
-              type="button"
-              className="flex h-5 w-5 items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground"
-              title="Rename"
+            {/* Icon — clickable for collections to toggle expand */}
+            <Icon
+              className={cn(
+                'size-4 flex-shrink-0',
+                iconClass,
+                isCollection && 'cursor-pointer hover:scale-110 transition-transform',
+              )}
               onClick={(e) => {
-                e.stopPropagation();
-                onRename(node);
+                if (isCollection) {
+                  e.stopPropagation();
+                  onToggleExpand(node.id);
+                }
+              }}
+            />
+
+            {/* Label */}
+            <div
+              className={cn('min-w-0 flex-1', isCollection && 'cursor-pointer')}
+              onClick={(e) => {
+                if (isCollection) {
+                  e.stopPropagation();
+                  onToggleExpand(node.id);
+                }
               }}
             >
-              <PencilSimpleIcon className="h-2.5 w-2.5" />
+              <div className="flex min-w-0 items-center gap-1.5">
+                <span className={cn('truncate text-xs')}>
+                  {node.label}
+                </span>
+                {/* Endpoint count badge for collections */}
+                {isCollection && endpointCount > 0 && (
+                  <span className="shrink-0 text-[10px] leading-none text-muted-foreground/60 tabular-nums">
+                    {endpointCount}
+                  </span>
+                )}
+                {/* Method badge for endpoints */}
+                {isEndpoint && node.method && (
+                  <MethodBadge
+                    method={node.method}
+                    className="text-[9px] px-1 py-px"
+                  />
+                )}
+              </div>
+            </div>
+
+            {/* Drag handle Handle — drag trigger, visible on hover */}
+            <button
+              type="button"
+              className="flex h-5 w-4 flex-shrink-0 items-center justify-center rounded-sm text-muted-foreground/30 opacity-0 group-hover/tree-row:opacity-100 transition-opacity cursor-grab active:cursor-grabbing hover:text-muted-foreground touch-none"
+              {...attributes}
+              {...listeners}
+              aria-label="Drag to reorder"
+            >
+              <DotsSixVerticalIcon className="h-3.5 w-3.5" />
             </button>
+          </div>
+        </ContextMenuTrigger>
+        <ContextMenuContent className="w-48">
+          {isCollection && (
+            <ContextMenuItem
+              onClick={() => onAddChild(node.originalId, 'endpoint')}
+              className="text-xs"
+            >
+              <PlusIcon className="mr-2 h-4 w-4" />
+              New Endpoint
+            </ContextMenuItem>
           )}
-
-          {/* Delete */}
-          <button
-            type="button"
-            className="flex h-5 w-5 items-center justify-center rounded text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
-            title="Delete"
-            onClick={(e) => {
-              e.stopPropagation();
-              onDelete(node);
-            }}
+          <ContextMenuItem
+            onClick={() => onRename(node)}
+            className="text-xs"
           >
-            <TrashIcon className="h-2.5 w-2.5" />
-          </button>
-        </div>
-
-        {/* DotsSixIcon Handle — drag trigger, visible on hover */}
-        <button
-          type="button"
-          className="flex h-5 w-4 flex-shrink-0 items-center justify-center rounded-sm text-muted-foreground/30 opacity-0 group-hover/tree-row:opacity-100 transition-opacity cursor-grab active:cursor-grabbing hover:text-muted-foreground touch-none"
-          {...attributes}
-          {...listeners}
-          aria-label="Drag to reorder"
-        >
-          <DotsSixVerticalIcon className="h-3.5 w-3.5" />
-        </button>
-      </div>
+            <PencilSimpleIcon className="mr-2 h-4 w-4" />
+            Rename
+          </ContextMenuItem>
+          <ContextMenuItem
+            onClick={() => onDelete(node)}
+            variant="destructive"
+            className="text-xs"
+          >
+            <TrashIcon className="mr-2 h-4 w-4" />
+            Delete
+          </ContextMenuItem>
+        </ContextMenuContent>
+      </ContextMenu>
     </div>
   );
 }

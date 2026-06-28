@@ -1,4 +1,7 @@
 import { CONSOLE_LEVEL_COLORS } from '@/pages/inspector/constants';
+import { Badge } from '@/components/ui/badge';
+import { getMethodBadgeColor } from '@/lib/method-colors';
+import { cn } from '@/lib/utils';
 
 export const levelBadge = {
   info: 'info',
@@ -36,9 +39,15 @@ export function StatusBadge({ status }: { status: StatusBadgeValue }) {
   }
   const colorClass = getStatusColor(status);
   return (
-    <span className={`text-[10px] px-1 py-0.5 rounded font-mono text-white ${colorClass}`}>
+    <Badge
+      variant="outline"
+      className={cn(
+        'text-[10px] px-1 py-0.5 rounded font-mono shadow-none border-none text-white font-semibold',
+        colorClass
+      )}
+    >
       {status}
-    </span>
+    </Badge>
   );
 }
 
@@ -52,9 +61,15 @@ export function getLevelColor(level: LevelBadgeValue) {
 export function LevelBadge({ level }: { level: LevelBadgeValue }) {
   const colorClass = getLevelColor(level);
   return (
-    <span className={`text-[10px] px-1 py-0.5 rounded font-mono text-white ${colorClass}`}>
+    <Badge
+      variant="outline"
+      className={cn(
+        'text-[10px] px-1 py-0.5 rounded font-mono shadow-none border-none text-white font-semibold',
+        colorClass
+      )}
+    >
       {level}
-    </span>
+    </Badge>
   );
 }
 
@@ -91,17 +106,26 @@ export function getSeverityColor(sev: SeverityBadgeValue) {
 export function SeverityBadge({ severity: sev }: { severity: SeverityBadgeValue }) {
   const colorClass = getSeverityColor(sev);
   return (
-    <span className={`text-[10px] px-1 py-0.5 rounded font-mono text-white ${colorClass}`}>
+    <Badge
+      variant="outline"
+      className={cn(
+        'text-[10px] px-1 py-0.5 rounded font-mono shadow-none border-none text-white font-semibold',
+        colorClass
+      )}
+    >
       {sev}
-    </span>
+    </Badge>
   );
 }
 
 export function InterestingBadge() {
   return (
-    <span className="text-[10px] px-1 py-0.5 rounded font-mono text-white bg-yellow-600">
+    <Badge
+      variant="outline"
+      className="text-[10px] px-1 py-0.5 rounded font-mono shadow-none border-none text-white font-semibold bg-yellow-600"
+    >
       Interesting
-    </span>
+    </Badge>
   );
 }
 
@@ -111,37 +135,45 @@ export function ConsoleLevelBadge({ level }: { level: ConsoleLevelValue }) {
   const colorClass = CONSOLE_LEVEL_COLORS[level] ?? 'bg-gray-600';
   const label = level === 'pageerror' ? 'error' : level;
   return (
-    <span className={`text-[10px] px-1 py-0.5 rounded font-mono text-white ${colorClass}`}>
+    <Badge
+      variant="outline"
+      className={cn(
+        'text-[10px] px-1 py-0.5 rounded font-mono shadow-none border-none text-white font-semibold',
+        colorClass
+      )}
+    >
       {label}
-    </span>
+    </Badge>
   );
 }
 
 export function ActivityStatusBadge({ status }: { status: StatusActivityValue }) {
   const colorClass = getActivityStatusColor(status);
   return (
-    <span className={`text-[10px] px-1 py-0.5 rounded font-mono text-white ${colorClass}`}>
+    <Badge
+      // variant="outline"
+      className={cn(
+        'text-[10px] px-1 py-0.5 rounded font-mono shadow-none border-none text-white font-semibold',
+        colorClass
+      )}
+    >
       {status}
-    </span>
+    </Badge>
   );
 }
 
-export function MethodBadge({ method }: { method: string }) {
-  const colors: Record<string, string> = {
-    GET: 'bg-green-600',
-    POST: 'bg-blue-600',
-    PUT: 'bg-orange-600',
-    DELETE: 'bg-red-600',
-    PATCH: 'bg-purple-600',
-    HEAD: 'bg-gray-600',
-    OPTIONS: 'bg-teal-600',
-    CONNECT: 'bg-indigo-600',
-    TRACE: 'bg-cyan-600',
-  };
+export function MethodBadge({ method, className }: { method: string; className?: string }) {
   return (
-    <span className={`text-[10px] px-1 py-0.5 rounded font-mono text-white ${colors[method.toUpperCase()] || 'bg-gray-600'}`}>
+    <Badge
+      // variant="outline"
+      className={cn(
+        'text-[10px] px-1 py-0.5 rounded font-mono shadow-none border shrink-0 font-semibold uppercase',
+        getMethodBadgeColor(method),
+        className
+      )}
+    >
       {method.toUpperCase()}
-    </span>
+    </Badge>
   );
 }
 
@@ -169,8 +201,14 @@ export function getCrawlStatusColor(status: CrawlStatusValue) {
 export function CrawlStatusBadge({ status }: { status: CrawlStatusValue }) {
   const colorClass = getCrawlStatusColor(status);
   return (
-    <span className={`text-[10px] px-1 py-0.5 rounded font-mono text-white ${colorClass}`}>
+    <Badge
+      variant="outline"
+      className={cn(
+        'text-[10px] px-1 py-0.5 rounded font-mono shadow-none border-none text-white font-semibold',
+        colorClass
+      )}
+    >
       {status}
-    </span>
+    </Badge>
   );
 }

@@ -75,7 +75,7 @@ export function CollectionPickerSubmenu({
     <Sub>
       <SubTrigger className="text-xs py-1 px-1.5" disabled={disabled}>
         <PaperPlaneTiltIcon className="mr-1.5 size-3" />
-        PaperPlaneTiltIcon to Repeater
+        Send to Repeater
       </SubTrigger>
       <SubContent>
         {!isHydrated ? (

@@ -212,7 +212,7 @@ export function ListenerSettings({
                   </div>
                   <p className="truncate font-mono text-[10px] text-muted-foreground">{s.url}</p>
                   <p className="font-mono text-[10px] text-muted-foreground">
-                    KeyIcon: {s.apiKey.slice(0, 4)}••••••
+                    Key: {s.apiKey.slice(0, 4)}••••••
                   </p>
                   <div className="flex gap-2 pt-1">
                     <Button

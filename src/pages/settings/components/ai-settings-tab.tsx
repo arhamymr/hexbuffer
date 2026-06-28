@@ -177,7 +177,7 @@ export function AiSettingsTab({ settings }: AiSettingsTabProps) {
               onClick={handleClearAiApiKey}
               disabled={aiSettingsLoading || aiSettingsSaving || !aiSettings.hasApiKey}
             >
-              Clear API KeyIcon
+              Clear API Key
             </Button>
           </div>
 
@@ -196,7 +196,7 @@ export function AiSettingsTab({ settings }: AiSettingsTabProps) {
                       {saved ? (
                         <>
                           <CheckIcon className="size-3.5" />
-                          KeyIcon saved
+                          Key saved
                         </>
                       ) : (
                         <>

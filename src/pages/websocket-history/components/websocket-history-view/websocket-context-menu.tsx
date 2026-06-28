@@ -99,7 +99,7 @@ export function WebSocketContextMenu({
       </ContextMenuTrigger>
       <ContextMenuContent>
         <ContextMenuItem onClick={handleOpenInRepeater} className="text-xs">
-          <PaperPlaneTiltIcon className="mr-2 h-4 w-4" /> PaperPlaneTiltIcon to Repeater
+          <PaperPlaneTiltIcon className="mr-2 h-4 w-4" /> Send to Repeater
         </ContextMenuItem>
         <CollectionPickerSubmenu
           variant="context"

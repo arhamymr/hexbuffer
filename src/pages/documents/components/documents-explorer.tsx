@@ -181,7 +181,7 @@ function ApiRequestRow({
           <ArrowSquareOutIcon className="mr-2 h-4 w-4" /> Open in Invoker
         </ContextMenuItem>
         <ContextMenuItem onClick={() => onOpenInRepeater(entry)} className="text-xs">
-          <PaperPlaneTiltIcon className="mr-2 h-4 w-4" /> PaperPlaneTiltIcon to Repeater
+          <PaperPlaneTiltIcon className="mr-2 h-4 w-4" /> Send to Repeater
         </ContextMenuItem>
         <CollectionPickerSubmenu
           variant="context"
@@ -247,96 +247,96 @@ export function DocumentsExplorer({
               );
             })}
 
-          <button
-            type="button"
-            onClick={onAddCustomSection}
-            className="flex h-7 w-full items-center gap-2 rounded px-2 text-left text-xs text-muted-foreground hover:bg-muted hover:text-foreground"
-          >
-            <PlusIcon className="h-4 w-4" />
-            <span className="truncate">add file</span>
-          </button>
+            <button
+              type="button"
+              onClick={onAddCustomSection}
+              className="flex h-7 w-full items-center gap-2 rounded px-2 text-left text-xs text-muted-foreground hover:bg-muted hover:text-foreground"
+            >
+              <PlusIcon className="h-4 w-4" />
+              <span className="truncate">add file</span>
+            </button>
 
-          <ContextMenu>
-            <ContextMenuTrigger asChild>
-              <button
-                type="button"
-                onClick={() => {
-                  onApiFolderOpenChange(!isApiFolderOpen);
-                  onOpenFile('api');
-                }}
-                className={cn(
-                  'flex h-7 w-full items-center gap-2 rounded px-2 text-left text-xs hover:bg-muted',
-                  activeFileId === 'api' && 'bg-muted text-foreground'
-                )}
-              >
-                <CaretDownIcon
+            <ContextMenu>
+              <ContextMenuTrigger asChild>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onApiFolderOpenChange(!isApiFolderOpen);
+                    onOpenFile('api');
+                  }}
                   className={cn(
-                    'h-3.5 w-3.5 text-muted-foreground transition-transform',
-                    !isApiFolderOpen && '-rotate-90'
+                    'flex h-7 w-full items-center gap-2 rounded px-2 text-left text-xs hover:bg-muted',
+                    activeFileId === 'api' && 'bg-muted text-foreground'
                   )}
-                />
-                {isApiFolderOpen ? (
-                  <FolderOpen className="h-4 w-4 text-muted-foreground" />
+                >
+                  <CaretDownIcon
+                    className={cn(
+                      'h-3.5 w-3.5 text-muted-foreground transition-transform',
+                      !isApiFolderOpen && '-rotate-90'
+                    )}
+                  />
+                  {isApiFolderOpen ? (
+                    <FolderOpen className="h-4 w-4 text-muted-foreground" />
+                  ) : (
+                    <FolderIcon className="h-4 w-4 text-muted-foreground" />
+                  )}
+                  <span className="truncate">api</span>
+                </button>
+              </ContextMenuTrigger>
+              <ContextMenuContent>
+                <ContextMenuItem onClick={onAddApiEntry} className="text-xs">
+                  <PlusIcon className="mr-2 size-3" /> New request
+                </ContextMenuItem>
+              </ContextMenuContent>
+            </ContextMenu>
+
+            {isApiFolderOpen && (
+              <div className="space-y-0.5 pl-5">
+                {activeDocument.apiEntries.length === 0 ? (
+                  <div className="space-y-1 px-2 py-2 text-xs text-muted-foreground">
+                    <div>No saved requests</div>
+                    <button
+                      type="button"
+                      onClick={onAddApiEntry}
+                      className="flex h-7 items-center gap-2 rounded text-xs hover:text-foreground"
+                    >
+                      <PlusIcon className="size-3" />
+                      <span>new request</span>
+                    </button>
+                  </div>
                 ) : (
-                  <FolderIcon className="h-4 w-4 text-muted-foreground" />
+                  <>
+                    <button
+                      type="button"
+                      onClick={onAddApiEntry}
+                      className="flex h-7 w-full items-center gap-2 rounded px-2 text-left text-xs text-muted-foreground hover:bg-muted hover:text-foreground"
+                    >
+                      <PlusIcon className="h-3.5 w-3.5" />
+                      <span className="truncate">new request</span>
+                    </button>
+                    {activeDocument.apiEntries.map((entry) => {
+                      const isActive = activeFileId === `api:${entry.id}`;
+
+                      return (
+                        <ApiRequestRow
+                          key={entry.id}
+                          entry={entry}
+                          isActive={isActive}
+                          onOpenApiEntry={onOpenApiEntry}
+                          onCopyCurlCommand={handleCopyCurlCommand}
+                          onCopyUrl={handleCopyUrl}
+                          onOpenInInvoker={handleOpenInInvoker}
+                          onOpenInRepeater={handleOpenInRepeater}
+                          onSendToCollection={handleSendToCollection}
+                          onDeleteApiEntry={onDeleteApiEntry}
+                        />
+                      );
+                    })}
+                  </>
                 )}
-                <span className="truncate">api</span>
-              </button>
-            </ContextMenuTrigger>
-            <ContextMenuContent>
-              <ContextMenuItem onClick={onAddApiEntry} className="text-xs">
-                <PlusIcon className="mr-2 size-3" /> New request
-              </ContextMenuItem>
-            </ContextMenuContent>
-          </ContextMenu>
-
-          {isApiFolderOpen && (
-            <div className="space-y-0.5 pl-5">
-              {activeDocument.apiEntries.length === 0 ? (
-                <div className="space-y-1 px-2 py-2 text-xs text-muted-foreground">
-                  <div>No saved requests</div>
-                  <button
-                    type="button"
-                    onClick={onAddApiEntry}
-                    className="flex h-7 items-center gap-2 rounded text-xs hover:text-foreground"
-                  >
-                    <PlusIcon className="size-3" />
-                    <span>new request</span>
-                  </button>
-                </div>
-              ) : (
-                <>
-                  <button
-                    type="button"
-                    onClick={onAddApiEntry}
-                    className="flex h-7 w-full items-center gap-2 rounded px-2 text-left text-xs text-muted-foreground hover:bg-muted hover:text-foreground"
-                  >
-                    <PlusIcon className="h-3.5 w-3.5" />
-                    <span className="truncate">new request</span>
-                  </button>
-                  {activeDocument.apiEntries.map((entry) => {
-                    const isActive = activeFileId === `api:${entry.id}`;
-
-                    return (
-                      <ApiRequestRow
-                        key={entry.id}
-                        entry={entry}
-                        isActive={isActive}
-                        onOpenApiEntry={onOpenApiEntry}
-                        onCopyCurlCommand={handleCopyCurlCommand}
-                        onCopyUrl={handleCopyUrl}
-                        onOpenInInvoker={handleOpenInInvoker}
-                        onOpenInRepeater={handleOpenInRepeater}
-                        onSendToCollection={handleSendToCollection}
-                        onDeleteApiEntry={onDeleteApiEntry}
-                      />
-                    );
-                  })}
-                </>
-              )}
-            </div>
-          )}
-        </div>
+              </div>
+            )}
+          </div>
           <DragOverlay className="rounded border bg-popover shadow-lg">
             {(source) => {
               const section = activeDocument.customSections.find(

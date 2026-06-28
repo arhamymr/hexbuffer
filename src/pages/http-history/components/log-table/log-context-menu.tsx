@@ -132,17 +132,17 @@ export const LogEntryContextMenu = memo(function LogEntryContextMenu({
           <PlusIcon className="mr-1.5 size-3" /> Add to Target
         </ContextMenuItem>
         <ContextMenuItem onClick={handleOpenInInvoker} className='text-xs py-1 px-1.5'>
-          <PaperPlaneTiltIcon className="mr-1.5 size-3" /> PaperPlaneTiltIcon to Invoker
+          <PaperPlaneTiltIcon className="mr-1.5 size-3" /> Send to Invoker
         </ContextMenuItem>
         <CollectionPickerSubmenu
           variant="context"
           onSelect={(stashId) => { void handleSendToCollection(stashId); }}
         />
         <ContextMenuItem onClick={handleSendToIntercept} className='text-xs py-1 px-1.5'>
-          <PaperPlaneTiltIcon className="mr-1.5 size-3" /> PaperPlaneTiltIcon to Intercept
+          <PaperPlaneTiltIcon className="mr-1.5 size-3" /> Send to Intercept
         </ContextMenuItem>
         <ContextMenuItem onClick={handleOpenInBrowserAutomation} className='text-xs py-1 px-1.5'>
-          <PaperPlaneTiltIcon className="mr-1.5 size-3" /> PaperPlaneTiltIcon to Automate Browser
+          <PaperPlaneTiltIcon className="mr-1.5 size-3" /> Send to Automate Browser
         </ContextMenuItem>
         {/* <ContextMenuItem onClick={handleOpenInPromptInjection} className='text-xs'>
           <RobotIcon className="mr-2 size-4" /> Open in Prompt Injection

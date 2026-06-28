@@ -7,6 +7,7 @@ import {
 } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { ColorizedUrlInput } from '@/components/ui/select-env-input';
+import { METHOD_COLORS } from '@/lib/method-colors';
 
 interface ForgeRequestBarProps {
   method: string;
@@ -17,16 +18,6 @@ interface ForgeRequestBarProps {
 }
 
 const METHODS = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS', 'HEAD'];
-
-const METHOD_COLORS: Record<string, string> = {
-  GET: 'text-green-500 dark:text-green-400',
-  POST: 'text-amber-500 dark:text-amber-400',
-  PUT: 'text-orange-500 dark:text-orange-400',
-  DELETE: 'text-red-500 dark:text-red-400',
-  PATCH: 'text-purple-500 dark:text-purple-400',
-  OPTIONS: 'text-cyan-500 dark:text-cyan-400',
-  HEAD: 'text-gray-500 dark:text-gray-400',
-};
 
 export function ForgeRequestBar({
   method,

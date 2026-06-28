@@ -4,16 +4,7 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { cn } from '@/lib/utils';
 import type { FlatNode, DropAction } from './utils';
-
-// ── Method badge colors ──
-
-const methodColors: Record<string, string> = {
-  GET: 'bg-emerald-500/10 text-emerald-600',
-  POST: 'bg-blue-500/10 text-blue-600',
-  PUT: 'bg-amber-500/10 text-amber-600',
-  DELETE: 'bg-red-500/10 text-red-600',
-  PATCH: 'bg-purple-500/10 text-purple-600',
-};
+import { MethodBadge } from '@/components/status-badge';
 
 // ── Props ──
 
@@ -159,14 +150,10 @@ export function TreeNodeRow({
             )}
             {/* Method badge for endpoints */}
             {isEndpoint && node.method && (
-              <span
-                className={cn(
-                  'font-semibold uppercase text-[9px] px-1 rounded',
-                  methodColors[node.method] || 'bg-gray-500/10 text-gray-600',
-                )}
-              >
-                {node.method}
-              </span>
+              <MethodBadge
+                method={node.method}
+                className="text-[9px] px-1 py-px"
+              />
             )}
           </div>
           {/* URL description for endpoints */}

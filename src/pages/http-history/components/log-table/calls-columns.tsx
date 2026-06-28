@@ -146,17 +146,17 @@ const CallActionCell = memo(function CallActionCell({ call, onNewGroup }: { call
           <PlusIcon className="mr-2 size-3" /> Add to Target
         </DropdownMenuItem>
         <DropdownMenuItem onClick={handleOpenInInvoker} className="text-xs">
-          <PaperPlaneTiltIcon className="mr-2 size-3" /> PaperPlaneTiltIcon to Invoker
+          <PaperPlaneTiltIcon className="mr-2 size-3" /> Send to Invoker
         </DropdownMenuItem>
         <CollectionPickerSubmenu
           variant="dropdown"
           onSelect={(stashId) => { void handleSendToCollection(stashId); }}
         />
         <DropdownMenuItem onClick={handleSendToIntercept} className="text-xs">
-          <PaperPlaneTiltIcon className="mr-2 size-3" /> PaperPlaneTiltIcon to Intercept
+          <PaperPlaneTiltIcon className="mr-2 size-3" /> Send to Intercept
         </DropdownMenuItem>
         <DropdownMenuItem onClick={handleOpenInBrowserAutomation} className="text-xs">
-          <PaperPlaneTiltIcon className="mr-2 size-3" /> PaperPlaneTiltIcon to Automate Browser
+          <PaperPlaneTiltIcon className="mr-2 size-3" /> Send to Automate Browser
         </DropdownMenuItem>
         <DropdownMenuItem onClick={handleSaveToDocuments} className="text-xs">
           <FilePlusIcon className="mr-2 size-4" /> FloppyDiskIcon to Documents

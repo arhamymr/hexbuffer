@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { TargetIcon, PlayIcon, PauseIcon, ArrowsLeftRightIcon, ShieldCheckIcon, ShieldSlashIcon, PaperPlaneTiltIcon, SquareIcon, ArrowCounterClockwiseIcon, SpinnerGapIcon } from '@phosphor-icons/react';
+import { TargetIcon, PlayIcon, PauseIcon, ShieldCheckIcon, ShieldSlashIcon, PaperPlaneTiltIcon, SquareIcon, ArrowCounterClockwiseIcon, SpinnerGapIcon, FloppyDiskIcon } from '@phosphor-icons/react';
 import { useHttpHistoryQueryStore } from '@/pages/http-history/state/history-query-store';
 import { useWebSocketHistoryQueryStore } from '@/pages/websocket-history/state/query-store';
 import { useInterceptStore } from '@/pages/intercept/state/intercept-store';
@@ -8,7 +8,7 @@ import { openTargetSelector } from '@/triggers';
 import { toggleInterceptEnabled, forwardPaused } from '@/triggers';
 import { toggleBrowserCrawl, stopBrowserCrawl, startBrowserCrawl } from '@/triggers';
 import { startInvokerUiAttack, stopInvokerUiAttack } from '@/triggers';
-import { sendCraftRequest } from '@/triggers/repeater/craft';
+import { sendCraftRequest, saveActiveEndpoint } from '@/triggers/repeater/craft';
 import { useInvokerStore } from '@/stores/invoker';
 import { useCollectionsStore } from '@/stores/collections';
 
@@ -36,6 +36,8 @@ export function useFloatingPageButtons(pathname: string): PageButton[] {
   const invokerTabs = useInvokerStore((s) => s.tabs);
   const invokerActiveTabId = useInvokerStore((s) => s.activeTabId);
   const collectionsActiveReq = useCollectionsStore((s) => s.activeRequest);
+  const selectedNodeId = useCollectionsStore((s) => s.selectedNodeId);
+  const hasEndpoint = selectedNodeId?.startsWith('ep-');
 
   const toggleHttpPause = React.useCallback(() => {
     const store = useHttpHistoryQueryStore.getState();
@@ -199,8 +201,7 @@ export function useFloatingPageButtons(pathname: string): PageButton[] {
 
     if (pathname === '/repeater') {
       const craftLoading = collectionsActiveReq.isLoading;
-
-      return [
+      const buttons: PageButton[] = [
         {
           key: 'repeater-send',
           icon: craftLoading ? SpinnerGapIcon : PaperPlaneTiltIcon,
@@ -212,8 +213,22 @@ export function useFloatingPageButtons(pathname: string): PageButton[] {
           variant: 'primary',
         },
       ];
+
+      if (hasEndpoint) {
+        buttons.push({
+          key: 'repeater-save',
+          icon: FloppyDiskIcon,
+          label: 'Save',
+          showLabel: true,
+          isActive: false,
+          onClick: () => { void saveActiveEndpoint(); },
+          visible: true,
+        });
+      }
+
+      return buttons;
     }
 
     return [];
-  }, [pathname, isHttpPaused, isWebSocketPaused, interceptStatus, interceptRequests, interceptActiveTabId, interceptSelectedId, interceptIsBusy, browserTabs, browserActiveTabId, invokerTabs, invokerActiveTabId, collectionsActiveReq]);
+  }, [pathname, isHttpPaused, isWebSocketPaused, interceptStatus, interceptRequests, interceptActiveTabId, interceptSelectedId, interceptIsBusy, browserTabs, browserActiveTabId, invokerTabs, invokerActiveTabId, collectionsActiveReq, selectedNodeId, hasEndpoint]);
 }

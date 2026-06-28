@@ -145,7 +145,7 @@ export function useHttpHistoryPage() {
     }
     return (
       <ContextMenuItem onClick={() => sendScopeToDocuments(tab.id)}>
-        PaperPlaneTiltIcon scope to Documents
+        Send scope to Documents
       </ContextMenuItem>
     );
   }, [sendScopeToDocuments, deleteGroup, setActiveTabId]);

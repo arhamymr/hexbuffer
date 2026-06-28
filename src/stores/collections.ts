@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { invoke } from '@tauri-apps/api/core';
+import { toast } from 'sonner';
 
 // ── Types (mirroring Rust StashRecord, StashEndpointRecord, etc.) ──
 
@@ -429,8 +430,10 @@ export const useCollectionsStore = create<CollectionsState>()(
       if (updated) {
         try {
           await invoke('save_stash_endpoint', { record: updated });
+          toast.success('Request saved successfully');
         } catch (e) {
           console.error('Failed to save endpoint:', e);
+          toast.error('Failed to save request');
         }
       }
     },

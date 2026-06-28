@@ -107,7 +107,7 @@ export function JwtGenerateView({
             <div className="flex items-end gap-3 pt-1">
               <div className="flex-1 space-y-1">
                 <Label className="text-xs font-semibold text-muted-foreground">
-                  Secret KeyIcon
+                  Secret Key
                 </Label>
                 <Input
                   className="h-8 font-mono text-xs bg-muted/5 focus-visible:ring-1"

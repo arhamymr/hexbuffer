@@ -95,6 +95,21 @@ export function useRepeaterPage() {
     [closeTabsToRight],
   );
 
+  // Register Cmd+S / Ctrl+S key handler for saving active request (ponytail: simple key listener)
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's') {
+        const store = useCollectionsStore.getState();
+        if (store.selectedNodeId?.startsWith('ep-')) {
+          e.preventDefault();
+          void store.saveActiveEndpoint();
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   return {
     tabs,
     activeWorkspaceId,

@@ -69,11 +69,10 @@ export function ForgeResponseView({
             <div className="flex items-center space-x-1.5">
               <span className="text-muted-foreground uppercase font-bold">Status:</span>
               <span
-                className={`font-semibold px-1 rounded ${
-                  response.status >= 200 && response.status < 300
+                className={`font-semibold px-1 rounded ${response.status >= 200 && response.status < 300
                     ? 'bg-emerald-500/10 text-emerald-600'
                     : 'bg-destructive/10 text-destructive'
-                }`}
+                  }`}
               >
                 {response.status} {response.statusText}
               </span>
@@ -202,11 +201,10 @@ export function ForgeResponseView({
                     {testResults.map((tr, index) => (
                       <div
                         key={index}
-                        className={`p-2 border rounded-md flex items-center justify-between text-xs ${
-                          tr.passed
+                        className={`p-2 border rounded-md flex items-center justify-between text-xs ${tr.passed
                             ? 'bg-emerald-500/5 border-emerald-500/20'
                             : 'bg-destructive/5 border-destructive/20'
-                        }`}
+                          }`}
                       >
                         <div className="flex items-center space-x-2">
                           {tr.passed ? (
@@ -247,7 +245,7 @@ export function ForgeResponseView({
           No response received yet.
         </span>
         <span className="text-xs text-muted-foreground/60 max-w-[200px] mt-1">
-          Enter target URL and click PaperPlaneTiltIcon to execute the endpoint.
+          Enter target URL and click Send to execute the endpoint.
         </span>
       </div>
     );

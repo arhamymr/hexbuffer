@@ -85,7 +85,7 @@ export function LicenseModal({ open, onOpenChange }: LicenseModalProps) {
                 <Badge className="bg-green-600 text-white hover:bg-green-700">Lifetime</Badge>
               </div>
               <p className="mt-2 font-mono text-xs text-muted-foreground">
-                KeyIcon: {licenseKey ? maskKey(licenseKey) : '—'}
+                Key: {licenseKey ? maskKey(licenseKey) : '—'}
               </p>
             </div>
           ) : (

@@ -250,14 +250,14 @@ export function LogEntryBurpView() {
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleSendToRepeater} className="text-xs">
-                  <PaperPlaneTiltIcon className="mr-2 h-4 w-4" /> PaperPlaneTiltIcon to Repeater
+                  <PaperPlaneTiltIcon className="mr-2 h-4 w-4" /> Send to Repeater
                 </DropdownMenuItem>
                 <CollectionPickerSubmenu
                   variant="dropdown"
                   onSelect={handleSendToCollection}
                 />
                 <DropdownMenuItem onClick={handleSendToInvoker} className="text-xs">
-                  <CrosshairIcon className="mr-2 h-4 w-4" /> PaperPlaneTiltIcon to Invoker
+                  <CrosshairIcon className="mr-2 h-4 w-4" /> Send to Invoker
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

@@ -230,7 +230,7 @@ export function ColorizedUrlInput({
           className={cn(
             'border-input min-h-7 w-full min-w-0 rounded-sm border bg-transparent px-3 py-1 text-sm transition-[color,box-shadow] outline-none',
             'focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]',
-            'overflow-y-auto whitespace-pre-wrap break-all',
+            'h-7 overflow-hidden whitespace-nowrap text-ellipsis focus:h-auto focus:overflow-y-auto focus:whitespace-pre-wrap focus:break-all',
             'empty:before:content-[attr(data-placeholder)] empty:before:text-muted-foreground',
             className,
           )}

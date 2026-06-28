@@ -1,244 +1,310 @@
 # AppRecon Capabilities
 
+This document outlines the capabilities and pages available in AppRecon, mapping their paths in the codebase to their features and structures.
 
-## 3. Browser
+---
+
+## 1. Overview
+
+**Path:** `src/pages/overview/`
+
+The main landing page and command center of AppRecon.
+
+### Features
+- **Launchpad**: Desktop-like icon grid for opening and searching available features.
+- **Clock Widget**: Real-time local clock display.
+- **Collections Widget**: Status summary of active workspaces and collections.
+- **Proxy Widget**: Real-time proxy status indicator with toggle controls.
+- **Scratchpad Widget**: A quick, persistent notepad for security notes and snippets.
+
+---
+
+## 2. HTTP History
+
+**Path:** `src/pages/http-history/` (shares core services with `src/pages/live-traffic/`)
+
+A comprehensive log of all HTTP/HTTPS requests processed through the MITM proxy.
+
+### Features
+- **Traffic Grid**: Paginated table rendering Method, URL, Status, Size, Content-Type, and Timestamp.
+- **Filters & Search**: Filter by HTTP methods, status code ranges, custom search text, and destination host scopes.
+- **Control Bar**: Stream controls (Pause/Resume), Refresh logs, and Clear History.
+- **Log Inspector**: Tabbed details drawer displaying:
+  - Raw request/response data.
+  - Parsed headers and query parameters.
+  - Form-data, JSON, and multi-format body viewers.
+- **Integrations**: Context menus to send requests directly to Repeater, Invoker, or Documents.
+
+---
+
+## 3. WebSocket History
+
+**Path:** `src/pages/websocket-history/` (shares core services with `src/pages/live-traffic/`)
+
+A dedicated history of all WebSocket connections and downstream/upstream frames.
+
+### Features
+- **Connections List**: Shows target WebSocket URLs, connection status (Active/Closed), message counts, and last activity timestamps.
+- **Frame Log Viewer**: Streams live messages with inbound/outbound direction indicators, payload size, timing, and formatting controls.
+
+---
+
+## 4. Workflow / Automation
+
+**Path:** `src/pages/automation/`
+
+A node-based automated testing workflow editor powered by `@xyflow/react`.
+
+### Node Registry
+- **Triggers**:
+  - `Scan Completed` — fires when a browser crawl finishes.
+  - `Scheduled` — triggers based on a cron schedule definition.
+  - `Manual` — fires via manual run execution.
+  - `Page Crawled` — triggers per page crawled in the browser.
+  - `Intercept Request` — fires on request interception breakpoints.
+  - `WebSocket Message` — triggers on live WebSocket traffic frames.
+  - `Port Scan Result` — fires on open port detection.
+  - `Live Traffic Captured` — triggers on new proxy requests.
+- **Conditions**: Status Code, URL Contains, Body Contains, Header Exists, Severity, AI Confidence, HTTP Method, Content-Type, Response Size, Crawl Status, Grep Match, Port Open.
+- **Actions**: Send to Repeater, AI Analyze, Create Finding, Add to Report, Send Webhook, Notification, Run Script (Shell), Start/Stop Crawl, Send to Intercept, Start Invoker, Port Scan, Encode/Decode, Hash Data, Export JSON, Create/Add Document, Connect CDP.
+
+### Workspace Controls
+- **Canvas Grid**: Drag, drop, link, and delete nodes and connection paths.
+- **Execution Log**: Real-time console feedback on running workflows.
+- **Templates**: Initialize canvas layout from saved security presets.
+
+---
+
+## 5. Browser Automation
 
 **Path:** `src/pages/browser/`
 
-4-panel resizable layout: Crawl Tree | Page Detail | AI Insights | Action Log
+BFS-based web crawler with integrated AI assessment capabilities.
 
-### Setup & Configuration
-- Target URL input; strategy (BFS); max depth; max pages; same-domain toggle; exclude paths; request delay; timeout
-- AI insights toggle; network settle time; capture screenshots; capture rendered HTML; headless toggle
-- Save config
-
-### Crawl Controls
-- Start (Headless) / Start Visible dropdown; Pause; Resume; Stop
-- Safety alert (dismissable) warning about unauthorized scanning
-- Proxy status check: shows alert if proxy not connected
-
-### Crawl Tree Panel
-- Hierarchical tree of crawled pages with status markers (queued, current, visited, error, blocked)
-
-### AI Insights Panel
-- AI-generated findings with severity levels: info, low, medium, high, critical
-- Insight types: authentication, login-form, upload-form, admin-route, hidden-route, and more
-
-### Action Log Panel
-- Chronological log with types: session, navigation, extraction, ai, human, policy, error, queue
-- Clearable; searchable globally across pages, logs, and insights
-
-### Data Operations
-- Session statistics overview; JSON export via `downloadJson`
-- Real-time Tauri event streaming for all crawl events
+### Features
+- **Crawling Configuration**: Target URL input, max depth/pages, delays, exclusion scopes, and headless/visible browser options.
+- **Crawl Tree Panel**: Visual tree tracking discovered pages and crawl state (queued, current, visited, error, blocked).
+- **AI Insights**: Categorized security findings (Auth, hidden routes, forms) with severity labels (critical, high, medium, low, info).
+- **Action Log**: Detailed execution events queue.
 
 ---
 
-## 5. Documents
-
-**Path:** `src/pages/documents/`
-
-Tabbed layout with toolbar + workspace (explorer sidebar + editor pane)
-
-### Document Templates
-- 4 templates: Blank, Developer, QA, Security Researcher
-- Each has predefined sections (scope, targetsDiscovered, dnsData, etc.) plus custom sections
-
-### Tab Management
-- Create, rename, close documents; add new document via template dialog
-
-### Toolbar
-- Document title editing; markdown mode toggle (edit/preview); export PDF; new document
-
-### Workspace
-- **Explorer**: file tree with API folder, custom sections, built-in sections
-- **API Entries**: saved API request/response entries with method, URL, host, headers, body, status; add/delete/edit; fetch API response
-- **Custom Sections**: create, rename, reorder, remove
-- **Document Editor**: Milkdown rich markdown editor + markdown preview
-
-### Built-in Sections
-scope, targetsDiscovered, dnsData, hostsAndServices, webObservations, endpoints, authenticationDetails, usersAndOrgInfo, potentialVulnerabilities, evidence
-
----
-
-## 6. Inspector
-
-**Path:** `src/pages/inspector/`
-
-3-panel resizable layout: Pages Sidebar | Console/Network/Storage | Detail Panel
-
-### Connection Management
-- Start Listening (connect CDP), Stop (disconnect), Reset browser
-- Connection status indicator (green dot)
-
-### Pages Sidebar
-- List of browser tab pages
-
-### Console Panel
-- Log entries with level filters: All, Log, Info, Warn, Error, Page Error
-- Color-coded log levels
-
-### Network Panel
-- List of network requests: method, URL, status, resource type, size, time
-
-### Storage Panel
-- Browser cookies and localStorage entries
-
-### Detail Panel
-- Full detail of selected console log or network entry
-
-### Export
-- Export console logs and network data
-
----
-
-## 7. Intercept
+## 6. Intercept
 
 **Path:** `src/pages/intercept/`
 
-2-panel resizable layout: Request Panel | Intercept Queue
+A request and response interception proxy with real-time modification.
 
-### Tab Management
-- Create tabs, rename, close, close tabs to left/right
-- Each tab has its own capture hosts scope
-
-### Request Panel
-- Intercept toggle switch (enable/disable)
-- Monaco-based raw request editor (editable when a request is selected)
-- Toggle between "Raw Request" and "Raw Response" views
-
-### Intercept Queue
-- List of paused requests with method badge, URL, timestamp, client/server addresses
-- **Actions**: FORWARD (selected), Refresh
-- **Context menu per request**: Intercept Response, Forward (this item), Drop, Don't Capture (adds host to exclusion)
-- Stats: request count and response count
-
-### Bypass Panel
-- Manage bypass patterns (glob/host patterns to skip interception)
-
-### Proxy Status
-- Alert to start proxy if disconnected
+### Features
+- **State Control**: Global intercept toggle switch.
+- **Monaco Editor**: View and live-edit raw HTTP requests/responses before forwarding.
+- **Intercept Queue**: List of pending streams waiting for action (Forward/Drop).
+- **Bypass Filters**: Scope exclusion rules using glob matches.
 
 ---
 
-## 8. Invoker
+## 7. Invoker
 
 **Path:** `src/pages/invoker/`
 
-2-panel resizable layout: Config Panel | Results Panel
+A high-speed security fuzzer and attack engine.
 
-### Attack Configuration
-- **Request Tab**: Monaco raw HTTP request editor; payload position marking with `§...§`
-- **Attack Tab**: attack mode (Sniper); concurrency; delay (ms); retries; grep match keywords; grep extract regex; session handling
-- **Payloads Tab**: payload type (SimpleList, RuntimeFile, NumberRange); file loading; number range config; processing pipeline (UrlEncode, UrlDecode, Base64Encode, Base64Decode, Md5Hash, Sha1Hash, Sha256Hash)
-
-### Controls
-- Start button with validation (URL required, positions marked, payloads loaded)
-- Stop button with running indicator
-- Progress badge (current/total); visual progress bar
-
-### Results Panel
-- Filterable table: payload values, status, response length, response time, error, comment, grep match
-- Click row to open detail drawer with full request/response (raw and rendered views)
-
-### Payload Management
-- Load from file (.txt, .lst, .wordlist) via Tauri file dialog
-- Dedicated payload dialog for managing lists
+### Features
+- **Monaco Request Editor**: Define injection points in raw requests using `§payload§` markers.
+- **Attack Setup**: Sniper mode, concurrency, delay intervals, grepping matches, and regex extractions.
+- **Payload Sources**: Simple Lists, Runtime Files (wordlists), and Number Ranges.
+- **Processing Pipeline**: Chain transformations (UrlEncode, Base64Encode, SHA-256 Hash, etc.).
+- **Attack Panel**: Visual progress status and a filterable grid showing fuzzed request details.
 
 ---
 
-## 10. Live Traffic
-
-**Path:** `src/pages/live-traffic/`
-
-Tabbed layout with target-scoped tabs + filter bar + history/websocket view toggle
-
-### Target Tabs
-- "All History" tab + per-target tabs; scope-based filtering
-- Context menu: "Send scope to Documents"
-
-### Mode Toggle
-- Switch between HTTP History and WebSocket History
-
-### HTTP History View
-- **Traffic Table**: paginated list of HTTP requests (method, URL, status, size, content type, timestamp); sortable; column visibility; context menu per row (copy URL, copy as cURL, delete, add to intercept, send to repeater, etc.)
-- **Log Entry Detail**: Burp-style request/response inspector with raw, headers, body tabs; JSON detail drawer
-- **Filters**: search input; method toggles (GET, POST, PUT, etc.); status code toggles (2xx, 3xx, 4xx, 5xx); target selector dialog; pause/resume stream; refresh; clear history
-
-### WebSocket History View
-- **Connections Table**: URL, state, message count, last activity
-- **WebSocket Entry View**: connection detail with handshake info + message list; real-time message streaming
-
-### Streaming
-Real-time event listening via Tauri `proxy-record` and `websocket-connection` events with debounced refresh
-
----
-
-## 12. Repeater
+## 8. Repeater
 
 **Path:** `src/pages/repeater/`
 
-2-panel resizable layout: Request Panel | Response Panel (HTTP mode)
+An interactive playground to manually craft, modify, and replay network requests.
 
-### Tab Management
-Create, rename, close tabs; close tabs to left/right
-
-### HTTP Mode
-- **Request Panel**: Monaco-based raw HTTP request editor; method/URL display; Send button with loading state
-- **Response Panel**: status code/text, response time, final URL; rendered response with tabs (raw, headers, body)
-
-### WebSocket Mode
-- WebSocket handshake request editor; connect/disconnect
-- Send messages; message log with direction indicators
-
-### Send Flow
-Parses raw request, sends via backend, displays response (status, headers, body, time, final URL)
+### Features
+- **HTTP Mode**: Edit raw HTTP requests, send, and examine status codes, response headers, and rendered body content.
+- **WebSocket Mode**: Craft handshake HTTP requests, connect, and interactively send text or binary frames with connection logging.
+- **Scripting Engine**: Supports sandboxed Javascript Pre-Request and Test/Assertion scripts for dynamic request signing, automated header injection, context variable chaining, and assertions. See [repeater-scripts.md](file:///Users/arham/Desktop/project/apprecon/docs/repeater-scripts.md) for full guide.
 
 ---
 
-## 14. Tools
+## 9. Documents
 
-**Path:** `src/pages/tools/`
+**Path:** `src/pages/documents/`
 
-Tabbed layout with 5 tool tabs
+Markdown document and report builder for logging security findings.
 
-### Encoder / Decoder
-- Encode/decode mode toggle; codec type selection (URL, Base64, Hex)
-- Input textarea; live output with error display; copy output; clear; swap input/output
+### Features
+- **Templates**: Blank, Developer, QA, and Security Researcher presets.
+- **Workspace Explorer**: Browse sections and manage API entries (saved request/response evidence databases).
+- **Milkdown Editor**: A rich WYSIWYG markdown editor with full preview toggles and PDF export capabilities.
 
-### Hash
-- 11 hash algorithms: MD5, SHA-1, SHA-224, SHA-256, SHA-384, SHA-512, SHA3-224, SHA3-256, SHA3-384, SHA3-512, RIPEMD-160
-- Input textarea; live hash output; copy hash; clear
+---
 
-### Comparer
-- Two text inputs (A and B); diff modes: Lines, Words, Chars
-- Side-by-side diff view with added/removed highlighting (green/red)
-- Swap inputs; copy diff as unified text; clear
+## 10. Encoder
 
-### Port Scanner
-- Target input; port presets (Quick, Web, Top 100, Full 1-65535, Custom)
-- Configurable timeout, concurrency; banner grabbing toggle
-- Start/Stop scan; results table (host, port, state, service, banner, response time)
-- Copy results; export to CSV/JSON; real-time progress via Tauri events
+**Path:** `src/pages/encoder/`
 
-### Script Analyzer
-- Paste shell script; analyze button
-- Results: meta (shebang, total lines, functions, variables, pipes, heredocs)
-- Insights categorized by severity (critical, high, medium, low, info) across 22 categories (network, filesystem, privilege-escalation, code-execution, hardcoded-secret, unsafe-pattern, etc.)
-- Command usage statistics; variable analysis; URL extraction
-- Expandable insight cards with evidence and line numbers
+A lightweight text encoder and decoder tool.
+
+### Features
+- **Codecs**: URL, Base64, and Hex encoding/decoding.
+- **Controls**: Live conversions on keypress, swap input/output, clear, and clipboard copy.
+
+---
+
+## 11. Hash
+
+**Path:** `src/pages/hash/`
+
+A client-side cryptographic hashing utility.
+
+### Features
+- **Algorithms**: MD5, SHA-1, SHA-224, SHA-256, SHA-384, SHA-512, SHA3-224, SHA3-256, SHA3-384, SHA3-512, and RIPEMD-160.
+- **Controls**: Live hashing updates, clear, and clipboard copy.
+
+---
+
+## 12. Comparer
+
+**Path:** `src/pages/comparer/`
+
+A visual diff editor to compare raw responses, headers, or general text.
+
+### Features
+- **Monaco Diff Engine**: Side-by-side highlighting showing added (green) and removed (red) diff blocks.
+- **Controls**: Clipboard imports and copy-to-clipboard actions.
+
+---
+
+## 13. Port Scanner
+
+**Path:** `src/pages/port-scanner/`
+
+A multi-threaded TCP port scanner powered by the Rust backend.
+
+### Features
+- **Scan Settings**: Target hostname/CIDR inputs, timeout intervals, thread concurrency, and service banner grabbing.
+- **Presets**: Quick, Web, Top 100, Full (1-65535), and Custom ranges.
+- **Results & Exports**: Renders list of open ports, services, response latencies, and service banners. Exportable to JSON or CSV.
+
+---
+
+## 14. JWT
+
+**Path:** `src/pages/jwt/`
+
+A decoder and generator tool for JSON Web Tokens.
+
+### Features
+- **Decode**: Deconstructs JWT strings into header, payload, and signatures, and flags security issues (e.g. `none` algorithm, weak signatures).
+- **Generate**: Customize and sign new JWT tokens using signature algorithms like HS256, RS256, etc.
+
+---
+
+## 15. XSS Generator
+
+**Path:** `src/pages/xss-generator/`
+
+An interactive XSS payload generator.
+
+### Features
+- **Payload Library**: Preconfigured database of payloads grouped by tags and execution vectors (e.g. SVG, Image, Script).
+- **Payload Builder**: Configure context wrappers (HTML, HTML Attribute, JavaScript block) and chain encoders (URL encode, hex, html entities, base64).
+
+---
+
+## 16. SQL Injection
+
+**Path:** `src/pages/sql-injection/`
+
+An injection scanner for detecting SQL vulnerabilities.
+
+### Features
+- **Configuration**: HTTP URL, target parameters, risk levels, and injection techniques (Boolean-based blind, Error-based, Union query, Stacked queries, Time-based blind).
+- **Results**: Live tracking of vulnerable points and a structural view for database schemas/extraction.
+
+---
+
+## 17. Debugger
+
+**Path:** `src/pages/debugger/`
+
+A timeline execution debugger for proxy operations and workflows.
+
+### Features
+- **Event Timeline**: A chronological list of intercepted events and internal workflow stages.
+- **Payload Details**: Inspector showing event JSON contents, parameters, and results.
+
+---
+
+## 18. Regression
+
+**Path:** `src/pages/regression/`
+
+Visual test suite editor and regression runner for browser automation.
+
+### Features
+- **Step Kinds**: navigate, click, fill, wait, screenshot, assert-visible, assert-text, assert-url, and ai-verify.
+- **Suite Editor**: Visual interface to construct and arrange test actions.
+- **Test Runner**: Stream execution logs, step durations, screenshot attachments, and overall test results.
+
+---
+
+## 19. Listener
+
+**Path:** `src/pages/listener/`
+
+An out-of-band collaborator server listener (similar to Burp Collaborator).
+
+### Features
+- **Payload Domain**: Generate random lookup domains pointing to the listener server.
+- **Interaction Log**: Capture incoming DNS, HTTP, and SMTP requests with full metadata dumps (headers, envelope logs, DNS types).
+
+---
+
+## 20. Settings
+
+**Path:** `src/pages/settings/`
+
+Application configuration and setup panel.
+
+### Features
+- **Root CA**: Certificate authority details, certificate regeneration, and trust installation status.
+- **Installation Guides**: Integration instructions for macOS, Windows, Chrome, Safari, Firefox, iOS, and Android.
+- **AI Settings**: API keys and models config (e.g., DeepSeek flash/pro models).
+
+---
+
+## Shared / Helper Directories
+
+These directories exist under `src/pages/` but do not map directly to application sidebar navigation items:
+- **`live-traffic`** (`src/pages/live-traffic/`) — core backend API integrations, hooks, and query stores shared by HTTP History and WebSocket History.
+- **`inspector`** (`src/pages/inspector/`) — API hooks and CDP interaction constants.
 
 ---
 
 ## Cross-Cutting Patterns
 
 ### State Management
-Zustand stores used throughout: `useAutomationStore`, `useBrowserAutomationStore`, `useDebuggerStore`, `useInspectorStore`, `useInterceptStore` (with `persist` middleware to localStorage), `useInvokerStore`, `useListenerStore`, `usePacketCaptureStore`, `useRepeaterStore`, `useHistoryQueryStore`, `useDocumentsStore`, `useAppStore`, `useTargetStore`, `useToolsStore`
+Zustand stores are utilized for centralized state management throughout features. These include:
+- `app.ts` — main window layouts.
+- `app-settings-store.ts` — proxy config, bypass list, theme settings.
+- `browser-automation.ts` — crawler configuration and active states.
+- `collections.ts` — target mappings, scopes, and workspaces.
+- `documents.ts` — Markdown notes database.
+- `debugger.ts` — timeline debugging records.
+- `invoker.ts` — fuzzer attacks configuration.
+- `listener.ts` — collaborator server parameters.
+- `regression.ts` — regression test cases registry.
+- `repeater.ts` — repeater HTTP and WS requests.
 
 ### Tab Management
-`useTabState` hook provides reusable tab creation, renaming, closing, and close-left/close-right across multiple pages
+The `useTabState` hook provides a standardized mechanism for creating, renaming, reordering, and closing multi-tab layouts across Repeater, Intercept, and HTTP History.
 
 ### Tauri Backend Integration
-- `invoke` from `@tauri-apps/api/core` for backend commands
-- `listen` from `@tauri-apps/api/event` for real-time streaming (proxy records, WebSocket messages, crawl events, packet capture, port scanning, CDP events)
-- `@tauri-apps/plugin-dialog` for file dialogs; `@tauri-apps/plugin-fs` for file reads
+- **Tauri Commands**: Communicates with the Rust backend via `invoke` commands from `@tauri-apps/api/core`.
+- **Event Listeners**: Listens to streaming channels using `listen` from `@tauri-apps/api/event` for real-time proxy traffic, socket messages, crawler events, and scanning status updates.

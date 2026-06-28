@@ -7,8 +7,11 @@ import { startPageCrawledWatcher, stopPageCrawledWatcher } from "@/triggers/brow
 const OverviewPage = React.lazy(() =>
   import("@/pages/overview").then((m) => ({ default: m.OverviewPage }))
 );
-const LiveTrafficPage = React.lazy(() =>
-  import("@/pages/live-traffic").then((m) => ({ default: m.LiveTrafficPage }))
+const HttpHistoryPage = React.lazy(() =>
+  import("@/pages/http-history").then((m) => ({ default: m.HttpHistoryPage }))
+);
+const WebSocketHistoryPage = React.lazy(() =>
+  import("@/pages/websocket-history").then((m) => ({ default: m.WebSocketHistoryPage }))
 );
 const InvokerPage = React.lazy(() =>
   import("@/pages/invoker").then((m) => ({ default: m.InvokerPage }))
@@ -86,7 +89,8 @@ function AppRoutes() {
       <React.Suspense fallback={<div className="h-full flex items-center justify-center text-muted-foreground text-sm">Loading…</div>}>
         <Routes>
           <Route path="/" element={<OverviewPage />} />
-          <Route path="/live-traffic" element={<LiveTrafficPage />} />
+          <Route path="/http-history" element={<HttpHistoryPage />} />
+          <Route path="/websocket-history" element={<WebSocketHistoryPage />} />
           <Route path="/intercept" element={<InterceptPage />} />
           <Route path="/repeater" element={<RepeaterPage />} />
           <Route path="/invoker" element={<InvokerPage />} />

@@ -56,6 +56,8 @@ pnpm tauri
 │       ├── port-scanner/ # Port scanning and banner grabbing
 │       └── ai/           # AI integration
 └── docs/
+    ├── capabilities.md        # Feature capabilities index and path mapping
+    ├── repeater-scripts.md    # Sandbox Javascript request scripting engine guide
     ├── privacy-policy.md      # Privacy policy
     └── security-audit.md      # Security audit notes
 ```
@@ -74,5 +76,7 @@ pnpm tauri
 
 ## Documentation
 
+- [Capabilities](./docs/capabilities.md) - Feature capabilities index and directory mapping
+- [Repeater Scripting Engine](./docs/repeater-scripts.md) - Pre-request and Test/Assertion scripts guide
 - [Privacy Policy](./docs/privacy-policy.md) - Data handling and privacy details
 - [Security Audit](./docs/security-audit.md) - Security review notes

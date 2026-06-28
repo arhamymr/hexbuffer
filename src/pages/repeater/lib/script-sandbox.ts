@@ -67,8 +67,8 @@ export function runScriptSandbox(
     };
   };
 
-  // Implement pm helper object
-  const pm = {
+  // Implement script helper object
+  const script = {
     environment: {
       get: (key: string) => updatedVariables[key] || '',
       set: (key: string, value: string) => {
@@ -113,7 +113,7 @@ export function runScriptSandbox(
 
   try {
     // Create sandboxed runner
-    const sandboxFn = new Function('pm', 'expect', 'console', `
+    const sandboxFn = new Function('pm', 'script', 'expect', 'console', `
       with (pm) {
         ${code}
       }
@@ -121,13 +121,13 @@ export function runScriptSandbox(
     
     // Stub console inside sandbox to direct to our custom logs
     const mockConsole = {
-      log: pm.log,
-      warn: pm.log,
-      error: pm.log,
-      info: pm.log
+      log: script.log,
+      warn: script.log,
+      error: script.log,
+      info: script.log
     };
 
-    sandboxFn(pm, expect, mockConsole);
+    sandboxFn(script, script, expect, mockConsole);
   } catch (err: any) {
     testResults.push({
       name: 'Script execution error',

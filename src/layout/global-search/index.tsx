@@ -1,7 +1,8 @@
 import { useLocation } from 'react-router-dom';
 
 import { OverviewSearch } from './overview-search';
-import { LiveTrafficSearch } from './live-traffic-search';
+import { HttpHistorySearch } from './http-history-search';
+import { WebSocketHistorySearch } from './websocket-history-search';
 import { BrowserAutomationSearch } from './browser-automation-search';
 import { InvokerSearch } from './invoker-search';
 import { DefaultSearch } from './default-search';
@@ -20,7 +21,8 @@ export function GlobalSearch() {
   if (HIDDEN_PATHS.some((p) => pathname.startsWith(p))) return null;
 
   if (pathname === '/') return <OverviewSearch />;
-  if (pathname === '/live-traffic') return <LiveTrafficSearch />;
+  if (pathname === '/http-history') return <HttpHistorySearch />;
+  if (pathname === '/websocket-history') return <WebSocketHistorySearch />;
   if (pathname.startsWith('/browser-automation')) return <BrowserAutomationSearch />;
   if (pathname.startsWith('/invoker')) return <InvokerSearch />;
 

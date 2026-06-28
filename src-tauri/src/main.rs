@@ -142,7 +142,8 @@ fn main() {
                 let icon = app.default_window_icon().cloned();
 
                 let assistant_i = MenuItem::with_id(app, "nav:/", "Assistant", true, None::<&str>)?;
-                let live_traffic_i = MenuItem::with_id(app, "nav:/live-traffic", "Live Traffic", true, None::<&str>)?;
+                let http_history_i = MenuItem::with_id(app, "nav:/http-history", "HTTP History", true, None::<&str>)?;
+                let websocket_history_i = MenuItem::with_id(app, "nav:/websocket-history", "WebSocket History", true, None::<&str>)?;
                 let browser_i = MenuItem::with_id(app, "nav:/browser-automation", "Browser", true, None::<&str>)?;
                 let intercept_i = MenuItem::with_id(app, "nav:/intercept", "Intercept", true, None::<&str>)?;
                 let invoker_i = MenuItem::with_id(app, "nav:/invoker", "Invoker", true, None::<&str>)?;
@@ -154,7 +155,7 @@ fn main() {
                     app,
                     "Features",
                     true,
-                    &[&assistant_i, &live_traffic_i, &browser_i, &intercept_i, &invoker_i, &repeater_i, &code_audit_i, &documents_i, &tools_i],
+                    &[&assistant_i, &http_history_i, &websocket_history_i, &browser_i, &intercept_i, &invoker_i, &repeater_i, &code_audit_i, &documents_i, &tools_i],
                 )?;
 
                 let settings_i = MenuItem::with_id(app, "nav:/settings", "Settings", true, None::<&str>)?;

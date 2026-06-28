@@ -20,7 +20,8 @@ export interface NavItem {
 
 export const allNavItems: NavItem[] = [
   { label: 'Overview', icon: Home, href: '/' },
-  { label: 'Live Traffic', icon: ArrowUpDown, iconImage: iconTerminal, href: '/live-traffic' },
+  { label: 'HTTP History', icon: ArrowUpDown, iconImage: iconTerminal, href: '/http-history' },
+  { label: 'WebSocket History', icon: ArrowUpDown, iconImage: iconTerminal, href: '/websocket-history' },
   { label: 'Workflow', icon: LoaderPinwheel, iconImage: iconWorkflow, href: '/automation', devOnly: true },
   { label: 'Browser', icon: AppWindow, iconImage: iconBrowser, href: '/browser' },
   { label: 'Intercept', icon: PauseCircle, href: '/intercept' },

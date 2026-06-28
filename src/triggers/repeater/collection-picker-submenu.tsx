@@ -1,4 +1,5 @@
-import { FolderHeart, Send, Loader2 } from 'lucide-react';
+import { FolderHeart, Send, Loader2, FolderOpen } from 'lucide-react';
+import React, { useMemo } from 'react';
 import {
   DropdownMenuSub,
   DropdownMenuSubTrigger,
@@ -13,7 +14,8 @@ import {
   ContextMenuItem,
   ContextMenuSeparator,
 } from '@/components/ui/context-menu';
-import { useCollectionPicker } from './use-collection-picker';
+import { useCollectionsStore } from '@/stores/collections';
+import { useRepeaterStore } from '@/stores/repeater';
 
 type MenuVariant = 'dropdown' | 'context';
 
@@ -28,13 +30,46 @@ export function CollectionPickerSubmenu({
   onSelect,
   disabled,
 }: CollectionPickerSubmenuProps) {
-  const { collections, isLoading, isEmpty } = useCollectionPicker();
+  const workspaces = useRepeaterStore((s) => s.workspaces);
+  const stashes = useCollectionsStore((s) => s.stashes);
+  const isHydrated = useCollectionsStore((s) => s.isHydrated);
+
+  // Auto-create workspace if empty after hydration (ponytail: keep it simple and robust)
+  React.useEffect(() => {
+    if (isHydrated && workspaces.length === 0) {
+      useRepeaterStore.getState().createWorkspace();
+    }
+  }, [isHydrated, workspaces.length]);
 
   const Sub = variant === 'dropdown' ? DropdownMenuSub : ContextMenuSub;
   const SubTrigger = variant === 'dropdown' ? DropdownMenuSubTrigger : ContextMenuSubTrigger;
   const SubContent = variant === 'dropdown' ? DropdownMenuSubContent : ContextMenuSubContent;
   const Item = variant === 'dropdown' ? DropdownMenuItem : ContextMenuItem;
-  const Separator = variant === 'dropdown' ? DropdownMenuSeparator : ContextMenuSeparator;
+
+  // ponytail: group collections by parentId (workspaceId) or fallback to first workspace for simplicity
+  const workspaceCollectionsMap = useMemo(() => {
+    const map: Record<string, typeof stashes> = {};
+    for (const ws of workspaces) {
+      map[ws.id] = [];
+    }
+    const defaultWorkspaceId = workspaces[0]?.id;
+    for (const stash of stashes) {
+      const parentId = stash.parentId || defaultWorkspaceId;
+      if (parentId && map[parentId]) {
+        map[parentId].push(stash);
+      }
+    }
+    // Sort stashes in each workspace
+    for (const wsId in map) {
+      map[wsId].sort((a, b) => a.sortOrder - b.sortOrder);
+    }
+    return map;
+  }, [workspaces, stashes]);
+
+  const handleCreateAndSelect = async (workspaceId: string) => {
+    const stashId = await useCollectionsStore.getState().createStash('new collection', workspaceId);
+    onSelect(stashId);
+  };
 
   return (
     <Sub>
@@ -43,27 +78,51 @@ export function CollectionPickerSubmenu({
         Send to Repeater
       </SubTrigger>
       <SubContent>
-        {isLoading ? (
+        {!isHydrated ? (
           <Item className="text-xs py-1 px-1.5" disabled>
             <Loader2 className="mr-1.5 size-3 animate-spin" />
-            Loading collections...
+            Loading workspaces...
           </Item>
-        ) : isEmpty ? (
+        ) : workspaces.length === 0 ? (
           <Item className="text-xs py-1 px-1.5" disabled>
-            <FolderHeart className="mr-1.5 size-3" />
-            No collections
+            No workspaces
           </Item>
         ) : (
-          collections.map((node) => (
-            <Item
-              key={node.stashId}
-              className="text-xs py-1 px-1.5"
-              onClick={() => onSelect(node.stashId)}
-            >
-              <Send className="mr-1.5 size-3" />
-              {node.name}
-            </Item>
-          ))
+          workspaces.map((ws) => {
+            const collections = workspaceCollectionsMap[ws.id] || [];
+            const hasCollections = collections.length > 0;
+
+            return (
+              <Sub key={ws.id}>
+                <SubTrigger className="text-xs py-1 px-1.5">
+                  <FolderOpen className="mr-1.5 size-3" />
+                  {ws.name}
+                </SubTrigger>
+                <SubContent>
+                  {!hasCollections ? (
+                    <Item
+                      className="text-xs py-1 px-1.5 font-medium text-primary"
+                      onClick={() => handleCreateAndSelect(ws.id)}
+                    >
+                      <FolderHeart className="mr-1.5 size-3" />
+                      new collection
+                    </Item>
+                  ) : (
+                    collections.map((node) => (
+                      <Item
+                        key={node.id}
+                        className="text-xs py-1 px-1.5"
+                        onClick={() => onSelect(node.id)}
+                      >
+                        <Send className="mr-1.5 size-3" />
+                        {node.name}
+                      </Item>
+                    ))
+                  )}
+                </SubContent>
+              </Sub>
+            );
+          })
         )}
       </SubContent>
     </Sub>

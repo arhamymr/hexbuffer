@@ -22,7 +22,8 @@ export const useAppSettingsStore = create<AppSettingsState>()(
       terminalRenderer: 'webgl',
       hiddenNavItems: [],
       pinnedNavItems: [
-        '/live-traffic',
+        '/http-history',
+        '/websocket-history',
         '/intercept',
         '/repeater',
         '/browser',

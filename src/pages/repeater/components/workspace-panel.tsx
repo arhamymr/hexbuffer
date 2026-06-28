@@ -32,11 +32,7 @@ export function WorkspacePanel({ workspaceId }: { workspaceId: string }) {
       {hasEndpoint ? (
         <div className="flex-1 min-w-0 flex flex-col min-h-0">
           {/* Craft Toolbar */}
-          <div className="flex items-center justify-between p-3 border-b shrink-0 bg-muted/10">
-            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              The Forge
-            </span>
-
+          <div className="flex items-center justify-end px-1 border-b shrink-0 bg-muted/10">
             <div className="flex items-center space-x-2">
               <span className="text-xs text-muted-foreground font-semibold">Environment:</span>
               <Select

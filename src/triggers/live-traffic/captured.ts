@@ -371,9 +371,9 @@ async function syncAutomationRuntime(): Promise<void> {
 
 let unlisteners: UnlistenFn[] = [];
 let unsubscribeAutomationSync: (() => void) | null = null;
-let syncTimer: ReturnType<typeof window.setTimeout> | null = null;
+let syncTimer: any = null;
 let lastSyncSignature = '';
-let hostInsightFlushTimer: ReturnType<typeof window.setTimeout> | null = null;
+let hostInsightFlushTimer: any = null;
 let queuedHostInsightsBuffer: LiveTrafficHostInsight[] = [];
 let capturedHostInsightsBuffer: LiveTrafficHostInsight[] = [];
 let hostInsightRemoveBuffer: string[] = [];

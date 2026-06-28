@@ -10,8 +10,6 @@ export {
   stopLiveTrafficWatcher,
   openTargetSelector,
   closeTargetSelector,
-  toggleStreamPause,
-  toggleHistoryMode,
 } from './live-traffic';
 
 export type {

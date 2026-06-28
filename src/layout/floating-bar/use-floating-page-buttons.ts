@@ -1,9 +1,10 @@
 import * as React from 'react';
 import { Target, Play, Pause, ArrowLeftRight, ShieldCheck, ShieldOff, SendHorizonal, Square, RotateCcw, Loader2 } from 'lucide-react';
-import { useHistoryQueryStore } from '@/pages/live-traffic/state/history-query-store';
+import { useHttpHistoryQueryStore } from '@/pages/http-history/state/history-query-store';
+import { useWebSocketHistoryQueryStore } from '@/pages/websocket-history/state/query-store';
 import { useInterceptStore } from '@/pages/intercept/state/intercept-store';
 import { useBrowserAutomationStore } from '@/stores/browser-automation';
-import { openTargetSelector, toggleStreamPause, toggleHistoryMode } from '@/triggers';
+import { openTargetSelector } from '@/triggers';
 import { toggleInterceptEnabled, forwardPaused } from '@/triggers';
 import { toggleBrowserCrawl, stopBrowserCrawl, startBrowserCrawl } from '@/triggers';
 import { startInvokerUiAttack, stopInvokerUiAttack } from '@/triggers';
@@ -23,7 +24,8 @@ export interface PageButton {
 }
 
 export function useFloatingPageButtons(pathname: string): PageButton[] {
-  const isPaused = useHistoryQueryStore((s) => s.isStreamManuallyPaused);
+  const isHttpPaused = useHttpHistoryQueryStore((s) => s.isStreamManuallyPaused);
+  const isWebSocketPaused = useWebSocketHistoryQueryStore((s) => s.isStreamManuallyPaused);
   const interceptStatus = useInterceptStore((s) => s.status);
   const interceptRequests = useInterceptStore((s) => s.requests);
   const interceptActiveTabId = useInterceptStore((s) => s.activeTabId);
@@ -35,23 +37,23 @@ export function useFloatingPageButtons(pathname: string): PageButton[] {
   const invokerActiveTabId = useInvokerStore((s) => s.activeTabId);
   const collectionsActiveReq = useCollectionsStore((s) => s.activeRequest);
 
-  const [historyMode, setHistoryMode] = React.useState<'http' | 'websocket'>(() =>
-    localStorage.getItem('history-mode') === 'websocket' ? 'websocket' : 'http'
-  );
+  const toggleHttpPause = React.useCallback(() => {
+    const store = useHttpHistoryQueryStore.getState();
+    const wasPaused = store.isStreamManuallyPaused;
+    store.setStreamManuallyPaused(!wasPaused);
+    if (wasPaused) store.triggerRefresh();
+  }, []);
 
-  // Listen for external history mode changes
-  React.useEffect(() => {
-    const handler = (e: Event) => {
-      const detail = (e as CustomEvent).detail as 'http' | 'websocket';
-      setHistoryMode(detail);
-    };
-    window.addEventListener('history-mode-change', handler);
-    return () => window.removeEventListener('history-mode-change', handler);
+  const toggleWebSocketPause = React.useCallback(() => {
+    const store = useWebSocketHistoryQueryStore.getState();
+    const wasPaused = store.isStreamManuallyPaused;
+    store.setStreamManuallyPaused(!wasPaused);
+    if (wasPaused) store.triggerRefresh();
   }, []);
 
   return React.useMemo<PageButton[]>(() => {
 
-    if (pathname === '/live-traffic') {
+    if (pathname === '/http-history') {
       return [
         {
           key: 'target-selector',
@@ -63,20 +65,33 @@ export function useFloatingPageButtons(pathname: string): PageButton[] {
         },
         {
           key: 'pause-resume',
-          icon: isPaused ? Play : Pause,
-          label: isPaused ? 'Resume' : 'Pause',
+          icon: isHttpPaused ? Play : Pause,
+          label: isHttpPaused ? 'Resume' : 'Pause',
           showLabel: true,
-          isActive: isPaused,
-          onClick: toggleStreamPause,
+          isActive: isHttpPaused,
+          onClick: toggleHttpPause,
+          visible: true,
+        },
+      ];
+    }
+
+    if (pathname === '/websocket-history') {
+      return [
+        {
+          key: 'target-selector',
+          icon: Target,
+          label: 'Manage Target',
+          isActive: false,
+          onClick: openTargetSelector,
           visible: true,
         },
         {
-          key: 'history-mode',
-          icon: ArrowLeftRight,
+          key: 'pause-resume',
+          icon: isWebSocketPaused ? Play : Pause,
+          label: isWebSocketPaused ? 'Resume' : 'Pause',
           showLabel: true,
-          label: historyMode === 'http' ? 'HTTP' : 'WebSocket',
-          isActive: false,
-          onClick: toggleHistoryMode,
+          isActive: isWebSocketPaused,
+          onClick: toggleWebSocketPause,
           visible: true,
         },
       ];
@@ -200,6 +215,5 @@ export function useFloatingPageButtons(pathname: string): PageButton[] {
     }
 
     return [];
-
-  }, [pathname, isPaused, historyMode, interceptStatus, interceptRequests, interceptActiveTabId, interceptSelectedId, interceptIsBusy, browserTabs, browserActiveTabId, invokerTabs, invokerActiveTabId, collectionsActiveReq]);
+  }, [pathname, isHttpPaused, isWebSocketPaused, interceptStatus, interceptRequests, interceptActiveTabId, interceptSelectedId, interceptIsBusy, browserTabs, browserActiveTabId, invokerTabs, invokerActiveTabId, collectionsActiveReq]);
 }

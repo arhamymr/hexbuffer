@@ -148,7 +148,7 @@ export const LogEntryContextMenu = memo(function LogEntryContextMenu({
           <RobotIcon className="mr-2 size-4" /> Open in Prompt Injection
         </ContextMenuItem> */}
         <ContextMenuItem onClick={handleSaveToDocuments} className='text-xs py-1 px-1.5'>
-          <FilePlusIcon className="mr-1.5 size-3" /> FloppyDiskIcon to Documents
+          <FilePlusIcon className="mr-1.5 size-3" /> Save to Documents
         </ContextMenuItem>
         <ContextMenuSeparator />
         <ContextMenuSub>

@@ -159,7 +159,7 @@ const CallActionCell = memo(function CallActionCell({ call, onNewGroup }: { call
           <PaperPlaneTiltIcon className="mr-2 size-3" /> Send to Automate Browser
         </DropdownMenuItem>
         <DropdownMenuItem onClick={handleSaveToDocuments} className="text-xs">
-          <FilePlusIcon className="mr-2 size-4" /> FloppyDiskIcon to Documents
+          <FilePlusIcon className="mr-2 size-4" /> Save to Documents
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuSub>

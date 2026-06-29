@@ -127,9 +127,8 @@ export function ContextsDialog({ open, onOpenChange }: ContextsDialogProps) {
                 {store.contexts.map((ctx) => (
                   <div
                     key={ctx.id}
-                    className={`flex items-center justify-between p-2 rounded-md text-sm cursor-pointer group hover:bg-muted ${
-                      editingContext?.id === ctx.id ? 'bg-secondary font-medium' : ''
-                    }`}
+                    className={`flex items-center justify-between p-2 rounded-md text-sm cursor-pointer group hover:bg-muted ${editingContext?.id === ctx.id ? 'bg-secondary font-medium' : ''
+                      }`}
                     onClick={() => handleStartEdit(ctx)}
                   >
                     <span className="truncate text-sm flex-1 pr-2">{ctx.name}</span>
@@ -203,7 +202,7 @@ export function ContextsDialog({ open, onOpenChange }: ContextsDialogProps) {
                       <PlusIcon className="h-3.5 w-3.5 mr-1" /> Add Row
                     </Button>
                   </div>
-                 
+
                   <ScrollArea className="flex-1 border rounded-md p-2">
                     <div className="space-y-2">
                       {variables.map((item, index) => (
@@ -237,7 +236,7 @@ export function ContextsDialog({ open, onOpenChange }: ContextsDialogProps) {
                       )}
                     </div>
                   </ScrollArea>
-                   <p className="text-[11px] text-muted-foreground/70 leading-relaxed">
+                  <p className="text-[11px] text-muted-foreground/70 leading-relaxed">
                     Reference variables in request URLs or headers using{" "}
                     <code className="font-mono bg-muted px-1 rounded text-[11px]">{"{{variable_key}}"}</code>{" "}
                     syntax.
@@ -253,7 +252,7 @@ export function ContextsDialog({ open, onOpenChange }: ContextsDialogProps) {
                     Cancel
                   </Button>
                   <Button onClick={handleSave} disabled={!name.trim()}>
-                    FloppyDiskIcon Environment
+                    Save Environment
                   </Button>
                 </DialogFooter>
               </div>

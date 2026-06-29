@@ -37,7 +37,7 @@ export function AppLauncher() {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && (e.key === ' ' || e.code === 'Space')) {
+      if ((e.metaKey || e.ctrlKey) && e.key?.toLowerCase() === 'p') {
         e.preventDefault();
         setOpen((prev) => !prev);
       }
@@ -68,7 +68,7 @@ export function AppLauncher() {
         <TooltipContent side="top" sideOffset={12} className="flex items-center gap-1.5">
           <span>All Apps</span>
           <Kbd className="text-[10px]">
-            {isMac ? '⌘Space' : 'Ctrl+Space'}
+            {isMac ? '⌘P' : 'Ctrl+P'}
           </Kbd>
         </TooltipContent>
       </Tooltip>

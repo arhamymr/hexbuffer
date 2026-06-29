@@ -89,7 +89,7 @@ export function ListenerPayloads({
             </DialogHeader>
             <div className="space-y-3">
               <div>
-                <Label className="text-xs">HardDrivesIcon</Label>
+                <Label className="text-xs">Server</Label>
                 <Select value={serverId} onValueChange={setServerId}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select server" />
@@ -185,7 +185,7 @@ export function ListenerPayloads({
                           onClick={() => navigator.clipboard.writeText(p.payloadUrl)}
                         >
                           <CopyIcon className="mr-2 h-3 w-3" />
-                          CopyIcon URL
+                          Copy URL
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => onArchivePayload(p.id)}>
                           <ArchiveIcon className="mr-2 h-3 w-3" />

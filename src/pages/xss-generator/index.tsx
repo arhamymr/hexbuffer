@@ -33,7 +33,7 @@ export function XssGeneratorPage() {
             className="h-7 text-xs gap-1 px-2"
           >
             <CopyIcon className="h-3 w-3" />
-            CopyIcon Output
+            Copy Output
           </Button>
           <Button
             variant="ghost"

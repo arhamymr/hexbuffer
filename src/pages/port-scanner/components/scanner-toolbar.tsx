@@ -168,7 +168,7 @@ export function ScannerToolbar({
             className="h-6 text-[11px] gap-1 px-2"
           >
             <CopyIcon className="h-3.5 w-3.5" />
-            CopyIcon Ports
+            Copy Ports
           </Button>
           <Button
             variant="outline"

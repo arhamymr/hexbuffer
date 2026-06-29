@@ -77,10 +77,10 @@ const CallActionCell = memo(function CallActionCell({ call, onNewGroup }: { call
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuItem onClick={handleCopyCurlCommand} className="text-xs">
-          <CopyIcon className="mr-2 size-3" /> CopyIcon as curl command (bash)
+          <CopyIcon className="mr-2 size-3" /> Copy as curl command (bash)
         </DropdownMenuItem>
         <DropdownMenuItem onClick={handleCopyUrl} className="text-xs">
-          <CopyIcon className="mr-2 size-3" /> CopyIcon URL
+          <CopyIcon className="mr-2 size-3" /> Copy URL
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleTogglePin} className="text-xs">

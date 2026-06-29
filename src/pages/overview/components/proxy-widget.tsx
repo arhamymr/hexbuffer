@@ -25,7 +25,7 @@ export function ProxyWidget() {
     <div className="p-2 rounded-md border bg-muted backdrop-blur-md flex flex-col gap-3 select-none">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-1.5">
-          <span className="text-[10px] font-mono font-bold tracking-wider text-muted-foreground uppercase">Proxy HardDrivesIcon</span>
+          <span className="text-[10px] font-mono font-bold tracking-wider text-muted-foreground uppercase">Proxy</span>
         </div>
         {proxyStatus === 'connected' && (
           <span className="relative flex h-1.5 w-1.5">

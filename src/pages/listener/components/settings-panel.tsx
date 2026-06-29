@@ -115,12 +115,12 @@ export function ListenerSettings({
           <DialogTrigger asChild>
             <Button variant="outline" className="h-7 gap-1 text-xs">
               <PlusIcon className="h-3 w-3" />
-              Add HardDrivesIcon
+              Add Server
             </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Add Listener HardDrivesIcon</DialogTitle>
+              <DialogTitle>Add Listener Server</DialogTitle>
             </DialogHeader>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(handleAdd)} className="space-y-3">

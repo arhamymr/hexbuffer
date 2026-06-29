@@ -171,10 +171,10 @@ function ApiRequestRow({
         </ContextMenuItem>
         <ContextMenuSeparator />
         <ContextMenuItem onClick={() => onCopyCurlCommand(entry)} className="text-xs">
-          <CopyIcon className="mr-2 size-3" /> CopyIcon as curl command (bash)
+          <CopyIcon className="mr-2 size-3" /> Copy as curl command (bash)
         </ContextMenuItem>
         <ContextMenuItem onClick={() => onCopyUrl(entry)} className="text-xs">
-          <CopyIcon className="mr-2 size-3" /> CopyIcon URL
+          <CopyIcon className="mr-2 size-3" /> Copy URL
         </ContextMenuItem>
         <ContextMenuSeparator />
         <ContextMenuItem onClick={() => onOpenInInvoker(entry)} className="text-xs">

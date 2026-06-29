@@ -63,10 +63,10 @@ export const LogEntryContextMenu = memo(function LogEntryContextMenu({
       </ContextMenuTrigger>
       <ContextMenuContent className="p-0.5">
         <ContextMenuItem onClick={handleCopyCurlCommand} className='text-xs py-1 px-1.5'>
-          <CopyIcon className="mr-1.5 size-3" /> CopyIcon as curl command (bash)
+          <CopyIcon className="mr-1.5 size-3" /> Copy as curl command (bash)
         </ContextMenuItem>
         <ContextMenuItem onClick={handleCopyUrl} className='text-xs py-1 px-1.5'>
-          <CopyIcon className="mr-1.5 size-3" /> CopyIcon URL
+          <CopyIcon className="mr-1.5 size-3" /> Copy URL
         </ContextMenuItem>
         <ContextMenuSeparator />
         <ContextMenuItem onClick={handleTogglePin} className='text-xs py-1 px-1.5'>

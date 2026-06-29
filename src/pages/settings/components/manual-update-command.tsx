@@ -47,7 +47,7 @@ export function ManualUpdateCommand({ className, message }: ManualUpdateCommandP
           ) : (
             <ClipboardIcon className="mr-2 size-4" />
           )}
-          {copied ? 'Copied' : 'CopyIcon'}
+          {copied ? 'Copied' : 'Copy'}
         </Button>
       </div>
     </div>

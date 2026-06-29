@@ -36,7 +36,7 @@ export function useHttpHistoryPage() {
   );
   const tabs = React.useMemo<PageTabItem[]>(
     () => [
-      { id: ALL_HISTORY_TAB_ID, name: 'All ClockCounterClockwiseIcon', closable: false },
+      { id: ALL_HISTORY_TAB_ID, name: 'All History', closable: false },
       ...(pinnedCount > 0
         ? [{ id: PINNED_TAB_ID, name: `Pinned (${pinnedCount})`, closable: true, indicator: React.createElement(PushPinSimpleIcon, { className: "size-3 text-amber-500" }) }]
         : []),

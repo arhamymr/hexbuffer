@@ -106,7 +106,7 @@ export function ContextsDialog({ open, onOpenChange }: ContextsDialogProps) {
     } catch {
       vars = [];
     }
-    await store.createContext(`CopyIcon of ${ctx.name}`, vars);
+    await store.createContext(`Copy of ${ctx.name}`, vars);
   };
 
   return (

@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import Ansi from "ansi-to-react";
-import { CheckIcon, CopyIcon, TerminalIcon, TrashIcon } from '@phosphor-icons/react';
+import { CheckIcon, CopyIcon, TerminalWindowIcon, TrashIcon } from '@phosphor-icons/react';
 import type { ComponentProps, HTMLAttributes } from "react";
 import {
   createContext,
@@ -55,8 +55,8 @@ export const TerminalTitle = ({
     className={cn("flex items-center gap-2 text-sm text-zinc-400", className)}
     {...props}
   >
-    <TerminalIcon className="size-4" />
-    {children ?? "TerminalIcon"}
+    <TerminalWindowIcon className="size-4" />
+    {children ?? "Terminal"}
   </div>
 );
 

@@ -1,4 +1,4 @@
-import { DatabaseIcon, Table } from '@phosphor-icons/react';
+import { DatabaseIcon, TableIcon } from '@phosphor-icons/react';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
@@ -84,7 +84,7 @@ export function ExtractionTab({
                 className={`w-full text-left px-3 py-1.5 text-xs hover:bg-muted/40 flex items-center transition-colors ${selectedTable === table.name ? 'bg-muted/70 font-semibold' : ''}`}
                 onClick={() => onSelectTable(table.name)}
               >
-                <Table className="h-3 w-3 mr-1.5 text-muted-foreground shrink-0" />
+                <TableIcon className="h-3 w-3 mr-1.5 text-muted-foreground shrink-0" />
                 <span className="truncate flex-1">{table.name}</span>
                 <Badge
                   variant="secondary"

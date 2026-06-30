@@ -1,24 +1,12 @@
-import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { useCollectionsStore } from '@/stores/collections';
 import { CollectionsTree } from './collection-tree';
 import { ForgePanel } from './ForgePanel';
-import { ContextsDialog } from './ContextsDialog';
-import { GearSixIcon, FolderStarIcon } from '@phosphor-icons/react';
+import { FolderStarIcon, PaperPlaneTiltIcon, FloppyDiskIcon } from '@phosphor-icons/react';
+import { sendCraftRequest, saveActiveEndpoint } from '@/triggers/repeater/craft';
 
 export function WorkspacePanel({ workspaceId }: { workspaceId: string }) {
   const selectedNodeId = useCollectionsStore((s) => s.selectedNodeId);
-  const activeContextId = useCollectionsStore((s) => s.activeContextId);
-  const contexts = useCollectionsStore((s) => s.contexts);
-  const [contextsDialogOpen, setContextsDialogOpen] = useState(false);
-
   const hasEndpoint = selectedNodeId?.startsWith('ep-');
 
   return (
@@ -32,36 +20,26 @@ export function WorkspacePanel({ workspaceId }: { workspaceId: string }) {
       {hasEndpoint ? (
         <div className="flex-1 min-w-0 flex flex-col min-h-0">
           {/* Craft Toolbar */}
-          <div className="flex items-center justify-end px-1 border-b shrink-0 bg-muted/10">
-            <div className="flex items-center space-x-2">
-              <span className="text-xs text-muted-foreground font-semibold">Environment:</span>
-              <Select
-                value={activeContextId || 'no-context'}
-                onValueChange={(val) =>
-                  useCollectionsStore.getState().setActiveContextId(val === 'no-context' ? null : val)
-                }
-              >
-                <SelectTrigger className="h-8 w-44 font-medium text-xs">
-                  <SelectValue placeholder="No Environment" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="no-context">No Environment</SelectItem>
-                  {contexts.map((ctx) => (
-                    <SelectItem key={ctx.id} value={ctx.id}>
-                      {ctx.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+          <div className="flex items-center justify-between px-1 border-b shrink-0 bg-muted/10">
+            <div className="flex items-center gap-2">
+              {/* Send + Save */}
               <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                onClick={() => setContextsDialogOpen(true)}
-                title="Manage Environments"
+                size="sm"
+                className="h-7 text-xs transition-transform active:scale-95"
+                onClick={() => { void sendCraftRequest(); }}
               >
-                <GearSixIcon className="h-4 w-4" />
+                <PaperPlaneTiltIcon className="size-3" /> Send
               </Button>
+              {hasEndpoint && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7 text-xs transition-transform active:scale-95"
+                  onClick={() => { void saveActiveEndpoint(); }}
+                >
+                  <FloppyDiskIcon className="size-3" /> Save
+                </Button>
+              )}
             </div>
           </div>
 
@@ -81,9 +59,6 @@ export function WorkspacePanel({ workspaceId }: { workspaceId: string }) {
           </div>
         </div>
       )}
-
-      {/* Contexts Dialog */}
-      <ContextsDialog open={contextsDialogOpen} onOpenChange={setContextsDialogOpen} />
     </div>
   );
 }

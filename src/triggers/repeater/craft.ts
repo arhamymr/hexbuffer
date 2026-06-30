@@ -1,5 +1,19 @@
-import { useCollectionsStore } from '@/stores/collections';
+import { useCollectionsStore, type KeyValuePair } from '@/stores/collections';
 import { runScriptSandbox } from '../../pages/repeater/lib/script-sandbox';
+
+function buildUrlWithQueryParams(baseUrl: string, params: KeyValuePair[]): string {
+  try {
+    const urlWithoutQuery = baseUrl.split('?')[0];
+    const activeParams = params.filter((p) => p.enabled && p.key);
+    if (activeParams.length === 0) return urlWithoutQuery;
+    const query = activeParams
+      .map((p) => `${encodeURIComponent(p.key)}=${encodeURIComponent(p.value)}`)
+      .join('&');
+    return `${urlWithoutQuery}?${query}`;
+  } catch {
+    return baseUrl;
+  }
+}
 
 function getActiveVariables(): Record<string, string> {
   const store = useCollectionsStore.getState();
@@ -52,8 +66,15 @@ export async function sendCraftRequest(): Promise<void> {
       updatedVariables = preResult.updatedVariables;
     }
 
-    // 2. Variable expansion
-    const expandedUrl = expandVars(req.url, updatedVariables);
+    // 2. Build final URL: expand variables in base URL and query parameters first, then combine them
+    // ponytail: this prevents curly braces in variable placeholders (e.g. {{var}}) from being encoded as %7B%7Bvar%7D%7D and failing to resolve.
+    const expandedBaseUrl = expandVars(req.url, updatedVariables);
+    const expandedQueryParams = req.queryParams.map((p) => ({
+      ...p,
+      key: expandVars(p.key, updatedVariables),
+      value: expandVars(p.value, updatedVariables),
+    }));
+    const expandedUrl = buildUrlWithQueryParams(expandedBaseUrl, expandedQueryParams);
     const reqHeaders: Record<string, string> = {};
     req.headers.forEach((h) => {
       if (h.enabled && h.key) {

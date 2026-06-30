@@ -1,4 +1,4 @@
-import { ArrowLeftIcon, ArrowRightIcon, FlagIcon, PauseCircleIcon, PlayIcon, PlusIcon, ShieldSlashIcon, TrashIcon } from '@phosphor-icons/react';
+import { ArrowLeftIcon, ArrowRightIcon, FlagIcon, PauseCircleIcon, PlayIcon, PlusIcon, ShieldSlashIcon, ShieldCheckIcon, PaperPlaneTiltIcon, TrashIcon } from '@phosphor-icons/react';
 import {
   ContextMenu,
   ContextMenuContent,
@@ -17,19 +17,51 @@ export function InterceptQueuePanel() {
     isEnabled,
     activeTab,
     activeRequests,
+    hasSelection,
+    isBusy,
     selectedRequestId,
     removingIds,
     setSelectedRequestId,
     getRequestMeta,
+    handleForward,
     handleInterceptResponse,
     handleDrop,
     handleDontCapture,
     handleAddCaptureHost,
+    handleToggleIntercept,
   } = useQueuePanel();
 
   return (
     <div className="flex h-full flex-col">
       <InterceptBypassPanel />
+
+      {/* Intercept toggle + forward actions */}
+      <div className="flex items-center gap-2 px-2 py-1.5 border-b shrink-0 bg-muted/30">
+        <button
+          type="button"
+          onClick={() => handleToggleIntercept(!isEnabled)}
+          className={cn(
+            'flex items-center gap-1.5 rounded px-2 py-1 text-xs font-medium transition-colors',
+            isEnabled
+              ? 'bg-primary/10 text-primary hover:bg-primary/20'
+              : 'bg-muted text-muted-foreground hover:bg-muted/80'
+          )}
+        >
+          {isEnabled
+            ? <><ShieldCheckIcon className="size-3.5" /> On</>
+            : <><ShieldSlashIcon className="size-3.5" /> Off</>}
+        </button>
+
+        <button
+          type="button"
+          disabled={!hasSelection || isBusy}
+          onClick={handleForward}
+          className="flex items-center gap-1.5 rounded bg-primary px-2 py-1 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          <PaperPlaneTiltIcon className="size-3.5" />
+          Forward
+        </button>
+      </div>
 
       <div className="flex min-h-0 flex-1 flex-col p-2">
         <div className="mb-2 grid grid-cols-2 gap-2">

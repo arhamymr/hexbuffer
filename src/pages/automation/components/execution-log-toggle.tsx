@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button';
-import { LayoutIcon, LayoutIcon } from '@phosphor-icons/react';
+import { LayoutIcon } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils';
 
 interface ExecutionLogToggleProps {

@@ -1,0 +1,396 @@
+import * as React from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import {
+  MinusIcon,
+  XIcon,
+  ArrowsOutSimpleIcon,
+  ArrowsInSimpleIcon,
+  SidebarSimpleIcon,
+  DotsSixIcon,
+} from "@phosphor-icons/react";
+
+import { useNavStore, type WindowState } from "@/stores/nav";
+import { cn } from "@/lib/utils";
+import { pageComponentMap } from "./page-lazy-imports";
+import { Separator } from "@/components/ui/separator";
+
+interface DesktopWindowProps {
+  win: WindowState;
+  isFocused: boolean;
+  activeChild: React.ReactNode;
+}
+
+const DesktopWindow = React.memo(function DesktopWindow({
+  win,
+  isFocused,
+  activeChild,
+}: DesktopWindowProps) {
+  const navigate = useNavigate();
+  const location = useLocation();
+  // ponytail: individual selectors avoid full-store re-subscription
+  const closeWindow = useNavStore((s) => s.closeWindow);
+  const minimizeWindow = useNavStore((s) => s.minimizeWindow);
+  const maximizeWindow = useNavStore((s) => s.maximizeWindow);
+  const focusWindow = useNavStore((s) => s.focusWindow);
+  const updateWindowPosition = useNavStore((s) => s.updateWindowPosition);
+  const updateWindowSize = useNavStore((s) => s.updateWindowSize);
+
+  const { id, title, isMinimized, isMaximized, position, size, zIndex } = win;
+
+  const windowRef = React.useRef<HTMLDivElement>(null);
+
+  // High-performance refs to hold dragging/resizing state without triggering React renders
+  const dragStartRef = React.useRef({ x: 0, y: 0, posX: 0, posY: 0 });
+  const dragCurrentPosRef = React.useRef(position);
+  const dragRafIdRef = React.useRef<number | null>(null);
+  const [isDragging, setIsDragging] = React.useState(false);
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    // Only drag with left click
+    if (e.button !== 0) return;
+
+    // Do not drag if clicking control buttons
+    const target = e.target as HTMLElement;
+    if (target.closest(".window-control-btn")) return;
+
+    setIsDragging(true);
+    dragStartRef.current = {
+      x: e.clientX,
+      y: e.clientY,
+      posX: position.x,
+      posY: position.y,
+    };
+    dragCurrentPosRef.current = position;
+
+    focusWindow(id, navigate);
+  };
+
+  React.useEffect(() => {
+    if (!isDragging) return;
+
+    document.body.classList.add("select-none-global");
+
+    const handleMouseMove = (e: MouseEvent) => {
+      // Calculate drag distance
+      const dx = e.clientX - dragStartRef.current.x;
+      const dy = e.clientY - dragStartRef.current.y;
+
+      // Bound within screen (safety margins)
+      const newX = Math.max(10, dragStartRef.current.posX + dx);
+      const yMin = 32; // below top bar / terminal
+      const newY = Math.max(yMin, dragStartRef.current.posY + dy);
+
+      dragCurrentPosRef.current = { x: newX, y: newY };
+
+      if (dragRafIdRef.current) cancelAnimationFrame(dragRafIdRef.current);
+      dragRafIdRef.current = requestAnimationFrame(() => {
+        if (windowRef.current) {
+          windowRef.current.style.transform = `translate(${newX}px, ${newY}px)`;
+        }
+      });
+    };
+
+    const handleMouseUp = () => {
+      setIsDragging(false);
+      updateWindowPosition(id, dragCurrentPosRef.current);
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+    return () => {
+      document.body.classList.remove("select-none-global");
+      if (dragRafIdRef.current) cancelAnimationFrame(dragRafIdRef.current);
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [isDragging, id, updateWindowPosition]);
+
+  const [isResizing, setIsResizing] = React.useState(false);
+  const resizeStartRef = React.useRef({
+    mouseX: 0,
+    mouseY: 0,
+    startW: 0,
+    startH: 0,
+  });
+  const resizeCurrentSizeRef = React.useRef(size);
+  const resizeRafIdRef = React.useRef<number | null>(null);
+
+  const handleResizeMouseDown = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    setIsResizing(true);
+    resizeStartRef.current = {
+      mouseX: e.clientX,
+      mouseY: e.clientY,
+      startW: size.width,
+      startH: size.height,
+    };
+    resizeCurrentSizeRef.current = size;
+    focusWindow(id, navigate);
+  };
+
+  React.useEffect(() => {
+    if (!isResizing) return;
+
+    document.body.classList.add("select-none-global");
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const dw = e.clientX - resizeStartRef.current.mouseX;
+      const dh = e.clientY - resizeStartRef.current.mouseY;
+
+      const newWidth = Math.max(400, resizeStartRef.current.startW + dw);
+      const newHeight = Math.max(300, resizeStartRef.current.startH + dh);
+
+      resizeCurrentSizeRef.current = { width: newWidth, height: newHeight };
+
+      if (resizeRafIdRef.current) cancelAnimationFrame(resizeRafIdRef.current);
+      resizeRafIdRef.current = requestAnimationFrame(() => {
+        if (windowRef.current) {
+          windowRef.current.style.width = `${newWidth}px`;
+          windowRef.current.style.height = `${newHeight}px`;
+        }
+      });
+    };
+
+    const handleMouseUp = () => {
+      setIsResizing(false);
+      updateWindowSize(id, resizeCurrentSizeRef.current);
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+    return () => {
+      document.body.classList.remove("select-none-global");
+      if (resizeRafIdRef.current) cancelAnimationFrame(resizeRafIdRef.current);
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [isResizing, id, updateWindowSize]);
+
+  // Focus on click
+  const handleWindowClick = () => {
+    if (!isFocused) {
+      focusWindow(id, navigate);
+    }
+  };
+
+  const tileLeft = () => {
+    if (windowRef.current?.parentElement) {
+      const parentRect =
+        windowRef.current.parentElement.getBoundingClientRect();
+      updateWindowPosition(id, { x: 0, y: 0 });
+      updateWindowSize(id, {
+        width: parentRect.width / 2,
+        height: parentRect.height,
+      });
+      if (isMaximized) maximizeWindow(id);
+    }
+  };
+
+  const tileRight = () => {
+    if (windowRef.current?.parentElement) {
+      const parentRect =
+        windowRef.current.parentElement.getBoundingClientRect();
+      updateWindowPosition(id, { x: parentRect.width / 2, y: 0 });
+      updateWindowSize(id, {
+        width: parentRect.width / 2,
+        height: parentRect.height,
+      });
+      if (isMaximized) maximizeWindow(id);
+    }
+  };
+
+  const isCurrentRoute = location.pathname === id;
+  const StaticComponent = pageComponentMap[id];
+
+  // ponytail: build className once, avoid cn() in hot path
+  const windowClassName = `absolute rounded-sm border flex flex-col overflow-hidden bg-background shadow-2xl select-text ${
+    isFocused ? "border-primary/60" : "border-border/40 shadow-none opacity-90"
+  } ${
+    isMinimized ? "scale-95 opacity-0 pointer-events-none translate-y-8" : ""
+  } ${
+    isMaximized
+      ? "inset-x-0 top-0 bottom-0 rounded-none border-none !w-full !h-full !translate-x-0 !translate-y-0"
+      : ""
+  } ${isDragging || isResizing ? "select-none" : ""}`;
+
+  return (
+    <div
+      ref={windowRef}
+      onClick={handleWindowClick}
+      className={windowClassName}
+      style={
+        isMaximized || isMinimized
+          ? { zIndex }
+          : {
+              left: 0,
+              top: 0,
+              transform: `translate(${position.x}px, ${position.y}px)`,
+              width: size.width,
+              height: size.height,
+              zIndex,
+              willChange: "transform, width, height",
+              contain: "layout style",
+            }
+      }
+    >
+      {/* Window Header */}
+      <div
+        onMouseDown={handleMouseDown}
+        className={cn(
+          "flex h-9 shrink-0 items-center cursor-pointer justify-between px-3 border-b cursor-grab select-none",
+          isFocused
+            ? "bg-muted/70 border-border/80 text-foreground"
+            : "bg-muted/30 border-border/40 text-muted-foreground",
+        )}
+      >
+        {/* Window Title */}
+        <div className="flex gap-2 h-6 items-center">
+          <DotsSixIcon size={16} className="mr-2" />
+          <span className="text-xs font-semibold tracking-wide">
+            {title}
+          </span>
+        </div>
+
+        <div className="flex gap-2 h-6 items-center">
+          {/* Snap Layout Controls */}
+          <div className="flex items-center gap-1 text-muted-foreground">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                tileLeft();
+              }}
+              className="window-control-btn p-1 hover:bg-muted rounded cursor-pointer transition-colors hover:text-foreground"
+              title="Tile Left (Split Screen)"
+            >
+              <SidebarSimpleIcon
+                size={16}
+                className="scale-x-[-1]"
+                weight="fill"
+              />
+            </button>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                tileRight();
+              }}
+              className="window-control-btn p-1 hover:bg-muted rounded cursor-pointer transition-colors hover:text-foreground"
+              title="Tile Right (Split Screen)"
+            >
+              <SidebarSimpleIcon size={16} weight="fill" />
+            </button>
+          </div>
+
+          <Separator orientation="vertical" className="h-6" />
+
+          {/* Window Controls */}
+          <div className="flex items-center gap-0.5">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                maximizeWindow(id);
+              }}
+              className="window-control-btn p-1.5 hover:bg-muted rounded-sm cursor-pointer active:scale-95 transition-all text-muted-foreground hover:text-foreground"
+              aria-label="Maximize"
+            >
+              {isMaximized ? (
+                <ArrowsInSimpleIcon className="size-3.5" />
+              ) : (
+                <ArrowsOutSimpleIcon className="size-3.5" />
+              )}
+            </button>
+             <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                closeWindow(id, navigate);
+              }}
+              className="window-control-btn p-1.5 hover:bg-destructive/20 hover:text-destructive rounded-sm cursor-pointer active:scale-95 transition-all"
+              aria-label="Close"
+            >
+              <XIcon className="size-3.5" />
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Window Body Container */}
+      <div className="flex-1 min-h-0 bg-background overflow-hidden relative">
+        {/* Interaction overlay blocks iframes/canvases during drag/resize to prevent reflow jank */}
+        {(isDragging || isResizing) && (
+          <div className="absolute inset-0 z-40" />
+        )}
+        <WindowContent
+          id={id}
+          isCurrentRoute={isCurrentRoute}
+          activeChild={activeChild}
+          StaticComponent={StaticComponent}
+        />
+      </div>
+
+      {/* Resize Handle (only show when not maximized) */}
+      {!isMaximized && (
+        <div
+          onMouseDown={handleResizeMouseDown}
+          className="absolute bottom-0 right-0 z-30 size-4 cursor-se-resize flex items-end justify-end p-0.5"
+        >
+          <svg
+            className="size-2.5 text-muted-foreground/40"
+            viewBox="0 0 10 10"
+          >
+            <path
+              d="M10,0 L0,10 M10,4 L4,10 M10,8 L8,10"
+              stroke="currentColor"
+              strokeWidth="1.2"
+              strokeLinecap="round"
+            />
+          </svg>
+        </div>
+      )}
+    </div>
+  );
+});
+
+interface WindowContentProps {
+  id: string;
+  isCurrentRoute: boolean;
+  activeChild: React.ReactNode;
+  StaticComponent: React.ComponentType<any> | null;
+}
+
+const WindowContent = React.memo(
+  function WindowContent({
+    id,
+    isCurrentRoute,
+    activeChild,
+    StaticComponent,
+  }: WindowContentProps) {
+    // ponytail: memoize window contents so they only evaluate/re-render when their active state changes, preventing CPU throttling during dragging
+    return (
+      <React.Suspense
+        fallback={
+          <div className="h-full flex items-center justify-center text-muted-foreground text-sm">
+            Loading window…
+          </div>
+        }
+      >
+        {isCurrentRoute ? (
+          activeChild
+        ) : StaticComponent ? (
+          <StaticComponent />
+        ) : null}
+      </React.Suspense>
+    );
+  },
+  (prev, next) => {
+    return (
+      prev.isCurrentRoute === next.isCurrentRoute &&
+      prev.activeChild === next.activeChild
+    );
+  },
+);
+
+export { DesktopWindow, type DesktopWindowProps };

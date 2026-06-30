@@ -65,6 +65,15 @@ const AutomationPage = React.lazy(() =>
 const RegressionPage = React.lazy(() =>
   import("@/pages/regression").then((m) => ({ default: m.RegressionPage }))
 );
+const AssistantPage = React.lazy(() =>
+  import("@/layout/assistant").then((m) => ({ default: m.AssistantPage }))
+);
+const TerminalPage = React.lazy(() =>
+  import("@/layout/terminal").then((m) => ({ default: m.TerminalPage }))
+);
+const ScratchpadPage = React.lazy(() =>
+  import("@/pages/scratchpad").then((m) => ({ default: m.ScratchpadPage }))
+);
 
 
 function AutomationEventWatchers() {
@@ -109,6 +118,9 @@ function AppRoutes() {
           <Route path="/automation" element={<AutomationPage />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/regression" element={<RegressionPage />} />
+          <Route path="/assistant" element={<AssistantPage />} />
+          <Route path="/terminal" element={<TerminalPage />} />
+          <Route path="/scratchpad" element={<ScratchpadPage />} />
 
         </Routes>
       </React.Suspense>

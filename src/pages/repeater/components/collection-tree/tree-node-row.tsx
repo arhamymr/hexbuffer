@@ -1,5 +1,5 @@
 import React from 'react';
-import { CaretDownIcon, DotsSixVerticalIcon, FileCodeIcon, FolderStarIcon, PlusIcon, TrashIcon, PencilSimpleIcon } from '@phosphor-icons/react';
+import { CaretDownIcon, DotsSixVerticalIcon, FolderStarIcon, PlusIcon, TrashIcon, PencilSimpleIcon } from '@phosphor-icons/react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { cn } from '@/lib/utils';
@@ -63,10 +63,6 @@ export function TreeNodeRow({
 
   const isCollection = node.kind === 'collection';
   const isEndpoint = node.kind === 'endpoint';
-  const Icon = isEndpoint ? FileCodeIcon : FolderStarIcon;
-  const iconClass = isEndpoint
-    ? 'text-gray-500'
-    : 'text-blue-500';
 
   // Drop indicator classes
   const showBeforeLine = dropAction?.action === 'reorder-before';
@@ -74,7 +70,7 @@ export function TreeNodeRow({
   const showInsideHighlight = dropAction?.action === 'reparent';
 
   return (
-    <div ref={setNodeRef} id={node.id} style={style} className="relative group/tree-row">
+    <div ref={setNodeRef} id={node.id} style={style} className="relative group/tree-row pl-1">
       {/* Drop indicator: insert-before line */}
       {showBeforeLine && (
         <div className="absolute -top-[1px] left-2 right-2 h-[2px] rounded-full bg-primary z-10" />
@@ -120,20 +116,16 @@ export function TreeNodeRow({
               <span className="w-4 flex-shrink-0" />
             )}
 
-            {/* Icon — clickable for collections to toggle expand */}
-            <Icon
-              className={cn(
-                'size-4 flex-shrink-0',
-                iconClass,
-                isCollection && 'cursor-pointer hover:scale-110 transition-transform',
-              )}
-              onClick={(e) => {
-                if (isCollection) {
+            {/* Folder icon — clickable for collections to toggle expand */}
+            {isCollection && (
+              <FolderStarIcon
+                className="size-4 flex-shrink-0 text-blue-500 cursor-pointer hover:scale-110 transition-transform"
+                onClick={(e) => {
                   e.stopPropagation();
                   onToggleExpand(node.id);
-                }
-              }}
-            />
+                }}
+              />
+            )}
 
             {/* Label */}
             <div
@@ -146,6 +138,14 @@ export function TreeNodeRow({
               }}
             >
               <div className="flex min-w-0 items-center gap-1.5">
+                {/* Method badge for endpoints */}
+                {isEndpoint && node.method && (
+                  <MethodBadge
+                    method={node.method}
+                    className="text-[9px] px-1 py-px"
+                  />
+                )}
+
                 <span className={cn('truncate text-xs')}>
                   {node.label}
                 </span>
@@ -155,13 +155,7 @@ export function TreeNodeRow({
                     {endpointCount}
                   </span>
                 )}
-                {/* Method badge for endpoints */}
-                {isEndpoint && node.method && (
-                  <MethodBadge
-                    method={node.method}
-                    className="text-[9px] px-1 py-px"
-                  />
-                )}
+
               </div>
             </div>
 

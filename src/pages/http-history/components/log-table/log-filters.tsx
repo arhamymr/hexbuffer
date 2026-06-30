@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { XIcon, TrashIcon, SpinnerGapIcon } from '@phosphor-icons/react';
+import { XIcon, TrashIcon, SpinnerGapIcon, PlayIcon, PauseIcon, TargetIcon } from '@phosphor-icons/react';
 import { toast } from 'sonner';
 import { CrawlStatusBadge } from '@/components/status-badge';
 import { Button } from '@/components/ui/button';
+import { openTargetSelector } from '@/triggers';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import {
   AlertDialog,
@@ -141,6 +142,26 @@ export function LogFilters({
             </Button>
           )}
 
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-6 text-xs shrink-0"
+            onClick={() => {
+              const store = useHttpHistoryQueryStore.getState();
+              const wasPaused = store.isStreamManuallyPaused;
+              store.setStreamManuallyPaused(!wasPaused);
+              if (wasPaused) store.triggerRefresh();
+            }}
+          >
+            {isStreamManuallyPaused
+              ? <><PlayIcon className="size-3" /> Resume</>
+              : <><PauseIcon className="size-3" /> Pause</>}
+          </Button>
+
+          <Button variant="ghost" size="sm" className="h-6 text-xs shrink-0" onClick={openTargetSelector}>
+            <TargetIcon className="size-3" />
+            Target
+          </Button>
 
           <Button variant="ghost" size="sm" onClick={() => setClearDialogOpen(true)} className="text-xs !text-red-500 shrink-0">
             <TrashIcon className="size-3 mb-0.5" />

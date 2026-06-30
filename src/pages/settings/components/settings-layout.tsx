@@ -1,67 +1,73 @@
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import * as React from 'react';
+import { cn } from '@/lib/utils';
 import type { SettingsPageState } from '../hooks/use-settings-page';
-import { AboutSettingsTab } from './about-settings-tab';
+import { SettingsSidebar, type SettingsCategory } from './settings-sidebar';
+import { GeneralSettingsTab } from './general-settings-tab';
+import { CaCertificateSettingsTab } from './ca-certificate-settings-tab';
 import { AiSettingsTab } from './ai-settings-tab';
 import { AutomationSettingsTab } from './automation-settings-tab';
-import { CaCertificateSettingsTab } from './ca-certificate-settings-tab';
-import { GeneralSettingsTab } from './general-settings-tab';
-import { getCurrentWebview } from '@tauri-apps/api/webview';
+import { AboutSettingsTab } from './about-settings-tab';
 
 interface SettingsLayoutProps {
   settings: SettingsPageState;
 }
 
-export function SettingsLayout({ settings }: SettingsLayoutProps) {
-  return (
-    <div className="h-full flex flex-col overflow-hidden">
-      <div className="px-6 py-4 border-b">
-        <h1 className="text-3xl font-normal">Settings</h1>
-        <p className="text-muted-foreground mt-1">Configure your application settings</p>
-      </div>
+interface CategoryContentProps {
+  settings: SettingsPageState;
+  active: SettingsCategory;
+}
 
-      <Tabs defaultValue="settings" className="flex-1 flex flex-col overflow-hidden">
-        <div className="px-6 pt-4">
-          <TabsList>
-            <TabsTrigger value="settings">
-              Settings
-            </TabsTrigger>
-            <TabsTrigger value="ca-cert">
-              CA Certificate
-            </TabsTrigger>
-            <TabsTrigger value="ai">
-              AI Settings
-            </TabsTrigger>
-            <TabsTrigger value="automation">
-              Automation
-            </TabsTrigger>
-            <TabsTrigger value="about">
-              About
-            </TabsTrigger>
-          </TabsList>
+const CATEGORY_LABELS: Record<SettingsCategory, string> = {
+  general: 'General',
+  'ca-cert': 'CA Certificate',
+  ai: 'AI',
+  automation: 'Automation',
+  about: 'About',
+};
+
+function CategoryContent({ settings, active }: CategoryContentProps) {
+  const title = CATEGORY_LABELS[active];
+
+  return (
+    <div className="flex-1 overflow-auto">
+      <div className="mx-auto w-full max-w-2xl px-8 py-8">
+        <div className="mb-6">
+          <h1 className="text-xl font-semibold tracking-tight">{title}</h1>
         </div>
 
-        <TabsContent value="settings" className="flex-1 overflow-auto px-6 py-4 space-y-4">
-          <GeneralSettingsTab settings={settings} />
-        </TabsContent>
+        <div className="space-y-6">
+          {active === 'general' && <GeneralSettingsTab settings={settings} />}
+          {active === 'ca-cert' && <CaCertificateSettingsTab settings={settings} />}
+          {active === 'ai' && <AiSettingsTab settings={settings} />}
+          {active === 'automation' && <AutomationSettingsTab />}
+          {active === 'about' && <AboutSettingsTab />}
+        </div>
+      </div>
+    </div>
+  );
+}
 
-        <TabsContent value="about" className="flex-1 overflow-auto px-6 py-4 space-y-4">
-          <AboutSettingsTab />
-        </TabsContent>
+export function SettingsLayout({ settings }: SettingsLayoutProps) {
+  const [active, setActive] = React.useState<SettingsCategory>('general');
+  const [contentKey, setContentKey] = React.useState(0);
 
-        <TabsContent value="ai" className="flex-1 overflow-auto px-6 py-4 space-y-4">
-          <AiSettingsTab settings={settings} />
-        </TabsContent>
+  const handleSelect = React.useCallback((category: SettingsCategory) => {
+    setActive(category);
+    setContentKey((k) => k + 1);
+  }, []);
 
+  return (
+    <div className="flex h-full overflow-hidden">
+      <SettingsSidebar active={active} onSelect={handleSelect} />
 
-        <TabsContent value="automation" className="flex-1 overflow-auto px-6 py-4 space-y-4">
-          <AutomationSettingsTab />
-        </TabsContent>
-
-
-        <TabsContent value="ca-cert" className="flex-1 overflow-auto px-6 py-4 space-y-4">
-          <CaCertificateSettingsTab settings={settings} />
-        </TabsContent>
-      </Tabs>
+      <div
+        key={contentKey}
+        className={cn(
+          'flex flex-1 flex-col overflow-hidden animate-in fade-in slide-in-from-right-4 duration-200',
+        )}
+      >
+        <CategoryContent settings={settings} active={active} />
+      </div>
     </div>
   );
 }

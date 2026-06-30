@@ -1,48 +1,27 @@
-import { CodeIcon, ArrowSquareOutIcon, TriangleIcon } from '@phosphor-icons/react';
+import { ArrowSquareOutIcon } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { PROFILE_LINKS } from '../constants';
+import { SettingsGroup, SettingsRow } from './settings-group';
 
 export function AboutSettingsTab() {
   return (
     <>
-      <div className="space-y-2">
-        <div className="flex items-center gap-2 text-sm font-medium text-green-500 dark:text-green-400">
-          <TriangleIcon className="size-4" />
-          About hexbuffer
-        </div>
-        <p className="max-w-2xl text-sm text-muted-foreground">
-          hexbuffer is my personal project for exploring, testing, and understanding web application traffic.
-        </p>
-      </div>
-
-      <Card>
-        <CardHeader>
+      <SettingsGroup label="About" description="hexbuffer is a focused desktop app for inspecting requests, repeating traffic, and shaping better workflows.">
+        <SettingsRow label="Developer" description="Arham — Software Developer" />
+        <SettingsRow label="Links">
           <div className="flex items-center gap-2">
-            <CodeIcon className="size-5 text-primary" />
-            <CardTitle>Arham</CardTitle>
-          </div>
-          <CardDescription>Software Developer</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <p className="text-sm leading-6 text-muted-foreground">
-            I build tools that help make development, testing, and security research more practical. hexbuffer is part of
-            that work: a focused desktop app for inspecting requests, repeating traffic, and shaping better workflows.
-          </p>
-
-          <div className="flex flex-wrap gap-2">
             {PROFILE_LINKS.map(({ label, href, Icon }) => (
-              <Button key={href} asChild variant="outline">
+              <Button key={href} size="xs" variant="outline" asChild>
                 <a href={href} target="_blank" rel="noreferrer">
-                  <Icon className="size-4" />
+                  <Icon className="size-3.5" />
                   {label}
                   <ArrowSquareOutIcon className="size-3" />
                 </a>
               </Button>
             ))}
           </div>
-        </CardContent>
-      </Card>
+        </SettingsRow>
+      </SettingsGroup>
     </>
   );
 }

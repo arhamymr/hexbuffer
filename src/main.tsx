@@ -6,9 +6,9 @@ import { getCurrentWindow } from "@tauri-apps/api/window";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AppLayout } from "@/layout";
 import { Toaster } from "@/components/ui/sonner";
-import { Settings } from "@/pages/settings";
 import { ResponseDetailWindow } from "@/pages/http-history/components/log-table/response-detail-window";
 import { suppressResizeObserverLoopErrors } from "@/lib/resize-observer-errors";
+import { useTauriFocusFix } from "@/hooks/useTauriFocusFix";
 import AppRoutes from "./App";
 import "@fontsource-variable/geist";
 import "@fontsource-variable/geist-mono";
@@ -16,13 +16,6 @@ import "@/styles/globals.css";
 
 suppressResizeObserverLoopErrors();
 
-function isSettingsWindow(): boolean {
-  try {
-    return getCurrentWindow().label === "settings";
-  } catch {
-    return false;
-  }
-}
 
 function getResponseDetailCallId(): string | null {
   const params = new URLSearchParams(window.location.search);
@@ -51,18 +44,8 @@ function MainWindowReadySignal() {
 }
 
 function Root() {
-  if (isSettingsWindow()) {
-    return (
-      <BrowserRouter>
-        <ThemeProvider>
-          <div className="h-screen overflow-hidden bg-background">
-            <Settings />
-          </div>
-          <Toaster />
-        </ThemeProvider>
-      </BrowserRouter>
-    );
-  }
+  useTauriFocusFix();
+
 
   const responseDetailCallId = getResponseDetailCallId();
   if (responseDetailCallId) {

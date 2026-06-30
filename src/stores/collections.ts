@@ -84,6 +84,7 @@ export interface ActiveRequestState {
   isLoading: boolean;
   error: string | null;
   testResults: TestResult[];
+  queryParams: KeyValuePair[];
 }
 
 interface ForgeRequestPayload {
@@ -103,6 +104,32 @@ function timestampNow(): string {
   return new Date().toISOString();
 }
 
+function parseQueryParams(url: string): KeyValuePair[] {
+  if (!url || !url.includes('?')) return [];
+  try {
+    const queryString = url.substring(url.indexOf('?') + 1);
+    if (!queryString) return [];
+    const params: KeyValuePair[] = [];
+    const pairs = queryString.split('&');
+    for (const pair of pairs) {
+      if (!pair) continue;
+      const eqIdx = pair.indexOf('=');
+      let key = eqIdx !== -1 ? pair.substring(0, eqIdx) : pair;
+      let value = eqIdx !== -1 ? pair.substring(eqIdx + 1) : '';
+      try {
+        key = decodeURIComponent(key);
+      } catch {}
+      try {
+        value = decodeURIComponent(value);
+      } catch {}
+      params.push({ key, value, enabled: true });
+    }
+    return params;
+  } catch {
+    return [];
+  }
+}
+
 function defaultActiveRequest(): ActiveRequestState {
   return {
     method: 'GET',
@@ -116,6 +143,7 @@ function defaultActiveRequest(): ActiveRequestState {
     isLoading: false,
     error: null,
     testResults: [],
+    queryParams: [],
   };
 }
 
@@ -327,6 +355,7 @@ export const useCollectionsStore = create<CollectionsState>()(
             isLoading: false,
             error: null,
             testResults: [],
+            queryParams: parseQueryParams(ep.url || ''),
           },
         });
       }
@@ -425,6 +454,17 @@ export const useCollectionsStore = create<CollectionsState>()(
             )
           : null;
 
+      // Rebuild URL with query params so they survive save/reload
+      const urlWithParams = (() => {
+        try {
+          const base = activeRequest.url.split('?')[0];
+          const active = activeRequest.queryParams.filter((p) => p.enabled && p.key);
+          if (active.length === 0) return base;
+          const q = active.map((p) => `${encodeURIComponent(p.key)}=${encodeURIComponent(p.value)}`).join('&');
+          return `${base}?${q}`;
+        } catch { return activeRequest.url; }
+      })();
+
       const now = timestampNow();
       set((s) => ({
         endpoints: s.endpoints.map((ep) =>
@@ -432,7 +472,7 @@ export const useCollectionsStore = create<CollectionsState>()(
             ? {
                 ...ep,
                 method: activeRequest.method,
-                url: activeRequest.url,
+                url: urlWithParams,
                 headers: headersJson,
                 body: activeRequest.body || null,
                 bodyType: activeRequest.bodyType,
@@ -459,7 +499,30 @@ export const useCollectionsStore = create<CollectionsState>()(
     updateActiveRequest: (updater) => {
       set((s) => {
         const patch = updater(s.activeRequest);
-        return { activeRequest: { ...s.activeRequest, ...patch } };
+        const next = { ...s.activeRequest, ...patch };
+
+        // ponytail: sync URL and query parameters to keep them aligned
+        if ('url' in patch && patch.url !== undefined) {
+          const newParams = parseQueryParams(patch.url);
+          next.queryParams = newParams.map((np, idx) => {
+            const existing = s.activeRequest.queryParams[idx];
+            if (existing && existing.key === np.key && existing.value === np.value) {
+              return { ...np, enabled: existing.enabled };
+            }
+            return np;
+          });
+        } else if ('queryParams' in patch && patch.queryParams !== undefined) {
+          const baseUrl = s.activeRequest.url.split('?')[0];
+          const active = patch.queryParams.filter((p) => p.enabled && p.key);
+          if (active.length > 0) {
+            const q = active.map((p) => `${encodeURIComponent(p.key)}=${encodeURIComponent(p.value)}`).join('&');
+            next.url = `${baseUrl}?${q}`;
+          } else {
+            next.url = baseUrl;
+          }
+        }
+
+        return { activeRequest: next };
       });
     },
 

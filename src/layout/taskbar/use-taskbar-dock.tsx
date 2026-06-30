@@ -1,9 +1,9 @@
 import * as React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { relaunch } from '@tauri-apps/plugin-process';
 import { toast } from 'sonner';
+import { useNavStore } from '@/stores/nav';
 
-import { useGlobalTerminalStore } from '@/stores/global-terminal';
-import { useChatboxStore } from '@/stores/chatbox';
 import { useTheme } from '@/components/theme-provider';
 import { useLicenseStore } from '@/stores/license';
 import { useUpdater } from '@/hooks/use-updater';
@@ -13,16 +13,7 @@ import { formatBytes } from '../footer/utils';
 const SNAP_THRESHOLD = 20;
 
 export function useSidebarDock() {
-  // ── Terminal toggle ─────────────────────────────────────────────────────
-  const isTerminalOpen = useGlobalTerminalStore((s) => s.isOpen);
-  const setIsTerminalOpen = useGlobalTerminalStore((s) => s.setIsOpen);
-  const toggleTerminal = React.useCallback(() => {
-    setIsTerminalOpen(!isTerminalOpen);
-  }, [isTerminalOpen, setIsTerminalOpen]);
-
-  // ── AI chat toggle ──────────────────────────────────────────────────────
-  const isChatboxOpen = useChatboxStore((s) => s.isOpen);
-  const toggleChatbox = useChatboxStore((s) => s.toggle);
+  const navigate = useNavigate();
 
   // ── Theme toggle ────────────────────────────────────────────────────────
   const { theme, toggleTheme } = useTheme();
@@ -205,34 +196,12 @@ export function useSidebarDock() {
       : 'Preparing...';
 
   // ── GearSix window ─────────────────────────────────────────────────────
-  const openSettings = React.useCallback(async () => {
-    try {
-      const { WebviewWindow } = await import('@tauri-apps/api/webviewWindow');
-      const existing = await WebviewWindow.getByLabel('settings');
-      // Close and recreate: on macOS child windows can't be elevated above parent
-      if (existing) {
-        await existing.close();
-      }
-      new WebviewWindow('settings', {
-        url: '/?window=settings',
-        title: 'hexbuffer - GearSix',
-        width: 700,
-        height: 600,
-        decorations: true,
-        resizable: true,
-      });
-    } catch {
-      window.open('/settings', '_blank');
-    }
-  }, []);
+  const openSettings = React.useCallback(() => {
+    useNavStore.getState().openWindow('/settings', 'Settings');
+    useNavStore.getState().focusWindow('/settings', navigate);
+  }, [navigate]);
 
   return {
-    // Terminal
-    isTerminalOpen,
-    toggleTerminal,
-    // Chat
-    isChatboxOpen,
-    toggleChatbox,
     // Theme
     theme,
     toggleTheme,

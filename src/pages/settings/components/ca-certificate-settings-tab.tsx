@@ -1,8 +1,7 @@
-import { DownloadSimpleIcon, KeyIcon, ArrowClockwiseIcon, ShieldCheckIcon } from '@phosphor-icons/react';
+import { DownloadSimpleIcon, KeyIcon, ArrowClockwiseIcon } from '@phosphor-icons/react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   HOW_IT_WORKS,
   INSTALLATION_GUIDES,
@@ -10,6 +9,7 @@ import {
   TROUBLESHOOTING_GUIDES,
 } from '../constants';
 import type { SettingsPageState } from '../hooks/use-settings-page';
+import { SettingsGroup } from './settings-group';
 
 interface CaCertificateSettingsTabProps {
   settings: SettingsPageState;
@@ -32,50 +32,36 @@ export function CaCertificateSettingsTab({ settings }: CaCertificateSettingsTabP
         <SecurityNoticeIcon className="size-4" />
         <AlertTitle>Important Security Notice</AlertTitle>
         <AlertDescription>
-          Open Browser uses an isolated Chrome profile managed by hexbuffer. Install the hexbuffer CA only
-          when you want to intercept HTTPS traffic from external browsers or apps.
+          Open Browser uses an isolated Chrome profile. Install the CA only when you want to intercept
+          HTTPS traffic from external browsers or apps.
         </AlertDescription>
       </Alert>
 
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <ShieldCheckIcon className="size-5 text-primary" />
-            <CardTitle>CA Certificate</CardTitle>
-          </div>
-          <CardDescription>
-            DownloadIcon or install the CA certificate for external browsers and apps
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex flex-col gap-2">
-            <div className="flex flex-wrap gap-2">
-              <Button onClick={handleInstallMacCert} disabled={installingCa} className="w-fit">
-                <KeyIcon className="mr-2 size-4" />
-                {installingCa ? 'Installing...' : 'Install to macOS Keychain'}
-              </Button>
-              <Button variant="outline" onClick={handleDownloadCert} disabled={downloading} className="w-fit">
-                <DownloadSimpleIcon className="mr-2 size-4" />
-                {downloading ? 'Saving...' : 'FloppyDiskIcon CA Certificate'}
-              </Button>
-              <Button variant="outline" onClick={handleRegenerateCert} disabled={regeneratingCa} className="w-fit">
-                <ArrowClockwiseIcon className="mr-2 size-4" />
-                {regeneratingCa ? 'Regenerating...' : 'Regenerate CA'}
-              </Button>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Use Open Browser for the managed Chrome profile. Install or save the CA only for external browsers and apps.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+      <SettingsGroup label="Certificate Actions" description="Manage the CA certificate for external browsers and apps.">
+        <div className="flex flex-wrap gap-2 px-4 py-3">
+          <Button onClick={handleInstallMacCert} disabled={installingCa}>
+            <KeyIcon className="mr-1.5 size-4" />
+            {installingCa ? 'Installing…' : 'Install to macOS Keychain'}
+          </Button>
+          <Button variant="outline" onClick={handleDownloadCert} disabled={downloading}>
+            <DownloadSimpleIcon className="mr-1.5 size-4" />
+            {downloading ? 'Saving…' : 'Download CA Certificate'}
+          </Button>
+          <Button variant="outline" onClick={handleRegenerateCert} disabled={regeneratingCa}>
+            <ArrowClockwiseIcon className="mr-1.5 size-4" />
+            {regeneratingCa ? 'Regenerating…' : 'Regenerate CA'}
+          </Button>
+        </div>
+        <div className="px-4 pb-3">
+          <p className="text-xs text-muted-foreground">
+            Use Open Browser for the managed Chrome profile. Install or save the CA only for external
+            browsers and apps.
+          </p>
+        </div>
+      </SettingsGroup>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Installation Guides</CardTitle>
-          <CardDescription>Follow the steps for your browser or device</CardDescription>
-        </CardHeader>
-        <CardContent>
+      <SettingsGroup label="Installation Guides" description="Follow the steps for your browser or device.">
+        <div className="px-4 py-2">
           <Accordion type="single" collapsible className="w-full">
             {INSTALLATION_GUIDES.map((guide) => (
               <AccordionItem key={guide.id} value={guide.id}>
@@ -96,15 +82,11 @@ export function CaCertificateSettingsTab({ settings }: CaCertificateSettingsTabP
               </AccordionItem>
             ))}
           </Accordion>
-        </CardContent>
-      </Card>
+        </div>
+      </SettingsGroup>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>How HTTPS Interception Works</CardTitle>
-          <CardDescription>Understanding the certificate-based proxy mechanism</CardDescription>
-        </CardHeader>
-        <CardContent>
+      <SettingsGroup label="How It Works" description="Understanding the certificate-based proxy mechanism.">
+        <div className="px-4 py-3">
           <div className="space-y-3 text-sm text-muted-foreground">
             {HOW_IT_WORKS.map((item) => (
               <p key={item.title}>
@@ -112,15 +94,11 @@ export function CaCertificateSettingsTab({ settings }: CaCertificateSettingsTabP
               </p>
             ))}
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </SettingsGroup>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Troubleshooting</CardTitle>
-          <CardDescription>Common issues and solutions</CardDescription>
-        </CardHeader>
-        <CardContent>
+      <SettingsGroup label="Troubleshooting" description="Common issues and solutions.">
+        <div className="px-4 py-2">
           <Accordion type="single" collapsible className="w-full">
             {TROUBLESHOOTING_GUIDES.map((guide) => (
               <AccordionItem key={guide.id} value={guide.id}>
@@ -145,8 +123,8 @@ export function CaCertificateSettingsTab({ settings }: CaCertificateSettingsTabP
               </AccordionItem>
             ))}
           </Accordion>
-        </CardContent>
-      </Card>
+        </div>
+      </SettingsGroup>
     </>
   );
 }

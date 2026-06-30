@@ -1,4 +1,4 @@
-import { Info } from '@phosphor-icons/react';
+import { Info, PlayIcon, SquareIcon, PauseIcon, ArrowCounterClockwiseIcon } from '@phosphor-icons/react';
 import { AiInsightsPanel } from './components/insight-panel';
 import { ActionLogPanel } from './components/ActionLogPanel';
 import { CrawlSetupScreen } from './components/setup-screen';
@@ -11,6 +11,7 @@ import { TabbedPageLayout } from '@/components/tabs-layout/tabbed-page-layout';
 import { CrawlStatusBadge } from '@/components/status-badge';
 import { useProxyStart } from '@/hooks/use-proxy-start';
 import { useBrowserAutomationPage } from './hooks/use-page';
+import { startBrowserCrawl, stopBrowserCrawl, toggleBrowserCrawl } from '@/triggers';
 
 export function BrowserAutomationPage() {
   const { proxyStatus, isStarting, handleStartProxy } = useProxyStart();
@@ -75,8 +76,38 @@ export function BrowserAutomationPage() {
       >
         <div className="flex h-full min-h-0 flex-col bg-background">
           <header className="bg-muted p-1">
-            <div className="flex flex-wrap justify-end items-center gap-2">
-              <CrawlStatusBadge status={page.status} />
+            <div className="flex flex-wrap justify-between items-center gap-2">
+              <div className="flex items-center gap-2">
+                <CrawlStatusBadge status={page.status} />
+
+                {/* Start/Stop/Pause/Resume */}
+                {(page.status === 'idle' || page.status === 'completed' || page.status === 'failed' || page.status === 'stopped') && (
+                  <Button size="sm" className="h-7 text-xs" onClick={startBrowserCrawl}>
+                    <PlayIcon className="size-3" /> Start
+                  </Button>
+                )}
+                {page.status === 'running' && (
+                  <>
+                    <Button size="sm" variant="outline" className="h-7 text-xs" onClick={toggleBrowserCrawl}>
+                      <PauseIcon className="size-3" /> Pause
+                    </Button>
+                    <Button size="sm" variant="destructive" className="h-7 text-xs" onClick={stopBrowserCrawl}>
+                      <SquareIcon className="size-3" /> Stop
+                    </Button>
+                  </>
+                )}
+                {page.status === 'paused' && (
+                  <>
+                    <Button size="sm" variant="outline" className="h-7 text-xs" onClick={toggleBrowserCrawl}>
+                      <ArrowCounterClockwiseIcon className="size-3" /> Resume
+                    </Button>
+                    <Button size="sm" variant="destructive" className="h-7 text-xs" onClick={stopBrowserCrawl}>
+                      <SquareIcon className="size-3" /> Stop
+                    </Button>
+                  </>
+                )}
+              </div>
+
               <CrawlSetupScreen
                 setup={setup}
                 disabled={page.isRunning}

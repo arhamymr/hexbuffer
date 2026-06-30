@@ -47,16 +47,16 @@ function KeyValueEditor({
             checked={item.enabled}
             onCheckedChange={() => onItemToggle(index)}
           />
-          <div className="flex w-full">
+          <div className="flex-1 flex min-w-0">
             <ColorizedUrlInput
               placeholder="Name"
-              className="font-mono rounded-none text-xs border-r-0"
+              className="font-mono rounded-none text-xs border-r-0 flex-1 w-0 min-w-0"
               value={item.key}
               onChange={(v) => onItemChange(index, "key", v)}
             />
             <ColorizedUrlInput
               placeholder="Value"
-              className="font-mono text-xs rounded-none"
+              className="font-mono text-xs rounded-none flex-1 w-0 min-w-0"
               value={item.value}
               onChange={(v) => onItemChange(index, "value", v)}
             />

@@ -1,7 +1,6 @@
 import * as React from 'react';
 import { WarningCircleIcon, CheckIcon, EyeIcon, EyeSlashIcon, FloppyDiskIcon, XIcon } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -18,6 +17,7 @@ import {
   AI_PROVIDER_OPTIONS,
 } from '../constants';
 import type { SettingsPageState } from '../hooks/use-settings-page';
+import { SettingsGroup, SettingsRow } from './settings-group';
 
 interface AiSettingsTabProps {
   settings: SettingsPageState;
@@ -55,88 +55,76 @@ export function AiSettingsTab({ settings }: AiSettingsTabProps) {
 
   return (
     <>
-      <Card>
-        <CardHeader>
-          <CardTitle>AI Provider</CardTitle>
-          <CardDescription>
-            Configure BYOK and the model used by the hexbuffer AI workflow.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="ai-provider">Provider</Label>
-              <Select
-                value={aiSettings.provider}
-                onValueChange={updateAiProvider}
-                disabled={aiSettingsLoading}
-              >
-                <SelectTrigger id="ai-provider" className="w-full">
-                  <SelectValue placeholder="Select provider" />
-                </SelectTrigger>
-                <SelectContent>
-                  {AI_PROVIDER_OPTIONS.map((provider) => (
-                    <SelectItem key={provider.id} value={provider.id}>
-                      {provider.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="ai-model">Model</Label>
-              <Select
-                value={aiSettings.model}
-                onValueChange={(model) => updateAiSettings({ model })}
-                disabled={aiSettingsLoading}
-              >
-                <SelectTrigger id="ai-model" className="w-full">
-                  <SelectValue placeholder="Select model" />
-                </SelectTrigger>
-                <SelectContent>
-                  {modelOptions.map((model) => (
-                    <SelectItem key={model} value={model}>
-                      {model}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+      <SettingsGroup label="Provider" description="Configure BYOK and the model used by the AI workflow.">
+        <SettingsRow label="Provider">
+          <Select
+            value={aiSettings.provider}
+            onValueChange={updateAiProvider}
+            disabled={aiSettingsLoading}
+          >
+            <SelectTrigger id="ai-provider" className="w-40">
+              <SelectValue placeholder="Select provider" />
+            </SelectTrigger>
+            <SelectContent>
+              {AI_PROVIDER_OPTIONS.map((provider) => (
+                <SelectItem key={provider.id} value={provider.id}>
+                  {provider.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </SettingsRow>
+        <SettingsRow label="Model">
+          <Select
+            value={aiSettings.model}
+            onValueChange={(model) => updateAiSettings({ model })}
+            disabled={aiSettingsLoading}
+          >
+            <SelectTrigger id="ai-model" className="w-40">
+              <SelectValue placeholder="Select model" />
+            </SelectTrigger>
+            <SelectContent>
+              {modelOptions.map((model) => (
+                <SelectItem key={model} value={model}>
+                  {model}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </SettingsRow>
+        <SettingsRow
+          label={`${selectedProviderLabel} API Key`}
+          description={
+            aiSettings.hasApiKey
+              ? 'A key is saved in your OS credential store.'
+              : 'No key saved yet. Provider and model are saved locally; API keys are kept in the OS credential store.'
+          }
+        >
+          <div className="relative w-56">
+            <Input
+              type={showApiKey ? 'text' : 'password'}
+              value={apiKeyInput}
+              onChange={(event) => handleApiKeyChange(event.target.value)}
+              placeholder={
+                aiSettings.hasApiKey && !aiSettings.apiKey
+                  ? '••••••••••••••••••••••••'
+                  : (AI_API_KEY_PLACEHOLDERS[aiSettings.provider] ?? 'API key')
+              }
+              disabled={aiSettingsLoading}
+              className="pr-9"
+            />
+            <button
+              type="button"
+              onClick={() => setShowApiKey((prev) => !prev)}
+              className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-0.5 text-muted-foreground hover:text-foreground"
+              tabIndex={-1}
+            >
+              {showApiKey ? <EyeSlashIcon className="size-4" /> : <EyeIcon className="size-4" />}
+            </button>
           </div>
+        </SettingsRow>
 
-          <div className="space-y-2">
-            <Label htmlFor="ai-api-key">{selectedProviderLabel} API KeyIcon</Label>
-            <div className="relative">
-              <Input
-                id="ai-api-key"
-                type={showApiKey ? 'text' : 'password'}
-                value={apiKeyInput}
-                onChange={(event) => handleApiKeyChange(event.target.value)}
-                placeholder={
-                  aiSettings.hasApiKey && !aiSettings.apiKey
-                    ? '••••••••••••••••••••••••'
-                    : (AI_API_KEY_PLACEHOLDERS[aiSettings.provider] ?? 'API key')
-                }
-                disabled={aiSettingsLoading}
-                className="pr-10"
-              />
-              <button
-                type="button"
-                onClick={() => setShowApiKey((prev) => !prev)}
-                className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-muted-foreground hover:text-foreground"
-                tabIndex={-1}
-              >
-                {showApiKey ? <EyeSlashIcon className="size-4" /> : <EyeIcon className="size-4" />}
-              </button>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {aiSettings.hasApiKey
-                ? 'A key is saved in your OS credential store. Enter a new value only if you want to replace it.'
-                : 'No readable key is saved yet. Provider and model are saved locally; API keys are kept in the OS credential store.'}
-            </p>
-          </div>
-
+        <div className="px-4 py-3">
           <label className="flex items-start gap-3 rounded-md border border-amber-500/40 bg-amber-500/10 dark:border-amber-500/30 dark:bg-amber-500/10 p-3">
             <Checkbox
               checked={aiSettings.allowThirdPartyAiSharing}
@@ -155,21 +143,17 @@ export function AiSettingsTab({ settings }: AiSettingsTabProps) {
               </span>
             </span>
           </label>
+        </div>
 
-          {!canSaveAiSettings && (
-            <p className="text-xs text-amber-700 dark:text-amber-300">
-              Enable third-party AI data sharing before saving or using an API key.
-            </p>
-          )}
-
-          <div className="flex flex-wrap gap-3">
+        <SettingsRow label="Actions">
+          <div className="flex items-center gap-2">
             <Button
               size="xs"
               onClick={handleSaveAiSettings}
               disabled={aiSettingsLoading || aiSettingsSaving || !canSaveAiSettings}
             >
-              <FloppyDiskIcon className="mr-2 size-4" />
-              {aiSettingsSaving ? 'Saving...' : 'Saving AI Settings'}
+              <FloppyDiskIcon className="mr-1.5 size-3.5" />
+              {aiSettingsSaving ? 'Saving…' : 'Save'}
             </Button>
             <Button
               size="xs"
@@ -180,38 +164,39 @@ export function AiSettingsTab({ settings }: AiSettingsTabProps) {
               Clear API Key
             </Button>
           </div>
+        </SettingsRow>
 
-          <div className="space-y-2">
-            <Label>Saved Keys</Label>
-            <div className="grid gap-2">
-              {AI_PROVIDER_OPTIONS.map((provider) => {
-                const saved = !!providerKeyStatus[provider.id];
-                return (
-                  <div
-                    key={provider.id}
-                    className="flex items-center justify-between rounded-md border px-3 py-2"
-                  >
-                    <span className="text-sm font-medium">{provider.label}</span>
-                    <span className={`flex items-center gap-1.5 text-xs ${saved ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'}`}>
-                      {saved ? (
-                        <>
-                          <CheckIcon className="size-3.5" />
-                          Key saved
-                        </>
-                      ) : (
-                        <>
-                          <XIcon className="size-3.5" />
-                          No key
-                        </>
-                      )}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
+        {!canSaveAiSettings && (
+          <div className="px-4 py-2">
+            <p className="text-xs text-amber-700 dark:text-amber-300">
+              Enable third-party AI data sharing before saving or using an API key.
+            </p>
           </div>
-        </CardContent>
-      </Card>
+        )}
+      </SettingsGroup>
+
+      <SettingsGroup label="Saved Keys">
+        {AI_PROVIDER_OPTIONS.map((provider) => {
+          const saved = !!providerKeyStatus[provider.id];
+          return (
+            <SettingsRow key={provider.id} label={provider.label}>
+              <span className={`flex items-center gap-1.5 text-xs ${saved ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'}`}>
+                {saved ? (
+                  <>
+                    <CheckIcon className="size-3.5" />
+                    Key saved
+                  </>
+                ) : (
+                  <>
+                    <XIcon className="size-3.5" />
+                    No key
+                  </>
+                )}
+              </span>
+            </SettingsRow>
+          );
+        })}
+      </SettingsGroup>
     </>
   );
 }

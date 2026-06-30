@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import { MonacoDiffEditor } from '@/components/ui/monaco-diff-editor';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
 import { toast } from 'sonner';
 import { useComparerPage } from './hooks/use-comparer-page';
 import { ComparerToolbar } from './components/comparer-toolbar';
 import { ComparerInputs } from './components/comparer-inputs';
+import { ComparerDiffView } from './components/comparer-diff-view';
 
 export function ComparerPage() {
   const page = useComparerPage();
@@ -72,20 +72,18 @@ export function ComparerPage() {
             
             <ResizablePanel defaultSize={65} minSize={30}>
               <div className="relative h-full w-full">
-                <MonacoDiffEditor
-                  originalValue={page.valueA}
-                  modifiedValue={page.valueB}
-                  className="absolute inset-0 h-full w-full"
+                <ComparerDiffView
+                  diffResult={page.diffResult}
+                  diffMode={page.diffMode}
                 />
               </div>
             </ResizablePanel>
           </ResizablePanelGroup>
         ) : (
           <div className="relative h-full w-full">
-            <MonacoDiffEditor
-              originalValue={page.valueA}
-              modifiedValue={page.valueB}
-              className="absolute inset-0 h-full w-full"
+            <ComparerDiffView
+              diffResult={page.diffResult}
+              diffMode={page.diffMode}
             />
           </div>
         )}

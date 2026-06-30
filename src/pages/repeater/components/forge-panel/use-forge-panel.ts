@@ -1,8 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { useCollectionsStore, type KeyValuePair } from '@/stores/collections';
 import {
-  getQueryParams,
-  rebuildUrl as rebuildUrlHelper,
   getFormattedBody as formatBody,
   deriveActiveEndpoint,
 } from './forge-utils';
@@ -13,70 +11,52 @@ export function useForgePanel() {
 
   const [activeReqTab, setActiveReqTab] = useState('params');
   const [activeResTab, setActiveResTab] = useState('pretty');
-  const [queryParams, setQueryParams] = useState<KeyValuePair[]>(() =>
-    getQueryParams(req.url),
-  );
 
-  // Sync query params when URL changes externally
-  useEffect(() => {
-    setQueryParams(getQueryParams(req.url));
-  }, [req.url]);
+  // Query params live in the store — same pattern as headers.
+  // The URL and query params are independent fields; they are only
+  // combined into the final URL when the request is sent.
+  const queryParams = req.queryParams;
 
   // ── Query param helpers ──
 
-  const rebuildUrl = useCallback(
-    (params: KeyValuePair[]) => {
-      rebuildUrlHelper(
-        (url) => store.updateActiveRequest(() => ({ url })),
-        req.url,
-        params,
-      );
-    },
-    [req.url, store],
-  );
-
   const handleQueryParamChange = useCallback(
     (index: number, field: 'key' | 'value', value: string) => {
-      setQueryParams((prev) => {
-        const updated = prev.map((p, i) =>
-          i === index ? { ...p, [field]: value } : p,
-        );
-        rebuildUrl(updated);
-        return updated;
+      store.updateActiveRequest((current) => {
+        const updated = [...current.queryParams];
+        updated[index] = { ...updated[index], [field]: value };
+        return { queryParams: updated };
       });
     },
-    [rebuildUrl],
+    [store],
   );
 
   const handleQueryParamToggle = useCallback(
     (index: number) => {
-      setQueryParams((prev) => {
-        const updated = prev.map((p, i) =>
-          i === index ? { ...p, enabled: !p.enabled } : p,
-        );
-        rebuildUrl(updated);
-        return updated;
+      store.updateActiveRequest((current) => {
+        const updated = [...current.queryParams];
+        updated[index] = {
+          ...updated[index],
+          enabled: !updated[index].enabled,
+        };
+        return { queryParams: updated };
       });
     },
-    [rebuildUrl],
+    [store],
   );
 
   const handleAddQueryParam = useCallback(() => {
-    setQueryParams((prev) => [
-      ...prev,
-      { key: '', value: '', enabled: true },
-    ]);
-  }, []);
+    store.updateActiveRequest((current) => ({
+      queryParams: [...current.queryParams, { key: '', value: '', enabled: true }],
+    }));
+  }, [store]);
 
   const handleRemoveQueryParam = useCallback(
     (index: number) => {
-      setQueryParams((prev) => {
-        const updated = prev.filter((_, i) => i !== index);
-        rebuildUrl(updated);
-        return updated;
-      });
+      store.updateActiveRequest((current) => ({
+        queryParams: current.queryParams.filter((_, i) => i !== index),
+      }));
     },
-    [rebuildUrl],
+    [store],
   );
 
   // ── Header handlers (delegate to store) ──

@@ -23,11 +23,13 @@ function colorizeHtml(value: string): string {
 
 function useEnvVarKeys(): string[] {
   const contexts = useCollectionsStore((s) => s.contexts);
+  const activeContextId = useCollectionsStore((s) => s.activeContextId);
   return React.useMemo(() => {
     const keys = new Set<string>();
-    for (const ctx of contexts) {
+    const activeCtx = contexts.find((c) => c.id === activeContextId);
+    if (activeCtx) {
       try {
-        const vars = JSON.parse(ctx.variables);
+        const vars = JSON.parse(activeCtx.variables);
         if (Array.isArray(vars)) {
           for (const v of vars) {
             if (v.key?.trim()) keys.add(v.key.trim());
@@ -38,7 +40,7 @@ function useEnvVarKeys(): string[] {
       }
     }
     return Array.from(keys).sort();
-  }, [contexts]);
+  }, [contexts, activeContextId]);
 }
 
 function getCaretOffset(container: HTMLElement): number {
@@ -88,11 +90,14 @@ export function ColorizedUrlInput({
   className,
 }: ColorizedUrlInputProps) {
   const editableRef = React.useRef<HTMLDivElement>(null);
+  const listRef = React.useRef<HTMLDivElement>(null);
   const isInternalUpdate = React.useRef(false);
   const [popoverOpen, setPopoverOpen] = React.useState(false);
   const [popoverQuery, setPopoverQuery] = React.useState('');
+  const [highlightedIndex, setHighlightedIndex] = React.useState(0);
 
   const envVarKeys = useEnvVarKeys();
+  const activeContextId = useCollectionsStore((s) => s.activeContextId);
 
   // Sync innerHTML when value changes externally
   React.useEffect(() => {
@@ -102,11 +107,13 @@ export function ColorizedUrlInput({
       return;
     }
 
-    const caret = getCaretOffset(el);
     el.innerHTML = value ? colorizeHtml(value) : '';
 
-    // Restore cursor if content still exists
-    if (value) {
+    // Only restore caret position if this element currently has focus;
+    // otherwise setCaretOffset would steal focus from whatever field
+    // the user is actively editing (e.g. a query param input).
+    if (value && document.activeElement === el) {
+      const caret = getCaretOffset(el);
       setCaretOffset(el, Math.min(caret, value.length));
     }
 
@@ -167,16 +174,6 @@ export function ColorizedUrlInput({
     evaluatePopover();
   }, [evaluatePopover]);
 
-  const handleKeyDown = React.useCallback(
-    (e: React.KeyboardEvent) => {
-      if (e.key === 'Escape' && popoverOpen) {
-        e.preventDefault();
-        setPopoverOpen(false);
-      }
-    },
-    [popoverOpen],
-  );
-
   const handleSelectVar = React.useCallback(
     (varKey: string) => {
       const el = editableRef.current;
@@ -213,7 +210,67 @@ export function ColorizedUrlInput({
     return envVarKeys.filter((k) => k.toLowerCase().includes(q));
   }, [envVarKeys, popoverQuery]);
 
-  const shouldShowPopover = popoverOpen && envVarKeys.length > 0;
+  // Reset highlighted index when filtering changes
+  React.useEffect(() => {
+    setHighlightedIndex(0);
+  }, [filteredVars.length, popoverQuery]);
+
+  // Scroll active item into view
+  React.useEffect(() => {
+    if (popoverOpen && listRef.current) {
+      const activeEl = listRef.current.querySelector('[data-highlighted="true"]');
+      if (activeEl) {
+        activeEl.scrollIntoView({ block: 'nearest' });
+      }
+    }
+  }, [highlightedIndex, popoverOpen]);
+
+  const handleKeyDown = React.useCallback(
+    (e: React.KeyboardEvent) => {
+      if (popoverOpen && filteredVars.length > 0) {
+        if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          setHighlightedIndex((prev) => (prev + 1) % filteredVars.length);
+          return;
+        }
+        if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          setHighlightedIndex((prev) => (prev - 1 + filteredVars.length) % filteredVars.length);
+          return;
+        }
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          const selected = filteredVars[highlightedIndex];
+          if (selected) {
+            handleSelectVar(selected);
+          }
+          return;
+        }
+      }
+
+      if (e.key === 'Enter') {
+        // Prevent newline insertion since this input should be single-line
+        e.preventDefault();
+      }
+
+      if (e.key === 'Escape' && popoverOpen) {
+        e.preventDefault();
+        setPopoverOpen(false);
+      }
+    },
+    [popoverOpen, filteredVars, highlightedIndex, handleSelectVar],
+  );
+
+  const shouldShowPopover = popoverOpen;
+
+  const handleBlur = React.useCallback(() => {
+    // ponytail: reset scroll offsets when blurred so text-ellipsis displays from the start
+    const el = editableRef.current;
+    if (el) {
+      el.scrollLeft = 0;
+      el.scrollTop = 0;
+    }
+  }, []);
 
   return (
     <Popover open={shouldShowPopover} onOpenChange={setPopoverOpen}>
@@ -227,6 +284,7 @@ export function ColorizedUrlInput({
           onInput={handleInput}
           onClick={handleClick}
           onKeyDown={handleKeyDown}
+          onBlur={handleBlur}
           className={cn(
             'border-input min-h-7 w-full min-w-0 rounded-sm border bg-transparent px-3 py-1 text-sm transition-[color,box-shadow] outline-none',
             'focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]',
@@ -242,19 +300,29 @@ export function ColorizedUrlInput({
         sideOffset={4}
         onOpenAutoFocus={(e) => e.preventDefault()}
       >
-        <div className="px-2 py-1.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+        <div className="px-2 py-1.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider border-b bg-muted/20">
           Environment Variables
         </div>
-        <div className="max-h-48 overflow-y-auto">
+        <div className="max-h-48 overflow-y-auto p-1 space-y-0.5" ref={listRef}>
           {filteredVars.length === 0 ? (
-            <div className="px-2 py-4 text-center text-xs text-muted-foreground">
-              No matching variables
+            <div className="px-3 py-4 text-center text-xs text-muted-foreground leading-relaxed">
+              {!activeContextId ? (
+                <span>No active environment.<br />Select one to use variables.</span>
+              ) : (
+                <span>No matching variables</span>
+              )}
             </div>
           ) : (
-            filteredVars.map((varKey) => (
+            filteredVars.map((varKey, idx) => (
               <button
                 key={varKey}
-                className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground cursor-pointer transition-colors"
+                data-highlighted={idx === highlightedIndex}
+                className={cn(
+                  'flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm text-left transition-all duration-150 active:scale-[0.98] cursor-pointer',
+                  idx === highlightedIndex
+                    ? 'bg-accent text-accent-foreground font-semibold'
+                    : 'hover:bg-accent/50 hover:text-accent-foreground text-muted-foreground',
+                )}
                 onMouseDown={(e) => {
                   e.preventDefault();
                   handleSelectVar(varKey);

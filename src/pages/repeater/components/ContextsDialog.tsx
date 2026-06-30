@@ -15,6 +15,7 @@ import {
   type KeyValuePair,
 } from '@/stores/collections';
 import { PlusIcon, TrashIcon, PencilSimpleIcon, CopyIcon } from '@phosphor-icons/react';
+import { toast } from 'sonner';
 
 interface ContextsDialogProps {
   open: boolean;
@@ -56,6 +57,56 @@ export function ContextsDialog({ open, onOpenChange }: ContextsDialogProps) {
     }
     setEditingContext(ctx);
     setIsCreating(false);
+  };
+
+  const handleBuildFromRequest = () => {
+    const store = useCollectionsStore.getState();
+    const req = store.activeRequest;
+
+    const varKeys = new Set<string>();
+
+    const scan = (str: string) => {
+      const matches = str.match(/\{\{([^}]+)\}\}/g);
+      if (matches) {
+        matches.forEach((m) => {
+          const key = m.slice(2, -2).trim();
+          if (key) varKeys.add(key);
+        });
+      }
+    };
+
+    scan(req.url || '');
+    req.queryParams.forEach((p) => {
+      scan(p.key || '');
+      scan(p.value || '');
+    });
+    req.headers.forEach((h) => {
+      scan(h.key || '');
+      scan(h.value || '');
+    });
+    scan(req.body || '');
+
+    if (varKeys.size === 0) {
+      toast.info('No environment variables found in the active request.');
+      return;
+    }
+
+    const currentVars = [...variables];
+    let addedCount = 0;
+
+    varKeys.forEach((key) => {
+      if (!currentVars.some((v) => v.key === key)) {
+        currentVars.push({ key, value: '', enabled: true });
+        addedCount++;
+      }
+    });
+
+    if (addedCount > 0) {
+      setVariables(currentVars);
+      toast.success(`Imported ${addedCount} variable(s) from the active request.`);
+    } else {
+      toast.info('All variables from the active request are already in this environment.');
+    }
   };
 
   const handleAddVar = () => {
@@ -198,9 +249,24 @@ export function ContextsDialog({ open, onOpenChange }: ContextsDialogProps) {
                     <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                       Variables
                     </span>
-                    <Button variant="outline" size="sm" className="h-7 px-2" onClick={handleAddVar}>
-                      <PlusIcon className="h-3.5 w-3.5 mr-1" /> Add Row
-                    </Button>
+                    <div className="flex items-center gap-1.5">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 px-2 text-[11px] font-medium transition-all active:scale-[0.97]"
+                        onClick={handleBuildFromRequest}
+                      >
+                        Build from Active Request
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 px-2 text-[11px] font-medium transition-all active:scale-[0.97]"
+                        onClick={handleAddVar}
+                      >
+                        <PlusIcon className="h-3.5 w-3.5 mr-1" /> Add Row
+                      </Button>
+                    </div>
                   </div>
 
                   <ScrollArea className="flex-1 border rounded-md p-2">

@@ -1,7 +1,5 @@
 import {
   AsteriskIcon,
-  DatabaseIcon,
-  NetworkIcon,
   ArrowClockwiseIcon,
   ArrowCounterClockwiseIcon,
   FloppyDiskIcon,
@@ -19,9 +17,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import {
   MAX_PROXY_PORT,
   MIN_PROXY_PORT,
@@ -29,8 +25,8 @@ import {
   isValidProxyPort,
 } from '@/stores/app';
 import type { SettingsPageState } from '../hooks/use-settings-page';
-import { NavSettingsCard } from './nav-settings-card';
 import { ManualUpdateCommand } from './manual-update-command';
+import { SettingsGroup, SettingsRow } from './settings-group';
 
 interface GeneralSettingsTabProps {
   settings: SettingsPageState;
@@ -64,28 +60,21 @@ export function GeneralSettingsTab({ settings }: GeneralSettingsTabProps) {
   const proxyPortIsChanged = proxyPortIsValid && parsedProxyPort !== proxyDefaultPort;
   const proxyRuntimeDiffers =
     proxyStatus === 'connected' && proxyPort !== null && proxyPort !== proxyDefaultPort;
-  const activeProxyPort = getEffectiveProxyPort({ proxyPort, proxyDefaultPort });
+
   const currentListenerLabel =
     proxyStatus === 'connected' && proxyPort !== null
       ? `127.0.0.1:${proxyPort}`
       : 'Not running';
-  const configuredListenerLabel = `127.0.0.1:${proxyDefaultPort}`;
 
   return (
     <>
-      <Card>
-        <CardHeader>
+      <SettingsGroup label="Proxy Listener" description="Choose the port used when the proxy starts.">
+        <SettingsRow
+          label="Listener port"
+          description={`Current: ${currentListenerLabel} — Configured: 127.0.0.1:${proxyDefaultPort}${proxyRuntimeDiffers ? ` (running on ${getEffectiveProxyPort({ proxyPort, proxyDefaultPort })})` : ''}`}
+        >
           <div className="flex items-center gap-2">
-            <NetworkIcon className="size-5 text-primary" />
-            <CardTitle>Proxy Listener</CardTitle>
-          </div>
-          <CardDescription>Choose the port used when the proxy starts</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="grid max-w-sm gap-2">
-            <Label htmlFor="default-proxy-port">Listener port</Label>
             <Input
-              id="default-proxy-port"
               type="number"
               min={MIN_PROXY_PORT}
               max={MAX_PROXY_PORT}
@@ -94,137 +83,98 @@ export function GeneralSettingsTab({ settings }: GeneralSettingsTabProps) {
               value={proxyPortDraft}
               aria-invalid={!proxyPortIsValid}
               onChange={(event) => setProxyPortDraft(event.target.value)}
+              className="w-28"
             />
-          </div>
-          <div className="space-y-1 text-sm text-muted-foreground">
-            <p>
-              Current listener: <span className="font-medium">{currentListenerLabel}</span>
-            </p>
-            <p>
-              Configured listener: <span className="font-medium">{configuredListenerLabel}</span>
-              {proxyRuntimeDiffers
-                ? `; running on ${activeProxyPort} because ${proxyDefaultPort} is unavailable or the proxy has not restarted cleanly.`
-                : ''}
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2">
             <Button
+              size="xs"
+              variant="outline"
               onClick={handleSaveProxyDefaultPort}
               disabled={!proxyPortIsChanged && !proxyRuntimeDiffers}
             >
-              <FloppyDiskIcon className="mr-2 size-4" />
-              FloppyDiskIcon Port
+              <FloppyDiskIcon className="mr-1.5 size-3.5" />
+              Save
             </Button>
             <Button
-              variant="outline"
+              size="xs"
+              variant="ghost"
               onClick={handleResetProxyDefaultPort}
               disabled={proxyDefaultPort === proxyFactoryDefaultPort}
             >
-              <ArrowCounterClockwiseIcon className="mr-2 size-4" />
-              Reset Port
+              <ArrowCounterClockwiseIcon className="size-3.5" />
             </Button>
           </div>
-        </CardContent>
-      </Card>
+        </SettingsRow>
+      </SettingsGroup>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Updates</CardTitle>
-          <CardDescription>CheckIcon for and install application updates</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <p className="text-sm text-muted-foreground">
-            Current version: <span className="font-medium">{currentVersion || 'Unknown'}</span>
-            {updateVersion && (
-              <span className="ml-2 text-green-600 dark:text-green-400">
-                (v{updateVersion} available)
-              </span>
-            )}
-          </p>
-          <div className="flex flex-wrap gap-2">
+      <SettingsGroup label="Updates" description={`Current version: ${currentVersion || 'Unknown'}${updateVersion ? ` (v${updateVersion} available)` : ''}`}>
+        <SettingsRow label="Check for updates">
+          <div className="flex items-center gap-2">
             <Button
+              size="xs"
+              variant="outline"
               onClick={handleCheckForUpdates}
               disabled={updateChecking || updateDownloading}
             >
-              <ArrowClockwiseIcon className={`mr-2 size-4 ${updateChecking ? 'animate-spin' : ''}`} />
-              {updateChecking ? 'Checking...' : 'CheckIcon for Updates'}
+              <ArrowClockwiseIcon className={`mr-1.5 size-3.5 ${updateChecking ? 'animate-spin' : ''}`} />
+              {updateChecking ? 'Checking…' : 'Check'}
             </Button>
             {updateAvailable && (
               <Button
-                variant="default"
+                size="xs"
                 onClick={handleInstallUpdate}
                 disabled={updateDownloading}
               >
-                <AsteriskIcon className={`mr-2 size-4 ${updateDownloading ? 'animate-spin' : ''}`} />
-                {updateDownloading ? 'Installing...' : `Install v${updateVersion}`}
+                <AsteriskIcon className={`mr-1.5 size-3.5 ${updateDownloading ? 'animate-spin' : ''}`} />
+                {updateDownloading ? 'Installing…' : `Install v${updateVersion}`}
               </Button>
             )}
           </div>
-          {updateMessage && (
-            <p className="text-sm text-muted-foreground">{updateMessage}</p>
-          )}
-          {updateError && (
-            <ManualUpdateCommand message="CopyIcon this command and run it manually in your terminal to update." />
-          )}
-        </CardContent>
-      </Card>
+        </SettingsRow>
+        {updateMessage && (
+          <SettingsRow label="Status">
+            <span className="text-xs text-muted-foreground">{updateMessage}</span>
+          </SettingsRow>
+        )}
+        {updateError && (
+          <div className="px-4 py-3">
+            <ManualUpdateCommand message="Copy this command and run it manually in your terminal to update." />
+          </div>
+        )}
+      </SettingsGroup>
 
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <DatabaseIcon className="size-5 text-primary" />
-            <CardTitle>Storage</CardTitle>
-          </div>
-          <CardDescription>Local application data paths</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="space-y-1">
-            <p className="text-sm font-medium">DatabaseIcon</p>
-            <p className="break-all rounded-md border bg-muted/40 px-3 py-2 font-mono text-xs text-muted-foreground">
-              {storageInfo?.databasePath ?? 'Loading...'}
-            </p>
-          </div>
-          <div className="space-y-1">
-            <p className="text-sm font-medium">Browser Automation Artifacts</p>
-            <p className="break-all rounded-md border bg-muted/40 px-3 py-2 font-mono text-xs text-muted-foreground">
-              {storageInfo?.browserArtifactsPath ?? 'Loading...'}
-            </p>
-          </div>
-          <p className="text-sm text-muted-foreground">
-            Proxy history, documents, and other local records are stored in this database on your device.
-          </p>
-          <div className="flex flex-wrap gap-2">
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button
-                  variant="destructive"
-                  disabled={resettingLocalData}
-                >
-                  <TrashIcon className="mr-2 size-4" />
-                  {resettingLocalData ? 'Resetting...' : 'Reset'}
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Reset local browser data?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    This clears browser automation artifacts, resets the managed intercept browser profile,
-                    and removes saved hexbuffer CA files. Proxy history and documents stay in the database.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleResetLocalData}>
-                    Reset
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          </div>
-        </CardContent>
-      </Card>
-
-      <NavSettingsCard />
+      <SettingsGroup label="Storage" description="Local application data paths.">
+        <SettingsRow label="Database" description={storageInfo?.databasePath ?? 'Loading…'} />
+        <SettingsRow label="Browser Artifacts" description={storageInfo?.browserArtifactsPath ?? 'Loading…'} />
+        <SettingsRow label="Reset local data" description="Clears browser automation artifacts, resets the managed intercept browser profile, and removes saved CA files.">
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                size="xs"
+                variant="destructive"
+                disabled={resettingLocalData}
+              >
+                <TrashIcon className="mr-1.5 size-3.5" />
+                {resettingLocalData ? 'Resetting…' : 'Reset'}
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Reset local browser data?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This clears browser automation artifacts, resets the managed intercept browser profile,
+                  and removes saved CA files. Proxy history and documents stay in the database.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleResetLocalData}>
+                  Reset
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </SettingsRow>
+      </SettingsGroup>
     </>
   );
 }

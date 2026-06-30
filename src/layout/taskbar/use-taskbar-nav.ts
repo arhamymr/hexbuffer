@@ -39,23 +39,49 @@ export function useSidebarNav() {
   const pinnedNavItems = useAppSettingsStore((s) => s.pinnedNavItems);
   const togglePinNavItem = useAppSettingsStore((s) => s.togglePinNavItem);
 
+  const windows = useNavStore((state) => state.windows);
+
+  const openedApps = React.useMemo(() => {
+    return windows.filter((w) => w.isOpen).map((w) => w.id);
+  }, [windows]);
+
+  const openWindow = useNavStore((state) => state.openWindow);
+  const closeWindow = useNavStore((state) => state.closeWindow);
+  const minimizeWindow = useNavStore((state) => state.minimizeWindow);
+  const focusWindow = useNavStore((state) => state.focusWindow);
+
   const visibleNavItems = React.useMemo(
     () => mainNavItems.filter((item) => !hiddenNavItems.includes(item.href)),
     [hiddenNavItems],
   );
 
-  const MAX_DOCK_ITEMS = 10;
+  // Auto-register/open window when pathname changes (unless desktop overview)
+  React.useEffect(() => {
+    const matchedItem = visibleNavItems.find((item) => item.href === pathname);
+    if (matchedItem && pathname !== '/') {
+      const activeWindowId = useNavStore.getState().activeWindowId;
+      const winState = useNavStore.getState().windows.find((w) => w.id === pathname);
+      const isAlreadyActive = winState && winState.isOpen && !winState.isMinimized && activeWindowId === pathname;
 
-  const dockNavItems = React.useMemo(() => {
-    // Overview always appears first (if visible), then pinned items, max 10
-    const overview = visibleNavItems.find((item) => item.href === '/');
-    const pinned = pinnedNavItems
+      if (!isAlreadyActive) {
+        openWindow(pathname, matchedItem.label);
+      }
+    }
+  }, [pathname, visibleNavItems, openWindow]);
+
+  const pinnedDockItems = React.useMemo(() => {
+    return pinnedNavItems
       .filter((href) => href !== '/')
       .map((href) => visibleNavItems.find((item) => item.href === href))
       .filter((item): item is NavItem => item != null);
-    const items = overview ? [overview, ...pinned] : pinned;
-    return items.slice(0, MAX_DOCK_ITEMS);
   }, [visibleNavItems, pinnedNavItems]);
+
+  const unpinnedOpenedItems = React.useMemo(() => {
+    return openedApps
+      .filter((href) => href !== '/' && !pinnedNavItems.includes(href))
+      .map((href) => visibleNavItems.find((item) => item.href === href))
+      .filter((item): item is NavItem => item != null);
+  }, [visibleNavItems, openedApps, pinnedNavItems]);
 
   React.useEffect(() => {
     if (hiddenNavItems.includes(pathname)) {
@@ -89,10 +115,16 @@ export function useSidebarNav() {
     pathname,
     blinkingItems,
     visibleNavItems,
-    dockNavItems,
+    pinnedDockItems,
+    unpinnedOpenedItems,
     pinnedNavItems,
     togglePinNavItem,
     isNavItemActive,
     getNavStatus,
+    openedApps,
+    openWindow,
+    closeWindow,
+    minimizeWindow,
+    focusWindow,
   };
 }

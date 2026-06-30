@@ -3,7 +3,6 @@ import {
   PlayIcon,
   CheckCircleIcon,
   WarningCircleIcon,
-  WarningCircleIcon,
   Info,
   TrashIcon,
   CaretDownIcon,

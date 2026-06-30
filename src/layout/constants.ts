@@ -1,5 +1,6 @@
 import React from 'react';
-import { HouseIcon, ArrowsDownUpIcon, CubeIcon, BugIcon, PauseCircleIcon, ArrowsClockwiseIcon, PinwheelIcon, SwordIcon, FlaskIcon, BinaryIcon, AppWindowIcon, FileTextIcon, DatabaseIcon, ShieldCheckIcon, CatIcon, KeyIcon, FingerprintIcon, GitDiffIcon, NetworkIcon, LightningIcon, ListIcon } from '@phosphor-icons/react';
+import { HouseIcon, ArrowsDownUpIcon, CubeIcon, BugIcon, PauseCircleIcon, ArrowsClockwiseIcon, PinwheelIcon, SwordIcon, FlaskIcon, BinaryIcon, AppWindowIcon, FileTextIcon, DatabaseIcon, ShieldCheckIcon, CatIcon, KeyIcon, FingerprintIcon, GearSixIcon, GitDiffIcon, NetworkIcon, LightningIcon, ListIcon, RobotIcon, TerminalWindowIcon, NoteIcon } from '@phosphor-icons/react';
+
 
 import iconBrowser from '@/assets/feature/browser.png';
 import iconDocuments from '@/assets/feature/documents.png';
@@ -25,6 +26,9 @@ export const allNavItems: NavItem[] = [
   { label: 'Workflow', icon: PinwheelIcon, iconImage: iconWorkflow, href: '/automation', devOnly: true },
   { label: 'Browser', icon: AppWindowIcon, iconImage: iconBrowser, href: '/browser' },
   { label: 'Intercept', icon: PauseCircleIcon, href: '/intercept' },
+  { label: 'AI Assistant', icon: RobotIcon, href: '/assistant' },
+  { label: 'Terminal', icon: TerminalWindowIcon, iconImage: iconTerminal, href: '/terminal' },
+  { label: 'Scratchpad', icon: NoteIcon, href: '/scratchpad' },
 
   { label: 'Invoker', icon: SwordIcon, href: '/invoker' },
   { label: 'Repeater', icon: ArrowsClockwiseIcon, iconImage: iconRepeater, href: '/repeater' },
@@ -37,6 +41,7 @@ export const allNavItems: NavItem[] = [
   { label: 'JWT', icon: KeyIcon, href: '/jwt' },
   { label: 'XSS', icon: LightningIcon, href: '/xss-generator' },
   { label: 'SQL Inject', icon: DatabaseIcon, href: '/sql-injection' },
+  { label: 'Settings', icon: GearSixIcon, href: '/settings' },
 
   { label: 'Debugger', icon: BugIcon, href: '/debugger', devOnly: true },
   { label: 'Regression', icon: FlaskIcon, href: '/regression', devOnly: true },

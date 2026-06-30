@@ -1,10 +1,11 @@
 import { useState, useCallback, useEffect } from 'react';
-import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
+import { useNavigate } from 'react-router-dom';
 import { invoke } from '@tauri-apps/api/core';
 import { SpinnerGapIcon, GearIcon, KeyIcon } from '@phosphor-icons/react';
 import { toast } from 'sonner';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import { useNavStore } from '@/stores/nav';
 import {
   Dialog,
   DialogContent,
@@ -17,6 +18,7 @@ import {
 const STORAGE_KEY = 'ca-install-dialog-dismissed';
 
 export function CaInstallDialog() {
+  const navigate = useNavigate();
   const [installing, setInstalling] = useState(false);
   const [open, setOpen] = useState(() => !localStorage.getItem(STORAGE_KEY));
 
@@ -40,27 +42,10 @@ export function CaInstallDialog() {
     }
   }, []);
 
-  const openSettings = async () => {
+  const openSettings = () => {
     setOpen(false);
-    try {
-      const existing = await WebviewWindow.getByLabel('settings');
-      if (existing) {
-        await existing.unminimize();
-        await existing.show();
-        await existing.setFocus();
-        return;
-      }
-      new WebviewWindow('settings', {
-        url: '/?window=settings',
-        title: 'hexbuffer - Settings',
-        width: 700,
-        height: 600,
-        decorations: true,
-        resizable: true,
-      });
-    } catch {
-      window.open('/settings', '_blank');
-    }
+    useNavStore.getState().openWindow('/settings', 'Settings');
+    useNavStore.getState().focusWindow('/settings', navigate);
   };
 
   return (

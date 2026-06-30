@@ -16,7 +16,7 @@ export function RepeaterPage() {
       onCloseTabsToLeft={page.onCloseTabsToLeft}
       onCloseTabsToRight={page.onCloseTabsToRight}
       className="flex h-full min-h-0 flex-col bg-background"
-      contentClassName="flex-1 m-2 border rounded-lg overflow-hidden bg-background min-h-0"
+      contentClassName="flex-1 m-2 border rounded-md overflow-hidden bg-background min-h-0"
     >
       {page.activeWorkspaceId && (
         <WorkspacePanel key={page.activeWorkspaceId} workspaceId={page.activeWorkspaceId} />

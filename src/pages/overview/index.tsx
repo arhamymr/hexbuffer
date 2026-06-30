@@ -1,5 +1,4 @@
 import { useOverviewPage } from './hooks/use-overview-page';
-import { ClockWidget } from './components/clock-widget';
 import { ProxyWidget } from './components/proxy-widget';
 import { ScratchpadWidget } from './components/scratchpad-widget';
 import { CollectionsWidget } from './components/collections-widget';
@@ -48,7 +47,6 @@ export function OverviewPage() {
         </div>
 
         <div className="w-full md:w-64 lg:w-72 shrink-0 flex flex-col gap-4">
-          <ClockWidget />
           <CollectionsWidget />
           <ProxyWidget />
           <ScratchpadWidget />

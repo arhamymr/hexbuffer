@@ -217,7 +217,7 @@ export function CrawlSetupScreen({
                 <div className="flex items-center justify-between gap-3">
                   <div className="space-y-1">
                     <Label htmlFor="capture-screenshots">Capture screenshots</Label>
-                    <p className="text-xs text-muted-foreground">FloppyDiskIcon a full-page PNG for each visited page.</p>
+                    <p className="text-xs text-muted-foreground">Save a full-page PNG for each visited page.</p>
                   </div>
                   <Switch
                     id="capture-screenshots"
@@ -229,7 +229,7 @@ export function CrawlSetupScreen({
                 <div className="flex items-center justify-between gap-3">
                   <div className="space-y-1">
                     <Label htmlFor="capture-rendered-html">Capture rendered HTML</Label>
-                    <p className="text-xs text-muted-foreground">FloppyDiskIcon the post-JS DOM after the page finishes loading.</p>
+                    <p className="text-xs text-muted-foreground">Save the post-JS DOM after the page finishes loading.</p>
                   </div>
                   <Switch
                     id="capture-rendered-html"
@@ -260,7 +260,7 @@ export function CrawlSetupScreen({
 
           <DialogFooter>
             <Button type="submit" disabled={disabled || !isValid}>
-              FloppyDiskIcon
+              Save
             </Button>
           </DialogFooter>
         </form>

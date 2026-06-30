@@ -346,8 +346,6 @@ fn main() {
             hexbuffer::commands::chat_sessions::delete_chat_session,
             hexbuffer::commands::chat_sessions::get_chat_messages,
             hexbuffer::commands::chat_sessions::save_chat_messages,
-            hexbuffer::commands::terminal::get_default_shell,
-            hexbuffer::commands::terminal::get_home_directory,
             hexbuffer::commands::threats::get_threats_settings,
             hexbuffer::commands::threats::save_threats_settings,
             hexbuffer::commands::threats::validate_ghidra_headless,

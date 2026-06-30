@@ -204,6 +204,15 @@ export function AppSidebar() {
   const windows = useNavStore((state) => state.windows);
   const activeWindowId = useNavStore((state) => state.activeWindowId);
 
+  const [time, setTime] = React.useState(new Date());
+
+  React.useEffect(() => {
+    const timer = setInterval(() => setTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const timeString = `${String(time.getHours()).padStart(2, '0')}:${String(time.getMinutes()).padStart(2, '0')}`;
+
   const isAssistantOpen = windows.some((w) => w.id === '/assistant' && w.isOpen);
   const isAssistantActive = activeWindowId === '/assistant';
 
@@ -489,6 +498,19 @@ export function AppSidebar() {
               </button>
             </div>
           </div>
+
+          {/* Clock */}
+          <div className="h-5 w-px bg-border/60 mx-0.5" />
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="text-xs font-mono font-medium text-muted-foreground select-none px-1.5 py-0.5 rounded-sm hover:bg-muted/80 hover:text-foreground transition-all duration-100 cursor-default">
+                {timeString}
+              </div>
+            </TooltipTrigger>
+            <TooltipContent side="top" sideOffset={12}>
+              {time.toLocaleDateString([], { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' })}
+            </TooltipContent>
+          </Tooltip>
         </div>
       </div>
 

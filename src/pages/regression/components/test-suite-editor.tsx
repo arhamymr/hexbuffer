@@ -177,7 +177,7 @@ export function TestSuiteEditor({ testCase, isNew, onSave, onDraftChange, onCanc
             className="gap-1"
           >
             <FloppyDiskIcon className="size-3.5" />
-            {isSaving ? 'Saving...' : 'FloppyDiskIcon'}
+            {isSaving ? 'Saving...' : 'Save'}
           </Button>
         </div>
       </div>

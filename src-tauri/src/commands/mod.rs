@@ -14,7 +14,6 @@ pub mod proxy;
 pub mod regression;
 pub mod repeater;
 pub mod storage;
-pub mod terminal;
 pub mod threats;
 pub mod lsp;
 pub mod api_collection;

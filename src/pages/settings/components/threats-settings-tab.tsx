@@ -44,14 +44,6 @@ export function ThreatsSettingsTab({ settings }: ThreatsSettingsTabProps) {
           />
         </div>
 
-        {ghidraValidation && (
-          <Alert variant={ghidraValidation.valid ? 'default' : 'destructive'}>
-            <CrosshairIcon className="size-4" />
-            <AlertTitle>{ghidraValidation.valid ? 'Ghidra Ready' : 'Ghidra Unavailable'}</AlertTitle>
-            <AlertDescription>{ghidraValidation.message}</AlertDescription>
-          </Alert>
-        )}
-
         <div className="flex flex-wrap gap-2">
           <Button onClick={handleValidateGhidra} variant="outline">
             <CrosshairIcon className="mr-2 size-4" />
@@ -59,7 +51,7 @@ export function ThreatsSettingsTab({ settings }: ThreatsSettingsTabProps) {
           </Button>
           <Button onClick={handleSaveThreatSettings} disabled={threatSettingsSaving}>
             <FloppyDiskIcon className="mr-2 size-4" />
-            {threatSettingsSaving ? 'Saving...' : 'FloppyDiskIcon'}
+            {threatSettingsSaving ? 'Saving...' : 'Save'}
           </Button>
         </div>
 

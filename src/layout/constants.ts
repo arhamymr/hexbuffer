@@ -1,5 +1,5 @@
 import React from 'react';
-import { HouseIcon, ArrowsDownUpIcon, CubeIcon, BugIcon, PauseCircleIcon, ArrowsClockwiseIcon, PinwheelIcon, SwordIcon, FlaskIcon, BinaryIcon, AppWindowIcon, FileTextIcon, DatabaseIcon, ShieldCheckIcon, CatIcon, KeyIcon, FingerprintIcon, GearSixIcon, GitDiffIcon, NetworkIcon, LightningIcon, ListIcon, RobotIcon, TerminalWindowIcon, NoteIcon } from '@phosphor-icons/react';
+import { HouseIcon, ArrowsDownUpIcon, CubeIcon, BugIcon, PauseCircleIcon, ArrowsClockwiseIcon, PinwheelIcon, SwordIcon, FlaskIcon, BinaryIcon, AppWindowIcon, FileTextIcon, DatabaseIcon, ShieldCheckIcon, CatIcon, KeyIcon, FingerprintIcon, GearSixIcon, GitDiffIcon, NetworkIcon, LightningIcon, ListIcon, RobotIcon, NoteIcon } from '@phosphor-icons/react';
 
 
 import iconBrowser from '@/assets/feature/browser.png';
@@ -27,7 +27,6 @@ export const allNavItems: NavItem[] = [
   { label: 'Browser', icon: AppWindowIcon, iconImage: iconBrowser, href: '/browser' },
   { label: 'Intercept', icon: PauseCircleIcon, href: '/intercept' },
   { label: 'AI Assistant', icon: RobotIcon, href: '/assistant' },
-  { label: 'Terminal', icon: TerminalWindowIcon, iconImage: iconTerminal, href: '/terminal' },
   { label: 'Scratchpad', icon: NoteIcon, href: '/scratchpad' },
 
   { label: 'Invoker', icon: SwordIcon, href: '/invoker' },

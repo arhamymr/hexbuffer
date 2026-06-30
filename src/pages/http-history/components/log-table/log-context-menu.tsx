@@ -72,7 +72,7 @@ export const LogEntryContextMenu = memo(function LogEntryContextMenu({
         <ContextMenuItem onClick={handleTogglePin} className='text-xs py-1 px-1.5'>
           {pinned
             ? <><PushPinSimpleSlashIcon className="mr-1.5 size-3" /> Unpin</>
-            : <><PushPinSimpleIcon className="mr-1.5 size-3" /> PushPinSimpleIcon</>
+            : <><PushPinSimpleIcon className="mr-1.5 size-3" /> Pin </>
           }
         </ContextMenuItem>
         <ContextMenuSeparator />
@@ -152,8 +152,8 @@ export const LogEntryContextMenu = memo(function LogEntryContextMenu({
         </ContextMenuItem>
         <ContextMenuSeparator />
         <ContextMenuSub>
-          <ContextMenuSubTrigger className='text-xs py-1 px-1.5'>
-            <PaletteIcon className="mr-1.5 size-3" /> Highlight
+          <ContextMenuSubTrigger className='text-xs py-1 px-2'>
+            <PaletteIcon className="mr-3 size-3" /> Highlight
           </ContextMenuSubTrigger>
           <ContextMenuSubContent>
             {HIGHLIGHT_COLORS.map((color) => (
@@ -162,7 +162,7 @@ export const LogEntryContextMenu = memo(function LogEntryContextMenu({
                 className='text-xs py-1 px-1.5'
                 onClick={() => handleHighlightHost(color)}
               >
-                <span className="mr-1.5 size-2 rounded-full" style={{ backgroundColor: color }} />
+                <span className="mr-2 size-2 rounded-full" style={{ backgroundColor: color }} />
                 {HIGHLIGHT_COLOR_LABELS[color] || color}
                 {highlightColor === color && <span className="ml-auto text-muted-foreground">✓</span>}
               </ContextMenuItem>

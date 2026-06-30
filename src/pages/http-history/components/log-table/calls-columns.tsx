@@ -86,7 +86,7 @@ const CallActionCell = memo(function CallActionCell({ call, onNewGroup }: { call
         <DropdownMenuItem onClick={handleTogglePin} className="text-xs">
           {pinned
             ? <><PushPinSimpleSlashIcon className="mr-2 size-3" /> Unpin</>
-            : <><PushPinSimpleIcon className="mr-2 size-3" /> PushPinSimpleIcon</>
+            : <><PushPinSimpleIcon className="mr-2 size-3" /> Pin</>
           }
         </DropdownMenuItem>
         <DropdownMenuSeparator />

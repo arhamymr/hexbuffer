@@ -39,6 +39,10 @@ export function useSidebarNav() {
   const pinnedNavItems = useAppSettingsStore((s) => s.pinnedNavItems);
   const togglePinNavItem = useAppSettingsStore((s) => s.togglePinNavItem);
 
+  const recentApps = useAppSettingsStore((s) => s.recentApps);
+  const addRecentApp = useAppSettingsStore((s) => s.addRecentApp);
+  const removeRecentApp = useAppSettingsStore((s) => s.removeRecentApp);
+
   const windows = useNavStore((state) => state.windows);
 
   const openedApps = React.useMemo(() => {
@@ -69,6 +73,18 @@ export function useSidebarNav() {
     }
   }, [pathname, visibleNavItems, openWindow]);
 
+  // Track pathname changes to update recent apps list
+  React.useEffect(() => {
+    const matchedItem = visibleNavItems.find((item) => item.href === pathname);
+    if (
+      matchedItem &&
+      pathname !== '/' &&
+      pathname !== '/assistant'
+    ) {
+      addRecentApp(pathname);
+    }
+  }, [pathname, visibleNavItems, addRecentApp]);
+
   const pinnedDockItems = React.useMemo(() => {
     return pinnedNavItems
       .filter((href) => href !== '/')
@@ -76,9 +92,26 @@ export function useSidebarNav() {
       .filter((item): item is NavItem => item != null);
   }, [visibleNavItems, pinnedNavItems]);
 
+  const recentDockItems = React.useMemo(() => {
+    return (recentApps || [])
+      .filter(
+        (href) =>
+          href !== '/' &&
+          href !== '/assistant' &&
+          href !== '/scratchpad'
+      )
+      .map((href) => visibleNavItems.find((item) => item.href === href))
+      .filter((item): item is NavItem => item != null);
+  }, [visibleNavItems, recentApps]);
+
   const unpinnedOpenedItems = React.useMemo(() => {
     return openedApps
-      .filter((href) => href !== '/' && !pinnedNavItems.includes(href))
+      .filter(
+        (href) =>
+          href !== '/' &&
+          href !== '/assistant' &&
+          !pinnedNavItems.includes(href)
+      )
       .map((href) => visibleNavItems.find((item) => item.href === href))
       .filter((item): item is NavItem => item != null);
   }, [visibleNavItems, openedApps, pinnedNavItems]);
@@ -117,6 +150,7 @@ export function useSidebarNav() {
     visibleNavItems,
     pinnedDockItems,
     unpinnedOpenedItems,
+    recentDockItems,
     pinnedNavItems,
     togglePinNavItem,
     isNavItemActive,
@@ -126,5 +160,6 @@ export function useSidebarNav() {
     closeWindow,
     minimizeWindow,
     focusWindow,
+    removeRecentApp,
   };
 }

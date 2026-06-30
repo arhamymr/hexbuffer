@@ -1,25 +1,23 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
-export type TerminalRenderer = 'webgl' | 'dom'
-
 interface AppSettingsState {
-  terminalRenderer: TerminalRenderer
   hiddenNavItems: string[]
   pinnedNavItems: string[]
-  setTerminalRenderer: (renderer: TerminalRenderer) => void
+  recentApps: string[]
   toggleNavItem: (href: string) => void
   resetHiddenNavItems: () => void
   togglePinNavItem: (href: string) => void
   reorderPinnedNavItems: (fromIndex: number, toIndex: number) => void
+  addRecentApp: (href: string) => void
+  removeRecentApp: (href: string) => void
 }
 
-type PersistedSettings = Pick<AppSettingsState, 'terminalRenderer' | 'hiddenNavItems' | 'pinnedNavItems'>
+type PersistedSettings = Pick<AppSettingsState, 'hiddenNavItems' | 'pinnedNavItems' | 'recentApps'>
 
 export const useAppSettingsStore = create<AppSettingsState>()(
   persist<AppSettingsState, [], [], PersistedSettings>(
     (set) => ({
-      terminalRenderer: 'webgl',
       hiddenNavItems: [],
       pinnedNavItems: [
         '/http-history',
@@ -29,7 +27,7 @@ export const useAppSettingsStore = create<AppSettingsState>()(
         '/browser',
         '/documents',
       ],
-      setTerminalRenderer: (terminalRenderer) => set({ terminalRenderer }),
+      recentApps: [],
       toggleNavItem: (href) =>
         set((state) => ({
           hiddenNavItems: state.hiddenNavItems.includes(href)
@@ -50,28 +48,34 @@ export const useAppSettingsStore = create<AppSettingsState>()(
           items.splice(toIndex, 0, moved);
           return { pinnedNavItems: items };
         }),
+      addRecentApp: (href) =>
+        set((state) => {
+          const filtered = (state.recentApps || []).filter((h) => h !== href);
+          const updated = [href, ...filtered].slice(0, 5);
+          return { recentApps: updated };
+        }),
+      removeRecentApp: (href) =>
+        set((state) => ({
+          recentApps: (state.recentApps || []).filter((h) => h !== href),
+        })),
     }),
     {
       name: 'hexbuffer-app-settings',
       partialize: (state) => ({
-        terminalRenderer: state.terminalRenderer,
         hiddenNavItems: state.hiddenNavItems,
         pinnedNavItems: state.pinnedNavItems,
+        recentApps: state.recentApps,
       }),
       merge: (persisted, current): AppSettingsState => {
         const base = current as AppSettingsState
         const state = persisted as Partial<PersistedSettings> | undefined
         return {
           ...base,
-          terminalRenderer: state?.terminalRenderer ?? base.terminalRenderer,
           hiddenNavItems: state?.hiddenNavItems ?? base.hiddenNavItems,
           pinnedNavItems: state?.pinnedNavItems ?? base.pinnedNavItems,
+          recentApps: state?.recentApps ?? base.recentApps,
         }
       },
     }
   )
 )
-
-export function useTerminalRenderer(): TerminalRenderer {
-  return useAppSettingsStore((s) => s.terminalRenderer)
-}

@@ -77,7 +77,7 @@ const DesktopWindow = React.memo(function DesktopWindow({
 
       // Bound within screen (safety margins)
       const newX = Math.max(10, dragStartRef.current.posX + dx);
-      const yMin = 32; // below top bar / terminal
+      const yMin = 32; // below top bar
       const newY = Math.max(yMin, dragStartRef.current.posY + dy);
 
       dragCurrentPosRef.current = { x: newX, y: newY };
@@ -207,7 +207,9 @@ const DesktopWindow = React.memo(function DesktopWindow({
   const windowClassName = `absolute rounded-sm border flex flex-col overflow-hidden bg-background shadow-2xl select-text ${
     isFocused ? "border-primary/60" : "border-border/40 shadow-none opacity-90"
   } ${
-    isMinimized ? "scale-95 opacity-0 pointer-events-none translate-y-8" : ""
+    isMinimized
+      ? "scale-95 opacity-0 pointer-events-none translate-y-8"
+      : "pointer-events-auto"
   } ${
     isMaximized
       ? "inset-x-0 top-0 bottom-0 rounded-none border-none !w-full !h-full !translate-x-0 !translate-y-0"
@@ -220,7 +222,7 @@ const DesktopWindow = React.memo(function DesktopWindow({
       onClick={handleWindowClick}
       className={windowClassName}
       style={
-        isMaximized || isMinimized
+        isMaximized
           ? { zIndex }
           : {
               left: 0,

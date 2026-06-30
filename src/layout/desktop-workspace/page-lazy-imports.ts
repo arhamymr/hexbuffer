@@ -22,7 +22,6 @@ const DebuggerPage = React.lazy(() => import("@/pages/debugger").then((m) => ({ 
 const AutomationPage = React.lazy(() => import("@/pages/automation").then((m) => ({ default: m.AutomationPage })));
 const RegressionPage = React.lazy(() => import("@/pages/regression").then((m) => ({ default: m.RegressionPage })));
 const AssistantPage = React.lazy(() => import("@/layout/assistant").then((m) => ({ default: m.AssistantPage })));
-const TerminalPage = React.lazy(() => import("@/layout/terminal").then((m) => ({ default: m.TerminalPage })));
 const ScratchpadPage = React.lazy(() => import("@/pages/scratchpad").then((m) => ({ default: m.ScratchpadPage })));
 
 export const pageComponentMap: Record<string, React.ComponentType<any>> = {
@@ -47,6 +46,5 @@ export const pageComponentMap: Record<string, React.ComponentType<any>> = {
   '/settings': Settings,
   '/regression': RegressionPage,
   '/assistant': AssistantPage,
-  '/terminal': TerminalPage,
   '/scratchpad': ScratchpadPage,
 };

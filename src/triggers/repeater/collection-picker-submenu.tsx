@@ -73,8 +73,8 @@ export function CollectionPickerSubmenu({
 
   return (
     <Sub>
-      <SubTrigger className="text-xs py-1 px-1.5" disabled={disabled}>
-        <PaperPlaneTiltIcon className="mr-1.5 size-3" />
+      <SubTrigger className="text-xs px-2" disabled={disabled}>
+        <PaperPlaneTiltIcon className="mr-3 size-3" />
         Send to Repeater
       </SubTrigger>
       <SubContent>

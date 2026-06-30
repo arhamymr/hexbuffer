@@ -4,13 +4,14 @@ import {
   MoonIcon,
   GearSixIcon,
   SunIcon,
-  TerminalWindowIcon,
   ArrowUpIcon,
   DiamondIcon,
   DotsSixIcon,
   DotsThreeIcon,
   SquaresFourIcon,
   RobotIcon,
+  XIcon,
+  XCircleIcon,
 } from '@phosphor-icons/react';
 import React, { useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
@@ -72,39 +73,57 @@ function DockItem({
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <Link
-          to={item.href}
-          onClick={onClick}
-          className={
-            item.iconImage
-              ? "relative flex size-7 items-center justify-center touch-none group/dock-item"
-              : cn(
-                "relative flex size-7 items-center justify-center rounded-sm text-muted-foreground transition-all hover:bg-muted/80 hover:text-foreground touch-none group/dock-item",
-                active && "bg-primary/15 text-primary",
-              )
-          }
-        >
-          {children}
-          {item.iconImage ? (
-            <img
-              src={item.iconImage}
-              alt=""
-              className="size-6 object-cover rounded-sm"
-            />
-          ) : (
-            <item.icon className="size-4" />
-          )}
+        <div className="relative size-7 group/dock-item touch-none">
+          <Link
+            to={item.href}
+            onClick={onClick}
+            className={
+              item.iconImage
+                ? "flex size-full items-center justify-center transition-transform active:scale-95 duration-100"
+                : cn(
+                  "flex size-full items-center justify-center rounded-sm text-muted-foreground transition-all hover:bg-muted/80 hover:text-foreground active:scale-95 duration-100",
+                  active && "bg-primary/15 text-primary",
+                )
+            }
+          >
+            {children}
+            {item.iconImage ? (
+              <img
+                src={item.iconImage}
+                alt=""
+                className="size-6 object-cover rounded-sm"
+              />
+            ) : (
+              <item.icon className="size-4" />
+            )}
 
-          {/* OS-style open indicator dot */}
-          {isOpened && (
-            <span
-              className={cn(
-                "absolute bottom-[-10px] left-1/2 -translate-x-1/2 size-1 rounded-full bg-primary transition-all duration-200",
-                active ? "bg-primary w-3 h-1 shadow-[0_0_4px_rgba(59,130,246,0.6)]" : "bg-muted-foreground/60 scale-75"
-              )}
-            />
+            {/* OS-style open indicator dot */}
+            {isOpened && (
+              <span
+                className={cn(
+                  "absolute bottom-[-10px] left-1/2 -translate-x-1/2 size-1 rounded-full bg-primary transition-all duration-200",
+                  active ? "bg-primary w-3 h-1 shadow-[0_0_4px_rgba(59,130,246,0.6)]" : "bg-muted-foreground/60 scale-75"
+                )}
+              />
+            )}
+          </Link>
+
+          {/* Close button that appears on hover */}
+          {onClose && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onClose();
+              }}
+              className="absolute -top-1.5 -right-1.5 flex size-4 items-center justify-center rounded-full bg-destructive text-destructive-foreground opacity-0 scale-90 pointer-events-none group-hover/dock-item:opacity-100 group-hover/dock-item:scale-100 group-hover/dock-item:pointer-events-auto transition-all duration-150 cubic-bezier(0.23, 1, 0.32, 1) shadow-sm border border-background hover:scale-110 active:scale-95 cursor-pointer z-10"
+              aria-label={`Close ${item.label}`}
+            >
+              <XIcon className="size-2.5" />
+            </button>
           )}
-        </Link>
+        </div>
       </TooltipTrigger>
       <TooltipContent side="top" sideOffset={12}>
         {item.label}
@@ -170,11 +189,13 @@ export function AppSidebar() {
   const {
     pinnedDockItems,
     unpinnedOpenedItems,
+    recentDockItems,
     isNavItemActive,
     pinnedNavItems,
     visibleNavItems,
     openedApps,
     closeWindow,
+    removeRecentApp,
   } = useSidebarNav();
 
   const navigate = useNavigate();
@@ -200,27 +221,6 @@ export function AppSidebar() {
       }
     } else {
       navStore.openWindow(pathname, 'AI Assistant');
-      navStore.focusWindow(pathname, navigate);
-    }
-  }, [navigate]);
-
-  const isTerminalWindowOpen = windows.some((w) => w.id === '/terminal' && w.isOpen);
-  const isTerminalActive = activeWindowId === '/terminal';
-
-  const toggleTerminalWindow = React.useCallback(() => {
-    const navStore = useNavStore.getState();
-    const pathname = '/terminal';
-    const winState = navStore.windows.find((w) => w.id === pathname);
-    const isActive = navStore.activeWindowId === pathname;
-
-    if (winState && winState.isOpen) {
-      if (isActive) {
-        navStore.closeWindow(pathname, navigate);
-      } else {
-        navStore.focusWindow(pathname, navigate);
-      }
-    } else {
-      navStore.openWindow(pathname, 'Terminal');
       navStore.focusWindow(pathname, navigate);
     }
   }, [navigate]);
@@ -276,7 +276,7 @@ export function AppSidebar() {
   return (
     <>
       <div className="w-full border-t border-border/80 bg-background/95 backdrop-blur-md px-4 py-1.5 flex items-center justify-between select-none h-11 shrink-0">
-        {/* Center section: App launcher, pinned & running apps */}
+        {/* Center section: App launcher & open windows tools */}
         <div className="flex items-center gap-2 h-6">
           <AppLauncher />
 
@@ -294,17 +294,20 @@ export function AppSidebar() {
               items={pinnedDockItems.map((i) => i.href)}
               strategy={horizontalListSortingStrategy}
             >
-              {pinnedDockItems.map((item) => (
-                <SortableDockItem
-                  key={item.href}
-                  item={item}
-                  active={isNavItemActive(item)}
-                  dragActive={dragActive}
-                  isOpened={openedApps.includes(item.href)}
-                  onClose={() => closeWindow(item.href, navigate)}
-                  onClick={() => handleAppClick(item.href, item.label)}
-                />
-              ))}
+              {pinnedDockItems.map((item) => {
+                const isOpened = openedApps.includes(item.href);
+                return (
+                  <SortableDockItem
+                    key={item.href}
+                    item={item}
+                    active={isNavItemActive(item)}
+                    dragActive={dragActive}
+                    isOpened={isOpened}
+                    onClose={isOpened ? () => closeWindow(item.href, navigate) : undefined}
+                    onClick={() => handleAppClick(item.href, item.label)}
+                  />
+                );
+              })}
             </SortableContext>
           </DndContext>
 
@@ -334,7 +337,7 @@ export function AppSidebar() {
                     className="flex size-7 items-center justify-center rounded-sm text-muted-foreground/50 transition-all hover:bg-red-500/10 hover:text-red-400 hover:scale-105"
                     aria-label="Close all windows"
                   >
-                    <SquaresFourIcon className="size-4" />
+                    <XCircleIcon className="size-4" />
                   </button>
                 </TooltipTrigger>
                 <TooltipContent side="top" sideOffset={12}>
@@ -356,32 +359,33 @@ export function AppSidebar() {
 
           <div className="h-5 w-px bg-border/60 mx-1" />
 
-          {/* Terminal */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button
-                type="button"
-                className={cn(
-                  "relative flex size-7 items-center justify-center rounded-sm text-muted-foreground transition-all hover:bg-muted/80 hover:text-foreground hover:scale-105",
-                  isTerminalActive && "bg-primary/15 text-primary scale-105",
-                )}
-                onClick={toggleTerminalWindow}
-              >
-                <TerminalWindowIcon className="size-4" />
-                {isTerminalWindowOpen && (
-                  <span
-                    className={cn(
-                      "absolute bottom-[1.5px] left-1/2 -translate-x-1/2 size-1 rounded-full bg-primary transition-all duration-200",
-                      isTerminalActive ? "bg-primary w-2 h-1 shadow-[0_0_4px_rgba(59,130,246,0.6)]" : "bg-muted-foreground/60 scale-75"
-                    )}
+          {recentDockItems.length > 0 && (
+            <>
+              <span className="text-[10px] text-muted-foreground/60 font-medium uppercase tracking-wider select-none mr-1">
+                Recent
+              </span>
+              {recentDockItems.map((item) => {
+                const isOpened = openedApps.includes(item.href);
+                return (
+                  <DockItem
+                    key={item.href}
+                    item={item}
+                    active={isNavItemActive(item)}
+                    isOpened={isOpened}
+                    onClose={() => {
+                      if (isOpened) {
+                        closeWindow(item.href, navigate);
+                      } else {
+                        removeRecentApp(item.href);
+                      }
+                    }}
+                    onClick={() => handleAppClick(item.href, item.label)}
                   />
-                )}
-              </button>
-            </TooltipTrigger>
-            <TooltipContent side="top" sideOffset={12}>
-              Terminal
-            </TooltipContent>
-          </Tooltip>
+                );
+              })}
+              <div className="h-5 w-px bg-border/60 mx-1" />
+            </>
+          )}
 
           {/* AI Chat */}
           <Tooltip>

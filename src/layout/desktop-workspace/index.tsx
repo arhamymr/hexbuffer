@@ -31,21 +31,23 @@ export function DesktopWorkspace({ activeChild }: DesktopWorkspaceProps) {
         }
       `}</style>
       {/* Desktop Background (Overview Dashboard) */}
-      <div className="absolute inset-0 w-full h-full z-0 overflow-y-auto">
+      <div className="absolute inset-0 w-full h-full z-0 overflow-hidden">
         <React.Suspense fallback={<div className="h-full flex items-center justify-center text-muted-foreground text-sm">Loading desktop…</div>}>
           {OverviewComponent ? <OverviewComponent /> : null}
         </React.Suspense>
       </div>
 
       {/* Floating Application Windows */}
-      {openWindows.map((win) => (
-        <DesktopWindow
-          key={win.id}
-          win={win}
-          isFocused={activeWindowId === win.id}
-          activeChild={activeChild}
-        />
-      ))}
+      <div className="absolute inset-0 pointer-events-none z-10">
+        {openWindows.map((win) => (
+          <DesktopWindow
+            key={win.id}
+            win={win}
+            isFocused={activeWindowId === win.id}
+            activeChild={activeChild}
+          />
+        ))}
+      </div>
     </div>
   );
 }

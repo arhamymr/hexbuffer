@@ -1,4 +1,11 @@
 import { Button } from '@/components/ui/button';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { DIFF_MODE_OPTIONS } from '../constants';
 import { type DiffMode } from '../types';
 import { 
@@ -56,17 +63,21 @@ export function ComparerToolbar({
         {/* Diff Mode Select */}
         <div className="flex items-center gap-1.5">
           <span className="text-[10px] font-medium text-muted-foreground uppercase">Mode:</span>
-          <select
+          <Select
             value={diffMode}
-            onChange={(e) => setDiffMode(e.target.value as DiffMode)}
-            className="h-6 rounded-sm border bg-background text-[11px] px-1 bg-transparent border-input outline-none focus:ring-1 focus:ring-ring text-foreground"
+            onValueChange={(val) => setDiffMode(val as DiffMode)}
           >
-            {DIFF_MODE_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
+            <SelectTrigger className="h-6 w-20 text-[11px] px-2 py-0 [&_svg]:size-3 bg-background">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {DIFF_MODE_OPTIONS.map((opt) => (
+                <SelectItem key={opt.value} value={opt.value} className="text-[11px]">
+                  {opt.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         <div className="h-4 w-[1px] bg-border mx-1" />

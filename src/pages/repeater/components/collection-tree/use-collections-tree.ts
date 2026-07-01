@@ -167,6 +167,11 @@ export function useCollectionsTree(workspaceId: string) {
     setInlineCreate(null);
   }, []);
 
+  const handleRenameCancel = useCallback(() => {
+    setRenameTarget(null);
+    setRenameValue('');
+  }, []);
+
   const handleRenameSubmit = useCallback(async () => {
     if (!renameTarget || !renameValue.trim()) {
       setRenameTarget(null);
@@ -184,13 +189,8 @@ export function useCollectionsTree(workspaceId: string) {
   }, [renameTarget, renameValue]);
 
   const handleRenameBlur = useCallback(() => {
-    setTimeout(() => {
-      if (!renameValue.trim()) {
-        setRenameTarget(null);
-        setRenameValue('');
-      }
-    }, 200);
-  }, [renameValue]);
+    void handleRenameSubmit();
+  }, [handleRenameSubmit]);
 
   // ── Delete ──
   const handleDelete = useCallback((node: FlatNode) => {
@@ -504,6 +504,7 @@ export function useCollectionsTree(workspaceId: string) {
     handleRename,
     handleRenameSubmit,
     handleRenameBlur,
+    handleRenameCancel,
     handleDelete,
     handleDeleteCancel,
     handleDeleteConfirm,

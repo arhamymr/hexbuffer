@@ -19,6 +19,7 @@ import { useGroupsStore } from '@/pages/http-history/state/groups-store';
 import { useBlacklistStore } from '@/pages/http-history/state/blacklist-store';
 import { useHighlightStore } from '@/pages/http-history/state/highlight-store';
 import { sendToCollection } from '@/triggers/repeater/send-to-collection';
+import { cleanUrl } from '@/lib/utils';
 
 function buildAutomationTargetUrl(request: ApiCall) {
   try {
@@ -67,7 +68,7 @@ export function useLogEntryActions(call: ApiCall, onDelete?: (id: string) => voi
       const request = adaptProxyRecordToApiCall(detail);
       const curl = buildHttpCurlCommand({
         method: request.method,
-        url: request.url,
+        url: cleanUrl(request.url),
         headers: request.headers,
         body: request.request_body ?? '',
       });
@@ -83,10 +84,12 @@ export function useLogEntryActions(call: ApiCall, onDelete?: (id: string) => voi
     try {
       const detail = await fetchHistoryDetail(call.id);
       const request = adaptProxyRecordToApiCall(detail);
-      if (await copyText(request.url)) toast.success('Copied URL');
+      const cleaned = cleanUrl(request.url);
+      if (await copyText(cleaned)) toast.success('Copied URL');
       else toast.error('Failed to copy URL');
     } catch {
-      if (await copyText(call.url)) toast.success('Copied URL');
+      const cleaned = cleanUrl(call.url);
+      if (await copyText(cleaned)) toast.success('Copied URL');
       else toast.error('Failed to copy URL');
     }
   }, [call.id, call.url]);
@@ -106,7 +109,7 @@ export function useLogEntryActions(call: ApiCall, onDelete?: (id: string) => voi
       const request = adaptProxyRecordToApiCall(detail);
       const baseRequest = {
         method: request.method,
-        url: request.url,
+        url: cleanUrl(request.url),
         headers: request.headers,
         body: request.request_body || '',
         follow_redirects: true,
@@ -131,14 +134,15 @@ export function useLogEntryActions(call: ApiCall, onDelete?: (id: string) => voi
     try {
       const detail = await fetchHistoryDetail(call.id);
       const request = adaptProxyRecordToApiCall(detail);
+      const cleanedUrl = cleanUrl(request.url);
       useRepeaterStore.getState().addRequestTab({
         raw: buildRawHttpRequest({
           method: request.method,
-          url: request.url,
+          url: cleanedUrl,
           headers: request.headers,
           body: request.request_body || '',
         }),
-        url: request.url,
+        url: cleanedUrl,
       });
       useNavStore.getState().triggerNavBlink('/repeater');
       toast.success(`Sent ${request.method} ${request.path || request.url} to Repeater`);

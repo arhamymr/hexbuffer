@@ -1,10 +1,10 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import { CaretDownIcon, DotsSixVerticalIcon, FolderStarIcon, PlusIcon, TrashIcon, PencilSimpleIcon } from '@phosphor-icons/react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { cn } from '@/lib/utils';
 import type { FlatNode, DropAction } from './utils';
-import { MethodBadge } from '@/components/status-badge';
+import { getMethodColor } from '@/lib/method-colors';
 import {
   ContextMenu,
   ContextMenuContent,
@@ -21,6 +21,11 @@ export interface TreeNodeRowProps {
   isDragOver: boolean;
   dropAction: DropAction | null;
   endpointCount: number;
+  isRenaming?: boolean;
+  renameValue?: string;
+  onRenameValueChange?: (value: string) => void;
+  onRenameSubmit?: () => void;
+  onRenameCancel?: () => void;
   onSelect: (node: FlatNode) => void;
   onToggleExpand: (id: string) => void;
   onAddChild: (parentId: string, type: 'endpoint') => void;
@@ -37,6 +42,11 @@ export function TreeNodeRow({
   isDragOver,
   dropAction,
   endpointCount,
+  isRenaming = false,
+  renameValue = '',
+  onRenameValueChange,
+  onRenameSubmit,
+  onRenameCancel,
   onSelect,
   onToggleExpand,
   onAddChild,
@@ -54,6 +64,15 @@ export function TreeNodeRow({
     id: node.id,
     data: { flatNode: node },
   });
+
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (isRenaming && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [isRenaming]);
 
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
@@ -90,6 +109,7 @@ export function TreeNodeRow({
               isDragOver && showInsideHighlight && 'bg-primary/30 ring-1 ring-primary/30',
             )}
             onClick={() => {
+              if (isRenaming) return;
               // Endpoints: select as usual
               if (isEndpoint) {
                 onSelect(node);
@@ -131,26 +151,60 @@ export function TreeNodeRow({
             <div
               className={cn('min-w-0 flex-1', isCollection && 'cursor-pointer')}
               onClick={(e) => {
+                if (isRenaming) {
+                  e.stopPropagation();
+                  return;
+                }
                 if (isCollection) {
                   e.stopPropagation();
                   onToggleExpand(node.id);
+                }
+              }}
+              onDoubleClick={(e) => {
+                e.stopPropagation();
+                if (!isRenaming) {
+                  onRename(node);
                 }
               }}
             >
               <div className="flex min-w-0 items-center gap-1.5">
                 {/* Method badge for endpoints */}
                 {isEndpoint && node.method && (
-                  <MethodBadge
-                    method={node.method}
-                    className="text-[9px] px-1 py-px"
-                  />
+                  <span className={cn('text-[9px] font-bold font-mono uppercase shrink-0', getMethodColor(node.method))}>
+                    {node.method}
+                  </span>
                 )}
 
-                <span className={cn('truncate text-xs')}>
-                  {node.label}
-                </span>
+                {isRenaming ? (
+                  /* ponytail: Simple inline input handling blur/Enter/Escape to minimize state overhead */
+                  <input
+                    ref={inputRef}
+                    type="text"
+                    value={renameValue}
+                    onChange={(e) => onRenameValueChange?.(e.target.value)}
+                    onBlur={onRenameSubmit}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.stopPropagation();
+                        onRenameSubmit?.();
+                      } else if (e.key === 'Escape') {
+                        e.stopPropagation();
+                        onRenameCancel?.();
+                      }
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                    onDoubleClick={(e) => e.stopPropagation()}
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onMouseDown={(e) => e.stopPropagation()}
+                    className="h-5 w-full min-w-0 bg-background border border-ring/55 rounded px-1 text-xs focus:outline-none focus:border-ring focus:ring-1 focus:ring-ring font-sans"
+                  />
+                ) : (
+                  <span className={cn('truncate text-xs')}>
+                    {node.label}
+                  </span>
+                )}
                 {/* Endpoint count badge for collections */}
-                {isCollection && endpointCount > 0 && (
+                {isCollection && endpointCount > 0 && !isRenaming && (
                   <span className="shrink-0 text-[10px] leading-none text-muted-foreground/60 tabular-nums">
                     {endpointCount}
                   </span>

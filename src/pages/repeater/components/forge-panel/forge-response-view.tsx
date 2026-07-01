@@ -3,7 +3,8 @@ import { Button } from '@/components/ui/button';
 import { ButtonGroup } from '@/components/ui/button-group';
 import { TextEditor } from '@/components/ui/text-editor';
 import { CheckCircleIcon, XCircleIcon } from '@phosphor-icons/react';
-import type { ForgeResponse, TestResult } from '@/stores/collections';
+import { useMemo } from 'react';
+import { useCollectionsStore, type ForgeResponse, type TestResult } from '@/stores/collections';
 import { cn } from '@/lib/utils';
 
 interface ForgeResponseViewProps {
@@ -37,6 +38,40 @@ export function ForgeResponseView({
   requestBody,
   requestBodyType,
 }: ForgeResponseViewProps) {
+  const activeContextId = useCollectionsStore((s) => s.activeContextId);
+  const contexts = useCollectionsStore((s) => s.contexts) || [];
+
+  const variables = useMemo(() => {
+    if (!activeContextId) return {};
+    const context = contexts.find((c) => c.id === activeContextId);
+    if (!context) return {};
+    try {
+      const vars: Array<{ key: string; value: string }> = JSON.parse(context.variables);
+      const map: Record<string, string> = {};
+      vars.forEach((v) => {
+        if (v.key) map[v.key.trim()] = v.value;
+      });
+      return map;
+    } catch {
+      return {};
+    }
+  }, [activeContextId, contexts]);
+
+  const expandVars = (text: string) => {
+    if (!text) return '';
+    // ponytail: expand environment variables placeholder {{key}} with value from active context
+    return text.replace(/\{\{([^}]+)\}\}/g, (_, key) => {
+      const trimmed = key.trim();
+      return trimmed in variables ? variables[trimmed] : `{{${key}}}`;
+    });
+  };
+
+  const safeHeaders = requestHeaders || [];
+  const safeBody = requestBody || '';
+  const safeBodyType = requestBodyType || 'none';
+  const safeRequestMethod = requestMethod || 'GET';
+  const safeRequestUrl = requestUrl || '';
+
   const renderContent = () => {
     if (isLoading) {
       return (
@@ -49,45 +84,43 @@ export function ForgeResponseView({
       );
     }
 
-    if (error) {
-      return (
-        <div className="h-full flex flex-col items-center justify-center p-4 text-center">
-          <XCircleIcon className="h-8 w-8 text-destructive mb-2" />
-          <span className="text-sm font-semibold text-destructive">Execution Failed</span>
-          <span className="text-xs text-muted-foreground max-w-md mt-1 font-mono bg-destructive/10 p-2 rounded border border-destructive/20">
-            {error}
-          </span>
-        </div>
-      );
-    }
-
-    if (response) {
+    if (error || response) {
       return (
         <div className="h-full flex flex-col min-h-0">
-          {/* Status bar */}
-          <div className="flex items-center space-x-4 border-b pb-2 shrink-0 text-xs">
-            <div className="flex items-center space-x-1.5">
-              <span className="text-muted-foreground uppercase font-bold">Status:</span>
-              <span
-                className={`font-semibold px-1 rounded ${response.status >= 200 && response.status < 300
-                    ? 'bg-emerald-500/10 text-emerald-600'
-                    : 'bg-destructive/10 text-destructive'
-                  }`}
-              >
-                {response.status} {response.statusText}
-              </span>
+          {/* Status / Error bar */}
+          {error ? (
+            <div className="flex items-center space-x-2 border-b pb-2 shrink-0 text-xs bg-destructive/5 p-2 rounded border border-destructive/20 mb-2">
+              <XCircleIcon className="h-4 w-4 text-destructive shrink-0" />
+              <span className="font-semibold text-destructive">Execution Failed:</span>
+              <span className="text-muted-foreground font-mono break-all">{error}</span>
             </div>
-            <div className="flex items-center space-x-1.5">
-              <span className="text-muted-foreground uppercase font-bold">Time:</span>
-              <span className="font-semibold text-foreground">{response.timeMs} ms</span>
-            </div>
-            <div className="flex items-center space-x-1.5">
-              <span className="text-muted-foreground uppercase font-bold">Size:</span>
-              <span className="font-semibold text-foreground">
-                {new Blob([response.body]).size} bytes
-              </span>
-            </div>
-          </div>
+          ) : (
+            response && (
+              <div className="flex items-center space-x-4 border-b pb-2 shrink-0 text-xs">
+                <div className="flex items-center space-x-1.5">
+                  <span className="text-muted-foreground uppercase font-bold">Status:</span>
+                  <span
+                    className={`font-semibold px-1 rounded ${response.status >= 200 && response.status < 300
+                        ? 'bg-emerald-500/10 text-emerald-600'
+                        : 'bg-destructive/10 text-destructive'
+                      }`}
+                  >
+                    {response.status} {response.statusText}
+                  </span>
+                </div>
+                <div className="flex items-center space-x-1.5">
+                  <span className="text-muted-foreground uppercase font-bold">Time:</span>
+                  <span className="font-semibold text-foreground">{response.timeMs} ms</span>
+                </div>
+                <div className="flex items-center space-x-1.5">
+                  <span className="text-muted-foreground uppercase font-bold">Size:</span>
+                  <span className="font-semibold text-foreground">
+                    {new Blob([response.body]).size} bytes
+                  </span>
+                </div>
+              </div>
+            )
+          )}
 
           {/* Response body & details tab */}
           <div className="flex-1 flex flex-col min-h-0 mt-2">
@@ -108,7 +141,13 @@ export function ForgeResponseView({
             {activeResTab === 'pretty' && (
               <div className="flex-1 min-h-0 mt-2">
                 <div className="h-full border rounded-md overflow-hidden bg-background">
-                  <TextEditor value={getFormattedBody()} options={{ readOnly: true }} />
+                  {response ? (
+                    <TextEditor value={getFormattedBody()} options={{ readOnly: true }} />
+                  ) : (
+                    <div className="h-full flex items-center justify-center text-xs text-muted-foreground bg-muted/5">
+                      No response received
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -116,25 +155,37 @@ export function ForgeResponseView({
             {activeResTab === 'raw' && (
               <div className="flex-1 min-h-0 mt-2">
                 <div className="h-full border rounded-md overflow-hidden bg-background">
-                  <TextEditor value={response.body} options={{ readOnly: true }} />
+                  {response ? (
+                    <TextEditor value={response.body} options={{ readOnly: true }} />
+                  ) : (
+                    <div className="h-full flex items-center justify-center text-xs text-muted-foreground bg-muted/5">
+                      No response received
+                    </div>
+                  )}
                 </div>
               </div>
             )}
 
             {activeResTab === 'headers' && (
               <div className="flex-1 min-h-0 mt-2">
-                <ScrollArea className="h-full">
-                  <div className="space-y-1 text-xs font-mono">
-                    {Object.entries(response.headers).map(([key, value]) => (
-                      <div key={key} className="flex border-b py-1">
-                        <span className="w-1/3 text-muted-foreground font-semibold truncate pr-2">
-                          {key}
-                        </span>
-                        <span className="w-2/3 text-foreground break-all">{value}</span>
-                      </div>
-                    ))}
+                {response ? (
+                  <ScrollArea className="h-full">
+                    <div className="space-y-1 text-xs font-mono">
+                      {Object.entries(response.headers || {}).map(([key, value]) => (
+                        <div key={key} className="flex border-b py-1">
+                          <span className="w-1/3 text-muted-foreground font-semibold truncate pr-2">
+                            {key}
+                          </span>
+                          <span className="w-2/3 text-foreground break-all">{value}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                ) : (
+                  <div className="h-full flex items-center justify-center text-xs text-muted-foreground bg-muted/5">
+                    No response headers
                   </div>
-                </ScrollArea>
+                )}
               </div>
             )}
 
@@ -148,8 +199,8 @@ export function ForgeResponseView({
                         Request
                       </span>
                       <div className="mt-1 font-mono text-xs bg-muted/30 rounded px-2 py-1">
-                        <span className="font-semibold text-primary">{requestMethod}</span>{' '}
-                        <span className="text-foreground break-all">{requestUrl}</span>
+                        <span className="font-semibold text-primary">{safeRequestMethod}</span>{' '}
+                        <span className="text-foreground break-all">{expandVars(safeRequestUrl)}</span>
                       </div>
                     </div>
 
@@ -159,18 +210,18 @@ export function ForgeResponseView({
                         Headers
                       </span>
                       <div className="mt-1 space-y-0.5 text-xs font-mono">
-                        {requestHeaders.filter((h) => h.enabled).length === 0 ? (
+                        {safeHeaders.filter((h) => h.enabled).length === 0 ? (
                           <span className="text-muted-foreground italic">No headers</span>
                         ) : (
-                          requestHeaders
+                          safeHeaders
                             .filter((h) => h.enabled)
                             .map((h, i) => (
                               <div key={i} className="flex border-b border-muted/30 py-1">
                                 <span className="w-1/3 text-muted-foreground font-semibold truncate pr-2">
-                                  {h.key}
+                                  {expandVars(h.key)}
                                 </span>
                                 <span className="w-2/3 text-foreground break-all">
-                                  {h.value}
+                                  {expandVars(h.value)}
                                 </span>
                               </div>
                             ))
@@ -179,13 +230,13 @@ export function ForgeResponseView({
                     </div>
 
                     {/* Request body */}
-                    {requestBodyType !== 'none' && (
+                    {safeBodyType !== 'none' && (
                       <div className="flex-1 min-h-0 flex flex-col">
                         <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider mb-1">
-                          Body ({requestBodyType})
+                          Body ({safeBodyType})
                         </span>
                         <div className="flex-1 border rounded-md overflow-hidden bg-background min-h-[100px]">
-                          <TextEditor value={requestBody} options={{ readOnly: true }} />
+                          <TextEditor value={expandVars(safeBody)} options={{ readOnly: true }} />
                         </div>
                       </div>
                     )}

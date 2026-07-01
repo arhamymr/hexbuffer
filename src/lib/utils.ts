@@ -24,3 +24,14 @@ export function matchesScope(host: string, scope: string[]): boolean {
   }
   return false;
 }
+
+export function cleanUrl(url: string): string {
+  if (!url) return url;
+  let cleaned = url;
+  if (cleaned.startsWith('https://')) {
+    cleaned = cleaned.replace(/(https:\/\/[^/:]+):443(\/|$)/, '$1$2');
+  } else if (cleaned.startsWith('http://')) {
+    cleaned = cleaned.replace(/(http:\/\/[^/:]+):80(\/|$)/, '$1$2');
+  }
+  return cleaned;
+}

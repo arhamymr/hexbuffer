@@ -2,6 +2,7 @@ import { getHttpLogDetail } from '@/pages/http-history/api';
 import { buildRawHttpRequest } from '@/lib/http-message';
 import { useRepeaterStore } from '@/stores/repeater';
 import { useNavStore } from '@/stores/nav';
+import { cleanUrl } from '@/lib/utils';
 
 export interface SendToRepeaterOptions {
   logId: string;
@@ -18,13 +19,14 @@ export async function sendToRepeater(options: SendToRepeaterOptions): Promise<vo
 
   const detail = await getHttpLogDetail(logId);
   const body = new TextDecoder().decode(new Uint8Array(detail.request.body));
+  const cleanedUrl = cleanUrl(detail.request.uri);
   const raw = buildRawHttpRequest({
     method: detail.request.method,
-    url: detail.request.uri,
+    url: cleanedUrl,
     headers: detail.request.headers,
     body,
   });
 
-  useRepeaterStore.getState().addRequestTab({ raw, url: detail.request.uri });
+  useRepeaterStore.getState().addRequestTab({ raw, url: cleanedUrl });
   useNavStore.getState().triggerNavBlink('/repeater');
 }

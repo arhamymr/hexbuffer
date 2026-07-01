@@ -45,6 +45,7 @@ export function CollectionsTree({ workspaceId }: { workspaceId: string }) {
     handleRename,
     handleRenameSubmit,
     handleRenameBlur,
+    handleRenameCancel,
     handleDelete,
     handleDeleteCancel,
     handleDeleteConfirm,
@@ -63,11 +64,6 @@ export function CollectionsTree({ workspaceId }: { workspaceId: string }) {
   return (
     <div className="flex flex-col h-full min-h-0 bg-background">
       <TreeHeader
-        renameTarget={renameTarget}
-        renameValue={renameValue}
-        onRenameValueChange={setRenameValue}
-        onRenameSubmit={handleRenameSubmit}
-        onRenameBlur={handleRenameBlur}
         onExport={handleExport}
         onImportClick={handleImportClick}
         onCreateCollection={handleCreateCollection}
@@ -111,6 +107,11 @@ export function CollectionsTree({ workspaceId }: { workspaceId: string }) {
                       isDragOver={false}
                       dropAction={null}
                       endpointCount={stashEndpointCounts.get(node.originalId) ?? 0}
+                      isRenaming={renameTarget?.id === node.id}
+                      renameValue={renameValue}
+                      onRenameValueChange={setRenameValue}
+                      onRenameSubmit={handleRenameSubmit}
+                      onRenameCancel={handleRenameCancel}
                       onSelect={handleSelectNode}
                       onToggleExpand={handleToggleExpand}
                       onAddChild={handleAddChild}

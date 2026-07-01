@@ -162,9 +162,9 @@ export function ContextsDialog({ open, onOpenChange }: ContextsDialogProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="h-full max-h-[70vh] sm:max-w-[820px] flex flex-col p-2">
+      <DialogContent className="h-full max-h-[70vh] sm:max-w-[820px] flex flex-col p-4">
         <DialogHeader>
-          <DialogTitle>Manage Environment Contexts</DialogTitle>
+          <DialogTitle>Manage Environment</DialogTitle>
         </DialogHeader>
 
         <div className="flex-1 min-h-0 grid grid-cols-5 gap-2 mt-4">

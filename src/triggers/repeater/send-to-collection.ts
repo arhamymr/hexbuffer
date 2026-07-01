@@ -3,6 +3,7 @@ import { toast } from 'sonner';
 import { useCollectionsStore, type StashEndpointRecord } from '@/stores/collections';
 import { useRepeaterStore } from '@/stores/repeater';
 import { useNavStore } from '@/stores/nav';
+import { cleanUrl } from '@/lib/utils';
 
 export interface SendToCollectionOptions {
   stashId: string;
@@ -44,9 +45,9 @@ export async function sendToCollection(options: SendToCollectionOptions): Promis
   const endpoint: StashEndpointRecord = {
     id: generateId(),
     stashId,
-    name: endpointData.name,
+    name: cleanUrl(endpointData.name),
     method: endpointData.method,
-    url: endpointData.url,
+    url: cleanUrl(endpointData.url),
     headers: headersJson,
     body: endpointData.body ?? null,
     bodyType: endpointData.body ? 'raw' : 'none',

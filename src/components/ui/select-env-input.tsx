@@ -14,10 +14,16 @@ interface ColorizedUrlInputProps {
   className?: string;
 }
 
-function colorizeHtml(value: string): string {
+function colorizeHtml(value: string, envVarKeys: string[]): string {
+  const keysSet = new Set(envVarKeys);
   return value.replace(
     /\{\{(\w+)\}\}/g,
-    '<span class="text-sky-400 dark:text-sky-300 font-semibold">{{$1}}</span>',
+    (match, key) => {
+      if (keysSet.has(key)) {
+        return `<span class="text-sky-400 dark:text-sky-300 font-semibold">${match}</span>`;
+      }
+      return match;
+    }
   );
 }
 
@@ -99,7 +105,7 @@ export function ColorizedUrlInput({
   const envVarKeys = useEnvVarKeys();
   const activeContextId = useCollectionsStore((s) => s.activeContextId);
 
-  // Sync innerHTML when value changes externally
+  // Sync innerHTML when value changes externally or environment keys change
   React.useEffect(() => {
     const el = editableRef.current;
     if (!el || isInternalUpdate.current) {
@@ -107,7 +113,7 @@ export function ColorizedUrlInput({
       return;
     }
 
-    el.innerHTML = value ? colorizeHtml(value) : '';
+    el.innerHTML = value ? colorizeHtml(value, envVarKeys) : '';
 
     // Only restore caret position if this element currently has focus;
     // otherwise setCaretOffset would steal focus from whatever field
@@ -118,7 +124,7 @@ export function ColorizedUrlInput({
     }
 
     el.dataset.placeholder = value ? '' : placeholder;
-  }, [value, placeholder]);
+  }, [value, placeholder, envVarKeys]);
 
   // Set initial placeholder on mount
   React.useEffect(() => {
@@ -196,12 +202,12 @@ export function ColorizedUrlInput({
 
       requestAnimationFrame(() => {
         if (editableRef.current) {
-          editableRef.current.innerHTML = colorizeHtml(newValue);
+          editableRef.current.innerHTML = colorizeHtml(newValue, envVarKeys);
           setCaretOffset(editableRef.current, newCaret);
         }
       });
     },
-    [onChange, findTriggerForPos],
+    [onChange, findTriggerForPos, envVarKeys],
   );
 
   const filteredVars = React.useMemo(() => {

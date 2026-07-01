@@ -59,8 +59,9 @@ const ListenerPage = React.lazy(() =>
 const DebuggerPage = React.lazy(() =>
   import("@/pages/debugger").then((m) => ({ default: m.DebuggerPage }))
 );
-const AutomationPage = React.lazy(() =>
-  import("@/pages/automation").then((m) => ({ default: m.AutomationPage }))
+
+const WorkflowPage = React.lazy(() =>
+  import("@/pages/workflow").then((m) => ({ default: m.AutomationPage }))
 );
 const RegressionPage = React.lazy(() =>
   import("@/pages/regression").then((m) => ({ default: m.RegressionPage }))
@@ -111,8 +112,7 @@ function AppRoutes() {
           <Route path="/xss-generator" element={<XssGeneratorPage />} />
           <Route path="/sql-injection" element={<SqlInjectionPage />} />
           <Route path="/documents" element={<DocumentsPage />} />
-
-          <Route path="/automation" element={<AutomationPage />} />
+          <Route path="/workflow" element={<WorkflowPage />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/regression" element={<RegressionPage />} />
           <Route path="/assistant" element={<AssistantPage />} />

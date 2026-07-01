@@ -160,73 +160,82 @@ export function TargetDialogForm({ target, onCancel, onSaved }: TargetDialogForm
   };
 
   return (
-    <form onSubmit={onSubmit}>
-      <div className="grid gap-4 py-4">
-        <div className="grid gap-2">
-          <label htmlFor="name" className="text-sm font-medium">
-            Name
+    <form onSubmit={onSubmit} className="select-none">
+      <div className="space-y-4 py-3">
+        {/* Target Name */}
+        <div className="space-y-1">
+          <label htmlFor="name" className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+            Target Name
           </label>
           <Input
             id="name"
-            placeholder="e.g., Example API"
+            placeholder="e.g., Production API, Local Staging"
             value={values.name}
             onChange={updateValue('name')}
+            className="h-9 text-xs border-border/60 focus-visible:ring-1 focus-visible:ring-primary/30"
           />
           {errors.name && (
-            <p className="text-xs text-destructive">{errors.name}</p>
+            <p className="text-[10px] text-destructive font-medium mt-0.5">{errors.name}</p>
           )}
         </div>
-        <div className="grid gap-2">
-          <label htmlFor="description" className="text-sm font-medium">
+
+        {/* Target Description */}
+        <div className="space-y-1">
+          <label htmlFor="description" className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
             Description
           </label>
           <Input
             id="description"
-            placeholder="Optional description"
+            placeholder="Optional notes or details"
             value={values.description}
             onChange={updateValue('description')}
+            className="h-9 text-xs border-border/60 focus-visible:ring-1 focus-visible:ring-primary/30"
           />
         </div>
-        <div className="grid gap-2">
-          <label htmlFor="scope" className="text-sm font-medium">
+
+        {/* Scope Patterns */}
+        <div className="space-y-1">
+          <label htmlFor="scope" className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
             Scope Patterns
           </label>
           <Textarea
             id="scope"
-            placeholder="*.example.com, api.example.com"
-            rows={3}
+            placeholder="*.example.com&#10;api.example.com"
+            rows={4}
             value={values.scope}
             onChange={updateValue('scope')}
+            className="font-mono text-xs border-border/60 focus-visible:ring-1 focus-visible:ring-primary/30 min-h-[90px] resize-none leading-relaxed bg-muted/5 focus-visible:bg-background"
           />
           {errors.scope && (
-            <p className="text-xs text-destructive">{errors.scope}</p>
+            <p className="text-[10px] text-destructive font-medium mt-0.5">{errors.scope}</p>
           )}
-          <p className="text-xs text-muted-foreground">
-            Separate multiple patterns with commas or new lines. Example: *.example.com, api.example.com
+          <p className="text-[10px] text-muted-foreground/60 leading-relaxed pt-0.5">
+            Separate multiple domain patterns with commas or newlines. Wildcards are supported (e.g. <code className="font-mono bg-muted px-1 rounded">*.domain.com</code>).
           </p>
         </div>
       </div>
-      <DialogFooter className={target ? 'sm:justify-between' : undefined}>
+
+      <DialogFooter className={`pt-4 border-t border-border mt-3 flex items-center ${target ? 'sm:justify-between' : 'sm:justify-end'}`}>
         {target && (
           <AlertDialog>
             <AlertDialogTrigger asChild>
-              <Button type="button" variant="destructive" className="gap-2">
-                <TrashIcon className="h-4 w-4" />
-                Delete
+              <Button type="button" variant="destructive" className="h-8 text-xs font-semibold gap-1.5 active:scale-[0.97]">
+                <TrashIcon className="h-3.5 w-3.5" />
+                <span>Delete</span>
               </Button>
             </AlertDialogTrigger>
-            <AlertDialogContent>
+            <AlertDialogContent className="rounded-xl border-border/80 shadow-2xl">
               <AlertDialogHeader>
-                <AlertDialogTitle>Delete Target?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  This will permanently remove {target.name} from your targets.
+                <AlertDialogTitle className="text-sm font-semibold tracking-tight">Delete Target?</AlertDialogTitle>
+                <AlertDialogDescription className="text-xs text-muted-foreground/80 leading-relaxed">
+                  This will permanently remove <strong className="text-foreground">{target.name}</strong> from your workspace. All associated traffic scopes will be unmonitored.
                 </AlertDialogDescription>
               </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel type="button">Cancel</AlertDialogCancel>
+              <AlertDialogFooter className="mt-2">
+                <AlertDialogCancel type="button" className="h-8 text-xs font-medium">Cancel</AlertDialogCancel>
                 <AlertDialogAction
                   type="button"
-                  className="bg-destructive text-white hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60"
+                  className="h-8 text-xs font-medium bg-destructive text-white hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60 active:scale-[0.97]"
                   onClick={deleteTarget}
                 >
                   Delete Target
@@ -235,12 +244,23 @@ export function TargetDialogForm({ target, onCancel, onSaved }: TargetDialogForm
             </AlertDialogContent>
           </AlertDialog>
         )}
-        <div className="flex gap-2 sm:ml-auto">
-          <Button type="button" variant="outline" onClick={onCancel}>
+        
+        <div className="flex items-center gap-2 sm:ml-auto">
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={onCancel}
+            className="h-8 text-xs font-medium active:scale-[0.97]"
+          >
             Cancel
           </Button>
-          <Button type="button" disabled={isSubmitting} onClick={() => void saveTarget()}>
-            {target ? 'FloppyDiskIcon Changes' : 'Create Target'}
+          <Button
+            type="button"
+            disabled={isSubmitting}
+            onClick={() => void saveTarget()}
+            className="h-8 text-xs font-semibold active:scale-[0.97]"
+          >
+            {target ? 'Save Changes' : 'Create Target'}
           </Button>
         </div>
       </DialogFooter>

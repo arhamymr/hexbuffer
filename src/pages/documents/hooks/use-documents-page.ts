@@ -1,11 +1,8 @@
 import * as React from 'react';
 import { useDocumentsStore } from '@/stores/documents';
 import { useShallow } from 'zustand/react/shallow';
-import { sendRepeaterRequest } from '@/pages/repeater/api';
-import { parseRawHttpRequest } from '@/lib/http-message';
 import { type DocumentTemplateId } from '../constants';
 import { type ReconDocument, type CustomSection, type MarkdownEditorMode } from '../types';
-import { type RepeaterResponse } from '@/pages/repeater/types';
 import { exportDocumentToPdf } from '../lib/export-document';
 import {
   getCustomSectionDefinition,
@@ -15,24 +12,9 @@ import {
   type EditorFileId,
 } from '../lib/editor-files';
 
-function getUrlParts(url: string) {
-  try {
-    const parsedUrl = new URL(url);
-    return {
-      host: parsedUrl.host,
-      path: `${parsedUrl.pathname}${parsedUrl.search}` || '/',
-    };
-  } catch {
-    return {
-      host: '',
-      path: url || '/',
-    };
-  }
-}
-
-function getDefaultFileId(document: ReconDocument | null | undefined): EditorFileId {
+function getDefaultFileId(document: ReconDocument | null | undefined): EditorFileId | null {
   const firstSection = document?.customSections[0];
-  return firstSection ? `custom:${firstSection.key}` : 'api';
+  return firstSection ? `custom:${firstSection.key}` : null;
 }
 
 const MAX_CUSTOM_SECTION_HISTORY = 100;
@@ -79,13 +61,9 @@ export function useDocumentsPage() {
     () => documents.find((document) => document.id === activeDocumentId) ?? documents[0] ?? null,
     [activeDocumentId, documents]
   );
-  const [selectedApiEntryId, setSelectedApiEntryId] = React.useState<string | null>(null);
-  const [apiResponse, setApiResponse] = React.useState<RepeaterResponse | null>(null);
-  const [isFetchingApi, setIsFetchingApi] = React.useState(false);
-  const [apiFetchError, setApiFetchError] = React.useState<string | null>(null);
-  const [activeFileId, setActiveFileId] = React.useState<EditorFileId>('api');
-  const [openFileIds, setOpenFileIds] = React.useState<EditorFileId[]>(['api']);
-  const [isApiFolderOpen, setIsApiFolderOpen] = React.useState(true);
+
+  const [activeFileId, setActiveFileId] = React.useState<EditorFileId | null>(null);
+  const [openFileIds, setOpenFileIds] = React.useState<EditorFileId[]>([]);
   const [documentIdPendingDelete, setDocumentIdPendingDelete] = React.useState<string | null>(
     null
   );
@@ -93,25 +71,27 @@ export function useDocumentsPage() {
   const [customSectionPendingRename, setCustomSectionPendingRename] =
     React.useState<CustomSection | null>(null);
   const [isTemplateDialogOpen, setIsTemplateDialogOpen] = React.useState(false);
-  const [apiEditError, setApiEditError] = React.useState<string | null>(null);
   const [exporting, setExporting] = React.useState(false);
   const [customSectionHistory, setCustomSectionHistory] = React.useState<
     Record<string, CustomSectionHistory>
   >({});
 
+  // ponytail: Reset / sync active file when document switches (YAGNI default clean)
   React.useEffect(() => {
-    const firstEntryId = activeDocument?.apiEntries[0]?.id ?? null;
-    const selectedEntryStillExists = activeDocument?.apiEntries.some(
-      (entry) => entry.id === selectedApiEntryId
-    );
-
-    if (!selectedEntryStillExists) {
-      setSelectedApiEntryId(firstEntryId);
-      setApiResponse(null);
-      setApiFetchError(null);
-      setApiEditError(null);
+    if (activeDocument) {
+      const defaultId = getDefaultFileId(activeDocument);
+      if (defaultId) {
+        setActiveFileId(defaultId);
+        setOpenFileIds([defaultId]);
+      } else {
+        setActiveFileId(null);
+        setOpenFileIds([]);
+      }
+    } else {
+      setActiveFileId(null);
+      setOpenFileIds([]);
     }
-  }, [activeDocument, selectedApiEntryId]);
+  }, [activeDocumentId, activeDocument]);
 
   const updateActiveDocument = React.useCallback(
     (updater: (document: ReconDocument) => ReconDocument) => {
@@ -191,14 +171,12 @@ export function useDocumentsPage() {
       if (!activeDocumentId) return;
       const remainingSections =
         activeDocument?.customSections.filter((section) => section.key !== sectionKey) ?? [];
-      const fallbackFileId: EditorFileId = remainingSections[0]
-        ? `custom:${remainingSections[0].key}`
-        : 'api';
+      const fallbackFileId = getDefaultFileId(activeDocument);
 
       useDocumentsStore.getState().removeCustomSection(activeDocumentId, sectionKey);
       setOpenFileIds((fileIds) => {
         const nextFileIds = fileIds.filter((fileId) => fileId !== `custom:${sectionKey}`);
-        return nextFileIds.length ? nextFileIds : [fallbackFileId];
+        return nextFileIds.length ? nextFileIds : (fallbackFileId ? [fallbackFileId] : []);
       });
       if (activeFileId === `custom:${sectionKey}`) {
         setActiveFileId(fallbackFileId);
@@ -278,131 +256,6 @@ export function useDocumentsPage() {
     [activeDocumentId]
   );
 
-  const deleteApiEntry = React.useCallback(
-    (entryId: string) => {
-      if (!activeDocumentId) return;
-      useDocumentsStore.getState().removeApiEntryFromDocument(activeDocumentId, entryId);
-      setOpenFileIds((fileIds) => {
-        const nextFileIds = fileIds.filter((fileId) => fileId !== `api:${entryId}`);
-        return nextFileIds.length ? nextFileIds : [getDefaultFileId(activeDocument)];
-      });
-      if (activeFileId === `api:${entryId}`) {
-        setActiveFileId(getDefaultFileId(activeDocument));
-      }
-    },
-    [activeDocument, activeDocumentId, activeFileId]
-  );
-
-  const addApiEntry = React.useCallback(() => {
-    if (!activeDocumentId) return;
-    const url = 'https://example.com/';
-    const { host, path } = getUrlParts(url);
-    const entryId = useDocumentsStore.getState().addApiEntryToDocument(activeDocumentId, {
-      sourceHistoryId: `manual-${crypto.randomUUID()}`,
-      method: 'GET',
-      url,
-      host,
-      path,
-      headers: { Host: host },
-      requestBody: '',
-      responseStatus: null,
-      responseContentType: null,
-      capturedAt: Date.now(),
-    });
-
-    setIsApiFolderOpen(true);
-    setSelectedApiEntryId(entryId);
-    setApiResponse(null);
-    setApiFetchError(null);
-    setApiEditError(null);
-    setActiveFileId(`api:${entryId}`);
-    setOpenFileIds((fileIds) =>
-      fileIds.includes(`api:${entryId}`) ? fileIds : [...fileIds, `api:${entryId}`]
-    );
-  }, [activeDocumentId]);
-
-  const updateApiEntryRaw = React.useCallback(
-    (entryId: string, rawRequest: string) => {
-      if (!activeDocumentId) return;
-
-      try {
-        const parsedRequest = parseRawHttpRequest(rawRequest, {
-          defaultProtocol: 'https',
-          uppercaseMethod: true,
-        });
-
-        if (!parsedRequest) {
-          setApiEditError('Request line is missing.');
-          return;
-        }
-
-        const { host, path } = getUrlParts(parsedRequest.url);
-        useDocumentsStore.getState().updateApiEntry(activeDocumentId, entryId, (entry) => ({
-          ...entry,
-          method: parsedRequest.method,
-          url: parsedRequest.url,
-          host,
-          path,
-          headers: parsedRequest.headers,
-          requestBody: parsedRequest.body,
-        }));
-        setApiEditError(null);
-        setApiResponse(null);
-        setApiFetchError(null);
-      } catch (error) {
-        setApiEditError(
-          error instanceof Error
-            ? error.message
-            : typeof error === 'string'
-            ? error
-            : 'Invalid HTTP request.'
-        );
-      }
-    },
-    [activeDocumentId]
-  );
-
-  const fetchSelectedApi = React.useCallback(async () => {
-    const selectedEntry =
-      activeDocument?.apiEntries.find((entry) => entry.id === selectedApiEntryId) ??
-      activeDocument?.apiEntries[0];
-
-    if (!selectedEntry) {
-      return;
-    }
-
-    setIsFetchingApi(true);
-    setApiFetchError(null);
-
-    try {
-      const response = await sendRepeaterRequest({
-        method: selectedEntry.method,
-        url: selectedEntry.url,
-        headers: selectedEntry.headers,
-        body: selectedEntry.requestBody ?? '',
-      });
-      setApiResponse(response);
-    } catch (error) {
-      setApiResponse(null);
-      setApiFetchError(
-        error instanceof Error
-          ? error.message
-          : typeof error === 'string'
-          ? error
-          : 'Failed to send request.'
-      );
-    } finally {
-      setIsFetchingApi(false);
-    }
-  }, [activeDocument, selectedApiEntryId]);
-
-  const selectApiEntry = React.useCallback((entryId: string) => {
-    setSelectedApiEntryId(entryId);
-    setApiResponse(null);
-    setApiFetchError(null);
-    setApiEditError(null);
-  }, []);
-
   const openFile = React.useCallback(
     (fileId: EditorFileId) => {
       if (fileId.startsWith('custom:')) {
@@ -423,26 +276,19 @@ export function useDocumentsPage() {
     (fileId: EditorFileId) => {
       setOpenFileIds((fileIds) => {
         const nextFileIds = fileIds.filter((openFileId) => openFileId !== fileId);
+        const fallbackFileId = getDefaultFileId(activeDocument);
         const normalizedFileIds: EditorFileId[] = nextFileIds.length
           ? nextFileIds
-          : [getDefaultFileId(activeDocument)];
+          : (fallbackFileId ? [fallbackFileId] : []);
 
         if (activeFileId === fileId) {
-          setActiveFileId(normalizedFileIds[normalizedFileIds.length - 1]);
+          setActiveFileId(normalizedFileIds[normalizedFileIds.length - 1] ?? null);
         }
 
         return normalizedFileIds;
       });
     },
     [activeDocument, activeFileId]
-  );
-
-  const openApiEntry = React.useCallback(
-    (entryId: string) => {
-      selectApiEntry(entryId);
-      openFile(`api:${entryId}`);
-    },
-    [openFile, selectApiEntry]
   );
 
   const handleAddDocument = React.useCallback((templateId: DocumentTemplateId = 'blank') => {
@@ -452,7 +298,7 @@ export function useDocumentsPage() {
       null;
     const defaultFileId = getDefaultFileId(createdDocument);
     setActiveFileId(defaultFileId);
-    setOpenFileIds([defaultFileId]);
+    setOpenFileIds(defaultFileId ? [defaultFileId] : []);
   }, [addDocument]);
 
   const openTemplateDialog = React.useCallback(() => {
@@ -474,17 +320,18 @@ export function useDocumentsPage() {
 
     closeDocument(documentIdPendingDelete);
     setDocumentIdPendingDelete(null);
-    setActiveFileId('api');
-    setOpenFileIds(['api']);
+    setActiveFileId(null);
+    setOpenFileIds([]);
   }, [closeDocument, documentIdPendingDelete]);
 
   const handleAddCustomSection = React.useCallback(
     (title: string, description: string, placeholder: string) => {
       const sectionKey = addCustomSection(title, description, placeholder);
       if (sectionKey) {
-        setActiveFileId(`custom:${sectionKey}`);
+        const newFileId: EditorFileId = `custom:${sectionKey}`;
+        setActiveFileId(newFileId);
         setOpenFileIds((fileIds) =>
-          fileIds.includes(`custom:${sectionKey}`) ? fileIds : [...fileIds, `custom:${sectionKey}`]
+          fileIds.includes(newFileId) ? fileIds : [...fileIds, newFileId]
         );
       }
     },
@@ -517,24 +364,8 @@ export function useDocumentsPage() {
     [documentIdPendingDelete, documents]
   );
 
-  const selectedApiEntry = React.useMemo(
-    () =>
-      activeDocument?.apiEntries.find((entry) => entry.id === selectedApiEntryId) ??
-      activeDocument?.apiEntries[0] ??
-      null,
-    [activeDocument, selectedApiEntryId]
-  );
-
-  const activeApiEntry = React.useMemo(
-    () =>
-      activeFileId.startsWith('api:')
-        ? activeDocument?.apiEntries.find((entry) => activeFileId === `api:${entry.id}`) ?? null
-        : selectedApiEntry,
-    [activeDocument, activeFileId, selectedApiEntry]
-  );
-
-  const isCustomSectionFileFlag = isCustomSectionFile(activeFileId);
-  const activeCustomSection = isCustomSectionFileFlag
+  const isCustomSectionFileFlag = activeFileId ? isCustomSectionFile(activeFileId) : false;
+  const activeCustomSection = isCustomSectionFileFlag && activeFileId
     ? getCustomSectionDefinition(
         activeDocument?.customSections ?? [],
         activeFileId.replace('custom:', '')
@@ -586,16 +417,11 @@ export function useDocumentsPage() {
     }));
     applyCustomSectionContent(activeCustomSection.key, nextContent);
   }, [activeCustomSection, activeCustomSectionHistory, applyCustomSectionContent]);
-  const activeLabel = getFileLabel(
+
+  const activeLabel = activeFileId ? getFileLabel(
     activeFileId,
-    activeApiEntry,
     activeDocument?.customSections
-  );
-  const activeFileName = getFileName(
-    activeFileId,
-    activeApiEntry,
-    activeDocument?.customSections
-  );
+  ) : '';
 
   return {
     markdownMode,
@@ -622,22 +448,10 @@ export function useDocumentsPage() {
     redoCustomSectionChange,
     canUndoCustomSection,
     canRedoCustomSection,
-    deleteApiEntry,
-    addApiEntry,
-    updateApiEntryRaw,
-    apiEditError,
-    apiResponse,
-    isFetchingApi,
-    apiFetchError,
-    fetchSelectedApi,
     activeFileId,
     openFileIds,
-    isApiFolderOpen,
-    setIsApiFolderOpen,
     openFile,
     closeFile,
-    openApiEntry,
-    activeApiEntry,
     activeCustomSection,
     activeLabel,
     isCustomSectionFile: isCustomSectionFileFlag,

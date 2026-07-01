@@ -16,6 +16,7 @@ export interface CustomSection {
   content: string;
 }
 
+// ponytail: SavedApiEntry removed. kept apiEntries for Rust database deserialization compatibility.
 export interface ReconDocument {
   id: string;
   name: string;
@@ -23,24 +24,9 @@ export interface ReconDocument {
   sections: DocumentSections;
   removedBuiltInSections: DocumentSectionKey[];
   customSections: CustomSection[];
-  apiEntries: SavedApiEntry[];
+  apiEntries: any[];
   createdAt: string;
   updatedAt: string;
-}
-
-export interface SavedApiEntry {
-  id: string;
-  sourceHistoryId: string;
-  method: string;
-  url: string;
-  host: string;
-  path: string;
-  headers: Record<string, string>;
-  requestBody: string | null;
-  responseStatus: number | null;
-  responseContentType: string | null;
-  capturedAt: number;
-  savedAt: string;
 }
 
 export function createEmptySections(): DocumentSections {

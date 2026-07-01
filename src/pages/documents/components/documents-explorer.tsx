@@ -1,16 +1,9 @@
 import React from 'react';
 import {
-  CaretDownIcon,
-  CopyIcon,
-  ArrowSquareOutIcon,
   FileTextIcon,
-  FolderIcon,
-  FolderOpen,
   DotsSixVerticalIcon,
   PencilIcon,
   PlusIcon,
-  PaperPlaneTiltIcon,
-  HardDrivesIcon,
   TrashIcon,
 } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils';
@@ -21,22 +14,16 @@ import {
   ContextMenuSeparator,
   ContextMenuTrigger,
 } from '@/components/ui/context-menu';
-import { DragDropProvider, DragOverlay, type DragEndEvent } from '@dnd-kit/react';
+import { DragDropProvider, DragOverlay } from '@dnd-kit/react';
 import { useSortable, isSortable } from '@dnd-kit/react/sortable';
-import { type ReconDocument, type SavedApiEntry, type CustomSection } from '../types';
+import { type ReconDocument, type CustomSection } from '../types';
 import { type EditorFileId } from '../lib/editor-files';
 import { useDocumentsExplorer } from './hooks/use-documents-explorer';
-import { CollectionPickerSubmenu } from '@/triggers/repeater/collection-picker-submenu';
 
 interface DocumentsExplorerProps {
   activeDocument: ReconDocument;
   activeFileId: EditorFileId;
-  isApiFolderOpen: boolean;
-  onApiFolderOpenChange: (isOpen: boolean) => void;
   onOpenFile: (fileId: EditorFileId) => void;
-  onOpenApiEntry: (entryId: string) => void;
-  onAddApiEntry: () => void;
-  onDeleteApiEntry: (entryId: string) => void;
   onAddCustomSection: () => void;
   onRenameCustomSection: (section: CustomSection) => void;
   onRemoveCustomSection: (sectionKey: string) => void;
@@ -126,102 +113,16 @@ function SortableReportFileRow({ index, ...props }: SortableReportFileRowProps) 
   );
 }
 
-interface ApiRequestRowProps {
-  entry: SavedApiEntry;
-  isActive: boolean;
-  onOpenApiEntry: (entryId: string) => void;
-  onCopyCurlCommand: (entry: SavedApiEntry) => void;
-  onCopyUrl: (entry: SavedApiEntry) => void;
-  onOpenInInvoker: (entry: SavedApiEntry) => void;
-  onOpenInRepeater: (entry: SavedApiEntry) => void;
-  onSendToCollection: (entry: SavedApiEntry, stashId: string) => void;
-  onDeleteApiEntry: (entryId: string) => void;
-}
-
-function ApiRequestRow({
-  entry,
-  isActive,
-  onOpenApiEntry,
-  onCopyCurlCommand,
-  onCopyUrl,
-  onOpenInInvoker,
-  onOpenInRepeater,
-  onSendToCollection,
-  onDeleteApiEntry,
-}: ApiRequestRowProps) {
-  return (
-    <ContextMenu>
-      <ContextMenuTrigger asChild>
-        <button
-          type="button"
-          onClick={() => onOpenApiEntry(entry.id)}
-          className={cn(
-            'flex h-7 w-full items-center gap-2 rounded px-2 text-left text-xs hover:bg-muted',
-            isActive && 'bg-muted text-foreground'
-          )}
-          title={entry.url}
-        >
-          <HardDrivesIcon className="h-3.5 w-3.5 text-muted-foreground" />
-          <span className="truncate font-mono">{entry.path}</span>
-        </button>
-      </ContextMenuTrigger>
-      <ContextMenuContent>
-        <ContextMenuItem onClick={() => onOpenApiEntry(entry.id)} className="text-xs">
-          <FileTextIcon className="mr-2 size-3" /> Open
-        </ContextMenuItem>
-        <ContextMenuSeparator />
-        <ContextMenuItem onClick={() => onCopyCurlCommand(entry)} className="text-xs">
-          <CopyIcon className="mr-2 size-3" /> Copy as curl command (bash)
-        </ContextMenuItem>
-        <ContextMenuItem onClick={() => onCopyUrl(entry)} className="text-xs">
-          <CopyIcon className="mr-2 size-3" /> Copy URL
-        </ContextMenuItem>
-        <ContextMenuSeparator />
-        <ContextMenuItem onClick={() => onOpenInInvoker(entry)} className="text-xs">
-          <ArrowSquareOutIcon className="mr-2 h-4 w-4" /> Open in Invoker
-        </ContextMenuItem>
-        <ContextMenuItem onClick={() => onOpenInRepeater(entry)} className="text-xs">
-          <PaperPlaneTiltIcon className="mr-2 h-4 w-4" /> Send to Repeater
-        </ContextMenuItem>
-        <CollectionPickerSubmenu
-          variant="context"
-          onSelect={(stashId) => onSendToCollection(entry, stashId)}
-        />
-        <ContextMenuSeparator />
-        <ContextMenuItem
-          onClick={() => onDeleteApiEntry(entry.id)}
-          variant="destructive"
-          className="text-xs"
-        >
-          <TrashIcon className="mr-2 h-4 w-4" /> Delete
-        </ContextMenuItem>
-      </ContextMenuContent>
-    </ContextMenu>
-  );
-}
-
 export function DocumentsExplorer({
   activeDocument,
   activeFileId,
-  isApiFolderOpen,
-  onApiFolderOpenChange,
   onOpenFile,
-  onOpenApiEntry,
-  onAddApiEntry,
-  onDeleteApiEntry,
   onAddCustomSection,
   onRenameCustomSection,
   onRemoveCustomSection,
   onReorderCustomSections,
 }: DocumentsExplorerProps) {
-  const {
-    handleCopyCurlCommand,
-    handleCopyUrl,
-    handleOpenInInvoker,
-    handleOpenInRepeater,
-    handleSendToCollection,
-    handleDragEnd,
-  } = useDocumentsExplorer({ onReorderCustomSections });
+  const { handleDragEnd } = useDocumentsExplorer({ onReorderCustomSections });
 
   return (
     <aside className="flex h-full min-h-0 flex-col border-r bg-muted/25">
@@ -255,87 +156,6 @@ export function DocumentsExplorer({
               <PlusIcon className="h-4 w-4" />
               <span className="truncate">add file</span>
             </button>
-
-            <ContextMenu>
-              <ContextMenuTrigger asChild>
-                <button
-                  type="button"
-                  onClick={() => {
-                    onApiFolderOpenChange(!isApiFolderOpen);
-                    onOpenFile('api');
-                  }}
-                  className={cn(
-                    'flex h-7 w-full items-center gap-2 rounded px-2 text-left text-xs hover:bg-muted',
-                    activeFileId === 'api' && 'bg-muted text-foreground'
-                  )}
-                >
-                  <CaretDownIcon
-                    className={cn(
-                      'h-3.5 w-3.5 text-muted-foreground transition-transform',
-                      !isApiFolderOpen && '-rotate-90'
-                    )}
-                  />
-                  {isApiFolderOpen ? (
-                    <FolderOpen className="h-4 w-4 text-muted-foreground" />
-                  ) : (
-                    <FolderIcon className="h-4 w-4 text-muted-foreground" />
-                  )}
-                  <span className="truncate">api</span>
-                </button>
-              </ContextMenuTrigger>
-              <ContextMenuContent>
-                <ContextMenuItem onClick={onAddApiEntry} className="text-xs">
-                  <PlusIcon className="mr-2 size-3" /> New request
-                </ContextMenuItem>
-              </ContextMenuContent>
-            </ContextMenu>
-
-            {isApiFolderOpen && (
-              <div className="space-y-0.5 pl-5">
-                {activeDocument.apiEntries.length === 0 ? (
-                  <div className="space-y-1 px-2 py-2 text-xs text-muted-foreground">
-                    <div>No saved requests</div>
-                    <button
-                      type="button"
-                      onClick={onAddApiEntry}
-                      className="flex h-7 items-center gap-2 rounded text-xs hover:text-foreground"
-                    >
-                      <PlusIcon className="size-3" />
-                      <span>new request</span>
-                    </button>
-                  </div>
-                ) : (
-                  <>
-                    <button
-                      type="button"
-                      onClick={onAddApiEntry}
-                      className="flex h-7 w-full items-center gap-2 rounded px-2 text-left text-xs text-muted-foreground hover:bg-muted hover:text-foreground"
-                    >
-                      <PlusIcon className="h-3.5 w-3.5" />
-                      <span className="truncate">new request</span>
-                    </button>
-                    {activeDocument.apiEntries.map((entry) => {
-                      const isActive = activeFileId === `api:${entry.id}`;
-
-                      return (
-                        <ApiRequestRow
-                          key={entry.id}
-                          entry={entry}
-                          isActive={isActive}
-                          onOpenApiEntry={onOpenApiEntry}
-                          onCopyCurlCommand={handleCopyCurlCommand}
-                          onCopyUrl={handleCopyUrl}
-                          onOpenInInvoker={handleOpenInInvoker}
-                          onOpenInRepeater={handleOpenInRepeater}
-                          onSendToCollection={handleSendToCollection}
-                          onDeleteApiEntry={onDeleteApiEntry}
-                        />
-                      );
-                    })}
-                  </>
-                )}
-              </div>
-            )}
           </div>
           <DragOverlay className="rounded border bg-popover shadow-lg">
             {(source) => {

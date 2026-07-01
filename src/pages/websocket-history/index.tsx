@@ -1,6 +1,6 @@
 import { TabbedPageLayout } from "@/components/tabs-layout/tabbed-page-layout";
 import { Card } from "@/components/ui/card";
-import { TargetSelectorDialog } from "../http-history/components/target-selector";
+import { TargetSelectorDialog } from "./components/target-selector";
 import { useWebSocketHistoryPage } from "./hooks/use-websocket-history-page";
 import { useWebSocketHistoryQueryStore } from "./state/query-store";
 import { clearWebSocketLogs } from "./services/history-service";

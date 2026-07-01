@@ -52,29 +52,17 @@ export function DocumentsPage() {
             activeDocument={page.activeDocument}
             activeFileId={page.activeFileId}
             openFileIds={page.openFileIds}
-            isApiFolderOpen={page.isApiFolderOpen}
-            activeApiEntry={page.activeApiEntry}
             activeCustomSection={page.activeCustomSection}
             activeLabel={page.activeLabel}
             isCustomSectionFile={page.isCustomSectionFile}
-            apiResponse={page.apiResponse}
-            isFetchingApi={page.isFetchingApi}
-            apiFetchError={page.apiFetchError}
-            apiEditError={page.apiEditError}
             markdownMode={page.markdownMode}
-            onApiFolderOpenChange={page.setIsApiFolderOpen}
             onOpenFile={page.openFile}
-            onOpenApiEntry={page.openApiEntry}
-            onAddApiEntry={page.addApiEntry}
-            onDeleteApiEntry={page.deleteApiEntry}
             onAddCustomSection={() => page.setIsCustomSectionDialogOpen(true)}
             onRenameCustomSection={page.setCustomSectionPendingRename}
             onRemoveCustomSection={page.removeCustomSection}
             onReorderCustomSections={page.reorderCustomSections}
             onCloseFile={page.closeFile}
-            onFetchSelectedApi={page.fetchSelectedApi}
             onUpdateCustomSection={page.updateCustomSection}
-            onUpdateApiEntryRaw={page.updateApiEntryRaw}
           />
         </div>
       </TabbedPageLayout>

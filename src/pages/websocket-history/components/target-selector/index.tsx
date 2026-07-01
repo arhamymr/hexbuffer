@@ -70,7 +70,7 @@ export function TargetSelectorDialog({
         ) : (
           <>
             <DialogHeader>
-              <DialogTitle>Add New TargetIcon</DialogTitle>
+              <DialogTitle>Add New Target</DialogTitle>
               <DialogDescription>
                 Select an existing target or create a new one
               </DialogDescription>

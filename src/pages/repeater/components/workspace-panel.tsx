@@ -1,9 +1,7 @@
-import { Button } from '@/components/ui/button';
 import { useCollectionsStore } from '@/stores/collections';
 import { CollectionsTree } from './collection-tree';
 import { ForgePanel } from './ForgePanel';
-import { FolderStarIcon, PaperPlaneTiltIcon, FloppyDiskIcon } from '@phosphor-icons/react';
-import { sendCraftRequest, saveActiveEndpoint } from '@/triggers/repeater/craft';
+import { FolderStarIcon } from '@phosphor-icons/react';
 
 export function WorkspacePanel({ workspaceId }: { workspaceId: string }) {
   const selectedNodeId = useCollectionsStore((s) => s.selectedNodeId);
@@ -18,35 +16,9 @@ export function WorkspacePanel({ workspaceId }: { workspaceId: string }) {
 
       {/* Right: Forge Content */}
       {hasEndpoint ? (
-        <div className="flex-1 min-w-0 flex flex-col min-h-0">
-          {/* Craft Toolbar */}
-          <div className="flex items-center justify-between px-1 border-b shrink-0 bg-muted/10">
-            <div className="flex items-center gap-2">
-              {/* Send + Save */}
-              <Button
-                size="sm"
-                className="h-7 text-xs transition-transform active:scale-95"
-                onClick={() => { void sendCraftRequest(); }}
-              >
-                <PaperPlaneTiltIcon className="size-3" /> Send
-              </Button>
-              {hasEndpoint && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="h-7 text-xs transition-transform active:scale-95"
-                  onClick={() => { void saveActiveEndpoint(); }}
-                >
-                  <FloppyDiskIcon className="size-3" /> Save
-                </Button>
-              )}
-            </div>
-          </div>
-
-          {/* Forge Panel */}
-          <div className="flex-1 min-h-0">
-            <ForgePanel />
-          </div>
+        <div className="flex-1 min-h-0">
+          {/* ponytail: keying by selectedNodeId resets local states like active tab/view switcher when changing endpoints */}
+          <ForgePanel key={selectedNodeId || ''} />
         </div>
       ) : (
         <div className="flex-1 flex flex-col items-center justify-center space-y-3 bg-muted/5">

@@ -2,10 +2,11 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { ButtonGroup } from '@/components/ui/button-group';
 import { TextEditor } from '@/components/ui/text-editor';
-import { CheckCircleIcon, XCircleIcon } from '@phosphor-icons/react';
+import { CheckCircleIcon, XCircleIcon, CopyIcon, CheckIcon } from '@phosphor-icons/react';
 import { useMemo } from 'react';
 import { useCollectionsStore, type ForgeResponse, type TestResult } from '@/stores/collections';
 import { cn } from '@/lib/utils';
+import { useCopyToClipboard } from '@/hooks/useCopyToClipboard';
 
 interface ForgeResponseViewProps {
   isLoading: boolean;
@@ -39,6 +40,13 @@ export function ForgeResponseView({
   requestBodyType,
 }: ForgeResponseViewProps) {
   const activeContextId = useCollectionsStore((s) => s.activeContextId);
+  const { isCopied, copy } = useCopyToClipboard();
+
+  const handleCopy = () => {
+    if (response?.body) {
+      void copy(response.body, 'Response body copied to clipboard');
+    }
+  };
   const contexts = useCollectionsStore((s) => s.contexts) || [];
 
   const variables = useMemo(() => {
@@ -96,28 +104,50 @@ export function ForgeResponseView({
             </div>
           ) : (
             response && (
-              <div className="flex items-center space-x-4 border-b pb-2 shrink-0 text-xs">
-                <div className="flex items-center space-x-1.5">
-                  <span className="text-muted-foreground uppercase font-bold">Status:</span>
-                  <span
-                    className={`font-semibold px-1 rounded ${response.status >= 200 && response.status < 300
-                        ? 'bg-emerald-500/10 text-emerald-600'
-                        : 'bg-destructive/10 text-destructive'
-                      }`}
-                  >
-                    {response.status} {response.statusText}
-                  </span>
+              <div className="flex items-center justify-between border-b pb-2 shrink-0 text-xs">
+                <div className="flex items-center space-x-4">
+                  <div className="flex items-center space-x-1.5">
+                    <span className="text-muted-foreground uppercase font-bold">Status:</span>
+                    <span
+                      className={`font-semibold px-1 rounded ${response.status >= 200 && response.status < 300
+                          ? 'bg-emerald-500/10 text-emerald-600'
+                          : 'bg-destructive/10 text-destructive'
+                        }`}
+                    >
+                      {response.status} {response.statusText}
+                    </span>
+                  </div>
+                  <div className="flex items-center space-x-1.5">
+                    <span className="text-muted-foreground uppercase font-bold">Time:</span>
+                    <span className="font-semibold text-foreground">{response.timeMs} ms</span>
+                  </div>
+                  <div className="flex items-center space-x-1.5">
+                    <span className="text-muted-foreground uppercase font-bold">Size:</span>
+                    <span className="font-semibold text-foreground">
+                      {new Blob([response.body]).size} bytes
+                    </span>
+                  </div>
                 </div>
-                <div className="flex items-center space-x-1.5">
-                  <span className="text-muted-foreground uppercase font-bold">Time:</span>
-                  <span className="font-semibold text-foreground">{response.timeMs} ms</span>
-                </div>
-                <div className="flex items-center space-x-1.5">
-                  <span className="text-muted-foreground uppercase font-bold">Size:</span>
-                  <span className="font-semibold text-foreground">
-                    {new Blob([response.body]).size} bytes
-                  </span>
-                </div>
+
+                <Button
+                  variant="ghost"
+                  size="xs"
+                  className="h-6 px-2 text-xs flex items-center gap-1.5 transition-transform active:scale-95 text-muted-foreground hover:text-foreground cursor-pointer"
+                  onClick={handleCopy}
+                  title="Copy response body"
+                >
+                  {isCopied ? (
+                    <>
+                      <CheckIcon className="h-3.5 w-3.5 text-emerald-500" />
+                      <span className="text-emerald-500 font-medium">Copied</span>
+                    </>
+                  ) : (
+                    <>
+                      <CopyIcon className="h-3.5 w-3.5" />
+                      <span>Copy</span>
+                    </>
+                  )}
+                </Button>
               </div>
             )
           )}

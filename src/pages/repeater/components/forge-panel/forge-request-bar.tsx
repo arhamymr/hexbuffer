@@ -11,7 +11,8 @@ import { cn } from '@/lib/utils';
 import { ColorizedUrlInput } from '@/components/ui/select-env-input';
 import { METHOD_COLORS } from '@/lib/method-colors';
 import { useCollectionsStore } from '@/stores/collections';
-import { GearSixIcon } from '@phosphor-icons/react';
+import { GearSixIcon, PaperPlaneTiltIcon, FloppyDiskIcon } from '@phosphor-icons/react';
+import { sendCraftRequest, saveActiveEndpoint } from '@/triggers/repeater/craft';
 import { ContextsDialog } from '../ContextsDialog';
 
 interface ForgeRequestBarProps {
@@ -37,7 +38,7 @@ export function ForgeRequestBar({
 
   return (
     <>
-      <div className="flex space-x-2 shrink-0 w-full min-w-0 items-center">
+      <div className="flex space-x-2 shrink-0 w-full min-w-0 items-start">
         <Select value={method} onValueChange={onMethodChange}>
           <SelectTrigger className="w-28 font-semibold h-8">
             {method ? (
@@ -57,10 +58,31 @@ export function ForgeRequestBar({
 
         <ColorizedUrlInput
           placeholder="Enter request URL (e.g. https://api.example.com/v1/users)"
-          className="flex-1 w-0 text-sm h-8"
+          className="flex-1 w-0 text-sm"
           value={url}
           onChange={onUrlChange}
         />
+
+
+        <div className="flex items-center space-x-1.5 shrink-0">
+          <Button
+            size="sm"
+            className="h-7 text-xs font-semibold gap-2"
+            onClick={() => { void sendCraftRequest(); }}
+          >
+            <PaperPlaneTiltIcon className="size-3.5" /> Send
+          </Button>
+          {activeEndpoint && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-7 text-xs font-semibold gap-2"
+              onClick={() => { void saveActiveEndpoint(); }}
+            >
+              <FloppyDiskIcon className="size-3.5" />
+            </Button>
+          )}
+        </div>
 
         <div className="flex items-center space-x-1.5 shrink-0">
           <Select
@@ -91,6 +113,7 @@ export function ForgeRequestBar({
             <GearSixIcon className="h-4 w-4" />
           </Button>
         </div>
+
       </div>
 
       <ContextsDialog open={contextsDialogOpen} onOpenChange={setContextsDialogOpen} />

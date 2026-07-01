@@ -38,7 +38,7 @@ function useEnvVarKeys(): string[] {
         const vars = JSON.parse(activeCtx.variables);
         if (Array.isArray(vars)) {
           for (const v of vars) {
-            if (v.key?.trim()) keys.add(v.key.trim());
+            if (v.key?.trim() && v.enabled !== false) keys.add(v.key.trim());
           }
         }
       } catch {
@@ -293,7 +293,7 @@ export function ColorizedUrlInput({
           onBlur={handleBlur}
           className={cn(
             'border-input min-h-7 w-full min-w-0 rounded-sm border bg-transparent px-3 py-1 text-sm transition-[color,box-shadow] outline-none',
-            'focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]',
+            'focus-visible:border-primary',
             'h-7 overflow-hidden whitespace-nowrap text-ellipsis focus:h-auto focus:overflow-y-auto focus:whitespace-pre-wrap focus:break-all',
             'empty:before:content-[attr(data-placeholder)] empty:before:text-muted-foreground',
             className,

@@ -21,10 +21,10 @@ function getActiveVariables(): Record<string, string> {
   const context = store.contexts.find((c) => c.id === store.activeContextId);
   if (!context) return {};
   try {
-    const vars: Array<{ key: string; value: string }> = JSON.parse(context.variables);
+    const vars: Array<{ key: string; value: string; enabled?: boolean }> = JSON.parse(context.variables);
     const map: Record<string, string> = {};
     vars.forEach((v) => {
-      if (v.key) map[v.key] = v.value;
+      if (v.key && v.enabled !== false) map[v.key] = v.value;
     });
     return map;
   } catch {
@@ -109,18 +109,19 @@ export async function sendCraftRequest(): Promise<void> {
           (c) => c.id === currentStore.activeContextId,
         );
         if (currentContext) {
-          const currentVars: Array<{ key: string; value: string }> = JSON.parse(
+          const currentVars: Array<{ key: string; value: string; enabled?: boolean }> = JSON.parse(
             currentContext.variables,
           );
           const mergedVars = currentVars.map((v) => {
+            const isEnabled = typeof v.enabled === 'boolean' ? v.enabled : true;
             if (v.key in testResult.updatedVariables) {
               return {
                 key: v.key,
                 value: testResult.updatedVariables[v.key],
-                enabled: true,
+                enabled: isEnabled,
               };
             }
-            return { ...v, enabled: true };
+            return { ...v, enabled: isEnabled };
           });
           Object.keys(testResult.updatedVariables).forEach((k) => {
             if (!currentVars.some((v) => v.key === k)) {

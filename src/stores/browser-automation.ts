@@ -592,8 +592,8 @@ export const useBrowserAutomationStore = create<BrowserAutomationState>((set, ge
       const humanInputRequest =
         log.humanInputRequest ?? (
           log.type === 'human' &&
-          tab.humanInputRequest &&
-          (!log.url || !tab.humanInputRequest.url || log.url === tab.humanInputRequest.url)
+            tab.humanInputRequest &&
+            (!log.url || !tab.humanInputRequest.url || log.url === tab.humanInputRequest.url)
             ? tab.humanInputRequest
             : undefined
         );
@@ -612,8 +612,8 @@ export const useBrowserAutomationStore = create<BrowserAutomationState>((set, ge
       humanInputRequest: request,
       logs: tab.logs.map((log) =>
         log.type === 'human' &&
-        !log.humanInputRequest &&
-        (!log.url || !request.url || log.url === request.url)
+          !log.humanInputRequest &&
+          (!log.url || !request.url || log.url === request.url)
           ? { ...log, humanInputRequest: request }
           : log
       ),

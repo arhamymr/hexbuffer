@@ -1,6 +1,6 @@
-import type { WorkflowDef } from '@/pages/automation/types';
-import { DEFAULT_WORKFLOW_NAME } from '@/pages/automation/constants';
-import { createWorkflowFromTemplate as buildFromTemplate } from '@/pages/automation/templates';
+import type { WorkflowDef } from '@/pages/workflow/types';
+import { DEFAULT_WORKFLOW_NAME } from '@/pages/workflow/constants';
+import { createWorkflowFromTemplate as buildFromTemplate } from '@/pages/workflow/templates';
 import { removeRunningWorkflowId } from '../constants';
 import type { AutomationState } from '../types';
 

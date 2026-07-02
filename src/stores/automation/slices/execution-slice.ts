@@ -1,7 +1,7 @@
 import { invoke } from '@tauri-apps/api/core';
 import { toast } from 'sonner';
-import type { WorkflowRun, WorkflowRunStep } from '@/pages/automation/types';
-import { getWorkflowReadiness } from '@/pages/automation/lib/workflow-readiness';
+import type { WorkflowRun, WorkflowRunStep } from '@/pages/workflow/types';
+import { getWorkflowReadiness } from '@/pages/workflow/lib/workflow-readiness';
 import { AUTOMATION_LOG_UI_LIMIT, removeRunningWorkflowId, capExecutionLogs } from '../constants';
 import type { AutomationState, ExecutionLog, WorkflowContext } from '../types';
 
@@ -136,11 +136,11 @@ export const createExecutionSlice = (
           nodeId,
           runtime.workflowId === workflowId && runtime.status === 'running'
             ? {
-                ...runtime,
-                status: 'skipped' as const,
-                message: `FlowArrow aborted: ${reason}`,
-                updatedAt: timestamp,
-              }
+              ...runtime,
+              status: 'skipped' as const,
+              message: `FlowArrow aborted: ${reason}`,
+              updatedAt: timestamp,
+            }
             : runtime,
         ])
       );
@@ -170,12 +170,12 @@ export const createExecutionSlice = (
           : state.executionLogs,
         executionLogsByWorkflowId: isKnownRun
           ? {
-              ...state.executionLogsByWorkflowId,
-              [workflowId]: [
-                ...(state.executionLogsByWorkflowId[workflowId] ?? []),
-                abortLog,
-              ].slice(-AUTOMATION_LOG_UI_LIMIT),
-            }
+            ...state.executionLogsByWorkflowId,
+            [workflowId]: [
+              ...(state.executionLogsByWorkflowId[workflowId] ?? []),
+              abortLog,
+            ].slice(-AUTOMATION_LOG_UI_LIMIT),
+          }
           : state.executionLogsByWorkflowId,
       };
     });

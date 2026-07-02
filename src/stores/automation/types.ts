@@ -2,7 +2,7 @@ import type {
   WorkflowDef,
   WorkflowRun,
   WorkflowRunStep,
-} from '@/pages/automation/types';
+} from '@/pages/workflow/types';
 
 export interface ExecutionLog {
   id: string;

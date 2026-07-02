@@ -19,7 +19,7 @@ const DocumentsPage = React.lazy(() => import("@/pages/documents").then((m) => (
 const BrowserAutomationPage = React.lazy(() => import("@/pages/browser").then((m) => ({ default: m.BrowserAutomationPage })));
 const ListenerPage = React.lazy(() => import("@/pages/listener").then((m) => ({ default: m.ListenerPage })));
 const DebuggerPage = React.lazy(() => import("@/pages/debugger").then((m) => ({ default: m.DebuggerPage })));
-const AutomationPage = React.lazy(() => import("@/pages/automation").then((m) => ({ default: m.AutomationPage })));
+const WorkflowPage = React.lazy(() => import("@/pages/workflow").then((m) => ({ default: m.AutomationPage })));
 const RegressionPage = React.lazy(() => import("@/pages/regression").then((m) => ({ default: m.RegressionPage })));
 const AssistantPage = React.lazy(() => import("@/layout/assistant").then((m) => ({ default: m.AssistantPage })));
 const ScratchpadPage = React.lazy(() => import("@/pages/scratchpad").then((m) => ({ default: m.ScratchpadPage })));
@@ -42,7 +42,7 @@ export const pageComponentMap: Record<string, React.ComponentType<any>> = {
   '/xss-generator': XssGeneratorPage,
   '/sql-injection': SqlInjectionPage,
   '/documents': DocumentsPage,
-  '/automation': AutomationPage,
+  '/automation': WorkflowPage,
   '/settings': Settings,
   '/regression': RegressionPage,
   '/assistant': AssistantPage,

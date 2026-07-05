@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/context-menu';
 import { useCollectionsStore } from '@/stores/collections';
 import { useRepeaterStore } from '@/stores/repeater';
+import { createWorkspace, createCollection } from './management';
 
 type MenuVariant = 'dropdown' | 'context';
 
@@ -37,7 +38,7 @@ export function CollectionPickerSubmenu({
   // Auto-create workspace if empty after hydration (ponytail: keep it simple and robust)
   React.useEffect(() => {
     if (isHydrated && workspaces.length === 0) {
-      useRepeaterStore.getState().createWorkspace();
+      createWorkspace();
     }
   }, [isHydrated, workspaces.length]);
 
@@ -67,7 +68,7 @@ export function CollectionPickerSubmenu({
   }, [workspaces, stashes]);
 
   const handleCreateAndSelect = async (workspaceId: string) => {
-    const stashId = await useCollectionsStore.getState().createStash('new collection', workspaceId);
+    const stashId = await createCollection(workspaceId, 'new collection');
     onSelect(stashId);
   };
 

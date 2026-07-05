@@ -44,7 +44,7 @@ export const useHttpHistoryQueryStore = create<HistoryQueryState>()((set) => ({
   activeScope: null,
   sortOrder: 'desc',
   page: 1,
-  perPage: 100,
+  perPage: 60,
   selectedCallId: null,
   isStreamManuallyPaused: false,
   refreshKey: 0,

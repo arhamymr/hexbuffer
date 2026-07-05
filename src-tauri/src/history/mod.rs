@@ -12,7 +12,7 @@ use crate::{
         ProxyFilter, ProxyRecord, WebSocketConnectionRecord, WebSocketFilter,
         WebSocketMessageRecord,
     },
-    threats::types::{ThreatAnalysisResult, ThreatAnalysisRun, ThreatArtifacts, ThreatSample},
+
 };
 use serde::{Deserialize, Serialize};
 
@@ -134,79 +134,7 @@ impl HistoryBridge {
     }
 
 
-    pub fn upsert_threat_sample(&self, sample: &ThreatSample) -> Result<(), String> {
-        self.db
-            .upsert_threat_sample(sample)
-            .map_err(|e| e.to_string())
-    }
 
-    pub fn list_threat_samples(&self) -> Result<Vec<ThreatSample>, String> {
-        self.db.list_threat_samples().map_err(|e| e.to_string())
-    }
-
-    pub fn get_threat_sample(&self, sample_id: &str) -> Result<Option<ThreatSample>, String> {
-        self.db
-            .get_threat_sample(sample_id)
-            .map_err(|e| e.to_string())
-    }
-
-    pub fn delete_threat_sample(&self, sample_id: &str) -> Result<usize, String> {
-        self.db
-            .delete_threat_sample(sample_id)
-            .map_err(|e| e.to_string())
-    }
-
-    pub fn insert_threat_analysis_run(&self, run: &ThreatAnalysisRun) -> Result<(), String> {
-        self.db
-            .insert_threat_analysis_run(run)
-            .map_err(|e| e.to_string())
-    }
-
-    pub fn update_threat_analysis_run(&self, run: &ThreatAnalysisRun) -> Result<(), String> {
-        self.db
-            .update_threat_analysis_run(run)
-            .map_err(|e| e.to_string())
-    }
-
-    pub fn upsert_threat_artifacts(
-        &self,
-        sample_id: &str,
-        artifacts: &ThreatArtifacts,
-        updated_at: &str,
-    ) -> Result<(), String> {
-        self.db
-            .upsert_threat_artifacts(sample_id, artifacts, updated_at)
-            .map_err(|e| e.to_string())
-    }
-
-    pub fn get_threat_analysis(
-        &self,
-        sample_id: &str,
-    ) -> Result<Option<ThreatAnalysisResult>, String> {
-        let Some(sample) = self
-            .db
-            .get_threat_sample(sample_id)
-            .map_err(|e| e.to_string())?
-        else {
-            return Ok(None);
-        };
-
-        let latest_run = self
-            .db
-            .get_latest_threat_analysis_run(sample_id)
-            .map_err(|e| e.to_string())?;
-        let artifacts = self
-            .db
-            .get_threat_artifacts(sample_id)
-            .map_err(|e| e.to_string())?
-            .unwrap_or_default();
-
-        Ok(Some(ThreatAnalysisResult {
-            sample,
-            latest_run,
-            artifacts,
-        }))
-    }
 
 
     pub fn get_documents(&self) -> Result<Vec<DocumentRecord>, String> {

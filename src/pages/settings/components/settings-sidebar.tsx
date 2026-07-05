@@ -4,11 +4,12 @@ import {
   ShieldCheckIcon,
   SparkleIcon,
   FlowArrowIcon,
+  PaletteIcon,
   InfoIcon,
 } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils';
 
-export type SettingsCategory = 'general' | 'ca-cert' | 'ai' | 'automation' | 'about';
+export type SettingsCategory = 'general' | 'ca-cert' | 'ai' | 'automation' | 'appearance' | 'about';
 
 interface SettingsNavItem {
   id: SettingsCategory;
@@ -21,6 +22,7 @@ const NAV_ITEMS: SettingsNavItem[] = [
   { id: 'ca-cert', label: 'CA Certificate', Icon: ShieldCheckIcon },
   { id: 'ai', label: 'AI', Icon: SparkleIcon },
   { id: 'automation', label: 'Automation', Icon: FlowArrowIcon },
+  { id: 'appearance', label: 'Appearance', Icon: PaletteIcon },
   { id: 'about', label: 'About', Icon: InfoIcon },
 ];
 

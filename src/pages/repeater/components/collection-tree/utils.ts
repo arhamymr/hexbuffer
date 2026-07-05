@@ -26,55 +26,83 @@ export type DropAction =
 // ── Flatten ──
 
 /**
- * Flatten the two-level tree of collections → endpoints into a visible-only flat list.
- * Stashes are scoped to a workspace via parentId (workspace ID). Only endpoints of
- * expanded collections are included. Sorted by sortOrder.
+ * Flatten the nested tree of collections/folders → endpoints into a visible-only flat list.
+ * Traverses recursively starting from the workspaceId. Only contents of expanded
+ * collections are included.
  */
 export function flattenVisibleTree(
   stashes: StashRecord[],
   endpoints: StashEndpointRecord[],
   expandedIds: Set<string>,
+  workspaceId: string,
 ): FlatNode[] {
   const result: FlatNode[] = [];
 
-  const sortedStashes = [...stashes].sort((a, b) => a.sortOrder - b.sortOrder);
+  // Group stashes by parentId
+  const stashesByParent = new Map<string, StashRecord[]>();
+  for (const stash of stashes) {
+    if (stash.parentId) {
+      if (!stashesByParent.has(stash.parentId)) {
+        stashesByParent.set(stash.parentId, []);
+      }
+      stashesByParent.get(stash.parentId)!.push(stash);
+    }
+  }
 
-  for (const stash of sortedStashes) {
-    const nodeId = `stash-${stash.id}`;
+  // Group endpoints by stashId
+  const endpointsByStash = new Map<string, StashEndpointRecord[]>();
+  for (const ep of endpoints) {
+    if (!endpointsByStash.has(ep.stashId)) {
+      endpointsByStash.set(ep.stashId, []);
+    }
+    endpointsByStash.get(ep.stashId)!.push(ep);
+  }
 
-    result.push({
-      id: nodeId,
-      originalId: stash.id,
-      parentId: null,
-      depth: 0,
-      kind: 'collection' as const,
-      label: stash.name,
-      stash,
-    });
+  // Recursive traversal function
+  function traverse(parentId: string, depth: number) {
+    const childStashes = (stashesByParent.get(parentId) || [])
+      .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || a.name.localeCompare(b.name));
 
-    // Only show endpoints if this collection is expanded
-    if (expandedIds.has(nodeId)) {
-      const childEndpoints = endpoints
-        .filter((ep) => ep.stashId === stash.id)
-        .sort((a, b) => a.sortOrder - b.sortOrder);
+    for (const stash of childStashes) {
+      const nodeId = `stash-${stash.id}`;
+      result.push({
+        id: nodeId,
+        originalId: stash.id,
+        parentId: stash.parentId,
+        depth,
+        kind: 'collection' as const,
+        label: stash.name,
+        stash,
+      });
 
-      for (const ep of childEndpoints) {
-        result.push({
-          id: `ep-${ep.id}`,
-          originalId: ep.id,
-          parentId: stash.id,
-          depth: 1,
-          kind: 'endpoint' as const,
-          label: ep.name,
-          description: ep.url || 'No URL set',
-          method: ep.method,
-          url: ep.url,
-          endpoint: ep,
-        });
+      // Only show contents if this folder is expanded
+      if (expandedIds.has(nodeId)) {
+        // 1. Folders first
+        traverse(stash.id, depth + 1);
+
+        // 2. Endpoints next
+        const childEndpoints = (endpointsByStash.get(stash.id) || [])
+          .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || a.createdAt.localeCompare(b.createdAt));
+
+        for (const ep of childEndpoints) {
+          result.push({
+            id: `ep-${ep.id}`,
+            originalId: ep.id,
+            parentId: stash.id,
+            depth: depth + 1,
+            kind: 'endpoint' as const,
+            label: ep.name,
+            description: ep.url || 'No URL set',
+            method: ep.method,
+            url: ep.url,
+            endpoint: ep,
+          });
+        }
       }
     }
   }
 
+  traverse(workspaceId, 0);
   return result;
 }
 

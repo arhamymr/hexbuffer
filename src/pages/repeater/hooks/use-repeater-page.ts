@@ -3,16 +3,18 @@ import { useRepeaterStore } from '@/stores/repeater';
 import { useCollectionsStore } from '@/stores/collections';
 import { invoke } from '@tauri-apps/api/core';
 import type { PageTabItem } from '@/components/tabs-layout/types';
+import {
+  createWorkspace,
+  renameWorkspace,
+  deleteWorkspace,
+  setActiveWorkspace,
+  closeWorkspacesToLeft,
+  closeWorkspacesToRight,
+} from '@/triggers/repeater';
 
 export function useRepeaterPage() {
   const workspaces = useRepeaterStore((s) => s.workspaces);
   const activeWorkspaceId = useRepeaterStore((s) => s.activeWorkspaceId);
-  const createWorkspace = useRepeaterStore((s) => s.createWorkspace);
-  const renameWorkspace = useRepeaterStore((s) => s.renameWorkspace);
-  const deleteWorkspace = useRepeaterStore((s) => s.deleteWorkspace);
-  const setActiveWorkspaceId = useRepeaterStore((s) => s.setActiveWorkspaceId);
-  const closeTabsToLeft = useRepeaterStore((s) => s.closeTabsToLeft);
-  const closeTabsToRight = useRepeaterStore((s) => s.closeTabsToRight);
 
   const stashes = useCollectionsStore((s) => s.stashes);
   const isHydrated = useCollectionsStore((s) => s.isHydrated);
@@ -30,7 +32,7 @@ export function useRepeaterPage() {
     if (workspaces.length === 0 && isHydrated) {
       createWorkspace();
     }
-  }, [workspaces.length, isHydrated, createWorkspace]);
+  }, [workspaces.length, isHydrated]);
 
   // Migrate orphaned stashes (parentId === null) into the first workspace
   React.useEffect(() => {
@@ -67,32 +69,32 @@ export function useRepeaterPage() {
   );
 
   const onTabChange = React.useCallback(
-    (id: string) => setActiveWorkspaceId(id),
-    [setActiveWorkspaceId],
+    (id: string) => setActiveWorkspace(id),
+    [],
   );
 
   const onTabRename = React.useCallback(
     (id: string, name: string) => renameWorkspace(id, name),
-    [renameWorkspace],
+    [],
   );
 
   const onTabClose = React.useCallback(
     (id: string) => deleteWorkspace(id),
-    [deleteWorkspace],
+    [],
   );
 
   const onTabAdd = React.useCallback(() => {
     createWorkspace();
-  }, [createWorkspace]);
+  }, []);
 
   const onCloseTabsToLeft = React.useCallback(
-    (id: string) => closeTabsToLeft(id),
-    [closeTabsToLeft],
+    (id: string) => closeWorkspacesToLeft(id),
+    [],
   );
 
   const onCloseTabsToRight = React.useCallback(
-    (id: string) => closeTabsToRight(id),
-    [closeTabsToRight],
+    (id: string) => closeWorkspacesToRight(id),
+    [],
   );
 
   // Register Cmd+S / Ctrl+S key handler for saving active request (ponytail: simple key listener)

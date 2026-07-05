@@ -1,7 +1,7 @@
 {
   "name": "hexbuffer",
   "private": true,
-  "version": "2026.0.54",
+  "version": "2026.0.58",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -9,8 +9,7 @@
     "tauri:dev": "tauri dev",
     "dev:clean": "lsof -ti:1420 | xargs kill -9 2>/dev/null || true && vite",
     "build": "vite build",
-    "sidecars:build": "node ./sidecars/download-rust-analyzer.mjs && node ./sidecars/build-sidecars.mjs",
-    "ra:download": "node ./sidecars/download-rust-analyzer.mjs",
+    "sidecars:build": "node ./sidecars/build-sidecars.mjs",
     "preview": "vite preview",
     "fix:packet-permissions": "bash ./scripts/fix-packet-capture-permissions.sh",
     "deploy": "bash ./scripts/deploy.sh"

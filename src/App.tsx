@@ -3,9 +3,10 @@ import { Routes, Route } from "react-router-dom";
 import { CaInstallDialog } from "@/components/ca-install-dialog";
 import { startLiveTrafficWatcher, stopLiveTrafficWatcher } from "@/triggers/live-traffic";
 import { startPageCrawledWatcher, stopPageCrawledWatcher } from "@/triggers/browser";
+import { ClipboardWatcher } from "@/components/clipboard-watcher";
 
-const OverviewPage = React.lazy(() =>
-  import("@/pages/overview").then((m) => ({ default: m.OverviewPage }))
+const DesktopPage = React.lazy(() =>
+  import("@/pages/desktop").then((m) => ({ default: m.DesktopPage }))
 );
 const HttpHistoryPage = React.lazy(() =>
   import("@/pages/http-history").then((m) => ({ default: m.HttpHistoryPage }))
@@ -72,6 +73,9 @@ const AssistantPage = React.lazy(() =>
 const ScratchpadPage = React.lazy(() =>
   import("@/pages/scratchpad").then((m) => ({ default: m.ScratchpadPage }))
 );
+const MockForgePage = React.lazy(() =>
+  import("@/pages/mock-forge").then((m) => ({ default: m.MockForgePage }))
+);
 
 
 function AutomationEventWatchers() {
@@ -92,10 +96,11 @@ function AppRoutes() {
   return (
     <>
       <AutomationEventWatchers />
+      <ClipboardWatcher />
       <CaInstallDialog />
       <React.Suspense fallback={<div className="h-full flex items-center justify-center text-muted-foreground text-sm">Loading…</div>}>
         <Routes>
-          <Route path="/" element={<OverviewPage />} />
+          <Route path="/" element={<DesktopPage />} />
           <Route path="/http-history" element={<HttpHistoryPage />} />
           <Route path="/websocket-history" element={<WebSocketHistoryPage />} />
           <Route path="/intercept" element={<InterceptPage />} />
@@ -117,6 +122,7 @@ function AppRoutes() {
           <Route path="/regression" element={<RegressionPage />} />
           <Route path="/assistant" element={<AssistantPage />} />
           <Route path="/scratchpad" element={<ScratchpadPage />} />
+          <Route path="/mock-forge" element={<MockForgePage />} />
 
         </Routes>
       </React.Suspense>

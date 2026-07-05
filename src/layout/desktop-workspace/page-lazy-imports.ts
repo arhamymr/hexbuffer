@@ -1,7 +1,7 @@
 import * as React from 'react';
 
 // Lazy load tool pages
-const OverviewPage = React.lazy(() => import("@/pages/overview").then((m) => ({ default: m.OverviewPage })));
+const DesktopPage = React.lazy(() => import("@/pages/desktop").then((m) => ({ default: m.DesktopPage })));
 const HttpHistoryPage = React.lazy(() => import("@/pages/http-history").then((m) => ({ default: m.HttpHistoryPage })));
 const WebSocketHistoryPage = React.lazy(() => import("@/pages/websocket-history").then((m) => ({ default: m.WebSocketHistoryPage })));
 const InvokerPage = React.lazy(() => import("@/pages/invoker").then((m) => ({ default: m.InvokerPage })));
@@ -23,9 +23,10 @@ const WorkflowPage = React.lazy(() => import("@/pages/workflow").then((m) => ({ 
 const RegressionPage = React.lazy(() => import("@/pages/regression").then((m) => ({ default: m.RegressionPage })));
 const AssistantPage = React.lazy(() => import("@/layout/assistant").then((m) => ({ default: m.AssistantPage })));
 const ScratchpadPage = React.lazy(() => import("@/pages/scratchpad").then((m) => ({ default: m.ScratchpadPage })));
+const MockForgePage = React.lazy(() => import("@/pages/mock-forge").then((m) => ({ default: m.MockForgePage })));
 
 export const pageComponentMap: Record<string, React.ComponentType<any>> = {
-  '/': OverviewPage,
+  '/': DesktopPage,
   '/http-history': HttpHistoryPage,
   '/websocket-history': WebSocketHistoryPage,
   '/intercept': InterceptPage,
@@ -47,4 +48,5 @@ export const pageComponentMap: Record<string, React.ComponentType<any>> = {
   '/regression': RegressionPage,
   '/assistant': AssistantPage,
   '/scratchpad': ScratchpadPage,
+  '/mock-forge': MockForgePage,
 };

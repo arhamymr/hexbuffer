@@ -27,7 +27,7 @@ export const useLogStore = create<LogState>()(
     selectedCallId: null,
     pagination: {
       page: 1,
-      perPage: 100,
+      perPage: 60,
       total: 0,
       hasMore: false,
     },
@@ -41,7 +41,7 @@ export const useLogStore = create<LogState>()(
 
     clearCalls: async () => {
       await invoke('clear_proxy_all');
-      set({ pagination: { page: 1, perPage: 100, total: 0, hasMore: false } });
+      set({ pagination: { page: 1, perPage: 60, total: 0, hasMore: false } });
     },
 
     deleteCall: async (id) => {

@@ -59,7 +59,7 @@ export function useSidebarNav() {
     [hiddenNavItems],
   );
 
-  // Auto-register/open window when pathname changes (unless desktop overview)
+  // Auto-register/open window when pathname changes (unless desktop)
   React.useEffect(() => {
     const matchedItem = visibleNavItems.find((item) => item.href === pathname);
     if (matchedItem && pathname !== '/') {

@@ -39,11 +39,9 @@ export function DocumentsPage() {
             activeDocument={page.activeDocument}
             exporting={page.exporting}
             canPreviewMarkdown={page.isCustomSectionFile}
-            markdownMode={page.markdownMode}
             canUndoMarkdown={page.isCustomSectionFile && page.canUndoCustomSection}
             canRedoMarkdown={page.isCustomSectionFile && page.canRedoCustomSection}
             onExportPdf={page.handleExportPdf}
-            onMarkdownModeChange={page.setMarkdownMode}
             onUndoMarkdown={page.undoCustomSectionChange}
             onRedoMarkdown={page.redoCustomSectionChange}
             onTitleChange={page.updateTitle}
@@ -55,7 +53,6 @@ export function DocumentsPage() {
             activeCustomSection={page.activeCustomSection}
             activeLabel={page.activeLabel}
             isCustomSectionFile={page.isCustomSectionFile}
-            markdownMode={page.markdownMode}
             onOpenFile={page.openFile}
             onAddCustomSection={() => page.setIsCustomSectionDialogOpen(true)}
             onRenameCustomSection={page.setCustomSectionPendingRename}

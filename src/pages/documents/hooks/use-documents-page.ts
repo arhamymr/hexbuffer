@@ -2,7 +2,7 @@ import * as React from 'react';
 import { useDocumentsStore } from '@/stores/documents';
 import { useShallow } from 'zustand/react/shallow';
 import { type DocumentTemplateId } from '../constants';
-import { type ReconDocument, type CustomSection, type MarkdownEditorMode } from '../types';
+import { type ReconDocument, type CustomSection } from '../types';
 import { exportDocumentToPdf } from '../lib/export-document';
 import {
   getCustomSectionDefinition,
@@ -29,7 +29,6 @@ function getEmptySectionHistory(): CustomSectionHistory {
 }
 
 export function useDocumentsPage() {
-  const [markdownMode, setMarkdownMode] = React.useState<MarkdownEditorMode>('code');
 
   const {
     documents,
@@ -424,8 +423,6 @@ export function useDocumentsPage() {
   ) : '';
 
   return {
-    markdownMode,
-    setMarkdownMode,
     tabs: documents.map((document) => ({
       id: document.id,
       name: document.title.trim() || document.name,

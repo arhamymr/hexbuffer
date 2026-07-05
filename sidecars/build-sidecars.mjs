@@ -8,8 +8,8 @@ import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const require = createRequire(import.meta.url);
-const binariesDir = path.join(root, 'apps', 'hexbuffer', 'src-tauri', 'binaries');
-const pkgCacheDir = path.join(root, 'apps', 'hexbuffer', 'src-tauri', '.pkg-cache');
+const binariesDir = path.join(root, 'src-tauri', 'binaries');
+const pkgCacheDir = path.join(root, 'src-tauri', '.pkg-cache');
 
 function run(command, args, options = {}) {
   execFileSync(command, args, {
@@ -87,7 +87,10 @@ function buildSidecar({ name, entry, target, targetTriple }) {
     pkgConfigPath,
     JSON.stringify(
       {
-        assets: [playwrightBrowsersJsonAsset],
+        assets: [
+          playwrightBrowsersJsonAsset,
+          'sidecars/knowledge/**/*'
+        ],
       },
       null,
       2
@@ -137,9 +140,28 @@ const target = pkgTargetForTriple(targetTriple);
 
 console.log(`[sidecars] Building sidecars for ${targetTriple} (${target})`);
 removeLegacySidecars(targetTriple);
+
+// ponytail: bundle ES modules into CommonJS before running pkg to avoid bytecode and module system mismatch errors
+console.log('[sidecars] Bundling sidecar with esbuild...');
+const esbuildPath = path.join(root, 'node_modules', '.pnpm', 'node_modules', '.bin', 'esbuild');
+fs.mkdirSync(path.join(root, 'sidecars', 'dist'), { recursive: true });
+run(esbuildPath, [
+  'sidecars/index.mjs',
+  '--bundle',
+  '--platform=node',
+  '--format=cjs',
+  '--external:ai',
+  '--external:zod',
+  '--external:@ai-sdk/deepseek',
+  '--external:@ai-sdk/openai',
+  '--external:playwright',
+  '--external:playwright-core',
+  '--outfile=sidecars/dist/index.cjs'
+]);
+
 buildSidecar({
   name: 'ai-engine',
-  entry: 'sidecars/index.mjs',
+  entry: 'sidecars/dist/index.cjs',
   target,
   targetTriple,
 });

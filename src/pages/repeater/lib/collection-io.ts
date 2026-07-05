@@ -19,14 +19,28 @@ interface ExportSchema {
 export async function exportCollectionsToFile(workspaceId?: string): Promise<void> {
   const { stashes, endpoints } = useCollectionsStore.getState();
 
-  // Funnel to workspace scope if provided
-  const workspaceStashes = workspaceId
-    ? stashes.filter((s) => s.parentId === workspaceId)
-    : stashes;
-  const workspaceStashIds = new Set(workspaceStashes.map((s) => s.id));
-  const workspaceEndpoints = workspaceId
-    ? endpoints.filter((ep) => workspaceStashIds.has(ep.stashId))
-    : endpoints;
+  // Funnel to workspace scope recursively if provided
+  const workspaceStashIds = new Set<string>();
+  if (workspaceId) {
+    const addDescendants = (parentId: string) => {
+      workspaceStashIds.add(parentId);
+      const children = stashes.filter((st) => st.parentId === parentId);
+      for (const child of children) {
+        addDescendants(child.id);
+      }
+    };
+    const roots = stashes.filter((st) => st.parentId === workspaceId);
+    for (const root of roots) {
+      addDescendants(root.id);
+    }
+  } else {
+    for (const s of stashes) {
+      workspaceStashIds.add(s.id);
+    }
+  }
+
+  const workspaceStashes = stashes.filter((s) => workspaceStashIds.has(s.id));
+  const workspaceEndpoints = endpoints.filter((ep) => workspaceStashIds.has(ep.stashId));
 
   const data: ExportSchema = {
     version: 1,
@@ -107,7 +121,10 @@ export async function importCollectionsFromFile(): Promise<ImportResult | null> 
   const stashes = collections.stashes as unknown[];
   const endpoints = collections.endpoints as unknown[];
 
-  // Validate each stash + normalize parentId to null
+  // Build stash ID set for validation & nested parent mapping
+  const stashIds = new Set(stashes.map((s) => (s as Record<string, unknown>).id as string));
+
+  // Validate each stash + normalize parentId or keep nested parentId
   for (let i = 0; i < stashes.length; i++) {
     const s = stashes[i] as Record<string, unknown>;
     if (typeof s.id !== 'string' || !s.id) {
@@ -118,12 +135,15 @@ export async function importCollectionsFromFile(): Promise<ImportResult | null> 
       toast.error(`Invalid stash at index ${i}: missing "name"`);
       return null;
     }
-    // Allow parentId for workspace scoping; normalize to null for import (caller reassigns)
-    (s as unknown as StashRecord).parentId = null;
+    
+    // ponytail: preserve internal parent relationships, otherwise normalize to null for caller scoping
+    const pId = s.parentId;
+    if (typeof pId === 'string' && stashIds.has(pId)) {
+      // It's a sub-collection nested inside another imported stash, keep parentId as-is
+    } else {
+      (s as unknown as StashRecord).parentId = null;
+    }
   }
-
-  // Build stash ID set for cross-reference validation
-  const stashIds = new Set(stashes.map((s) => (s as Record<string, unknown>).id as string));
 
   // Validate each endpoint
   for (let i = 0; i < endpoints.length; i++) {

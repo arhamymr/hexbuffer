@@ -34,6 +34,7 @@ interface ReportFileRowProps {
   section: CustomSection;
   isActive: boolean;
   isDragging?: boolean;
+  handleRef?: (element: Element | null) => void;
   onOpenFile: (fileId: EditorFileId) => void;
   onRenameCustomSection: (section: CustomSection) => void;
   onRemoveCustomSection: (sectionKey: string) => void;
@@ -43,6 +44,7 @@ function ReportFileRow({
   section,
   isActive,
   isDragging,
+  handleRef,
   onOpenFile,
   onRenameCustomSection,
   onRemoveCustomSection,
@@ -64,7 +66,14 @@ function ReportFileRow({
             isActive && 'bg-muted text-foreground'
           )}
         >
-          <DotsSixVerticalIcon className="h-3.5 w-3.5 shrink-0 cursor-grab text-muted-foreground/50 active:cursor-grabbing" />
+          {/* ponytail: use handleRef on drag handle to bypass isInteractiveElement prevention */}
+          <span
+            ref={handleRef}
+            className="flex items-center justify-center cursor-grab active:cursor-grabbing text-muted-foreground/50 hover:text-foreground touch-none"
+            aria-label="Drag to reorder"
+          >
+            <DotsSixVerticalIcon className="h-3.5 w-3.5 shrink-0" />
+          </span>
           <FileTextIcon className="h-4 w-4 text-muted-foreground" />
           <span className="truncate">{section.title.toLowerCase()}.md</span>
         </button>
@@ -94,7 +103,7 @@ interface SortableReportFileRowProps extends ReportFileRowProps {
 }
 
 function SortableReportFileRow({ index, ...props }: SortableReportFileRowProps) {
-  const { ref, isDragging } = useSortable({
+  const { ref, isDragging, handleRef } = useSortable({
     id: props.section.key,
     index,
     type: 'custom-section',
@@ -108,7 +117,7 @@ function SortableReportFileRow({ index, ...props }: SortableReportFileRowProps) 
         isDragging && 'z-50 opacity-50'
       )}
     >
-      <ReportFileRow {...props} isDragging={isDragging} />
+      <ReportFileRow {...props} isDragging={isDragging} handleRef={handleRef} />
     </div>
   );
 }

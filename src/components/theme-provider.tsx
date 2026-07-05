@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { useAppSettingsStore } from '@/stores/app-settings-store';
 
 type Theme = 'light' | 'dark';
 
@@ -24,8 +25,13 @@ interface ThemeProviderProps {
 }
 
 export function ThemeProvider({ children, defaultTheme = 'dark' }: ThemeProviderProps) {
-  const [theme, setThemeState] = React.useState<Theme>(defaultTheme);
+  // ponytail: read initial value from persisted store; fall back to prop
+  const storedTheme = useAppSettingsStore((s) => s.theme);
+  const setStoredTheme = useAppSettingsStore((s) => s.setTheme);
 
+  const [theme, setThemeState] = React.useState<Theme>(storedTheme ?? defaultTheme);
+
+  // Apply class to <html> whenever theme changes
   React.useEffect(() => {
     const root = document.documentElement;
     if (theme === 'dark') {
@@ -35,13 +41,19 @@ export function ThemeProvider({ children, defaultTheme = 'dark' }: ThemeProvider
     }
   }, [theme]);
 
-  const toggleTheme = React.useCallback(() => {
-    setThemeState((prev) => (prev === 'light' ? 'dark' : 'light'));
-  }, []);
+  // Sync from store (e.g. changed via context menu while on another page)
+  React.useEffect(() => {
+    setThemeState(storedTheme);
+  }, [storedTheme]);
 
   const setTheme = React.useCallback((newTheme: Theme) => {
     setThemeState(newTheme);
-  }, []);
+    setStoredTheme(newTheme);
+  }, [setStoredTheme]);
+
+  const toggleTheme = React.useCallback(() => {
+    setTheme(theme === 'light' ? 'dark' : 'light');
+  }, [theme, setTheme]);
 
   return (
     <ThemeContext.Provider value={{ theme, toggleTheme, setTheme }}>

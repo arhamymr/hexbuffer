@@ -21,6 +21,33 @@ import {
   DropdownMenuSubContent,
 } from "@/components/ui/dropdown-menu";
 import { formatTimestamp, formatBytes } from "./utils";
+
+// ponytail: fixed palette — enough colours for typical query strings
+const PARAM_COLORS = ["#e06c75", "#61afef", "#98c379", "#e5c07b", "#c678dd", "#56b6c2", "#d19a66"];
+
+function ColoredUrl({ url, searchQuery }: { url: string; searchQuery: string }) {
+  try {
+    const qIdx = url.indexOf('?');
+    if (qIdx === -1) return <HighlightedText text={url} query={searchQuery} />;
+    const base = url.slice(0, qIdx + 1);
+    const pairs = url.slice(qIdx + 1).split('&');
+    return (
+      <>
+        <HighlightedText text={base} query={searchQuery} />
+        {pairs.map((pair, i) => (
+          <span key={i}>
+            {i > 0 && <span className="text-muted-foreground">&</span>}
+            <span style={{ color: PARAM_COLORS[i % PARAM_COLORS.length] }}>
+              <HighlightedText text={pair} query={searchQuery} />
+            </span>
+          </span>
+        ))}
+      </>
+    );
+  } catch {
+    return <HighlightedText text={url} query={searchQuery} />;
+  }
+}
 import { StatusBadge, MethodBadge } from "@/components/status-badge";
 import { LogEntryContextMenu } from "./log-context-menu";
 import type { ApiCall } from '@/types';
@@ -368,9 +395,9 @@ export const TrafficTable = memo(function TrafficTable({
             ))}
             <BrowserIcon userAgent={row.original.user_agent} />
             <span className="truncate min-w-0" style={{ direction: 'rtl', textAlign: 'left', color: getHighlightColor(row.original.host, row.original.path) || undefined }}>
-              <HighlightedText
-                text={displayUrl}
-                query={(table.options.meta as { searchQuery?: string } | undefined)?.searchQuery ?? ""}
+              <ColoredUrl
+                url={displayUrl}
+                searchQuery={(table.options.meta as { searchQuery?: string } | undefined)?.searchQuery ?? ""}
               />
             </span>
           </div>

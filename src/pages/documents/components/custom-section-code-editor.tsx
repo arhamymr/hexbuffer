@@ -17,6 +17,8 @@ export function CustomSectionCodeEditor({
       path={`${documentId}/sections/${section.key}.md`}
       value={section.content}
       onChange={(value) => onChange(value ?? '')}
+      language="markdown"
+      detectLinks={true}
     />
   );
 }

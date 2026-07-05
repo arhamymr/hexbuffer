@@ -1,12 +1,12 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "hexbuffer",
-  "version": "2026.0.54",
+  "version": "2026.0.58",
   "identifier": "com.hexbuffer.security",
   "build": {
     "beforeDevCommand": "pnpm dev:clean",
     "devUrl": "http://localhost:1420",
-    "beforeBuildCommand": "pnpm build",
+    "beforeBuildCommand": "pnpm sidecars:build && pnpm build",
     "frontendDist": "../dist"
   },
   "app": {
@@ -64,7 +64,9 @@
         "type": "downloadBootstrapper"
       }
     },
-    "externalBin": [],
+    "externalBin": [
+      "binaries/ai-engine"
+    ],
     "resources": [
       "resources/ghidra/*"
     ],

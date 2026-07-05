@@ -1,10 +1,19 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
+export type BgType = 'none' | 'color' | 'image';
+export type AppTheme = 'dark' | 'light';
+
 interface AppSettingsState {
   hiddenNavItems: string[]
   pinnedNavItems: string[]
   recentApps: string[]
+  bgType: BgType
+  bgValue: string // hex color or data URL
+  theme: AppTheme
+  setBg: (type: BgType, value: string) => void
+  clearBg: () => void
+  setTheme: (t: AppTheme) => void
   toggleNavItem: (href: string) => void
   resetHiddenNavItems: () => void
   togglePinNavItem: (href: string) => void
@@ -13,7 +22,7 @@ interface AppSettingsState {
   removeRecentApp: (href: string) => void
 }
 
-type PersistedSettings = Pick<AppSettingsState, 'hiddenNavItems' | 'pinnedNavItems' | 'recentApps'>
+type PersistedSettings = Pick<AppSettingsState, 'hiddenNavItems' | 'pinnedNavItems' | 'recentApps' | 'bgType' | 'bgValue' | 'theme'>
 
 export const useAppSettingsStore = create<AppSettingsState>()(
   persist<AppSettingsState, [], [], PersistedSettings>(
@@ -28,6 +37,12 @@ export const useAppSettingsStore = create<AppSettingsState>()(
         '/documents',
       ],
       recentApps: [],
+      bgType: 'none',
+      bgValue: '',
+      theme: 'dark',
+      setBg: (type, value) => set({ bgType: type, bgValue: value }),
+      clearBg: () => set({ bgType: 'none', bgValue: '' }),
+      setTheme: (t) => set({ theme: t }),
       toggleNavItem: (href) =>
         set((state) => ({
           hiddenNavItems: state.hiddenNavItems.includes(href)
@@ -65,6 +80,9 @@ export const useAppSettingsStore = create<AppSettingsState>()(
         hiddenNavItems: state.hiddenNavItems,
         pinnedNavItems: state.pinnedNavItems,
         recentApps: state.recentApps,
+        bgType: state.bgType,
+        bgValue: state.bgValue,
+        theme: state.theme,
       }),
       merge: (persisted, current): AppSettingsState => {
         const base = current as AppSettingsState
@@ -74,6 +92,9 @@ export const useAppSettingsStore = create<AppSettingsState>()(
           hiddenNavItems: state?.hiddenNavItems ?? base.hiddenNavItems,
           pinnedNavItems: state?.pinnedNavItems ?? base.pinnedNavItems,
           recentApps: state?.recentApps ?? base.recentApps,
+          bgType: state?.bgType ?? base.bgType,
+          bgValue: state?.bgValue ?? base.bgValue,
+          theme: state?.theme ?? base.theme,
         }
       },
     }

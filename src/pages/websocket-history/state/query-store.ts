@@ -26,7 +26,7 @@ export const useWebSocketHistoryQueryStore = create<WebSocketHistoryQueryState>(
   filter: { search: '' },
   activeScope: null,
   page: 1,
-  perPage: 100,
+  perPage: 60,
   selectedConnectionId: null,
   isStreamManuallyPaused: false,
   refreshKey: 0,

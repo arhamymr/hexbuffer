@@ -34,6 +34,7 @@ export function ScratchpadWidget() {
           onChange={(value) => setNote(value ?? '')}
           language="markdown"
           height="100%"
+          detectLinks={true}
         />
       </div>
     </div>

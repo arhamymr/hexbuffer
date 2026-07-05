@@ -45,7 +45,7 @@ export function useWebSocketTable() {
   );
 
   const [connections, setConnections] = useState<WebSocketConnectionSummary[]>([]);
-  const [pagination, setPagination] = useState({ page: 1, perPage: 100, total: 0, hasMore: false });
+  const [pagination, setPagination] = useState({ page: 1, perPage: 60, total: 0, hasMore: false });
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [newEventsCount, setNewEventsCount] = useState(0);

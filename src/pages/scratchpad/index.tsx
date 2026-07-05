@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { toast } from 'sonner';
 import { useScratchpadStore } from '@/stores/scratchpad';
 import { TextEditor } from '@/components/ui/text-editor';
 import { Button } from '@/components/ui/button';
@@ -29,6 +30,17 @@ export function ScratchpadPage() {
   const [isRenaming, setIsRenaming] = React.useState(false);
   const [renameValue, setRenameValue] = React.useState('');
 
+  React.useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 's') {
+        e.preventDefault();
+        toast.success('Scratchpad saved', { description: activePad?.name });
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [activePad?.name]);
+
   const handleRenameStart = () => {
     if (!activePad) return;
     setRenameValue(activePad.name);
@@ -49,15 +61,10 @@ export function ScratchpadPage() {
 
   // ponytail: kept simple with inline event handlers to minimize abstraction overhead
   return (
-    <div className="h-full w-full overflow-hidden bg-background p-3 flex flex-col gap-2">
+    <div className="h-full w-full overflow-hidden bg-background p-2 flex flex-col">
       {/* Toolbar */}
-      <div className="flex h-10 shrink-0 items-center justify-between border rounded-md bg-muted/40 px-3">
-        <div className="flex items-center gap-2">
-          <FileTextIcon className="h-4 w-4 text-primary" />
-          <span className="text-xs font-semibold uppercase tracking-wider text-foreground">Scratchpad</span>
-        </div>
-
-        <div className="flex items-center gap-2">
+      <div className="shrink-0 border-t border-x  rounded-t-md bg-muted px-1">
+        <div className="flex items-center gap-2 p-1 justify-between">
           {isRenaming ? (
             /* Inline Rename Input */
             <form
@@ -104,7 +111,7 @@ export function ScratchpadPage() {
                 value={activeId}
                 onValueChange={setActiveId}
               >
-                <SelectTrigger className="h-6 min-w-[130px] text-[11px] px-2 py-0 [&_svg]:size-3 bg-background active:scale-97 transition-all">
+                <SelectTrigger className="!h-6 min-w-[130px] text-[11px] px-2 py-0 [&_svg]:size-3 bg-background active:scale-97 transition-all">
                   <SelectValue placeholder="Select scratchpad" />
                 </SelectTrigger>
                 <SelectContent>
@@ -119,9 +126,7 @@ export function ScratchpadPage() {
           )}
 
           {!isRenaming && (
-            <>
-              <div className="h-4 w-[1px] bg-border mx-1" />
-
+            <div className='flex gap-2'>
               {/* Rename */}
               <Button
                 variant="outline"
@@ -157,18 +162,19 @@ export function ScratchpadPage() {
                 <PlusIcon className="h-3 w-3" />
                 <span>Add ({scratchpads.length}/6)</span>
               </Button>
-            </>
+            </div>
           )}
         </div>
       </div>
 
       {/* Editor Container */}
-      <div className="flex-1 min-h-0 border rounded-md overflow-hidden bg-background">
+      <div className="flex-1 min-h-0 border rounded-b-md overflow-hidden bg-background">
         <TextEditor
           value={note}
           onChange={(value) => setNote(value ?? '')}
           language="markdown"
           height="100%"
+          detectLinks={true}
         />
       </div>
     </div>

@@ -1,17 +1,14 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use std::sync::Arc;
 use std::sync::Mutex;
 use tauri::{
     menu::{Menu, MenuItem, Submenu},
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
     Manager,
 };
-use hexbuffer::commands::browser_panel::BrowserTabManager;
 use hexbuffer::commands::intruder::IntruderState;
 use hexbuffer::commands::repeater::WsRepeaterState;
-use hexbuffer::commands::threats::ThreatAnalysisState;
 use hexbuffer::{
     AiBrowserState, BrowserProcessState, CollaboratorPollingState, HistoryBridge,
     PortScanState, ProxyState, SqliScanState,
@@ -70,41 +67,11 @@ fn main() {
             app.manage(AiBrowserState::default());
             app.manage(SqliScanState::new());
             app.manage(WsRepeaterState::default());
-            app.manage(ThreatAnalysisState::default());
             app.manage(CollaboratorPollingState::default());
             app.manage(hexbuffer::automation::AutomationRuntimeState::default());
             app.manage(hexbuffer::commands::audit::AuditState::new());
-            app.manage(hexbuffer::commands::inspector::InspectorCdpState::default());
-            app.manage(Arc::new(BrowserTabManager::new(app.handle().clone())));
             app.manage(database);
             app.manage(history);
-            // Start the LSP Server — prefer the bundled rust-analyzer sidecar binary.
-            // Tauri places externalBin sidecars next to the app executable.
-            let (port_tx, port_rx) = tokio::sync::oneshot::channel();
-            {
-                let ext = if cfg!(windows) { ".exe" } else { "" };
-                let bundled_ra = std::env::current_exe()
-                    .ok()
-                    .and_then(|exe| exe.parent().map(|dir| {
-                        dir.join(format!("rust-analyzer{}", ext))
-                    }));
-                tauri::async_runtime::spawn(async move {
-                    hexbuffer::commands::lsp::run_lsp_server(port_tx, bundled_ra).await;
-                });
-            }
-            let app_handle = app.handle().clone();
-            tauri::async_runtime::spawn(async move {
-                if let Ok(port) = port_rx.await {
-                    if let Some(state) = app_handle.try_state::<hexbuffer::commands::lsp::LspState>() {
-                        if let Ok(mut port_lock) = state.port.lock() {
-                            *port_lock = Some(port);
-                        }
-                    }
-                }
-            });
-            app.manage(hexbuffer::commands::lsp::LspState {
-                port: Mutex::new(None),
-            });
 
             log("Building Tauri app...");
 
@@ -243,13 +210,6 @@ fn main() {
             hexbuffer::commands::intercept::remove_intercept_bypass_pattern,
             hexbuffer::commands::intercept::open_intercept_browser,
             hexbuffer::commands::intercept::trust_intercept_ca,
-            hexbuffer::commands::inspector::open_inspector_browser,
-            hexbuffer::commands::inspector::connect_inspector_cdp,
-            hexbuffer::commands::inspector::disconnect_inspector_cdp,
-            hexbuffer::commands::inspector::get_inspector_pages,
-            hexbuffer::commands::inspector::get_inspector_cookies,
-            hexbuffer::commands::inspector::get_inspector_storage,
-            hexbuffer::commands::inspector::reset_inspector_browser,
             hexbuffer::commands::history::clear_proxy_all,
             hexbuffer::commands::history::get_documents,
             hexbuffer::commands::history::save_document,
@@ -346,34 +306,10 @@ fn main() {
             hexbuffer::commands::chat_sessions::delete_chat_session,
             hexbuffer::commands::chat_sessions::get_chat_messages,
             hexbuffer::commands::chat_sessions::save_chat_messages,
-            hexbuffer::commands::threats::get_threats_settings,
-            hexbuffer::commands::threats::save_threats_settings,
-            hexbuffer::commands::threats::validate_ghidra_headless,
-            hexbuffer::commands::threats::import_yara_rule_pack,
-            hexbuffer::commands::threats::update_yara_rule_pack,
-            hexbuffer::commands::threats::delete_yara_rule_pack,
-            hexbuffer::commands::threats::import_threat_sample,
-            hexbuffer::commands::threats::start_threat_analysis,
-            hexbuffer::commands::threats::get_threat_analysis,
-            hexbuffer::commands::threats::list_threat_samples,
-            hexbuffer::commands::threats::delete_threat_sample,
-            hexbuffer::commands::threats::cancel_threat_analysis,
             // Audit
             hexbuffer::commands::audit::audit_directory,
             hexbuffer::commands::audit::stop_audit,
             hexbuffer::commands::audit::generate_audit_report,
-            // Playground
-            hexbuffer::commands::playground::check_compilers,
-            hexbuffer::commands::playground::get_system_info,
-            hexbuffer::commands::playground::create_project,
-            hexbuffer::commands::playground::list_projects,
-            hexbuffer::commands::playground::list_project_files,
-            hexbuffer::commands::playground::read_project_file,
-            hexbuffer::commands::playground::write_project_file,
-            hexbuffer::commands::playground::delete_project_file,
-            hexbuffer::commands::playground::rename_project_file,
-            hexbuffer::commands::playground::create_directory,
-            hexbuffer::commands::playground::run_build_command,
             // Regression testing
             hexbuffer::commands::regression::run_regression_test,
             hexbuffer::commands::regression::list_regression_test_cases,
@@ -382,29 +318,8 @@ fn main() {
             hexbuffer::commands::regression::list_regression_runs,
             hexbuffer::commands::regression::scrape_page_for_steps,
             hexbuffer::commands::regression::run_regression_step,
-            // Browser panel (embedded webview)
-            hexbuffer::commands::browser_panel::browser_tab_create,
-            hexbuffer::commands::browser_panel::browser_tab_navigate,
-            hexbuffer::commands::browser_panel::browser_tab_resize,
-            hexbuffer::commands::browser_panel::browser_tab_show,
-            hexbuffer::commands::browser_panel::browser_tab_hide,
-            hexbuffer::commands::browser_panel::browser_tab_destroy,
-            hexbuffer::commands::browser_panel::browser_tab_go_back,
-            hexbuffer::commands::browser_panel::browser_tab_go_forward,
-            hexbuffer::commands::browser_panel::browser_tab_reload,
-            hexbuffer::commands::browser_panel::browser_tab_inject_annotation,
-            hexbuffer::commands::browser_panel::browser_tab_remove_annotation_overlay,
-            hexbuffer::commands::browser_panel::browser_tab_inject_annotation_markers,
-            hexbuffer::commands::browser_panel::browser_tab_update_annotation_marker_selection,
-            hexbuffer::commands::browser_panel::browser_tab_report_url,
-            hexbuffer::commands::browser_panel::browser_tab_report_loaded,
-            hexbuffer::commands::browser_panel::browser_tab_report_title,
-            hexbuffer::commands::browser_panel::browser_tab_report_region_captured,
-            hexbuffer::commands::browser_panel::browser_tab_report_element_captured,
-            hexbuffer::commands::browser_panel::browser_tab_report_annotation_marker_clicked,
             show_main_window,
             safe_start_dragging,
-            hexbuffer::commands::lsp::get_lsp_port
         ])
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())

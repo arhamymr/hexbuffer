@@ -125,8 +125,18 @@ function DockItem({
           )}
         </div>
       </TooltipTrigger>
-      <TooltipContent side="top" sideOffset={12}>
-        {item.label}
+      <TooltipContent side="top" sideOffset={12} className="flex items-center gap-1.5 font-sans">
+        <span>{item.label}</span>
+        {item.flag && item.flag !== 'release' && (
+          <span className={cn(
+            "text-[9px] font-extrabold uppercase tracking-wider px-1 rounded-sm leading-none py-0.5",
+            item.flag === 'alpha'
+              ? "bg-rose-500/20 text-rose-500 dark:text-rose-400"
+              : "bg-amber-500/20 text-amber-600 dark:text-amber-400"
+          )}>
+            {item.flag}
+          </span>
+        )}
       </TooltipContent>
     </Tooltip>
   );
@@ -288,6 +298,8 @@ export function AppSidebar() {
         {/* Center section: App launcher & open windows tools */}
         <div className="flex items-center gap-2 h-6">
           <AppLauncher />
+          <ProxyButton />
+          <OpenBrowserButton />
 
           <Separator orientation="vertical" className='h-6' />
 
@@ -359,11 +371,6 @@ export function AppSidebar() {
 
         {/* Right section: System tools & settings */}
         <div className="flex items-center gap-2.5 min-w-[160px] justify-end">
-          <ProxyButton />
-          <OpenBrowserButton />
-
-          <div className="h-5 w-px bg-border/60 mx-1" />
-
           <GlobalSearch />
 
           <div className="h-5 w-px bg-border/60 mx-1" />

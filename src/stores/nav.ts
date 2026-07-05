@@ -15,8 +15,8 @@ export interface WindowState {
 interface NavState {
   blinkingItems: Set<string>;
   triggerNavBlink: (href: string) => void;
-  overviewSearchQuery: string;
-  setOverviewSearchQuery: (query: string) => void;
+  desktopSearchQuery: string;
+  setDesktopSearchQuery: (query: string) => void;
 
   // Window Manager
   windows: WindowState[];
@@ -33,8 +33,8 @@ interface NavState {
 
 export const useNavStore = create<NavState>()((set, get) => ({
   blinkingItems: new Set(),
-  overviewSearchQuery: '',
-  setOverviewSearchQuery: (overviewSearchQuery) => set({ overviewSearchQuery }),
+  desktopSearchQuery: '',
+  setDesktopSearchQuery: (desktopSearchQuery) => set({ desktopSearchQuery }),
   triggerNavBlink: (href: string) => {
     const current = get().blinkingItems;
     const next = new Set(current);
@@ -53,7 +53,7 @@ export const useNavStore = create<NavState>()((set, get) => ({
   activeWindowId: null,
 
   openWindow: (id, title) => {
-    // Overview is the desktop background, not a window
+    // Desktop is the background, not a window
     if (id === '/') {
       set({ activeWindowId: null });
       return;

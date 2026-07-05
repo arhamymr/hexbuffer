@@ -75,7 +75,7 @@ export interface ProxyFilter {
 
 export async function getHttpLogs(
   page: number,
-  perPage: number = 100,
+  perPage: number = 60,
   filter?: ProxyFilter,
   sortOrder: 'asc' | 'desc' = 'desc'
 ): Promise<PaginatedResponse<ProxyLogSummary>> {

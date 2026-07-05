@@ -72,61 +72,6 @@ CREATE TABLE IF NOT EXISTS documents (
 CREATE INDEX IF NOT EXISTS idx_documents_updated_at ON documents(updated_at);
 "#;
 
-pub const CREATE_THREAT_TABLES: &str = r#"
-CREATE TABLE IF NOT EXISTS threat_samples (
-    id TEXT PRIMARY KEY,
-    file_name TEXT NOT NULL,
-    original_path TEXT NOT NULL,
-    stored_path TEXT NOT NULL,
-    size INTEGER NOT NULL,
-    sha256 TEXT NOT NULL,
-    created_at TEXT NOT NULL,
-    updated_at TEXT NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS threat_analysis_runs (
-    id TEXT PRIMARY KEY,
-    sample_id TEXT NOT NULL,
-    status TEXT NOT NULL,
-    started_at TEXT NOT NULL,
-    finished_at TEXT,
-    error TEXT,
-    logs TEXT NOT NULL DEFAULT '[]',
-    FOREIGN KEY(sample_id) REFERENCES threat_samples(id) ON DELETE CASCADE
-);
-
-CREATE TABLE IF NOT EXISTS threat_artifacts (
-    sample_id TEXT PRIMARY KEY,
-    metadata_json TEXT,
-    hashes_json TEXT,
-    strings_json TEXT NOT NULL DEFAULT '[]',
-    imports_json TEXT NOT NULL DEFAULT '[]',
-    exports_json TEXT NOT NULL DEFAULT '[]',
-    entropy_json TEXT,
-    yara_json TEXT NOT NULL DEFAULT '[]',
-    functions_json TEXT NOT NULL DEFAULT '[]',
-    decompiled_json TEXT NOT NULL DEFAULT '[]',
-    call_graph_json TEXT,
-    updated_at TEXT NOT NULL,
-    FOREIGN KEY(sample_id) REFERENCES threat_samples(id) ON DELETE CASCADE
-);
-
-CREATE TABLE IF NOT EXISTS threat_findings (
-    id TEXT PRIMARY KEY,
-    sample_id TEXT NOT NULL,
-    severity TEXT NOT NULL,
-    category TEXT NOT NULL,
-    title TEXT NOT NULL,
-    description TEXT NOT NULL,
-    created_at TEXT NOT NULL,
-    FOREIGN KEY(sample_id) REFERENCES threat_samples(id) ON DELETE CASCADE
-);
-
-CREATE INDEX IF NOT EXISTS idx_threat_samples_updated_at ON threat_samples(updated_at);
-CREATE INDEX IF NOT EXISTS idx_threat_samples_sha256 ON threat_samples(sha256);
-CREATE INDEX IF NOT EXISTS idx_threat_runs_sample_id ON threat_analysis_runs(sample_id);
-CREATE INDEX IF NOT EXISTS idx_threat_findings_sample_id ON threat_findings(sample_id);
-"#;
 
 pub const CREATE_AI_BROWSER_TABLES: &str = r#"
 CREATE TABLE IF NOT EXISTS ai_browser_sessions (

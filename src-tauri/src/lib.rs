@@ -10,7 +10,6 @@ pub mod port_scanner;
 pub mod proxy;
 pub mod scanner;
 pub mod sqli;
-pub mod threats;
 
 pub use ai::{
     clear_ai_api_key, get_ai_key_status, get_ai_settings, save_ai_settings, send_ai_chat_message,
@@ -53,8 +52,4 @@ pub use sqli::{
     start_sqli_scan, stop_sqli_scan, SqliParam, SqliParamLocation, SqliRiskLevel, SqliScanResult,
     SqliSeverity, SqliTechnique, SqliVulnerability,
 };
-pub use threats::types::{
-    GhidraCallGraph, GhidraDecompiledFunction, GhidraFunction, GhidraValidationResult,
-    ThreatAnalysisOptions, ThreatAnalysisResult, ThreatAnalysisRun, ThreatArtifacts, ThreatSample,
-    ThreatSettings,
-};
+

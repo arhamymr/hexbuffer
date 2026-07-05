@@ -1,6 +1,10 @@
 import { writeText } from '@tauri-apps/plugin-clipboard-manager';
+import { useClipboardStore } from '@/stores/clipboard';
 
 export async function copyText(text: string): Promise<boolean> {
+  // ponytail: record programmatic copies in the store
+  useClipboardStore.getState().addClipboardItem(text);
+
   try {
     await writeText(text);
     return true;

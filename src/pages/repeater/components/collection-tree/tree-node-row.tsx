@@ -1,5 +1,7 @@
 import React, { useRef, useEffect } from 'react';
-import { CaretDownIcon, DotsSixVerticalIcon, FolderStarIcon, PlusIcon, TrashIcon, PencilSimpleIcon } from '@phosphor-icons/react';
+import { CaretDownIcon, DotsSixVerticalIcon, PlusIcon, TrashIcon, PencilSimpleIcon } from '@phosphor-icons/react';
+import folderIcon from '@/assets/explorer-icon/_folder.svg';
+import folderOpenIcon from '@/assets/explorer-icon/_folder_open.svg';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { cn } from '@/lib/utils';
@@ -28,7 +30,7 @@ export interface TreeNodeRowProps {
   onRenameCancel?: () => void;
   onSelect: (node: FlatNode) => void;
   onToggleExpand: (id: string) => void;
-  onAddChild: (parentId: string, type: 'endpoint') => void;
+  onAddChild: (parentId: string, type: 'endpoint' | 'collection') => void;
   onRename: (node: FlatNode) => void;
   onDelete: (node: FlatNode) => void;
 }
@@ -89,7 +91,15 @@ export function TreeNodeRow({
   const showInsideHighlight = dropAction?.action === 'reparent';
 
   return (
-    <div ref={setNodeRef} id={node.id} style={style} className="relative group/tree-row pl-1">
+    <div
+      ref={setNodeRef}
+      id={node.id}
+      style={{
+        ...style,
+        paddingLeft: `${node.depth * 12 + 4}px`,
+      }}
+      className="relative group/tree-row"
+    >
       {/* Drop indicator: insert-before line */}
       {showBeforeLine && (
         <div className="absolute -top-[1px] left-2 right-2 h-[2px] rounded-full bg-primary z-10" />
@@ -137,9 +147,12 @@ export function TreeNodeRow({
             )}
 
             {/* Folder icon — clickable for collections to toggle expand */}
+            {/* ponytail: use custom SVG folder icons */}
             {isCollection && (
-              <FolderStarIcon
-                className="size-4 flex-shrink-0 text-blue-500 cursor-pointer hover:scale-110 transition-transform"
+              <img
+                src={isExpanded ? folderOpenIcon : folderIcon}
+                alt="folder"
+                className="size-4 flex-shrink-0 cursor-pointer hover:scale-110 transition-transform"
                 onClick={(e) => {
                   e.stopPropagation();
                   onToggleExpand(node.id);
@@ -227,13 +240,22 @@ export function TreeNodeRow({
         </ContextMenuTrigger>
         <ContextMenuContent className="w-48">
           {isCollection && (
-            <ContextMenuItem
-              onClick={() => onAddChild(node.originalId, 'endpoint')}
-              className="text-xs"
-            >
-              <PlusIcon className="mr-2 h-4 w-4" />
-              New Endpoint
-            </ContextMenuItem>
+            <>
+              <ContextMenuItem
+                onClick={() => onAddChild(node.originalId, 'endpoint')}
+                className="text-xs"
+              >
+                <PlusIcon className="mr-2 h-4 w-4" />
+                New Endpoint
+              </ContextMenuItem>
+              <ContextMenuItem
+                onClick={() => onAddChild(node.originalId, 'collection')}
+                className="text-xs"
+              >
+                <img src={folderIcon} className="mr-2 h-4 w-4" alt="folder" />
+                New Folder
+              </ContextMenuItem>
+            </>
           )}
           <ContextMenuItem
             onClick={() => onRename(node)}

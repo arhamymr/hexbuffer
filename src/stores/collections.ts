@@ -177,7 +177,7 @@ interface CollectionsState {
   createStash: (name: string, workspaceId?: string) => Promise<string>;
   renameStash: (id: string, name: string) => Promise<void>;
   deleteStash: (id: string) => Promise<void>;
-  moveStash: (id: string, newSortOrder?: number) => Promise<void>;
+  moveStash: (id: string, newSortOrder?: number, newParentId?: string | null) => Promise<void>;
 
   // Endpoint CRUD
   setActiveEndpointId: (id: string) => void;
@@ -215,6 +215,22 @@ interface CollectionsState {
     endpoints: StashEndpointRecord[],
     workspaceId?: string,
   ) => Promise<{ stashesImported: number; endpointsImported: number; errors: string[] }>;
+}
+
+function getWorkspaceStashIds(stashes: StashRecord[], workspaceId: string): Set<string> {
+  const wsStashIds = new Set<string>();
+  const addDescendants = (parentId: string) => {
+    wsStashIds.add(parentId);
+    const children = stashes.filter((st) => st.parentId === parentId);
+    for (const child of children) {
+      addDescendants(child.id);
+    }
+  };
+  const roots = stashes.filter((st) => st.parentId === workspaceId);
+  for (const root of roots) {
+    addDescendants(root.id);
+  }
+  return wsStashIds;
 }
 
 export const useCollectionsStore = create<CollectionsState>()(
@@ -293,28 +309,46 @@ export const useCollectionsStore = create<CollectionsState>()(
     },
 
     deleteStash: async (id) => {
+      const getDescendantStashIds = (stashId: string): string[] => {
+        const descendants = [stashId];
+        const children = get().stashes.filter((st) => st.parentId === stashId);
+        for (const child of children) {
+          descendants.push(...getDescendantStashIds(child.id));
+        }
+        return descendants;
+      };
+
+      const stashesToDelete = getDescendantStashIds(id);
+      const stashDeleteSet = new Set(stashesToDelete);
+
       set((s) => ({
-        stashes: s.stashes.filter((st) => st.id !== id),
-        endpoints: s.endpoints.filter((ep) => ep.stashId !== id),
+        stashes: s.stashes.filter((st) => !stashDeleteSet.has(st.id)),
+        endpoints: s.endpoints.filter((ep) => !stashDeleteSet.has(ep.stashId)),
       }));
-      try {
-        await invoke('delete_stash', { id });
-      } catch (e) {
-        console.error('Failed to delete stash:', e);
+
+      for (const stashId of stashesToDelete) {
+        try {
+          await invoke('delete_stash', { id: stashId });
+        } catch (e) {
+          console.error(`Failed to delete stash ${stashId}:`, e);
+        }
       }
     },
 
-    moveStash: async (id, newSortOrder) => {
+    moveStash: async (id, newSortOrder, newParentId) => {
       const now = timestampNow();
-      const existing = get().stashes.find((st) => st.id === id);
       set((s) => ({
         stashes: s.stashes.map((st) =>
           st.id === id
-            ? { ...st, sortOrder: newSortOrder ?? st.sortOrder, updatedAt: now } as StashRecord
+            ? {
+                ...st,
+                sortOrder: newSortOrder !== undefined ? newSortOrder : st.sortOrder,
+                parentId: newParentId !== undefined ? newParentId : st.parentId,
+                updatedAt: now,
+              } as StashRecord
             : st
         ),
       }));
-      // Persist: preserve the existing parentId (workspace scoping)
       const updated = get().stashes.find((s) => s.id === id);
       if (updated) {
         try {
@@ -620,13 +654,10 @@ export const useCollectionsStore = create<CollectionsState>()(
       const errors: string[] = [];
 
       // Funnel to workspace scope if provided
-      const targetStashes = workspaceId
-        ? state.stashes.filter((s) => s.parentId === workspaceId)
-        : state.stashes;
-      const targetStashIds = new Set(targetStashes.map((s) => s.id));
-      const targetEndpoints = workspaceId
-        ? state.endpoints.filter((ep) => targetStashIds.has(ep.stashId))
-        : state.endpoints;
+      const targetStashIds = workspaceId
+        ? getWorkspaceStashIds(state.stashes, workspaceId)
+        : new Set(state.stashes.map((s) => s.id));
+      const targetEndpoints = state.endpoints.filter((ep) => targetStashIds.has(ep.stashId));
 
       // Delete endpoints first (FK-like dependency on stashes)
       for (const ep of targetEndpoints) {
@@ -639,11 +670,11 @@ export const useCollectionsStore = create<CollectionsState>()(
       }
 
       // Delete stashes
-      for (const st of targetStashes) {
+      for (const stashId of targetStashIds) {
         try {
-          await invoke('delete_stash', { id: st.id });
+          await invoke('delete_stash', { id: stashId });
         } catch (e) {
-          console.error(`Failed to delete stash ${st.id}:`, e);
+          console.error(`Failed to delete stash ${stashId}:`, e);
           errors.push(String(e));
         }
       }
@@ -663,8 +694,7 @@ export const useCollectionsStore = create<CollectionsState>()(
       const state = get();
 
       if (workspaceId) {
-        const targetStashes = state.stashes.filter((s) => s.parentId === workspaceId);
-        const targetStashIds = new Set(targetStashes.map((s) => s.id));
+        const targetStashIds = getWorkspaceStashIds(state.stashes, workspaceId);
         const targetEndpoints = state.endpoints.filter((ep) => targetStashIds.has(ep.stashId));
 
         for (const ep of targetEndpoints) {
@@ -675,9 +705,9 @@ export const useCollectionsStore = create<CollectionsState>()(
           }
         }
 
-        for (const st of targetStashes) {
+        for (const stashId of targetStashIds) {
           try {
-            await invoke('delete_stash', { id: st.id });
+            await invoke('delete_stash', { id: stashId });
           } catch (e) {
             console.error(`Failed to delete stash during import:`, e);
           }
@@ -714,7 +744,7 @@ export const useCollectionsStore = create<CollectionsState>()(
 
       // Insert stashes (with workspaceId if provided)
       for (const st of stashes) {
-        const record = workspaceId ? { ...st, parentId: workspaceId } : st;
+        const record = workspaceId && !st.parentId ? { ...st, parentId: workspaceId } : st;
         try {
           await invoke('save_stash', { record });
           stashesImported++;

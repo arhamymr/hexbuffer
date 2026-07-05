@@ -28,6 +28,11 @@ import {
   submitCrawlCredentialsDef,
   navigateToDef,
   requestHumanSelectionDef,
+  createWorkspaceDef,
+  createCollectionDef,
+  createFolderDef,
+  createEndpointDef,
+  selectEndpointDef,
 } from './tools/index.mjs';
 import { classifyIntent, TASK_CATEGORIES } from './intent-classifier.mjs';
 
@@ -46,6 +51,7 @@ const CHAT_INSTRUCTIONS = [
   'Crawl credential workflow: when the crawler pauses at a login form and the user provides credentials, use submitCrawlCredentials to resume the crawl with the provided fields.',
   'Crawl callback workflow: when a crawl completes the system will automatically send you a message with crawl results (session ID, target URL, pages visited, insights found). When you receive this, use getCrawlContext to fetch the full results. If the crawl discovered 2+ distinct hosts or targets, use requestHumanSelection to let the user pick which ones to add to scope, then call addScope with the hosts array to add them all at once. Otherwise give a one-sentence overview and call out only the single most critical finding.',
   'Selection rule: whenever you are about to list 2+ choices or options for the user to pick from (hosts, targets, actions, etc.), use requestHumanSelection instead of plain text. This shows an interactive picker in the UI. Only list options in plain text if the user explicitly asks for a list.',
+  'Repeater workflow: when users ask to create workspaces, collections, folders, or add API requests to the Repeater tool, use createWorkspace, createCollection, createFolder, and createEndpoint tools to build out the API explorer structure. createEndpoint allows you to populate the request with custom HTTP method, URL, headers, and request body. You can use these tools to import APIs from spec formats (like markdown lists, Swagger schemas, or curl requests) into the Repeater workspace tree. After creating an endpoint, use selectEndpoint to focus the user UI on that endpoint request.',
   'After configuring something, use navigateTo to show the user the result in the relevant page.',
   'Only work within declared project scope. Prefer passive analysis over active testing.',
   'Be evidence-based. If data is insufficient, explain what is missing.',
@@ -168,6 +174,11 @@ export async function runChat() {
       submitCrawlCredentials: submitCrawlCredentialsDef,
       navigateTo: navigateToDef,
       requestHumanSelection: requestHumanSelectionDef,
+      createWorkspace: createWorkspaceDef,
+      createCollection: createCollectionDef,
+      createFolder: createFolderDef,
+      createEndpoint: createEndpointDef,
+      selectEndpoint: selectEndpointDef,
     },
     ctx: toolContext,
     maxSteps: MAX_TOOL_STEPS,

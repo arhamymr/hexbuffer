@@ -23,6 +23,18 @@ import {
   computeDropResult,
   type FlatNode,
 } from './utils';
+import {
+  createCollection,
+  createFolder,
+  createEndpoint,
+  renameCollection,
+  renameEndpoint,
+  deleteCollection,
+  deleteEndpoint,
+  selectEndpoint,
+  selectCollection,
+} from '@/triggers/repeater';
+
 
 export function useCollectionsTree(workspaceId: string) {
   // ── Zustand selectors ──
@@ -31,7 +43,7 @@ export function useCollectionsTree(workspaceId: string) {
 
   // ── State ──
   const [expandedIds, setExpandedIds] = useState<Set<string>>(() => new Set());
-  const [inlineCreate, setInlineCreate] = useState<{ parentId: string; type: 'endpoint' } | null>(null);
+  const [inlineCreate, setInlineCreate] = useState<{ parentId: string; type: 'endpoint' | 'collection' } | null>(null);
   const [renameTarget, setRenameTarget] = useState<{ id: string; name: string } | null>(null);
   const [renameValue, setRenameValue] = useState('');
   const [dragActiveId, setDragActiveId] = useState<string | null>(null);
@@ -51,16 +63,10 @@ export function useCollectionsTree(workspaceId: string) {
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
 
-  // ── Workspace-scoped stashes ──
-  const workspaceStashes = useMemo(
-    () => stashes.filter((s) => s.parentId === workspaceId),
-    [stashes, workspaceId],
-  );
-
   // ── Flat tree ──
   const flatNodes = useMemo(
-    () => flattenVisibleTree(workspaceStashes, endpoints, expandedIds),
-    [workspaceStashes, endpoints, expandedIds],
+    () => flattenVisibleTree(stashes, endpoints, expandedIds, workspaceId),
+    [stashes, endpoints, expandedIds, workspaceId],
   );
 
   // ── Lookup helpers ──
@@ -80,22 +86,49 @@ export function useCollectionsTree(workspaceId: string) {
 
   // ── Non-empty stash IDs ──
   const nonEmptyStashIds = useMemo(() => {
-    const stashIds = new Set(workspaceStashes.map((s) => s.id));
     const set = new Set<string>();
     for (const ep of endpoints) {
-      if (stashIds.has(ep.stashId)) set.add(ep.stashId);
+      set.add(ep.stashId);
+    }
+    for (const s of stashes) {
+      if (s.parentId) {
+        set.add(s.parentId);
+      }
     }
     return set;
-  }, [endpoints, workspaceStashes]);
+  }, [stashes, endpoints]);
 
   // ── Endpoint count per stash ──
   const stashEndpointCounts = useMemo(() => {
     const map = new Map<string, number>();
+    const directCounts = new Map<string, number>();
     for (const ep of endpoints) {
-      map.set(ep.stashId, (map.get(ep.stashId) ?? 0) + 1);
+      directCounts.set(ep.stashId, (directCounts.get(ep.stashId) ?? 0) + 1);
+    }
+    const childStashes = new Map<string, string[]>();
+    for (const s of stashes) {
+      if (s.parentId) {
+        if (!childStashes.has(s.parentId)) {
+          childStashes.set(s.parentId, []);
+        }
+        childStashes.get(s.parentId)!.push(s.id);
+      }
+    }
+    function getCount(stashId: string): number {
+      if (map.has(stashId)) return map.get(stashId)!;
+      let count = directCounts.get(stashId) ?? 0;
+      const children = childStashes.get(stashId) || [];
+      for (const childId of children) {
+        count += getCount(childId);
+      }
+      map.set(stashId, count);
+      return count;
+    }
+    for (const s of stashes) {
+      getCount(s.id);
     }
     return map;
-  }, [endpoints]);
+  }, [stashes, endpoints]);
 
   // ── Expand/Collapse ──
   const handleToggleExpand = useCallback((id: string) => {
@@ -113,25 +146,23 @@ export function useCollectionsTree(workspaceId: string) {
   // ── Selection ──
   const handleSelectNode = useCallback(
     (node: FlatNode) => {
-      useCollectionsStore.getState().setSelectedNodeId(node.id);
-      if (node.kind === 'endpoint' && node.endpoint) {
-        useCollectionsStore.getState().setActiveEndpointId(node.endpoint.id);
-      }
-      if (node.kind === 'collection' && node.stash) {
-        useCollectionsStore.getState().setMode('craft');
+      if (node.kind === 'endpoint') {
+        selectEndpoint(node.originalId);
+      } else {
+        selectCollection(node.originalId);
       }
     },
     [],
   );
 
   // ── Inline Create ──
-  const handleAddChild = useCallback((parentId: string, _type: 'endpoint') => {
+  const handleAddChild = useCallback((parentId: string, type: 'endpoint' | 'collection') => {
     setExpandedIds((prev) => {
       const next = new Set(prev);
       next.add(`stash-${parentId}`);
       return next;
     });
-    setInlineCreate({ parentId, type: 'endpoint' });
+    setInlineCreate({ parentId, type });
     setRenameTarget(null);
   }, []);
 
@@ -142,7 +173,9 @@ export function useCollectionsTree(workspaceId: string) {
         return;
       }
       if (inlineCreate.type === 'endpoint') {
-        await useCollectionsStore.getState().createEndpoint(inlineCreate.parentId, name.trim());
+        await createEndpoint(inlineCreate.parentId, name.trim());
+      } else if (inlineCreate.type === 'collection') {
+        await createFolder(inlineCreate.parentId, name.trim());
       }
       setInlineCreate(null);
     },
@@ -157,7 +190,7 @@ export function useCollectionsTree(workspaceId: string) {
   const handleCreateCollection = useCallback(() => {
     setRenameTarget(null);
     setInlineCreate(null);
-    useCollectionsStore.getState().createStash('New Collection', workspaceId);
+    void createCollection(workspaceId, 'New Collection');
   }, [workspaceId]);
 
   // ── Rename ──
@@ -180,9 +213,9 @@ export function useCollectionsTree(workspaceId: string) {
     }
     const { id } = renameTarget;
     if (id.startsWith('stash-')) {
-      await useCollectionsStore.getState().renameStash(id.slice(6), renameValue.trim());
+      await renameCollection(id.slice(6), renameValue.trim());
     } else if (id.startsWith('ep-')) {
-      await useCollectionsStore.getState().renameEndpoint(id.slice(3), renameValue.trim());
+      await renameEndpoint(id.slice(3), renameValue.trim());
     }
     setRenameTarget(null);
     setRenameValue('');
@@ -202,9 +235,9 @@ export function useCollectionsTree(workspaceId: string) {
   const handleDeleteConfirm = useCallback(async () => {
     if (!deleteTarget) return;
     if (deleteTarget.kind === 'endpoint') {
-      await useCollectionsStore.getState().deleteEndpoint(deleteTarget.originalId);
+      await deleteEndpoint(deleteTarget.originalId);
     } else {
-      await useCollectionsStore.getState().deleteStash(deleteTarget.originalId);
+      await deleteCollection(deleteTarget.originalId);
     }
     setDeleteTarget(null);
   }, [deleteTarget]);
@@ -383,11 +416,31 @@ export function useCollectionsTree(workspaceId: string) {
         return;
       }
 
+      const isDescendant = (childStashId: string, possibleAncestorId: string): boolean => {
+        if (childStashId === possibleAncestorId) return true;
+        const stash = stashes.find((s) => s.id === childStashId);
+        if (!stash || !stash.parentId) return false;
+        return isDescendant(stash.parentId, possibleAncestorId);
+      };
+
       if (result.action === 'reparent') {
+        const newParentId = result.parentId;
         if (activeFlatNode.kind === 'endpoint') {
-          const newParentId = result.parentId;
           if (activeFlatNode.parentId !== newParentId) {
             useCollectionsStore.getState().moveEndpoint(activeFlatNode.originalId, newParentId, 0);
+          }
+        } else if (activeFlatNode.kind === 'collection') {
+          if (activeFlatNode.originalId === newParentId) {
+            setDragActiveId(null);
+            return;
+          }
+          if (isDescendant(newParentId, activeFlatNode.originalId)) {
+            toast.error("Cannot move a folder inside itself or its own subfolders");
+            setDragActiveId(null);
+            return;
+          }
+          if (activeFlatNode.parentId !== newParentId) {
+            useCollectionsStore.getState().moveStash(activeFlatNode.originalId, 0, newParentId);
           }
         }
         setDragActiveId(null);
@@ -403,23 +456,26 @@ export function useCollectionsTree(workspaceId: string) {
         }
 
         if (activeFlatNode.kind === 'endpoint') {
-          if (targetNode.kind === 'collection') {
-            if (activeFlatNode.parentId !== targetNode.originalId) {
-              useCollectionsStore.getState().moveEndpoint(activeFlatNode.originalId, targetNode.originalId, 0);
+          let targetStashId = targetNode.kind === 'collection' ? targetNode.parentId : targetNode.parentId;
+
+          if (!targetStashId || targetStashId === workspaceId) {
+            if (targetNode.kind === 'collection') {
+              targetStashId = targetNode.originalId;
+            } else {
+              setDragActiveId(null);
+              return;
             }
-            setDragActiveId(null);
-            return;
           }
 
-          if (activeFlatNode.parentId !== targetNode.parentId) {
-            useCollectionsStore.getState().moveEndpoint(activeFlatNode.originalId, targetNode.parentId!, 0);
+          if (activeFlatNode.parentId !== targetStashId) {
+            useCollectionsStore.getState().moveEndpoint(activeFlatNode.originalId, targetStashId, 0);
             setDragActiveId(null);
             return;
           }
 
           const siblingEndpoints = flatNodes.filter(
             (n) =>
-              n.parentId === targetNode.parentId &&
+              n.parentId === targetStashId &&
               n.kind === 'endpoint' &&
               n.id !== activeId,
           );
@@ -436,40 +492,45 @@ export function useCollectionsTree(workspaceId: string) {
           reordered.splice(targetIndex, 0, activeFlatNode);
 
           reordered.forEach((node, idx) => {
-            useCollectionsStore.getState().moveEndpoint(node.originalId, node.parentId!, idx);
+            useCollectionsStore.getState().moveEndpoint(node.originalId, targetStashId, idx);
           });
           setDragActiveId(null);
           return;
         }
 
-        if (targetNode.kind === 'endpoint') {
+        if (activeFlatNode.kind === 'collection') {
+          const targetParentId = targetNode.parentId;
+
+          if (targetParentId && (activeFlatNode.originalId === targetParentId || isDescendant(targetParentId, activeFlatNode.originalId))) {
+            toast.error("Cannot move a folder inside itself or its own subfolders");
+            setDragActiveId(null);
+            return;
+          }
+
+          const siblingStashes = flatNodes.filter(
+            (n) =>
+              n.parentId === targetParentId &&
+              n.kind === 'collection' &&
+              n.id !== activeId,
+          );
+
+          const activeIndex = siblingStashes.findIndex((n) => n.id === activeId);
+          let targetIndex = siblingStashes.findIndex((n) => n.id === targetId);
+          if (result.action === 'reorder-after') targetIndex += 1;
+
+          const reordered = [...siblingStashes];
+          if (activeIndex >= 0) {
+            reordered.splice(activeIndex, 1);
+            if (activeIndex < targetIndex) targetIndex -= 1;
+          }
+          reordered.splice(targetIndex, 0, activeFlatNode);
+
+          reordered.forEach((node, idx) => {
+            useCollectionsStore.getState().moveStash(node.originalId, idx, targetParentId);
+          });
           setDragActiveId(null);
           return;
         }
-
-        const siblingStashes = flatNodes.filter(
-          (n) =>
-            n.parentId === targetNode.parentId &&
-            n.kind === 'collection' &&
-            n.id !== activeId,
-        );
-
-        const activeIndex = siblingStashes.findIndex((n) => n.id === activeId);
-        let targetIndex = siblingStashes.findIndex((n) => n.id === targetId);
-        if (result.action === 'reorder-after') targetIndex += 1;
-
-        const reordered = [...siblingStashes];
-        if (activeIndex >= 0) {
-          reordered.splice(activeIndex, 1);
-          if (activeIndex < targetIndex) targetIndex -= 1;
-        }
-        reordered.splice(targetIndex, 0, activeFlatNode);
-
-        reordered.forEach((node, idx) => {
-          useCollectionsStore.getState().moveStash(node.originalId, idx);
-        });
-        setDragActiveId(null);
-        return;
       }
 
       setDragActiveId(null);

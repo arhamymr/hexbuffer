@@ -1,11 +1,11 @@
-import { FileTextIcon, HardDrivesIcon, XIcon } from '@phosphor-icons/react';
+import { FileTextIcon, XIcon } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils';
 import { type ReconDocument } from '../types';
 import { getFileName, type EditorFileId } from '../lib/editor-files';
 
 interface EditorTabStripProps {
   activeDocument: ReconDocument;
-  activeFileId: EditorFileId;
+  activeFileId: EditorFileId | null;
   openFileIds: EditorFileId[];
   onOpenFile: (fileId: EditorFileId) => void;
   onCloseFile: (fileId: EditorFileId) => void;
@@ -21,12 +21,9 @@ export function EditorTabStrip({
   return (
     <div className="flex h-full min-w-0 flex-1 overflow-x-auto">
       {openFileIds.map((fileId) => {
-        const apiEntry = fileId.startsWith('api:')
-          ? activeDocument.apiEntries.find((entry) => fileId === `api:${entry.id}`) ?? null
-          : null;
         const isActive = activeFileId === fileId;
-        const Icon = fileId.startsWith('api:') ? HardDrivesIcon : FileTextIcon;
-        const fileName = getFileName(fileId, apiEntry, activeDocument.customSections);
+        const Icon = FileTextIcon;
+        const fileName = getFileName(fileId, activeDocument.customSections);
 
         return (
           <button

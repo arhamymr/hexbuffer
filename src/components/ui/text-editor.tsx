@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { basicSetup } from 'codemirror';
-import { EditorState, Compartment, Prec } from '@codemirror/state';
-import { EditorView, keymap } from '@codemirror/view';
+import { EditorState, Compartment, Prec, Range } from '@codemirror/state';
+import { EditorView, keymap, ViewPlugin, Decoration, DecorationSet } from '@codemirror/view';
 import { HighlightStyle, syntaxHighlighting } from '@codemirror/language';
 import { tags as t } from '@lezer/highlight';
 import { useTheme } from '@/components/theme-provider';
@@ -9,6 +9,7 @@ import type { Extension } from '@codemirror/state';
 import { javascript } from '@codemirror/lang-javascript';
 import { json } from '@codemirror/lang-json';
 import { markdown } from '@codemirror/lang-markdown';
+import { openUrl } from '@tauri-apps/plugin-opener';
 
 // ---------------------------------------------------------------------------
 // Theme definitions
@@ -87,6 +88,48 @@ const themeLight: Extension = [lightBase, Prec.highest(syntaxHighlighting(lightH
 // Helpers
 // ---------------------------------------------------------------------------
 
+function buildLinkDecorations(view: EditorView) {
+  const builder: Range<Decoration>[] = [];
+  const urlRegex = /https?:\/\/[^\s'"()[\]{}]+/g;
+
+  for (const { from, to } of view.visibleRanges) {
+    const text = view.state.doc.sliceString(from, to);
+    let match;
+    while ((match = urlRegex.exec(text)) !== null) {
+      const start = from + match.index;
+      const end = start + match[0].length;
+      
+      builder.push(
+        Decoration.mark({
+          class: 'cm-link',
+          attributes: {
+            'data-url': match[0],
+            'title': 'Click to open link in browser'
+          }
+        }).range(start, end)
+      );
+    }
+  }
+  return Decoration.set(builder);
+}
+
+const linkPlugin = ViewPlugin.fromClass(
+  class {
+    decorations: DecorationSet;
+    constructor(view: EditorView) {
+      this.decorations = buildLinkDecorations(view);
+    }
+    update(update: any) {
+      if (update.docChanged || update.viewportChanged) {
+        this.decorations = buildLinkDecorations(update.view);
+      }
+    }
+  },
+  {
+    decorations: (v) => v.decorations,
+  }
+);
+
 interface TextEditorOptions {
   readOnly?: boolean;
 }
@@ -117,6 +160,7 @@ export interface TextEditorProps {
   path?: string;
   className?: string;
   language?: 'javascript' | 'json' | 'markdown';
+  detectLinks?: boolean;
 }
 
 export function TextEditor({
@@ -127,6 +171,7 @@ export function TextEditor({
   height = '100%',
   className,
   language = 'javascript',
+  detectLinks = false,
 }: TextEditorProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
@@ -173,6 +218,14 @@ export function TextEditor({
             '.cm-gutter': {
               fontSize: '12px',
             },
+            '.cm-link': {
+              color: 'var(--primary, #00c950)',
+              textDecoration: 'underline',
+              cursor: 'pointer',
+            },
+            '.cm-link:hover': {
+              opacity: 0.8,
+            },
           }),
 
           // Dynamic compartments
@@ -184,6 +237,27 @@ export function TextEditor({
               onChangeRef.current?.(update.state.doc.toString());
             }
           }),
+
+          // ponytail: Keep implementation simple by appending link extensions only when detectLinks is true
+          ...(detectLinks ? [
+            linkPlugin,
+            EditorView.domEventHandlers({
+              click: (event, view) => {
+                const target = event.target as HTMLElement;
+                const linkEl = target.closest('.cm-link');
+                if (linkEl) {
+                  const url = linkEl.getAttribute('data-url');
+                  if (url) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    openUrl(url).catch(() => {
+                      window.open(url, '_blank', 'noopener,noreferrer');
+                    });
+                  }
+                }
+              }
+            })
+          ] : [])
         ],
       }),
     });

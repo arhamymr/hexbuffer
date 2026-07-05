@@ -95,7 +95,7 @@ export interface WebSocketConnectionDetail {
 
 export async function getWebSocketLogs(
   page: number,
-  perPage: number = 100,
+  perPage: number = 60,
   filter?: WebSocketFilter
 ): Promise<PaginatedResponse<WebSocketConnectionSummary>> {
   return invokeTauri('get_websocket_paginated', {

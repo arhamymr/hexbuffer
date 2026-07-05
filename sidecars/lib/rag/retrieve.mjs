@@ -7,10 +7,10 @@
  */
 
 import { readFile } from 'node:fs/promises';
-import { fileURLToPath } from 'node:url';
-import { dirname, join } from 'node:path';
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
+const currentDir = typeof __dirname !== 'undefined' ? __dirname : import.meta.dirname;
 
 /**
  * Cosine similarity between two vectors.
@@ -66,7 +66,10 @@ function textToVector(text, dimensions = 256) {
  */
 async function loadIndex() {
   try {
-    const indexPath = join(__dirname, '..', '..', 'knowledge', 'vectors.json');
+    let indexPath = join(currentDir, '..', 'knowledge', 'vectors.json');
+    if (!existsSync(indexPath)) {
+      indexPath = join(currentDir, '..', '..', 'knowledge', 'vectors.json');
+    }
     const raw = await readFile(indexPath, 'utf-8');
     return JSON.parse(raw);
   } catch {
@@ -115,7 +118,10 @@ export async function retrieveContext(finding, topK = 3) {
 
   // Fallback: keyword matching against corpus
   try {
-    const corpusPath = join(__dirname, '..', '..', 'knowledge', 'corpus.json');
+    let corpusPath = join(currentDir, '..', 'knowledge', 'corpus.json');
+    if (!existsSync(corpusPath)) {
+      corpusPath = join(currentDir, '..', '..', 'knowledge', 'corpus.json');
+    }
     const raw = await readFile(corpusPath, 'utf-8');
     const corpus = JSON.parse(raw);
 

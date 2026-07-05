@@ -31,3 +31,12 @@ export { startProxyDef } from './proxy/index.mjs';
 
 // Document tools
 export { writeDocumentSectionDef } from './documents/index.mjs';
+
+// Repeater tools
+export {
+  createWorkspaceDef,
+  createCollectionDef,
+  createFolderDef,
+  createEndpointDef,
+  selectEndpointDef,
+} from './repeater/index.mjs';

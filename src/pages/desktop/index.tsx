@@ -1,24 +1,29 @@
-import { useOverviewPage } from './hooks/use-overview-page';
+import { useDesktopPage } from './hooks/use-desktop-page';
 import { ProxyWidget } from './components/proxy-widget';
 import { ScratchpadWidget } from './components/scratchpad-widget';
 import { CollectionsWidget } from './components/collections-widget';
+import { ClipboardWidget } from './components/clipboard-widget';
 import { DesktopIconItem } from './components/desktop-icon-item';
 import { Button } from '@/components/ui/button';
 import { ShieldWarningIcon } from '@phosphor-icons/react';
+import { useAppSettingsStore } from '@/stores/app-settings-store';
 
-export function OverviewPage() {
+export function DesktopPage() {
   const {
     displayItems,
     handleItemClick,
     handleClearSearch,
-  } = useOverviewPage();
+  } = useDesktopPage();
+  const bgType = useAppSettingsStore((s) => s.bgType);
+
+  const rootBg = bgType === 'none' ? 'bg-background' : 'bg-transparent';
 
   return (
-    <div className="bg-background flex flex-col h-full min-h-0 overflow-y-auto scrollbar-thin">
-      <div className="mx-auto w-full px-6 py-6 flex flex-col md:flex-row gap-6 items-start">
+    <div className={`${rootBg} flex flex-col h-full min-h-0 overflow-y-auto scrollbar-thin`}>
+      <div className="mx-auto w-full p-6 flex flex-col md:flex-row gap-6 items-start">
         <div className="flex-1 min-w-0">
           {displayItems.length > 0 ? (
-            <div className="flex max-w-[800px] flex-wrap gap-3 justify-items-center">
+            <div className="flex max-w-[800px] flex-wrap gap-2 justify-items-center">
               {displayItems.map((item) => (
                 <DesktopIconItem
                   key={item.href}
@@ -50,6 +55,7 @@ export function OverviewPage() {
           <CollectionsWidget />
           <ProxyWidget />
           <ScratchpadWidget />
+          <ClipboardWidget />
         </div>
       </div>
     </div>

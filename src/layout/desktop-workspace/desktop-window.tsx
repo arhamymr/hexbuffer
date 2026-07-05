@@ -13,6 +13,8 @@ import { useNavStore, type WindowState } from "@/stores/nav";
 import { cn } from "@/lib/utils";
 import { pageComponentMap } from "./page-lazy-imports";
 import { Separator } from "@/components/ui/separator";
+import { allNavItems } from "../constants";
+import { Badge } from "@/components/ui/badge";
 
 interface DesktopWindowProps {
   win: WindowState;
@@ -36,6 +38,10 @@ const DesktopWindow = React.memo(function DesktopWindow({
   const updateWindowSize = useNavStore((s) => s.updateWindowSize);
 
   const { id, title, isMinimized, isMaximized, position, size, zIndex } = win;
+
+  const navItem = React.useMemo(() => {
+    return allNavItems.find((item) => item.href === id);
+  }, [id]);
 
   const windowRef = React.useRef<HTMLDivElement>(null);
 
@@ -220,6 +226,8 @@ const DesktopWindow = React.memo(function DesktopWindow({
     <div
       ref={windowRef}
       onClick={handleWindowClick}
+      // ponytail: prevent desktop context menu from triggering when right-clicking the window
+      onContextMenu={(e) => e.stopPropagation()}
       className={windowClassName}
       style={
         isMaximized
@@ -248,10 +256,21 @@ const DesktopWindow = React.memo(function DesktopWindow({
       >
         {/* Window Title */}
         <div className="flex gap-2 h-6 items-center">
-          <DotsSixIcon size={16} className="mr-2" />
-          <span className="text-xs font-semibold tracking-wide">
+          <DotsSixIcon size={16} className="text-muted-foreground/45 cursor-grab shrink-0 mr-1" />
+          {navItem && (
+            <navItem.icon className="size-4 text-muted-foreground shrink-0" />
+          )}
+          <span className="text-xs font-semibold tracking-wide truncate max-w-[200px]">
             {title}
           </span>
+          {navItem?.flag && navItem.flag !== 'release' && (
+            <Badge
+              variant={navItem.flag === 'alpha' ? 'destructive' : 'yellow'}
+              className="px-1 py-0 text-[8px] font-extrabold uppercase tracking-wider h-3.5 leading-none rounded-sm border-none pointer-events-none select-none shrink-0"
+            >
+              {navItem.flag}
+            </Badge>
+          )}
         </div>
 
         <div className="flex gap-2 h-6 items-center">

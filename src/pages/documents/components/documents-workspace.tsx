@@ -5,7 +5,6 @@ import {
 } from '@/components/ui/resizable';
 import {
   type CustomSection,
-  type MarkdownEditorMode,
   type ReconDocument,
 } from '../types';
 import { DocumentsEditorPane } from './documents-editor-pane';
@@ -14,12 +13,11 @@ import { type EditorFileId } from '../lib/editor-files';
 
 interface DocumentsWorkspaceProps {
   activeDocument: ReconDocument;
-  activeFileId: EditorFileId;
+  activeFileId: EditorFileId | null;
   openFileIds: EditorFileId[];
   activeCustomSection: CustomSection | null;
   activeLabel: string;
   isCustomSectionFile: boolean;
-  markdownMode: MarkdownEditorMode;
   onOpenFile: (fileId: EditorFileId) => void;
   onAddCustomSection: () => void;
   onRenameCustomSection: (section: CustomSection) => void;
@@ -36,7 +34,6 @@ export function DocumentsWorkspace({
   activeCustomSection,
   activeLabel,
   isCustomSectionFile,
-  markdownMode,
   onOpenFile,
   onAddCustomSection,
   onRenameCustomSection,
@@ -69,7 +66,6 @@ export function DocumentsWorkspace({
           activeCustomSection={activeCustomSection}
           activeLabel={activeLabel}
           isCustomSectionFile={isCustomSectionFile}
-          markdownMode={markdownMode}
           onOpenFile={onOpenFile}
           onCloseFile={onCloseFile}
           onUpdateCustomSection={onUpdateCustomSection}

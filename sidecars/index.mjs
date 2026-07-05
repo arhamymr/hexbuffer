@@ -173,7 +173,11 @@ function runPreflight() {
 // Main entry point
 // ---------------------------------------------------------------------------
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+const isMain = 
+  (typeof require !== 'undefined' && require.main === module) ||
+  (import.meta && import.meta.url === `file://${process.argv[1]}`);
+
+if (isMain) {
   const isValidateMode =
     process.argv.includes('--validate') ||
     process.env['HEXBUFFER_AI_ENGINE_MODE'] === 'validate';

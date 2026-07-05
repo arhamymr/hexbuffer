@@ -7,6 +7,11 @@ import {
   sendToInvoker as orchSendToInvoker,
   sendToRepeater as orchSendToRepeater,
   writeDocument as orchWriteDocument,
+  createWorkspace as orchCreateWorkspace,
+  createCollection as orchCreateCollection,
+  createFolder as orchCreateFolder,
+  createEndpoint as orchCreateEndpoint,
+  selectEndpoint as orchSelectEndpoint,
 } from '@/triggers';
 import {
   triggerScan as orchTriggerScan,
@@ -63,6 +68,11 @@ const actionLabels: Record<string, string> = {
   list_proxy_hosts: 'Listing proxy hosts',
   request_human_selection: 'Asking for your input',
   request_intent_clarification: 'Clarifying your request',
+  create_workspace: 'Creating Repeater workspace',
+  create_collection: 'Creating Repeater collection',
+  create_folder: 'Creating folder in collection',
+  create_endpoint: 'Adding request to collection',
+  select_endpoint: 'Opening request in Repeater',
 };
 
 let trackedActions: TrackedAction[] = [];
@@ -193,6 +203,45 @@ const handlers: Record<string, (payload: Record<string, unknown>) => void | Prom
   submit_crawl_input: async (payload) => {
     const { sessionId, fields } = payload as unknown as SubmitCrawlInputPayload;
     await orchSubmitCrawlInput({ sessionId, fields });
+  },
+
+  create_workspace: (payload) => {
+    const { name } = payload as { name?: string };
+    orchCreateWorkspace(name);
+    useNavStore.getState().triggerNavBlink('/repeater');
+  },
+
+  create_collection: async (payload) => {
+    const { workspaceId, name } = payload as { workspaceId: string; name: string };
+    await orchCreateCollection(workspaceId, name);
+  },
+
+  create_folder: async (payload) => {
+    const { parentId, name } = payload as { parentId: string; name: string };
+    await orchCreateFolder(parentId, name);
+  },
+
+  create_endpoint: async (payload) => {
+    const { collectionId, name, method, url, headers, body } = payload as {
+      collectionId: string;
+      name: string;
+      method?: string;
+      url?: string;
+      headers?: Record<string, string>;
+      body?: string;
+    };
+    const endpointId = await orchCreateEndpoint(collectionId, name, {
+      method,
+      url,
+      headers,
+      body,
+    });
+    orchSelectEndpoint(endpointId);
+  },
+
+  select_endpoint: (payload) => {
+    const { endpointId } = payload as { endpointId: string };
+    orchSelectEndpoint(endpointId);
   },
 };
 

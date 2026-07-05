@@ -67,6 +67,21 @@ export {
   convertCraftToRepeater,
   CollectionPickerSubmenu,
   useCollectionPicker,
+  createWorkspace,
+  renameWorkspace,
+  deleteWorkspace,
+  setActiveWorkspace,
+  closeWorkspacesToLeft,
+  closeWorkspacesToRight,
+  createCollection,
+  createFolder,
+  createEndpoint,
+  renameCollection,
+  renameEndpoint,
+  deleteCollection,
+  deleteEndpoint,
+  selectEndpoint,
+  selectCollection,
 } from './repeater';
 export type { SendToRepeaterOptions, SendToCollectionOptions, CollectionNode } from './repeater';
 

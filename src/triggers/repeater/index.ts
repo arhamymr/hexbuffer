@@ -8,3 +8,22 @@ export { convertRepeaterToCraft, convertCraftToRepeater } from './convert-to-cra
 export { CollectionPickerSubmenu } from './collection-picker-submenu';
 export { useCollectionPicker } from './use-collection-picker';
 export type { CollectionNode } from './use-collection-picker';
+
+export {
+  createWorkspace,
+  renameWorkspace,
+  deleteWorkspace,
+  setActiveWorkspace,
+  closeWorkspacesToLeft,
+  closeWorkspacesToRight,
+  createCollection,
+  createFolder,
+  createEndpoint,
+  renameCollection,
+  renameEndpoint,
+  deleteCollection,
+  deleteEndpoint,
+  selectEndpoint,
+  selectCollection,
+} from './management';
+

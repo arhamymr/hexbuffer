@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import type { SettingsPageState } from '../hooks/use-settings-page';
 import { SettingsSidebar, type SettingsCategory } from './settings-sidebar';
@@ -6,6 +7,7 @@ import { GeneralSettingsTab } from './general-settings-tab';
 import { CaCertificateSettingsTab } from './ca-certificate-settings-tab';
 import { AiSettingsTab } from './ai-settings-tab';
 import { AutomationSettingsTab } from './automation-settings-tab';
+import { AppearanceSettingsTab } from './appearance-settings-tab';
 import { AboutSettingsTab } from './about-settings-tab';
 
 interface SettingsLayoutProps {
@@ -22,6 +24,7 @@ const CATEGORY_LABELS: Record<SettingsCategory, string> = {
   'ca-cert': 'CA Certificate',
   ai: 'AI',
   automation: 'Automation',
+  appearance: 'Appearance',
   about: 'About',
 };
 
@@ -40,6 +43,7 @@ function CategoryContent({ settings, active }: CategoryContentProps) {
           {active === 'ca-cert' && <CaCertificateSettingsTab settings={settings} />}
           {active === 'ai' && <AiSettingsTab settings={settings} />}
           {active === 'automation' && <AutomationSettingsTab />}
+          {active === 'appearance' && <AppearanceSettingsTab />}
           {active === 'about' && <AboutSettingsTab />}
         </div>
       </div>
@@ -47,8 +51,13 @@ function CategoryContent({ settings, active }: CategoryContentProps) {
   );
 }
 
+const VALID_TABS: SettingsCategory[] = ['general', 'ca-cert', 'ai', 'automation', 'appearance', 'about'];
+
 export function SettingsLayout({ settings }: SettingsLayoutProps) {
-  const [active, setActive] = React.useState<SettingsCategory>('general');
+  const [searchParams] = useSearchParams();
+  const tabParam = searchParams.get('tab') as SettingsCategory | null;
+  const initialTab: SettingsCategory = tabParam && VALID_TABS.includes(tabParam) ? tabParam : 'general';
+  const [active, setActive] = React.useState<SettingsCategory>(initialTab);
   const [contentKey, setContentKey] = React.useState(0);
 
   const handleSelect = React.useCallback((category: SettingsCategory) => {

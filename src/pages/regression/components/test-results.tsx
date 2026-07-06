@@ -4,17 +4,21 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import type { TestRun, StepResult, AiVerdict } from '../types';
+import type { TestRun, StepResult, AiVerdict, RegressionLogEntry } from '../types';
 import { STEP_KIND_LABELS, STEP_KIND_ICONS } from '../constants';
+import { PlaywrightLogPanel } from './playwright-log-panel';
 
 interface TestResultsProps {
   runs: TestRun[];
   onRun: (testCaseId: string) => void;
   isRunning: boolean;
+  logs: RegressionLogEntry[];
+  onClearLogs: () => void;
 }
 
-export function TestResults({ runs, onRun, isRunning }: TestResultsProps) {
+export function TestResults({ runs, onRun, isRunning, logs, onClearLogs }: TestResultsProps) {
   const [selectedRunId, setSelectedRunId] = React.useState<string | null>(null);
+  const [activeSubTab, setActiveSubTab] = React.useState<'history' | 'logs'>('history');
 
   const selectedRun = runs.find((r) => r.id === selectedRunId) || null;
 
@@ -24,21 +28,63 @@ export function TestResults({ runs, onRun, isRunning }: TestResultsProps) {
   );
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b bg-card shrink-0">
-        <div className="flex items-center gap-2">
-          <ClockCounterClockwiseIcon className="size-4 text-muted-foreground" />
-          <h2 className="text-sm font-semibold">Run ClockCounterClockwiseIcon</h2>
+    <div className="flex flex-col h-full min-h-0 bg-background">
+      {/* Tabbed Header */}
+      <div className="flex items-center justify-between border-b bg-card shrink-0 px-3 py-1">
+        <div className="flex items-center gap-1 select-none">
+          <button
+            onClick={() => { setActiveSubTab('history'); setSelectedRunId(null); }}
+            className={cn(
+              "px-2.5 py-1 text-xs font-semibold rounded-sm transition-all active:scale-[0.97] flex items-center gap-1.5",
+              activeSubTab === 'history'
+                ? "bg-muted text-foreground"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <ClockCounterClockwiseIcon className="size-3.5" />
+            History
+          </button>
+          <button
+            onClick={() => setActiveSubTab('logs')}
+            className={cn(
+              "px-2.5 py-1 text-xs font-semibold rounded-sm transition-all active:scale-[0.97] flex items-center gap-1.5",
+              activeSubTab === 'logs'
+                ? "bg-muted text-foreground"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <SparkleIcon className="size-3.5 text-blue-400" />
+            Playwright Log
+            {logs.length > 0 && (
+              <span className="rounded-full bg-blue-100 dark:bg-blue-900/30 px-1.5 py-0.2 text-[9px] text-blue-600 dark:text-blue-400">
+                {logs.length}
+              </span>
+            )}
+          </button>
         </div>
-        {runs.length > 0 && (
-          <Badge variant="outline" className="text-[10px]">
-            {runs.length} run{runs.length !== 1 ? 's' : ''}
-          </Badge>
+
+        {activeSubTab === 'history' ? (
+          runs.length > 0 && (
+            <Badge variant="outline" className="text-[10px] rounded-sm bg-background">
+              {runs.length} run{runs.length !== 1 ? 's' : ''}
+            </Badge>
+          )
+        ) : (
+          <Button
+            variant="ghost"
+            size="xs"
+            onClick={onClearLogs}
+            disabled={logs.length === 0}
+            className="h-6 text-[10px] active:scale-[0.97] transition-transform text-muted-foreground hover:text-destructive"
+          >
+            Clear
+          </Button>
         )}
       </div>
 
-      {sortedRuns.length === 0 ? (
+      {activeSubTab === 'logs' ? (
+        <PlaywrightLogPanel logs={logs} isRunning={isRunning} />
+      ) : sortedRuns.length === 0 ? (
         <div className="flex flex-col items-center justify-center flex-1 text-center p-6">
           <ClockCounterClockwiseIcon className="size-8 text-muted-foreground/30 mb-2" />
           <p className="text-sm text-muted-foreground">No runs yet</p>
@@ -48,7 +94,7 @@ export function TestResults({ runs, onRun, isRunning }: TestResultsProps) {
         </div>
       ) : selectedRun ? (
         /* Run detail view */
-        <div className="flex flex-col flex-1">
+        <div className="flex flex-col flex-1 min-h-0">
           <div className="flex items-center gap-2 px-4 py-2 border-b">
             <Button
               variant="ghost"

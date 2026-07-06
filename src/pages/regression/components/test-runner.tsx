@@ -48,8 +48,8 @@ export function TestRunner({
     );
   }
 
-  const isActiveForThis = activeRun?.testCaseId === testCase.id;
-  const displaySteps = isActiveForThis && liveSteps.length > 0
+  const isRunningForThis = activeRun?.testCaseId === testCase.id && (activeRun.status === 'running' || activeRun.status === 'queued');
+  const displaySteps = isRunningForThis && liveSteps.length > 0
     ? liveSteps
     : latestRun?.stepResults || [];
 
@@ -62,17 +62,17 @@ export function TestRunner({
     }
 
     const result = displaySteps.find((r) => r.stepIndex === i);
-    if (isActiveForThis && !result) {
+    if (isRunningForThis && !result) {
       return { ...step, status: 'pending' as const, error: null, durationMs: 0 };
     }
     return { ...step, status: result?.status || 'pending', error: result?.error || null, durationMs: result?.durationMs || 0 };
   });
 
-  const isRunningForThis = isActiveForThis && isRunning;
+  const isRunningActive = isRunningForThis && isRunning;
   const canRunSingleStep = !isRunning;
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full bg-background">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b bg-card shrink-0">
         <div className="min-w-0">
@@ -81,12 +81,12 @@ export function TestRunner({
             {testCase.targetUrl || 'No target URL'}
           </p>
         </div>
-        <div className="flex items-center gap-1.5 shrink-0">
+        <div className="flex items-center gap-1.5 shrink-0 select-none">
           <Button
             size="sm"
             onClick={() => onRun(testCase.id)}
             disabled={isRunning}
-            className="gap-1.5 shrink-0"
+            className="gap-1.5 shrink-0 active:scale-[0.97]"
           >
             {isRunningForThis ? (
               <>
@@ -105,7 +105,7 @@ export function TestRunner({
 
       {/* Step progress */}
       <ScrollArea className="flex-1">
-        <div className="p-3 space-y-1">
+        <div className="p-3 space-y-1.5">
           {stepStatuses.map((step, i) => {
             const Icon = STEP_KIND_ICONS[step.kind];
             const isRunning = step.status === 'running';
@@ -118,33 +118,49 @@ export function TestRunner({
               <div
                 key={i}
                 className={cn(
-                  'flex items-center gap-2.5 px-3 py-2 rounded-md transition-colors group',
-                  isRunning && 'bg-blue-50 dark:bg-blue-950/30',
-                  isPassed && 'bg-green-50/50 dark:bg-green-950/20',
-                  isFailed && 'bg-red-50 dark:bg-red-950/30',
-                  isPending && 'text-muted-foreground'
+                  'flex items-start gap-3 px-3 py-2.5 rounded-sm border border-border/40 bg-card/25 transition-all duration-150 relative overflow-hidden group select-none',
+                  isRunning && 'border-blue-500/30 bg-blue-50/10 dark:bg-blue-950/10',
+                  isPassed && 'border-emerald-500/20 bg-emerald-50/5 dark:bg-emerald-950/5',
+                  isFailed && 'border-rose-500/30 bg-rose-50/10 dark:bg-rose-950/10',
+                  isPending && 'text-muted-foreground hover:bg-card/45'
                 )}
               >
-                {/* Status icon */}
-                <div className="shrink-0">
+                {/* Left accent border */}
+                {isRunning && <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500" />}
+                {isPassed && <div className="absolute left-0 top-0 bottom-0 w-1 bg-emerald-500" />}
+                {isFailed && <div className="absolute left-0 top-0 bottom-0 w-1 bg-rose-500" />}
+
+                {/* Status icon badge */}
+                <div className="shrink-0 mt-0.5">
                   {isRunning || isSingleRunning ? (
-                    <SpinnerGapIcon className="size-4 text-blue-500 animate-spin" />
+                    <div className="flex size-5 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-950/50">
+                      <SpinnerGapIcon className="size-3.5 text-blue-500 animate-spin" />
+                    </div>
                   ) : isPassed ? (
-                    <CheckCircleIcon className="size-4 text-green-500" />
+                    <div className="flex size-5 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-950/50">
+                      <CheckCircleIcon className="size-3.5 text-emerald-500" />
+                    </div>
                   ) : isFailed ? (
-                    <XCircleIcon className="size-4 text-red-500" />
+                    <div className="flex size-5 items-center justify-center rounded-full bg-rose-100 dark:bg-rose-950/50">
+                      <XCircleIcon className="size-3.5 text-rose-500" />
+                    </div>
                   ) : (
-                    <ClockIcon className="size-4 text-muted-foreground/40" />
+                    <div className="flex size-5 items-center justify-center rounded-full border border-dashed border-muted-foreground/30">
+                      <ClockIcon className="size-3.5 text-muted-foreground/40" />
+                    </div>
                   )}
                 </div>
 
                 {/* Step info */}
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1.5">
-                    {Icon && <Icon className="size-3 text-muted-foreground" />}
-                    <span className="text-xs font-medium">{STEP_KIND_LABELS[step.kind]}</span>
+                  <div className="flex items-center gap-1.5 leading-none">
+                    {Icon && <Icon className="size-3.5 text-muted-foreground/75" />}
+                    <span className="text-xs font-semibold">{STEP_KIND_LABELS[step.kind]}</span>
+                    <span className="text-[10px] text-muted-foreground/50 font-mono">
+                      #{i + 1}
+                    </span>
                   </div>
-                  <p className="text-[11px] text-muted-foreground truncate">
+                  <p className="text-[11px] text-muted-foreground/80 font-mono mt-1 truncate">
                     {step.kind === 'navigate' && step.value}
                     {step.kind === 'click' && step.selector}
                     {step.kind === 'fill' && `${step.selector} ← "${step.value}"`}
@@ -158,32 +174,35 @@ export function TestRunner({
 
                   {/* Error message */}
                   {isFailed && step.error && (
-                    <div className="mt-1 flex items-start gap-1 text-[11px] text-red-600 dark:text-red-400">
-                      <WarningCircleIcon className="size-3 shrink-0 mt-0.5" />
-                      <span className="line-clamp-2">{step.error}</span>
+                    <div className="mt-2 flex items-start gap-1 text-[11px] text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/20 p-2 rounded-sm border border-rose-500/10">
+                      <WarningCircleIcon className="size-3.5 shrink-0 mt-0.5" />
+                      <span className="font-mono break-all whitespace-pre-wrap">{step.error}</span>
                     </div>
                   )}
                 </div>
 
-                {/* Run Step button (single step execution) */}
-                {canRunSingleStep && isPending && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="size-6 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                    onClick={() => onRunStep(i)}
-                    title={`Run step ${i + 1}`}
-                  >
-                    <PlayCircleIcon className="size-3.5 text-muted-foreground hover:text-blue-500" />
-                  </Button>
-                )}
+                {/* Actions */}
+                <div className="flex items-center gap-2 shrink-0 select-none align-middle self-center">
+                  {/* Run Step button (single step execution) */}
+                  {canRunSingleStep && isPending && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="size-6 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity active:scale-[0.97]"
+                      onClick={() => onRunStep(i)}
+                      title={`Run step ${i + 1}`}
+                    >
+                      <PlayCircleIcon className="size-4 text-muted-foreground hover:text-blue-500" />
+                    </Button>
+                  )}
 
-                {/* Duration */}
-                {!isPending && step.durationMs > 0 && (
-                  <span className="text-[11px] text-muted-foreground shrink-0">
-                    {(step.durationMs / 1000).toFixed(1)}s
-                  </span>
-                )}
+                  {/* Duration */}
+                  {!isPending && step.durationMs > 0 && (
+                    <Badge variant="outline" className="text-[10px] font-mono font-medium rounded-sm py-0.5 bg-background">
+                      {(step.durationMs / 1000).toFixed(2)}s
+                    </Badge>
+                  )}
+                </div>
               </div>
             );
           })}

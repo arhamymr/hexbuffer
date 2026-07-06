@@ -8,7 +8,6 @@ import type { RegressionLogEntry } from '../types';
 interface PlaywrightLogPanelProps {
   logs: RegressionLogEntry[];
   isRunning: boolean;
-  onClear: () => void;
 }
 
 const levelColors: Record<RegressionLogEntry['level'], string> = {
@@ -40,7 +39,7 @@ function formatTime(isoString: string): string {
   }
 }
 
-export function PlaywrightLogPanel({ logs, isRunning, onClear }: PlaywrightLogPanelProps) {
+export function PlaywrightLogPanel({ logs, isRunning }: PlaywrightLogPanelProps) {
   const bottomRef = React.useRef<HTMLDivElement>(null);
 
   // Auto-scroll to latest log
@@ -51,35 +50,12 @@ export function PlaywrightLogPanel({ logs, isRunning, onClear }: PlaywrightLogPa
   }, [logs]);
 
   return (
-    <div className="flex flex-col h-full min-h-0">
-      {/* Header */}
-      <div className="flex items-center justify-between px-3 py-1.5 border-b shrink-0">
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-medium">Playwright Log</span>
-          {logs.length > 0 && (
-            <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4">
-              {logs.length}
-            </Badge>
-          )}
-        </div>
-        <Button
-          variant="ghost"
-          size="xs"
-          onClick={onClear}
-          disabled={logs.length === 0}
-          className="h-6 text-[10px]"
-        >
-          Clear
-        </Button>
-      </div>
-
-      {/* Log entries */}
-      <ScrollArea className="flex-1 min-h-0">
-        <div className="p-1">
-          {logs.length === 0 ? (
-            <div className="flex items-center justify-center py-8 text-center">
-              <p className="text-xs text-muted-foreground">
-                {isRunning ? 'Waiting for test to start…' : 'No logs yet. Run a test to see Playwright execution details.'}
+    <ScrollArea className="flex-1 min-h-0">
+      <div className="p-1.5">
+        {logs.length === 0 ? (
+          <div className="flex items-center justify-center py-12 text-center">
+            <p className="text-xs text-muted-foreground">
+              {isRunning ? 'Waiting for Playwright logs…' : 'No logs yet. Run a test to see execution details.'}
               </p>
             </div>
           ) : (
@@ -145,6 +121,5 @@ export function PlaywrightLogPanel({ logs, isRunning, onClear }: PlaywrightLogPa
           )}
         </div>
       </ScrollArea>
-    </div>
   );
 }

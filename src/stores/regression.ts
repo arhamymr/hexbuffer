@@ -21,6 +21,7 @@ interface RegressionState {
   activeRun: { testCaseId: string; runId: string; status: string } | null;
   liveSteps: StepResult[];
   logs: RegressionLogEntry[];
+  queue: string[];
 
   // Actions
   loadTestCases: () => Promise<void>;
@@ -30,6 +31,8 @@ interface RegressionState {
   loadRuns: (testCaseId: string) => Promise<void>;
   clearLogs: () => void;
   runSingleStep: (testCaseId: string, stepIndex: number) => Promise<StepResult | null>;
+  runAll: (testCaseIds: string[]) => Promise<void>;
+  stopQueue: () => void;
 
   // Internal
   _startListening: () => Promise<void>;
@@ -45,6 +48,7 @@ export const useRegressionStore = create<RegressionState>()((set, get) => ({
   activeRun: null,
   liveSteps: [],
   logs: [],
+  queue: [],
 
   loadTestCases: async () => {
     const cases = await invoke<TestCase[]>('list_regression_test_cases');
@@ -130,6 +134,17 @@ export const useRegressionStore = create<RegressionState>()((set, get) => ({
     }
   },
 
+  runAll: async (testCaseIds) => {
+    if (testCaseIds.length === 0) return;
+    const [firstId, ...rest] = testCaseIds;
+    set({ queue: rest });
+    await get().runTest(firstId);
+  },
+
+  stopQueue: () => {
+    set({ queue: [] });
+  },
+
   _startListening: async () => {
     if (listening) return;
     listening = true;
@@ -137,6 +152,9 @@ export const useRegressionStore = create<RegressionState>()((set, get) => ({
     const u1 = await listen<{ runId: string; testCaseId: string; targetUrl: string; stepCount: number }>(
       'regression:test-started',
       (event) => {
+        const activeRun = get().activeRun;
+        if (!activeRun || activeRun.runId !== event.payload.runId) return;
+
         set((s) => ({
           activeRun: s.activeRun
             ? { ...s.activeRun, status: 'running' }
@@ -148,6 +166,9 @@ export const useRegressionStore = create<RegressionState>()((set, get) => ({
     const u2 = await listen<{ runId: string; stepIndex: number; kind: string }>(
       'regression:step-started',
       (event) => {
+        const activeRun = get().activeRun;
+        if (!activeRun || activeRun.runId !== event.payload.runId) return;
+
         const step: StepResult = {
           stepIndex: event.payload.stepIndex,
           kind: event.payload.kind as StepResult['kind'],
@@ -165,6 +186,9 @@ export const useRegressionStore = create<RegressionState>()((set, get) => ({
     const u3 = await listen<{ runId: string; stepIndex: number; kind: string; durationMs: number; screenshotPath: string | null }>(
       'regression:step-completed',
       (event) => {
+        const activeRun = get().activeRun;
+        if (!activeRun || activeRun.runId !== event.payload.runId) return;
+
         set((s) => ({
           liveSteps: s.liveSteps.map((st) =>
             st.stepIndex === event.payload.stepIndex
@@ -178,6 +202,9 @@ export const useRegressionStore = create<RegressionState>()((set, get) => ({
     const u4 = await listen<{ runId: string; stepIndex: number; kind: string; error: string; screenshotPath: string | null }>(
       'regression:step-failed',
       (event) => {
+        const activeRun = get().activeRun;
+        if (!activeRun || activeRun.runId !== event.payload.runId) return;
+
         set((s) => ({
           liveSteps: s.liveSteps.map((st) =>
             st.stepIndex === event.payload.stepIndex
@@ -191,32 +218,59 @@ export const useRegressionStore = create<RegressionState>()((set, get) => ({
     const u5 = await listen<{ runId: string; status: string; passedSteps: number; failedSteps: number; aiVerdict: AiVerdict | null }>(
       'regression:test-finished',
       (event) => {
+        const activeRun = get().activeRun;
+        if (!activeRun || activeRun.runId !== event.payload.runId) return;
+
         set((s) => ({
           activeRun: s.activeRun
             ? { ...s.activeRun, status: event.payload.status }
             : null,
         }));
         // Reload runs for the test case
-        if (get().activeRun) {
-          get().loadRuns(get().activeRun!.testCaseId);
-        }
+        get().loadRuns(activeRun.testCaseId);
+
+        // Process next item in queue after a tiny delay
+        setTimeout(() => {
+          const nextQueue = get().queue;
+          if (nextQueue.length > 0) {
+            const nextCaseId = nextQueue[0];
+            set({ queue: nextQueue.slice(1) });
+            get().runTest(nextCaseId);
+          }
+        }, 100);
       }
     );
 
     const u6 = await listen<{ runId: string; error: string }>(
       'regression:test-failed',
       (event) => {
+        const activeRun = get().activeRun;
+        if (!activeRun || activeRun.runId !== event.payload.runId) return;
+
         set((s) => ({
           activeRun: s.activeRun
             ? { ...s.activeRun, status: 'failed' }
             : null,
         }));
+
+        // Process next item in queue after a tiny delay
+        setTimeout(() => {
+          const nextQueue = get().queue;
+          if (nextQueue.length > 0) {
+            const nextCaseId = nextQueue[0];
+            set({ queue: nextQueue.slice(1) });
+            get().runTest(nextCaseId);
+          }
+        }, 100);
       }
     );
 
     const u7 = await listen<{ runId?: string; level?: string; logType?: string; message?: string; url?: string; createdAt?: string }>(
       'regression:log-created',
       (event) => {
+        const activeRun = get().activeRun;
+        if (event.payload.runId && activeRun && event.payload.runId !== activeRun.runId) return;
+
         set((s) => ({
           logs: [...s.logs, {
             id: crypto.randomUUID(),

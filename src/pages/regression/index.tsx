@@ -42,6 +42,8 @@ export function RegressionPage() {
             onCreate={page.handleCreate}
             onRunAll={page.handleRunAllInActiveTest}
             onRun={() => page.activeTabTestCase && page.handleRun(page.activeTabTestCase.id)}
+            queue={page.queue}
+            onStopQueue={page.stopQueue}
           />
 
           <main className="min-h-0 flex-1">
@@ -80,6 +82,8 @@ export function RegressionPage() {
                             runs={tab.tabRuns}
                             onRun={page.handleRun}
                             isRunning={page.isRunning}
+                            logs={page.logs}
+                            onClearLogs={page.clearLogs}
                           />
                         </ResizablePanel>
                       </ResizablePanelGroup>

@@ -1,16 +1,24 @@
-import { Badge } from '@/components/ui/badge';
+import { useCallback } from 'react';
 import { usePortScannerPage } from './hooks/use-port-scanner-page';
-import { ScannerToolbar } from './components/scanner-toolbar';
-import { ResultsTable } from './components/results-table';
+import { ScannerSidebar } from './components/scanner-sidebar';
+import { ScanResults } from './components/scan-results';
+import type { PortPreset } from './constants';
 
 export function PortScannerPage() {
   const page = usePortScannerPage();
 
-  const resultsCount = page.results.length + (page.error ? 1 : 0);
+  const handleQuickStart = useCallback(async (presetValue: PortPreset) => {
+    const scanTarget = page.target.trim() || '127.0.0.1';
+    if (!page.target.trim()) {
+      page.setTarget('127.0.0.1');
+    }
+    page.handlePresetChange(presetValue);
+    await page.startScan(scanTarget, presetValue);
+  }, [page.target, page.setTarget, page.handlePresetChange, page.startScan]);
 
   return (
-    <div className="flex h-full min-h-0 flex-col bg-background">
-      <ScannerToolbar
+    <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] h-full min-h-0 bg-background overflow-hidden">
+      <ScannerSidebar
         target={page.target}
         onTargetChange={page.setTarget}
         preset={page.preset}
@@ -25,45 +33,26 @@ export function PortScannerPage() {
         onBannerGrabChange={page.setBannerGrab}
         selectedPortLabel={page.selectedPortLabel}
         isRunning={page.isRunning}
-        hasResults={page.hasResults}
         canScan={page.canScan}
-        resultsCount={resultsCount}
         onStart={page.startScan}
         onStop={page.stopScan}
+      />
+
+      <ScanResults
+        openResults={page.openResults}
+        hasResults={page.hasResults}
+        isRunning={page.isRunning}
+        hasRun={page.hasRun}
+        progress={page.progress}
+        error={page.error}
+        target={page.target}
+        concurrency={page.concurrency}
         onClear={page.clearResults}
         onCopyPorts={page.copyOpenPorts}
         onExportJson={page.handleExportJson}
         onExportCsv={page.handleExportCsv}
+        onQuickStart={handleQuickStart}
       />
-
-      <main className="min-h-0 flex-1 flex flex-col bg-background">
-        <div className="flex h-8 shrink-0 items-center justify-between border-b bg-muted/10 px-3">
-          <div className="flex items-baseline gap-2">
-            <span className="text-[11px] font-semibold uppercase text-muted-foreground tracking-wider">
-              Open Ports
-            </span>
-            <span className="text-[10px] text-muted-foreground hidden sm:inline">
-              Host, service, latency & captured banners
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            {page.error && (
-              <span className="max-w-[320px] truncate text-[10px] text-destructive font-mono">
-                {page.error}
-              </span>
-            )}
-            {page.isRunning && (
-              <Badge variant="secondary" className="animate-pulse text-[9px] h-4 py-0 px-1.5 font-mono">
-                {page.progress.current} / {page.progress.total}
-              </Badge>
-            )}
-          </div>
-        </div>
-
-        <div className="min-h-0 flex-1 overflow-auto">
-          <ResultsTable openResults={page.openResults} hasResults={page.hasResults} />
-        </div>
-      </main>
     </div>
   );
 }

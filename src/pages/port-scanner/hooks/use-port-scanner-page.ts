@@ -25,6 +25,7 @@ export function usePortScannerPage() {
   const [results, setResults] = useState<PortScanResult[]>([]);
   const [progress, setProgress] = useState({ current: 0, total: 0 });
   const [isRunning, setIsRunning] = useState(false);
+  const [hasRun, setHasRun] = useState(false);
   const [error, setError] = useState('');
   const scanIdRef = useRef<string | null>(null);
 
@@ -45,15 +46,20 @@ export function usePortScannerPage() {
   }, []);
 
   // ── Scan ─────────────────────────────────────
-  const startScan = useCallback(async () => {
-    if (!canScan) return;
+  const startScan = useCallback(async (targetOverride?: string, presetOverride?: PortPreset) => {
+    const scanTarget = (targetOverride !== undefined ? targetOverride : target).trim();
+    const scanPortsStr = presetOverride !== undefined && presetOverride !== 'custom' ? PORT_PRESETS[presetOverride] : ports;
+    const scanPorts = parsePorts(scanPortsStr);
+
+    if (!scanTarget || scanPorts.length === 0) return;
 
     const scanId = crypto.randomUUID();
     scanIdRef.current = scanId;
     setResults([]);
-    setProgress({ current: 0, total: parsedPorts.length });
+    setProgress({ current: 0, total: scanPorts.length });
     setError('');
     setIsRunning(true);
+    setHasRun(true);
 
     const unlisteners: UnlistenFn[] = [];
     try {
@@ -77,8 +83,8 @@ export function usePortScannerPage() {
       const finalResults = await invoke<PortScanResult[]>('scan_ports', {
         request: {
           scan_id: scanId,
-          target: target.trim(),
-          ports: parsedPorts,
+          target: scanTarget,
+          ports: scanPorts,
           timeout_ms: Number(timeoutMs) || 800,
           concurrency: Number(concurrency) || 100,
           banner_grab: bannerGrab,
@@ -94,7 +100,7 @@ export function usePortScannerPage() {
       unlisteners.forEach((u) => u());
       scanIdRef.current = null;
     }
-  }, [canScan, target, parsedPorts, timeoutMs, concurrency, bannerGrab]);
+  }, [target, ports, timeoutMs, concurrency, bannerGrab]);
 
   const stopScan = useCallback(async () => {
     if (!scanIdRef.current) return;
@@ -107,6 +113,7 @@ export function usePortScannerPage() {
     setResults([]);
     setProgress({ current: 0, total: 0 });
     setError('');
+    setHasRun(false);
   }, []);
 
   const copyOpenPorts = useCallback(async () => {
@@ -140,6 +147,8 @@ export function usePortScannerPage() {
     results,
     progress,
     isRunning,
+    hasRun,
+    setHasRun,
     error,
     // Derived
     parsedPorts,

@@ -30,6 +30,9 @@ export function useRegressionPage() {
     runSingleStep,
     loadRuns,
     clearLogs,
+    queue,
+    runAll,
+    stopQueue,
   } = useRegressionStore(
     useShallow((s) => ({
       testCases: s.testCases,
@@ -44,6 +47,9 @@ export function useRegressionPage() {
       runSingleStep: s.runSingleStep,
       loadRuns: s.loadRuns,
       clearLogs: s.clearLogs,
+      queue: s.queue,
+      runAll: s.runAll,
+      stopQueue: s.stopQueue,
     }))
   );
 
@@ -292,6 +298,7 @@ export function useRegressionPage() {
 
   const handleRun = React.useCallback(
     async (testCaseId: string) => {
+      setSingleStepResults({});
       await runTest(testCaseId);
     },
     [runTest],
@@ -331,10 +338,9 @@ export function useRegressionPage() {
 
   const handleRunAllInActiveTest = React.useCallback(async () => {
     const runnableCases = activeTestCases.filter((tc) => tc.enabled && tc.steps.length > 0);
-    for (const tc of runnableCases) {
-      await runTest(tc.id);
-    }
-  }, [activeTestCases, runTest]);
+    setSingleStepResults({});
+    await runAll(runnableCases.map((tc) => tc.id));
+  }, [activeTestCases, runAll]);
 
   // Enriched internal tabs for rendering
   const enrichedInternalTabs = React.useMemo(
@@ -379,6 +385,10 @@ export function useRegressionPage() {
     handleCloseTab,
     handleRenameTab,
     setActiveTabId,
+    // Queue
+    queue,
+    runAll,
+    stopQueue,
     // Derived state
     isRunning,
     activeTabTestCase,

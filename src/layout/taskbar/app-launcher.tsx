@@ -117,12 +117,23 @@ export function AppLauncher() {
                       <PushPinSimpleSlashIcon className="size-3.5" />
                     )}
                   </div>
-                  {item.iconImage ? (
-                    <img src={item.iconImage} alt="" className="size-4 mr-2" />
-                  ) : (
-                    <item.icon className="size-4 mr-2" />
-                  )}
+                  <div className={cn(
+                    "size-5 rounded-sm flex items-center justify-center mr-2 border shadow-sm shrink-0",
+                    item.colors ? `${item.colors.bg} ${item.colors.border} text-white` : "bg-muted/40 border-transparent text-muted-foreground"
+                  )}>
+                    <item.icon className="size-3" />
+                  </div>
                   <span>{item.label}</span>
+                  {item.flag && item.flag !== 'release' && (
+                    <span className={cn(
+                      "text-[8px] font-extrabold uppercase tracking-wider ml-1.5 px-1 rounded-sm leading-none py-0.5 pointer-events-none select-none shrink-0",
+                      item.flag === 'alpha'
+                        ? "bg-rose-500/20 text-rose-500 dark:text-rose-400"
+                        : "bg-amber-500/20 text-amber-600 dark:text-amber-400"
+                    )}>
+                      {item.flag}
+                    </span>
+                  )}
                 </CommandItem>
               );
             })}

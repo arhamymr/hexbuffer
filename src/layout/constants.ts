@@ -1,19 +1,9 @@
 import React from 'react';
-import { HouseIcon, ArrowsDownUpIcon, CubeIcon, BugIcon, PauseCircleIcon, ArrowsClockwiseIcon, PinwheelIcon, SwordIcon, FlaskIcon, BinaryIcon, AppWindowIcon, FileTextIcon, DatabaseIcon, ShieldCheckIcon, CatIcon, KeyIcon, FingerprintIcon, GearSixIcon, GitDiffIcon, NetworkIcon, LightningIcon, ListIcon, RobotIcon, NoteIcon, CloudArrowUpIcon, WifiHighIcon, SpinnerIcon } from '@phosphor-icons/react';
-
-
-import iconBrowser from '@/assets/feature/browser.png';
-import iconDocuments from '@/assets/feature/documents.png';
-import iconRepeater from '@/assets/feature/repeater.png';
-import iconWorkflow from '@/assets/feature/workflow.png';
-import iconBinary from '@/assets/feature/binary.png';
-import iconTerminal from '@/assets/feature/terminal.png';
+import { HouseIcon, ArrowsDownUpIcon, CubeIcon, BugIcon, PauseCircleIcon, ArrowsClockwiseIcon, PinwheelIcon, SwordIcon, FlaskIcon, BinaryIcon, AppWindowIcon, FileTextIcon, DatabaseIcon, ShieldCheckIcon, CatIcon, KeyIcon, FingerprintIcon, GearSixIcon, GitDiffIcon, NetworkIcon, LightningIcon, ListIcon, RobotIcon, NoteIcon, CloudArrowUpIcon, WifiHighIcon, SpinnerIcon, BlueprintIcon } from '@phosphor-icons/react';
 
 export interface NavItem {
   label: string;
   icon: React.ComponentType<{ className?: string }>;
-  /** Optional image URL (PNG, SVG, etc.) — takes precedence over icon when set */
-  iconImage?: string;
   href: string;
   devOnly?: boolean;
   rightIcon?: React.ComponentType<{ className?: string }>;
@@ -34,7 +24,6 @@ export const allNavItems: NavItem[] = [
   {
     label: 'HTTP',
     icon: ArrowsDownUpIcon,
-    iconImage: iconTerminal,
     href: '/http-history',
     description: 'Capture and inspect real-time HTTP/HTTPS network traffic.',
     colors: { bg: 'bg-emerald-500 dark:bg-emerald-500', hoverBg: 'group-hover:bg-emerald-500 dark:group-hover:bg-emerald-500', border: 'border-emerald-500 dark:border-emerald-500' },
@@ -43,7 +32,6 @@ export const allNavItems: NavItem[] = [
   {
     label: 'WebSocket',
     icon: WifiHighIcon,
-    iconImage: iconTerminal,
     href: '/websocket-history',
     description: 'Capture and inspect real-time WebSocket network traffic.',
     colors: { bg: 'bg-blue-500 dark:bg-blue-500', hoverBg: 'group-hover:bg-blue-500 dark:group-hover:bg-blue-500', border: 'border-blue-500 dark:border-blue-500' },
@@ -52,7 +40,6 @@ export const allNavItems: NavItem[] = [
   {
     label: 'Workflow',
     icon: SpinnerIcon,
-    iconImage: iconWorkflow,
     href: '/automation',
     devOnly: true,
     description: 'Build and execute automated visual workflows for target reconnaissance.',
@@ -62,7 +49,6 @@ export const allNavItems: NavItem[] = [
   {
     label: 'Browser',
     icon: AppWindowIcon,
-    iconImage: iconBrowser,
     href: '/browser',
     description: 'Control an automated browser session to crawl websites and capture elements.',
     colors: { bg: 'bg-sky-500 dark:bg-sky-500', hoverBg: 'group-hover:bg-sky-500 dark:group-hover:bg-sky-500', border: 'border-sky-500 dark:border-sky-500' },
@@ -103,7 +89,6 @@ export const allNavItems: NavItem[] = [
   {
     label: 'Repeater',
     icon: ArrowsClockwiseIcon,
-    iconImage: iconRepeater,
     href: '/repeater',
     description: 'Modify HTTP requests, reissue them, and analyze responses side-by-side.',
     colors: { bg: 'bg-cyan-500 dark:bg-cyan-500', hoverBg: 'group-hover:bg-cyan-500 dark:group-hover:bg-cyan-500', border: 'border-cyan-500 dark:border-cyan-500' },
@@ -111,7 +96,7 @@ export const allNavItems: NavItem[] = [
   },
   {
     label: 'MockForge',
-    icon: CloudArrowUpIcon,
+    icon: BlueprintIcon,
     href: '/mock-forge',
     description: 'Mock HTTP endpoints, responses, and simulate server behaviors.',
     colors: { bg: 'bg-teal-600 dark:bg-teal-600', hoverBg: 'group-hover:bg-teal-600 dark:group-hover:bg-teal-600', border: 'border-teal-600 dark:border-teal-600' },
@@ -120,7 +105,6 @@ export const allNavItems: NavItem[] = [
   {
     label: 'Documents',
     icon: FileTextIcon,
-    iconImage: iconDocuments,
     href: '/documents',
     description: 'Create markdown documents, API definitions, and manage target scopes.',
     colors: { bg: 'bg-orange-500 dark:bg-orange-500', hoverBg: 'group-hover:bg-orange-500 dark:group-hover:bg-orange-500', border: 'border-orange-500 dark:border-orange-500' },
@@ -129,7 +113,6 @@ export const allNavItems: NavItem[] = [
   {
     label: 'Encoder',
     icon: BinaryIcon,
-    iconImage: iconBinary,
     href: '/encoder',
     description: 'Access encoders, decoders, hashes, and other payload helper utilities.',
     colors: { bg: 'bg-teal-500 dark:bg-teal-500', hoverBg: 'group-hover:bg-teal-500 dark:group-hover:bg-teal-500', border: 'border-teal-500 dark:border-teal-500' },
@@ -214,5 +197,3 @@ export const allNavItems: NavItem[] = [
 export const mainNavItems = import.meta.env.PROD
   ? allNavItems.filter((item) => !item.devOnly)
   : allNavItems;
-
-

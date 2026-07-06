@@ -661,6 +661,8 @@ async fn execute_ai_analyze(
             role: "user".to_string(),
             content,
         }],
+        workspaces: None,
+        active_workspace_id: None,
     };
     let response = crate::ai::send_ai_chat_message(app.clone(), history, request).await?;
 

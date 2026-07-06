@@ -39,8 +39,17 @@ pub struct AiChatMessage {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+pub struct WorkspaceInfo {
+    pub id: String,
+    pub name: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct AiChatRequest {
     pub messages: Vec<AiChatMessage>,
+    pub workspaces: Option<Vec<WorkspaceInfo>>,
+    pub active_workspace_id: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -98,6 +107,7 @@ pub(crate) struct AiChatContext {
     pub(crate) latest_crawl: Option<AiChatCrawlContext>,
     pub(crate) proxy_summary: Vec<crate::ProxyLogSummary>,
     pub(crate) proxy_tree: Vec<crate::TreeNode>,
+    pub(crate) stashes: Vec<crate::StashRecord>,
 }
 
 #[derive(Debug, Clone, Serialize)]

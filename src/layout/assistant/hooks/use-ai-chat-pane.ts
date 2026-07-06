@@ -1,22 +1,15 @@
 import type { UIMessage } from '@ai-sdk/react';
-import { useRef, useState, useEffect, useCallback, useMemo } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useRef, useState, useEffect, useCallback } from 'react';
 import { useChatSessions } from './use-chat-sessions';
 import { useDashboardPage } from './use-dashboard-page';
 import { useAiChatActions } from '@/hooks/use-ai-chat-actions';
 import { useTrackedActions, clearTrackedActions } from '@/lib/ai-chat-actions';
 import { AI_MODEL_OPTIONS_BY_PROVIDER } from '@/pages/settings/constants';
-import { allNavItems, type NavItem } from '@/layout/constants';
 
+// ponytail: removed active page auto-detection to simplify system context and rely on explicit mentions
 export function useAiChatPane() {
   const setMessagesRef = useRef<((messages: UIMessage<unknown>[]) => void) | null>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
-  const location = useLocation();
-
-  const currentPage: NavItem | null = useMemo(() => {
-    const match = allNavItems.find((item) => item.href === location.pathname);
-    return match ?? null;
-  }, [location.pathname]);
 
   const {
     sessions,
@@ -51,7 +44,6 @@ export function useAiChatPane() {
     sessionId: activeSessionId,
     setMessagesRef,
     onSaveMessages: saveMessages,
-    currentPage,
   });
 
   const providerDisplay = 'DeepSeek';
@@ -106,6 +98,5 @@ export function useAiChatPane() {
     dismissClarification,
     submitClarification,
     requestedFieldLabels,
-    currentPage,
   };
 }

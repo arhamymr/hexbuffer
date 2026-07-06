@@ -45,10 +45,10 @@ export interface WorkspaceTab {
   name: string;
 }
 
-export function createWorkspaceTab(name?: string, counter?: number): WorkspaceTab {
+export function createWorkspaceTab(name?: string, counter?: number, id?: string): WorkspaceTab {
   const num = counter ?? 1;
   return {
-    id: `ws-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+    id: id || `ws-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
     name: name || `Workspace ${num}`,
   };
 }

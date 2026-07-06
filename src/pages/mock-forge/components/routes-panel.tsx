@@ -25,6 +25,7 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { useRepeaterStore } from '@/stores/repeater';
+import { useCollectionsStore } from '@/stores/collections';
 import { useNavStore } from '@/stores/nav';
 import { buildRawHttpRequest } from '@/lib/http-message';
 import { toast } from 'sonner';
@@ -308,7 +309,7 @@ function RouteEditor({
     onUpdate(route.id, { requestQueryParams: updated });
   };
 
-  const handleSendToRepeater = () => {
+  const handleSendToRepeater = async () => {
     try {
       const protocol = domain?.ssl ? 'https' : 'http';
       const hostname = domain?.hostname || 'localhost';
@@ -319,15 +320,61 @@ function RouteEditor({
         : '';
       
       const url = `${protocol}://${hostname}${route.path}${queryStr}`;
-      
-      const raw = buildRawHttpRequest({
+
+      // 1. Get repeater store & look for workspace named 'mock-forge'
+      const repeaterStore = useRepeaterStore.getState();
+      let ws = repeaterStore.workspaces.find(w => w.name === 'mock-forge');
+      let wsId = '';
+      if (!ws) {
+        wsId = repeaterStore.createWorkspace('mock-forge');
+      } else {
+        wsId = ws.id;
+        repeaterStore.setActiveWorkspaceId(wsId);
+      }
+
+      // 2. Find collection (stash) belonging to this workspaceId
+      const collectionsStore = useCollectionsStore.getState();
+      let stash = collectionsStore.stashes.find(s => s.parentId === wsId);
+      let stashId = '';
+      if (!stash) {
+        stashId = await collectionsStore.createStash('mock-forge', wsId);
+      } else {
+        stashId = stash.id;
+      }
+
+      // 3. Create a new endpoint under this stash
+      const endpointName = `${route.method} ${route.path}`;
+      const epId = await collectionsStore.createEndpoint(stashId, endpointName);
+
+      // 4. Headers
+      const headersObj = route.responseHeaders || { 'Content-Type': 'application/json' };
+      const parsedHeaders = Object.entries(headersObj).map(([key, value]) => ({
+        key,
+        value,
+        enabled: true,
+      }));
+
+      // 5. Update active request
+      collectionsStore.setSelectedNodeId(`ep-${epId}`);
+      collectionsStore.updateActiveRequest(() => ({
         method: route.method,
         url,
-        headers: route.responseHeaders || { 'Content-Type': 'application/json' },
+        headers: parsedHeaders,
         body: isWriteMethod ? reqBody : '',
-      });
+        bodyType: isWriteMethod ? 'json' : 'none',
+        preScript: '',
+        testScript: '',
+        response: null,
+        isLoading: false,
+        error: null,
+        testResults: [],
+        queryParams: queryParams.map(p => ({ key: p.key, value: p.value, enabled: p.enabled })),
+      }));
 
-      useRepeaterStore.getState().addRequestTab({ raw, url });
+      // 6. Save active endpoint
+      await collectionsStore.saveActiveEndpoint();
+
+      // 7. Navigate
       useNavStore.getState().triggerNavBlink('/repeater');
       toast.success(`Sent mock route ${route.method} ${route.path} to Repeater!`);
     } catch (error) {

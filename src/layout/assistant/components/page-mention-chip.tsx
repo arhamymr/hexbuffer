@@ -9,11 +9,7 @@ interface PageMentionChipProps {
 export function PageMentionChip({ item, onRemove }: PageMentionChipProps) {
   return (
     <span className="inline-flex items-center gap-1 rounded-md border bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
-      {item.iconImage ? (
-        <img src={item.iconImage} alt="" className="size-3.5 object-cover rounded-sm" />
-      ) : (
-        <item.icon className="size-3.5" />
-      )}
+      <item.icon className="size-3.5" />
       <span>{item.label}</span>
       <button
         type="button"

@@ -2,7 +2,7 @@ import * as React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { SpinnerGapIcon, PauseIcon } from '@phosphor-icons/react';
 
-import { mainNavItems, type NavItem } from '../constants';
+import { mainNavItems, type NavItem } from '../../constants';
 import { useNavStore } from '@/stores/nav';
 import { useAppSettingsStore } from '@/stores/app-settings-store';
 import { useAutomationStore } from '@/stores/automation';

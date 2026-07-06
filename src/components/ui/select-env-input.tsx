@@ -15,6 +15,7 @@ interface ColorizedUrlInputProps {
 }
 
 function colorizeHtml(value: string, envVarKeys: string[]): string {
+  if (typeof value !== 'string') return '';
   const keysSet = new Set(envVarKeys);
   return value.replace(
     /\{\{(\w+)\}\}/g,
@@ -113,7 +114,7 @@ export function ColorizedUrlInput({
       return;
     }
 
-    el.innerHTML = value ? colorizeHtml(value, envVarKeys) : '';
+    el.innerHTML = typeof value === 'string' ? colorizeHtml(value, envVarKeys) : '';
 
     // Only restore caret position if this element currently has focus;
     // otherwise setCaretOffset would steal focus from whatever field

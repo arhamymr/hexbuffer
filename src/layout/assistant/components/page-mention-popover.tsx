@@ -23,8 +23,8 @@ export function PageMentionPopover({
   if (!isOpen) return null;
 
   return (
-    <div className="absolute top-full left-0 mt-1 w-64 z-50 rounded-md border bg-popover shadow-md max-h-48 overflow-y-auto">
-      <Command>
+    <div className="absolute bottom-full left-0 mb-1 w-64 z-50 rounded-md border bg-popover shadow-md max-h-48 overflow-y-auto">
+      <Command shouldFilter={false}>
         <CommandList>
           {filteredPages.length > 0 ? (
             <CommandGroup heading="Pages">
@@ -40,15 +40,7 @@ export function PageMentionPopover({
                   }
                 >
                   <div className="flex items-center gap-2">
-                    {page.iconImage ? (
-                      <img
-                        src={page.iconImage}
-                        alt=""
-                        className="size-4 object-cover rounded-sm"
-                      />
-                    ) : (
-                      <page.icon className="size-4 shrink-0" />
-                    )}
+                    <page.icon className="size-4 shrink-0" />
                     <span>{page.label}</span>
                   </div>
                 </CommandItem>

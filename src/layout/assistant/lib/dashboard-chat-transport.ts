@@ -1,5 +1,6 @@
 import { invoke } from '@tauri-apps/api/core';
 import { createUIMessageStream, type ChatTransport } from 'ai';
+import { useRepeaterStore } from '@/stores/repeater';
 import type { DashboardAiSettings, DashboardChatMessage } from '../types';
 
 interface DashboardChatBody {
@@ -68,9 +69,12 @@ export class DashboardSettingsChatTransport implements ChatTransport<DashboardCh
           if (!aiSettings?.hasApiKey || !aiSettings.allowThirdPartyAiSharing) {
             content = fallbackContent(aiSettings);
           } else {
+            const repeaterStore = useRepeaterStore.getState();
             const response = await invoke<AiChatResponse>('send_ai_chat_message', {
               request: {
                 messages: toProviderMessages(messages),
+                workspaces: repeaterStore.workspaces.map((w) => ({ id: w.id, name: w.name })),
+                activeWorkspaceId: repeaterStore.activeWorkspaceId,
               },
             });
             provider = response.provider;

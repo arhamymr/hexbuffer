@@ -39,4 +39,6 @@ export {
   createFolderDef,
   createEndpointDef,
   selectEndpointDef,
+  listWorkspacesDef,
+  listCollectionsDef,
 } from './repeater/index.mjs';

@@ -66,11 +66,14 @@ fn build_ai_chat_context(history: &crate::HistoryBridge) -> Result<AiChatContext
         .map(|r| r.data)
         .unwrap_or_default();
 
+    let stashes = history.get_stashes().unwrap_or_default();
+
     Ok(AiChatContext {
         crawl_sessions,
         latest_crawl,
         proxy_summary,
         proxy_tree,
+        stashes,
     })
 }
 
@@ -394,6 +397,25 @@ fn execute_chat_action(_app: &AppHandle, action: &str, payload: &Value) -> Strin
                 .unwrap_or("unknown");
             format!("Asked for clarification: {}", question)
         }
+        "create_workspace" => {
+            let name = payload.get("name").and_then(|v| v.as_str()).unwrap_or("Default");
+            format!("Created workspace \"{}\"", name)
+        }
+        "create_collection" => {
+            let name = payload.get("name").and_then(|v| v.as_str()).unwrap_or("unnamed");
+            format!("Created collection \"{}\"", name)
+        }
+        "create_folder" => {
+            let name = payload.get("name").and_then(|v| v.as_str()).unwrap_or("unnamed");
+            format!("Created folder \"{}\"", name)
+        }
+        "create_endpoint" => {
+            let name = payload.get("name").and_then(|v| v.as_str()).unwrap_or("unnamed");
+            format!("Created endpoint \"{}\"", name)
+        }
+        "select_endpoint" => "Selected endpoint".to_string(),
+        "list_workspaces" => "Listed workspaces".to_string(),
+        "list_collections" => "Listed collections".to_string(),
         other => format!("Unknown action: {}", other),
     }
 }

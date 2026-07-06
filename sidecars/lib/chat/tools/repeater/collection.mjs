@@ -5,11 +5,12 @@ export const createCollectionDef = {
   inputSchema: z.object({
     workspaceId: z.string().describe('The ID of the Repeater workspace to create the collection under.'),
     name: z.string().describe('The name of the new collection.'),
+    id: z.string().optional().describe('Optional unique identifier for the collection, enabling you to add requests or folders to it in the same turn.'),
   }),
-  execute: async ({ workspaceId, name }, ctx) => {
+  execute: async ({ workspaceId, name, id }, ctx) => {
     ctx.emitAction({
       action: 'create_collection',
-      payload: { workspaceId, name },
+      payload: { workspaceId, name, id },
     });
     return { success: true, message: `Collection "${name}" creation triggered.` };
   },
@@ -20,11 +21,12 @@ export const createFolderDef = {
   inputSchema: z.object({
     parentId: z.string().describe('The ID of the parent collection or folder.'),
     name: z.string().describe('The name of the folder.'),
+    id: z.string().optional().describe('Optional unique identifier for the folder, enabling you to add requests to it in the same turn.'),
   }),
-  execute: async ({ parentId, name }, ctx) => {
+  execute: async ({ parentId, name, id }, ctx) => {
     ctx.emitAction({
       action: 'create_folder',
-      payload: { parentId, name },
+      payload: { parentId, name, id },
     });
     return { success: true, message: `Folder "${name}" creation triggered.` };
   },
@@ -39,11 +41,12 @@ export const createEndpointDef = {
     url: z.string().optional().describe('The request URL.'),
     headers: z.record(z.string()).optional().describe('Key-value pairs of HTTP request headers.'),
     body: z.string().optional().describe('Request body string content.'),
+    id: z.string().optional().describe('Optional unique identifier for the endpoint.'),
   }),
-  execute: async ({ collectionId, name, method, url, headers, body }, ctx) => {
+  execute: async ({ collectionId, name, method, url, headers, body, id }, ctx) => {
     ctx.emitAction({
       action: 'create_endpoint',
-      payload: { collectionId, name, method, url, headers, body },
+      payload: { collectionId, name, method, url, headers, body, id },
     });
     return { success: true, message: `Endpoint "${name}" creation triggered.` };
   },

@@ -33,6 +33,8 @@ import {
   createFolderDef,
   createEndpointDef,
   selectEndpointDef,
+  listWorkspacesDef,
+  listCollectionsDef,
 } from './tools/index.mjs';
 import { classifyIntent, TASK_CATEGORIES } from './intent-classifier.mjs';
 
@@ -51,7 +53,7 @@ const CHAT_INSTRUCTIONS = [
   'Crawl credential workflow: when the crawler pauses at a login form and the user provides credentials, use submitCrawlCredentials to resume the crawl with the provided fields.',
   'Crawl callback workflow: when a crawl completes the system will automatically send you a message with crawl results (session ID, target URL, pages visited, insights found). When you receive this, use getCrawlContext to fetch the full results. If the crawl discovered 2+ distinct hosts or targets, use requestHumanSelection to let the user pick which ones to add to scope, then call addScope with the hosts array to add them all at once. Otherwise give a one-sentence overview and call out only the single most critical finding.',
   'Selection rule: whenever you are about to list 2+ choices or options for the user to pick from (hosts, targets, actions, etc.), use requestHumanSelection instead of plain text. This shows an interactive picker in the UI. Only list options in plain text if the user explicitly asks for a list.',
-  'Repeater workflow: when users ask to create workspaces, collections, folders, or add API requests to the Repeater tool, use createWorkspace, createCollection, createFolder, and createEndpoint tools to build out the API explorer structure. createEndpoint allows you to populate the request with custom HTTP method, URL, headers, and request body. You can use these tools to import APIs from spec formats (like markdown lists, Swagger schemas, or curl requests) into the Repeater workspace tree. After creating an endpoint, use selectEndpoint to focus the user UI on that endpoint request.',
+  'Repeater workflow: when users ask to create workspaces, collections, folders, or add API requests to the Repeater tool (such as parsing a raw HTTP request input), use createWorkspace, createCollection, createFolder, and createEndpoint tools to build out the structure. You can call listWorkspaces and listCollections to inspect existing resources. If the user does not specify a target workspace and collection to save an API request to, use requestHumanSelection to ask them to select one of the existing collections or choose to create a new one (e.g. by providing options for each collection, and options like "Create new collection in workspace <Name>"). If they want to create a new collection, call createCollection first, then createEndpoint. When parsing a raw HTTP request, construct the full URL (e.g. using the Host header and path, defaulting to https:// if not specified) and map all HTTP headers and body properly. After creating an endpoint, use selectEndpoint to focus the request. CRITICAL: When creating a workspace, collection, and endpoints together in a single turn, you must generate and pass client-side unique IDs (e.g. "ws-X", "stash-Y", "ep-Z") in the "id" field of these tools to link them correctly. For example, pass the same generated workspace ID to createWorkspace(..., id) and createCollection(workspaceId, ...), and the same collection ID to createCollection(..., id) and createEndpoint(collectionId, ...). This ensures the newly created collections/endpoints are correctly linked to the workspace immediately.',
   'After configuring something, use navigateTo to show the user the result in the relevant page.',
   'Only work within declared project scope. Prefer passive analysis over active testing.',
   'Be evidence-based. If data is insufficient, explain what is missing.',
@@ -109,7 +111,13 @@ export async function runChat() {
   const redactedRequest = runRedactionWorkflow(request).redactedValue;
   const redactedContext = runRedactionWorkflow(context).redactedValue;
 
-  const toolContext = createToolContext({ redactedContext });
+  const toolContext = createToolContext({
+    redactedContext: {
+      ...redactedContext,
+      workspaces: redactedRequest.workspaces || [],
+      activeWorkspaceId: redactedRequest.activeWorkspaceId || null,
+    },
+  });
 
   // ── Intent classification ───────────────────────────────────────────
   const classification = await classifyIntent(messages);
@@ -179,6 +187,8 @@ export async function runChat() {
       createFolder: createFolderDef,
       createEndpoint: createEndpointDef,
       selectEndpoint: selectEndpointDef,
+      listWorkspaces: listWorkspacesDef,
+      listCollections: listCollectionsDef,
     },
     ctx: toolContext,
     maxSteps: MAX_TOOL_STEPS,

@@ -8,7 +8,7 @@ import { useTheme } from '@/components/theme-provider';
 import { useLicenseStore } from '@/stores/license';
 import { useUpdater } from '@/hooks/use-updater';
 import { ManualUpdateCommand } from '@/pages/settings/components/manual-update-command';
-import { formatBytes } from '../footer/utils';
+import { formatBytes } from '../../footer/utils';
 
 const SNAP_THRESHOLD = 20;
 

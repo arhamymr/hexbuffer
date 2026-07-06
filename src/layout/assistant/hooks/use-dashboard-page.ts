@@ -5,7 +5,6 @@ import { listen } from '@tauri-apps/api/event';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { FileUIPart } from 'ai';
 import { usePromptInputController } from '@/components/ai-elements/prompt-input';
-import type { NavItem } from '@/layout/constants';
 import { useBrowserAutomationStore } from '@/stores/browser-automation';
 import { DASHBOARD_DEFAULT_AI_MODEL } from '../constants';
 import { DashboardSettingsChatTransport } from '../lib/dashboard-chat-transport';
@@ -130,10 +129,9 @@ interface UseDashboardPageOptions {
   sessionId: string | null;
   setMessagesRef: React.MutableRefObject<((messages: UIMessage<unknown>[]) => void) | null>;
   onSaveMessages?: (sessionId: string, messages: ChatMessageRecord[]) => void;
-  currentPage?: NavItem | null;
 }
 
-export function useDashboardPage({ sessionId, setMessagesRef, onSaveMessages, currentPage }: UseDashboardPageOptions) {
+export function useDashboardPage({ sessionId, setMessagesRef, onSaveMessages }: UseDashboardPageOptions) {
   const [aiSettings, setAiSettings] = useState<DashboardAiSettings>(DEFAULT_AI_SETTINGS);
   const [aiSettingsLoading, setAiSettingsLoading] = useState(true);
   const [pendingCrawlInput, setPendingCrawlInput] = useState<CrawlHumanInputRequest | null>(null);
@@ -146,7 +144,6 @@ export function useDashboardPage({ sessionId, setMessagesRef, onSaveMessages, cu
   const processedSessionIdsRef = useRef(new Set<string>());
   const promptController = usePromptInputController();
   const inputBeingConsumedRef = useRef(false);
-  const currentPageRef = useRef(currentPage);
 
   useEffect(() => {
     aiSettingsRef.current = aiSettings;
@@ -163,10 +160,6 @@ export function useDashboardPage({ sessionId, setMessagesRef, onSaveMessages, cu
   useEffect(() => {
     clarificationRef.current = pendingClarification;
   }, [pendingClarification]);
-
-  useEffect(() => {
-    currentPageRef.current = currentPage ?? null;
-  }, [currentPage]);
 
   // Listen for crawl human input requests from the backend
   useEffect(() => {
@@ -371,10 +364,11 @@ export function useDashboardPage({ sessionId, setMessagesRef, onSaveMessages, cu
 
     setPendingSelection(null);
 
-    // PaperPlaneTilt the selection as a regular chat message so the AI can continue
-    const selectedLabels = request.options
-      .filter((o) => selectedValues.includes(o.value))
-      .map((o) => o.label);
+    // ponytail: handle custom user-typed values gracefully
+    const selectedLabels = selectedValues.map((val) => {
+      const option = request.options.find((o) => o.value === val);
+      return option ? option.label : val;
+    });
     const selectionText = `I choose: ${selectedLabels.join(', ')}`;
 
     await sendMessage(
@@ -423,11 +417,8 @@ export function useDashboardPage({ sessionId, setMessagesRef, onSaveMessages, cu
       return;
     }
 
-    // Build context prefix from current page and mentioned pages
+    // Build context prefix from mentioned pages
     const contextParts: string[] = [];
-    if (currentPageRef.current) {
-      contextParts.push(`[Current page: ${currentPageRef.current.label}]`);
-    }
     if (mentionedPages && mentionedPages.length > 0) {
       contextParts.push(`[Referenced pages: ${mentionedPages.map((p) => p.label).join(', ')}]`);
     }

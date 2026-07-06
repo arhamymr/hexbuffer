@@ -23,7 +23,7 @@ export function DesktopPage() {
       <div className="mx-auto w-full p-6 flex flex-col md:flex-row gap-6 items-start">
         <div className="flex-1 min-w-0">
           {displayItems.length > 0 ? (
-            <div className="flex max-w-[800px] flex-wrap gap-2 justify-items-center">
+            <div className="flex max-w-[800px] flex-wrap gap-3 justify-items-center">
               {displayItems.map((item) => (
                 <DesktopIconItem
                   key={item.href}

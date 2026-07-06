@@ -21,7 +21,6 @@ import {
   PromptInput,
   PromptInputBody,
   PromptInputFooter,
-  PromptInputHeader,
   PromptInputProvider,
   PromptInputSelect,
   PromptInputSelectContent,
@@ -88,7 +87,6 @@ function AIAssistantPaneContent({ onClose }: { onClose?: () => void }) {
     dismissClarification,
     submitClarification,
     requestedFieldLabels,
-    currentPage,
   } = useAiChatPane();
 
   const {
@@ -138,16 +136,6 @@ function AIAssistantPaneContent({ onClose }: { onClose?: () => void }) {
             )}
           </Button>
         </div>
-        {currentPage && (
-          <Badge variant="secondary" className="text-xs font-medium gap-1.5">
-            {currentPage.iconImage ? (
-              <img src={currentPage.iconImage} alt="" className="size-3 object-cover" />
-            ) : (
-              <currentPage.icon className="size-3" />
-            )}
-            {currentPage.label}
-          </Badge>
-        )}
         {onClose && (
           <Button
             variant="ghost"
@@ -394,10 +382,12 @@ function AIAssistantPaneContent({ onClose }: { onClose?: () => void }) {
 
           {/* Prompt input */}
           <div className="shrink-0 border-t p-2 bg-muted">
-            <div className="relative max-w-xl mx-auto">
-              <PromptInput onSubmit={wrappedHandleSubmit} className='bg-background overflow-hidden'>
-                {mentionedPages.length > 0 && (
-                  <PromptInputHeader>
+            <div className="relative max-w-xl mx-auto flex flex-col">
+              {/* ponytail: show active page mentions directly on top of the prompt input box, aligned and full-width */}
+              {mentionedPages.length > 0 && (
+                <div className="flex shrink-0 items-center gap-2 pb-1.5 text-xs text-muted-foreground w-full">
+                  <span className="font-medium shrink-0">Context:</span>
+                  <div className="flex flex-wrap gap-1.5 flex-1 min-w-0">
                     {mentionedPages.map((page) => (
                       <PageMentionChip
                         key={page.href}
@@ -405,57 +395,70 @@ function AIAssistantPaneContent({ onClose }: { onClose?: () => void }) {
                         onRemove={() => removeMentionedPage(page.href)}
                       />
                     ))}
-                  </PromptInputHeader>
-                )}
-                <PromptInputBody>
-                  <PromptInputTextarea
-                    className="min-h-12"
-                    placeholder={
-                      pendingCrawlInput
-                        ? `Enter ${requestedFieldLabels} to resume crawl…`
-                        : pendingSelection
-                          ? 'Select an option above or type a message…'
-                          : pendingClarification
-                            ? 'Select a task above to clarify your intent…'
-                            : 'Message AI… (use @ to mention a page)'
-                    }
-                    onChange={onTextareaChange}
-                    onSelect={onTextareaSelect}
-                    onKeyDown={onTextareaKeyDown}
-                  />
-                </PromptInputBody>
-                <PromptInputFooter>
-                  <PromptInputTools>
-                    <PromptInputSelect
-                      disabled={isStreaming || !!pendingCrawlInput}
-                      onValueChange={handleModelChange}
-                      value={model}
-                    >
-                      <PromptInputSelectTrigger className="border border-border">
-                        <ModelSelectorLogo provider="deepseek" className='size-4' />
-                        <PromptInputSelectValue />
-                      </PromptInputSelectTrigger>
-                      <PromptInputSelectContent>
-                        {modelOptions.map((option) => (
-                          <PromptInputSelectItem key={option} value={option}>
-                            {option}
-                          </PromptInputSelectItem>
-                        ))}
-                      </PromptInputSelectContent>
-                    </PromptInputSelect>
-                  </PromptInputTools>
-                  <PromptInputSubmit
-                    onStop={stop}
-                    status={status}
-                  />
-                </PromptInputFooter>
-              </PromptInput>
-              <PageMentionPopover
-                isOpen={mentionState.isOpen}
-                filteredPages={filteredPages}
-                highlightedIndex={highlightedIndex}
-                onSelect={selectPage}
-              />
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="xs"
+                    onClick={clearMentionedPages}
+                    className="h-6 px-1.5 text-xs text-muted-foreground hover:text-foreground shrink-0"
+                  >
+                    Clear
+                  </Button>
+                </div>
+              )}
+
+              <div className="relative w-full">
+                <PromptInput onSubmit={wrappedHandleSubmit} className=' '>
+                  <PromptInputBody>
+                    <PromptInputTextarea
+                      className="min-h-12"
+                      placeholder={
+                        pendingCrawlInput
+                          ? `Enter ${requestedFieldLabels} to resume crawl…`
+                          : pendingSelection
+                            ? 'Select an option above or type a message…'
+                            : pendingClarification
+                              ? 'Select a task above to clarify your intent…'
+                              : 'Message AI… (use @ to mention a page)'
+                      }
+                      onChange={onTextareaChange}
+                      onSelect={onTextareaSelect}
+                      onKeyDown={onTextareaKeyDown}
+                    />
+                  </PromptInputBody>
+                  <PromptInputFooter>
+                    <PromptInputTools>
+                      <PromptInputSelect
+                        disabled={isStreaming || !!pendingCrawlInput}
+                        onValueChange={handleModelChange}
+                        value={model}
+                      >
+                        <PromptInputSelectTrigger className="border border-border">
+                          <ModelSelectorLogo provider="deepseek" className='size-4' />
+                          <PromptInputSelectValue />
+                        </PromptInputSelectTrigger>
+                        <PromptInputSelectContent>
+                          {modelOptions.map((option) => (
+                            <PromptInputSelectItem key={option} value={option}>
+                              {option}
+                            </PromptInputSelectItem>
+                          ))}
+                        </PromptInputSelectContent>
+                      </PromptInputSelect>
+                    </PromptInputTools>
+                    <PromptInputSubmit
+                      onStop={stop}
+                      status={status}
+                    />
+                  </PromptInputFooter>
+                </PromptInput>
+                <PageMentionPopover
+                  isOpen={mentionState.isOpen}
+                  filteredPages={filteredPages}
+                  highlightedIndex={highlightedIndex}
+                  onSelect={selectPage}
+                />
+              </div>
             </div>
           </div>
         </div>

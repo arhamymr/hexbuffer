@@ -16,6 +16,8 @@ export function HumanSelectionCard({
   onDismiss,
 }: HumanSelectionCardProps) {
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  // ponytail: store custom user typed option value
+  const [customText, setCustomText] = useState('');
 
   const toggleOption = (value: string) => {
     setSelected((prev) => {
@@ -36,8 +38,33 @@ export function HumanSelectionCard({
   };
 
   const handleSubmit = () => {
-    if (selected.size === 0) return;
-    onSubmit(Array.from(selected));
+    const finalValues: string[] = [];
+    selected.forEach((val) => {
+      if (val === '__custom__') {
+        if (customText.trim()) {
+          finalValues.push(customText.trim());
+        }
+      } else {
+        finalValues.push(val);
+      }
+    });
+    if (finalValues.length === 0) return;
+    onSubmit(finalValues);
+  };
+
+  const isSubmitDisabled = () => {
+    const hasPreset = Array.from(selected).some((v) => v !== '__custom__');
+    const hasCustomText = selected.has('__custom__') && customText.trim().length > 0;
+    return !hasPreset && !hasCustomText;
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      if (!isSubmitDisabled()) {
+        handleSubmit();
+      }
+    }
   };
 
   return (
@@ -99,13 +126,55 @@ export function HumanSelectionCard({
             </button>
           );
         })}
+
+        {/* ponytail: Custom typing option */}
+        <button
+          type="button"
+          onClick={() => toggleOption('__custom__')}
+          className={cn(
+            'flex w-full items-start gap-2 rounded-md border px-3 py-2 text-left transition-colors',
+            selected.has('__custom__')
+              ? 'border-blue-500/60 bg-blue-500/20 text-foreground'
+              : 'border-border bg-background/50 hover:bg-accent/50',
+          )}
+        >
+          <span
+            className={cn(
+              'mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-sm border transition-colors',
+              selected.has('__custom__')
+                ? 'border-blue-500 bg-blue-500 text-white'
+                : request.multiSelect
+                  ? 'border-muted-foreground/40 rounded'
+                  : 'border-muted-foreground/40 rounded-full',
+            )}
+          >
+            {selected.has('__custom__') && <CheckIcon className="h-3 w-3" />}
+          </span>
+          <div className="flex-1 min-w-0">
+            <span className="block font-medium text-xs">Other (type your own)</span>
+          </div>
+        </button>
       </div>
+
+      {selected.has('__custom__') && (
+        <div className="mt-2">
+          <input
+            type="text"
+            value={customText}
+            onChange={(e) => setCustomText(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Type your custom selection..."
+            className="w-full rounded-md border border-border bg-background px-3 py-2 text-xs focus:border-blue-500 focus:outline-none placeholder:text-muted-foreground/50"
+            autoFocus
+          />
+        </div>
+      )}
 
       <div className="mt-3 flex items-center gap-2">
         <Button
           size="sm"
           onClick={handleSubmit}
-          disabled={selected.size === 0}
+          disabled={isSubmitDisabled()}
           className="gap-1.5"
         >
           <CheckIcon className="h-3.5 w-3.5" />

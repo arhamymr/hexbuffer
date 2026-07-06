@@ -15,7 +15,7 @@ export interface RepeaterState {
   activeWorkspaceId: string;
 
   // Workspace CRUD
-  createWorkspace: (name?: string) => string;
+  createWorkspace: (name?: string, id?: string) => string;
   renameWorkspace: (id: string, name: string) => void;
   deleteWorkspace: (id: string) => void;
   setActiveWorkspaceId: (id: string) => void;
@@ -57,9 +57,9 @@ export const useRepeaterStore = create<RepeaterState>()(
 
       // ── Workspace CRUD ──
 
-      createWorkspace: (name) => {
+      createWorkspace: (name, id) => {
         const counter = getNextWorkspaceCounter(get().workspaces);
-        const ws = createWorkspaceTab(name, counter);
+        const ws = createWorkspaceTab(name, counter, id);
         set((s) => ({
           workspaces: [...s.workspaces, ws],
           activeWorkspaceId: ws.id,

@@ -86,6 +86,44 @@ export function usePageMentions() {
     [detectMention],
   );
 
+  const closePopover = useCallback(() => {
+    setMentionState({ isOpen: false, query: '', atPosition: -1 });
+    setHighlightedIndex(0);
+  }, []);
+
+  // Select a page: remove @query text, add page, close popover
+  const selectPage = useCallback(
+    (page: NavItem) => {
+      const value = controller.textInput.value;
+      const atPos = mentionState.atPosition;
+      const queryLen = mentionState.query.length;
+
+      // Remove "@query" from the text
+      const beforeAt = value.slice(0, atPos);
+      const afterQuery = value.slice(atPos + 1 + queryLen);
+      controller.textInput.setInput(beforeAt + afterQuery);
+
+      // Add page to mentioned pages (no duplicates)
+      setMentionedPages((prev) => {
+        if (prev.some((p) => p.href === page.href)) return prev;
+        return [...prev, page];
+      });
+
+      closePopover();
+
+      // Refocus textarea and set cursor at replacement point
+      requestAnimationFrame(() => {
+        const ta = textareaRef.current;
+        if (ta) {
+          ta.focus();
+          ta.setSelectionRange(atPos, atPos);
+          cursorRef.current = atPos;
+        }
+      });
+    },
+    [controller.textInput, mentionState.atPosition, mentionState.query, closePopover],
+  );
+
   // onKeyDown handler for popover keyboard navigation
   const onTextareaKeyDown = useCallback(
     (e: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -127,40 +165,7 @@ export function usePageMentions() {
         }
       }
     },
-    [mentionState.isOpen, filteredPages, highlightedIndex],
-  );
-
-  // Select a page: remove @query text, add page, close popover
-  const selectPage = useCallback(
-    (page: NavItem) => {
-      const value = controller.textInput.value;
-      const atPos = mentionState.atPosition;
-      const queryLen = mentionState.query.length;
-
-      // Remove "@query" from the text
-      const beforeAt = value.slice(0, atPos);
-      const afterQuery = value.slice(atPos + 1 + queryLen);
-      controller.textInput.setInput(beforeAt + afterQuery);
-
-      // Add page to mentioned pages (no duplicates)
-      setMentionedPages((prev) => {
-        if (prev.some((p) => p.href === page.href)) return prev;
-        return [...prev, page];
-      });
-
-      closePopover();
-
-      // Refocus textarea and set cursor at replacement point
-      requestAnimationFrame(() => {
-        const ta = textareaRef.current;
-        if (ta) {
-          ta.focus();
-          ta.setSelectionRange(atPos, atPos);
-          cursorRef.current = atPos;
-        }
-      });
-    },
-    [controller.textInput, mentionState.atPosition, mentionState.query],
+    [mentionState.isOpen, filteredPages, highlightedIndex, selectPage, closePopover],
   );
 
   const removeMentionedPage = useCallback((href: string) => {
@@ -169,11 +174,6 @@ export function usePageMentions() {
 
   const clearMentionedPages = useCallback(() => {
     setMentionedPages([]);
-  }, []);
-
-  const closePopover = useCallback(() => {
-    setMentionState({ isOpen: false, query: '', atPosition: -1 });
-    setHighlightedIndex(0);
   }, []);
 
   // Re-detect when controller value changes externally (e.g., after submit clear)

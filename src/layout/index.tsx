@@ -53,13 +53,13 @@ export function AppLayout({ children }: { children?: React.ReactNode }) {
     initInspectorListeners();
   }, [initInspectorListeners]);
 
-  // Drop bg-background when a custom background is active so BgLayer shows through
-  const rootBg = bgType === 'none' ? 'bg-background' : 'bg-transparent';
+  // // Drop bg-background when a custom background is active so BgLayer shows through
+  // const rootBg = bgType === 'none' ? 'bg-background' : 'bg-transparent';
 
   return (
     <ContextMenu>
       <ContextMenuTrigger asChild>
-        <div className={`flex h-screen flex-col border ${rootBg} relative overflow-hidden`}>
+        <div className={`flex h-screen flex-col bg-background relative overflow-hidden`}>
           <BgLayer />
           <div className="min-h-0 flex-1 relative z-10">
             <DesktopWorkspace activeChild={children} />

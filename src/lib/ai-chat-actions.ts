@@ -73,6 +73,8 @@ const actionLabels: Record<string, string> = {
   create_folder: 'Creating folder in collection',
   create_endpoint: 'Adding request to collection',
   select_endpoint: 'Opening request in Repeater',
+  list_workspaces: 'Listing workspaces',
+  list_collections: 'Listing collections',
 };
 
 let trackedActions: TrackedAction[] = [];
@@ -206,36 +208,37 @@ const handlers: Record<string, (payload: Record<string, unknown>) => void | Prom
   },
 
   create_workspace: (payload) => {
-    const { name } = payload as { name?: string };
-    orchCreateWorkspace(name);
+    const { name, id } = payload as { name?: string; id?: string };
+    orchCreateWorkspace(name, id);
     useNavStore.getState().triggerNavBlink('/repeater');
   },
 
   create_collection: async (payload) => {
-    const { workspaceId, name } = payload as { workspaceId: string; name: string };
-    await orchCreateCollection(workspaceId, name);
+    const { workspaceId, name, id } = payload as { workspaceId: string; name: string; id?: string };
+    await orchCreateCollection(workspaceId, name, id);
   },
 
   create_folder: async (payload) => {
-    const { parentId, name } = payload as { parentId: string; name: string };
-    await orchCreateFolder(parentId, name);
+    const { parentId, name, id } = payload as { parentId: string; name: string; id?: string };
+    await orchCreateFolder(parentId, name, id);
   },
 
   create_endpoint: async (payload) => {
-    const { collectionId, name, method, url, headers, body } = payload as {
+    const { collectionId, name, method, url, headers, body, id } = payload as {
       collectionId: string;
       name: string;
       method?: string;
       url?: string;
       headers?: Record<string, string>;
       body?: string;
+      id?: string;
     };
     const endpointId = await orchCreateEndpoint(collectionId, name, {
       method,
       url,
       headers,
       body,
-    });
+    }, id);
     orchSelectEndpoint(endpointId);
   },
 

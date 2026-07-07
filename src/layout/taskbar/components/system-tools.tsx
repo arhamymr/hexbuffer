@@ -7,7 +7,7 @@ import {
   ArrowUpIcon,
   DiamondIcon,
   DotsThreeIcon,
-  RobotIcon,
+  StarFourIcon,
 } from '@phosphor-icons/react';
 
 import { cn } from '@/lib/utils';
@@ -99,7 +99,7 @@ export function SystemTools({
             )}
             onClick={toggleAssistantWindow}
           >
-            <RobotIcon className="size-4" />
+            <StarFourIcon className="size-4" />
             {isAssistantOpen && (
               <span
                 className={cn(

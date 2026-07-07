@@ -48,7 +48,7 @@ const SqlInjectionPage = React.lazy(() =>
   import("@/pages/sql-injection").then((m) => ({ default: m.SqlInjectionPage }))
 );
 const DocumentsPage = React.lazy(() =>
-  import("@/pages/documents").then((m) => ({ default: m.DocumentsPage }))
+  import("@/pages/markdown").then((m) => ({ default: m.DocumentsPage }))
 );
 
 const BrowserAutomationPage = React.lazy(() =>
@@ -117,7 +117,7 @@ function AppRoutes() {
           <Route path="/xss-generator" element={<XssGeneratorPage />} />
           <Route path="/sql-injection" element={<SqlInjectionPage />} />
           <Route path="/documents" element={<DocumentsPage />} />
-          <Route path="/workflow" element={<WorkflowPage />} />
+          <Route path="/automation" element={<WorkflowPage />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/regression" element={<RegressionPage />} />
           <Route path="/assistant" element={<AssistantPage />} />

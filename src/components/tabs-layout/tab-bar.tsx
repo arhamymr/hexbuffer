@@ -1,5 +1,5 @@
 import { useCallback, type MouseEvent, type ReactNode } from 'react';
-import { WarningCircleIcon, CheckCircleIcon, SpinnerGapIcon, PlusIcon, XIcon } from '@phosphor-icons/react';
+import { WarningCircleIcon, CheckCircleIcon, SpinnerGapIcon, PlusIcon, XIcon, GearSixIcon } from '@phosphor-icons/react';
 import {
   ContextMenu,
   ContextMenuContent,
@@ -19,6 +19,7 @@ interface PageTabBarProps {
   onTabRename?: (id: string, name: string) => void;
   onTabClose?: (id: string) => void;
   onTabAdd?: () => void;
+  onTabManage?: () => void;
   onCloseTabsToLeft?: (id: string) => void;
   onCloseTabsToRight?: (id: string) => void;
   renderTabContextMenuItems?: (tab: PageTabItem) => ReactNode;
@@ -31,6 +32,7 @@ export function PageTabBar({
   onTabRename,
   onTabClose,
   onTabAdd,
+  onTabManage,
   onCloseTabsToLeft,
   onCloseTabsToRight,
   renderTabContextMenuItems,
@@ -212,6 +214,17 @@ export function PageTabBar({
               aria-label="Add tab"
             >
               <PlusIcon className="h-3.5 w-3.5" />
+            </button>
+          )}
+          {onTabManage && (
+            <button
+              type="button"
+              className="mb-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-t-md border text-muted-foreground hover:bg-muted hover:text-foreground"
+              onClick={onTabManage}
+              aria-label="Manage workspaces"
+              title="Manage Workspaces"
+            >
+              <GearSixIcon className="h-3.5 w-3.5" />
             </button>
           )}
         </div>

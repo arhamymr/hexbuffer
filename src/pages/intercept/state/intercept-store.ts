@@ -49,6 +49,7 @@ interface InterceptState {
   syncActiveScope: () => Promise<void>;
   toggleIntercept: (enabled: boolean) => Promise<void>;
   forwardSelectedRequest: () => Promise<void>;
+  forwardRequest: (request: PausedRequest) => Promise<void>;
   forwardRequestAndInterceptResponse: (request: PausedRequest) => Promise<void>;
   dropRequest: (request: PausedRequest) => Promise<void>;
 }
@@ -458,6 +459,47 @@ export const useInterceptStore = create<InterceptState>()(
 
             await orchForwardRequest(selectedRequest.id, parsedRequest);
             toast.success('Request forwarded');
+          }
+
+          await refresh();
+        } catch (error) {
+          toast.error(error instanceof Error ? error.message : 'Failed to forward intercepted item.');
+        } finally {
+          set({ isBusy: false });
+        }
+      },
+
+      forwardRequest: async (request) => {
+        const { rawRequest, selectedRequestId, refresh } = get();
+        set({ isBusy: true });
+
+        try {
+          if (request.id === selectedRequestId) {
+            if (request.response) {
+              const parsedResponse = parseRawHttpResponse(rawRequest);
+
+              if (!parsedResponse) {
+                throw new Error('Response is invalid.');
+              }
+
+              await orchForwardResponse(request.id, parsedResponse);
+              toast.success('Response forwarded');
+            } else {
+              const parsedRequest = parseRawHttpRequest(rawRequest, {
+                fallbackUrl: request.request.uri,
+              });
+
+              if (!parsedRequest) {
+                throw new Error('Request is invalid.');
+              }
+
+              await orchForwardRequest(request.id, parsedRequest);
+              toast.success('Request forwarded');
+            }
+          } else {
+            // ponytail: forward original paused request directly to minimize complexity
+            await forwardPausedItem(request);
+            toast.success(request.response ? 'Response forwarded' : 'Request forwarded');
           }
 
           await refresh();

@@ -15,7 +15,7 @@ const PortScannerPage = React.lazy(() => import("@/pages/port-scanner").then((m)
 const JwtPage = React.lazy(() => import("@/pages/jwt").then((m) => ({ default: m.JwtPage })));
 const XssGeneratorPage = React.lazy(() => import("@/pages/xss-generator").then((m) => ({ default: m.XssGeneratorPage })));
 const SqlInjectionPage = React.lazy(() => import("@/pages/sql-injection").then((m) => ({ default: m.SqlInjectionPage })));
-const DocumentsPage = React.lazy(() => import("@/pages/documents").then((m) => ({ default: m.DocumentsPage })));
+const DocumentsPage = React.lazy(() => import("@/pages/markdown").then((m) => ({ default: m.DocumentsPage })));
 const BrowserAutomationPage = React.lazy(() => import("@/pages/browser").then((m) => ({ default: m.BrowserAutomationPage })));
 const ListenerPage = React.lazy(() => import("@/pages/listener").then((m) => ({ default: m.ListenerPage })));
 const DebuggerPage = React.lazy(() => import("@/pages/debugger").then((m) => ({ default: m.DebuggerPage })));

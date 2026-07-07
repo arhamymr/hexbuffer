@@ -204,7 +204,7 @@ export function ScannerSidebar({
         {isRunning ? (
           <Button
             variant="destructive"
-            onClick={onStop}
+            onClick={() => onStop()}
             className="w-full h-9 text-xs font-medium gap-1.5 active:scale-[0.97] transition-all duration-150 relative overflow-hidden"
           >
             <SquareIcon className="h-3.5 w-3.5 fill-current animate-pulse" />
@@ -213,7 +213,7 @@ export function ScannerSidebar({
         ) : (
           <Button
             disabled={!canScan}
-            onClick={onStart}
+            onClick={() => onStart()}
             className="w-full h-9 text-xs font-medium gap-1.5 active:scale-[0.97] transition-all duration-150 disabled:opacity-50 disabled:active:scale-100 relative bg-primary hover:bg-primary/95 text-primary-foreground shadow-sm shadow-primary/20"
           >
             <PlayIcon className="h-3.5 w-3.5 fill-current" />

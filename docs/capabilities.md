@@ -51,7 +51,7 @@ A dedicated history of all WebSocket connections and downstream/upstream frames.
 
 ## 4. Workflow / Automation
 
-**Path:** `src/pages/automation/`
+**Path:** `src/pages/workflow/`
 
 A node-based automated testing workflow editor powered by `@xyflow/react`.
 

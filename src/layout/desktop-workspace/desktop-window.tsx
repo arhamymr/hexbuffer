@@ -29,6 +29,15 @@ const DesktopWindow = React.memo(function DesktopWindow({
 }: DesktopWindowProps) {
   const navigate = useNavigate();
   const location = useLocation();
+  const { id, title, isMinimized, isMaximized, position, size, zIndex } = win;
+  const [isHovered, setIsHovered] = React.useState(false);
+
+  React.useEffect(() => {
+    if (!isMinimized) {
+      setIsHovered(false);
+    }
+  }, [isMinimized]);
+
   // ponytail: individual selectors avoid full-store re-subscription
   const closeWindow = useNavStore((s) => s.closeWindow);
   const minimizeWindow = useNavStore((s) => s.minimizeWindow);
@@ -36,8 +45,6 @@ const DesktopWindow = React.memo(function DesktopWindow({
   const focusWindow = useNavStore((s) => s.focusWindow);
   const updateWindowPosition = useNavStore((s) => s.updateWindowPosition);
   const updateWindowSize = useNavStore((s) => s.updateWindowSize);
-
-  const { id, title, isMinimized, isMaximized, position, size, zIndex } = win;
 
   const navItem = React.useMemo(() => {
     return allNavItems.find((item) => item.href === id);
@@ -209,29 +216,52 @@ const DesktopWindow = React.memo(function DesktopWindow({
   const isCurrentRoute = location.pathname === id;
   const StaticComponent = pageComponentMap[id];
 
+  // ponytail: get index of current minimized window to offset them horizontally
+  const minimizedIndex = useNavStore((s) => {
+    const minimized = s.windows.filter((w) => w.isOpen && w.isMinimized);
+    return minimized.findIndex((w) => w.id === id);
+  });
+  const mIndex = minimizedIndex >= 0 ? minimizedIndex : 0;
+
+  const currentScale = isMinimized ? (isHovered ? 0.12 : 0.1) : 1;
+
   // ponytail: build className once, avoid cn() in hot path
-  const windowClassName = `absolute rounded-sm border flex flex-col overflow-hidden bg-background shadow-2xl select-text ${
-    isFocused ? "border-primary/60" : "border-border/40 shadow-none opacity-90"
-  } ${
+  const windowClassName = `absolute rounded-sm flex flex-col overflow-hidden bg-background shadow-2xl select-text pointer-events-auto ${
     isMinimized
-      ? "scale-95 opacity-0 pointer-events-none translate-y-8"
-      : "pointer-events-auto"
+      ? "cursor-pointer border-[3px] border-border/85"
+      : isFocused
+      ? "border border-primary/60"
+      : "border border-border/40 shadow-none opacity-90"
   } ${
-    isMaximized
+    isMaximized && !isMinimized
       ? "inset-x-0 top-0 bottom-0 rounded-none border-none !w-full !h-full !translate-x-0 !translate-y-0"
       : ""
-  } ${isDragging || isResizing ? "select-none" : ""}`;
+  } ${isDragging || isResizing ? "select-none" : "transition-all duration-200 ease-in-out"}`;
 
   return (
     <div
       ref={windowRef}
       onClick={handleWindowClick}
+      onMouseEnter={isMinimized ? () => setIsHovered(true) : undefined}
+      onMouseLeave={isMinimized ? () => setIsHovered(false) : undefined}
       // ponytail: prevent desktop context menu from triggering when right-clicking the window
       onContextMenu={(e) => e.stopPropagation()}
       className={windowClassName}
       style={
-        isMaximized
+        isMaximized && !isMinimized
           ? { zIndex }
+          : isMinimized
+          ? {
+              left: 0,
+              top: '100%',
+              transform: `translate(${mIndex * 120 + 4}px, ${-size.height * currentScale - 4}px) scale(${currentScale})`,
+              transformOrigin: 'top left',
+              width: size.width,
+              height: size.height,
+              zIndex: zIndex + 100,
+              willChange: "transform",
+              contain: "layout style",
+            }
           : {
               left: 0,
               top: 0,
@@ -244,6 +274,42 @@ const DesktopWindow = React.memo(function DesktopWindow({
             }
       }
     >
+      {/* Minimized Overlay to capture click and prevent inner interactions */}
+      {isMinimized && (
+        <div className="absolute inset-0 z-50 cursor-pointer bg-black/10 hover:bg-black/5 transition-colors flex items-center justify-center">
+          <div 
+            className="bg-background/95 p-2.5 rounded-full shadow-xl border border-border/60 flex items-center justify-center"
+            style={{ transform: 'scale(8)' }}
+          >
+            {navItem && (
+              <navItem.icon className="size-4 text-primary shrink-0" />
+            )}
+          </div>
+
+          {/* Close button for minimized window */}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              closeWindow(id, navigate);
+            }}
+            className="flex items-center justify-center rounded-full bg-red-500 hover:bg-red-600 text-white shadow-lg border border-background/40 transition-all active:scale-95 duration-100"
+            style={{ 
+              position: 'absolute',
+              top: `${6 / currentScale}px`,
+              right: `${6 / currentScale}px`,
+              width: '18px',
+              height: '18px',
+              transform: 'scale(7)',
+              transformOrigin: 'center',
+            }}
+            title="Close Window"
+          >
+            <XIcon className="size-2.5 stroke-[2.5]" />
+          </button>
+        </div>
+      )}
+
       {/* Window Header */}
       <div
         onMouseDown={handleMouseDown}
@@ -312,10 +378,23 @@ const DesktopWindow = React.memo(function DesktopWindow({
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
+                minimizeWindow(id, navigate);
+              }}
+              className="window-control-btn p-1.5 hover:bg-muted rounded-sm cursor-pointer active:scale-95 transition-all text-muted-foreground hover:text-foreground"
+              aria-label="Minimize"
+              title="Minimize"
+            >
+              <MinusIcon className="size-3.5" />
+            </button>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
                 maximizeWindow(id);
               }}
               className="window-control-btn p-1.5 hover:bg-muted rounded-sm cursor-pointer active:scale-95 transition-all text-muted-foreground hover:text-foreground"
               aria-label="Maximize"
+              title="Maximize"
             >
               {isMaximized ? (
                 <ArrowsInSimpleIcon className="size-3.5" />
@@ -323,7 +402,7 @@ const DesktopWindow = React.memo(function DesktopWindow({
                 <ArrowsOutSimpleIcon className="size-3.5" />
               )}
             </button>
-             <button
+            <button
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
@@ -331,6 +410,7 @@ const DesktopWindow = React.memo(function DesktopWindow({
               }}
               className="window-control-btn p-1.5 hover:bg-destructive/20 hover:text-destructive rounded-sm cursor-pointer active:scale-95 transition-all"
               aria-label="Close"
+              title="Close"
             >
               <XIcon className="size-3.5" />
             </button>
@@ -352,8 +432,8 @@ const DesktopWindow = React.memo(function DesktopWindow({
         />
       </div>
 
-      {/* Resize Handle (only show when not maximized) */}
-      {!isMaximized && (
+      {/* Resize Handle (only show when not maximized and not minimized) */}
+      {!isMaximized && !isMinimized && (
         <div
           onMouseDown={handleResizeMouseDown}
           className="absolute bottom-0 right-0 z-30 size-4 cursor-se-resize flex items-end justify-end p-0.5"

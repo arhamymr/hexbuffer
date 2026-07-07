@@ -1,4 +1,5 @@
-import { WarningCircleIcon } from '@phosphor-icons/react';
+import { useState } from 'react';
+import { WarningCircleIcon, CopyIcon, CheckIcon } from '@phosphor-icons/react';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -10,6 +11,11 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import {
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+} from '@/components/ui/resizable';
 import type { SqliVulnerability, SqliTechnique } from '../types';
 import { TECHNIQUE_LABELS, SEVERITY_COLORS } from '../constants';
 
@@ -28,120 +34,186 @@ export function VulnerabilitiesTab({
   selectedVulnData,
   onSelectVuln,
 }: VulnerabilitiesTabProps) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopyPoC = () => {
+    if (!selectedVulnData?.poc_request) return;
+    navigator.clipboard.writeText(selectedVulnData.poc_request);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  // ponytail: Simple empty state.
   if (vulnerabilities.length === 0 && !isRunning) {
     return (
-      <div className="h-full flex flex-col items-center justify-center gap-2 text-muted-foreground">
-        <WarningCircleIcon className="h-8 w-8 text-muted-foreground/55" />
-        <p className="text-xs">No vulnerabilities found. Configure target and start scan.</p>
+      <div className="h-full flex flex-col items-center justify-center gap-2 text-muted-foreground select-none">
+        <WarningCircleIcon className="h-10 w-10 text-muted-foreground/35" />
+        <span className="text-xs font-semibold">No vulnerabilities detected</span>
+        <span className="text-[10px] text-muted-foreground/60 text-center max-w-[240px]">
+          Configure parameters, select injection methods, and start scanning to identify weaknesses.
+        </span>
       </div>
     );
   }
 
   return (
-    <div className="flex-1 min-h-0 flex">
-      <ScrollArea className="flex-1 border-r">
-        <Table className="text-xs">
-          <TableHeader className="sticky top-0 z-10 bg-background">
-            <TableRow className="hover:bg-transparent">
-              <TableHead className="h-8 py-0">Parameter</TableHead>
-              <TableHead className="h-8 py-0">Location</TableHead>
-              <TableHead className="h-8 py-0">Technique</TableHead>
-              <TableHead className="h-8 py-0">DBMS</TableHead>
-              <TableHead className="h-8 py-0">Severity</TableHead>
-              <TableHead className="h-8 py-0">PoC</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {vulnerabilities.map(vuln => (
-              <TableRow
-                key={vuln.id}
-                className={`hover:bg-muted/30 cursor-pointer ${selectedVuln === vuln.id ? 'bg-muted/65' : ''}`}
-                onClick={() => onSelectVuln(vuln.id)}
-              >
-                <TableCell className="font-mono py-1">{vuln.param_name}</TableCell>
-                <TableCell className="py-1">{vuln.param_location}</TableCell>
-                <TableCell className="py-1">{vuln.technique.replace('_', ' ')}</TableCell>
-                <TableCell className="py-1">{vuln.dbms}</TableCell>
-                <TableCell className="py-1">
-                  <Badge
-                    variant="outline"
-                    className={`text-[9px] px-1 py-0 h-4 uppercase ${SEVERITY_COLORS[vuln.severity]}`}
-                  >
-                    {vuln.severity}
-                  </Badge>
-                </TableCell>
-                <TableCell
-                  className="font-mono text-[11px] py-1 truncate max-w-[120px]"
-                  title={vuln.poc_request}
-                >
-                  {vuln.poc_request}
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </ScrollArea>
+    <div className="flex-1 min-h-0 h-full flex flex-col bg-background">
+      <ResizablePanelGroup orientation="horizontal" className="h-full w-full">
+        {/* Vulnerabilities Table Panel */}
+        <ResizablePanel defaultSize={68} minSize={40} className="flex flex-col h-full">
+          <ScrollArea className="flex-1 min-h-0">
+            <Table className="text-xs border-b">
+              <TableHeader className="sticky top-0 z-10 bg-muted/95 border-b backdrop-blur-sm shadow-sm select-none">
+                <TableRow className="hover:bg-transparent">
+                  <TableHead className="h-9 py-0 font-bold text-muted-foreground uppercase text-[10px] tracking-wider">Parameter</TableHead>
+                  <TableHead className="h-9 py-0 font-bold text-muted-foreground uppercase text-[10px] tracking-wider">Location</TableHead>
+                  <TableHead className="h-9 py-0 font-bold text-muted-foreground uppercase text-[10px] tracking-wider">Technique</TableHead>
+                  <TableHead className="h-9 py-0 font-bold text-muted-foreground uppercase text-[10px] tracking-wider">DBMS</TableHead>
+                  <TableHead className="h-9 py-0 font-bold text-muted-foreground uppercase text-[10px] tracking-wider">Severity</TableHead>
+                  <TableHead className="h-9 py-0 font-bold text-muted-foreground uppercase text-[10px] tracking-wider">PoC Payload</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {vulnerabilities.map(vuln => {
+                  const isSelected = selectedVuln === vuln.id;
+                  return (
+                    <TableRow
+                      key={vuln.id}
+                      className={`hover:bg-muted/30 cursor-pointer border-b transition-colors ${
+                        isSelected ? 'bg-muted/65 font-medium' : ''
+                      }`}
+                      onClick={() => onSelectVuln(vuln.id)}
+                    >
+                      <TableCell className="font-mono py-1.5 font-semibold text-foreground max-w-[120px] truncate">{vuln.param_name}</TableCell>
+                      <TableCell className="py-1.5 text-muted-foreground uppercase text-[10px] font-bold">{vuln.param_location}</TableCell>
+                      <TableCell className="py-1.5 text-muted-foreground">
+                        {TECHNIQUE_LABELS[vuln.technique as SqliTechnique] || vuln.technique.replace('_', ' ')}
+                      </TableCell>
+                      <TableCell className="py-1.5 font-medium">{vuln.dbms}</TableCell>
+                      <TableCell className="py-1.5">
+                        <Badge
+                          variant="outline"
+                          className={`text-[9px] font-extrabold tracking-wide uppercase px-1.5 py-0 h-4 rounded-full select-none ${
+                            SEVERITY_COLORS[vuln.severity] || ''
+                          }`}
+                        >
+                          {vuln.severity}
+                        </Badge>
+                      </TableCell>
+                      <TableCell
+                        className="font-mono text-[10px] py-1.5 truncate max-w-[160px] text-muted-foreground"
+                        title={vuln.poc_request}
+                      >
+                        {vuln.poc_request}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </ScrollArea>
+        </ResizablePanel>
 
-      {selectedVulnData && (
-        <div className="w-72 flex flex-col shrink-0 border-l">
-          <div className="p-2 border-b bg-muted/10">
-            <span className="text-[11px] font-semibold uppercase text-muted-foreground tracking-wider">
-              Details
-            </span>
-          </div>
-          <ScrollArea className="flex-1 p-3">
-            <div className="space-y-3 text-xs">
-              <div>
-                <Label className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider block">
-                  Parameter
-                </Label>
-                <p className="font-mono text-xs font-semibold">
-                  {selectedVulnData.param_name} ({selectedVulnData.param_location})
-                </p>
-              </div>
-              <div>
-                <Label className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider block">
-                  Technique
-                </Label>
-                <p>{TECHNIQUE_LABELS[selectedVulnData.technique as SqliTechnique]}</p>
-              </div>
-              <div>
-                <Label className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider block">
-                  DBMS
-                </Label>
-                <p>{selectedVulnData.dbms}</p>
-              </div>
-              <div>
-                <Label className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider block">
-                  Severity
-                </Label>
+        {selectedVulnData && (
+          <>
+            <ResizableHandle withHandle />
+            
+            {/* Vulnerability Details Panel */}
+            <ResizablePanel defaultSize={32} minSize={20} className="flex flex-col h-full bg-card/45">
+              <div className="flex h-9 shrink-0 items-center justify-between border-b bg-muted/15 px-3 select-none">
+                <span className="text-[10px] font-bold uppercase text-muted-foreground tracking-wider">
+                  Vulnerability Details
+                </span>
                 <Badge
                   variant="outline"
-                  className={`text-[9px] px-1.5 py-0 h-4 uppercase mt-0.5 ${SEVERITY_COLORS[selectedVulnData.severity]}`}
+                  className={`text-[8px] font-black uppercase px-2 py-0 h-4 rounded-full ${
+                    SEVERITY_COLORS[selectedVulnData.severity]
+                  }`}
                 >
                   {selectedVulnData.severity}
                 </Badge>
               </div>
-              <div>
-                <Label className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider block">
-                  FingerprintIcon
-                </Label>
-                <p className="font-mono text-[10px] bg-muted/10 p-1 rounded break-all">
-                  {selectedVulnData.fingerprint}
-                </p>
-              </div>
-              <div>
-                <Label className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider block">
-                  Proof of Concept
-                </Label>
-                <pre className="mt-1 p-2 bg-muted/20 border rounded text-[10px] font-mono whitespace-pre-wrap break-all max-h-36 overflow-auto">
-                  {selectedVulnData.poc_request}
-                </pre>
-              </div>
-            </div>
-          </ScrollArea>
-        </div>
-      )}
+              
+              <ScrollArea className="flex-1 min-h-0">
+                <div className="p-4 space-y-4 text-xs">
+                  {/* Parameter & Location */}
+                  <div className="space-y-1">
+                    <Label className="text-[10px] text-muted-foreground/75 font-semibold uppercase tracking-wider block">
+                      Vulnerable Target
+                    </Label>
+                    <p className="font-mono text-xs font-semibold text-foreground flex items-center gap-1.5">
+                      <span>{selectedVulnData.param_name}</span>
+                      <span className="text-[10px] text-muted-foreground uppercase bg-muted/50 border px-1 rounded-sm leading-none py-0.5">
+                        {selectedVulnData.param_location}
+                      </span>
+                    </p>
+                  </div>
+
+                  {/* Technique */}
+                  <div className="space-y-1">
+                    <Label className="text-[10px] text-muted-foreground/75 font-semibold uppercase tracking-wider block">
+                      Attack Vector (Technique)
+                    </Label>
+                    <p className="font-medium text-foreground">
+                      {TECHNIQUE_LABELS[selectedVulnData.technique as SqliTechnique] || selectedVulnData.technique}
+                    </p>
+                  </div>
+
+                  {/* DBMS */}
+                  <div className="space-y-1">
+                    <Label className="text-[10px] text-muted-foreground/75 font-semibold uppercase tracking-wider block">
+                      Database Management System
+                    </Label>
+                    <p className="font-semibold text-foreground">
+                      {selectedVulnData.dbms}
+                    </p>
+                  </div>
+
+                  {/* Database Fingerprint */}
+                  <div className="space-y-1">
+                    <Label className="text-[10px] text-muted-foreground/75 font-semibold uppercase tracking-wider block">
+                      DBMS Fingerprint
+                    </Label>
+                    <div className="font-mono text-[10px] text-foreground bg-muted/15 border p-2 rounded-md break-all leading-relaxed">
+                      {selectedVulnData.fingerprint || 'No fingerprint returned.'}
+                    </div>
+                  </div>
+
+                  {/* Proof of Concept Request */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-[10px] text-muted-foreground/75 font-semibold uppercase tracking-wider block">
+                        Proof of Concept Payload
+                      </Label>
+                      <button
+                        onClick={handleCopyPoC}
+                        className={`flex items-center gap-1 text-[10px] font-medium border px-1.5 py-0.5 rounded transition-all hover:bg-muted/50 ${
+                          copied ? 'border-green-500/20 text-green-600 bg-green-500/5' : 'text-muted-foreground'
+                        }`}
+                      >
+                        {copied ? (
+                          <>
+                            <CheckIcon className="h-3 w-3" />
+                            Copied
+                          </>
+                        ) : (
+                          <>
+                            <CopyIcon className="h-3 w-3" />
+                            Copy Payload
+                          </>
+                        )}
+                      </button>
+                    </div>
+                    <pre className="p-2.5 bg-muted/20 border rounded-md text-[10px] font-mono whitespace-pre-wrap break-all max-h-48 overflow-y-auto leading-relaxed text-muted-foreground">
+                      {selectedVulnData.poc_request}
+                    </pre>
+                  </div>
+                </div>
+              </ScrollArea>
+            </ResizablePanel>
+          </>
+        )}
+      </ResizablePanelGroup>
     </div>
   );
 }

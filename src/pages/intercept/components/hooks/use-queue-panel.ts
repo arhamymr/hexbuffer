@@ -12,6 +12,7 @@ export function useQueuePanel() {
   const isBusy = useInterceptStore((state) => state.isBusy);
   const setSelectedRequestId = useInterceptStore((state) => state.setSelectedRequestId);
   const forwardSelectedRequest = useInterceptStore((state) => state.forwardSelectedRequest);
+  const forwardRequest = useInterceptStore((state) => state.forwardRequest);
   const forwardRequestAndInterceptResponse = useInterceptStore(
     (state) => state.forwardRequestAndInterceptResponse
   );
@@ -39,6 +40,13 @@ export function useQueuePanel() {
   const handleForward = React.useCallback(() => {
     void forwardSelectedRequest();
   }, [forwardSelectedRequest]);
+
+  const handleForwardRequest = React.useCallback(
+    (request: PausedRequest) => {
+      void forwardRequest(request);
+    },
+    [forwardRequest]
+  );
 
   const handleInterceptResponse = React.useCallback(
     (request: PausedRequest) => {
@@ -88,6 +96,7 @@ export function useQueuePanel() {
     setSelectedRequestId,
     getRequestMeta,
     handleForward,
+    handleForwardRequest,
     handleInterceptResponse,
     handleDrop,
     handleDontCapture,

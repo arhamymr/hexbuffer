@@ -11,10 +11,14 @@ import {
   closeWorkspacesToLeft,
   closeWorkspacesToRight,
 } from '@/triggers/repeater';
+import { toast } from 'sonner';
 
 export function useRepeaterPage() {
   const workspaces = useRepeaterStore((s) => s.workspaces);
   const activeWorkspaceId = useRepeaterStore((s) => s.activeWorkspaceId);
+
+  const [isManageDialogOpen, setIsManageDialogOpen] = React.useState(false);
+  const [workspaceToDeleteId, setWorkspaceToDeleteId] = React.useState<string | null>(null);
 
   const stashes = useCollectionsStore((s) => s.stashes);
   const isHydrated = useCollectionsStore((s) => s.isHydrated);
@@ -79,9 +83,21 @@ export function useRepeaterPage() {
   );
 
   const onTabClose = React.useCallback(
-    (id: string) => deleteWorkspace(id),
-    [],
+    (id: string) => {
+      if (workspaces.length <= 1) {
+        toast.error('Cannot delete the last remaining workspace');
+        return;
+      }
+      setWorkspaceToDeleteId(id);
+      setIsManageDialogOpen(true);
+    },
+    [workspaces.length],
   );
+
+  const onTabManage = React.useCallback(() => {
+    setWorkspaceToDeleteId(null);
+    setIsManageDialogOpen(true);
+  }, []);
 
   const onTabAdd = React.useCallback(() => {
     createWorkspace();
@@ -121,5 +137,10 @@ export function useRepeaterPage() {
     onTabAdd,
     onCloseTabsToLeft,
     onCloseTabsToRight,
+    isManageDialogOpen,
+    setIsManageDialogOpen,
+    workspaceToDeleteId,
+    setWorkspaceToDeleteId,
+    onTabManage,
   };
 }

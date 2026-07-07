@@ -1,7 +1,9 @@
 use std::{
     io::{BufRead, BufReader},
-    process::{Command, Stdio},
+    process::{Command, Stdio, Child},
     thread,
+    sync::{Mutex, OnceLock},
+    collections::HashMap,
 };
 
 #[cfg(unix)]
@@ -13,6 +15,12 @@ use tauri_plugin_shell::ShellExt;
 use uuid::Uuid;
 
 use crate::db::repository::Database;
+
+static RUNNING_PROCESSES: OnceLock<Mutex<HashMap<String, Child>>> = OnceLock::new();
+
+fn get_running_processes() -> &'static Mutex<HashMap<String, Child>> {
+    RUNNING_PROCESSES.get_or_init(|| Mutex::new(HashMap::new()))
+}
 
 /// Spawn the AI engine sidecar in regression mode and relay its stdout events
 /// to the Tauri frontend in real time.
@@ -101,6 +109,8 @@ pub async fn run_regression_test(
         .stdout
         .take()
         .ok_or_else(|| "Failed to capture sidecar stdout".to_string())?;
+
+    get_running_processes().lock().unwrap().insert(run_id.clone(), child);
 
     let app_clone = app.clone();
     let run_id_clone = run_id.clone();
@@ -210,6 +220,8 @@ pub async fn run_regression_test(
                 }
             }
         }
+        // Remove process from active map on completion
+        get_running_processes().lock().unwrap().remove(&run_id_clone);
     });
 
     Ok(serde_json::json!({
@@ -217,6 +229,32 @@ pub async fn run_regression_test(
         "testCaseId": test_case_id,
         "status": "queued",
     }))
+}
+
+/// Abort a running regression test sidecar process.
+#[tauri::command]
+pub async fn abort_regression_test(app: AppHandle, run_id: String) -> Result<(), String> {
+    if let Some(mut child) = get_running_processes().lock().unwrap().remove(&run_id) {
+        let _ = child.kill();
+        
+        if let Some(db) = app.try_state::<Database>() {
+            let _ = db.finish_regression_run(
+                &run_id,
+                "aborted",
+                "[]",
+                None,
+                Some("Aborted by user"),
+            );
+        }
+        let _ = app.emit("regression:test-finished", serde_json::json!({
+            "runId": run_id,
+            "status": "aborted",
+            "stepResults": [],
+            "aiVerdict": null,
+            "error": "Aborted by user"
+        }));
+    }
+    Ok(())
 }
 
 #[tauri::command]

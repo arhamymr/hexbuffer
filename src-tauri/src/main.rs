@@ -318,6 +318,7 @@ fn main() {
             hexbuffer::commands::regression::list_regression_runs,
             hexbuffer::commands::regression::scrape_page_for_steps,
             hexbuffer::commands::regression::run_regression_step,
+            hexbuffer::commands::regression::abort_regression_test,
             show_main_window,
             safe_start_dragging,
         ])

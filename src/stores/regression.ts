@@ -33,6 +33,7 @@ interface RegressionState {
   runSingleStep: (testCaseId: string, stepIndex: number) => Promise<StepResult | null>;
   runAll: (testCaseIds: string[]) => Promise<void>;
   stopQueue: () => void;
+  abortTest: () => Promise<void>;
 
   // Internal
   _startListening: () => Promise<void>;
@@ -143,6 +144,20 @@ export const useRegressionStore = create<RegressionState>()((set, get) => ({
 
   stopQueue: () => {
     set({ queue: [] });
+  },
+
+  abortTest: async () => {
+    const activeRun = get().activeRun;
+    if (!activeRun) return;
+    try {
+      await invoke('abort_regression_test', { runId: activeRun.runId });
+      set({
+        activeRun: { ...activeRun, status: 'aborted' },
+        queue: [],
+      });
+    } catch (error) {
+      console.error('Failed to abort test:', error);
+    }
   },
 
   _startListening: async () => {

@@ -1,4 +1,4 @@
-import { RobotIcon, CheckCircleIcon, CaretDownIcon, CircleIcon, SpinnerGapIcon, SidebarIcon, ShieldWarningIcon, TriangleIcon, XIcon, XCircleIcon } from '@phosphor-icons/react';
+import { CheckCircleIcon, CaretDownIcon, CircleIcon, SpinnerGapIcon, SidebarIcon, ShieldWarningIcon, TriangleIcon, XIcon, XCircleIcon, StarFourIcon } from '@phosphor-icons/react';
 import { useCallback } from 'react';
 import type { FileUIPart } from 'ai';
 import { Badge } from '@/components/ui/badge';
@@ -193,7 +193,7 @@ function AIAssistantPaneContent({ onClose }: { onClose?: () => void }) {
                         <MessageContent>
                           {label ? (
                             <div className="flex items-center gap-2">
-                              <RobotIcon className="h-4 w-4 shrink-0" />
+                              <StarFourIcon className="h-4 w-4 shrink-0" />
                               <Badge variant="outline" className="max-w-full truncate">
                                 {label}
                               </Badge>

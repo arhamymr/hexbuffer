@@ -4,19 +4,19 @@ import {
   deleteDocumentFromDb,
   loadDocumentsFromDb,
   saveDocumentToDb,
-} from '@/pages/documents/api';
+} from '@/pages/markdown/api';
 import {
   createDocument,
   createEmptySections,
   type ReconDocument,
   type SavedApiEntry,
   type CustomSection,
-} from '@/pages/documents/types';
+} from '@/pages/markdown/types';
 import {
   DOCUMENT_SECTION_DEFINITIONS,
   type DocumentSectionKey,
   type DocumentTemplateId,
-} from '@/pages/documents/constants';
+} from '@/pages/markdown/constants';
 
 interface DocumentsState {
   documents: ReconDocument[];
@@ -184,8 +184,8 @@ export const useDocumentsStore = create<DocumentsState>()(
               existingIndex === -1
                 ? [nextEntry, ...document.apiEntries]
                 : document.apiEntries.map((apiEntry, index) =>
-                    index === existingIndex ? { ...nextEntry, id: apiEntry.id } : apiEntry
-                  );
+                  index === existingIndex ? { ...nextEntry, id: apiEntry.id } : apiEntry
+                );
 
             updatedDocument = {
               ...document,

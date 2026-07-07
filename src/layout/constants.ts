@@ -1,5 +1,5 @@
 import React from 'react';
-import { HouseIcon, ArrowsDownUpIcon, CubeIcon, BugIcon, PauseCircleIcon, ArrowsClockwiseIcon, PinwheelIcon, SwordIcon, FlaskIcon, BinaryIcon, AppWindowIcon, FileTextIcon, DatabaseIcon, ShieldCheckIcon, CatIcon, KeyIcon, FingerprintIcon, GearSixIcon, GitDiffIcon, NetworkIcon, LightningIcon, ListIcon, RobotIcon, NoteIcon, CloudArrowUpIcon, WifiHighIcon, SpinnerIcon, BlueprintIcon } from '@phosphor-icons/react';
+import { HouseIcon, ArrowsDownUpIcon, BugIcon, PauseCircleIcon, SwordIcon, FlaskIcon, BinaryIcon, AppWindowIcon, DatabaseIcon, FingerprintIcon, GearSixIcon, GitDiffIcon, NetworkIcon, LightningIcon, NoteIcon, WifiHighIcon, SpinnerIcon, BlueprintIcon, MarkdownLogoIcon, InfinityIcon, StarFourIcon, CloverIcon, CubeFocusIcon } from '@phosphor-icons/react';
 
 export interface NavItem {
   label: string;
@@ -64,7 +64,7 @@ export const allNavItems: NavItem[] = [
   },
   {
     label: 'AI Assistant',
-    icon: RobotIcon,
+    icon: StarFourIcon,
     href: '/assistant',
     description: 'Interact with AI to analyze web traffic and write exploits.',
     colors: { bg: 'bg-violet-500 dark:bg-violet-500', hoverBg: 'group-hover:bg-violet-500 dark:group-hover:bg-violet-500', border: 'border-violet-500 dark:border-violet-500' },
@@ -80,7 +80,7 @@ export const allNavItems: NavItem[] = [
   },
   {
     label: 'Invoker',
-    icon: SwordIcon,
+    icon: CubeFocusIcon,
     href: '/invoker',
     description: 'Generate client-side requests, perform attacks, and trigger endpoints.',
     colors: { bg: 'bg-indigo-500 dark:bg-indigo-500', hoverBg: 'group-hover:bg-indigo-500 dark:group-hover:bg-indigo-500', border: 'border-indigo-500 dark:border-indigo-500' },
@@ -88,7 +88,7 @@ export const allNavItems: NavItem[] = [
   },
   {
     label: 'Repeater',
-    icon: ArrowsClockwiseIcon,
+    icon: InfinityIcon,
     href: '/repeater',
     description: 'Modify HTTP requests, reissue them, and analyze responses side-by-side.',
     colors: { bg: 'bg-cyan-500 dark:bg-cyan-500', hoverBg: 'group-hover:bg-cyan-500 dark:group-hover:bg-cyan-500', border: 'border-cyan-500 dark:border-cyan-500' },
@@ -103,8 +103,8 @@ export const allNavItems: NavItem[] = [
     flag: 'beta'
   },
   {
-    label: 'Documents',
-    icon: FileTextIcon,
+    label: 'Markdown',
+    icon: MarkdownLogoIcon,
     href: '/documents',
     description: 'Create markdown documents, API definitions, and manage target scopes.',
     colors: { bg: 'bg-orange-500 dark:bg-orange-500', hoverBg: 'group-hover:bg-orange-500 dark:group-hover:bg-orange-500', border: 'border-orange-500 dark:border-orange-500' },
@@ -144,10 +144,10 @@ export const allNavItems: NavItem[] = [
   },
   {
     label: 'JWT',
-    icon: KeyIcon,
+    icon: CloverIcon,
     href: '/jwt',
     description: 'Decode, edit, and sign JSON Web Tokens.',
-    colors: { bg: 'bg-lime-500 dark:bg-lime-500', hoverBg: 'group-hover:bg-lime-500 dark:group-hover:bg-lime-500', border: 'border-lime-500 dark:border-lime-500' },
+    colors: { bg: 'bg-lime-700 dark:bg-lime-700', hoverBg: 'group-hover:bg-lime-700 dark:group-hover:bg-lime-700', border: 'border-lime-700 dark:border-lime-700' },
     flag: 'release'
   },
   {

@@ -14,8 +14,6 @@ import {
   BroadcastIcon,
   SpinnerGapIcon,
   CheckCircleIcon,
-  CopyIcon,
-  DownloadIcon,
   TrashIcon,
 } from '@phosphor-icons/react';
 import type { PortScanResult } from '../types';
@@ -31,9 +29,6 @@ interface ScanResultsProps {
   target: string;
   concurrency: string;
   onClear: () => void;
-  onCopyPorts: () => void;
-  onExportJson: () => void;
-  onExportCsv: () => void;
   onQuickStart: (preset: PortPreset) => void;
 }
 
@@ -47,9 +42,6 @@ export function ScanResults({
   target,
   concurrency,
   onClear,
-  onCopyPorts,
-  onExportJson,
-  onExportCsv,
   onQuickStart,
 }: ScanResultsProps) {
   // ponytail: calculate percentage in-line safely
@@ -127,7 +119,7 @@ export function ScanResults({
                 Scanning target: <code className="text-primary font-mono text-[11px] bg-primary/10 px-1 py-0.5 rounded">{target || 'N/A'}</code>
               </span>
             </div>
-            <Badge variant="secondary" className="text-[10px] font-mono h-5 py-0 px-2">
+            <Badge variant="secondary">
               {percent}% Complete
             </Badge>
           </div>
@@ -181,43 +173,12 @@ export function ScanResults({
             <span className="text-xs font-semibold text-foreground">
               Scan completed on <code className="font-mono text-[11px] text-muted-foreground">{target}</code>
             </span>
-            <Badge variant="outline" className="text-[10px] border-emerald-500/20 text-emerald-600 dark:text-emerald-400 bg-emerald-500/5">
+            <Badge variant="outline">
               {openResults.length} Open Ports
             </Badge>
           </div>
 
           <div className="flex items-center gap-1.5">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onCopyPorts}
-              disabled={!hasResults}
-              className="h-7 text-xs gap-1 px-2.5 active:scale-[0.97] transition-all"
-            >
-              <CopyIcon className="h-3.5 w-3.5" />
-              Copy
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onExportJson}
-              disabled={!hasResults}
-              className="h-7 text-xs gap-1 px-2.5 active:scale-[0.97] transition-all"
-            >
-              <DownloadIcon className="h-3.5 w-3.5" />
-              JSON
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onExportCsv}
-              disabled={!hasResults}
-              className="h-7 text-xs gap-1 px-2.5 active:scale-[0.97] transition-all"
-            >
-              <DownloadIcon className="h-3.5 w-3.5" />
-              CSV
-            </Button>
-            <div className="h-4 w-px bg-border mx-0.5" />
             <Button
               variant="ghost"
               size="icon"
@@ -274,10 +235,7 @@ export function ScanResults({
                       <TableCell className="font-mono py-2 font-medium">{result.host}</TableCell>
                       <TableCell className="font-mono py-2 font-semibold text-primary">{result.port}</TableCell>
                       <TableCell className="py-2">
-                        <Badge
-                          variant="outline"
-                          className="text-[9px] font-normal tracking-wide h-4 px-1.5 border-emerald-500/20 text-emerald-600 bg-emerald-500/5 select-none"
-                        >
+                        <Badge variant="outline">
                           {result.state}
                         </Badge>
                       </TableCell>

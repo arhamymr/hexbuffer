@@ -1,7 +1,7 @@
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 import { useAutomationStore, type WorkflowContext } from '@/stores/automation';
 import type { CrawlPage } from '@/pages/browser/types';
-import type { TriggerConfig, WorkflowDef } from '@/pages/automation/types';
+import type { TriggerConfig, WorkflowDef } from '@/pages/workflow/types';
 import { parseHostWhitelist } from '@/triggers/live-traffic/captured';
 
 const PAGE_CRAWLED_TRIGGER_TYPE = 'trigger:browser-page-crawled';

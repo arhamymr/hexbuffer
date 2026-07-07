@@ -14,7 +14,7 @@ import {
   type PayloadConfig,
 } from '@/pages/invoker/types';
 import type { ProxyRecord } from '@/types';
-import type { TriggerConfig, WorkflowDef } from '@/pages/automation/types';
+import type { TriggerConfig, WorkflowDef } from '@/pages/workflow/types';
 
 const LIVE_TRAFFIC_TRIGGER_TYPE = 'trigger:live-traffic-captured';
 

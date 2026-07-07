@@ -1,4 +1,4 @@
-import { FlaskIcon, ListChecksIcon, PlayIcon, PlusIcon, PlayCircleIcon, SquareIcon } from '@phosphor-icons/react';
+import { FlaskIcon, ListChecksIcon, PlayIcon, PlayCircleIcon, SquareIcon } from '@phosphor-icons/react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -15,9 +15,9 @@ export function RegressionHeader({
   totalRuns,
   isRunning,
   activeTab,
-  onCreate,
   onRunAll,
   onRun,
+  onAbort,
   queue,
   onStopQueue,
 }: {
@@ -31,9 +31,9 @@ export function RegressionHeader({
   totalRuns: number;
   isRunning: boolean;
   activeTab: { isEditing?: boolean } | null;
-  onCreate: () => void;
   onRunAll: () => void;
   onRun: () => void;
+  onAbort: () => void;
   queue: string[];
   onStopQueue: () => void;
 }) {
@@ -74,10 +74,6 @@ export function RegressionHeader({
           <Badge variant="outline" className="h-7 rounded-sm bg-background text-xs text-muted-foreground/80 font-medium">
             {activeTabRunCount || totalRuns} run{(activeTabRunCount || totalRuns) !== 1 ? 's' : ''}
           </Badge>
-          <Button variant="outline" onClick={onCreate} className="active:scale-[0.97] transition-transform">
-            <PlusIcon className="size-4" />
-            New
-          </Button>
           {isQueueActive ? (
             <Button
               variant="destructive"
@@ -98,14 +94,25 @@ export function RegressionHeader({
               Run All
             </Button>
           )}
-          <Button
-            onClick={onRun}
-            disabled={isRunning || !activeTabTestCase || activeTab?.isEditing}
-            className="active:scale-[0.97] transition-transform gap-1.5"
-          >
-            <PlayIcon className="size-4 fill-current" />
-            Run
-          </Button>
+          {isRunning ? (
+            <Button
+              variant="destructive"
+              onClick={onAbort}
+              className="active:scale-[0.97] transition-transform gap-1.5"
+            >
+              <SquareIcon className="size-4 fill-current" />
+              Stop
+            </Button>
+          ) : (
+            <Button
+              onClick={onRun}
+              disabled={!activeTabTestCase || activeTab?.isEditing}
+              className="active:scale-[0.97] transition-transform gap-1.5"
+            >
+              <PlayIcon className="size-4 fill-current" />
+              Run
+            </Button>
+          )}
         </div>
       </div>
     </header>

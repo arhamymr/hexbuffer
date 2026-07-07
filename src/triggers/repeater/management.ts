@@ -41,7 +41,16 @@ export function renameWorkspace(id: string, name: string): void {
  * 
  * @param id The ID of the workspace to delete.
  */
-export function deleteWorkspace(id: string): void {
+export async function deleteWorkspace(id: string): Promise<void> {
+  const collectionsStore = useCollectionsStore.getState();
+  const stashesToDelete = collectionsStore.stashes.filter((s) => s.parentId === id);
+  for (const stash of stashesToDelete) {
+    try {
+      await collectionsStore.deleteStash(stash.id);
+    } catch (e) {
+      console.error(`Failed to delete stash ${stash.id} on workspace deletion:`, e);
+    }
+  }
   useRepeaterStore.getState().deleteWorkspace(id);
 }
 

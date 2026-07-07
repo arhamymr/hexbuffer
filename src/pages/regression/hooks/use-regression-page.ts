@@ -33,6 +33,7 @@ export function useRegressionPage() {
     queue,
     runAll,
     stopQueue,
+    abortTest,
   } = useRegressionStore(
     useShallow((s) => ({
       testCases: s.testCases,
@@ -50,6 +51,7 @@ export function useRegressionPage() {
       queue: s.queue,
       runAll: s.runAll,
       stopQueue: s.stopQueue,
+      abortTest: s.abortTest,
     }))
   );
 
@@ -139,10 +141,10 @@ export function useRegressionPage() {
   }, []);
 
   // Create a new test case tab in editing mode
-  const handleCreate = React.useCallback(() => {
+  const handleCreate = React.useCallback((folderName?: string) => {
     const newCase: TestCase = {
       id: crypto.randomUUID(),
-      testName: selectedCase?.testName || 'New Test',
+      testName: folderName || selectedCase?.testName || 'Default Test',
       name: 'New Test Case',
       description: '',
       targetUrl: '',
@@ -291,6 +293,28 @@ export function useRegressionPage() {
     [testCases, saveTestCase],
   );
 
+  // Rename a folder: updates testName for all test cases that have that testName
+  const handleRenameFolder = React.useCallback(
+    async (oldName: string, newName: string) => {
+      const targets = testCases.filter((tc) => tc.testName === oldName);
+      for (const tc of targets) {
+        await saveTestCase({ ...tc, testName: newName, updatedAt: new Date().toISOString() });
+      }
+    },
+    [testCases, saveTestCase],
+  );
+
+  // Delete a folder: deletes all test cases that have that testName
+  const handleDeleteFolder = React.useCallback(
+    async (folderName: string) => {
+      const targets = testCases.filter((tc) => tc.testName === folderName);
+      for (const tc of targets) {
+        await deleteTestCase(tc.id);
+      }
+    },
+    [testCases, deleteTestCase],
+  );
+
   // Add a new tab via the "+" button
   const handleAddTab = React.useCallback(() => {
     handleCreate();
@@ -357,6 +381,7 @@ export function useRegressionPage() {
 
   return {
     testCases,
+    loadTestCases,
     totalRuns,
     selectedCase,
     selectedRuns,
@@ -385,10 +410,13 @@ export function useRegressionPage() {
     handleCloseTab,
     handleRenameTab,
     setActiveTabId,
+    handleRenameFolder,
+    handleDeleteFolder,
     // Queue
     queue,
     runAll,
     stopQueue,
+    abortTest,
     // Derived state
     isRunning,
     activeTabTestCase,

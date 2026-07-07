@@ -1,4 +1,4 @@
-import { ArrowLeftIcon, ArrowRightIcon, FlagIcon, PauseCircleIcon, PlayIcon, PlusIcon, ShieldSlashIcon, ShieldCheckIcon, PaperPlaneTiltIcon, TrashIcon } from '@phosphor-icons/react';
+import { ArrowLeftIcon, ArrowRightIcon, FlagIcon, PlusIcon, ShieldSlashIcon, ShieldCheckIcon, PaperPlaneTiltIcon, TrashIcon, PauseIcon, PlayIcon } from '@phosphor-icons/react';
 import {
   ContextMenu,
   ContextMenuContent,
@@ -24,6 +24,7 @@ export function InterceptQueuePanel() {
     setSelectedRequestId,
     getRequestMeta,
     handleForward,
+    handleForwardRequest,
     handleInterceptResponse,
     handleDrop,
     handleDontCapture,
@@ -44,45 +45,21 @@ export function InterceptQueuePanel() {
             'flex items-center gap-1.5 rounded px-2 py-1 text-xs font-medium transition-colors',
             isEnabled
               ? 'bg-primary/10 text-primary hover:bg-primary/20'
-              : 'bg-muted text-muted-foreground hover:bg-muted/80'
+              : 'bg-destructive/10 text-destructive hover:bg-destructive/20'
           )}
         >
           {isEnabled
-            ? <><ShieldCheckIcon className="size-3.5" /> On</>
-            : <><ShieldSlashIcon className="size-3.5" /> Off</>}
+            ? <><PauseIcon className="size-4" /> Intercept</>
+            : <><PlayIcon className="size-4" /> Off</>}
         </button>
-
-        <button
-          type="button"
-          disabled={!hasSelection || isBusy}
-          onClick={handleForward}
-          className="flex items-center gap-1.5 rounded bg-primary px-2 py-1 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed"
-        >
-          <PaperPlaneTiltIcon className="size-3.5" />
-          Forward
-        </button>
+        {activeRequests.length > 0 && (
+          <span className="text-xs text-muted-foreground ml-auto">
+            {activeRequests.length} paused req{activeRequests.length === 1 ? '' : 's'}
+          </span>
+        )}
       </div>
 
       <div className="flex min-h-0 flex-1 flex-col p-2">
-        <div className="mb-2 grid grid-cols-2 gap-2">
-          <div className="rounded-md border bg-background p-2">
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <PauseCircleIcon className="h-3.5 w-3.5" />
-              Paused
-            </div>
-            <div className="mt-1 text-sm font-semibold">{activeRequests.length}</div>
-            <div className="text-[11px] text-muted-foreground">{activeRequests.length} in tab</div>
-          </div>
-          <div className="rounded-md border bg-background p-2">
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <PlayIcon className="h-3.5 w-3.5" />
-              Mode
-            </div>
-            <div className="mt-1 truncate text-sm font-medium">
-              {isEnabled && activeTab?.captureHosts.length ? 'Capture' : 'Pass through'}
-            </div>
-          </div>
-        </div>
 
         <div className="min-h-0 flex-1 overflow-auto rounded-md border bg-background">
           {activeRequests.length === 0 ? (
@@ -101,50 +78,89 @@ export function InterceptQueuePanel() {
                 return (
                   <ContextMenu key={request.id}>
                     <ContextMenuTrigger asChild>
-                      <button
-                        type="button"
+                      <div
+                        role="button"
+                        tabIndex={0}
                         onClick={() => setSelectedRequestId(request.id)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            setSelectedRequestId(request.id);
+                          }
+                        }}
                         className={cn(
-                          'flex gap-2 p-2 items-start justify-between w-full text-sm hover:bg-muted cursor-pointer',
+                          'group relative flex gap-2 p-2 items-start justify-between w-full text-sm hover:bg-muted cursor-pointer transition-colors outline-none focus-visible:bg-muted',
                           isSelected && 'bg-muted',
                           isRemoving && 'pointer-events-none animate-slide-out-right'
                         )}
                         title={`${host}${path}`}
                       >
-                        <div className='flex gap-2'>
-                        <span
-                          className="mt-0.5 inline-flex size-8 bg-background items-center justify-center rounded border font-mono text-[11px] text-muted-foreground"
-                          title={direction === 'response' ? 'Response' : 'Request'}
-                        >
-                          {direction === 'response' ? <ArrowLeftIcon className='size-4' /> : <ArrowRightIcon className='size-4' />}
-                        </span>
-                        <div>
-                          <div className='flex flex-col items-start gap-1'>
-                            <div className='mb-1 flex gap-2'>
-                              {direction === 'response' ? (
-                                <span className="inline-flex rounded border px-1.5 py-0.5 text-[11px] font-semibold">
-                                  {request.response?.status_code ?? 'RES'}
+                        <div className='flex gap-2 min-w-0 flex-1'>
+                          <span
+                            className="mt-0.5 inline-flex size-8 bg-background items-center justify-center rounded border font-mono text-[11px] text-muted-foreground shrink-0"
+                            title={direction === 'response' ? 'Response' : 'Request'}
+                          >
+                            {direction === 'response' ? <ArrowLeftIcon className='size-4' /> : <ArrowRightIcon className='size-4' />}
+                          </span>
+                          <div className="min-w-0 flex-1">
+                            <div className='flex flex-col items-start gap-1'>
+                              <div className='mb-1 flex gap-2 w-full'>
+                                {direction === 'response' ? (
+                                  <span className="inline-flex rounded border px-1.5 py-0.5 text-[11px] font-semibold shrink-0">
+                                    {request.response?.status_code ?? 'RES'}
+                                  </span>
+                                ) : (
+                                  <MethodBadge method={request.request.method} className="shrink-0" />
+                                )}
+                                <span className="min-w-0 flex-1">
+                                  <span className="block truncate text-xs font-medium">{host}</span>
                                 </span>
-                              ) : (
-                                <MethodBadge method={request.request.method} />
-                              )}
-                              <span className="min-w-0">
-                                <span className="block truncate text-xs font-medium">{host}</span>
+                              </div>
+
+                              <span className="block truncate font-mono text-xs text-muted-foreground w-full">
+                                {path}
                               </span>
                             </div>
-
-                            <span className="block truncate font-mono text-xs text-muted-foreground">
-                              {path}
-                            </span>
                           </div>
-
-
                         </div>
+
+                        <div className="relative flex flex-col items-end gap-1.5 self-stretch shrink-0 justify-center min-w-[160px]">
+                          {/* Normal state: time */}
+                          <span className="pt-1 text-[11px] text-muted-foreground group-hover:opacity-0 transition-opacity duration-150">
+                            {formatRequestTime(request.timestamp)}
+                          </span>
+
+                          {/* Hover state: actions */}
+                          <div className="absolute right-0 top-1/2 -translate-y-1/2 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity duration-150 flex items-center gap-1.5">
+                            {direction === 'request' && (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleInterceptResponse(request);
+                                }}
+                                className="flex h-6 items-center gap-1 rounded border bg-background hover:bg-accent text-muted-foreground hover:text-foreground transition-all active:scale-95 shadow-sm px-2 text-[11px] font-medium"
+                                title="Intercept Response"
+                              >
+                                <PauseIcon className="size-4" />
+                                Intercept
+                              </button>
+                            )}
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleForwardRequest(request);
+                              }}
+                              className="flex h-6 items-center gap-1 rounded bg-primary px-2 text-[11px] font-medium text-primary-foreground hover:bg-primary/90 transition-all active:scale-95 shadow-sm"
+                              title="Forward"
+                            >
+                              <PaperPlaneTiltIcon className="size-3 text-primary-foreground" />
+                              Forward
+                            </button>
+                          </div>
                         </div>
-                        <span className="pt-1 text-[11px] text-muted-foreground">
-                          {formatRequestTime(request.timestamp)}
-                        </span>
-                      </button>
+                      </div>
                     </ContextMenuTrigger>
                     <ContextMenuContent className="w-52">
                       <ContextMenuItem

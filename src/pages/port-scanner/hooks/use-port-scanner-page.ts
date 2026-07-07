@@ -46,9 +46,9 @@ export function usePortScannerPage() {
   }, []);
 
   // ── Scan ─────────────────────────────────────
-  const startScan = useCallback(async (targetOverride?: string, presetOverride?: PortPreset) => {
-    const scanTarget = (targetOverride !== undefined ? targetOverride : target).trim();
-    const scanPortsStr = presetOverride !== undefined && presetOverride !== 'custom' ? PORT_PRESETS[presetOverride] : ports;
+  const startScan = useCallback(async (targetOverride?: string | unknown, presetOverride?: PortPreset | unknown) => {
+    const scanTarget = (typeof targetOverride === 'string' ? targetOverride : target).trim();
+    const scanPortsStr = typeof presetOverride === 'string' && presetOverride !== 'custom' ? PORT_PRESETS[presetOverride] : ports;
     const scanPorts = parsePorts(scanPortsStr);
 
     if (!scanTarget || scanPorts.length === 0) return;

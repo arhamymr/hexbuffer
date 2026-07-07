@@ -11,6 +11,7 @@ interface TabbedPageLayoutProps {
   onTabRename?: (id: string, name: string) => void;
   onTabClose?: (id: string) => void;
   onTabAdd?: () => void;
+  onTabManage?: () => void;
   onCloseTabsToLeft?: (id: string) => void;
   onCloseTabsToRight?: (id: string) => void;
   renderTabContextMenuItems?: (tab: PageTabItem) => ReactNode;
@@ -26,6 +27,7 @@ export function TabbedPageLayout({
   onTabRename,
   onTabClose,
   onTabAdd,
+  onTabManage,
   onCloseTabsToLeft,
   onCloseTabsToRight,
   renderTabContextMenuItems,
@@ -43,6 +45,7 @@ export function TabbedPageLayout({
           onTabRename={onTabRename}
           onTabClose={onTabClose}
           onTabAdd={onTabAdd}
+          onTabManage={onTabManage}
           onCloseTabsToLeft={onCloseTabsToLeft}
           onCloseTabsToRight={onCloseTabsToRight}
           renderTabContextMenuItems={renderTabContextMenuItems}

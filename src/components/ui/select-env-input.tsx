@@ -279,6 +279,13 @@ export function ColorizedUrlInput({
     }
   }, []);
 
+  const handlePaste = React.useCallback((e: React.ClipboardEvent) => {
+    e.preventDefault();
+    // ponytail: use native insertText command to strip all rich formatting/styles on paste
+    const text = e.clipboardData.getData('text/plain');
+    document.execCommand('insertText', false, text);
+  }, []);
+
   return (
     <Popover open={shouldShowPopover} onOpenChange={setPopoverOpen}>
       <PopoverAnchor asChild>
@@ -292,6 +299,7 @@ export function ColorizedUrlInput({
           onClick={handleClick}
           onKeyDown={handleKeyDown}
           onBlur={handleBlur}
+          onPaste={handlePaste}
           className={cn(
             'border-input min-h-7 w-full min-w-0 rounded-sm border bg-transparent px-3 py-1 text-sm transition-[color,box-shadow] outline-none',
             'focus-visible:border-primary',

@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
+import { Checkbox } from '@/components/ui/checkbox';
 import type { CrawlSetupConfig } from '../types';
 
 const formSchema = z.object({
@@ -117,7 +117,7 @@ export function CrawlSetupScreen({
       </DialogTrigger>
       <DialogContent className="sm:max-w-[720px]">
         <DialogHeader>
-          <DialogTitle>Automation Config</DialogTitle>
+          <DialogTitle>Browser Config</DialogTitle>
           <DialogDescription>
             Configure the target, crawl limits, scope rules, and timing.
           </DialogDescription>
@@ -207,11 +207,11 @@ export function CrawlSetupScreen({
                     <Label htmlFor="enable-ai-insights">AI analysis</Label>
                     <p className="text-xs text-muted-foreground">Run AI-powered reconnaissance analysis during the crawl.</p>
                   </div>
-                  <Switch
+                  <Checkbox
                     id="enable-ai-insights"
                     checked={enableAiInsights}
                     disabled={disabled}
-                    onCheckedChange={(checked) => setValue('enableAiInsights', checked, { shouldDirty: true, shouldValidate: true })}
+                    onCheckedChange={(checked) => setValue('enableAiInsights', checked === true, { shouldDirty: true, shouldValidate: true })}
                   />
                 </div>
                 <div className="flex items-center justify-between gap-3">
@@ -219,11 +219,11 @@ export function CrawlSetupScreen({
                     <Label htmlFor="capture-screenshots">Capture screenshots</Label>
                     <p className="text-xs text-muted-foreground">Save a full-page PNG for each visited page.</p>
                   </div>
-                  <Switch
+                  <Checkbox
                     id="capture-screenshots"
                     checked={captureScreenshots}
                     disabled={disabled}
-                    onCheckedChange={(checked) => setValue('captureScreenshots', checked, { shouldDirty: true, shouldValidate: true })}
+                    onCheckedChange={(checked) => setValue('captureScreenshots', checked === true, { shouldDirty: true, shouldValidate: true })}
                   />
                 </div>
                 <div className="flex items-center justify-between gap-3">
@@ -231,11 +231,11 @@ export function CrawlSetupScreen({
                     <Label htmlFor="capture-rendered-html">Capture rendered HTML</Label>
                     <p className="text-xs text-muted-foreground">Save the post-JS DOM after the page finishes loading.</p>
                   </div>
-                  <Switch
+                  <Checkbox
                     id="capture-rendered-html"
                     checked={captureRenderedHtml}
                     disabled={disabled}
-                    onCheckedChange={(checked) => setValue('captureRenderedHtml', checked, { shouldDirty: true, shouldValidate: true })}
+                    onCheckedChange={(checked) => setValue('captureRenderedHtml', checked === true, { shouldDirty: true, shouldValidate: true })}
                   />
                 </div>
               </div>

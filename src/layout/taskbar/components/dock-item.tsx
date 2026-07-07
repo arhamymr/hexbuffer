@@ -45,7 +45,7 @@ export function DockItem({
             )}
           >
             {children}
-            <item.icon className="size-3.5 transition-transform duration-150 group-hover/dock-item:scale-110" />
+            <item.icon className="size-5 transition-transform duration-150 group-hover/dock-item:scale-110" />
 
             {/* OS-style open indicator dot */}
             {isOpened && (

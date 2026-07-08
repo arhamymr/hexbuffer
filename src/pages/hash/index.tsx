@@ -18,7 +18,8 @@ export function HashPage() {
       />
 
       <main className="min-h-0 flex-1 flex flex-col">
-        <section className="grid h-full min-h-0 grid-cols-1 lg:grid-cols-2">
+        {/* Static 50/50 side-by-side pane split */}
+        <section className="grid h-full min-h-0 grid-cols-2 divide-x divide-border bg-background">
           <HashInputPanel
             input={page.input}
             isEmpty={page.isEmpty}

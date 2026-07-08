@@ -44,6 +44,7 @@ export function RegressionPage() {
               onRefresh={page.loadTestCases}
               onAbortTestCase={page.abortTest}
               isRunning={page.isRunning}
+              onCreateTestCase={page.handleCreate}
             />
           </div>
 

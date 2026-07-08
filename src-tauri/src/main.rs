@@ -73,6 +73,17 @@ fn main() {
             app.manage(database);
             app.manage(history);
 
+            // ponytail: manage MockForgeState and spawn server
+            let mock_forge = hexbuffer::commands::mock_forge::MockForgeState::new();
+            app.manage(mock_forge);
+
+            let handle = app.handle().clone();
+            tauri::async_runtime::spawn(async move {
+                if let Err(e) = hexbuffer::commands::mock_forge::start_mock_forge_server(handle).await {
+                    eprintln!("[mock-forge] startup server error: {}", e);
+                }
+            });
+
             log("Building Tauri app...");
 
             #[cfg(desktop)]
@@ -319,6 +330,18 @@ fn main() {
             hexbuffer::commands::regression::scrape_page_for_steps,
             hexbuffer::commands::regression::run_regression_step,
             hexbuffer::commands::regression::abort_regression_test,
+            // ponytail: register MockForge commands
+            hexbuffer::commands::mock_forge::mock_forge_get_domains,
+            hexbuffer::commands::mock_forge::mock_forge_add_domain,
+            hexbuffer::commands::mock_forge::mock_forge_delete_domain,
+            hexbuffer::commands::mock_forge::mock_forge_toggle_domain,
+            hexbuffer::commands::mock_forge::mock_forge_get_routes,
+            hexbuffer::commands::mock_forge::mock_forge_add_route,
+            hexbuffer::commands::mock_forge::mock_forge_update_route,
+            hexbuffer::commands::mock_forge::mock_forge_delete_route,
+            hexbuffer::commands::mock_forge::mock_forge_get_logs,
+            hexbuffer::commands::mock_forge::mock_forge_clear_logs,
+            hexbuffer::commands::mock_forge::mock_forge_get_server_port,
             show_main_window,
             safe_start_dragging,
         ])

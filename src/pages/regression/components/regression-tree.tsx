@@ -8,7 +8,8 @@ import {
   CheckIcon,
   XIcon,
   ArrowClockwiseIcon,
-  SquareIcon
+  SquareIcon,
+  PlusIcon
 } from '@phosphor-icons/react';
 import folderIcon from '@/assets/explorer-icon/_folder.svg';
 import folderOpenIcon from '@/assets/explorer-icon/_folder_open.svg';
@@ -42,6 +43,7 @@ interface RegressionTreeProps {
   onRefresh: () => void | Promise<void>;
   onAbortTestCase: () => void;
   isRunning: boolean;
+  onCreateTestCase?: (folderName?: string) => void;
 }
 
 export function RegressionTree({
@@ -57,6 +59,7 @@ export function RegressionTree({
   onRefresh,
   onAbortTestCase,
   isRunning,
+  onCreateTestCase,
 }: RegressionTreeProps) {
   // Local expand/collapse state
   const [expandedFolders, setExpandedFolders] = React.useState<Set<string>>(() => new Set());
@@ -136,15 +139,32 @@ export function RegressionTree({
         <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">
           Regression Suites
         </span>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-6 w-6 text-muted-foreground hover:text-foreground"
-          title="Update Suites"
-          onClick={() => void onRefresh()}
-        >
-          <ArrowClockwiseIcon className="size-3.5" />
-        </Button>
+        <div className="flex items-center gap-0.5">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6 text-muted-foreground hover:text-foreground"
+            title="Add Suite"
+            onClick={() => {
+              // ponytail: Native prompt for minimal code and overhead.
+              const name = window.prompt('Enter suite name:');
+              if (name && name.trim() && onCreateTestCase) {
+                onCreateTestCase(name.trim());
+              }
+            }}
+          >
+            <PlusIcon className="size-3.5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6 text-muted-foreground hover:text-foreground"
+            title="Update Suites"
+            onClick={() => void onRefresh()}
+          >
+            <ArrowClockwiseIcon className="size-3.5" />
+          </Button>
+        </div>
       </div>
 
       {/* Tree Content */}
@@ -207,6 +227,18 @@ export function RegressionTree({
 
                   {!isRenaming && (
                     <div className="flex items-center gap-0.5 opacity-0 group-hover/folder:opacity-100 transition-opacity">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="size-5 text-muted-foreground hover:text-foreground"
+                        title="Add Test Case to Suite"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (onCreateTestCase) onCreateTestCase(folderName);
+                        }}
+                      >
+                        <PlusIcon className="size-3" />
+                      </Button>
                       <Button
                         variant="ghost"
                         size="icon"

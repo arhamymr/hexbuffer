@@ -204,6 +204,151 @@ impl HttpHandler for AppHandler {
 
         let mut body_modified = false;
 
+        // ponytail: MockForge domain proxy interception
+        if let Some(mock_state) = self.app_handle.try_state::<crate::commands::mock_forge::MockForgeState>() {
+            // Extract path and query
+            let uri_parsed = url::Url::parse(&ctx.req_uri).ok();
+            let host_str = uri_parsed.as_ref().and_then(|u| u.host_str()).unwrap_or("");
+            let path_str = uri_parsed.as_ref().map(|u| u.path()).unwrap_or("/");
+            
+            let query_map: HashMap<String, String> = uri_parsed
+                .as_ref()
+                .map(|u| u.query_pairs().into_owned().collect())
+                .unwrap_or_default();
+                
+            let (matched, matching_domain) = {
+                let domains_guard = mock_state.domains.lock().unwrap();
+                let routes_guard = mock_state.routes.lock().unwrap();
+                
+                let matched = crate::commands::mock_forge::find_matching_route(
+                    &domains_guard,
+                    &routes_guard,
+                    host_str,
+                    &ctx.req_method,
+                    path_str,
+                    &ctx.req_headers,
+                    &query_map,
+                    &ctx.req_body,
+                    false, // is_local_server = false
+                );
+                
+                let matching_domain = if matched.is_none() {
+                    domains_guard.iter().find(|d| {
+                        d.status == "active" && d.hostname == host_str
+                    }).cloned()
+                } else {
+                    None
+                };
+                
+                (matched, matching_domain)
+            };
+            
+            if let Some((domain, route)) = matched {
+                let start_time = std::time::Instant::now();
+                let mut latency_ms = 0;
+                let mut status_code = route.status_code;
+
+                use rand::Rng;
+
+                if route.chaos.latency_mode == "fixed" {
+                    if let Some(fixed) = route.chaos.latency_fixed {
+                        latency_ms = fixed;
+                        tokio::time::sleep(Duration::from_millis(fixed)).await;
+                    }
+                } else if route.chaos.latency_mode == "random" {
+                    if let (Some(min), Some(max)) = (route.chaos.latency_min, route.chaos.latency_max) {
+                        if max >= min {
+                            let rand_val = rand::thread_rng().gen_range(min..=max);
+                            latency_ms = rand_val;
+                            tokio::time::sleep(Duration::from_millis(rand_val)).await;
+                        }
+                    }
+                }
+
+                if let Some(err_rate) = route.chaos.error_rate {
+                    if err_rate > 0.0 {
+                        let roll = rand::thread_rng().gen_range(0.0..100.0);
+                        if roll < err_rate {
+                            if let Some(err_status) = route.chaos.error_status {
+                                status_code = err_status;
+                            } else {
+                                status_code = 500;
+                            }
+                        }
+                    }
+                }
+                
+                let log_entry = crate::commands::mock_forge::RequestLog {
+                    id: format!("l{}", uuid::Uuid::new_v4()),
+                    domain_id: domain.id.clone(),
+                    route_id: Some(route.id.clone()),
+                    method: ctx.req_method.clone(),
+                    path: path_str.to_string(),
+                    status_code,
+                    latency_ms: if latency_ms == 0 { start_time.elapsed().as_millis() as u64 } else { latency_ms },
+                    timestamp: chrono::Utc::now().to_rfc3339(),
+                    request_headers: ctx.req_headers.clone(),
+                    request_body: if ctx.req_body.is_empty() { None } else { Some(String::from_utf8_lossy(&ctx.req_body).into_owned()) },
+                };
+                
+                {
+                    let mut logs_lock = mock_state.logs.lock().unwrap();
+                    logs_lock.insert(0, log_entry.clone());
+                    if logs_lock.len() > 200 {
+                        logs_lock.truncate(200);
+                    }
+                }
+                
+                let _ = self.app_handle.emit("mock-forge-log", log_entry);
+                
+                let mut builder = Response::builder().status(status_code);
+                for (k, v) in &route.response_headers {
+                    if let (Ok(name), Ok(val)) = (HeaderName::from_bytes(k.as_bytes()), HeaderValue::from_str(v)) {
+                        builder = builder.header(name, val);
+                    }
+                }
+                
+                let body_content = if status_code == route.status_code {
+                    route.response_body.clone()
+                } else {
+                    format!("Simulated chaos error status: {}", status_code)
+                };
+                
+                return hudsucker::RequestOrResponse::Response(
+                    builder.body(Body::from(body_content)).unwrap()
+                );
+            } else if let Some(domain) = matching_domain {
+                let log_entry = crate::commands::mock_forge::RequestLog {
+                    id: format!("l{}", uuid::Uuid::new_v4()),
+                    domain_id: domain.id.clone(),
+                    route_id: None,
+                    method: ctx.req_method.clone(),
+                    path: path_str.to_string(),
+                    status_code: 404,
+                    latency_ms: 0,
+                    timestamp: chrono::Utc::now().to_rfc3339(),
+                    request_headers: ctx.req_headers.clone(),
+                    request_body: if ctx.req_body.is_empty() { None } else { Some(String::from_utf8_lossy(&ctx.req_body).into_owned()) },
+                };
+                
+                {
+                    let mut logs_lock = mock_state.logs.lock().unwrap();
+                    logs_lock.insert(0, log_entry.clone());
+                    if logs_lock.len() > 200 {
+                        logs_lock.truncate(200);
+                    }
+                }
+                let _ = self.app_handle.emit("mock-forge-log", log_entry);
+                
+                return hudsucker::RequestOrResponse::Response(
+                    Response::builder()
+                        .status(StatusCode::NOT_FOUND)
+                        .body(Body::from("404 Not Found (MockForge)"))
+                        .unwrap()
+                );
+            }
+        }
+
         let proxy_state_handle = self.app_handle.state::<Mutex<ProxyState>>();
         let should_bypass_uri = proxy_state_handle
             .lock()

@@ -64,7 +64,7 @@ export const useScratchpadStore = create<ScratchpadState>()((set, get) => ({
 
   addScratchpad: () => {
     const { scratchpads } = get();
-    if (scratchpads.length >= 6) return;
+    if (scratchpads.length >= 20) return;
 
     let index = 1;
     while (scratchpads.some((s) => s.name === `Scratchpad ${index}`)) {

@@ -7,6 +7,7 @@ pub mod proxy_logs;
 pub mod regression;
 pub mod types;
 pub mod websocket;
+pub mod mock_forge;
 
 pub use types::*;
 
@@ -40,6 +41,7 @@ impl Database {
         conn.execute_batch(crate::db::schema::CREATE_STASHES_TABLES)?;
         conn.execute_batch(crate::db::schema::CREATE_CONTEXTS_TABLES)?;
         conn.execute_batch(crate::db::schema::CREATE_CHRONICLE_TABLES)?;
+        conn.execute_batch(crate::db::schema::CREATE_MOCK_FORGE_TABLES)?;
 
         Self::ensure_column(
             &conn,

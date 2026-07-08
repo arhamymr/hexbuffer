@@ -5,7 +5,7 @@ pub mod chat_sessions;
 pub mod collaborator;
 pub mod history;
 pub mod intercept;
-pub mod intruder;
+pub mod invoker;
 pub mod license;
 pub mod proxy;
 pub mod regression;

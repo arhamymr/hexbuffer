@@ -16,7 +16,6 @@ export function MockForgeContent({ page }: MockForgeContentProps) {
           domains={page.domains}
           routes={page.routes}
           onToggle={page.toggleDomain}
-          onAdd={page.addDomain}
           onDelete={page.deleteDomain}
           selectedDomainId={page.selectedDomainId}
           onSelect={page.setSelectedDomainId}

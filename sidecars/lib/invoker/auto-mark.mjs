@@ -50,9 +50,9 @@ function markerRanges(raw) {
   let searchStart = 0;
 
   while (true) {
-    const start = raw.indexOf('§', searchStart);
+    const start = raw.indexOf('$', searchStart);
     if (start === -1) break;
-    const end = raw.indexOf('§', start + 1);
+    const end = raw.indexOf('$', start + 1);
     if (end === -1) break;
     ranges.push({ start, end: end + 1 });
     searchStart = end + 1;
@@ -68,7 +68,7 @@ function overlapsAny(start, end, ranges) {
 function addCandidate(candidates, ranges, candidate) {
   if (candidate.start < 0 || candidate.end <= candidate.start) return;
   if (!candidate.value || !candidate.value.trim()) return;
-  if (candidate.value.includes('§')) return;
+  if (candidate.value.includes('$')) return;
   if (overlapsAny(candidate.start, candidate.end, ranges)) return;
 
   const id = `cand_${String(candidates.length + 1).padStart(3, '0')}`;

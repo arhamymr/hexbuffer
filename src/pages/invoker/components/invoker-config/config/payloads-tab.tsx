@@ -156,7 +156,7 @@ export function PayloadsTab() {
   if (positions.length === 0) {
     return (
       <div className="rounded-md border bg-muted/30 p-3 text-sm text-muted-foreground">
-        Mark payload positions in the request with § markers before assigning payloads.
+        Mark payload positions in the request with $ markers before assigning payloads.
       </div>
     );
   }

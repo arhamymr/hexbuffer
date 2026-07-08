@@ -253,7 +253,7 @@ pub async fn remove_intercept_bypass_pattern(
     Ok(proxy_state.remove_bypass_pattern(&pattern))
 }
 
-fn browser_candidates() -> Vec<PathBuf> {
+pub fn browser_candidates() -> Vec<PathBuf> {
     #[cfg(target_os = "macos")]
     {
         return vec![

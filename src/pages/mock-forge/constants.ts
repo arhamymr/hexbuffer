@@ -1,7 +1,7 @@
 import type { MockForgeSubTab } from './types';
 
 export const MOCK_FORGE_SUB_TABS: { id: MockForgeSubTab; label: string }[] = [
-  { id: 'domains', label: 'Domains' },
+  { id: 'domains', label: 'Hosts' },
   { id: 'routes', label: 'Routes' },
   { id: 'logs', label: 'Request Logs' },
 ];

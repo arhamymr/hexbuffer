@@ -199,7 +199,8 @@ pub fn find_matching_route(
                 true
             } else {
                 let host_only = req_host.split(':').next().unwrap_or(req_host);
-                d.hostname == host_only
+                let d_host_only = d.hostname.split(':').next().unwrap_or(&d.hostname);
+                d_host_only.eq_ignore_ascii_case(host_only)
             }
         })
         .collect();
@@ -221,6 +222,17 @@ pub fn find_matching_route(
     None
 }
 
+pub fn load_mock_forge_from_db(
+    state: &MockForgeState,
+    db: &crate::db::repository::Database,
+) -> Result<(), String> {
+    let domains = db.get_mock_domains().map_err(|e| e.to_string())?;
+    let routes = db.get_mock_routes().map_err(|e| e.to_string())?;
+    *state.domains.lock().unwrap() = domains;
+    *state.routes.lock().unwrap() = routes;
+    Ok(())
+}
+
 #[tauri::command]
 pub fn mock_forge_get_domains(state: State<'_, MockForgeState>) -> Vec<MockDomain> {
     state.domains.lock().unwrap().clone()
@@ -229,9 +241,10 @@ pub fn mock_forge_get_domains(state: State<'_, MockForgeState>) -> Vec<MockDomai
 #[tauri::command]
 pub fn mock_forge_add_domain(
     state: State<'_, MockForgeState>,
+    db: State<'_, crate::db::repository::Database>,
     hostname: String,
     ssl: bool,
-) -> MockDomain {
+) -> Result<MockDomain, String> {
     let domain = MockDomain {
         id: format!("d{}", uuid::Uuid::new_v4()),
         hostname,
@@ -239,28 +252,38 @@ pub fn mock_forge_add_domain(
         status: "active".to_string(),
         created_at: chrono::Utc::now().to_rfc3339(),
     };
+    db.insert_mock_domain(&domain)
+        .map_err(|e| format!("Failed to save domain in database: {}", e))?;
     state.domains.lock().unwrap().push(domain.clone());
-    domain
+    Ok(domain)
 }
 
 #[tauri::command]
 pub fn mock_forge_delete_domain(
     state: State<'_, MockForgeState>,
+    db: State<'_, crate::db::repository::Database>,
     id: String,
-) {
+) -> Result<(), String> {
+    db.delete_mock_domain(&id)
+        .map_err(|e| format!("Failed to delete domain from database: {}", e))?;
     state.domains.lock().unwrap().retain(|d| d.id != id);
     state.routes.lock().unwrap().retain(|r| r.domain_id != id);
+    Ok(())
 }
 
 #[tauri::command]
 pub fn mock_forge_toggle_domain(
     state: State<'_, MockForgeState>,
+    db: State<'_, crate::db::repository::Database>,
     id: String,
-) {
+) -> Result<(), String> {
+    db.toggle_mock_domain(&id)
+        .map_err(|e| format!("Failed to toggle domain in database: {}", e))?;
     let mut domains = state.domains.lock().unwrap();
     if let Some(d) = domains.iter_mut().find(|d| d.id == id) {
         d.status = if d.status == "active" { "inactive".to_string() } else { "active".to_string() };
     }
+    Ok(())
 }
 
 #[tauri::command]
@@ -271,34 +294,45 @@ pub fn mock_forge_get_routes(state: State<'_, MockForgeState>) -> Vec<MockRoute>
 #[tauri::command]
 pub fn mock_forge_add_route(
     state: State<'_, MockForgeState>,
+    db: State<'_, crate::db::repository::Database>,
     route: MockRoute,
-) -> MockRoute {
+) -> Result<MockRoute, String> {
     let mut route = route;
     if route.id.is_empty() || route.id.starts_with("new") {
         route.id = format!("r{}", uuid::Uuid::new_v4());
     }
+    db.upsert_mock_route(&route)
+        .map_err(|e| format!("Failed to save route in database: {}", e))?;
     state.routes.lock().unwrap().push(route.clone());
-    route
+    Ok(route)
 }
 
 #[tauri::command]
 pub fn mock_forge_update_route(
     state: State<'_, MockForgeState>,
+    db: State<'_, crate::db::repository::Database>,
     id: String,
     patch: MockRoute,
-) {
+) -> Result<(), String> {
+    db.upsert_mock_route(&patch)
+        .map_err(|e| format!("Failed to update route in database: {}", e))?;
     let mut routes = state.routes.lock().unwrap();
     if let Some(r) = routes.iter_mut().find(|r| r.id == id) {
         *r = patch;
     }
+    Ok(())
 }
 
 #[tauri::command]
 pub fn mock_forge_delete_route(
     state: State<'_, MockForgeState>,
+    db: State<'_, crate::db::repository::Database>,
     id: String,
-) {
+) -> Result<(), String> {
+    db.delete_mock_route(&id)
+        .map_err(|e| format!("Failed to delete route from database: {}", e))?;
     state.routes.lock().unwrap().retain(|r| r.id != id);
+    Ok(())
 }
 
 #[tauri::command]
@@ -441,7 +475,8 @@ async fn handle_local_request(
             domains_guard.iter().find(|d| {
                 d.status == "active" && {
                     let host_only = host.split(':').next().unwrap_or(&host);
-                    d.hostname == host_only
+                    let d_host_only = d.hostname.split(':').next().unwrap_or(&d.hostname);
+                    d_host_only.eq_ignore_ascii_case(host_only)
                 }
             }).cloned()
         } else {
@@ -509,6 +544,12 @@ async fn handle_local_request(
         
         let mut builder = Response::builder().status(status_code);
         for (k, v) in &route.response_headers {
+            if k.eq_ignore_ascii_case("content-length")
+                || k.eq_ignore_ascii_case("content-encoding")
+                || k.eq_ignore_ascii_case("transfer-encoding")
+            {
+                continue;
+            }
             if let (Ok(name), Ok(val)) = (HeaderName::from_bytes(k.as_bytes()), HeaderValue::from_str(v)) {
                 builder = builder.header(name, val);
             }
@@ -519,6 +560,9 @@ async fn handle_local_request(
         } else {
             format!("Simulated chaos error status: {}", status_code)
         };
+        
+        let body_len = body_content.len();
+        builder = builder.header("content-length", body_len.to_string());
         
         Ok(builder.body(Full::new(Bytes::from(body_content))).unwrap())
     } else {
@@ -563,5 +607,105 @@ mod tests {
         assert!(path_matches("/auth/login", "/auth/login"));
         assert!(!path_matches("/auth/login", "/auth/me"));
         assert!(path_matches("/users/:id/profile/:section", "/users/1/profile/billing"));
+    }
+
+    #[test]
+    fn test_find_matching_route_case_insensitive() {
+        let domains = vec![MockDomain {
+            id: "d1".to_string(),
+            hostname: "api.example.com".to_string(),
+            ssl: true,
+            status: "active".to_string(),
+            created_at: "".to_string(),
+        }];
+        let routes = vec![MockRoute {
+            id: "r1".to_string(),
+            domain_id: "d1".to_string(),
+            method: "GET".to_string(),
+            path: "/v1/users".to_string(),
+            status_code: 200,
+            response_body: "{}".to_string(),
+            response_headers: HashMap::new(),
+            matchers: vec![],
+            chaos: ChaosConfig {
+                latency_mode: "none".to_string(),
+                latency_fixed: None,
+                latency_min: None,
+                latency_max: None,
+                error_rate: None,
+                error_status: None,
+            },
+            enabled: true,
+            request_query_params: None,
+            request_body: None,
+        }];
+
+        let req_headers = HashMap::new();
+        let req_query = HashMap::new();
+        let matched = find_matching_route(
+            &domains,
+            &routes,
+            "API.EXAMPLE.COM",
+            "get",
+            "/v1/users",
+            &req_headers,
+            &req_query,
+            &[],
+            false,
+        );
+        assert!(matched.is_some());
+        let (d, r) = matched.unwrap();
+        assert_eq!(d.id, "d1");
+        assert_eq!(r.id, "r1");
+    }
+
+    #[test]
+    fn test_find_matching_route_with_port() {
+        let domains = vec![MockDomain {
+            id: "d1".to_string(),
+            hostname: "api.example.com:8080".to_string(),
+            ssl: true,
+            status: "active".to_string(),
+            created_at: "".to_string(),
+        }];
+        let routes = vec![MockRoute {
+            id: "r1".to_string(),
+            domain_id: "d1".to_string(),
+            method: "GET".to_string(),
+            path: "/v1/users".to_string(),
+            status_code: 200,
+            response_body: "{}".to_string(),
+            response_headers: HashMap::new(),
+            matchers: vec![],
+            chaos: ChaosConfig {
+                latency_mode: "none".to_string(),
+                latency_fixed: None,
+                latency_min: None,
+                latency_max: None,
+                error_rate: None,
+                error_status: None,
+            },
+            enabled: true,
+            request_query_params: None,
+            request_body: None,
+        }];
+
+        let req_headers = HashMap::new();
+        let req_query = HashMap::new();
+        let matched = find_matching_route(
+            &domains,
+            &routes,
+            "api.example.com:9000",
+            "GET",
+            "/v1/users",
+            &req_headers,
+            &req_query,
+            &[],
+            false,
+        );
+        assert!(matched.is_some());
+        let (d, r) = matched.unwrap();
+        assert_eq!(d.id, "d1");
+        assert_eq!(r.id, "r1");
     }
 }

@@ -30,25 +30,18 @@ export function PayloadBuilderPanel({
   onCopy,
 }: PayloadBuilderPanelProps) {
   return (
-    <div className="flex min-h-0 flex-col bg-background">
-      <div className="flex h-8 shrink-0 items-center justify-between border-b bg-muted/10 px-3">
-        <div className="flex items-baseline gap-2">
-          <span className="text-[11px] font-semibold uppercase text-muted-foreground tracking-wider">
-            Payload Builder
-          </span>
-          <span className="text-[10px] text-muted-foreground hidden sm:inline">
-            Apply encoding and context
-          </span>
-        </div>
+    <div className="flex h-full min-h-0 flex-col">
+      <div className="flex h-9 shrink-0 items-center border-b px-3">
+        <span className="text-xs font-medium text-muted-foreground">Builder</span>
       </div>
 
       <ScrollArea className="min-h-0 flex-1">
-        <div className="space-y-4 p-4">
-          {/* Selected Payload */}
-          <div className="space-y-1">
-            <Label className="text-xs font-semibold text-muted-foreground">Payload</Label>
+        <div className="space-y-5 p-4">
+          {/* Payload input */}
+          <div className="space-y-1.5">
+            <Label>Payload</Label>
             <Textarea
-              className="min-h-[70px] font-mono text-xs p-2.5 bg-muted/5 focus-visible:ring-1"
+              className="font-mono text-xs"
               placeholder="Select a payload from the library or type your own..."
               value={basePayload}
               onChange={(e) => onBasePayloadChange(e.target.value)}
@@ -56,18 +49,18 @@ export function PayloadBuilderPanel({
           </div>
 
           {/* Encoding Pipeline */}
-          <div className="space-y-1">
-            <Label className="text-xs font-semibold text-muted-foreground">
-              Encoding Pipeline
-            </Label>
-            <div className="text-[10px] text-muted-foreground">
-              Applied in order: URL → HTML Entity → Base64 → Double URL → Unicode
+          <div className="space-y-2">
+            <div>
+              <Label>Encoding Pipeline</Label>
+              <p className="text-xs text-muted-foreground">
+                Applied in order: URL → HTML Entity → Base64 → Double URL → Unicode
+              </p>
             </div>
-            <div className="flex flex-wrap gap-x-4 gap-y-2 py-1">
+            <div className="flex flex-wrap gap-x-4 gap-y-2">
               {ENCODING_ORDER.map((enc) => (
                 <label
                   key={enc}
-                  className="flex items-center gap-1.5 cursor-pointer text-xs select-none"
+                  className="flex items-center gap-1.5 cursor-pointer text-sm select-none"
                 >
                   <Checkbox
                     checked={encodings.has(enc)}
@@ -80,39 +73,34 @@ export function PayloadBuilderPanel({
           </div>
 
           {/* Injection Context */}
-          <div className="space-y-1">
-            <Label className="text-xs font-semibold text-muted-foreground">
-              Injection Context (optional)
-            </Label>
-            <div className="text-[10px] text-muted-foreground">
-              Use PAYLOAD or § as placeholder for the encoded payload.
-            </div>
+          <div className="space-y-1.5">
+            <Label>Injection Context</Label>
+            <p className="text-xs text-muted-foreground">
+              Use <code className="font-mono">PAYLOAD</code> or <code className="font-mono">$</code> as a placeholder.
+            </p>
             <Input
-              className="h-8 font-mono text-xs bg-muted/5 focus-visible:ring-1"
+              className="font-mono text-xs"
               placeholder='<input value="PAYLOAD">'
               value={injectionContext}
               onChange={(e) => onInjectionContextChange(e.target.value)}
             />
           </div>
 
-          {/* Output */}
-          <div className="space-y-1">
+          {/* Encoded Output */}
+          <div className="space-y-1.5">
             <div className="flex items-center justify-between">
-              <Label className="text-xs font-semibold text-muted-foreground">
-                Encoded Output
-              </Label>
+              <Label>Encoded Output</Label>
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => onCopy(encodedOutput)}
                 disabled={!encodedOutput}
-                className="h-6 w-6 text-muted-foreground hover:text-foreground"
               >
-                <CopyIcon className="h-3 w-3" />
+                <CopyIcon />
               </Button>
             </div>
             <Textarea
-              className="min-h-[70px] font-mono text-xs p-2.5 bg-muted/5 focus-visible:ring-1"
+              className="font-mono text-xs"
               placeholder="Encoded output will appear here..."
               value={encodedOutput}
               readOnly

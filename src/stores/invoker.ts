@@ -369,7 +369,7 @@ export const useInvokerStore = create<InvokerState>((set, get) => ({
         ),
       }));
 
-      const unlistenProgress = await listen<AttackProgress>(`intruder-progress-${id}`, (event) => {
+      const unlistenProgress = await listen<AttackProgress>(`invoker-progress-${id}`, (event) => {
         const p = event.payload;
         set((state) => ({
           tabs: state.tabs.map((currentTab) => {
@@ -388,7 +388,7 @@ export const useInvokerStore = create<InvokerState>((set, get) => ({
         }));
       });
 
-      const unlistenResult = await listen<AttackResult>(`intruder-result-${id}`, (event) => {
+      const unlistenResult = await listen<AttackResult>(`invoker-result-${id}`, (event) => {
         set((state) => ({
           tabs: state.tabs.map((currentTab) =>
             currentTab.id === tab.id

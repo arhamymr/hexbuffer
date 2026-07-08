@@ -40,7 +40,7 @@ export function useXssGeneratorPage() {
     }
 
     if (injectionContext.trim()) {
-      result = injectionContext.replace(/PAYLOAD|§/g, result);
+      result = injectionContext.replace(/PAYLOAD|\$/g, result);
     }
 
     setEncodedOutput(result);

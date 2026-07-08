@@ -253,10 +253,10 @@ function resolveSimpleTemplate(template: string, input: Record<string, unknown>)
 }
 
 function markFirstOccurrence(value: string, needle: string): string {
-  if (!needle.trim() || value.includes('§')) return value;
+  if (!needle.trim() || value.includes('$')) return value;
   const index = value.indexOf(needle);
   if (index < 0) return value;
-  return `${value.slice(0, index)}§${value.slice(index, index + needle.length)}§${value.slice(index + needle.length)}`;
+  return `${value.slice(0, index)}$${value.slice(index, index + needle.length)}$${value.slice(index + needle.length)}`;
 }
 
 function payloadConfigFromWordlist(wordlist: string): PayloadConfig {

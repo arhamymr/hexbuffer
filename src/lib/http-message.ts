@@ -65,7 +65,7 @@ function getRequestTarget(url: string, options: BuildRawHttpRequestOptions = {})
   try {
     const parsed = new URL(url);
     const target = `${parsed.pathname}${parsed.search}` || '/';
-    return options.decodePayloadMarkers ? target.replace(/%C2%A7/gi, '§') : target;
+    return options.decodePayloadMarkers ? target.replace(/%C2%A7/gi, '$').replace(/%24/gi, '$') : target;
   } catch {
     return url;
   }

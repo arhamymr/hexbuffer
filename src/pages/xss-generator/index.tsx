@@ -1,9 +1,12 @@
-import { Badge } from '@/components/ui/badge';
+
 import { Button } from '@/components/ui/button';
-import { CopyIcon, TrashIcon, LightningIcon } from '@phosphor-icons/react';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { CopyIcon, TrashIcon } from '@phosphor-icons/react';
 import { useXssGeneratorPage } from './hooks/use-xss-generator-page';
 import { PayloadLibraryPanel } from './components/payload-library-panel';
 import { PayloadBuilderPanel } from './components/payload-builder-panel';
+import { CATEGORY_LABELS } from './constants';
+import type { XssPayloadCategory } from './types';
 
 export function XssGeneratorPage() {
   const page = useXssGeneratorPage();
@@ -13,26 +16,27 @@ export function XssGeneratorPage() {
   return (
     <div className="flex h-full min-h-0 flex-col bg-background">
       {/* Toolbar */}
-      <div className="flex h-10 shrink-0 items-center justify-between border-b bg-muted/40 px-3 gap-2">
-        <div className="flex items-center gap-2">
-          <Badge variant="outline" className="font-normal text-[10px] py-px h-5 gap-1">
-            <LightningIcon className="h-3 w-3 text-amber-500 fill-amber-500/20" />
-            XSS Generator
-          </Badge>
-          <Badge variant="secondary" className="font-normal text-[10px] py-px h-5">
-            {page.filteredPayloads.length} payloads
-          </Badge>
-        </div>
+      <div className="flex shrink-0 items-center justify-between border-b px-2 py-1 gap-3">
+        <Tabs
+          value={page.activeCategory}
+          onValueChange={(v) => page.setActiveCategory(v as XssPayloadCategory)}
+        >
+          <TabsList>
+            {(Object.keys(CATEGORY_LABELS) as XssPayloadCategory[]).map((cat) => (
+              <TabsTrigger key={cat} value={cat}>
+                {CATEGORY_LABELS[cat]}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </Tabs>
 
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1 shrink-0">
           <Button
             variant="outline"
-            size="sm"
             onClick={() => page.handleCopy(page.encodedOutput)}
             disabled={!page.encodedOutput}
-            className="h-7 text-xs gap-1 px-2"
           >
-            <CopyIcon className="h-3 w-3" />
+            <CopyIcon />
             Copy Output
           </Button>
           <Button
@@ -40,22 +44,21 @@ export function XssGeneratorPage() {
             size="icon"
             onClick={page.handleClear}
             disabled={isEmpty}
-            className="h-7 w-7 text-muted-foreground hover:text-foreground"
           >
-            <TrashIcon className="h-3.5 w-3.5" />
+            <TrashIcon />
           </Button>
         </div>
       </div>
 
-      <main className="min-h-0 flex-1 flex flex-col">
-        <section className="grid h-full min-h-0 grid-cols-1 lg:grid-cols-[300px_1fr]">
+      <main className="flex min-h-0 flex-1">
+        <div className="w-72 shrink-0">
           <PayloadLibraryPanel
-            activeCategory={page.activeCategory}
-            onCategoryChange={page.setActiveCategory}
             filteredPayloads={page.filteredPayloads}
             onSelectPayload={page.handleSelectPayload}
           />
+        </div>
 
+        <div className="flex-1 min-w-0">
           <PayloadBuilderPanel
             basePayload={page.basePayload}
             onBasePayloadChange={page.setBasePayload}
@@ -66,7 +69,7 @@ export function XssGeneratorPage() {
             encodedOutput={page.encodedOutput}
             onCopy={page.handleCopy}
           />
-        </section>
+        </div>
       </main>
     </div>
   );

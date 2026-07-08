@@ -64,7 +64,7 @@ export function useInvokerPage() {
   const startBlockedReason = !config?.base_request.url
     ? 'Add a request URL'
     : markedPositions.length === 0
-      ? 'Mark a payload position with § markers'
+      ? 'Mark a payload position with $ markers'
       : !hasPayloads
         ? 'Add payloads for every marked position'
         : startError;

@@ -110,7 +110,7 @@ A request and response interception proxy with real-time modification.
 A high-speed security fuzzer and attack engine.
 
 ### Features
-- **Monaco Request Editor**: Define injection points in raw requests using `§payload§` markers.
+- **Monaco Request Editor**: Define injection points in raw requests using `$payload$` markers.
 - **Attack Setup**: Sniper mode, concurrency, delay intervals, grepping matches, and regex extractions.
 - **Payload Sources**: Simple Lists, Runtime Files (wordlists), and Number Ranges.
 - **Processing Pipeline**: Chain transformations (UrlEncode, Base64Encode, SHA-256 Hash, etc.).

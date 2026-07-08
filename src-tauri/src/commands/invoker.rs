@@ -13,7 +13,7 @@ use tokio::sync::Semaphore;
 use uuid::Uuid;
 
 #[derive(Debug, Clone, Deserialize)]
-pub enum IntruderAttackMode {
+pub enum InvokerAttackMode {
     Sniper,
     BatteringRam,
     Pitchfork,
@@ -21,14 +21,14 @@ pub enum IntruderAttackMode {
 }
 
 #[derive(Debug, Clone, Deserialize)]
-pub enum IntruderPayloadType {
+pub enum InvokerPayloadType {
     SimpleList,
     RuntimeFile,
     NumberRange,
 }
 
 #[derive(Debug, Clone, Deserialize)]
-pub enum IntruderPayloadProcessingStep {
+pub enum InvokerPayloadProcessingStep {
     UrlEncode,
     UrlDecode,
     Base64Encode,
@@ -39,40 +39,40 @@ pub enum IntruderPayloadProcessingStep {
 }
 
 #[derive(Debug, Clone, Deserialize)]
-pub struct IntruderPayloadPosition {
+pub struct InvokerPayloadPosition {
     pub name: String,
     pub start: usize,
     pub end: usize,
 }
 
 #[derive(Debug, Clone, Deserialize)]
-pub struct IntruderPayloadConfig {
-    pub payload_type: IntruderPayloadType,
+pub struct InvokerPayloadConfig {
+    pub payload_type: InvokerPayloadType,
     pub values: Vec<String>,
     pub file_path: Option<String>,
     pub number_start: Option<i64>,
     pub number_end: Option<i64>,
     pub number_step: Option<i64>,
     pub number_format: Option<String>,
-    pub processing: Vec<IntruderPayloadProcessingStep>,
+    pub processing: Vec<InvokerPayloadProcessingStep>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
-pub struct IntruderGrepMatchConfig {
+pub struct InvokerGrepMatchConfig {
     pub enabled: bool,
     pub keyword: String,
     pub case_sensitive: bool,
 }
 
 #[derive(Debug, Clone, Deserialize)]
-pub struct IntruderGrepExtractConfig {
+pub struct InvokerGrepExtractConfig {
     pub enabled: bool,
     pub regex: String,
     pub replacement: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
-pub struct IntruderSessionHandlingConfig {
+pub struct InvokerSessionHandlingConfig {
     pub enabled: bool,
     pub extract_token_name: Option<String>,
     pub extract_from_response: Option<String>,
@@ -80,7 +80,7 @@ pub struct IntruderSessionHandlingConfig {
 }
 
 #[derive(Debug, Clone, Deserialize)]
-pub struct IntruderHttpRequest {
+pub struct InvokerHttpRequest {
     pub method: String,
     pub url: String,
     pub headers: HashMap<String, String>,
@@ -90,33 +90,33 @@ pub struct IntruderHttpRequest {
 }
 
 #[derive(Debug, Clone, Deserialize)]
-pub struct IntruderAttackConfig {
+pub struct InvokerAttackConfig {
     pub name: String,
-    pub mode: IntruderAttackMode,
-    pub base_request: IntruderHttpRequest,
-    pub positions: Vec<IntruderPayloadPosition>,
-    pub payload_config: IntruderPayloadConfig,
+    pub mode: InvokerAttackMode,
+    pub base_request: InvokerHttpRequest,
+    pub positions: Vec<InvokerPayloadPosition>,
+    pub payload_config: InvokerPayloadConfig,
     #[serde(default)]
-    pub position_payloads: Option<HashMap<String, IntruderPayloadConfig>>,
+    pub position_payloads: Option<HashMap<String, InvokerPayloadConfig>>,
     pub concurrency: usize,
     pub delay_ms: u64,
     pub delay_max_ms: Option<u64>,
     pub retries: usize,
-    pub grep_match: IntruderGrepMatchConfig,
+    pub grep_match: InvokerGrepMatchConfig,
     #[serde(rename = "grep_extract")]
-    pub grep_extract: IntruderGrepExtractConfig,
-    pub session_handling: IntruderSessionHandlingConfig,
+    pub grep_extract: InvokerGrepExtractConfig,
+    pub session_handling: InvokerSessionHandlingConfig,
 }
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(tag = "type")]
-pub enum IntruderProgress {
+pub enum InvokerProgress {
     Update { current: usize, total: usize },
     Complete,
 }
 
 #[derive(Debug, Clone, Serialize)]
-pub struct IntruderResponse {
+pub struct InvokerResponse {
     pub status: u16,
     pub status_text: String,
     pub headers: HashMap<String, String>,
@@ -126,7 +126,7 @@ pub struct IntruderResponse {
 }
 
 #[derive(Debug, Clone, Serialize)]
-pub struct IntruderAttackResult {
+pub struct InvokerAttackResult {
     pub id: String,
     pub payload_values: HashMap<String, String>,
     pub status: Option<u16>,
@@ -134,12 +134,12 @@ pub struct IntruderAttackResult {
     pub response_time_ms: Option<u128>,
     pub error: Option<String>,
     pub comment: Option<String>,
-    pub response: Option<IntruderResponse>,
+    pub response: Option<InvokerResponse>,
     pub grep_match: bool,
     pub grep_extracted: Option<String>,
 }
 
-impl IntruderAttackResult {
+impl InvokerAttackResult {
     pub fn error(error: String) -> Self {
         Self {
             id: Uuid::new_v4().to_string(),
@@ -157,30 +157,30 @@ impl IntruderAttackResult {
 }
 
 #[derive(Default)]
-pub struct IntruderState {
+pub struct InvokerState {
     pub cancellations: Arc<Mutex<HashMap<String, Arc<AtomicBool>>>>,
 }
 
 #[tauri::command]
-pub async fn start_intruder_attack(
+pub async fn start_invoker_attack(
     app: AppHandle,
-    state: State<'_, IntruderState>,
-    config: IntruderAttackConfig,
+    state: State<'_, InvokerState>,
+    config: InvokerAttackConfig,
 ) -> Result<String, String> {
-    validate_intruder_config(&config)?;
+    validate_invoker_config(&config)?;
 
     let attack_id = Uuid::new_v4().to_string();
     let cancel_flag = Arc::new(AtomicBool::new(false));
     state
         .cancellations
         .lock()
-        .map_err(|_| "Failed to lock intruder state".to_string())?
+        .map_err(|_| "Failed to lock invoker state".to_string())?
         .insert(attack_id.clone(), cancel_flag.clone());
 
     let event_id = attack_id.clone();
     let cancellations = state.cancellations.clone();
     tokio::spawn(async move {
-        run_intruder_attack(app, event_id.clone(), config, cancel_flag).await;
+        run_invoker_attack(app, event_id.clone(), config, cancel_flag).await;
         if let Ok(mut cancellations) = cancellations.lock() {
             cancellations.remove(&event_id);
         }
@@ -190,14 +190,14 @@ pub async fn start_intruder_attack(
 }
 
 #[tauri::command]
-pub async fn stop_intruder_attack(
-    state: State<'_, IntruderState>,
+pub async fn stop_invoker_attack(
+    state: State<'_, InvokerState>,
     attack_id: String,
 ) -> Result<(), String> {
     if let Some(cancel_flag) = state
         .cancellations
         .lock()
-        .map_err(|_| "Failed to lock intruder state".to_string())?
+        .map_err(|_| "Failed to lock invoker state".to_string())?
         .remove(&attack_id)
     {
         cancel_flag.store(true, Ordering::Relaxed);
@@ -206,13 +206,13 @@ pub async fn stop_intruder_attack(
     Ok(())
 }
 
-pub fn validate_intruder_config(config: &IntruderAttackConfig) -> Result<(), String> {
+pub fn validate_invoker_config(config: &InvokerAttackConfig) -> Result<(), String> {
     if config.base_request.url.trim().is_empty() {
         return Err("Base request URL is required".to_string());
     }
 
     if count_markers(&config.base_request) == 0 {
-        return Err("Add at least one payload position with § markers".to_string());
+        return Err("Add at least one payload position with $ markers".to_string());
     }
 
     if config
@@ -239,24 +239,24 @@ pub fn validate_intruder_config(config: &IntruderAttackConfig) -> Result<(), Str
     Ok(())
 }
 
-pub async fn run_intruder_attack(
+pub async fn run_invoker_attack(
     app: AppHandle,
     attack_id: String,
-    config: IntruderAttackConfig,
+    config: InvokerAttackConfig,
     cancel_flag: Arc<AtomicBool>,
 ) {
     let defaults = marker_defaults(&config.base_request);
     let position_count = defaults.len();
-    let payloads = match build_intruder_payload_rows(&config, position_count) {
+    let payloads = match build_invoker_payload_rows(&config, position_count) {
         Ok(values) => values,
         Err(error) => {
             let _ = app.emit(
-                &format!("intruder-result-{}", attack_id),
-                IntruderAttackResult::error(error),
+                &format!("invoker-result-{}", attack_id),
+                InvokerAttackResult::error(error),
             );
             let _ = app.emit(
-                &format!("intruder-progress-{}", attack_id),
-                IntruderProgress::Complete,
+                &format!("invoker-progress-{}", attack_id),
+                InvokerProgress::Complete,
             );
             return;
         }
@@ -276,12 +276,12 @@ pub async fn run_intruder_attack(
         Ok(client) => client,
         Err(error) => {
             let _ = app.emit(
-                &format!("intruder-result-{}", attack_id),
-                IntruderAttackResult::error(format!("Failed to build HTTP client: {}", error)),
+                &format!("invoker-result-{}", attack_id),
+                InvokerAttackResult::error(format!("Failed to build HTTP client: {}", error)),
             );
             let _ = app.emit(
-                &format!("intruder-progress-{}", attack_id),
-                IntruderProgress::Complete,
+                &format!("invoker-progress-{}", attack_id),
+                InvokerProgress::Complete,
             );
             return;
         }
@@ -314,8 +314,8 @@ pub async fn run_intruder_attack(
                 return;
             }
 
-            apply_intruder_delay(&config, index).await;
-            let result = send_intruder_request(
+            apply_invoker_delay(&config, index).await;
+            let result = send_invoker_request(
                 &client,
                 &config,
                 &defaults,
@@ -326,10 +326,10 @@ pub async fn run_intruder_attack(
             .await;
 
             let current = completed.fetch_add(1, Ordering::Relaxed) + 1;
-            let _ = app.emit(&format!("intruder-result-{}", attack_id), result);
+            let _ = app.emit(&format!("invoker-result-{}", attack_id), result);
             let _ = app.emit(
-                &format!("intruder-progress-{}", attack_id),
-                IntruderProgress::Update { current, total },
+                &format!("invoker-progress-{}", attack_id),
+                InvokerProgress::Update { current, total },
             );
         }));
     }
@@ -339,12 +339,12 @@ pub async fn run_intruder_attack(
     }
 
     let _ = app.emit(
-        &format!("intruder-progress-{}", attack_id),
-        IntruderProgress::Complete,
+        &format!("invoker-progress-{}", attack_id),
+        InvokerProgress::Complete,
     );
 }
 
-pub async fn apply_intruder_delay(config: &IntruderAttackConfig, index: usize) {
+pub async fn apply_invoker_delay(config: &InvokerAttackConfig, index: usize) {
     let base_delay = match config.delay_max_ms {
         Some(max_delay) if max_delay > config.delay_ms => {
             let span = max_delay - config.delay_ms;
@@ -358,14 +358,14 @@ pub async fn apply_intruder_delay(config: &IntruderAttackConfig, index: usize) {
     }
 }
 
-pub async fn send_intruder_request(
+pub async fn send_invoker_request(
     client: &reqwest::Client,
-    config: &IntruderAttackConfig,
+    config: &InvokerAttackConfig,
     defaults: &[String],
     payload_values: HashMap<String, String>,
     session_value: Arc<Mutex<Option<String>>>,
     cancel_flag: Arc<AtomicBool>,
-) -> IntruderAttackResult {
+) -> InvokerAttackResult {
     let mut last_error = None;
 
     for attempt in 0..=config.retries {
@@ -374,7 +374,7 @@ pub async fn send_intruder_request(
             break;
         }
 
-        match send_intruder_request_once(client, config, defaults, &payload_values, &session_value)
+        match send_invoker_request_once(client, config, defaults, &payload_values, &session_value)
             .await
         {
             Ok(result) => return result,
@@ -387,7 +387,7 @@ pub async fn send_intruder_request(
         }
     }
 
-    IntruderAttackResult {
+    InvokerAttackResult {
         id: Uuid::new_v4().to_string(),
         payload_values,
         status: None,
@@ -401,13 +401,13 @@ pub async fn send_intruder_request(
     }
 }
 
-pub async fn send_intruder_request_once(
+pub async fn send_invoker_request_once(
     client: &reqwest::Client,
-    config: &IntruderAttackConfig,
+    config: &InvokerAttackConfig,
     defaults: &[String],
     payload_values: &HashMap<String, String>,
     session_value: &Arc<Mutex<Option<String>>>,
-) -> Result<IntruderAttackResult, String> {
+) -> Result<InvokerAttackResult, String> {
     let method = reqwest::Method::from_bytes(config.base_request.method.as_bytes())
         .map_err(|error| format!("Invalid HTTP method: {}", error))?;
     let url = replace_marked_values(&config.base_request.url, payload_values, defaults);
@@ -479,7 +479,7 @@ pub async fn send_intruder_request_once(
         }
     }
 
-    Ok(IntruderAttackResult {
+    Ok(InvokerAttackResult {
         id: Uuid::new_v4().to_string(),
         payload_values: payload_values.clone(),
         status: Some(status.as_u16()),
@@ -487,7 +487,7 @@ pub async fn send_intruder_request_once(
         response_time_ms: Some(elapsed_ms),
         error: None,
         comment: None,
-        response: Some(IntruderResponse {
+        response: Some(InvokerResponse {
             status: status.as_u16(),
             status_text: status.canonical_reason().unwrap_or_default().to_string(),
             headers: response_headers,
@@ -500,10 +500,10 @@ pub async fn send_intruder_request_once(
     })
 }
 
-pub fn build_payload_source(config: &IntruderPayloadConfig) -> Result<Vec<String>, String> {
+pub fn build_payload_source(config: &InvokerPayloadConfig) -> Result<Vec<String>, String> {
     let values = match config.payload_type {
-        IntruderPayloadType::SimpleList => config.values.clone(),
-        IntruderPayloadType::RuntimeFile => {
+        InvokerPayloadType::SimpleList => config.values.clone(),
+        InvokerPayloadType::RuntimeFile => {
             if let Some(file_path) = &config.file_path {
                 std::fs::read_to_string(file_path)
                     .map_err(|error| format!("Failed to read payload file: {}", error))?
@@ -514,7 +514,7 @@ pub fn build_payload_source(config: &IntruderPayloadConfig) -> Result<Vec<String
                 config.values.clone()
             }
         }
-        IntruderPayloadType::NumberRange => {
+        InvokerPayloadType::NumberRange => {
             let start = config.number_start.unwrap_or(0);
             let end = config.number_end.unwrap_or(100);
             let mut step = config.number_step.unwrap_or(1);
@@ -549,8 +549,8 @@ pub fn build_payload_source(config: &IntruderPayloadConfig) -> Result<Vec<String
         .collect())
 }
 
-pub fn build_intruder_payload_rows(
-    config: &IntruderAttackConfig,
+pub fn build_invoker_payload_rows(
+    config: &InvokerAttackConfig,
     position_count: usize,
 ) -> Result<Vec<HashMap<String, String>>, String> {
     if config
@@ -563,7 +563,7 @@ pub fn build_intruder_payload_rows(
     }
 
     let payload_source = build_payload_source(&config.payload_config)?;
-    Ok(generate_intruder_payloads(
+    Ok(generate_invoker_payloads(
         config,
         &payload_source,
         position_count,
@@ -571,7 +571,7 @@ pub fn build_intruder_payload_rows(
 }
 
 pub fn build_position_payload_sources(
-    config: &IntruderAttackConfig,
+    config: &InvokerAttackConfig,
     position_count: usize,
 ) -> Result<Vec<(String, Vec<String>)>, String> {
     let Some(position_payloads) = config.position_payloads.as_ref() else {
@@ -630,27 +630,27 @@ pub fn format_number_payload(value: i64, format: Option<&str>) -> String {
 
 pub fn apply_payload_processing(
     mut value: String,
-    steps: &[IntruderPayloadProcessingStep],
+    steps: &[InvokerPayloadProcessingStep],
 ) -> String {
     for step in steps {
         value = match step {
-            IntruderPayloadProcessingStep::UrlEncode => percent_encode(&value),
-            IntruderPayloadProcessingStep::UrlDecode => percent_decode(&value).unwrap_or(value),
-            IntruderPayloadProcessingStep::Base64Encode => {
+            InvokerPayloadProcessingStep::UrlEncode => percent_encode(&value),
+            InvokerPayloadProcessingStep::UrlDecode => percent_decode(&value).unwrap_or(value),
+            InvokerPayloadProcessingStep::Base64Encode => {
                 general_purpose::STANDARD.encode(value.as_bytes())
             }
-            IntruderPayloadProcessingStep::Base64Decode => general_purpose::STANDARD
+            InvokerPayloadProcessingStep::Base64Decode => general_purpose::STANDARD
                 .decode(value.as_bytes())
                 .ok()
                 .and_then(|bytes| String::from_utf8(bytes).ok())
                 .unwrap_or(value),
-            IntruderPayloadProcessingStep::Md5Hash => md5_hex(value.as_bytes()),
-            IntruderPayloadProcessingStep::Sha1Hash => {
+            InvokerPayloadProcessingStep::Md5Hash => md5_hex(value.as_bytes()),
+            InvokerPayloadProcessingStep::Sha1Hash => {
                 let mut hasher = Sha1::new();
                 hasher.update(value.as_bytes());
                 hex_encode(&hasher.finalize())
             }
-            IntruderPayloadProcessingStep::Sha256Hash => {
+            InvokerPayloadProcessingStep::Sha256Hash => {
                 let mut hasher = Sha256::new();
                 hasher.update(value.as_bytes());
                 hex_encode(&hasher.finalize())
@@ -661,13 +661,13 @@ pub fn apply_payload_processing(
     value
 }
 
-pub fn generate_intruder_payloads(
-    config: &IntruderAttackConfig,
+pub fn generate_invoker_payloads(
+    config: &InvokerAttackConfig,
     source: &[String],
     position_count: usize,
 ) -> Vec<HashMap<String, String>> {
     match config.mode {
-        IntruderAttackMode::Sniper => {
+        InvokerAttackMode::Sniper => {
             let mut rows = Vec::new();
             for position_index in 0..position_count {
                 for payload in source {
@@ -681,7 +681,7 @@ pub fn generate_intruder_payloads(
             }
             rows
         }
-        IntruderAttackMode::BatteringRam => source
+        InvokerAttackMode::BatteringRam => source
             .iter()
             .map(|payload| {
                 (0..position_count)
@@ -689,7 +689,7 @@ pub fn generate_intruder_payloads(
                     .collect()
             })
             .collect(),
-        IntruderAttackMode::Pitchfork => source
+        InvokerAttackMode::Pitchfork => source
             .iter()
             .map(|payload| {
                 (0..position_count)
@@ -697,7 +697,7 @@ pub fn generate_intruder_payloads(
                     .collect()
             })
             .collect(),
-        IntruderAttackMode::ClusterBomb => {
+        InvokerAttackMode::ClusterBomb => {
             let mut rows = Vec::new();
             append_cluster_payloads(
                 &mut rows,
@@ -716,7 +716,7 @@ pub fn append_cluster_payloads(
     rows: &mut Vec<HashMap<String, String>>,
     current: HashMap<String, String>,
     source: &[String],
-    positions: &[IntruderPayloadPosition],
+    positions: &[InvokerPayloadPosition],
     position_count: usize,
     position_index: usize,
 ) {
@@ -742,18 +742,18 @@ pub fn append_cluster_payloads(
     }
 }
 
-pub fn position_name(positions: &[IntruderPayloadPosition], index: usize) -> String {
+pub fn position_name(positions: &[InvokerPayloadPosition], index: usize) -> String {
     positions
         .get(index)
         .map(|position| position.name.clone())
         .unwrap_or_else(|| format!("position_{}", index + 1))
 }
 
-pub fn count_markers(request: &IntruderHttpRequest) -> usize {
+pub fn count_markers(request: &InvokerHttpRequest) -> usize {
     marker_defaults(request).len()
 }
 
-pub fn marker_defaults(request: &IntruderHttpRequest) -> Vec<String> {
+pub fn marker_defaults(request: &InvokerHttpRequest) -> Vec<String> {
     let mut defaults = Vec::new();
     collect_marked_values(&request.url, &mut defaults);
     for (name, value) in &request.headers {
@@ -766,12 +766,12 @@ pub fn marker_defaults(request: &IntruderHttpRequest) -> Vec<String> {
 
 pub fn collect_marked_values(text: &str, values: &mut Vec<String>) {
     let mut search_start = 0;
-    while let Some(start) = text[search_start..].find('§') {
+    while let Some(start) = text[search_start..].find('$') {
         let absolute_start = search_start + start;
-        if let Some(end) = text[absolute_start + '§'.len_utf8()..].find('§') {
-            let absolute_end = absolute_start + '§'.len_utf8() + end;
-            values.push(text[absolute_start + '§'.len_utf8()..absolute_end].to_string());
-            search_start = absolute_end + '§'.len_utf8();
+        if let Some(end) = text[absolute_start + '$'.len_utf8()..].find('$') {
+            let absolute_end = absolute_start + '$'.len_utf8() + end;
+            values.push(text[absolute_start + '$'.len_utf8()..absolute_end].to_string());
+            search_start = absolute_end + '$'.len_utf8();
         } else {
             break;
         }
@@ -787,12 +787,12 @@ pub fn replace_marked_values(
     let mut search_start = 0;
     let mut position_index = 0;
 
-    while let Some(start) = text[search_start..].find('§') {
+    while let Some(start) = text[search_start..].find('$') {
         let absolute_start = search_start + start;
-        let Some(end) = text[absolute_start + '§'.len_utf8()..].find('§') else {
+        let Some(end) = text[absolute_start + '$'.len_utf8()..].find('$') else {
             break;
         };
-        let absolute_end = absolute_start + '§'.len_utf8() + end;
+        let absolute_end = absolute_start + '$'.len_utf8() + end;
         let position_key = format!("position_{}", position_index + 1);
         let replacement = payload_values
             .get(&position_key)
@@ -801,7 +801,7 @@ pub fn replace_marked_values(
 
         output.push_str(&text[search_start..absolute_start]);
         output.push_str(&replacement);
-        search_start = absolute_end + '§'.len_utf8();
+        search_start = absolute_end + '$'.len_utf8();
         position_index += 1;
     }
 
@@ -809,7 +809,7 @@ pub fn replace_marked_values(
     output
 }
 
-pub fn response_matches(body: &str, config: &IntruderGrepMatchConfig) -> bool {
+pub fn response_matches(body: &str, config: &InvokerGrepMatchConfig) -> bool {
     if !config.enabled || config.keyword.is_empty() {
         return false;
     }
@@ -821,7 +821,7 @@ pub fn response_matches(body: &str, config: &IntruderGrepMatchConfig) -> bool {
     }
 }
 
-pub fn extract_grep_value(body: &str, config: &IntruderGrepExtractConfig) -> Option<String> {
+pub fn extract_grep_value(body: &str, config: &InvokerGrepExtractConfig) -> Option<String> {
     if !config.enabled || config.regex.is_empty() {
         return None;
     }
@@ -838,7 +838,7 @@ pub fn extract_grep_value(body: &str, config: &IntruderGrepExtractConfig) -> Opt
         .map(|match_| match_.as_str().to_string())
 }
 
-pub fn extract_session_value(body: &str, config: &IntruderSessionHandlingConfig) -> Option<String> {
+pub fn extract_session_value(body: &str, config: &InvokerSessionHandlingConfig) -> Option<String> {
     if let Some(pattern) = config
         .extract_from_response
         .as_ref()
@@ -991,9 +991,9 @@ pub fn md5_hex(input: &[u8]) -> String {
 mod tests {
     use super::*;
 
-    fn payload_config(values: &[&str]) -> IntruderPayloadConfig {
-        IntruderPayloadConfig {
-            payload_type: IntruderPayloadType::SimpleList,
+    fn payload_config(values: &[&str]) -> InvokerPayloadConfig {
+        InvokerPayloadConfig {
+            payload_type: InvokerPayloadType::SimpleList,
             values: values.iter().map(|value| value.to_string()).collect(),
             file_path: None,
             number_start: None,
@@ -1005,26 +1005,26 @@ mod tests {
     }
 
     fn attack_config(
-        position_payloads: Option<HashMap<String, IntruderPayloadConfig>>,
-    ) -> IntruderAttackConfig {
-        IntruderAttackConfig {
+        position_payloads: Option<HashMap<String, InvokerPayloadConfig>>,
+    ) -> InvokerAttackConfig {
+        InvokerAttackConfig {
             name: "test".to_string(),
-            mode: IntruderAttackMode::Sniper,
-            base_request: IntruderHttpRequest {
+            mode: InvokerAttackMode::Sniper,
+            base_request: InvokerHttpRequest {
                 method: "GET".to_string(),
-                url: "https://example.test/login?u=§user§&p=§pass§".to_string(),
+                url: "https://example.test/login?u=$user$&p=$pass$".to_string(),
                 headers: HashMap::new(),
                 body: String::new(),
                 follow_redirects: true,
                 max_hops: 10,
             },
             positions: vec![
-                IntruderPayloadPosition {
+                InvokerPayloadPosition {
                     name: "position_1".to_string(),
                     start: 0,
                     end: 0,
                 },
-                IntruderPayloadPosition {
+                InvokerPayloadPosition {
                     name: "position_2".to_string(),
                     start: 0,
                     end: 0,
@@ -1036,17 +1036,17 @@ mod tests {
             delay_ms: 0,
             delay_max_ms: None,
             retries: 0,
-            grep_match: IntruderGrepMatchConfig {
+            grep_match: InvokerGrepMatchConfig {
                 enabled: false,
                 keyword: String::new(),
                 case_sensitive: false,
             },
-            grep_extract: IntruderGrepExtractConfig {
+            grep_extract: InvokerGrepExtractConfig {
                 enabled: false,
                 regex: String::new(),
                 replacement: None,
             },
-            session_handling: IntruderSessionHandlingConfig {
+            session_handling: InvokerSessionHandlingConfig {
                 enabled: false,
                 extract_token_name: None,
                 extract_from_response: None,
@@ -1102,7 +1102,7 @@ mod tests {
         let config = attack_config(Some(position_payloads));
 
         assert_eq!(
-            validate_intruder_config(&config),
+            validate_invoker_config(&config),
             Err("Add payloads for position_2".to_string())
         );
     }
@@ -1110,7 +1110,7 @@ mod tests {
     #[test]
     fn legacy_single_payload_config_still_generates_sniper_rows() {
         let config = attack_config(None);
-        let rows = build_intruder_payload_rows(&config, 2).expect("legacy rows");
+        let rows = build_invoker_payload_rows(&config, 2).expect("legacy rows");
 
         assert_eq!(rows.len(), 4);
         assert_eq!(

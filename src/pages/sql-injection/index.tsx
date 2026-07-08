@@ -1,10 +1,5 @@
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import {
-  ResizableHandle,
-  ResizablePanel,
-  ResizablePanelGroup,
-} from '@/components/ui/resizable';
 import { useSqliPage } from './hooks/use-sqli-page';
 import { ScanToolbar } from './components/scan-toolbar';
 import { ParametersPanel } from './components/parameters-panel';
@@ -38,8 +33,8 @@ export function SqlInjectionPage() {
         onExportCsv={page.handleExportCsv}
       />
 
-      <main className="min-h-0 flex-1 flex flex-col">
-        {/* Sleek top-level progress bar */}
+      <main className="min-h-0 flex-1 flex flex-col overflow-hidden">
+        {/* Progress bar */}
         {page.progress.total > 0 && (
           <div className="w-full bg-muted/20 shrink-0 border-b">
             <div className="h-[2px] bg-primary/25 rounded-full overflow-hidden w-full relative">
@@ -57,9 +52,9 @@ export function SqlInjectionPage() {
           </div>
         )}
 
-        <ResizablePanelGroup orientation="horizontal" className="flex-1 min-h-0">
-          {/* Left panel: parameters config */}
-          <ResizablePanel defaultSize={22} minSize={15} maxSize={35} className="flex flex-col">
+        <div className="flex flex-1 min-h-0 overflow-hidden">
+          {/* Left: parameters config */}
+          <div className="w-64 shrink-0 flex flex-col border-r overflow-hidden">
             <ParametersPanel
               parameters={page.parameters}
               newParamName={page.newParamName}
@@ -76,12 +71,10 @@ export function SqlInjectionPage() {
                 )
               }
             />
-          </ResizablePanel>
+          </div>
 
-          <ResizableHandle withHandle />
-
-          {/* Right panel: results (tabs) */}
-          <ResizablePanel defaultSize={78} className="flex flex-col min-h-0">
+          {/* Right: results tabs */}
+          <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
             <Tabs defaultValue="vulnerabilities" className="h-full flex flex-col min-h-0 bg-background">
               <div className="flex h-9 shrink-0 items-center justify-between border-b bg-muted/15 px-3">
                 <TabsList className="h-7 bg-background/50 p-0.5 border shadow-sm rounded-md">
@@ -123,8 +116,8 @@ export function SqlInjectionPage() {
                 />
               </TabsContent>
 
-              <TabsContent 
-                value="extraction" 
+              <TabsContent
+                value="extraction"
                 className="flex-1 min-h-0 flex flex-col m-0 overflow-hidden"
               >
                 <ExtractionTab
@@ -139,8 +132,8 @@ export function SqlInjectionPage() {
                 />
               </TabsContent>
             </Tabs>
-          </ResizablePanel>
-        </ResizablePanelGroup>
+          </div>
+        </div>
       </main>
     </div>
   );

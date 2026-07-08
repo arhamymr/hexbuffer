@@ -1,24 +1,16 @@
 import { useState } from 'react';
 import {
-  PlusIcon,
   TrashIcon,
   LockSimpleIcon,
   LockSimpleOpenIcon,
   GlobeIcon,
   MagnifyingGlassIcon,
+  Info,
 } from '@phosphor-icons/react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import type { MockDomain, MockRoute } from '../types';
 
@@ -26,7 +18,6 @@ interface DomainsProps {
   domains: MockDomain[];
   routes: MockRoute[];
   onToggle: (id: string) => void;
-  onAdd: (hostname: string, ssl: boolean) => void;
   onDelete: (id: string) => void;
   selectedDomainId: string | null;
   onSelect: (id: string) => void;
@@ -36,23 +27,11 @@ export function DomainsPanel({
   domains,
   routes,
   onToggle,
-  onAdd,
   onDelete,
   selectedDomainId,
   onSelect,
 }: DomainsProps) {
-  const [open, setOpen] = useState(false);
-  const [hostname, setHostname] = useState('');
-  const [ssl, setSsl] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-
-  const handleAdd = () => {
-    if (!hostname.trim()) return;
-    onAdd(hostname.trim(), ssl);
-    setHostname('');
-    setSsl(true);
-    setOpen(false);
-  };
 
   const filteredDomains = domains.filter((d) =>
     d.hostname.toLowerCase().includes(searchQuery.toLowerCase())
@@ -62,52 +41,21 @@ export function DomainsPanel({
     <div className="flex h-full min-h-0 flex-col bg-background">
       {/* Top Header Controls */}
       <div className="flex flex-col gap-3 border-b p-3 bg-muted/10">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
           <div>
             <h2 className="text-sm font-semibold text-foreground">Local Mock Domains</h2>
             <p className="text-xs text-muted-foreground mt-0.5">
               Provision custom hostnames that route mock traffic to your mock rule definitions.
             </p>
           </div>
-          <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-              <Button size="sm" className="bg-primary hover:bg-primary-dark text-black font-semibold h-8 rounded-md px-3 cursor-pointer">
-                <PlusIcon className="mr-1.5 h-3.5 w-3.5 stroke-[2]" />
-                Add Domain
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-sm border-border bg-background">
-              <DialogHeader>
-                <DialogTitle className="text-sm font-bold text-foreground">New Mock Domain</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4 pt-2">
-                <div className="space-y-1.5">
-                  <Label htmlFor="mf-hostname" className="text-xs text-muted-foreground">Hostname</Label>
-                  <Input
-                    id="mf-hostname"
-                    placeholder="api.my-service.local"
-                    value={hostname}
-                    onChange={(e) => setHostname(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
-                    className="h-9 font-mono text-sm bg-muted/40 focus-visible:ring-primary focus-visible:ring-1"
-                  />
-                </div>
-                <div className="flex items-center gap-3">
-                  <Switch
-                    id="mf-ssl"
-                    checked={ssl}
-                    onCheckedChange={setSsl}
-                  />
-                  <Label htmlFor="mf-ssl" className="cursor-pointer text-xs text-foreground font-medium">
-                    Enable HTTPS (Generate self-signed certificate)
-                  </Label>
-                </div>
-                <Button className="w-full bg-primary hover:bg-primary-dark text-black font-semibold h-9 rounded-md mt-2 cursor-pointer" onClick={handleAdd}>
-                  Create Domain
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
+          {/* ponytail: guide to pick domain from http history instead of manual creation */}
+          <div className="flex items-start gap-2.5 rounded-lg border border-primary/20 bg-primary/5 p-2.5 text-xs text-muted-foreground max-w-md shrink-0">
+            <Info className="h-4 w-4 shrink-0 text-primary mt-0.5" />
+            <div>
+              <span className="font-semibold text-foreground">How to add domains: </span>
+              Go to <span className="font-medium text-foreground">HTTP History</span>, right-click any request, and select <span className="font-medium text-foreground">"Send to Mock Forge"</span>.
+            </div>
+          </div>
         </div>
 
         {/* Search Bar */}

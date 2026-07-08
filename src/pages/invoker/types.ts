@@ -190,7 +190,7 @@ export function markPayloadPosition(
   const before = text.substring(0, start);
   const marked = text.substring(start, end);
   const after = text.substring(end);
-  return `${before}§${marked}§${after}`;
+  return `${before}$${marked}$${after}`;
 }
 
 export function findPayloadPositions(text: string): PayloadPosition[] {
@@ -198,10 +198,10 @@ export function findPayloadPositions(text: string): PayloadPosition[] {
   let searchStart = 0;
 
   while (true) {
-    const startIdx = text.indexOf('§', searchStart);
+    const startIdx = text.indexOf('$', searchStart);
     if (startIdx === -1) break;
 
-    const endIdx = text.indexOf('§', startIdx + 1);
+    const endIdx = text.indexOf('$', startIdx + 1);
     if (endIdx === -1) break;
 
     positions.push({

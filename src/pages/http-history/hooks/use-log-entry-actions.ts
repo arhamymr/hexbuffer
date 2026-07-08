@@ -14,6 +14,9 @@ import { copyText } from '@/lib/clipboard';
 import { useTargetStore } from '@/stores/target';
 import { useNavStore } from '@/stores/nav';
 import { useInterceptStore } from '@/pages/intercept/state/intercept-store';
+import { invoke } from '@tauri-apps/api/core';
+import { useMockForgeStore } from '@/stores/mock-forge';
+import type { MockDomain, MockRoute } from '@/pages/mock-forge/types';
 import { usePinnedRequestsStore } from '@/pages/http-history/state/pinned-requests-store';
 import { useGroupsStore } from '@/pages/http-history/state/groups-store';
 import { useBlacklistStore } from '@/pages/http-history/state/blacklist-store';
@@ -201,6 +204,103 @@ export function useLogEntryActions(call: ApiCall, onDelete?: (id: string) => voi
     }
   }, [call.id]);
 
+  const handleSendToMockForge = useCallback(async () => {
+    try {
+      const detail = await fetchHistoryDetail(call.id);
+      const request = adaptProxyRecordToApiCall(detail);
+      
+      const hostname = request.host;
+      if (!hostname) {
+        toast.error('Host is unavailable');
+        return;
+      }
+
+      // 1. Fetch domains to see if we already have one for request.host
+      const domains = await invoke<MockDomain[]>('mock_forge_get_domains');
+      let domain = domains.find((d) => d.hostname === hostname);
+      
+      if (!domain) {
+        // 2. Add domain if it doesn't exist
+        const isSsl = request.url.startsWith('https');
+        domain = await invoke<MockDomain>('mock_forge_add_domain', {
+          hostname,
+          ssl: isSsl,
+        });
+      }
+      
+      // 3. Add route
+      const responseHeaders: Record<string, string> = {};
+      if (request.response_headers) {
+        for (const [key, val] of Object.entries(request.response_headers)) {
+          const lowerKey = key.toLowerCase();
+          if (lowerKey !== 'content-encoding' && lowerKey !== 'content-length' && lowerKey !== 'transfer-encoding') {
+            responseHeaders[key] = val;
+          }
+        }
+      }
+
+      // ponytail: Populate query params from URL
+      const requestQueryParams: { key: string; value: string; enabled: boolean }[] = [];
+      if (request.url.includes('?')) {
+        const queryStr = request.url.substring(request.url.indexOf('?') + 1);
+        const pairs = queryStr.split('&');
+        for (const pair of pairs) {
+          const eq = pair.indexOf('=');
+          if (eq !== -1) {
+            const key = decodeURIComponent(pair.substring(0, eq));
+            const value = decodeURIComponent(pair.substring(eq + 1));
+            requestQueryParams.push({ key, value, enabled: true });
+          } else if (pair) {
+            requestQueryParams.push({ key: decodeURIComponent(pair), value: '', enabled: true });
+          }
+        }
+      }
+
+      // ponytail: Populate request headers as matchers
+      const matchers: { headerKey: string; headerValue: string }[] = [];
+      if (request.headers) {
+        for (const [key, val] of Object.entries(request.headers)) {
+          matchers.push({
+            headerKey: key,
+            headerValue: val,
+          });
+        }
+      }
+
+      const route = {
+        domainId: domain.id,
+        method: request.method,
+        path: request.path || '/',
+        statusCode: request.response_status || 200,
+        responseBody: request.response_body || '',
+        responseHeaders,
+        matchers,
+        chaos: { latencyMode: 'none' },
+        enabled: true,
+        requestQueryParams,
+        requestBody: request.request_body || undefined,
+      };
+      
+      const newRoute = await invoke<MockRoute>('mock_forge_add_route', { route });
+      
+      // Update store state if loaded, so Mock Forge UI reflects this immediately
+      const store = useMockForgeStore.getState();
+      const updatedDomains = store.domains.some((d) => d.id === domain.id) ? store.domains : [...store.domains, domain];
+      store.setDomains(updatedDomains);
+      store.setRoutes([...store.routes, newRoute]);
+      
+      // Navigate/blink to Mock Forge
+      useNavStore.getState().openWindow('/mock-forge', 'Mock Forge');
+      useNavStore.getState().focusWindow('/mock-forge');
+      useNavStore.getState().triggerNavBlink('/mock-forge');
+      
+      toast.success(`Mock created for ${request.method} ${hostname}${request.path}`);
+    } catch (error) {
+      console.error('Failed to send to Mock Forge:', error);
+      toast.error('Failed to create mock in Mock Forge');
+    }
+  }, [call.id]);
+
   const handleSaveToDocuments = useCallback(async () => {
     try {
       const detail = await fetchHistoryDetail(call.id);
@@ -263,6 +363,7 @@ export function useLogEntryActions(call: ApiCall, onDelete?: (id: string) => voi
     handleOpenInRepeater,
     handleSendToCollection,
     handleSendToIntercept,
+    handleSendToMockForge,
     handleOpenInBrowserAutomation,
     handleSaveToDocuments,
     handleDelete,

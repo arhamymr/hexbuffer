@@ -7,7 +7,7 @@ use tauri::{
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
     Manager,
 };
-use hexbuffer::commands::intruder::IntruderState;
+use hexbuffer::commands::invoker::InvokerState;
 use hexbuffer::commands::repeater::WsRepeaterState;
 use hexbuffer::{
     AiBrowserState, BrowserProcessState, CollaboratorPollingState, HistoryBridge,
@@ -61,7 +61,7 @@ fn main() {
             log("History bridge initialized");
 
             app.manage(Mutex::new(ProxyState::new()));
-            app.manage(IntruderState::default());
+            app.manage(InvokerState::default());
             app.manage(PortScanState::default());
             app.manage(BrowserProcessState::default());
             app.manage(AiBrowserState::default());
@@ -75,6 +75,10 @@ fn main() {
 
             // ponytail: manage MockForgeState and spawn server
             let mock_forge = hexbuffer::commands::mock_forge::MockForgeState::new();
+            let db_ref = app.state::<hexbuffer::db::repository::Database>();
+            if let Err(e) = hexbuffer::commands::mock_forge::load_mock_forge_from_db(&mock_forge, &db_ref) {
+                eprintln!("[mock-forge] failed to load from db: {}", e);
+            }
             app.manage(mock_forge);
 
             let handle = app.handle().clone();
@@ -252,9 +256,9 @@ fn main() {
             hexbuffer::commands::api_collection::get_chronicle_logs,
             hexbuffer::commands::api_collection::add_chronicle_log,
             hexbuffer::commands::api_collection::clear_chronicle_logs,
-            hexbuffer::commands::intruder::start_intruder_attack,
+            hexbuffer::commands::invoker::start_invoker_attack,
 
-            hexbuffer::commands::intruder::stop_intruder_attack,
+            hexbuffer::commands::invoker::stop_invoker_attack,
             hexbuffer::port_scanner::scan_ports,
             hexbuffer::port_scanner::stop_port_scan,
             hexbuffer::ai::get_ai_settings,
@@ -344,6 +348,8 @@ fn main() {
             hexbuffer::commands::mock_forge::mock_forge_get_server_port,
             show_main_window,
             safe_start_dragging,
+            get_cdp_targets,
+            open_cdp_browser,
         ])
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
@@ -440,4 +446,56 @@ fn safe_start_dragging(window: tauri::Window) -> Result<(), String> {
     std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| window.start_dragging()))
         .map_err(|_| "drag failed".to_string())?
         .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn get_cdp_targets(port: u16) -> Result<String, String> {
+    let url = format!("http://127.0.0.1:{}/json", port);
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(3))
+        .build()
+        .map_err(|e| e.to_string())?;
+    let resp = client.get(&url)
+        .send()
+        .await
+        .map_err(|e| e.to_string())?
+        .text()
+        .await
+        .map_err(|e| e.to_string())?;
+    Ok(resp)
+}
+
+#[tauri::command]
+async fn open_cdp_browser(app: tauri::AppHandle, port: u16) -> Result<(), String> {
+    let profile_dir = app
+        .path()
+        .app_data_dir()
+        .map_err(|e| e.to_string())?
+        .join("cdp-browser-profile");
+    std::fs::create_dir_all(&profile_dir).map_err(|e| e.to_string())?;
+
+    let args = vec![
+        format!("--remote-debugging-port={}", port),
+        format!("--user-data-dir={}", profile_dir.display()),
+        "--new-window".to_string(),
+        "--no-first-run".to_string(),
+        "--no-default-browser-check".to_string(),
+        "about:blank".to_string(),
+    ];
+
+    let mut last_error = None;
+    for candidate in hexbuffer::commands::intercept::browser_candidates() {
+        if candidate.components().count() > 1 && !candidate.exists() {
+            continue;
+        }
+
+        match std::process::Command::new(&candidate).args(&args).spawn() {
+            Ok(_) => return Ok(()),
+            Err(error) => last_error = Some(error.to_string()),
+        }
+    }
+
+    Err(last_error.unwrap_or_else(|| {
+        "Google Chrome or Chromium was not found. Install Chrome or Chromium to use Open Browser.".to_string()
+    }))
 }

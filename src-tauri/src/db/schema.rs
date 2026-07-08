@@ -321,3 +321,31 @@ CREATE TABLE IF NOT EXISTS chronicle_logs (
 CREATE INDEX IF NOT EXISTS idx_chronicle_timestamp ON chronicle_logs(timestamp);
 "#;
 
+pub const CREATE_MOCK_FORGE_TABLES: &str = r#"
+CREATE TABLE IF NOT EXISTS mock_domains (
+    id TEXT PRIMARY KEY,
+    hostname TEXT NOT NULL UNIQUE,
+    ssl INTEGER NOT NULL DEFAULT 1,
+    status TEXT NOT NULL DEFAULT 'active',
+    created_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS mock_routes (
+    id TEXT PRIMARY KEY,
+    domain_id TEXT NOT NULL,
+    method TEXT NOT NULL,
+    path TEXT NOT NULL,
+    status_code INTEGER NOT NULL,
+    response_body TEXT NOT NULL,
+    response_headers TEXT NOT NULL,
+    matchers TEXT NOT NULL,
+    chaos TEXT NOT NULL,
+    enabled INTEGER NOT NULL DEFAULT 1,
+    request_query_params TEXT,
+    request_body TEXT,
+    FOREIGN KEY(domain_id) REFERENCES mock_domains(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_mock_routes_domain_id ON mock_routes(domain_id);
+"#;
+

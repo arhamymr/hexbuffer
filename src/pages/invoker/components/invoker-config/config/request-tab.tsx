@@ -48,9 +48,9 @@ function findMarkerRanges(text: string) {
   let searchStart = 0;
 
   while (true) {
-    const start = text.indexOf('§', searchStart);
+    const start = text.indexOf('$', searchStart);
     if (start === -1) break;
-    const end = text.indexOf('§', start + 1);
+    const end = text.indexOf('$', start + 1);
     if (end === -1) break;
     ranges.push({ start, end: end + 1 });
     searchStart = end + 1;
@@ -97,7 +97,7 @@ function applyMarkers(text: string, suggestions: InvokerMarkerSuggestion[]) {
       const before = nextText.slice(0, suggestion.start);
       const value = nextText.slice(suggestion.start, suggestion.end);
       const after = nextText.slice(suggestion.end);
-      return `${before}§${value}§${after}`;
+      return `${before}$${value}$${after}`;
     }, text);
 }
 
@@ -195,7 +195,7 @@ export function RequestTab() {
 
     const selectedText = view.state.sliceDoc(from, to);
     view.dispatch({
-      changes: { from, to, insert: `§${selectedText}§` },
+      changes: { from, to, insert: `$${selectedText}$` },
     });
     view.focus();
     updateRawRequest(view.state.doc.toString());

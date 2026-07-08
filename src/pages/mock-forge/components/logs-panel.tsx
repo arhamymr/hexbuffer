@@ -98,9 +98,8 @@ export function LogsPanel({ logs, domains, routes, selectedLogId, onSelect }: Lo
                 return (
                   <div
                     key={log.id}
-                    className={`flex cursor-pointer items-center gap-2.5 px-3 py-2 transition-colors hover:bg-muted/40 ${
-                      isSelected ? 'bg-muted/50' : ''
-                    }`}
+                    className={`flex cursor-pointer items-center gap-2.5 px-3 py-2 transition-colors hover:bg-muted/40 ${isSelected ? 'bg-muted/50' : ''
+                      }`}
                     onClick={() => onSelect(log.id)}
                   >
                     <span
@@ -196,15 +195,15 @@ function LogDetail({
         enabled: true,
       }));
 
-      const queryParams = url.includes('?') 
+      const queryParams = url.includes('?')
         ? url.substring(url.indexOf('?') + 1).split('&').map(pair => {
-            const eq = pair.indexOf('=');
-            return {
-              key: eq !== -1 ? decodeURIComponent(pair.substring(0, eq)) : decodeURIComponent(pair),
-              value: eq !== -1 ? decodeURIComponent(pair.substring(eq + 1)) : '',
-              enabled: true,
-            };
-          }).filter(p => p.key)
+          const eq = pair.indexOf('=');
+          return {
+            key: eq !== -1 ? decodeURIComponent(pair.substring(0, eq)) : decodeURIComponent(pair),
+            value: eq !== -1 ? decodeURIComponent(pair.substring(eq + 1)) : '',
+            enabled: true,
+          };
+        }).filter(p => p.key)
         : [];
 
       collectionsStore.setSelectedNodeId(`ep-${epId}`);
@@ -244,7 +243,7 @@ function LogDetail({
           </span>
           <span className="font-mono text-sm font-semibold text-foreground truncate max-w-[280px] lg:max-w-md">{log.path}</span>
           <div className="ml-auto flex items-center gap-2 shrink-0">
-            <span className={`font-mono text-xs font-bold ${statusColor(log.statusCode)}`}>
+            <span className={`font-mono text-xs ${statusColor(log.statusCode)}`}>
               HTTP {log.statusCode}
             </span>
             <Badge variant="outline" className="text-[10px] font-mono bg-muted/50 border-border">
@@ -274,11 +273,10 @@ function LogDetail({
           <button
             key={t}
             onClick={() => setTab(t)}
-            className={`px-4 py-2 text-xs font-semibold capitalize transition-colors hover:text-foreground relative cursor-pointer ${
-              tab === t
-                ? 'text-primary'
-                : 'text-muted-foreground'
-            }`}
+            className={`px-4 py-2 text-xs font-semibold capitalize transition-colors hover:text-foreground relative cursor-pointer ${tab === t
+              ? 'text-primary'
+              : 'text-muted-foreground'
+              }`}
           >
             {t}
             {tab === t && (
@@ -288,7 +286,7 @@ function LogDetail({
         ))}
       </div>
 
-      <ScrollArea className="flex-1 p-4 bg-muted/5">
+      <ScrollArea className="flex-1 p-2 bg-muted/5">
         {tab === 'request' ? (
           <div className="space-y-4">
             <Section title="Request Headers">
@@ -317,7 +315,7 @@ function LogDetail({
                 <Section title="Response Headers">
                   <HeaderTable headers={route.responseHeaders} />
                 </Section>
-                <Separator className="bg-border/40" />
+                <Separator className="bg-border" />
                 <Section title="Response Body">
                   <div className="h-[240px] rounded border border-border overflow-hidden bg-code-bg mt-1.5">
                     <TextEditor

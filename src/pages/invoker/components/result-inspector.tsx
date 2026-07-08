@@ -12,12 +12,12 @@ function replaceMarkedValues(text: string, payloadValues: Record<string, string>
   let positionIndex = 0;
 
   while (true) {
-    const start = text.indexOf('§', searchStart);
+    const start = text.indexOf('$', searchStart);
     if (start === -1) {
       break;
     }
 
-    const end = text.indexOf('§', start + 1);
+    const end = text.indexOf('$', start + 1);
     if (end === -1) {
       break;
     }

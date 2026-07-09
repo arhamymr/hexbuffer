@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { ListIcon, ArrowSquareOutIcon, MagnifyingGlassIcon } from '@phosphor-icons/react';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -6,11 +5,8 @@ import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { TextEditor } from '@/components/ui/text-editor';
-import { useRepeaterStore } from '@/stores/repeater';
-import { useCollectionsStore } from '@/stores/collections';
-import { useNavStore } from '@/stores/nav';
-import { toast } from 'sonner';
 import type { MockDomain, MockRoute, RequestLog } from '../types';
+import { useLogsPanel, useLogDetail } from './hooks/use-logs-panel';
 
 interface LogsProps {
   logs: RequestLog[];
@@ -44,19 +40,7 @@ function formatTime(ts: string) {
 }
 
 export function LogsPanel({ logs, domains, routes, selectedLogId, onSelect }: LogsProps) {
-  const [searchQuery, setSearchQuery] = useState('');
-
-  const filteredLogs = logs.filter((log) => {
-    const domain = domains.find((d) => d.id === log.domainId);
-    const search = searchQuery.toLowerCase();
-    return (
-      log.path.toLowerCase().includes(search) ||
-      log.method.toLowerCase().includes(search) ||
-      log.statusCode.toString().includes(search) ||
-      (domain && domain.hostname.toLowerCase().includes(search))
-    );
-  });
-
+  const { searchQuery, setSearchQuery, filteredLogs } = useLogsPanel(logs, domains);
   const selectedLog = logs.find((l) => l.id === selectedLogId) ?? null;
 
   return (
@@ -156,80 +140,7 @@ function LogDetail({
   domains: MockDomain[];
   routes: MockRoute[];
 }) {
-  const [tab, setTab] = useState<'request' | 'response'>('request');
-  const domain = domains.find((d) => d.id === log.domainId);
-  const route = routes.find((r) => r.id === log.routeId);
-
-  const handleSendToRepeater = async () => {
-    try {
-      const protocol = domain?.ssl ? 'https' : 'http';
-      const hostname = domain?.hostname || 'localhost';
-      const url = `${protocol}://${hostname}${log.path}`;
-
-      const repeaterStore = useRepeaterStore.getState();
-      let ws = repeaterStore.workspaces.find(w => w.name === 'mock-forge');
-      let wsId = '';
-      if (!ws) {
-        wsId = repeaterStore.createWorkspace('mock-forge');
-      } else {
-        wsId = ws.id;
-        repeaterStore.setActiveWorkspaceId(wsId);
-      }
-
-      const collectionsStore = useCollectionsStore.getState();
-      let stash = collectionsStore.stashes.find(s => s.parentId === wsId);
-      let stashId = '';
-      if (!stash) {
-        stashId = await collectionsStore.createStash('mock-forge', wsId);
-      } else {
-        stashId = stash.id;
-      }
-
-      const endpointName = `${log.method} ${log.path}`;
-      const epId = await collectionsStore.createEndpoint(stashId, endpointName);
-
-      const headersObj = log.requestHeaders || {};
-      const parsedHeaders = Object.entries(headersObj).map(([key, value]) => ({
-        key,
-        value,
-        enabled: true,
-      }));
-
-      const queryParams = url.includes('?')
-        ? url.substring(url.indexOf('?') + 1).split('&').map(pair => {
-          const eq = pair.indexOf('=');
-          return {
-            key: eq !== -1 ? decodeURIComponent(pair.substring(0, eq)) : decodeURIComponent(pair),
-            value: eq !== -1 ? decodeURIComponent(pair.substring(eq + 1)) : '',
-            enabled: true,
-          };
-        }).filter(p => p.key)
-        : [];
-
-      collectionsStore.setSelectedNodeId(`ep-${epId}`);
-      collectionsStore.updateActiveRequest(() => ({
-        method: log.method,
-        url,
-        headers: parsedHeaders,
-        body: log.requestBody || '',
-        bodyType: log.requestBody ? 'json' : 'none',
-        preScript: '',
-        testScript: '',
-        response: null,
-        isLoading: false,
-        error: null,
-        testResults: [],
-        queryParams,
-      }));
-
-      await collectionsStore.saveActiveEndpoint();
-      useNavStore.getState().triggerNavBlink('/repeater');
-      toast.success(`Sent to Repeater: ${log.method} ${log.path}`);
-    } catch (error) {
-      console.error('Failed to send request to Repeater:', error);
-      toast.error('Failed to send request to Repeater');
-    }
-  };
+  const { tab, setTab, domain, route, handleSendToRepeater } = useLogDetail(log, domains, routes);
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-background border-l">

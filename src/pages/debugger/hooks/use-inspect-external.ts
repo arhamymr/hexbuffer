@@ -59,11 +59,13 @@ export interface ConsoleLog {
 }
 
 export function useInspectExternal() {
-  const [port, setPort] = useState<number>(9222);
+  const [port, setPort] = useState<number | ''>(9223);
   const [targets, setTargets] = useState<Target[]>([]);
   const [selectedTarget, setSelectedTarget] = useState<Target | null>(null);
   const [connectionStatus, setConnectionStatus] = useState<'disconnected' | 'connecting' | 'connected'>('disconnected');
   const [error, setError] = useState<string | null>(null);
+  const [scanCount, setScanCount] = useState<number>(0);
+  const [isBrowserRunning, setIsBrowserRunning] = useState<boolean>(false);
 
   const [activeTab, setActiveTab] = useState<string>('network');
 
@@ -89,36 +91,6 @@ export function useInspectExternal() {
 
   // Search filter
   const [searchQuery, setSearchQuery] = useState('');
-
-  // Fetch targets from backend
-  const fetchTargets = useCallback(async () => {
-    setError(null);
-    try {
-      const resp = await invoke<string>('get_cdp_targets', { port });
-      const list = JSON.parse(resp) as Target[];
-      // Filter for debuggable pages
-      setTargets(list.filter((t) => t.type === 'page' && t.webSocketDebuggerUrl));
-    } catch (e: any) {
-      console.error(e);
-      setError(e.toString() || 'Failed to fetch targets. Make sure the browser is running with --remote-debugging-port=' + port);
-      setTargets([]);
-    }
-  }, [port]);
-
-  // Open browser with CDP config
-  // ponytail: Keep it simple, just invoke open_cdp_browser with port and scan targets
-  const openBrowser = useCallback(async () => {
-    setError(null);
-    try {
-      await invoke('open_cdp_browser', { port });
-      // Wait a brief moment for the browser to start
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-      await fetchTargets();
-    } catch (e: any) {
-      console.error(e);
-      setError(e.toString() || 'Failed to open browser with remote debugging on port ' + port);
-    }
-  }, [port, fetchTargets]);
 
   // Send CDP Command
   const sendCommand = useCallback(<T = any>(method: string, params: any = {}): Promise<T> => {
@@ -300,6 +272,7 @@ export function useInspectExternal() {
     setConsoleLogs([]);
     setNetworkThrottling('online');
     pendingCommands.current.clear();
+    setScanCount(0);
   }, []);
 
   // Connect WebSocket
@@ -517,6 +490,109 @@ export function useInspectExternal() {
     };
   }, []);
 
+  // Reset scan count when port changes
+  useEffect(() => {
+    setScanCount(0);
+    setTargets([]);
+    setIsBrowserRunning(false);
+  }, [port]);
+
+  // Fetch targets from backend
+  const fetchTargets = useCallback(async () => {
+    setError(null);
+    const targetPort = port === '' ? 9223 : port;
+    try {
+      const resp = await invoke<string>('get_cdp_targets', { port: targetPort });
+      
+      let list: Target[] = [];
+      try {
+        list = JSON.parse(resp) as Target[];
+      } catch (parseErr) {
+        throw new Error(`Port ${targetPort} responded but did not return a valid JSON target list. Ensure you are targeting a browser remote debugging endpoint (CDP).`);
+      }
+
+      if (!list || !Array.isArray(list)) {
+        throw new Error(`Port ${targetPort} did not return a list of targets.`);
+      }
+
+      // Filter for debuggable pages
+      const filtered = list.filter((t) => t.type === 'page' && t.webSocketDebuggerUrl);
+      setTargets(filtered);
+      setScanCount((c) => c + 1);
+      setIsBrowserRunning(true);
+      return filtered;
+    } catch (e: any) {
+      console.error(e);
+      setError(e.message || e.toString() || 'Failed to fetch targets. Make sure the browser is running with --remote-debugging-port=' + targetPort);
+      setTargets([]);
+      setIsBrowserRunning(false);
+      return [];
+    }
+  }, [port]);
+
+  // Open browser with CDP config and auto-connect
+  const openBrowser = useCallback(async () => {
+    setError(null);
+    const targetPort = port === '' ? 9223 : port;
+    try {
+      await invoke('open_cdp_browser', { port: targetPort });
+      
+      // Poll for active target tabs (up to 8 times, every 500ms)
+      let scannedTargets: Target[] = [];
+      let lastFetchError: any = null;
+      for (let i = 0; i < 8; i++) {
+        await new Promise((resolve) => setTimeout(resolve, 500));
+        try {
+          const resp = await invoke<string>('get_cdp_targets', { port: targetPort });
+          const list = JSON.parse(resp) as Target[];
+          if (Array.isArray(list)) {
+            const filtered = list.filter((t) => t.type === 'page' && t.webSocketDebuggerUrl);
+            setIsBrowserRunning(true);
+            lastFetchError = null;
+            if (filtered.length > 0) {
+              scannedTargets = filtered;
+              setTargets(filtered);
+              setScanCount((c) => c + 1);
+              break;
+            }
+          }
+        } catch (err: any) {
+          lastFetchError = err;
+        }
+      }
+
+      if (scannedTargets && scannedTargets.length > 0) {
+        // Automatically connect to the first available target tab!
+        await connect(scannedTargets[0]);
+      } else {
+        if (lastFetchError) {
+          const errMsg = lastFetchError.message || lastFetchError.toString() || 'Failed to connect to the browser debugging port.';
+          setError(`Failed to connect to browser on port ${targetPort}: ${errMsg}`);
+          setIsBrowserRunning(false);
+        } else {
+          setError(`Browser is running on port ${targetPort}, but has no active tabs open. Please open a webpage manually in the browser window.`);
+          setIsBrowserRunning(true);
+        }
+      }
+    } catch (e: any) {
+      console.error(e);
+      setError(e.toString() || 'Failed to open browser with remote debugging on port ' + targetPort);
+    }
+  }, [port, connect]);
+
+  // Automatically poll targets list in background if browser is active and not connected
+  useEffect(() => {
+    if (!isBrowserRunning || connectionStatus === 'connected') return;
+
+    const interval = setInterval(() => {
+      if (connectionStatus === 'disconnected') {
+        fetchTargets();
+      }
+    }, 2000);
+
+    return () => clearInterval(interval);
+  }, [isBrowserRunning, connectionStatus, fetchTargets]);
+
   // Derived selected request
   const selectedRequest = networkRequests.find((r) => r.requestId === selectedRequestId) || null;
 
@@ -559,6 +635,10 @@ export function useInspectExternal() {
     // Console
     consoleLogs,
     clearConsole,
+
+    // Scan Count
+    scanCount,
+    isBrowserRunning,
 
     // Filters
     searchQuery,

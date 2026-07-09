@@ -18,15 +18,6 @@ export interface RequestMatcher {
   bodyContains?: string;
 }
 
-export interface ChaosConfig {
-  latencyMode: 'none' | 'fixed' | 'random';
-  latencyFixed?: number; // ms
-  latencyMin?: number;
-  latencyMax?: number;
-  errorRate?: number; // 0-100
-  errorStatus?: number;
-}
-
 export interface MockRoute {
   id: string;
   domainId: string;
@@ -36,7 +27,6 @@ export interface MockRoute {
   responseBody: string;
   responseHeaders: Record<string, string>;
   matchers: RequestMatcher[];
-  chaos: ChaosConfig;
   enabled: boolean;
   requestQueryParams?: { key: string; value: string; enabled: boolean }[];
   requestBody?: string;

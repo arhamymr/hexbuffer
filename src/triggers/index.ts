@@ -88,3 +88,6 @@ export type { SendToRepeaterOptions, SendToCollectionOptions, CollectionNode } f
 export { writeDocument } from './documents';
 export type { WriteDocumentOptions } from './documents';
 
+export { openApp } from './navigation';
+
+

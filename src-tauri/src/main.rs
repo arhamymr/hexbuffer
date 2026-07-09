@@ -274,6 +274,8 @@ fn main() {
             hexbuffer::commands::storage::get_storage_info,
             hexbuffer::commands::storage::clear_browser_automation_artifacts,
             hexbuffer::commands::storage::reset_local_data,
+            hexbuffer::commands::storage::reset_database,
+            hexbuffer::commands::storage::reset_all_app_data,
             hexbuffer::commands::browser::get_browser_status,
             hexbuffer::commands::browser::browser_open,
             hexbuffer::commands::browser::browser_close,
@@ -467,16 +469,66 @@ async fn get_cdp_targets(port: u16) -> Result<String, String> {
 
 #[tauri::command]
 async fn open_cdp_browser(app: tauri::AppHandle, port: u16) -> Result<(), String> {
+    // Check if the port is already occupied by a different application
+    if std::net::TcpListener::bind(("127.0.0.1", port)).is_err() {
+        let url = format!("http://127.0.0.1:{}/json", port);
+        let client = reqwest::Client::builder()
+            .timeout(std::time::Duration::from_millis(500))
+            .build()
+            .map_err(|e| e.to_string())?;
+
+        let is_cdp = match client.get(&url).send().await {
+            Ok(resp) => {
+                if let Ok(text) = resp.text().await {
+                    if let Ok(val) = serde_json::from_str::<serde_json::Value>(&text) {
+                        val.is_array()
+                    } else {
+                        false
+                    }
+                } else {
+                    false
+                }
+            }
+            Err(_) => false,
+        };
+
+        if !is_cdp {
+            return Err(format!(
+                "Port {} is already occupied by another application (e.g. AirPlay, web server). Please use a different debugging port (e.g. 9222 or 9223).",
+                port
+            ));
+        } else {
+            // It is an existing Chrome CDP instance. Let's terminate it to release any profile/window lock and launch fresh.
+            #[cfg(unix)]
+            {
+                if let Ok(output) = std::process::Command::new("lsof")
+                    .args(&["-t", "-i", &format!("tcp:{}", port)])
+                    .output()
+                {
+                    let pid_str = String::from_utf8_lossy(&output.stdout).trim().to_string();
+                    if !pid_str.is_empty() {
+                        let _ = std::process::Command::new("kill")
+                            .args(&["-9", &pid_str])
+                            .status();
+                        // Wait for port to be released
+                        std::thread::sleep(std::time::Duration::from_millis(500));
+                    }
+                }
+            }
+        }
+    }
+
     let profile_dir = app
         .path()
         .app_data_dir()
         .map_err(|e| e.to_string())?
-        .join("cdp-browser-profile");
+        .join(format!("cdp-browser-profile-{}", port));
     std::fs::create_dir_all(&profile_dir).map_err(|e| e.to_string())?;
 
     let args = vec![
         format!("--remote-debugging-port={}", port),
         format!("--user-data-dir={}", profile_dir.display()),
+        "--remote-allow-origins=*".to_string(),
         "--new-window".to_string(),
         "--no-first-run".to_string(),
         "--no-default-browser-check".to_string(),

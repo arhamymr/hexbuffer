@@ -63,6 +63,16 @@ impl HistoryBridge {
         Ok(Self { db })
     }
 
+    // ponytail: delegates to reset internal database connection
+    pub fn close_connection(&self) -> Result<(), String> {
+        self.db.close_connection().map_err(|e| e.to_string())
+    }
+
+    pub fn reopen_and_init(&self) -> Result<(), String> {
+        self.db.reopen_and_init().map_err(|e| e.to_string())
+    }
+
+
     pub fn insert_record(&self, record: &ProxyRecord) -> Result<(), String> {
         self.db.insert_log(record).map_err(|e| e.to_string())
     }

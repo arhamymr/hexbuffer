@@ -78,6 +78,8 @@ export async function sendToCollection(options: SendToCollectionOptions): Promis
 
   // Navigate to repeater
   useNavStore.getState().triggerNavBlink('/repeater');
+  useNavStore.getState().openWindow('/repeater', 'Repeater');
+  useNavStore.getState().focusWindow('/repeater');
 
   toast.success(`Saved "${endpointData.name}" to ${resolvedName}`);
 }

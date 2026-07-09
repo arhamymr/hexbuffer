@@ -7,8 +7,8 @@ import { Globe, ArrowClockwise, Plugs, PlugsConnected, Bug, Browser, Warning } f
 import type { Target } from '../hooks/use-inspect-external';
 
 interface TargetSelectorProps {
-  port: number;
-  setPort: (p: number) => void;
+  port: number | '';
+  setPort: (p: number | '') => void;
   targets: Target[];
   connectionStatus: 'disconnected' | 'connecting' | 'connected';
   error: string | null;
@@ -71,14 +71,14 @@ export function TargetSelector({
                   type="number"
                   className="pl-18 h-10 font-mono text-sm bg-background border-border/60"
                   value={port}
-                  onChange={(e) => setPort(Number(e.target.value))}
+                  onChange={(e) => setPort(e.target.value === '' ? '' : Number(e.target.value))}
                   placeholder="9222"
                 />
               </div>
             </div>
 
             <Button
-              className="h-10 px-5 gap-2 w-full sm:w-auto font-medium"
+              className="h-10 px-5 gap-2 w-full sm:w-auto font-medium active:scale-[0.97] transition-transform duration-100 ease-out"
               onClick={async () => {
                 setLoading(true);
                 await openBrowser();
@@ -92,7 +92,7 @@ export function TargetSelector({
 
             <Button
               variant="outline"
-              className="h-10 px-5 gap-2 w-full sm:w-auto font-medium"
+              className="h-10 px-5 gap-2 w-full sm:w-auto font-medium active:scale-[0.97] transition-transform duration-100 ease-out"
               onClick={handleRefresh}
               disabled={loading || connectionStatus === 'connecting'}
             >
@@ -174,7 +174,7 @@ export function TargetSelector({
 
                     <Button
                       size="sm"
-                      className="gap-1.5 shrink-0"
+                      className="gap-1.5 shrink-0 active:scale-[0.97] transition-transform duration-100 ease-out"
                       onClick={() => connect(target)}
                       disabled={connectionStatus === 'connecting'}
                     >

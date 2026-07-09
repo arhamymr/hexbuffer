@@ -17,15 +17,36 @@ use std::sync::Mutex;
 
 pub struct Database {
     conn: Mutex<Connection>,
+    path: PathBuf,
 }
 
 impl Database {
     pub fn new(path: PathBuf) -> SqlResult<Self> {
-        let conn = Connection::open(path)?;
+        let conn = Connection::open(&path)?;
         Ok(Self {
             conn: Mutex::new(conn),
+            path,
         })
     }
+
+    // ponytail: allow closing the sqlite connection and reopening it to reset the database file safely
+    pub fn close_connection(&self) -> SqlResult<()> {
+        let mut conn = self.conn.lock().unwrap();
+        let dummy_conn = Connection::open_in_memory()?;
+        let old_conn = std::mem::replace(&mut *conn, dummy_conn);
+        drop(old_conn);
+        Ok(())
+    }
+
+    pub fn reopen_and_init(&self) -> SqlResult<()> {
+        let mut conn = self.conn.lock().unwrap();
+        let new_conn = Connection::open(&self.path)?;
+        *conn = new_conn;
+        drop(conn);
+        self.init()?;
+        Ok(())
+    }
+
 
     pub fn init(&self) -> SqlResult<()> {
         let conn = self.conn.lock().unwrap();

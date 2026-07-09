@@ -56,6 +56,8 @@ export function useSettingsPage() {
   const [providerKeyStatus, setProviderKeyStatus] = React.useState<AiKeyStatus>({});
   const [storageInfo, setStorageInfo] = React.useState<StorageInfo | null>(null);
   const [resettingLocalData, setResettingLocalData] = React.useState(false);
+  const [resettingDatabase, setResettingDatabase] = React.useState(false);
+  const [resettingAllAppData, setResettingAllAppData] = React.useState(false);
   const proxyDefaultPort = useAppStore((state) => state.proxyDefaultPort);
   const proxyPort = useAppStore((state) => state.proxyPort);
   const proxyStatus = useAppStore((state) => state.proxyStatus);
@@ -170,6 +172,39 @@ export function useSettingsPage() {
       toast.error(`Failed to reset local data: ${error}`);
     } finally {
       setResettingLocalData(false);
+    }
+  }, [clearBrowserAutomationArtifactPaths]);
+
+  const handleResetDatabase = React.useCallback(async () => {
+    try {
+      setResettingDatabase(true);
+      await invoke('reset_database');
+      toast.success('Database and all saved data deleted successfully');
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+    } catch (error) {
+      console.error('Failed to delete database:', error);
+      toast.error(`Failed to delete database: ${error}`);
+    } finally {
+      setResettingDatabase(false);
+    }
+  }, []);
+
+  const handleResetAllAppData = React.useCallback(async () => {
+    try {
+      setResettingAllAppData(true);
+      await invoke('reset_all_app_data');
+      clearBrowserAutomationArtifactPaths();
+      toast.success('Application fully reset. Reinitializing...');
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+    } catch (error) {
+      console.error('Failed to reset application:', error);
+      toast.error(`Failed to reset application: ${error}`);
+    } finally {
+      setResettingAllAppData(false);
     }
   }, [clearBrowserAutomationArtifactPaths]);
 
@@ -334,6 +369,8 @@ export function useSettingsPage() {
     proxyPortDraft,
     proxyStatus,
     resettingLocalData,
+    resettingDatabase,
+    resettingAllAppData,
     downloading,
     installingCa,
     regeneratingCa,
@@ -342,6 +379,8 @@ export function useSettingsPage() {
     handleRegenerateCert,
     handleClearAiApiKey,
     handleResetLocalData,
+    handleResetDatabase,
+    handleResetAllAppData,
     handleResetProxyDefaultPort,
     handleSaveProxyDefaultPort,
     handleSaveAiSettings,

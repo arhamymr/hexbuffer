@@ -12,6 +12,7 @@ import {
   createFolder as orchCreateFolder,
   createEndpoint as orchCreateEndpoint,
   selectEndpoint as orchSelectEndpoint,
+  openApp as orchOpenApp,
 } from '@/triggers';
 import {
   triggerScan as orchTriggerScan,
@@ -132,7 +133,10 @@ export function useTrackedActions() {
 
 // ── Handlers ──
 
-const handlers: Record<string, (payload: Record<string, unknown>) => void | Promise<void>> = {
+const handlers: Record<
+  string,
+  (payload: Record<string, unknown>, navigate?: (path: string) => void) => void | Promise<void>
+> = {
   add_targets: (payload) => {
     const { hosts, targetId } = payload as { hosts?: Array<{ host: string; name?: string | null }>; targetId?: string | null };
     orchAddTargets({ hosts: hosts ?? [], targetId });
@@ -196,10 +200,10 @@ const handlers: Record<string, (payload: Record<string, unknown>) => void | Prom
     await orchSendToRepeater({ logId });
   },
 
-  navigate_to: (payload) => {
+  navigate_to: (payload, navigate) => {
     const { path } = payload as unknown as NavigateToPayload;
     if (!path) return;
-    useNavStore.getState().triggerNavBlink(path);
+    orchOpenApp(path, navigate);
   },
 
   submit_crawl_input: async (payload) => {
@@ -248,7 +252,11 @@ const handlers: Record<string, (payload: Record<string, unknown>) => void | Prom
   },
 };
 
-export async function dispatchAiChatAction(action: string, payload: Record<string, unknown>) {
+export async function dispatchAiChatAction(
+  action: string,
+  payload: Record<string, unknown>,
+  navigate?: (path: string) => void
+) {
   console.log('[ai-chat-action] received:', action, JSON.stringify(payload).slice(0, 200));
   const actionId = addTrackedAction(action);
   const handler = handlers[action];
@@ -257,7 +265,7 @@ export async function dispatchAiChatAction(action: string, payload: Record<strin
     completeTrackedAction(actionId);
   } else {
     try {
-      await handler(payload);
+      await handler(payload, navigate);
       console.log('[ai-chat-action] completed:', action);
       completeTrackedAction(actionId);
     } catch (error) {

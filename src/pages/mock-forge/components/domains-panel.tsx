@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import {
   TrashIcon,
   LockSimpleIcon,
@@ -13,6 +12,7 @@ import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import type { MockDomain, MockRoute } from '../types';
+import { useDomainsPanel } from './hooks/use-domains-panel';
 
 interface DomainsProps {
   domains: MockDomain[];
@@ -31,11 +31,7 @@ export function DomainsPanel({
   selectedDomainId,
   onSelect,
 }: DomainsProps) {
-  const [searchQuery, setSearchQuery] = useState('');
-
-  const filteredDomains = domains.filter((d) =>
-    d.hostname.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const { searchQuery, setSearchQuery, filteredDomains } = useDomainsPanel(domains);
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-background">
@@ -43,7 +39,7 @@ export function DomainsPanel({
       <div className="flex flex-col gap-3 border-b p-3 bg-muted/10">
         <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
           <div>
-            <h2 className="text-sm font-semibold text-foreground">Local Mock Domains</h2>
+            <h2 className="text-sm font-semibold text-foreground">Mock Domains</h2>
             <p className="text-xs text-muted-foreground mt-0.5">
               Provision custom hostnames that route mock traffic to your mock rule definitions.
             </p>
@@ -98,9 +94,8 @@ export function DomainsPanel({
               return (
                 <div
                   key={domain.id}
-                  className={`group flex items-center px-4 py-2.5 transition-colors hover:bg-muted/30 cursor-pointer ${
-                    isSelected ? 'bg-muted/40' : ''
-                  }`}
+                  className={`group flex items-center px-4 py-2.5 transition-colors hover:bg-muted/30 cursor-pointer ${isSelected ? 'bg-muted/40' : ''
+                    }`}
                   onClick={() => onSelect(domain.id)}
                 >
                   {/* SSL status icon */}

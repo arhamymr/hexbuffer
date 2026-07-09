@@ -44,4 +44,6 @@ export async function sendToInvoker(options: SendToInvokerOptions): Promise<void
   }
 
   useNavStore.getState().triggerNavBlink('/invoker');
+  useNavStore.getState().openWindow('/invoker', 'Invoker');
+  useNavStore.getState().focusWindow('/invoker');
 }

@@ -29,4 +29,6 @@ export async function sendToRepeater(options: SendToRepeaterOptions): Promise<vo
 
   useRepeaterStore.getState().addRequestTab({ raw, url: cleanedUrl });
   useNavStore.getState().triggerNavBlink('/repeater');
+  useNavStore.getState().openWindow('/repeater', 'Repeater');
+  useNavStore.getState().focusWindow('/repeater');
 }

@@ -173,9 +173,9 @@ function runPreflight() {
 // Main entry point
 // ---------------------------------------------------------------------------
 
-const isMain = 
+const isMain =
   (typeof require !== 'undefined' && require.main === module) ||
-  (import.meta && import.meta.url === `file://${process.argv[1]}`);
+  (typeof __filename !== 'undefined' && __filename === process.argv[1]);
 
 if (isMain) {
   const isValidateMode =

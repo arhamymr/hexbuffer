@@ -191,24 +191,13 @@ export function CollectionsWidget() {
                             .sort((a, b) => a.sortOrder - b.sortOrder);
 
                           return (
-                            <div key={s.id} className="flex flex-col gap-0.5" style={{ paddingLeft: depth > 0 ? '8px' : '0px' }}>
+                            <div key={s.id} className="flex ml-5 flex-col gap-0.5" style={{ paddingLeft: depth > 0 ? '8px' : '0px' }}>
                               {/* Collection Row */}
                               <div className="w-full flex items-center gap-1 group rounded-sm hover:bg-muted/40 transition-colors px-1 py-0.5">
-                                {/* Chevron */}
-                                <button
-                                  onClick={() => toggleExpand(`stash-${s.id}`)}
-                                  className="p-0.5 text-muted-foreground hover:text-foreground transition-colors shrink-0"
-                                >
-                                  {stashExpanded ? (
-                                    <CaretDownIcon className="size-2.5" />
-                                  ) : (
-                                    <CaretRightIcon className="size-2.5" />
-                                  )}
-                                </button>
 
-                                {/* Clickable collection name */}
+                                {/* Icon + Name */}
                                 <div
-                                  onClick={() => handleCollectionClick(s)}
+                                  onClick={() => toggleExpand(`stash-${s.id}`)}
                                   className="flex-1 min-w-0 flex items-center gap-1.5 cursor-pointer"
                                 >
                                   {/* ponytail: use custom SVG folder icon */}
@@ -230,7 +219,7 @@ export function CollectionsWidget() {
 
                               {/* Endpoints & Subfolders */}
                               {stashExpanded && (
-                                <div className="flex flex-col gap-0.5">
+                                <div className="flex ml-1 flex-col gap-0.5">
                                   {/* Subfolders */}
                                   {childStashes.map((child) => renderStash(child, depth + 1))}
 

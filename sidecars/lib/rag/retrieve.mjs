@@ -8,9 +8,13 @@
 
 import { readFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const currentDir = typeof __dirname !== 'undefined' ? __dirname : import.meta.dirname;
+
+const currentDir = typeof __dirname !== 'undefined'
+  ? __dirname
+  : dirname(fileURLToPath(import.meta.url));
 
 /**
  * Cosine similarity between two vectors.

@@ -56,70 +56,73 @@ export function useMockForgePage() {
   const toggleDomain = useCallback(async (id: string) => {
     try {
       await invoke('mock_forge_toggle_domain', { id });
-      setDomains(
-        domains.map((d) =>
-          d.id === id ? { ...d, status: d.status === 'active' ? 'inactive' : 'active' } : d
-        )
-      );
+      const { domains: d } = useMockForgeStore.getState();
+      setDomains(d.map((dom) => dom.id === id ? { ...dom, status: dom.status === 'active' ? 'inactive' : 'active' } : dom));
     } catch (err) {
       console.error(err);
     }
-  }, [domains, setDomains]);
+  }, [setDomains]);
 
   const addDomain = useCallback(async (hostname: string, ssl: boolean) => {
     try {
       const domain = await invoke<MockDomain>('mock_forge_add_domain', { hostname, ssl });
-      setDomains([...domains, domain]);
+      const { domains: d } = useMockForgeStore.getState();
+      setDomains([...d, domain]);
       return domain;
     } catch (err) {
       console.error(err);
       throw err;
     }
-  }, [domains, setDomains]);
+  }, [setDomains]);
 
   const deleteDomain = useCallback(async (id: string) => {
     try {
       await invoke('mock_forge_delete_domain', { id });
-      setDomains(domains.filter((d) => d.id !== id));
-      setRoutes(routes.filter((r) => r.domainId !== id));
-      if (selectedDomainId === id) setSelectedDomainId(null);
+      const { domains: d, routes: r, selectedDomainId: sel } = useMockForgeStore.getState();
+      setDomains(d.filter((dom) => dom.id !== id));
+      setRoutes(r.filter((route) => route.domainId !== id));
+      if (sel === id) setSelectedDomainId(null);
     } catch (err) {
       console.error(err);
     }
-  }, [domains, routes, selectedDomainId, setDomains, setRoutes, setSelectedDomainId]);
+  }, [setDomains, setRoutes, setSelectedDomainId]);
 
   const addRoute = useCallback(async (route: Omit<MockRoute, 'id'>) => {
     try {
       const r = await invoke<MockRoute>('mock_forge_add_route', { route });
-      setRoutes([...routes, r]);
+      const { routes: current } = useMockForgeStore.getState();
+      setRoutes([...current, r]);
+      setSelectedRouteId(r.id);
       return r;
     } catch (err) {
       console.error(err);
       throw err;
     }
-  }, [routes, setRoutes]);
+  }, [setRoutes, setSelectedRouteId]);
 
   const updateRoute = useCallback(async (id: string, patch: Partial<MockRoute>) => {
     try {
-      const current = routes.find((r) => r.id === id);
-      if (!current) return;
-      const updated = { ...current, ...patch } as MockRoute;
+      const { routes: current } = useMockForgeStore.getState();
+      const existing = current.find((r) => r.id === id);
+      if (!existing) return;
+      const updated = { ...existing, ...patch } as MockRoute;
       await invoke('mock_forge_update_route', { id, patch: updated });
-      setRoutes(routes.map((r) => (r.id === id ? updated : r)));
+      setRoutes(useMockForgeStore.getState().routes.map((r) => (r.id === id ? updated : r)));
     } catch (err) {
       console.error(err);
     }
-  }, [routes, setRoutes]);
+  }, [setRoutes]);
 
   const deleteRoute = useCallback(async (id: string) => {
     try {
       await invoke('mock_forge_delete_route', { id });
-      setRoutes(routes.filter((r) => r.id !== id));
-      if (selectedRouteId === id) setSelectedRouteId(null);
+      const { routes: current, selectedRouteId: sel } = useMockForgeStore.getState();
+      setRoutes(current.filter((r) => r.id !== id));
+      if (sel === id) setSelectedRouteId(null);
     } catch (err) {
       console.error(err);
     }
-  }, [routes, selectedRouteId, setRoutes, setSelectedRouteId]);
+  }, [setRoutes, setSelectedRouteId]);
 
   const selectedDomain = useMemo<MockDomain | null>(
     () => domains.find((d) => d.id === selectedDomainId) ?? null,

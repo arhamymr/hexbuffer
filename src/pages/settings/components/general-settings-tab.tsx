@@ -54,6 +54,10 @@ export function GeneralSettingsTab({ settings }: GeneralSettingsTabProps) {
     storageInfo,
     resettingLocalData,
     handleResetLocalData,
+    resettingDatabase,
+    handleResetDatabase,
+    resettingAllAppData,
+    handleResetAllAppData,
   } = settings;
   const parsedProxyPort = Number(proxyPortDraft);
   const proxyPortIsValid = isValidProxyPort(parsedProxyPort);
@@ -145,6 +149,7 @@ export function GeneralSettingsTab({ settings }: GeneralSettingsTabProps) {
       <SettingsGroup label="Storage" description="Local application data paths.">
         <SettingsRow label="Database" description={storageInfo?.databasePath ?? 'Loading…'} />
         <SettingsRow label="Browser Artifacts" description={storageInfo?.browserArtifactsPath ?? 'Loading…'} />
+        
         <SettingsRow label="Reset local data" description="Clears browser automation artifacts, resets the managed intercept browser profile, and removes saved CA files.">
           <AlertDialog>
             <AlertDialogTrigger asChild>
@@ -169,6 +174,66 @@ export function GeneralSettingsTab({ settings }: GeneralSettingsTabProps) {
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
                 <AlertDialogAction onClick={handleResetLocalData}>
                   Reset
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </SettingsRow>
+
+        <SettingsRow label="Delete database & data" description="Deletes the SQLite database and all saved data (HTTP history, WebSocket messages, documents, mock configurations, regression tests).">
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                size="xs"
+                variant="destructive"
+                disabled={resettingDatabase}
+              >
+                <TrashIcon className="mr-1.5 size-3.5" />
+                {resettingDatabase ? 'Deleting…' : 'Delete'}
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete all database data?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will permanently delete your SQLite database. All proxy history, WebSocket messages,
+                  documents, mock configurations, and regression tests will be lost. The app will reload.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleResetDatabase} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                  Delete
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </SettingsRow>
+
+        <SettingsRow label="Reset entire application" description="Deletes the database, browser automation artifacts, browser profile, and CA certificate files. Fully resets the app state.">
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                size="xs"
+                variant="destructive"
+                disabled={resettingAllAppData}
+              >
+                <TrashIcon className="mr-1.5 size-3.5" />
+                {resettingAllAppData ? 'Resetting…' : 'Reset All'}
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Fully reset the application?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This is a complete reset. It deletes all database data, CA certificates, local browser automation
+                  profiles, and browser artifacts. Everything will be wiped and the app will reload to a fresh state.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleResetAllAppData} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                  Reset Everything
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>

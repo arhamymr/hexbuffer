@@ -1,7 +1,6 @@
 import * as React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { convertFileSrc } from '@tauri-apps/api/core';
-import { useInspectorStore } from '@/stores/inspector';
 import { useAppSettingsStore } from '@/stores/app-settings-store';
 import { useTheme } from '@/components/theme-provider';
 import {
@@ -44,14 +43,9 @@ function BgLayer() {
 }
 
 export function AppLayout({ children }: { children?: React.ReactNode }) {
-  const initInspectorListeners = useInspectorStore((state) => state.initListeners);
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
   const bgType = useAppSettingsStore((s) => s.bgType);
-
-  React.useEffect(() => {
-    initInspectorListeners();
-  }, [initInspectorListeners]);
 
   // // Drop bg-background when a custom background is active so BgLayer shows through
   // const rootBg = bgType === 'none' ? 'bg-background' : 'bg-transparent';

@@ -1,21 +1,14 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use std::sync::Mutex;
-use tauri::{
-    menu::{Menu, MenuItem, Submenu},
-    tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
-    Manager,
-};
-use hexbuffer::commands::invoker::InvokerState;
-use hexbuffer::commands::repeater::WsRepeaterState;
-use hexbuffer::{
-    AiBrowserState, BrowserProcessState, CollaboratorPollingState, HistoryBridge,
-    PortScanState, ProxyState, SqliScanState,
-};
+mod app_commands;
+mod setup;
+mod tray;
+
+use tauri::Manager;
 
 /// Append a timestamped line to both stderr and /tmp/hexbuffer.log
-fn log(msg: &str) {
+pub(crate) fn log(msg: &str) {
     let ts = chrono::Local::now().format("%Y-%m-%d %H:%M:%S%.3f");
     let line = format!("[{ts}] {msg}");
     eprintln!("{line}");
@@ -39,163 +32,7 @@ fn main() {
 
     tauri::Builder::default()
         .setup(|app| {
-            #[cfg(desktop)]
-            app.handle()
-                .plugin(tauri_plugin_updater::Builder::new().build())
-                .expect("Failed to initialize updater plugin");
-
-            log("Initializing database...");
-            let app_dir = app
-                .path()
-                .app_data_dir()
-                .expect("Failed to get app data dir");
-            std::fs::create_dir_all(&app_dir).expect("Failed to create app data dir");
-            hexbuffer::proxy::https::cert::init_ca_dir(app_dir.clone());
-
-            let db_path = app_dir.join("hexbuffer.db");
-            log(&format!("Opening database at {:?}", db_path));
-            let database = hexbuffer::db::repository::Database::new(db_path.clone())
-                .expect("Failed to initialize database");
-            database.init().expect("Failed to initialize database schema");
-            let history = HistoryBridge::new(db_path).expect("Failed to initialize history bridge");
-            log("History bridge initialized");
-
-            app.manage(Mutex::new(ProxyState::new()));
-            app.manage(InvokerState::default());
-            app.manage(PortScanState::default());
-            app.manage(BrowserProcessState::default());
-            app.manage(AiBrowserState::default());
-            app.manage(SqliScanState::new());
-            app.manage(WsRepeaterState::default());
-            app.manage(CollaboratorPollingState::default());
-            app.manage(hexbuffer::automation::AutomationRuntimeState::default());
-            app.manage(hexbuffer::commands::audit::AuditState::new());
-            app.manage(database);
-            app.manage(history);
-
-            // ponytail: manage MockForgeState and spawn server
-            let mock_forge = hexbuffer::commands::mock_forge::MockForgeState::new();
-            let db_ref = app.state::<hexbuffer::db::repository::Database>();
-            if let Err(e) = hexbuffer::commands::mock_forge::load_mock_forge_from_db(&mock_forge, &db_ref) {
-                eprintln!("[mock-forge] failed to load from db: {}", e);
-            }
-            app.manage(mock_forge);
-
-            let handle = app.handle().clone();
-            tauri::async_runtime::spawn(async move {
-                if let Err(e) = hexbuffer::commands::mock_forge::start_mock_forge_server(handle).await {
-                    eprintln!("[mock-forge] startup server error: {}", e);
-                }
-            });
-
-            log("Building Tauri app...");
-
-            #[cfg(desktop)]
-            {
-                let handle = app.handle().clone();
-                tauri::async_runtime::spawn(async move {
-                    if let Err(e) = check_for_updates(handle).await {
-                        log(&format!("[updater] startup check failed: {e}"));
-                    }
-                });
-            }
-
-            // Fallback: if React fails to mount and call show_main_window,
-            // auto-dismiss the splash after 10 seconds to prevent the app from
-            // getting stuck on the splash screen in production builds.
-            {
-                let handle = app.handle().clone();
-                tauri::async_runtime::spawn(async move {
-                    tokio::time::sleep(std::time::Duration::from_secs(10)).await;
-                    if let Some(splash) = handle.get_webview_window("splashscreen") {
-                        log("Splash fallback timer fired — closing splash");
-                        let _ = splash.close();
-                    }
-                    if let Some(main_window) = handle.get_webview_window("main") {
-                        let _ = main_window.show();
-                        let _ = main_window.set_focus();
-                        log("Splash fallback: main window shown");
-                    }
-                });
-            }
-
-            // System tray icon + menu
-            {
-                let icon = app.default_window_icon().cloned();
-
-                let assistant_i = MenuItem::with_id(app, "nav:/", "Assistant", true, None::<&str>)?;
-                let http_history_i = MenuItem::with_id(app, "nav:/http-history", "HTTP History", true, None::<&str>)?;
-                let websocket_history_i = MenuItem::with_id(app, "nav:/websocket-history", "WebSocket History", true, None::<&str>)?;
-                let browser_i = MenuItem::with_id(app, "nav:/browser-automation", "Browser", true, None::<&str>)?;
-                let intercept_i = MenuItem::with_id(app, "nav:/intercept", "Intercept", true, None::<&str>)?;
-                let invoker_i = MenuItem::with_id(app, "nav:/invoker", "Invoker", true, None::<&str>)?;
-                let repeater_i = MenuItem::with_id(app, "nav:/repeater", "Repeater", true, None::<&str>)?;
-                let code_audit_i = MenuItem::with_id(app, "nav:/code-audit", "Code Audit", true, None::<&str>)?;
-                let documents_i = MenuItem::with_id(app, "nav:/documents", "Documents", true, None::<&str>)?;
-                let tools_i = MenuItem::with_id(app, "nav:/tools", "Tools", true, None::<&str>)?;
-                let features_menu = Submenu::with_items(
-                    app,
-                    "Features",
-                    true,
-                    &[&assistant_i, &http_history_i, &websocket_history_i, &browser_i, &intercept_i, &invoker_i, &repeater_i, &code_audit_i, &documents_i, &tools_i],
-                )?;
-
-                let settings_i = MenuItem::with_id(app, "nav:/settings", "Settings", true, None::<&str>)?;
-                let show_i =
-                    MenuItem::with_id(app, "show", "Show", true, None::<&str>)?;
-                let quit_i =
-                    MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
-                let menu = Menu::with_items(app, &[&features_menu, &settings_i, &show_i, &quit_i])?;
-
-                let handle = app.handle().clone();
-                TrayIconBuilder::new()
-                    .menu(&menu)
-                    .on_menu_event(move |app, event| match event.id.as_ref() {
-                        "show" => {
-                            if let Some(window) = app.get_webview_window("main") {
-                                let _ = window.unminimize();
-                                let _ = window.show();
-                                let _ = window.set_focus();
-                            }
-                        }
-                        "quit" => {
-                            log("Quit via tray menu");
-                            app.exit(0);
-                        }
-                        id if id.starts_with("nav:") => {
-                            let path = &id[4..]; // strip "nav:" prefix
-                            if let Some(window) = app.get_webview_window("main") {
-                                let _ = window.unminimize();
-                                let _ = window.show();
-                                let _ = window.set_focus();
-                                let js = format!("window.location.href = '{}'", path);
-                                let _ = window.eval(&js);
-                            }
-                        }
-                        _ => {}
-                    })
-                    .on_tray_icon_event(move |_tray, event| match event {
-                        TrayIconEvent::Click {
-                            button: MouseButton::Left,
-                            button_state: MouseButtonState::Up,
-                            ..
-                        } => {
-                            if let Some(window) = handle.get_webview_window("main") {
-                                let _ = window.unminimize();
-                                let _ = window.show();
-                                let _ = window.set_focus();
-                            }
-                        }
-                        _ => {}
-                    })
-                    .icon(
-                        icon.expect("default window icon must be set in tauri.conf.json"),
-                    )
-                    .build(app)?;
-                log("System tray icon created");
-            }
-
-            log("Tauri setup complete");
+            setup::init(app)?;
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -257,7 +94,6 @@ fn main() {
             hexbuffer::commands::api_collection::add_chronicle_log,
             hexbuffer::commands::api_collection::clear_chronicle_logs,
             hexbuffer::commands::invoker::start_invoker_attack,
-
             hexbuffer::commands::invoker::stop_invoker_attack,
             hexbuffer::port_scanner::scan_ports,
             hexbuffer::port_scanner::stop_port_scan,
@@ -323,10 +159,6 @@ fn main() {
             hexbuffer::commands::chat_sessions::delete_chat_session,
             hexbuffer::commands::chat_sessions::get_chat_messages,
             hexbuffer::commands::chat_sessions::save_chat_messages,
-            // Audit
-            hexbuffer::commands::audit::audit_directory,
-            hexbuffer::commands::audit::stop_audit,
-            hexbuffer::commands::audit::generate_audit_report,
             // Regression testing
             hexbuffer::commands::regression::run_regression_test,
             hexbuffer::commands::regression::list_regression_test_cases,
@@ -347,11 +179,10 @@ fn main() {
             hexbuffer::commands::mock_forge::mock_forge_delete_route,
             hexbuffer::commands::mock_forge::mock_forge_get_logs,
             hexbuffer::commands::mock_forge::mock_forge_clear_logs,
-            hexbuffer::commands::mock_forge::mock_forge_get_server_port,
-            show_main_window,
-            safe_start_dragging,
-            get_cdp_targets,
-            open_cdp_browser,
+            app_commands::show_main_window,
+            app_commands::safe_start_dragging,
+            app_commands::get_cdp_targets,
+            app_commands::open_cdp_browser,
         ])
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
@@ -384,170 +215,4 @@ fn main() {
         })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
-}
-
-#[cfg(desktop)]
-async fn check_for_updates(app: tauri::AppHandle) -> tauri_plugin_updater::Result<()> {
-    use tauri_plugin_updater::UpdaterExt;
-
-    if let Some(update) = app.updater()?.check().await? {
-        log(&format!(
-            "[updater] update {} available (current: {}) — user will be prompted via UI",
-            update.version, update.current_version
-        ));
-    } else {
-        log("[updater] no update available");
-    }
-
-    Ok(())
-}
-
-#[tauri::command]
-fn show_main_window(app: tauri::AppHandle) -> Result<(), String> {
-    log("show_main_window invoked by frontend");
-
-    // Close splashscreen if it exists
-    if let Some(splash_window) = app.get_webview_window("splashscreen") {
-        log("Closing splash screen");
-        splash_window.close().map_err(|error| {
-            log(&format!("Failed to close splash: {error}"));
-            error.to_string()
-        })?;
-    } else {
-        log("No splash screen found to close");
-    }
-
-    // Show and focus main window
-    let main_window = app
-        .get_webview_window("main")
-        .ok_or_else(|| {
-            log("ERROR: main window was not found");
-            "main window was not found".to_string()
-        })?;
-
-    main_window.show().map_err(|error| {
-        log(&format!("Failed to show main window: {error}"));
-        error.to_string()
-    })?;
-    main_window.set_focus().map_err(|error| {
-        log(&format!("Failed to focus main window: {error}"));
-        error.to_string()
-    })?;
-
-    log("Main window shown and focused successfully");
-    Ok(())
-}
-
-/// Safe wrapper around start_dragging that catches the nil-currentEvent panic
-/// in tao 0.35.2 on macOS (tao/src/platform_impl/macos/window.rs:936).
-#[tauri::command]
-fn safe_start_dragging(window: tauri::Window) -> Result<(), String> {
-    if window.is_fullscreen().unwrap_or(false) {
-        return Ok(());
-    }
-    std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| window.start_dragging()))
-        .map_err(|_| "drag failed".to_string())?
-        .map_err(|e| e.to_string())
-}
-
-#[tauri::command]
-async fn get_cdp_targets(port: u16) -> Result<String, String> {
-    let url = format!("http://127.0.0.1:{}/json", port);
-    let client = reqwest::Client::builder()
-        .timeout(std::time::Duration::from_secs(3))
-        .build()
-        .map_err(|e| e.to_string())?;
-    let resp = client.get(&url)
-        .send()
-        .await
-        .map_err(|e| e.to_string())?
-        .text()
-        .await
-        .map_err(|e| e.to_string())?;
-    Ok(resp)
-}
-
-#[tauri::command]
-async fn open_cdp_browser(app: tauri::AppHandle, port: u16) -> Result<(), String> {
-    // Check if the port is already occupied by a different application
-    if std::net::TcpListener::bind(("127.0.0.1", port)).is_err() {
-        let url = format!("http://127.0.0.1:{}/json", port);
-        let client = reqwest::Client::builder()
-            .timeout(std::time::Duration::from_millis(500))
-            .build()
-            .map_err(|e| e.to_string())?;
-
-        let is_cdp = match client.get(&url).send().await {
-            Ok(resp) => {
-                if let Ok(text) = resp.text().await {
-                    if let Ok(val) = serde_json::from_str::<serde_json::Value>(&text) {
-                        val.is_array()
-                    } else {
-                        false
-                    }
-                } else {
-                    false
-                }
-            }
-            Err(_) => false,
-        };
-
-        if !is_cdp {
-            return Err(format!(
-                "Port {} is already occupied by another application (e.g. AirPlay, web server). Please use a different debugging port (e.g. 9222 or 9223).",
-                port
-            ));
-        } else {
-            // It is an existing Chrome CDP instance. Let's terminate it to release any profile/window lock and launch fresh.
-            #[cfg(unix)]
-            {
-                if let Ok(output) = std::process::Command::new("lsof")
-                    .args(&["-t", "-i", &format!("tcp:{}", port)])
-                    .output()
-                {
-                    let pid_str = String::from_utf8_lossy(&output.stdout).trim().to_string();
-                    if !pid_str.is_empty() {
-                        let _ = std::process::Command::new("kill")
-                            .args(&["-9", &pid_str])
-                            .status();
-                        // Wait for port to be released
-                        std::thread::sleep(std::time::Duration::from_millis(500));
-                    }
-                }
-            }
-        }
-    }
-
-    let profile_dir = app
-        .path()
-        .app_data_dir()
-        .map_err(|e| e.to_string())?
-        .join(format!("cdp-browser-profile-{}", port));
-    std::fs::create_dir_all(&profile_dir).map_err(|e| e.to_string())?;
-
-    let args = vec![
-        format!("--remote-debugging-port={}", port),
-        format!("--user-data-dir={}", profile_dir.display()),
-        "--remote-allow-origins=*".to_string(),
-        "--new-window".to_string(),
-        "--no-first-run".to_string(),
-        "--no-default-browser-check".to_string(),
-        "about:blank".to_string(),
-    ];
-
-    let mut last_error = None;
-    for candidate in hexbuffer::commands::intercept::browser_candidates() {
-        if candidate.components().count() > 1 && !candidate.exists() {
-            continue;
-        }
-
-        match std::process::Command::new(&candidate).args(&args).spawn() {
-            Ok(_) => return Ok(()),
-            Err(error) => last_error = Some(error.to_string()),
-        }
-    }
-
-    Err(last_error.unwrap_or_else(|| {
-        "Google Chrome or Chromium was not found. Install Chrome or Chromium to use Open Browser.".to_string()
-    }))
 }

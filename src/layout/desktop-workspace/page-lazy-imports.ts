@@ -18,7 +18,7 @@ const SqlInjectionPage = React.lazy(() => import("@/pages/sql-injection").then((
 const DocumentsPage = React.lazy(() => import("@/pages/markdown").then((m) => ({ default: m.DocumentsPage })));
 const BrowserAutomationPage = React.lazy(() => import("@/pages/browser").then((m) => ({ default: m.BrowserAutomationPage })));
 const ListenerPage = React.lazy(() => import("@/pages/listener").then((m) => ({ default: m.ListenerPage })));
-const DebuggerPage = React.lazy(() => import("@/pages/debugger").then((m) => ({ default: m.DebuggerPage })));
+const InspectorPage = React.lazy(() => import("@/pages/inspector").then((m) => ({ default: m.InspectorPage })));
 const WorkflowPage = React.lazy(() => import("@/pages/workflow").then((m) => ({ default: m.AutomationPage })));
 const RegressionPage = React.lazy(() => import("@/pages/regression").then((m) => ({ default: m.RegressionPage })));
 const AssistantPage = React.lazy(() => import("@/layout/assistant").then((m) => ({ default: m.AssistantPage })));
@@ -34,7 +34,7 @@ export const pageComponentMap: Record<string, React.ComponentType<any>> = {
   '/invoker': InvokerPage,
   '/browser': BrowserAutomationPage,
   '/listener': ListenerPage,
-  '/debugger': DebuggerPage,
+  '/inspector': InspectorPage,
   '/encoder': EncoderPage,
   '/hash': HashPage,
   '/comparer': ComparerPage,

@@ -1,4 +1,3 @@
-pub mod audit;
 pub mod browser;
 pub mod cert;
 pub mod chat_sessions;

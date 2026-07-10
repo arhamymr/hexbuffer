@@ -57,8 +57,8 @@ const BrowserAutomationPage = React.lazy(() =>
 const ListenerPage = React.lazy(() =>
   import("@/pages/listener").then((m) => ({ default: m.ListenerPage }))
 );
-const DebuggerPage = React.lazy(() =>
-  import("@/pages/debugger").then((m) => ({ default: m.DebuggerPage }))
+const InspectorPage = React.lazy(() =>
+  import("@/pages/inspector").then((m) => ({ default: m.InspectorPage }))
 );
 
 const WorkflowPage = React.lazy(() =>
@@ -108,7 +108,7 @@ function AppRoutes() {
           <Route path="/invoker" element={<InvokerPage />} />
           <Route path="/browser" element={<BrowserAutomationPage />} />
           <Route path="/listener" element={<ListenerPage />} />
-          <Route path="/debugger" element={<DebuggerPage />} />
+          <Route path="/inspector" element={<InspectorPage />} />
           <Route path="/encoder" element={<EncoderPage />} />
           <Route path="/hash" element={<HashPage />} />
           <Route path="/comparer" element={<ComparerPage />} />

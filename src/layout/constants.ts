@@ -1,5 +1,5 @@
 import React from 'react';
-import { HouseIcon, ArrowsDownUpIcon, BugIcon, PauseCircleIcon, SwordIcon, FlaskIcon, BinaryIcon, AppWindowIcon, DatabaseIcon, FingerprintIcon, GearSixIcon, GitDiffIcon, NetworkIcon, LightningIcon, NoteIcon, WifiHighIcon, SpinnerIcon, BlueprintIcon, MarkdownLogoIcon, InfinityIcon, StarFourIcon, CloverIcon, CubeFocusIcon } from '@phosphor-icons/react';
+import { HouseIcon, ArrowsDownUpIcon, BugIcon, PauseCircleIcon, SwordIcon, FlaskIcon, BinaryIcon, AppWindowIcon, DatabaseIcon, FingerprintIcon, GearSixIcon, GitDiffIcon, NetworkIcon, LightningIcon, NoteIcon, WifiHighIcon, SpinnerIcon, BlueprintIcon, MarkdownLogoIcon, InfinityIcon, StarFourIcon, CloverIcon, CubeFocusIcon, RadioIcon, TargetIcon } from '@phosphor-icons/react';
 
 export interface NavItem {
   label: string;
@@ -103,6 +103,14 @@ export const allNavItems: NavItem[] = [
     flag: 'beta'
   },
   {
+    label: 'Listener',
+    icon: RadioIcon,
+    href: '/listener',
+    description: 'Generate out-of-band (OOB) payloads and monitor incoming DNS, HTTP, and HTTPS interactions.',
+    colors: { bg: 'bg-green-500 dark:bg-green-500', hoverBg: 'group-hover:bg-green-500 dark:group-hover:bg-green-500', border: 'border-green-500 dark:border-green-500' },
+    flag: 'release'
+  },
+  {
     label: 'Markdown',
     icon: MarkdownLogoIcon,
     href: '/documents',
@@ -136,7 +144,7 @@ export const allNavItems: NavItem[] = [
   },
   {
     label: 'Port Scanner',
-    icon: NetworkIcon,
+    icon: TargetIcon,
     href: '/port-scanner',
     description: 'Scan host ports for open services and network vulnerabilities.',
     colors: { bg: 'bg-pink-500 dark:bg-pink-500', hoverBg: 'group-hover:bg-pink-500 dark:group-hover:bg-pink-500', border: 'border-pink-500 dark:border-pink-500' },
@@ -175,11 +183,11 @@ export const allNavItems: NavItem[] = [
     flag: 'release'
   },
   {
-    label: 'Debugger',
+    label: 'Inspector',
     icon: BugIcon,
-    href: '/debugger',
+    href: '/inspector',
     devOnly: true,
-    description: 'Analyze proxy engine logs, active tunnels, and troubleshoot performance.',
+    description: 'Inspect external browser pages, network traffic, cookies, and console logs via CDP.',
     colors: { bg: 'bg-zinc-500 dark:bg-zinc-500', hoverBg: 'group-hover:bg-zinc-500 dark:group-hover:bg-zinc-500', border: 'border-zinc-500 dark:border-zinc-500' },
     flag: 'alpha'
   },

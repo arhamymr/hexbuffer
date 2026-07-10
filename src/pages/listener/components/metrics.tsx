@@ -1,49 +1,65 @@
-import { PulseIcon, ClockIcon, GlobeIcon, ShieldIcon, WifiHighIcon } from '@phosphor-icons/react';
-import type { ComponentType } from 'react';
-import { Card } from '@/components/ui/card';
+import { ShieldIcon, PulseIcon, ClockIcon, WifiHighIcon } from '@phosphor-icons/react';
 import type { ListenerDashboardStats } from '../types';
 
 interface ListenerMetricsProps {
   stats: ListenerDashboardStats;
+  isEnabled: boolean;
 }
 
-export function ListenerMetrics({ stats }: ListenerMetricsProps) {
+export function ListenerMetrics({ stats, isEnabled }: ListenerMetricsProps) {
   return (
-    <div className="grid shrink-0 grid-cols-2 gap-2 border-b bg-background p-2 md:grid-cols-4 lg:grid-cols-7">
-      <MetricCard label="Active Payloads" value={stats.activePayloads} icon={ShieldIcon} />
-      <MetricCard label="Interactions Today" value={stats.interactionsToday} icon={PulseIcon} />
-      <MetricCard label="DNS Events" value={stats.dnsEvents} icon={GlobeIcon} />
-      <MetricCard label="HTTP Events" value={stats.httpEvents} icon={WifiHighIcon} />
-      <MetricCard label="HTTPS Events" value={stats.httpsEvents} icon={WifiHighIcon} />
-      <MetricCard
-        label="Last Callback"
-        value={stats.lastCallback ? formatRelative(stats.lastCallback) : 'Never'}
-        icon={ClockIcon}
-      />
-      <MetricCard label="Connected Servers" value={stats.connectedServers} icon={WifiHighIcon} />
-    </div>
-  );
-}
-
-function MetricCard({
-  label,
-  value,
-  icon: Icon,
-}: {
-  label: string;
-  value: string | number;
-  icon: ComponentType<{ className?: string }>;
-}) {
-  return (
-    <Card className="p-2">
-      <div className="flex items-center gap-2">
-        <Icon className="text-muted-foreground h-4 w-4 shrink-0" />
-        <div className="min-w-0">
-          <p className="text-muted-foreground truncate text-[10px]">{label}</p>
-          <p className="truncate text-sm font-semibold">{value}</p>
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 border-b bg-muted/30 px-3 py-1.5 text-xs text-muted-foreground font-mono shrink-0">
+      {/* Connected Servers */}
+      <div className="flex items-center gap-1.5">
+        <div className="relative flex h-2 w-2">
+          {isEnabled ? (
+            <>
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500"></span>
+            </>
+          ) : (
+            <span className="relative inline-flex h-2 w-2 rounded-full bg-muted-foreground/40"></span>
+          )}
         </div>
+        <span className="font-semibold text-foreground">
+          {isEnabled ? stats.connectedServers : 0}
+        </span>
+        <span>servers active</span>
       </div>
-    </Card>
+
+      <span className="text-border">|</span>
+
+      {/* Active Payloads */}
+      <div className="flex items-center gap-1">
+        <ShieldIcon className="h-3.5 w-3.5" />
+        <span className="font-semibold text-foreground">{stats.activePayloads}</span>
+        <span>payloads</span>
+      </div>
+
+      <span className="text-border">|</span>
+
+      {/* Interactions Today */}
+      <div className="flex items-center gap-1.5">
+        <PulseIcon className="h-3.5 w-3.5" />
+        <span className="font-semibold text-foreground">{stats.interactionsToday}</span>
+        <span>interactions today</span>
+        <span className="text-[10px] text-muted-foreground/80">
+          (DNS: {stats.dnsEvents} · HTTP: {stats.httpEvents} · HTTPS: {stats.httpsEvents})
+        </span>
+      </div>
+
+      {stats.lastCallback && (
+        <>
+          <span className="text-border">|</span>
+          {/* Last Callback */}
+          <div className="flex items-center gap-1">
+            <ClockIcon className="h-3.5 w-3.5" />
+            <span>Last callback:</span>
+            <span className="font-semibold text-foreground">{formatRelative(stats.lastCallback)}</span>
+          </div>
+        </>
+      )}
+    </div>
   );
 }
 

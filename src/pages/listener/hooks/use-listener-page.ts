@@ -2,20 +2,12 @@ import { useCallback, useEffect, useMemo } from 'react';
 import { useListenerStore } from '@/stores/listener';
 import { useShallow } from 'zustand/react/shallow';
 import * as api from '../api';
-import {
-  MOCK_INTERACTIONS,
-  MOCK_PAYLOADS,
-  MOCK_SERVERS,
-  MOCK_STATS,
-} from '../mock-data';
 import type {
   ListenerInteraction,
   CreatePayloadRequest,
   CreateServerRequest,
+  ListenerServer,
 } from '../types';
-
-/** When true, the hook seeds the store with mock data instead of calling the backend. */
-const USE_MOCK = true;
 
 export function useListenerPage() {
   const {
@@ -38,6 +30,8 @@ export function useListenerPage() {
     isPolling,
     setIsPolling,
     setLastPollError,
+    isEnabled,
+    setIsEnabled,
   } = useListenerStore(
     useShallow((s) => ({
       activeSubTab: s.activeSubTab,
@@ -59,49 +53,33 @@ export function useListenerPage() {
       isPolling: s.isPolling,
       setIsPolling: s.setIsPolling,
       setLastPollError: s.setLastPollError,
+      isEnabled: s.isEnabled,
+      setIsEnabled: s.setIsEnabled,
     }))
   );
 
+  // ponytail: simplified loader calls direct to Tauri commands with zero mock boilerplate
   const loadServers = useCallback(async () => {
-    if (USE_MOCK) {
-      setServers(MOCK_SERVERS);
-      return;
-    }
     try {
       const s = await api.listListenerServers();
       setServers(s);
     } catch (e) {
       console.error('Failed to load listener servers', e);
-      setServers(MOCK_SERVERS);
+      setServers([]);
     }
   }, [setServers]);
 
   const loadPayloads = useCallback(async () => {
-    if (USE_MOCK) {
-      setPayloads(MOCK_PAYLOADS);
-      return;
-    }
     try {
       const p = await api.listListenerPayloads();
       setPayloads(p);
     } catch (e) {
       console.error('Failed to load listener payloads', e);
-      setPayloads(MOCK_PAYLOADS);
+      setPayloads([]);
     }
   }, [setPayloads]);
 
   const loadInteractions = useCallback(async () => {
-    if (USE_MOCK) {
-      let filtered = MOCK_INTERACTIONS;
-      if (selectedPayloadFilter) {
-        filtered = filtered.filter((i) => i.payloadId === selectedPayloadFilter);
-      }
-      if (selectedTypeFilter) {
-        filtered = filtered.filter((i) => i.interactionType === selectedTypeFilter);
-      }
-      setInteractions(filtered);
-      return;
-    }
     try {
       const i = await api.listListenerInteractions(
         selectedPayloadFilter ?? undefined,
@@ -110,21 +88,16 @@ export function useListenerPage() {
       setInteractions(i);
     } catch (e) {
       console.error('Failed to load listener interactions', e);
-      setInteractions(MOCK_INTERACTIONS);
+      setInteractions([]);
     }
   }, [setInteractions, selectedPayloadFilter, selectedTypeFilter]);
 
   const loadStats = useCallback(async () => {
-    if (USE_MOCK) {
-      setStats(MOCK_STATS);
-      return;
-    }
     try {
       const s = await api.getListenerDashboardStats();
       setStats(s);
     } catch (e) {
       console.error('Failed to load listener stats', e);
-      setStats(MOCK_STATS);
     }
   }, [setStats]);
 
@@ -133,6 +106,15 @@ export function useListenerPage() {
       const server = await api.addListenerServer(req);
       setServers([server, ...servers]);
       return server;
+    },
+    [servers, setServers]
+  );
+
+  const handleUpdateServer = useCallback(
+    async (server: ListenerServer) => {
+      const updated = await api.updateListenerServer(server);
+      setServers(servers.map((s) => (s.id === server.id ? updated : s)));
+      return updated;
     },
     [servers, setServers]
   );
@@ -183,7 +165,10 @@ export function useListenerPage() {
 
   // auto-polling
   useEffect(() => {
-    if (servers.length === 0) return;
+    if (!isEnabled || servers.length === 0) {
+      setIsPolling(false);
+      return;
+    }
 
     setIsPolling(true);
     setLastPollError(null);
@@ -208,7 +193,7 @@ export function useListenerPage() {
       clearInterval(interval);
       setIsPolling(false);
     };
-  }, [servers.length]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isEnabled, servers.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // load data on mount
   useEffect(() => {
@@ -242,11 +227,14 @@ export function useListenerPage() {
     setSelectedTypeFilter,
     isPolling,
     selectedInteraction,
+    isEnabled,
+    setIsEnabled,
     loadServers,
     loadPayloads,
     loadInteractions,
     loadStats,
     handleAddServer,
+    handleUpdateServer,
     handleDeleteServer,
     handleCheckHealth,
     handleCreatePayload,

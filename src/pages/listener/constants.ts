@@ -6,7 +6,6 @@ interface SubTabDef {
 }
 
 export const LISTENER_SUB_TABS: SubTabDef[] = [
-  { id: 'payloads', label: 'Payloads' },
+  { id: 'hosts', label: 'Hosts' },
   { id: 'interactions', label: 'Interactions' },
-  { id: 'settings', label: 'GearSix' },
 ];

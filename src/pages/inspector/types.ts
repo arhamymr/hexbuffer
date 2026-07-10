@@ -46,3 +46,61 @@ export interface InspectorStorageEntry {
 export type InspectorTab = 'console' | 'network' | 'storage';
 
 export type InspectorTopTab = 'browser' | 'inspector';
+
+export interface Target {
+  id: string;
+  title: string;
+  url: string;
+  type: string;
+  faviconUrl?: string;
+  webSocketDebuggerUrl: string;
+}
+
+export interface NetworkRequest {
+  requestId: string;
+  method: string;
+  url: string;
+  status: number | null;
+  type: string;
+  mimeType: string;
+  startTime: number;
+  endTime: number | null;
+  duration: number | null;
+  requestHeaders: Record<string, string>;
+  responseHeaders: Record<string, string>;
+  postData: string | null;
+  webSocketFrames: WebSocketFrame[];
+  errorText?: string;
+}
+
+export interface WebSocketFrame {
+  timestamp: number;
+  direction: 'send' | 'receive';
+  opcode: number;
+  payloadData: string;
+  size: number;
+}
+
+export interface Cookie {
+  name: string;
+  value: string;
+  domain: string;
+  path: string;
+  expires: number;
+  httpOnly: boolean;
+  secure: boolean;
+  session?: boolean;
+}
+
+export interface StorageItem {
+  key: string;
+  value: string;
+}
+
+export interface ConsoleLog {
+  id: string;
+  level: 'log' | 'info' | 'warning' | 'error' | 'debug';
+  text: string;
+  timestamp: number;
+}
+

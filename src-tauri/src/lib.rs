@@ -8,7 +8,6 @@ pub mod history;
 #[path = "port-scanner/mod.rs"]
 pub mod port_scanner;
 pub mod proxy;
-pub mod scanner;
 pub mod sqli;
 
 pub use ai::{

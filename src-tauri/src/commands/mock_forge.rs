@@ -1,18 +1,8 @@
 // ponytail: MockForge backend features
 use std::collections::HashMap;
 use std::sync::Mutex;
-use std::time::Duration;
 use serde::{Deserialize, Serialize};
-use tauri::{AppHandle, Manager, State, Emitter};
-use tokio::net::TcpListener;
-use hyper::server::conn::http1;
-use hyper_util::rt::TokioIo;
-use hyper::service::service_fn;
-use hyper::{Request, Response, StatusCode, header::{HeaderName, HeaderValue}};
-use http_body_util::Full;
-use bytes::Bytes;
-use url::form_urlencoded;
-use rand::Rng;
+use tauri::State;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MockDomain {
@@ -108,7 +98,6 @@ pub struct MockForgeState {
     pub domains: Mutex<Vec<MockDomain>>,
     pub routes: Mutex<Vec<MockRoute>>,
     pub logs: Mutex<Vec<RequestLog>>,
-    pub port: Mutex<u16>,
 }
 
 impl MockForgeState {
@@ -117,7 +106,6 @@ impl MockForgeState {
             domains: Mutex::new(Vec::new()),
             routes: Mutex::new(Vec::new()),
             logs: Mutex::new(Vec::new()),
-            port: Mutex::new(9999),
         }
     }
 }
@@ -343,258 +331,6 @@ pub fn mock_forge_get_logs(state: State<'_, MockForgeState>) -> Vec<RequestLog> 
 #[tauri::command]
 pub fn mock_forge_clear_logs(state: State<'_, MockForgeState>) {
     state.logs.lock().unwrap().clear();
-}
-
-#[tauri::command]
-pub fn mock_forge_get_server_port(state: State<'_, MockForgeState>) -> u16 {
-    *state.port.lock().unwrap()
-}
-
-pub async fn start_mock_forge_server(app_handle: AppHandle) -> Result<(), String> {
-    let preferred_port = 9999;
-    let mut port = preferred_port;
-    let listener = loop {
-        match TcpListener::bind(("0.0.0.0", port)).await {
-            Ok(l) => break l,
-            Err(e) => {
-                eprintln!("[mock-forge] Port {} in use: {}. Trying fallback.", port, e);
-                port -= 1;
-                if port < 9000 {
-                    return Err("Could not find a free port for mock forge server".to_string());
-                }
-            }
-        }
-    };
-
-    {
-        let state = app_handle.state::<MockForgeState>();
-        *state.port.lock().unwrap() = port;
-    }
-
-    eprintln!("[mock-forge] Server listening on port {}", port);
-
-    let handle = app_handle.clone();
-    
-    tokio::task::spawn(async move {
-        loop {
-            let (stream, _) = match listener.accept().await {
-                Ok(conn) => conn,
-                Err(e) => {
-                    eprintln!("[mock-forge] accept connection error: {:?}", e);
-                    continue;
-                }
-            };
-            
-            let io = TokioIo::new(stream);
-            let handle_clone = handle.clone();
-            
-            tokio::task::spawn(async move {
-                let service = service_fn(move |req| {
-                    let handle_inner = handle_clone.clone();
-                    async move {
-                        handle_local_request(req, handle_inner).await
-                    }
-                });
-                
-                if let Err(_err) = http1::Builder::new()
-                    .serve_connection(io, service)
-                    .await
-                {
-                    // connection closed
-                }
-            });
-        }
-    });
-
-    Ok(())
-}
-
-async fn handle_local_request(
-    req: Request<hyper::body::Incoming>,
-    app_handle: AppHandle,
-) -> Result<Response<Full<Bytes>>, hyper::Error> {
-    use http_body_util::BodyExt;
-    
-    let state = app_handle.state::<MockForgeState>();
-    
-    let method = req.method().to_string();
-    
-    let path_and_query_str = req.uri()
-        .path_and_query()
-        .map(|pq| pq.as_str().to_string())
-        .unwrap_or_else(|| "/".to_string());
-    
-    let host = req.headers()
-        .get("host")
-        .and_then(|h| h.to_str().ok())
-        .unwrap_or("localhost")
-        .to_string();
-        
-    let mut req_headers = HashMap::new();
-    for (name, val) in req.headers() {
-        if let Ok(v) = val.to_str() {
-            req_headers.insert(name.as_str().to_string(), v.to_string());
-        }
-    }
-    
-    let body = req.into_body();
-    let body_bytes = match body.collect().await {
-        Ok(collected) => collected.to_bytes().to_vec(),
-        Err(_) => Vec::new(),
-    };
-
-    let (path_str, query_map) = if let Some(pos) = path_and_query_str.find('?') {
-        let path = path_and_query_str[..pos].to_string();
-        let query = &path_and_query_str[pos + 1..];
-        let query_map: HashMap<String, String> = form_urlencoded::parse(query.as_bytes())
-            .into_owned()
-            .collect();
-        (path, query_map)
-    } else {
-        (path_and_query_str, HashMap::new())
-    };
-    let path = &path_str;
-    
-    let (matched, matching_domain) = {
-        let domains_guard = state.domains.lock().unwrap();
-        let routes_guard = state.routes.lock().unwrap();
-        
-        let matched = find_matching_route(
-            &domains_guard,
-            &routes_guard,
-            &host,
-            &method,
-            path,
-            &req_headers,
-            &query_map,
-            &body_bytes,
-            true,
-        );
-        
-        let matching_domain = if matched.is_none() {
-            domains_guard.iter().find(|d| {
-                d.status == "active" && {
-                    let host_only = host.split(':').next().unwrap_or(&host);
-                    let d_host_only = d.hostname.split(':').next().unwrap_or(&d.hostname);
-                    d_host_only.eq_ignore_ascii_case(host_only)
-                }
-            }).cloned()
-        } else {
-            None
-        };
-        
-        (matched, matching_domain)
-    };
-    
-    if let Some((domain, route)) = matched {
-        let start_time = std::time::Instant::now();
-        let mut latency_ms = 0;
-        let mut status_code = route.status_code;
-
-        if route.chaos.latency_mode == "fixed" {
-            if let Some(fixed) = route.chaos.latency_fixed {
-                latency_ms = fixed;
-                tokio::time::sleep(Duration::from_millis(fixed)).await;
-            }
-        } else if route.chaos.latency_mode == "random" {
-            if let (Some(min), Some(max)) = (route.chaos.latency_min, route.chaos.latency_max) {
-                if max >= min {
-                    let rand_val = rand::thread_rng().gen_range(min..=max);
-                    latency_ms = rand_val;
-                    tokio::time::sleep(Duration::from_millis(rand_val)).await;
-                }
-            }
-        }
-
-        if let Some(err_rate) = route.chaos.error_rate {
-            if err_rate > 0.0 {
-                let roll = rand::thread_rng().gen_range(0.0..100.0);
-                if roll < err_rate {
-                    if let Some(err_status) = route.chaos.error_status {
-                        status_code = err_status;
-                    } else {
-                        status_code = 500;
-                    }
-                }
-            }
-        }
-        
-        let log_entry = RequestLog {
-            id: format!("l{}", uuid::Uuid::new_v4()),
-            domain_id: domain.id.clone(),
-            route_id: Some(route.id.clone()),
-            method: method.clone(),
-            path: path.to_string(),
-            status_code,
-            latency_ms: if latency_ms == 0 { start_time.elapsed().as_millis() as u64 } else { latency_ms },
-            timestamp: chrono::Utc::now().to_rfc3339(),
-            request_headers: req_headers.clone(),
-            request_body: if body_bytes.is_empty() { None } else { Some(String::from_utf8_lossy(&body_bytes).into_owned()) },
-        };
-        
-        {
-            let mut logs_lock = state.logs.lock().unwrap();
-            logs_lock.insert(0, log_entry.clone());
-            if logs_lock.len() > 200 {
-                logs_lock.truncate(200);
-            }
-        }
-        
-        let _ = app_handle.emit("mock-forge-log", log_entry);
-        
-        let mut builder = Response::builder().status(status_code);
-        for (k, v) in &route.response_headers {
-            if k.eq_ignore_ascii_case("content-length")
-                || k.eq_ignore_ascii_case("content-encoding")
-                || k.eq_ignore_ascii_case("transfer-encoding")
-            {
-                continue;
-            }
-            if let (Ok(name), Ok(val)) = (HeaderName::from_bytes(k.as_bytes()), HeaderValue::from_str(v)) {
-                builder = builder.header(name, val);
-            }
-        }
-        
-        let body_content = if status_code == route.status_code {
-            route.response_body.clone()
-        } else {
-            format!("Simulated chaos error status: {}", status_code)
-        };
-        
-        let body_len = body_content.len();
-        builder = builder.header("content-length", body_len.to_string());
-        
-        Ok(builder.body(Full::new(Bytes::from(body_content))).unwrap())
-    } else {
-        if let Some(domain) = matching_domain {
-            let log_entry = RequestLog {
-                id: format!("l{}", uuid::Uuid::new_v4()),
-                domain_id: domain.id.clone(),
-                route_id: None,
-                method: method.clone(),
-                path: path.to_string(),
-                status_code: 404,
-                latency_ms: 0,
-                timestamp: chrono::Utc::now().to_rfc3339(),
-                request_headers: req_headers.clone(),
-                request_body: if body_bytes.is_empty() { None } else { Some(String::from_utf8_lossy(&body_bytes).into_owned()) },
-            };
-            
-            {
-                let mut logs_lock = state.logs.lock().unwrap();
-                logs_lock.insert(0, log_entry.clone());
-                if logs_lock.len() > 200 {
-                    logs_lock.truncate(200);
-                }
-            }
-            let _ = app_handle.emit("mock-forge-log", log_entry);
-        }
-        
-        Ok(Response::builder()
-            .status(StatusCode::NOT_FOUND)
-            .body(Full::new(Bytes::from("404 Not Found (MockForge)")))
-            .unwrap())
-    }
 }
 
 #[cfg(test)]

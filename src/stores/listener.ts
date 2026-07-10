@@ -19,6 +19,7 @@ interface ListenerState {
   selectedTypeFilter: string | null;
   isPolling: boolean;
   lastPollError: string | null;
+  isEnabled: boolean;
 
   setActiveSubTab: (tab: ListenerSubTab) => void;
   setServers: (servers: ListenerServer[]) => void;
@@ -30,6 +31,7 @@ interface ListenerState {
   setSelectedTypeFilter: (type: string | null) => void;
   setIsPolling: (v: boolean) => void;
   setLastPollError: (err: string | null) => void;
+  setIsEnabled: (v: boolean) => void;
 }
 
 const defaultStats: ListenerDashboardStats = {
@@ -45,7 +47,7 @@ const defaultStats: ListenerDashboardStats = {
 export const useListenerStore = create<ListenerState>()(
   persist(
     (set) => ({
-      activeSubTab: 'payloads',
+      activeSubTab: 'hosts',
       servers: [],
       payloads: [],
       interactions: [],
@@ -55,6 +57,7 @@ export const useListenerStore = create<ListenerState>()(
       selectedTypeFilter: null,
       isPolling: false,
       lastPollError: null,
+      isEnabled: true,
 
       setActiveSubTab: (tab) => set({ activeSubTab: tab }),
       setServers: (servers) => set({ servers }),
@@ -66,24 +69,28 @@ export const useListenerStore = create<ListenerState>()(
       setSelectedTypeFilter: (type) => set({ selectedTypeFilter: type }),
       setIsPolling: (v) => set({ isPolling: v }),
       setLastPollError: (err) => set({ lastPollError: err }),
+      setIsEnabled: (v) => set({ isEnabled: v }),
     }),
     {
       name: 'hexbuffer-listener',
       partialize: (state) => ({
         activeSubTab: state.activeSubTab,
         servers: state.servers,
+        isEnabled: state.isEnabled,
       }),
       merge: (persisted, current) => {
         const p = (persisted ?? {}) as Partial<ListenerState>;
         const activeSubTab =
-          p.activeSubTab && ['payloads', 'interactions', 'settings'].includes(p.activeSubTab)
+          p.activeSubTab && ['hosts', 'interactions'].includes(p.activeSubTab)
             ? p.activeSubTab
-            : 'payloads';
+            : 'hosts';
+        const isEnabled = typeof p.isEnabled === 'boolean' ? p.isEnabled : true;
 
         return {
           ...(current as ListenerState),
           ...p,
           activeSubTab,
+          isEnabled,
           interactions: [],
           payloads: [],
           stats: defaultStats,

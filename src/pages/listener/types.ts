@@ -59,4 +59,4 @@ export interface ListenerDashboardStats {
   connectedServers: number;
 }
 
-export type ListenerSubTab = 'payloads' | 'interactions' | 'settings';
+export type ListenerSubTab = 'hosts' | 'interactions';

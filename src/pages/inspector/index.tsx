@@ -11,7 +11,7 @@ import { useInspectExternal } from './hooks/use-inspect-external';
 import { NetworkMonitor } from './components/network-monitor';
 import { StorageAuditor } from './components/storage-auditor';
 
-export function DebuggerPage() {
+export function InspectorPage() {
   const cdp = useInspectExternal();
 
   // Active dashboard tabs list

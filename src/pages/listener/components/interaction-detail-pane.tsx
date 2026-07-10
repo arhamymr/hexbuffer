@@ -32,6 +32,23 @@ export function InteractionDetailPane({ interaction, onClose }: Props) {
     }
   })();
 
+  // ponytail: extract and parse query parameters from the request path
+  const parsedQuery = (() => {
+    if (!interaction.path) return null;
+    try {
+      const queryIdx = interaction.path.indexOf('?');
+      if (queryIdx === -1) return null;
+      const params = new URLSearchParams(interaction.path.slice(queryIdx));
+      const obj: Record<string, string> = {};
+      params.forEach((v, k) => {
+        obj[k] = v;
+      });
+      return Object.keys(obj).length > 0 ? obj : null;
+    } catch {
+      return null;
+    }
+  })();
+
   return (
     <div className="flex h-full flex-col bg-background">
       {/* Header */}
@@ -86,6 +103,18 @@ export function InteractionDetailPane({ interaction, onClose }: Props) {
                 value={new Date(interaction.timestamp).toLocaleString()}
               />
               <InfoBlock label="Payload ID" value={interaction.payloadId} mono />
+
+              {parsedQuery && (
+                <div className="border-t border-border/40 mt-2 pt-2 space-y-1">
+                  <p className="font-semibold text-muted-foreground mb-1.5">Query Parameters:</p>
+                  {Object.entries(parsedQuery).map(([k, v]) => (
+                    <div key={k} className="flex gap-2 text-[11px]">
+                      <span className="w-24 shrink-0 text-right font-mono text-muted-foreground">{k}:</span>
+                      <span className="break-all font-mono text-foreground">{v}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 

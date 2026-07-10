@@ -207,6 +207,29 @@ export function useListenerPage() {
     loadInteractions();
   }, [selectedPayloadFilter, selectedTypeFilter]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // ponytail: auto-generate a default callback payload in the background if a server has none
+  useEffect(() => {
+    if (servers.length === 0) return;
+
+    const serversWithoutPayloads = servers.filter(
+      (s) => !payloads.some((p) => p.serverId === s.id && p.status === 'active')
+    );
+
+    for (const server of serversWithoutPayloads) {
+      const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      api.createListenerPayload({
+        serverId: server.id,
+        name: `Default Callback [${timeStr}]`,
+        description: `Auto-generated default callback URL`,
+        tags: [],
+      }).then((newPayload) => {
+        setPayloads([newPayload, ...payloads]);
+      }).catch((e) => {
+        console.error('Failed to auto-generate default payload for server', server.id, e);
+      });
+    }
+  }, [servers, payloads, setPayloads]);
+
   const selectedInteraction = useMemo<ListenerInteraction | null>(
     () => interactions.find((i) => i.id === selectedInteractionId) ?? null,
     [interactions, selectedInteractionId]

@@ -398,89 +398,39 @@ export function ListenerHosts({
                       </Button>
                     </div>
 
-                    {/* Payloads Section inside Host card */}
-                    <div className="border-t border-border/40 pt-2 space-y-2">
-                      <div className="flex items-center justify-between">
-                        <button
-                          className="flex items-center gap-1 text-[11px] font-semibold text-muted-foreground hover:text-foreground transition-colors"
-                          onClick={() => toggleExpandPayloads(s.id)}
-                        >
-                          {isExpanded ? (
-                            <CaretDownIcon className="h-3.5 w-3.5" />
-                          ) : (
-                            <CaretRightIcon className="h-3.5 w-3.5" />
-                          )}
-                          Payload URLs ({serverPayloads.length})
-                        </button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-6 px-1.5 text-[10px] gap-1 text-primary hover:text-primary-foreground hover:bg-primary"
-                          onClick={() => handleGeneratePayload(s)}
-                          disabled={generating === s.id}
-                        >
-                          {generating === s.id ? (
-                            <SpinnerGapIcon className="h-3 w-3 animate-spin" />
-                          ) : (
-                            <PlusIcon className="h-3 w-3" />
-                          )}
-                          Generate URL
-                        </Button>
-                      </div>
-
-                      {isExpanded && (
-                        <div className="space-y-1.5 max-h-40 overflow-y-auto pr-1">
-                          {serverPayloads.length === 0 ? (
-                            <p className="text-[10px] text-muted-foreground italic pl-4 py-1">
-                              No payload URLs generated yet.
-                            </p>
-                          ) : (
-                            serverPayloads.map((p) => (
-                              <div
-                                key={p.id}
-                                className="flex items-center gap-1.5 rounded bg-muted/40 p-1 pl-2 text-[10px] hover:bg-muted transition-colors border border-transparent hover:border-border/30"
-                              >
-                                <div className="min-w-0 flex-1">
-                                  <span className="font-medium text-foreground block truncate" title={p.name}>
-                                    {p.name}
-                                  </span>
-                                  <span className="font-mono text-[9px] text-muted-foreground block truncate select-all">
-                                    {p.payloadUrl}
-                                  </span>
-                                </div>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-5 w-5 shrink-0 text-muted-foreground hover:text-foreground"
-                                  onClick={() => {
-                                    navigator.clipboard.writeText(p.payloadUrl);
-                                    toast.success('Payload URL copied');
-                                  }}
-                                  title="Copy URL"
-                                >
-                                  <CopyIcon className="h-3 w-3" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-5 w-5 shrink-0 text-muted-foreground hover:text-destructive"
-                                  onClick={() => onArchivePayload(p.id)}
-                                  title="Archive Payload"
-                                >
-                                  <ArchiveIcon className="h-3 w-3" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-5 w-5 shrink-0 text-muted-foreground hover:text-destructive"
-                                  onClick={() => onDeletePayload(p.id)}
-                                  title="Delete Payload"
-                                >
-                                  <TrashIcon className="h-3 w-3" />
-                                </Button>
-                              </div>
-                            ))
-                          )}
+                    {/* ponytail: simplified Target Callback URL display */}
+                    <div className="border-t border-border/40 pt-2 space-y-1.5">
+                      <span className="text-[10px] font-semibold text-muted-foreground block">
+                        Target Callback URL:
+                      </span>
+                      {serverPayloads.find(p => p.status === 'active') ? (() => {
+                        const activePayload = serverPayloads.find(p => p.status === 'active')!;
+                        return (
+                          <div className="flex items-center gap-1.5 rounded bg-muted/40 p-1 pl-2 text-[10px] border border-border/30">
+                            <span
+                              className="font-mono text-[9px] text-foreground block truncate select-all flex-1"
+                              title={activePayload.payloadUrl}
+                            >
+                              {activePayload.payloadUrl}
+                            </span>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-5 w-5 shrink-0 text-muted-foreground hover:text-foreground"
+                              onClick={() => {
+                                navigator.clipboard.writeText(activePayload.payloadUrl);
+                                toast.success('Callback URL copied to clipboard');
+                              }}
+                              title="Copy Callback URL"
+                            >
+                              <CopyIcon className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        );
+                      })() : (
+                        <div className="flex items-center gap-2 text-[10px] text-muted-foreground italic pl-1">
+                          <SpinnerGapIcon className="h-3 w-3 animate-spin text-primary" />
+                          <span>Generating default callback URL...</span>
                         </div>
                       )}
                     </div>

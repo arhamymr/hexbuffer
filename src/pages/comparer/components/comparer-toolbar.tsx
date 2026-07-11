@@ -8,13 +8,13 @@ import {
 } from '@/components/ui/select';
 import { DIFF_MODE_OPTIONS } from '../constants';
 import { type DiffMode } from '../types';
-import { 
-  GitDiffIcon, 
-  ArrowsLeftRightIcon, 
-  TrashIcon, 
-  CopyIcon, 
-  EyeIcon, 
-  EyeSlashIcon 
+import {
+  GitDiffIcon,
+  ArrowsLeftRightIcon,
+  TrashIcon,
+  CopyIcon,
+  EyeIcon,
+  EyeSlashIcon
 } from '@phosphor-icons/react';
 
 interface ComparerToolbarProps {
@@ -48,18 +48,9 @@ export function ComparerToolbar({
 }: ComparerToolbarProps) {
   // ponytail: kept simple with inline event handlers to minimize abstraction overhead.
   return (
-    <div className="flex h-10 shrink-0 items-center justify-between border rounded-md bg-muted/40 px-3">
-      <div className="flex items-center gap-2">
-        <GitDiffIcon className="h-4 w-4 text-primary" />
-        <span className="text-xs font-semibold uppercase tracking-wider text-foreground">Comparer</span>
-        {hasContent && (
-          <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-medium">
-            {hasDiff ? 'Differences found' : 'Identical'}
-          </span>
-        )}
-      </div>
+    <div className="flex h-10 shrink-0 items-center justify-between  border border-b-0 rounded-t-md bg-muted/40 px-3">
 
-      <div className="flex items-center gap-2">
+      <div className='flex items-center gap-2'>
         {/* Diff Mode Select */}
         <div className="flex items-center gap-1.5">
           <span className="text-[10px] font-medium text-muted-foreground uppercase">Mode:</span>
@@ -105,20 +96,9 @@ export function ComparerToolbar({
           Swap A/B
         </Button>
 
-        {/* Clear */}
-        <Button
-          variant="outline"
-          size="xs"
-          onClick={handleClear}
-          disabled={!hasContent}
-          className="h-6 text-[11px] gap-1.5 px-2 text-destructive hover:bg-destructive/10 hover:text-destructive"
-        >
-          <TrashIcon className="h-3 w-3" />
-          Clear All
-        </Button>
 
-        <div className="h-4 w-[1px] bg-border mx-1" />
-
+      </div>
+      <div className='flex items-center gap-2'>
         {/* Copy original/modified */}
         <Button
           variant="ghost"
@@ -152,7 +132,21 @@ export function ComparerToolbar({
           <CopyIcon className="h-3 w-3" />
           Copy Diff
         </Button>
+
+        {/* Clear */}
+        <Button
+          variant="outline"
+          size="xs"
+          onClick={handleClear}
+          disabled={!hasContent}
+          className="h-6 text-[11px] gap-1.5 px-2 text-destructive hover:bg-destructive/10 hover:text-destructive"
+        >
+          <TrashIcon className="h-3 w-3" />
+          Clear All
+        </Button>
+
       </div>
+
     </div>
   );
 }

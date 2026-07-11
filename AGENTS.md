@@ -1,5 +1,9 @@
 # Repository Guidelines
 
+## Components usage 
+
+use components inside `/src/components/ui` dont put any custom className just use the original components 
+
 ## Project Structure & Module Organization
 
 `src/` contains the React + TypeScript frontend. Feature pages live in `src/pages/` (for example, `http-history/`, `repeater/`, and `brute-force/`), shared UI primitives in `src/components/ui/`, stores in `src/stores/`, hooks in `src/hooks/`, and helpers in `src/lib/`. Static assets live in `public/` and `src/assets/`.

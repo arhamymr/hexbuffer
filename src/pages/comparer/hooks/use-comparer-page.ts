@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { toast } from 'sonner';
 import { diffLines, diffWords, diffChars, type Change } from 'diff';
 import type { DiffMode } from '../types';
@@ -20,9 +20,21 @@ const diffFunctions: Record<DiffMode, (a: string, b: string) => Change[]> = {
 };
 
 export function useComparerPage() {
-  const [valueA, setValueA] = useState('');
-  const [valueB, setValueB] = useState('');
-  const [diffMode, setDiffMode] = useState<DiffMode>('lines');
+  const [valueA, setValueA] = useState(() => localStorage.getItem('comparer-value-a') ?? '');
+  const [valueB, setValueB] = useState(() => localStorage.getItem('comparer-value-b') ?? '');
+  const [diffMode, setDiffMode] = useState<DiffMode>(() => (localStorage.getItem('comparer-diff-mode') as DiffMode) ?? 'lines');
+
+  useEffect(() => {
+    localStorage.setItem('comparer-value-a', valueA);
+  }, [valueA]);
+
+  useEffect(() => {
+    localStorage.setItem('comparer-value-b', valueB);
+  }, [valueB]);
+
+  useEffect(() => {
+    localStorage.setItem('comparer-diff-mode', diffMode);
+  }, [diffMode]);
 
   const diffResult = useMemo<Change[]>(() => {
     if (!valueA && !valueB) return [];

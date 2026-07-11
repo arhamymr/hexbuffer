@@ -4,10 +4,22 @@ import { XIcon } from '@phosphor-icons/react'
 
 import { cn } from '@/lib/utils';
 
+import { WindowContext } from "@/providers/window-provider"
+
+const DialogContext = React.createContext<{ absolute?: boolean }>({ absolute: false })
+
 function Dialog({
+  absolute: absoluteProp,
   ...props
-}: React.ComponentProps<typeof DialogPrimitive.Root>) {
-  return <DialogPrimitive.Root data-slot="dialog" {...props} />
+}: React.ComponentProps<typeof DialogPrimitive.Root> & { absolute?: boolean }) {
+  const { isInWindow } = React.useContext(WindowContext)
+  const absolute = absoluteProp ?? isInWindow
+
+  return (
+    <DialogContext.Provider value={{ absolute }}>
+      <DialogPrimitive.Root data-slot="dialog" {...props} />
+    </DialogContext.Provider>
+  )
 }
 
 function DialogTrigger({
@@ -26,13 +38,19 @@ function DialogClose({
 
 function DialogOverlay({
   className,
+  absolute: absoluteProp,
   ...props
-}: React.ComponentProps<typeof DialogPrimitive.Overlay>) {
+}: React.ComponentProps<typeof DialogPrimitive.Overlay> & { absolute?: boolean }) {
+  const { absolute: contextAbsolute } = React.useContext(DialogContext)
+  const { isInWindow } = React.useContext(WindowContext)
+  const absolute = absoluteProp ?? contextAbsolute ?? isInWindow
+
   return (
     <DialogPrimitive.Overlay
       data-slot="dialog-overlay"
       className={cn(
-        "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed inset-0 z-50 bg-black/50",
+        "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 inset-0 z-50 bg-black/50",
+        absolute ? "absolute" : "fixed",
         className
       )}
       {...props}
@@ -45,18 +63,25 @@ function DialogContent({
   children,
   showCloseButton = true,
   portalContainer,
+  absolute: absoluteProp,
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
   showCloseButton?: boolean
   portalContainer?: HTMLElement
+  absolute?: boolean
 }) {
-  return (
-    <DialogPortal data-slot="dialog-portal" container={portalContainer}>
-      <DialogOverlay />
+  const { absolute: contextAbsolute } = React.useContext(DialogContext)
+  const { isInWindow, windowElement } = React.useContext(WindowContext)
+  const absolute = absoluteProp ?? contextAbsolute ?? isInWindow
+
+  const content = (
+    <>
+      <DialogOverlay absolute={absolute} />
       <DialogPrimitive.Content
         data-slot="dialog-content"
         className={cn(
-          "bg-background data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-sm border p-6 shadow-lg duration-200 sm:max-w-lg",
+          "bg-background data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-sm border p-6 shadow-lg duration-200 sm:max-w-lg",
+          absolute ? "absolute" : "fixed",
           className
         )}
         {...props}
@@ -72,6 +97,23 @@ function DialogContent({
           </DialogPrimitive.Close>
         )}
       </DialogPrimitive.Content>
+    </>
+  )
+
+  if (absolute) {
+    const container = portalContainer ?? windowElement
+    return container ? (
+      <DialogPortal data-slot="dialog-portal" container={container}>
+        {content}
+      </DialogPortal>
+    ) : (
+      content
+    )
+  }
+
+  return (
+    <DialogPortal data-slot="dialog-portal" container={portalContainer}>
+      {content}
     </DialogPortal>
   )
 }

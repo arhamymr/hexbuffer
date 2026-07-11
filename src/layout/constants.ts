@@ -1,5 +1,5 @@
 import React from 'react';
-import { HouseIcon, ArrowsDownUpIcon, BugIcon, PauseCircleIcon, SwordIcon, FlaskIcon, BinaryIcon, AppWindowIcon, DatabaseIcon, FingerprintIcon, GearSixIcon, GitDiffIcon, NetworkIcon, LightningIcon, NoteIcon, WifiHighIcon, SpinnerIcon, BlueprintIcon, MarkdownLogoIcon, InfinityIcon, StarFourIcon, CloverIcon, CubeFocusIcon, RadioIcon, TargetIcon, SquaresFourIcon } from '@phosphor-icons/react';
+import { HouseIcon, ArrowsDownUpIcon, BugIcon, PauseCircleIcon, FlaskIcon, BinaryIcon, AppWindowIcon, DatabaseIcon, FingerprintIcon, GearSixIcon, GitDiffIcon, LightningIcon, WifiHighIcon, SpinnerIcon, BlueprintIcon, MarkdownLogoIcon, InfinityIcon, StarFourIcon, CloverIcon, CubeFocusIcon, TargetIcon, SquaresFourIcon, BroadcastIcon, PencilIcon } from '@phosphor-icons/react';
 
 export interface NavItem {
   label: string;
@@ -35,7 +35,7 @@ export const allNavItems: NavItem[] = [
     href: '/websocket-history',
     description: 'Capture and inspect real-time WebSocket network traffic.',
     colors: { bg: 'bg-blue-500 dark:bg-blue-500', hoverBg: 'group-hover:bg-blue-500 dark:group-hover:bg-blue-500', border: 'border-blue-500 dark:border-blue-500' },
-    flag: 'release'
+    flag: 'beta'
   },
   {
     label: 'Workflow',
@@ -72,7 +72,7 @@ export const allNavItems: NavItem[] = [
   },
   {
     label: 'Scratchpad',
-    icon: NoteIcon,
+    icon: PencilIcon,
     href: '/scratchpad',
     description: 'Write quick notes, scripts, or documentation.',
     colors: { bg: 'bg-amber-500 dark:bg-amber-500', hoverBg: 'group-hover:bg-amber-500 dark:group-hover:bg-amber-500', border: 'border-amber-500 dark:border-amber-500' },
@@ -112,7 +112,7 @@ export const allNavItems: NavItem[] = [
   },
   {
     label: 'Listener',
-    icon: RadioIcon,
+    icon: BroadcastIcon,
     href: '/listener',
     description: 'Generate out-of-band (OOB) payloads and monitor incoming DNS, HTTP, and HTTPS interactions.',
     colors: { bg: 'bg-green-500 dark:bg-green-500', hoverBg: 'group-hover:bg-green-500 dark:group-hover:bg-green-500', border: 'border-green-500 dark:border-green-500' },

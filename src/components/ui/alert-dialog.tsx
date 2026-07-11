@@ -4,10 +4,22 @@ import { AlertDialog as AlertDialogPrimitive } from "radix-ui"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 
+import { WindowContext } from "@/providers/window-provider"
+
+const AlertDialogContext = React.createContext<{ absolute?: boolean }>({ absolute: false })
+
 function AlertDialog({
+  absolute: absoluteProp,
   ...props
-}: React.ComponentProps<typeof AlertDialogPrimitive.Root>) {
-  return <AlertDialogPrimitive.Root data-slot="alert-dialog" {...props} />
+}: React.ComponentProps<typeof AlertDialogPrimitive.Root> & { absolute?: boolean }) {
+  const { isInWindow } = React.useContext(WindowContext)
+  const absolute = absoluteProp ?? isInWindow
+
+  return (
+    <AlertDialogContext.Provider value={{ absolute }}>
+      <AlertDialogPrimitive.Root data-slot="alert-dialog" {...props} />
+    </AlertDialogContext.Provider>
+  )
 }
 
 function AlertDialogTrigger({
@@ -19,22 +31,29 @@ function AlertDialogTrigger({
 }
 
 function AlertDialogPortal({
+  container,
   ...props
-}: React.ComponentProps<typeof AlertDialogPrimitive.Portal>) {
+}: React.ComponentProps<typeof AlertDialogPrimitive.Portal> & { container?: HTMLElement }) {
   return (
-    <AlertDialogPrimitive.Portal data-slot="alert-dialog-portal" {...props} />
+    <AlertDialogPrimitive.Portal data-slot="alert-dialog-portal" container={container} {...props} />
   )
 }
 
 function AlertDialogOverlay({
   className,
+  absolute: absoluteProp,
   ...props
-}: React.ComponentProps<typeof AlertDialogPrimitive.Overlay>) {
+}: React.ComponentProps<typeof AlertDialogPrimitive.Overlay> & { absolute?: boolean }) {
+  const { absolute: contextAbsolute } = React.useContext(AlertDialogContext)
+  const { isInWindow } = React.useContext(WindowContext)
+  const absolute = absoluteProp ?? contextAbsolute ?? isInWindow
+
   return (
     <AlertDialogPrimitive.Overlay
       data-slot="alert-dialog-overlay"
       className={cn(
-        "fixed inset-0 z-50 bg-black/10 duration-100 supports-backdrop-filter:backdrop-blur-xs data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0",
+        "inset-0 z-50 bg-black/10 duration-100 supports-backdrop-filter:backdrop-blur-xs data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0",
+        absolute ? "absolute" : "fixed",
         className
       )}
       {...props}
@@ -45,22 +64,50 @@ function AlertDialogOverlay({
 function AlertDialogContent({
   className,
   size = "default",
+  portalContainer,
+  absolute: absoluteProp,
   ...props
 }: React.ComponentProps<typeof AlertDialogPrimitive.Content> & {
   size?: "default" | "sm"
+  portalContainer?: HTMLElement
+  absolute?: boolean
 }) {
-  return (
-    <AlertDialogPortal>
-      <AlertDialogOverlay />
+  const { absolute: contextAbsolute } = React.useContext(AlertDialogContext)
+  const { isInWindow, windowElement } = React.useContext(WindowContext)
+  const absolute = absoluteProp ?? contextAbsolute ?? isInWindow
+
+  const content = (
+    <>
+      <AlertDialogOverlay absolute={absolute} />
       <AlertDialogPrimitive.Content
         data-slot="alert-dialog-content"
         data-size={size}
         className={cn(
-          "group/alert-dialog-content fixed top-1/2 left-1/2 z-50 grid w-full -translate-x-1/2 -translate-y-1/2 gap-4 rounded-xl bg-popover p-4 text-popover-foreground ring-1 ring-foreground/10 duration-100 outline-none data-[size=default]:max-w-xs data-[size=sm]:max-w-xs data-[size=default]:sm:max-w-sm data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
+          "group/alert-dialog-content top-1/2 left-1/2 z-50 grid w-full -translate-x-1/2 -translate-y-1/2 gap-4 rounded-xl bg-popover p-4 text-popover-foreground ring-1 ring-foreground/10 duration-100 outline-none data-[size=default]:max-w-xs data-[size=sm]:max-w-xs data-[size=default]:sm:max-w-sm data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
+          absolute ? "absolute" : "fixed",
           className
         )}
         {...props}
-      />
+      >
+        {props.children}
+      </AlertDialogPrimitive.Content>
+    </>
+  )
+
+  if (absolute) {
+    const container = portalContainer ?? windowElement
+    return container ? (
+      <AlertDialogPortal container={container}>
+        {content}
+      </AlertDialogPortal>
+    ) : (
+      content
+    )
+  }
+
+  return (
+    <AlertDialogPortal container={portalContainer}>
+      {content}
     </AlertDialogPortal>
   )
 }

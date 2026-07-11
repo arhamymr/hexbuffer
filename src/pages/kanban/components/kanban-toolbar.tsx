@@ -1,6 +1,8 @@
 import type { GroupBy } from '../types';
 import { GROUP_OPTIONS } from '../constants';
 import { PlusIcon } from '@phosphor-icons/react';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface Props {
   groupBy: GroupBy;
@@ -30,31 +32,27 @@ export function KanbanToolbar({ groupBy, onGroupByChange, totalCards, doneCards,
       {/* Right: Actions and Group by */}
       <div className="flex items-center gap-4">
         {/* Group by toggle */}
-        <div className="flex items-center gap-1.5 border-r border-border/60 pr-4">
-          <span className="text-[10px] font-mono text-muted-foreground mr-1">Group by:</span>
-          {GROUP_OPTIONS.map((opt) => (
-            <button
-              key={opt.value}
-              onClick={() => onGroupByChange(opt.value)}
-              className={`rounded-sm px-2 py-0.5 text-[10px] font-semibold transition-colors duration-100 ${
-                groupBy === opt.value
-                  ? 'bg-muted/80 text-foreground border border-border/80'
-                  : 'bg-transparent text-muted-foreground border border-transparent hover:bg-muted/40 hover:text-foreground'
-              }`}
-            >
-              {opt.label}
-            </button>
-          ))}
+        <div className="flex items-center gap-1 border-r border-border/60 pr-4">
+          <span className="text-[10px] font-mono text-muted-foreground mr-2">Group by:</span>
+          <Tabs value={groupBy} onValueChange={(val) => onGroupByChange(val as GroupBy)}>
+            <TabsList>
+              {GROUP_OPTIONS.map((opt) => (
+                <TabsTrigger key={opt.value} value={opt.value}>
+                  {opt.label}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
         </div>
 
         {/* Add Card Primary Button */}
-        <button
+        <Button
           onClick={onAddCardClick}
-          className="flex h-7 items-center gap-1 rounded bg-primary px-3 text-xs font-semibold text-background hover:bg-primary-dark transition-colors duration-150"
+          className="h-7"
         >
           <PlusIcon className="h-3.5 w-3.5" weight="bold" />
           Add card
-        </button>
+        </Button>
       </div>
     </div>
   );

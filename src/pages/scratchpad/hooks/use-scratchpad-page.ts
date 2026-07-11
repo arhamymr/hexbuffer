@@ -47,6 +47,9 @@ export function useScratchpadPage() {
     return () => window.removeEventListener('keydown', onKey);
   }, [activePad?.name]);
 
+  const [deleteConfirmId, setDeleteConfirmId] = React.useState<string | null>(null);
+  const [deleteConfirmName, setDeleteConfirmName] = React.useState<string>('');
+
   const handleStartRename = (id: string, currentName: string) => {
     setEditingId(id);
     setRenameValue(currentName);
@@ -78,8 +81,22 @@ export function useScratchpadPage() {
       toast.error('Cannot delete', { description: 'You must keep at least one scratchpad' });
       return;
     }
-    deleteScratchpad(id);
-    toast.success('Scratchpad deleted', { description: name });
+    setDeleteConfirmId(id);
+    setDeleteConfirmName(name);
+  };
+
+  const handleConfirmDelete = () => {
+    if (deleteConfirmId) {
+      deleteScratchpad(deleteConfirmId);
+      toast.success('Scratchpad deleted', { description: deleteConfirmName });
+      setDeleteConfirmId(null);
+      setDeleteConfirmName('');
+    }
+  };
+
+  const handleCancelDelete = () => {
+    setDeleteConfirmId(null);
+    setDeleteConfirmName('');
   };
 
   const filteredScratchpads = React.useMemo(() => {
@@ -109,6 +126,10 @@ export function useScratchpadPage() {
     handleRenameCancel,
     handleAdd,
     handleDelete,
+    deleteConfirmId,
+    deleteConfirmName,
+    handleConfirmDelete,
+    handleCancelDelete,
     handleSelect: setActiveId,
     isSidebarOpen,
     toggleSidebar,

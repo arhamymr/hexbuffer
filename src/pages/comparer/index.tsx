@@ -38,7 +38,7 @@ export function ComparerPage() {
 
   // ponytail: thin page coordinator wiring presentation sub-components together.
   return (
-    <div className="flex h-full min-h-0 flex-col bg-background p-2 gap-2">
+    <div className="flex h-full min-h-0 flex-col bg-background p-2">
       <ComparerToolbar
         hasContent={page.hasContent}
         hasDiff={page.hasDiff}
@@ -54,7 +54,7 @@ export function ComparerPage() {
         copyPanel={copyPanel}
       />
 
-      <div className="min-h-0 flex-1 border rounded-md overflow-hidden relative">
+      <div className="min-h-0 flex-1 border rounded-b-md overflow-hidden relative">
         {showInputs ? (
           <ResizablePanelGroup orientation="vertical" className="h-full">
             <ResizablePanel defaultSize={35} minSize={15}>
@@ -67,9 +67,9 @@ export function ComparerPage() {
                 handlePasteB={handlePasteB}
               />
             </ResizablePanel>
-            
+
             <ResizableHandle withHandle />
-            
+
             <ResizablePanel defaultSize={65} minSize={30}>
               <div className="relative h-full w-full">
                 <ComparerDiffView

@@ -91,7 +91,7 @@ export function ListenerHosts({
           Add Host
         </Button>
 
-        <Dialog open={dialogOpen} onOpenChange={handleDialogOpenChange}>
+        <Dialog open={dialogOpen} onOpenChange={handleDialogOpenChange} absolute>
           <DialogContent className="max-w-md">
             <DialogHeader>
               <DialogTitle className="text-sm font-semibold">

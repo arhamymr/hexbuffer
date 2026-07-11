@@ -12,6 +12,16 @@ import {
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { ScratchpadPageHookType } from '../hooks/use-scratchpad-page';
 
 interface ScratchpadSidebarProps {
@@ -33,6 +43,10 @@ export function ScratchpadSidebar({ hook }: ScratchpadSidebarProps) {
     handleRenameCancel,
     handleAdd,
     handleDelete,
+    deleteConfirmId,
+    deleteConfirmName,
+    handleConfirmDelete,
+    handleCancelDelete,
     handleSelect,
     toggleSidebar,
   } = hook;
@@ -42,6 +56,17 @@ export function ScratchpadSidebar({ hook }: ScratchpadSidebarProps) {
     <div className="w-60 shrink-0 border-r bg-muted/10 flex flex-col h-full overflow-hidden select-none animate-in slide-in-from-left duration-200">
       {/* Sidebar Header */}
       <div className="p-3 border-b flex items-center justify-between shrink-0 bg-muted/5">
+
+        <Button
+          variant="ghost"
+          onClick={handleAdd}
+          disabled={scratchpads.length >= 20}
+          title={scratchpads.length >= 20 ? "Limit reached (max 20)" : "Create new scratchpad"}
+        >
+          <PlusIcon className="size-3.5" />
+          NEW
+        </Button>
+
         <div className="flex items-center gap-1.5">
           <Button
             variant="ghost"
@@ -52,18 +77,8 @@ export function ScratchpadSidebar({ hook }: ScratchpadSidebarProps) {
           >
             <SidebarSimpleIcon className="size-3.5" />
           </Button>
-          <span className="font-semibold text-xs tracking-tight uppercase text-foreground/90">Scratchpads</span>
         </div>
-        <Button
-          variant="ghost"
-          size="xs"
-          onClick={handleAdd}
-          disabled={scratchpads.length >= 20}
-          title={scratchpads.length >= 20 ? "Limit reached (max 20)" : "Create new scratchpad"}
-          className="size-6 p-0 hover:bg-muted active:scale-95 transition-all text-muted-foreground hover:text-foreground"
-        >
-          <PlusIcon className="size-3.5" />
-        </Button>
+
       </div>
 
       {/* Search Input */}
@@ -188,6 +203,29 @@ export function ScratchpadSidebar({ hook }: ScratchpadSidebarProps) {
       <div className="p-2 border-t bg-muted/5 text-[10px] text-muted-foreground flex justify-between items-center select-none font-mono shrink-0">
         <span>Total: {scratchpads.length}/20</span>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog
+        open={deleteConfirmId !== null}
+        onOpenChange={(open) => {
+          if (!open) handleCancelDelete();
+        }}
+      >
+        <AlertDialogContent size="sm">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Scratchpad?</AlertDialogTitle>
+            <AlertDialogDescription>
+              "{deleteConfirmName}" will be permanently deleted. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleCancelDelete}>Cancel</AlertDialogCancel>
+            <AlertDialogAction variant="destructive" onClick={handleConfirmDelete}>
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -1,7 +1,3 @@
-import { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
 import { toast } from 'sonner';
 import {
   PlusIcon,
@@ -11,9 +7,6 @@ import {
   EyeSlashIcon,
   CopyIcon,
   PencilSimpleIcon,
-  CaretDownIcon,
-  CaretRightIcon,
-  ArchiveIcon,
   SpinnerGapIcon,
 } from '@phosphor-icons/react';
 import { Badge } from '@/components/ui/badge';
@@ -40,31 +33,7 @@ import type {
   ListenerPayload,
   CreatePayloadRequest,
 } from '../types';
-
-const serverFormSchema = z.object({
-  name: z.string().trim().min(1, 'Name is required.'),
-  url: z
-    .string()
-    .trim()
-    .min(1, 'Server URL is required.')
-    .refine((value) => {
-      try {
-        const url = new URL(value);
-        return ['http:', 'https:'].includes(url.protocol);
-      } catch {
-        return false;
-      }
-    }, 'Enter a valid HTTP or HTTPS URL.'),
-  apiKey: z.string().trim().min(1, 'API key is required.'),
-});
-
-type ServerFormValues = z.infer<typeof serverFormSchema>;
-
-const serverFormDefaults: ServerFormValues = {
-  name: '',
-  url: '',
-  apiKey: '',
-};
+import { useHostsPanel } from './hooks/use-hosts-panel';
 
 interface Props {
   servers: ListenerServer[];
@@ -87,128 +56,29 @@ export function ListenerHosts({
   onCheckHealth,
   onCreatePayload,
   onDeletePayload,
-  onArchivePayload,
 }: Props) {
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [checking, setChecking] = useState<string | null>(null);
-  const [generating, setGenerating] = useState<string | null>(null);
-  const [showKeys, setShowKeys] = useState<Record<string, boolean>>({});
-  const [showFormKey, setShowFormKey] = useState(false);
-  const [editingServer, setEditingServer] = useState<ListenerServer | null>(null);
-  const [expandedPayloads, setExpandedPayloads] = useState<Record<string, boolean>>({});
-
-  const form = useForm<ServerFormValues>({
-    resolver: zodResolver(serverFormSchema),
-    defaultValues: serverFormDefaults,
-    mode: 'onChange',
+  const {
+    dialogOpen,
+    checking,
+    generating,
+    showKeys,
+    showFormKey,
+    setShowFormKey,
+    editingServer,
+    form,
+    handleDialogOpenChange,
+    startAdd,
+    startEdit,
+    handleAdd,
+    handleCheck,
+    toggleShowKey,
+    handleGeneratePayload,
+  } = useHostsPanel({
+    onAddServer,
+    onUpdateServer,
+    onCheckHealth,
+    onCreatePayload,
   });
-
-  const generateRandomApiKey = () => {
-    const chars = 'abcdef0123456789';
-    let result = '';
-    for (let i = 0; i < 32; i++) {
-      result += chars[Math.floor(Math.random() * chars.length)];
-    }
-    return result;
-  };
-
-  const handleDialogOpenChange = (open: boolean) => {
-    setDialogOpen(open);
-    setShowFormKey(false);
-    if (!open) {
-      setEditingServer(null);
-      form.reset(serverFormDefaults);
-    }
-  };
-
-  const startAdd = () => {
-    setEditingServer(null);
-    form.reset({
-      name: '',
-      url: '',
-      apiKey: generateRandomApiKey(),
-    });
-    setDialogOpen(true);
-  };
-
-  const startEdit = (server: ListenerServer) => {
-    setEditingServer(server);
-    form.reset({
-      name: server.name,
-      url: server.url,
-      apiKey: server.apiKey,
-    });
-    setDialogOpen(true);
-  };
-
-  const handleAdd = async (values: ServerFormValues) => {
-    form.clearErrors('root');
-    try {
-      if (editingServer) {
-        await onUpdateServer({
-          ...editingServer,
-          name: values.name.trim(),
-          url: values.url.trim().replace(/\/$/, ''),
-          apiKey: values.apiKey.trim(),
-        });
-        toast.success('Host configuration updated');
-      } else {
-        await onAddServer({
-          name: values.name.trim(),
-          url: values.url.trim().replace(/\/$/, ''),
-          apiKey: values.apiKey.trim(),
-        });
-        toast.success('Host connected');
-      }
-    } catch (error) {
-      form.setError('root', {
-        message: error instanceof Error ? error.message : String(error),
-      });
-      return;
-    }
-
-    setDialogOpen(false);
-    setEditingServer(null);
-    form.reset(serverFormDefaults);
-  };
-
-  const handleCheck = async (id: string) => {
-    setChecking(id);
-    try {
-      await onCheckHealth(id);
-    } finally {
-      setChecking(null);
-    }
-  };
-
-  const toggleShowKey = (id: string) => {
-    setShowKeys((prev) => ({ ...prev, [id]: !prev[id] }));
-  };
-
-  const toggleExpandPayloads = (id: string) => {
-    setExpandedPayloads((prev) => ({ ...prev, [id]: !prev[id] }));
-  };
-
-  // ponytail: inline generator simplifies user flow & removes payloads tab
-  const handleGeneratePayload = async (server: ListenerServer) => {
-    setGenerating(server.id);
-    try {
-      const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-      await onCreatePayload({
-        serverId: server.id,
-        name: `Payload [${timeStr}]`,
-        description: `Generated for ${server.name}`,
-        tags: [],
-      });
-      toast.success('Callback payload URL generated');
-      // ensure expanded to show the generated payload
-      setExpandedPayloads((prev) => ({ ...prev, [server.id]: true }));
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'Failed to generate payload');
-    } finally {
-      setGenerating(null);
-    }
-  };
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-background">
@@ -332,16 +202,14 @@ export function ListenerHosts({
         </Dialog>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-auto p-3">
+      <div className="min-h-0 flex-1 flex flex-col">
         {servers.length === 0 ? (
-          <div className="flex h-full items-center justify-center p-4 text-xs text-muted-foreground">
-            No hosts configured. Add a listener server host to get started.
-          </div>
+          <SetupGuide onAddHost={startAdd} />
         ) : (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 items-start">
+          <div className="min-h-0 flex-1 overflow-auto p-3">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 items-start">
             {servers.map((s) => {
               const serverPayloads = payloads.filter((p) => p.serverId === s.id);
-              const isExpanded = expandedPayloads[s.id] ?? false;
 
               return (
                 <Card key={s.id} className="border bg-card text-card-foreground shadow-sm">
@@ -398,39 +266,77 @@ export function ListenerHosts({
                       </Button>
                     </div>
 
-                    {/* ponytail: simplified Target Callback URL display */}
+                    {/* Subdomains */}
                     <div className="border-t border-border/40 pt-2 space-y-1.5">
-                      <span className="text-[10px] font-semibold text-muted-foreground block">
-                        Target Callback URL:
-                      </span>
-                      {serverPayloads.find(p => p.status === 'active') ? (() => {
-                        const activePayload = serverPayloads.find(p => p.status === 'active')!;
-                        return (
-                          <div className="flex items-center gap-1.5 rounded bg-muted/40 p-1 pl-2 text-[10px] border border-border/30">
-                            <span
-                              className="font-mono text-[9px] text-foreground block truncate select-all flex-1"
-                              title={activePayload.payloadUrl}
-                            >
-                              {activePayload.payloadUrl}
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-semibold text-muted-foreground">
+                          Subdomains
+                          {serverPayloads.filter(p => p.status === 'active').length > 0 && (
+                            <span className="ml-1 text-muted-foreground/60">
+                              ({serverPayloads.filter(p => p.status === 'active').length})
                             </span>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-5 w-5 shrink-0 text-muted-foreground hover:text-foreground"
-                              onClick={() => {
-                                navigator.clipboard.writeText(activePayload.payloadUrl);
-                                toast.success('Callback URL copied to clipboard');
-                              }}
-                              title="Copy Callback URL"
-                            >
-                              <CopyIcon className="h-3 w-3" />
-                            </Button>
-                          </div>
-                        );
-                      })() : (
+                          )}
+                        </span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-5 gap-1 px-1.5 text-[10px] text-muted-foreground hover:text-foreground"
+                          onClick={() => handleGeneratePayload(s)}
+                          disabled={generating === s.id}
+                          title="Generate a new subdomain"
+                        >
+                          {generating === s.id ? (
+                            <SpinnerGapIcon className="h-3 w-3 animate-spin" />
+                          ) : (
+                            <PlusIcon className="h-3 w-3" />
+                          )}
+                          New
+                        </Button>
+                      </div>
+
+                      {serverPayloads.filter(p => p.status === 'active').length === 0 ? (
                         <div className="flex items-center gap-2 text-[10px] text-muted-foreground italic pl-1">
                           <SpinnerGapIcon className="h-3 w-3 animate-spin text-primary" />
-                          <span>Generating default callback URL...</span>
+                          <span>Generating first subdomain...</span>
+                        </div>
+                      ) : (
+                        <div className="space-y-1">
+                          {serverPayloads
+                            .filter(p => p.status === 'active')
+                            .map(p => (
+                              <div
+                                key={p.id}
+                                className="flex items-center gap-1 rounded bg-muted/40 border border-border/30 p-1 pl-2"
+                              >
+                                <span
+                                  className="font-mono text-[9px] text-foreground truncate select-all flex-1"
+                                  title={p.payloadUrl}
+                                >
+                                  {p.payloadUrl}
+                                </span>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-5 w-5 shrink-0 text-muted-foreground hover:text-foreground"
+                                  onClick={() => {
+                                    navigator.clipboard.writeText(p.payloadUrl);
+                                    toast.success('Subdomain URL copied');
+                                  }}
+                                  title="Copy subdomain URL"
+                                >
+                                  <CopyIcon className="h-3 w-3" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-5 w-5 shrink-0 text-muted-foreground hover:text-destructive"
+                                  onClick={() => onDeletePayload(p.id)}
+                                  title="Delete subdomain"
+                                >
+                                  <TrashIcon className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            ))}
                         </div>
                       )}
                     </div>
@@ -471,8 +377,106 @@ export function ListenerHosts({
                 </Card>
               );
             })}
+            </div>
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+const STEPS = [
+  {
+    n: '1',
+    title: 'Add a Host',
+    body: 'Connect your OOB listener server (e.g. interactsh, Burp Collaborator, or self-hosted).',
+  },
+  {
+    n: '2',
+    title: 'Copy Callback URL',
+    body: 'Each host auto-generates a unique callback URL you can inject into target requests.',
+  },
+  {
+    n: '3',
+    title: 'Inject & Monitor',
+    body: 'Paste the URL into a header, body, or parameter. Interactions appear in the Interactions tab.',
+  },
+];
+
+function SetupGuide({ onAddHost }: { onAddHost: () => void }) {
+  return (
+    <div className="flex h-full items-start justify-center overflow-auto p-6">
+      <div
+        className="w-full max-w-lg"
+        style={{
+          animation: 'listener-guide-enter 280ms cubic-bezier(0.23, 1, 0.32, 1) both',
+        }}
+      >
+        <style>{`
+          @keyframes listener-guide-enter {
+            from { opacity: 0; transform: translateY(6px); }
+            to   { opacity: 1; transform: translateY(0); }
+          }
+        `}</style>
+
+        {/* Header */}
+        <div className="mb-5">
+          <p className="text-sm font-semibold text-foreground">Out-of-Band Listener</p>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            Detect blind vulnerabilities — SSRF, XXE, Log4Shell — by monitoring
+            callback interactions from a remote server your targets reach out to.
+          </p>
+        </div>
+
+        {/* Steps */}
+        <div className="mb-5 space-y-0">
+          {STEPS.map((step, i) => (
+            <div
+              key={step.n}
+              className="flex gap-3"
+              style={{ animationDelay: `${i * 55}ms` }}
+            >
+              {/* Spine */}
+              <div className="flex flex-col items-center">
+                <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[10px] font-bold text-primary">
+                  {step.n}
+                </div>
+                {i < STEPS.length - 1 && (
+                  <div className="mt-1 mb-1 w-px flex-1 bg-border/60" />
+                )}
+              </div>
+              {/* Content */}
+              <div className="pb-4">
+                <p className="text-xs font-semibold text-foreground">{step.title}</p>
+                <p className="mt-0.5 text-[11px] leading-relaxed text-muted-foreground">{step.body}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Example snippet */}
+        <div className="mb-5 rounded-md border border-border/60 bg-muted/30">
+          <div className="flex items-center gap-1.5 border-b border-border/40 px-3 py-1.5">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Example — inject into a request
+            </span>
+          </div>
+          <pre className="overflow-x-auto px-3 py-2.5 font-mono text-[10px] leading-relaxed text-foreground">
+{`GET /api/fetch?url=https://YOUR_CALLBACK_URL HTTP/1.1
+Host: target.example.com
+
+# Or in a header:
+X-Forwarded-For: https://YOUR_CALLBACK_URL
+
+# Or in an XML body (XXE):
+<!DOCTYPE foo [<!ENTITY xxe SYSTEM "https://YOUR_CALLBACK_URL"> ]>`}
+          </pre>
+        </div>
+
+        <Button className="h-8 w-full gap-1.5 text-xs" onClick={onAddHost}>
+          <PlusIcon className="h-3.5 w-3.5" />
+          Add your first host
+        </Button>
       </div>
     </div>
   );

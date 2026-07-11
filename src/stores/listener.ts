@@ -20,6 +20,7 @@ interface ListenerState {
   isPolling: boolean;
   lastPollError: string | null;
   isEnabled: boolean;
+  search: string;
 
   setActiveSubTab: (tab: ListenerSubTab) => void;
   setServers: (servers: ListenerServer[]) => void;
@@ -32,6 +33,7 @@ interface ListenerState {
   setIsPolling: (v: boolean) => void;
   setLastPollError: (err: string | null) => void;
   setIsEnabled: (v: boolean) => void;
+  setSearch: (search: string) => void;
 }
 
 const defaultStats: ListenerDashboardStats = {
@@ -58,6 +60,7 @@ export const useListenerStore = create<ListenerState>()(
       isPolling: false,
       lastPollError: null,
       isEnabled: true,
+      search: '',
 
       setActiveSubTab: (tab) => set({ activeSubTab: tab }),
       setServers: (servers) => set({ servers }),
@@ -70,6 +73,7 @@ export const useListenerStore = create<ListenerState>()(
       setIsPolling: (v) => set({ isPolling: v }),
       setLastPollError: (err) => set({ lastPollError: err }),
       setIsEnabled: (v) => set({ isEnabled: v }),
+      setSearch: (search) => set({ search }),
     }),
     {
       name: 'hexbuffer-listener',
@@ -91,6 +95,7 @@ export const useListenerStore = create<ListenerState>()(
           ...p,
           activeSubTab,
           isEnabled,
+          search: '',
           interactions: [],
           payloads: [],
           stats: defaultStats,

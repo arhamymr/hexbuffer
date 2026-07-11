@@ -56,6 +56,8 @@ const DesktopWindow = React.memo(function DesktopWindow({
   const dragStartRef = React.useRef({ x: 0, y: 0, posX: 0, posY: 0 });
   const dragCurrentPosRef = React.useRef(position);
   const dragRafIdRef = React.useRef<number | null>(null);
+  // ponytail: capture container bounds once at drag start, not on every mousemove
+  const dragContainerRectRef = React.useRef<DOMRect | null>(null);
   const [isDragging, setIsDragging] = React.useState(false);
 
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -65,6 +67,10 @@ const DesktopWindow = React.memo(function DesktopWindow({
     // Do not drag if clicking control buttons
     const target = e.target as HTMLElement;
     if (target.closest(".window-control-btn")) return;
+
+    // Capture the container bounds once at drag start
+    dragContainerRectRef.current =
+      windowRef.current?.parentElement?.getBoundingClientRect() ?? null;
 
     setIsDragging(true);
     dragStartRef.current = {
@@ -84,14 +90,17 @@ const DesktopWindow = React.memo(function DesktopWindow({
     document.body.classList.add("select-none-global");
 
     const handleMouseMove = (e: MouseEvent) => {
-      // Calculate drag distance
       const dx = e.clientX - dragStartRef.current.x;
       const dy = e.clientY - dragStartRef.current.y;
 
-      // Bound within screen (safety margins)
-      const newX = Math.max(10, dragStartRef.current.posX + dx);
-      const yMin = 32; // below top bar
-      const newY = Math.max(yMin, dragStartRef.current.posY + dy);
+      const raw = dragContainerRectRef.current;
+      // ponytail: container is inset-0, so left/top are always 0; only width/height bound the drag
+      const containerW = raw ? raw.width  : window.innerWidth;
+      const containerH = raw ? raw.height : window.innerHeight;
+
+      const HEADER_H = 36; // keep title bar reachable
+      const newX = Math.min(Math.max(0, dragStartRef.current.posX + dx), containerW - size.width);
+      const newY = Math.min(Math.max(0, dragStartRef.current.posY + dy), containerH - HEADER_H);
 
       dragCurrentPosRef.current = { x: newX, y: newY };
 

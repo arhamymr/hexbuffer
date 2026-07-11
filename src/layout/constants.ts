@@ -1,5 +1,5 @@
 import React from 'react';
-import { HouseIcon, ArrowsDownUpIcon, BugIcon, PauseCircleIcon, SwordIcon, FlaskIcon, BinaryIcon, AppWindowIcon, DatabaseIcon, FingerprintIcon, GearSixIcon, GitDiffIcon, NetworkIcon, LightningIcon, NoteIcon, WifiHighIcon, SpinnerIcon, BlueprintIcon, MarkdownLogoIcon, InfinityIcon, StarFourIcon, CloverIcon, CubeFocusIcon, RadioIcon, TargetIcon } from '@phosphor-icons/react';
+import { HouseIcon, ArrowsDownUpIcon, BugIcon, PauseCircleIcon, SwordIcon, FlaskIcon, BinaryIcon, AppWindowIcon, DatabaseIcon, FingerprintIcon, GearSixIcon, GitDiffIcon, NetworkIcon, LightningIcon, NoteIcon, WifiHighIcon, SpinnerIcon, BlueprintIcon, MarkdownLogoIcon, InfinityIcon, StarFourIcon, CloverIcon, CubeFocusIcon, RadioIcon, TargetIcon, SquaresFourIcon } from '@phosphor-icons/react';
 
 export interface NavItem {
   label: string;
@@ -79,6 +79,14 @@ export const allNavItems: NavItem[] = [
     flag: 'release'
   },
   {
+    label: 'Kanban',
+    icon: SquaresFourIcon,
+    href: '/kanban',
+    description: 'Visual project board: track tasks across status, priority, or assignee swimlanes with WIP limits.',
+    colors: { bg: 'bg-rose-500 dark:bg-rose-500', hoverBg: 'group-hover:bg-rose-500 dark:group-hover:bg-rose-500', border: 'border-rose-500 dark:border-rose-500' },
+    flag: 'alpha'
+  },
+  {
     label: 'Invoker',
     icon: CubeFocusIcon,
     href: '/invoker',
@@ -108,7 +116,7 @@ export const allNavItems: NavItem[] = [
     href: '/listener',
     description: 'Generate out-of-band (OOB) payloads and monitor incoming DNS, HTTP, and HTTPS interactions.',
     colors: { bg: 'bg-green-500 dark:bg-green-500', hoverBg: 'group-hover:bg-green-500 dark:group-hover:bg-green-500', border: 'border-green-500 dark:border-green-500' },
-    flag: 'release'
+    flag: 'alpha'
   },
   {
     label: 'Markdown',

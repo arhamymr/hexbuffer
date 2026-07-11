@@ -1,16 +1,14 @@
-import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { XIcon } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils';
 import type { ListenerInteraction } from '../types';
+import { useInteractionDetail, type Tab } from './hooks/use-interaction-detail';
 
 interface Props {
   interaction: ListenerInteraction | null;
   onClose: () => void;
 }
-
-type Tab = 'overview' | 'headers' | 'body' | 'raw';
 
 const TABS: { id: Tab; label: string }[] = [
   { id: 'overview', label: 'Overview' },
@@ -20,34 +18,11 @@ const TABS: { id: Tab; label: string }[] = [
 ];
 
 export function InteractionDetailPane({ interaction, onClose }: Props) {
-  const [activeTab, setActiveTab] = useState<Tab>('overview');
+  const { activeTab, setActiveTab, parsedHeaders, parsedQuery } = useInteractionDetail({
+    interaction,
+  });
 
   if (!interaction) return null;
-
-  const parsedHeaders = (() => {
-    try {
-      return interaction.headers ? JSON.parse(interaction.headers) : null;
-    } catch {
-      return null;
-    }
-  })();
-
-  // ponytail: extract and parse query parameters from the request path
-  const parsedQuery = (() => {
-    if (!interaction.path) return null;
-    try {
-      const queryIdx = interaction.path.indexOf('?');
-      if (queryIdx === -1) return null;
-      const params = new URLSearchParams(interaction.path.slice(queryIdx));
-      const obj: Record<string, string> = {};
-      params.forEach((v, k) => {
-        obj[k] = v;
-      });
-      return Object.keys(obj).length > 0 ? obj : null;
-    } catch {
-      return null;
-    }
-  })();
 
   return (
     <div className="flex h-full flex-col bg-background">

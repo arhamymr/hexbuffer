@@ -1,4 +1,3 @@
-import { useRef, useState, useCallback } from 'react';
 import { Badge } from '@/components/ui/badge';
 import {
   Select,
@@ -21,6 +20,7 @@ import { InteractionDetailPane } from './interaction-detail-pane';
 import { ListenerMetrics } from './metrics';
 import { cn } from '@/lib/utils';
 import type { ListenerInteraction, ListenerPayload, ListenerDashboardStats, ListenerServer } from '../types';
+import { useInteractionsPanel } from './hooks/use-interactions-panel';
 
 const TYPE_VARIANT: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
   dns: 'secondary',
@@ -53,42 +53,17 @@ export function ListenerInteractions({
   stats,
   isEnabled,
 }: Props) {
-  const [isDragging, setIsDragging] = useState(false);
-  const isDraggingRef = useRef(false);
-  const [collapsedServers, setCollapsedServers] = useState<Record<string, boolean>>({});
-
-  const handlePointerDown = useCallback(() => {
-    isDraggingRef.current = true;
-    setIsDragging(true);
-
-    const onPointerUp = () => {
-      isDraggingRef.current = false;
-      setIsDragging(false);
-      window.removeEventListener('pointerup', onPointerUp);
-    };
-    window.addEventListener('pointerup', onPointerUp, { once: true });
-  }, []);
-
-  const toggleServerCollapse = (serverId: string) => {
-    setCollapsedServers((prev) => ({
-      ...prev,
-      [serverId]: !prev[serverId],
-    }));
-  };
-
-  const coverStyle = isDragging
-    ? { pointerEvents: 'none' as const, userSelect: 'none' as const }
-    : undefined;
-
-  // Group interactions by server
-  const getInteractionsForServer = (serverId: string) => {
-    const serverPayloadIds = payloads.filter((p) => p.serverId === serverId).map((p) => p.id);
-    return interactions.filter((i) => serverPayloadIds.includes(i.payloadId));
-  };
-
-  const orphanedInteractions = interactions.filter((i) => {
-    const payload = payloads.find((p) => p.id === i.payloadId);
-    return !payload || !servers.some((s) => s.id === payload.serverId);
+  const {
+    collapsedServers,
+    handlePointerDown,
+    toggleServerCollapse,
+    coverStyle,
+    interactionsByServer,
+    orphanedInteractions,
+  } = useInteractionsPanel({
+    servers,
+    interactions,
+    payloads,
   });
 
   return (
@@ -141,7 +116,7 @@ export function ListenerInteractions({
                 <div className="divide-y divide-border">
                   {/* ponytail: visual hierarchy list HOST -> Interactions list */}
                   {servers.map((s) => {
-                    const serverInteractions = getInteractionsForServer(s.id);
+                    const serverInteractions = interactionsByServer[s.id] ?? [];
                     const isCollapsed = collapsedServers[s.id] ?? false;
 
                     return (
@@ -178,13 +153,11 @@ export function ListenerInteractions({
                                     <TableHead className="w-[120px] px-3">Source IP</TableHead>
                                     <TableHead className="w-[80px] px-3">Method</TableHead>
                                     <TableHead className="px-3">Path</TableHead>
-                                    <TableHead className="w-[140px] px-3">Payload</TableHead>
                                     <TableHead className="w-[160px] px-3">Time</TableHead>
                                   </TableRow>
                                 </TableHeader>
                                 <TableBody>
                                   {serverInteractions.map((i) => {
-                                    const payload = payloads.find((p) => p.id === i.payloadId);
                                     const isSelected = selectedInteractionId === i.id;
                                     return (
                                       <TableRow
@@ -208,9 +181,6 @@ export function ListenerInteractions({
                                         </TableCell>
                                         <TableCell className="px-3 py-1.5 max-w-[200px] truncate font-mono text-[11px]">
                                           {i.path ?? '-'}
-                                        </TableCell>
-                                        <TableCell className="px-3 py-1.5 truncate">
-                                          {payload?.name ?? i.payloadId.slice(0, 8)}
                                         </TableCell>
                                         <TableCell className="px-3 py-1.5 text-muted-foreground font-mono text-[10px]">
                                           {new Date(i.timestamp).toLocaleString()}
@@ -257,7 +227,6 @@ export function ListenerInteractions({
                                 <TableHead className="w-[120px] px-3">Source IP</TableHead>
                                 <TableHead className="w-[80px] px-3">Method</TableHead>
                                 <TableHead className="px-3">Path</TableHead>
-                                <TableHead className="w-[140px] px-3">Payload ID</TableHead>
                                 <TableHead className="w-[160px] px-3">Time</TableHead>
                               </TableRow>
                             </TableHeader>
@@ -286,9 +255,6 @@ export function ListenerInteractions({
                                     </TableCell>
                                     <TableCell className="px-3 py-1.5 max-w-[200px] truncate font-mono text-[11px]">
                                       {i.path ?? '-'}
-                                    </TableCell>
-                                    <TableCell className="px-3 py-1.5 font-mono text-[10px] text-muted-foreground truncate">
-                                      {i.payloadId}
                                     </TableCell>
                                     <TableCell className="px-3 py-1.5 text-muted-foreground font-mono text-[10px]">
                                       {new Date(i.timestamp).toLocaleString()}

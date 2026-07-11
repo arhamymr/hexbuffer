@@ -76,6 +76,10 @@ const ScratchpadPage = React.lazy(() =>
 const MockForgePage = React.lazy(() =>
   import("@/pages/mock-forge").then((m) => ({ default: m.MockForgePage }))
 );
+const KanbanPage = React.lazy(() =>
+  import("@/pages/kanban").then((m) => ({ default: m.KanbanPage }))
+);
+
 
 
 function AutomationEventWatchers() {
@@ -123,6 +127,8 @@ function AppRoutes() {
           <Route path="/assistant" element={<AssistantPage />} />
           <Route path="/scratchpad" element={<ScratchpadPage />} />
           <Route path="/mock-forge" element={<MockForgePage />} />
+          <Route path="/kanban" element={<KanbanPage />} />
+
 
         </Routes>
       </React.Suspense>

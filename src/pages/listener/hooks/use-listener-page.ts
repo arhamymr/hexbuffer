@@ -32,6 +32,8 @@ export function useListenerPage() {
     setLastPollError,
     isEnabled,
     setIsEnabled,
+    search,
+    setSearch,
   } = useListenerStore(
     useShallow((s) => ({
       activeSubTab: s.activeSubTab,
@@ -55,6 +57,8 @@ export function useListenerPage() {
       setLastPollError: s.setLastPollError,
       isEnabled: s.isEnabled,
       setIsEnabled: s.setIsEnabled,
+      search: s.search,
+      setSearch: s.setSearch,
     }))
   );
 
@@ -230,9 +234,32 @@ export function useListenerPage() {
     }
   }, [servers, payloads, setPayloads]);
 
+  const filteredInteractions = useMemo(() => {
+    if (!search.trim()) return interactions;
+    const query = search.toLowerCase().trim();
+    return interactions.filter((i) => {
+      const payload = payloads.find((p) => p.id === i.payloadId);
+      const payloadName = payload?.name?.toLowerCase() || '';
+      const payloadIdentifier = payload?.identifier?.toLowerCase() || '';
+      
+      return (
+        i.interactionType.toLowerCase().includes(query) ||
+        i.sourceIp.toLowerCase().includes(query) ||
+        (i.method && i.method.toLowerCase().includes(query)) ||
+        (i.path && i.path.toLowerCase().includes(query)) ||
+        (i.headers && i.headers.toLowerCase().includes(query)) ||
+        (i.requestBody && i.requestBody.toLowerCase().includes(query)) ||
+        (i.serverResponse && i.serverResponse.toLowerCase().includes(query)) ||
+        (i.rawRequest && i.rawRequest.toLowerCase().includes(query)) ||
+        payloadName.includes(query) ||
+        payloadIdentifier.includes(query)
+      );
+    });
+  }, [interactions, search, payloads]);
+
   const selectedInteraction = useMemo<ListenerInteraction | null>(
-    () => interactions.find((i) => i.id === selectedInteractionId) ?? null,
-    [interactions, selectedInteractionId]
+    () => filteredInteractions.find((i) => i.id === selectedInteractionId) ?? null,
+    [filteredInteractions, selectedInteractionId]
   );
 
   return {
@@ -240,7 +267,7 @@ export function useListenerPage() {
     setActiveSubTab,
     servers,
     payloads,
-    interactions,
+    interactions: filteredInteractions,
     stats,
     selectedInteractionId,
     setSelectedInteractionId,
@@ -252,6 +279,8 @@ export function useListenerPage() {
     selectedInteraction,
     isEnabled,
     setIsEnabled,
+    search,
+    setSearch,
     loadServers,
     loadPayloads,
     loadInteractions,

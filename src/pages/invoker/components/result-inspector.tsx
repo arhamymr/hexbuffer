@@ -103,7 +103,6 @@ export function InvokerResultInspector({
           <Button
             variant="ghost"
             size="icon"
-            className="h-6 w-6 text-muted-foreground hover:text-foreground"
             title={isStacked ? "Split side-by-side" : "Stack vertically"}
             onClick={() => setIsStacked(!isStacked)}
           >
@@ -112,7 +111,6 @@ export function InvokerResultInspector({
           <Button
             variant="ghost"
             size="icon"
-            className="h-6 w-6 text-muted-foreground hover:text-foreground"
             onClick={onClose}
           >
             <X className="size-3.5" />

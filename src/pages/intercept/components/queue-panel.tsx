@@ -7,8 +7,8 @@ import {
   ContextMenuTrigger,
 } from '@/components/ui/context-menu';
 import { MethodBadge } from '@/components/status-badge';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { InterceptBypassPanel } from './bypass-panel';
 import { formatRequestTime } from '../lib';
 import { useQueuePanel } from './hooks/use-queue-panel';
 
@@ -34,31 +34,6 @@ export function InterceptQueuePanel() {
 
   return (
     <div className="flex h-full flex-col">
-      <InterceptBypassPanel />
-
-      {/* Intercept toggle + forward actions */}
-      <div className="flex items-center gap-2 px-2 py-1.5 border-b shrink-0 bg-muted/30">
-        <button
-          type="button"
-          onClick={() => handleToggleIntercept(!isEnabled)}
-          className={cn(
-            'flex items-center gap-1.5 rounded px-2 py-1 text-xs font-medium transition-colors',
-            isEnabled
-              ? 'bg-primary/10 text-primary hover:bg-primary/20'
-              : 'bg-destructive/10 text-destructive hover:bg-destructive/20'
-          )}
-        >
-          {isEnabled
-            ? <><PauseIcon className="size-4" /> Intercept</>
-            : <><PlayIcon className="size-4" /> Off</>}
-        </button>
-        {activeRequests.length > 0 && (
-          <span className="text-xs text-muted-foreground ml-auto">
-            {activeRequests.length} paused req{activeRequests.length === 1 ? '' : 's'}
-          </span>
-        )}
-      </div>
-
       <div className="flex min-h-0 flex-1 flex-col p-2">
 
         <div className="min-h-0 flex-1 overflow-auto rounded-md border bg-background">
@@ -133,31 +108,31 @@ export function InterceptQueuePanel() {
                           {/* Hover state: actions */}
                           <div className="absolute right-0 top-1/2 -translate-y-1/2 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity duration-150 flex items-center gap-1.5">
                             {direction === 'request' && (
-                              <button
-                                type="button"
+                              <Button
+                                variant="outline"
+                                size="xs"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   handleInterceptResponse(request);
                                 }}
-                                className="flex h-6 items-center gap-1 rounded border bg-background hover:bg-accent text-muted-foreground hover:text-foreground transition-all active:scale-95 shadow-sm px-2 text-[11px] font-medium"
                                 title="Intercept Response"
                               >
                                 <PauseIcon className="size-4" />
                                 Intercept
-                              </button>
+                              </Button>
                             )}
-                            <button
-                              type="button"
+                            <Button
+                              variant="default"
+                              size="xs"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleForwardRequest(request);
                               }}
-                              className="flex h-6 items-center gap-1 rounded bg-primary px-2 text-[11px] font-medium text-primary-foreground hover:bg-primary/90 transition-all active:scale-95 shadow-sm"
                               title="Forward"
                             >
-                              <PaperPlaneTiltIcon className="size-3 text-primary-foreground" />
+                              <PaperPlaneTiltIcon className="size-3" />
                               Forward
-                            </button>
+                            </Button>
                           </div>
                         </div>
                       </div>

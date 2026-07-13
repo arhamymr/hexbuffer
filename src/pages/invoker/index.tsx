@@ -44,8 +44,7 @@ export function InvokerPage() {
             </div>
             <Button
               variant="outline"
-              size="sm"
-              className="h-6 text-[10px] px-2 shrink-0 border-amber-500/20 hover:bg-amber-500/10"
+              size="xs"
               aria-label="Dismiss safety notice"
               onClick={() => page.setInvokerSafetyAlertDismissed(true)}
             >
@@ -69,21 +68,20 @@ export function InvokerPage() {
             <div className="flex items-center gap-3">
               {page.isRunning ? (
                 <Button 
-                  size="sm" 
+                  size="xs" 
                   variant="destructive" 
-                  className="h-7 text-xs gap-1.5 px-3 font-semibold shadow-sm hover:shadow" 
                   onClick={stopInvokerUiAttack}
                 >
-                  <SquareIcon className="size-3 fill-current" /> Stop Attack
+                  <SquareIcon className="size-3" /> Stop Attack
                 </Button>
               ) : (
                 <Button 
-                  size="sm" 
-                  className="h-7 text-xs gap-1.5 px-3 font-semibold bg-emerald-600 hover:bg-emerald-500 dark:bg-emerald-500 dark:hover:bg-emerald-400 text-white shadow-sm hover:shadow" 
+                  size="xs" 
+                  variant="default"
                   onClick={page.handleStartAttack} 
                   disabled={!!page.startBlockedReason}
                 >
-                  <PlayIcon className="size-3 fill-current" /> Start Attack
+                  <PlayIcon className="size-3" /> Start Attack
                 </Button>
               )}
 

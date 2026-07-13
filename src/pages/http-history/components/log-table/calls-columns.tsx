@@ -95,12 +95,13 @@ const CallActionCell = memo(function CallActionCell({ call, onNewGroup }: { call
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button
-          className="flex items-center justify-center size-6 rounded hover:bg-muted-foreground/15 transition-colors"
+        <Button
+          variant="ghost"
+          size="icon"
           onClick={(e) => e.stopPropagation()}
         >
           <DotsThreeVerticalIcon className="size-3.5 text-muted-foreground" />
-        </button>
+        </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuItem onClick={handleCopyCurlCommand} className="text-xs">

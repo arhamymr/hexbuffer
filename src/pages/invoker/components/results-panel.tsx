@@ -25,8 +25,7 @@ export function InvokerResultsPanel() {
         </span>
         <Button
           variant="outline"
-          size="sm"
-          className="h-6 text-xs px-2"
+          size="xs"
           onClick={clearResults}
           disabled={resultsCount === 0}
         >

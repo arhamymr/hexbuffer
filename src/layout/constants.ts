@@ -34,7 +34,7 @@ export const allNavItems: NavItem[] = [
     href: '/websocket-history',
     description: 'Capture and inspect real-time WebSocket network traffic.',
     colors: { bg: 'bg-blue-500 dark:bg-blue-500', hoverBg: 'group-hover:bg-blue-500 dark:group-hover:bg-blue-500', border: 'border-blue-500 dark:border-blue-500' },
-    flag: 'beta'
+    flag: 'alpha'
   },
   {
     label: 'Workflow',

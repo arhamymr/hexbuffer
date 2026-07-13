@@ -39,7 +39,6 @@ export function ManageWorkspacesDialog({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState('');
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
-  const [deleteConfirmInput, setDeleteConfirmInput] = useState('');
 
   const editInputRef = useRef<HTMLInputElement>(null);
 
@@ -47,13 +46,11 @@ export function ManageWorkspacesDialog({
   useEffect(() => {
     if (open && initialDeleteId) {
       setConfirmDeleteId(initialDeleteId);
-      setDeleteConfirmInput('');
       setEditingId(null);
     } else if (!open) {
       // Reset state on close
       setEditingId(null);
       setConfirmDeleteId(null);
-      setDeleteConfirmInput('');
       onClearInitialDeleteId?.();
     }
   }, [open, initialDeleteId, onClearInitialDeleteId]);
@@ -89,7 +86,6 @@ export function ManageWorkspacesDialog({
       return;
     }
     setConfirmDeleteId(id);
-    setDeleteConfirmInput('');
     setEditingId(null);
   };
 
@@ -97,16 +93,10 @@ export function ManageWorkspacesDialog({
     const targetWs = workspaces.find((w) => w.id === id);
     if (!targetWs) return;
 
-    if (deleteConfirmInput !== targetWs.name) {
-      toast.error('Workspace name does not match');
-      return;
-    }
-
     try {
       await deleteWorkspace(id);
       toast.success(`Workspace "${targetWs.name}" and its collections deleted`);
       setConfirmDeleteId(null);
-      setDeleteConfirmInput('');
       // If we deleted the tab that opened the modal, clear the initial request
       onClearInitialDeleteId?.();
     } catch (e) {
@@ -142,24 +132,7 @@ export function ManageWorkspacesDialog({
               </div>
             </div>
 
-            <div className="space-y-2">
-              <label htmlFor="confirm-ws-name" className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider block">
-                Type <span className="font-mono text-foreground font-semibold bg-muted px-1.5 py-0.5 rounded border">{targetDeleteWorkspace.name}</span> to confirm:
-              </label>
-              <Input
-                id="confirm-ws-name"
-                className="h-9 text-xs focus-visible:ring-destructive"
-                placeholder={targetDeleteWorkspace.name}
-                value={deleteConfirmInput}
-                onChange={(e) => setDeleteConfirmInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && deleteConfirmInput === targetDeleteWorkspace.name) {
-                    void handleConfirmDelete(confirmDeleteId);
-                  }
-                }}
-              />
-            </div>
-
+            {/* ponytail: remove input check to simplify the delete flow */}
             <div className="flex items-center justify-end gap-2 pt-2">
               <Button
                 variant="ghost"
@@ -174,7 +147,6 @@ export function ManageWorkspacesDialog({
               <Button
                 variant="destructive"
                 className="h-8 px-3 text-xs font-medium"
-                disabled={deleteConfirmInput !== targetDeleteWorkspace.name}
                 onClick={() => void handleConfirmDelete(confirmDeleteId)}
               >
                 Delete Workspace

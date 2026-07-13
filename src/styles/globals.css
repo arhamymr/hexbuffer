@@ -506,3 +506,8 @@
   --admonitionNoteBg: var(--muted);
   --admonitionNoteBorder: var(--border);
 }
+
+/* ponytail: clean 3D shadow class for destructive buttons using relative color mixing */
+.shadow-destructive-3d {
+  box-shadow: 0 2px 0 0 color-mix(in oklch, var(--destructive) 70%, black);
+}

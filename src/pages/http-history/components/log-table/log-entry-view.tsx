@@ -245,7 +245,7 @@ export function LogEntryBurpView() {
           <div className="flex gap-2 items-center">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="h-7 w-7">
+                <Button variant="ghost" size="icon">
                   <DotsThreeVerticalIcon className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
@@ -282,7 +282,6 @@ export function LogEntryBurpView() {
             <Button
               variant="ghost"
               size="icon"
-              className="h-6 w-6 text-destructive hover:text-destructive"
               onClick={() => setSelectedCallId(null)}
             >
               <XIcon className="h-3.5 w-3.5" />

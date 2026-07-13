@@ -13,6 +13,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { TextEditor } from '@/components/ui/text-editor';
+import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { HTTP_METHODS } from '../constants';
@@ -58,6 +59,7 @@ export function RouteEditor({ route, domains, onUpdate, onDelete, onAdd }: Route
   const [statusCodeStr, setStatusCodeStr] = useState(String(route.statusCode));
   const [editMethod, setEditMethod] = useState<MockRoute['method']>(route.method);
   const [editPath, setEditPath] = useState(route.path);
+  const [matcherEnabled, setMatcherEnabled] = useState(route.matcherEnabled ?? true);
 
   const handleSaveHeader = () => {
     if (!editPath.trim()) return;
@@ -128,9 +130,10 @@ export function RouteEditor({ route, domains, onUpdate, onDelete, onAdd }: Route
 
       {/* Tabs */}
       <div className="px-2 pt-2 bg-muted/5">
-        <Tabs value={activeTab} onValueChange={(val) => setActiveTab(val as 'config' | 'response')}>
+        <Tabs value={activeTab} onValueChange={(val) => setActiveTab(val as 'config' | 'matcher' | 'response')}>
           <TabsList>
             <TabsTrigger value="config">Configuration</TabsTrigger>
+            <TabsTrigger value="matcher">Matcher</TabsTrigger>
             <TabsTrigger value="response">Response</TabsTrigger>
           </TabsList>
         </Tabs>
@@ -174,60 +177,89 @@ export function RouteEditor({ route, domains, onUpdate, onDelete, onAdd }: Route
                 </div>
               </div>
 
-              {/* Request Matching */}
-              <div className="space-y-4 rounded-md border border-border p-2 bg-muted">
-                <div className="flex items-center justify-between">
-                  <h4 className="text-xs font-bold text-foreground uppercase tracking-wider">Incoming Matcher</h4>
-                  {isWriteMethod && (
-                    <Button size="sm" className="bg-primary hover:bg-primary-dark text-black font-semibold h-6 text-[10px] rounded cursor-pointer" onClick={saveReqBody}>
-                      Save Matcher
-                    </Button>
-                  )}
+
+            </div>
+          ) : activeTab === 'matcher' ? (
+            <div className="space-y-2">
+              {/* Matcher Enable/Disable */}
+              <div className="flex items-center justify-between rounded-md border border-border p-2 bg-muted">
+                <div className="flex flex-col gap-0.5">
+                  <h4 className="text-xs font-bold text-foreground uppercase tracking-wider">Request Matcher</h4>
+                  <p className="text-[10px] text-muted-foreground">
+                    {matcherEnabled
+                      ? 'Matches incoming requests by query params or body payload'
+                      : 'Only matches by HTTP method + path (URL-level matching)'}
+                  </p>
                 </div>
-
-                {isWriteMethod ? (
-                  <div className="space-y-1.5">
-                    <Label className="text-xs text-muted-foreground">Expected Payload Body (JSON)</Label>
-                    <div className="h-[180px] rounded border border-border overflow-hidden bg-code-bg">
-                      <TextEditor value={reqBody} onChange={(val) => setReqBody(val || '')} language="json" height="100%" />
-                    </div>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <Label className="text-xs text-muted-foreground">Expected Query Parameters</Label>
-                      <Button size="sm" variant="ghost" className="h-6 px-1.5 text-xs text-primary hover:bg-primary/10 rounded cursor-pointer" onClick={handleAddParam}>
-                        <PlusIcon className="mr-1 h-3 w-3 stroke-[2]" /> Add Param
-                      </Button>
-                    </div>
-
-                    {queryParams.length === 0 ? (
-                      <div className="rounded-md border border-dashed border-border/60 p-4 text-center text-xs text-muted-foreground font-mono bg-muted/10">
-                        Matches any query string parameter ruleset
-                      </div>
-                    ) : (
-                      <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1">
-                        {queryParams.map((param, index) => (
-                          <div key={index} className="flex items-center gap-2">
-                            <Checkbox
-                              checked={param.enabled}
-                              onCheckedChange={() => handleParamToggle(index)}
-                              className="data-[state=checked]:bg-primary shrink-0"
-                            />
-                            <Input placeholder="Key" value={param.key} onChange={(e) => handleParamChange(index, 'key', e.target.value)} className="h-7.5 font-mono text-xs bg-muted/20 border-border" />
-                            <Input placeholder="Value" value={param.value} onChange={(e) => handleParamChange(index, 'value', e.target.value)} className="h-7.5 font-mono text-xs bg-muted/20 border-border" />
-                            <Button variant="ghost" size="icon" className="h-7.5 w-7.5 text-muted-foreground hover:text-red-400 hover:bg-red-500/10 shrink-0 rounded cursor-pointer" onClick={() => handleRemoveParam(index)}>
-                              <TrashIcon className="h-3.5 w-3.5" />
-                            </Button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
+                <Switch
+                  checked={matcherEnabled}
+                  onCheckedChange={(v) => {
+                    setMatcherEnabled(v);
+                    onUpdate(route.id, { matcherEnabled: v });
+                  }}
+                />
               </div>
 
+              {/* Incoming Matcher Content */}
+              {matcherEnabled && (
+                <div className="space-y-4 rounded-md border border-border p-2 bg-muted">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-xs font-bold text-foreground uppercase tracking-wider">Incoming Matcher</h4>
+                    {isWriteMethod && (
+                      <Button size="sm" className="bg-primary hover:bg-primary-dark text-black font-semibold h-6 text-[10px] rounded cursor-pointer" onClick={saveReqBody}>
+                        Save Matcher
+                      </Button>
+                    )}
+                  </div>
 
+                  {isWriteMethod ? (
+                    <div className="space-y-1.5">
+                      <Label className="text-xs text-muted-foreground">Expected Payload Body (JSON)</Label>
+                      <div className="h-[180px] rounded border border-border overflow-hidden bg-code-bg">
+                        <TextEditor value={reqBody} onChange={(val) => setReqBody(val || '')} language="json" height="100%" />
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-xs text-muted-foreground">Expected Query Parameters</Label>
+                        <Button size="sm" variant="ghost" className="h-6 px-1.5 text-xs text-primary hover:bg-primary/10 rounded cursor-pointer" onClick={handleAddParam}>
+                          <PlusIcon className="mr-1 h-3 w-3 stroke-[2]" /> Add Param
+                        </Button>
+                      </div>
+
+                      {queryParams.length === 0 ? (
+                        <div className="rounded-md border border-dashed border-border/60 p-4 text-center text-xs text-muted-foreground font-mono bg-muted/10">
+                          Matches any query string parameter ruleset
+                        </div>
+                      ) : (
+                        <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1">
+                          {queryParams.map((param, index) => (
+                            <div key={index} className="flex items-center gap-2">
+                              <Checkbox
+                                checked={param.enabled}
+                                onCheckedChange={() => handleParamToggle(index)}
+                                className="data-[state=checked]:bg-primary shrink-0"
+                              />
+                              <Input placeholder="Key" value={param.key} onChange={(e) => handleParamChange(index, 'key', e.target.value)} className="h-7.5 font-mono text-xs bg-muted/20 border-border" />
+                              <Input placeholder="Value" value={param.value} onChange={(e) => handleParamChange(index, 'value', e.target.value)} className="h-7.5 font-mono text-xs bg-muted/20 border-border" />
+                              <Button variant="ghost" size="icon" className="h-7.5 w-7.5 text-muted-foreground hover:text-red-400 hover:bg-red-500/10 shrink-0 rounded cursor-pointer" onClick={() => handleRemoveParam(index)}>
+                                <TrashIcon className="h-3.5 w-3.5" />
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {!matcherEnabled && (
+                <div className="rounded-md border border-dashed border-border/60 p-6 text-center text-xs text-muted-foreground font-mono bg-muted/10">
+                  Matcher disabled — route matches on <span className="text-foreground font-semibold">{route.method} {route.path}</span> only
+                </div>
+              )}
             </div>
           ) : (
             <div className="space-y-5">

@@ -36,7 +36,7 @@ export function useRouteEditor(
 ) {
   const [body, setBody] = useState(route.responseBody);
   const [reqBody, setReqBody] = useState(route.requestBody || '');
-  const [activeTab, setActiveTab] = useState<'config' | 'response'>('config');
+  const [activeTab, setActiveTab] = useState<'config' | 'matcher' | 'response'>('config');
 
   const domain = domains.find((d) => d.id === route.domainId);
   const isWriteMethod = ['POST', 'PUT', 'PATCH'].includes(route.method);

@@ -57,6 +57,7 @@ export function useRegressionPage() {
 
   const [tabs, setTabs] = React.useState<RegressionTab[]>([]);
   const [activeTabId, setActiveTabId] = React.useState<string | null>(null);
+  const [sidebarMode, setSidebarMode] = React.useState<'builder' | 'dashboard'>('builder');
 
   // Load test cases on mount
   React.useEffect(() => {
@@ -427,5 +428,7 @@ export function useRegressionPage() {
     activeTestEnabledCount,
     runningStepIndex,
     singleStepResults,
+    sidebarMode,
+    setSidebarMode,
   };
 }

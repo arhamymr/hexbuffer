@@ -277,6 +277,7 @@ export function useLogEntryActions(call: ApiCall, onDelete?: (id: string) => voi
         matchers,
         chaos: { latencyMode: 'none' },
         enabled: true,
+        matcherEnabled: true,
         requestQueryParams,
         requestBody: request.request_body || undefined,
       };

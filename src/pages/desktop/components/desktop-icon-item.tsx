@@ -10,7 +10,6 @@ interface DesktopIconItemProps {
   href: string;
   label: string;
   icon: React.ComponentType<{ className?: string }>;
-  devOnly?: boolean;
   onClick: (href: string) => void;
 }
 
@@ -20,7 +19,7 @@ const DEFAULT_COLORS = {
   border: 'border-transparent'
 };
 
-export function DesktopIconItem({ href, label, icon: IconComp, devOnly, onClick }: DesktopIconItemProps) {
+export function DesktopIconItem({ href, label, icon: IconComp, onClick }: DesktopIconItemProps) {
   const item = React.useMemo(() => {
     return allNavItems.find((i) => i.href === href);
   }, [href]);

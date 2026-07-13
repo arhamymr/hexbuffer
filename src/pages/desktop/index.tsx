@@ -30,7 +30,6 @@ export function DesktopPage() {
                   href={item.href}
                   label={item.label}
                   icon={item.icon}
-                  devOnly={item.devOnly}
                   onClick={handleItemClick}
                 />
               ))}

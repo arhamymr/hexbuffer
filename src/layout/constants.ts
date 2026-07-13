@@ -5,7 +5,6 @@ export interface NavItem {
   label: string;
   icon: React.ComponentType<{ className?: string }>;
   href: string;
-  devOnly?: boolean;
   rightIcon?: React.ComponentType<{ className?: string }>;
   description?: string;
   colors?: { bg: string; hoverBg: string; border: string };
@@ -41,7 +40,6 @@ export const allNavItems: NavItem[] = [
     label: 'Workflow',
     icon: SpinnerIcon,
     href: '/automation',
-    devOnly: true,
     description: 'Build and execute automated visual workflows for target reconnaissance.',
     colors: { bg: 'bg-purple-500 dark:bg-purple-500', hoverBg: 'group-hover:bg-purple-500 dark:group-hover:bg-purple-500', border: 'border-purple-500 dark:border-purple-500' },
     flag: 'alpha'
@@ -194,7 +192,6 @@ export const allNavItems: NavItem[] = [
     label: 'Inspector',
     icon: BugIcon,
     href: '/inspector',
-    devOnly: true,
     description: 'Inspect external browser pages, network traffic, cookies, and console logs via CDP.',
     colors: { bg: 'bg-zinc-500 dark:bg-zinc-500', hoverBg: 'group-hover:bg-zinc-500 dark:group-hover:bg-zinc-500', border: 'border-zinc-500 dark:border-zinc-500' },
     flag: 'alpha'
@@ -203,7 +200,6 @@ export const allNavItems: NavItem[] = [
     label: 'Regression',
     icon: FlaskIcon,
     href: '/regression',
-    devOnly: true,
     description: 'Execute automated regression tests on target endpoints.',
     colors: { bg: 'bg-indigo-600 dark:bg-indigo-600', hoverBg: 'group-hover:bg-indigo-600 dark:group-hover:bg-indigo-600', border: 'border-indigo-600 dark:border-indigo-600' },
     flag: 'alpha'
@@ -211,5 +207,5 @@ export const allNavItems: NavItem[] = [
 ];
 
 export const mainNavItems = import.meta.env.PROD
-  ? allNavItems.filter((item) => !item.devOnly)
+  ? allNavItems.filter((item) => item.flag !== 'alpha')
   : allNavItems;

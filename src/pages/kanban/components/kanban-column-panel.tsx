@@ -1,32 +1,28 @@
 import type { KanbanColumn, KanbanCard } from '../types';
 import { KanbanCardItem } from './kanban-card-item';
 import { WarningIcon, PlusIcon } from '@phosphor-icons/react';
+import { useDroppable } from '@dnd-kit/core';
 
 interface Props {
   column: KanbanColumn;
   cards: KanbanCard[];
   draggingId: string | null;
-  isDragOver: boolean;
-  onDragStart: (id: string) => void;
-  onDragEnd: () => void;
-  onDragOver: (colId: string) => void;
-  onDrop: (colId: string) => void;
   onToggleSubtask: (cardId: string, subtaskId: string) => void;
   onAddCardClick: (colId: string) => void;
+  onCardClick: (id: string) => void;
 }
 
 export function KanbanColumnPanel({
-  column, cards, draggingId, isDragOver,
-  onDragStart, onDragEnd, onDragOver, onDrop, onToggleSubtask, onAddCardClick,
+  column, cards, draggingId, onToggleSubtask, onAddCardClick, onCardClick,
 }: Props) {
+  const { setNodeRef, isOver } = useDroppable({
+    id: column.id,
+  });
+
   const wipViolation = column.wipLimit !== undefined && cards.length > column.wipLimit;
 
   return (
-    <div
-      className="kanban-col flex h-full min-h-0 w-[280px] shrink-0 flex-col"
-      onDragOver={(e) => { e.preventDefault(); onDragOver(column.id); }}
-      onDrop={(e) => { e.preventDefault(); onDrop(column.id); }}
-    >
+    <div ref={setNodeRef} className="kanban-col flex h-full min-h-0 w-[280px] shrink-0 flex-col">
       {/* Column header */}
       <div className="mb-3 flex items-center gap-2 px-1">
         <span
@@ -55,9 +51,11 @@ export function KanbanColumnPanel({
 
       {/* Drop zone */}
       <div
-        className={`flex-1 min-h-0 overflow-y-auto overflow-x-hidden rounded-md border px-2 py-2 space-y-2 scrollbar-thin transition-colors duration-150 ${
-          isDragOver
-            ? 'border-primary/40 bg-primary/5'
+        className={`flex-1 min-h-0 overflow-y-auto overflow-x-hidden rounded-md border px-2 py-2 space-y-2 scrollbar-thin transition-all duration-200 ${
+          isOver
+            ? 'border-primary/60 bg-primary/5 ring-2 ring-primary/10 shadow-sm'
+            : draggingId
+            ? 'border-dashed border-primary/30 bg-primary/2' // ponytail: highlight drop zones when dragging
             : 'border-border/40 bg-muted/10'
         }`}
       >
@@ -66,9 +64,8 @@ export function KanbanColumnPanel({
             key={card.id}
             card={card}
             isDragging={draggingId === card.id}
-            onDragStart={onDragStart}
-            onDragEnd={onDragEnd}
             onToggleSubtask={onToggleSubtask}
+            onClick={onCardClick}
           />
         ))}
 

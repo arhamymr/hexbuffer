@@ -108,6 +108,14 @@ impl Database {
             "sort_order",
             "INTEGER NOT NULL DEFAULT 0",
         )?;
+        Self::ensure_column(
+            &conn,
+            "mock_routes",
+            "matcher_enabled",
+            "INTEGER NOT NULL DEFAULT 1",
+        )?;
+        drop(conn); // drop conn lock before calling self.seed_relational_data_if_empty which locks it again
+        self.seed_relational_data_if_empty()?;
         Ok(())
     }
 

@@ -22,7 +22,7 @@ export function usePageMentions() {
   });
   const [highlightedIndex, setHighlightedIndex] = useState(0);
 
-  // Available pages to mention (exclude devOnly in production)
+  // Available pages to mention (filtered by flag in production via mainNavItems)
   const mentionablePages = useMemo(() => mainNavItems, []);
 
   // Detect @pattern in text up to cursor position

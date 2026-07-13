@@ -39,6 +39,7 @@ export function NewRouteDialog({ domains, onAdd }: NewRouteDialogProps) {
       responseHeaders: { 'Content-Type': 'application/json' },
       matchers: [],
       enabled: true,
+      matcherEnabled: true,
     });
     setOpen(false);
   };

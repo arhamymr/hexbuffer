@@ -68,10 +68,17 @@ pub struct MockRoute {
     pub matchers: Vec<RequestMatcher>,
     pub chaos: ChaosConfig,
     pub enabled: bool,
+    #[serde(rename = "matcherEnabled")]
+    #[serde(default = "default_matcher_enabled")]
+    pub matcher_enabled: bool,
     #[serde(rename = "requestQueryParams")]
     pub request_query_params: Option<Vec<QueryParam>>,
     #[serde(rename = "requestBody")]
     pub request_body: Option<String>,
+}
+
+fn default_matcher_enabled() -> bool {
+    true
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -202,12 +209,51 @@ pub fn find_matching_route(
         });
 
         for r in matching_routes {
-            if matchers_satisfied(&r.matchers, req_headers, req_query, req_body) {
+            // When matcher is disabled, match on method + path only
+            if !r.matcher_enabled {
                 return Some((d.clone(), r.clone()));
             }
+
+            // Check request matchers (headers, query, body)
+            if !matchers_satisfied(&r.matchers, req_headers, req_query, req_body) {
+                continue;
+            }
+
+            // Check request body matcher (for write methods)
+            if let Some(ref expected_body) = r.request_body {
+                if !expected_body.trim().is_empty() {
+                    let actual_body = String::from_utf8_lossy(req_body);
+                    if trim_json(&actual_body) != trim_json(expected_body) {
+                        continue;
+                    }
+                }
+            }
+
+            // Check request query params (for read methods)
+            if let Some(ref params) = r.request_query_params {
+                let active_params: Vec<&QueryParam> = params.iter().filter(|p| p.enabled).collect();
+                if !active_params.is_empty() {
+                    let all_match = active_params.iter().all(|p| {
+                        req_query.get(&p.key).map(|v| v == &p.value).unwrap_or(false)
+                    });
+                    if !all_match {
+                        continue;
+                    }
+                }
+            }
+
+            return Some((d.clone(), r.clone()));
         }
     }
     None
+}
+
+fn trim_json(s: &str) -> String {
+    if let Ok(v) = serde_json::from_str::<serde_json::Value>(s) {
+        serde_json::to_string(&v).unwrap_or_else(|_| s.to_string())
+    } else {
+        s.trim().to_string()
+    }
 }
 
 pub fn load_mock_forge_from_db(
@@ -372,6 +418,7 @@ mod tests {
                 error_status: None,
             },
             enabled: true,
+            matcher_enabled: true,
             request_query_params: None,
             request_body: None,
         }];
@@ -422,6 +469,7 @@ mod tests {
                 error_status: None,
             },
             enabled: true,
+            matcher_enabled: true,
             request_query_params: None,
             request_body: None,
         }];

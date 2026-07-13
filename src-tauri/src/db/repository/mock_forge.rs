@@ -62,14 +62,15 @@ impl Database {
     pub fn get_mock_routes(&self) -> SqlResult<Vec<MockRoute>> {
         let conn = self.conn.lock().unwrap();
         let mut stmt = conn.prepare(
-            "SELECT id, domain_id, method, path, status_code, response_body, response_headers, matchers, chaos, enabled, request_query_params, request_body FROM mock_routes"
+            "SELECT id, domain_id, method, path, status_code, response_body, response_headers, matchers, chaos, enabled, matcher_enabled, request_query_params, request_body FROM mock_routes"
         )?;
         let rows = stmt.query_map([], |row| {
             let headers_str: String = row.get(6)?;
             let matchers_str: String = row.get(7)?;
             let chaos_str: String = row.get(8)?;
             let enabled_int: i32 = row.get(9)?;
-            let query_params_str: Option<String> = row.get(10)?;
+            let matcher_enabled_int: i32 = row.get(10)?;
+            let query_params_str: Option<String> = row.get(11)?;
             
             let response_headers = serde_json::from_str(&headers_str).unwrap_or_default();
             let matchers = serde_json::from_str(&matchers_str).unwrap_or_default();
@@ -94,8 +95,9 @@ impl Database {
                 matchers,
                 chaos,
                 enabled: enabled_int != 0,
+                matcher_enabled: matcher_enabled_int != 0,
                 request_query_params,
-                request_body: row.get(11)?,
+                request_body: row.get(12)?,
             })
         })?;
         rows.collect()
@@ -109,8 +111,8 @@ impl Database {
         let query_params_str = route.request_query_params.as_ref().and_then(|q| serde_json::to_string(q).ok());
 
         conn.execute(
-            "INSERT INTO mock_routes (id, domain_id, method, path, status_code, response_body, response_headers, matchers, chaos, enabled, request_query_params, request_body)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)
+            "INSERT INTO mock_routes (id, domain_id, method, path, status_code, response_body, response_headers, matchers, chaos, enabled, matcher_enabled, request_query_params, request_body)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)
              ON CONFLICT(id) DO UPDATE SET
                 domain_id = excluded.domain_id,
                 method = excluded.method,
@@ -121,6 +123,7 @@ impl Database {
                 matchers = excluded.matchers,
                 chaos = excluded.chaos,
                 enabled = excluded.enabled,
+                matcher_enabled = excluded.matcher_enabled,
                 request_query_params = excluded.request_query_params,
                 request_body = excluded.request_body",
             params![
@@ -134,6 +137,7 @@ impl Database {
                 matchers_str,
                 chaos_str,
                 if route.enabled { 1 } else { 0 },
+                if route.matcher_enabled { 1 } else { 0 },
                 query_params_str,
                 route.request_body,
             ],

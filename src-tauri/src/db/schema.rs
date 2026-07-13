@@ -260,6 +260,92 @@ CREATE TABLE IF NOT EXISTS regression_runs (
 
 CREATE INDEX IF NOT EXISTS idx_regression_runs_test_case ON regression_runs(test_case_id);
 CREATE INDEX IF NOT EXISTS idx_regression_runs_created ON regression_runs(created_at);
+
+-- Relational Playwright Regression schema tables
+CREATE TABLE IF NOT EXISTS r_projects (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL UNIQUE,
+    repository_url TEXT,
+    created_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS r_execution_environments (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL UNIQUE,
+    description TEXT
+);
+
+CREATE TABLE IF NOT EXISTS r_regression_runs (
+    id TEXT PRIMARY KEY,
+    project_id TEXT NOT NULL,
+    environment_id TEXT,
+    build_number TEXT NOT NULL,
+    branch_name TEXT NOT NULL,
+    commit_sha TEXT,
+    status TEXT NOT NULL DEFAULT 'running',
+    sign_off_status TEXT NOT NULL DEFAULT 'pending',
+    sign_off_by TEXT,
+    sign_off_notes TEXT,
+    started_at TEXT NOT NULL,
+    ended_at TEXT,
+    total_tests INTEGER DEFAULT 0,
+    passed_tests INTEGER DEFAULT 0,
+    failed_tests INTEGER DEFAULT 0,
+    skipped_tests INTEGER DEFAULT 0,
+    flaky_tests INTEGER DEFAULT 0,
+    FOREIGN KEY(project_id) REFERENCES r_projects(id) ON DELETE CASCADE,
+    FOREIGN KEY(environment_id) REFERENCES r_execution_environments(id) ON DELETE SET NULL
+);
+
+CREATE TABLE IF NOT EXISTS r_test_suites (
+    id TEXT PRIMARY KEY,
+    project_id TEXT NOT NULL,
+    file_path TEXT NOT NULL,
+    title TEXT NOT NULL,
+    UNIQUE(project_id, file_path),
+    FOREIGN KEY(project_id) REFERENCES r_projects(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS r_test_cases (
+    id TEXT PRIMARY KEY,
+    suite_id TEXT NOT NULL,
+    title TEXT NOT NULL,
+    unique_signature TEXT NOT NULL UNIQUE,
+    created_at TEXT NOT NULL,
+    FOREIGN KEY(suite_id) REFERENCES r_test_suites(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS r_error_signatures (
+    id TEXT PRIMARY KEY,
+    error_message_summary TEXT NOT NULL,
+    error_hash TEXT NOT NULL UNIQUE,
+    first_seen_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS r_test_run_results (
+    id TEXT PRIMARY KEY,
+    run_id TEXT NOT NULL,
+    test_case_id TEXT NOT NULL,
+    browser TEXT NOT NULL,
+    device TEXT,
+    status TEXT NOT NULL,
+    duration_ms INTEGER NOT NULL,
+    retry_attempts INTEGER DEFAULT 0,
+    is_flaky INTEGER DEFAULT 0,
+    error_id TEXT,
+    trace_url TEXT,
+    video_url TEXT,
+    screenshot_url TEXT,
+    executed_at TEXT NOT NULL,
+    FOREIGN KEY(run_id) REFERENCES r_regression_runs(id) ON DELETE CASCADE,
+    FOREIGN KEY(test_case_id) REFERENCES r_test_cases(id) ON DELETE CASCADE,
+    FOREIGN KEY(error_id) REFERENCES r_error_signatures(id) ON DELETE SET NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_r_runs_project_date ON r_regression_runs (project_id, started_at DESC);
+CREATE INDEX IF NOT EXISTS idx_r_results_flaky ON r_test_run_results (is_flaky) WHERE is_flaky = 1;
+CREATE INDEX IF NOT EXISTS idx_r_results_run_id ON r_test_run_results (run_id);
+CREATE INDEX IF NOT EXISTS idx_r_results_test_case_history ON r_test_run_results (test_case_id, executed_at DESC);
 "#;
 
 pub const CREATE_STASHES_TABLES: &str = r#"
@@ -341,6 +427,7 @@ CREATE TABLE IF NOT EXISTS mock_routes (
     matchers TEXT NOT NULL,
     chaos TEXT NOT NULL,
     enabled INTEGER NOT NULL DEFAULT 1,
+    matcher_enabled INTEGER NOT NULL DEFAULT 1,
     request_query_params TEXT,
     request_body TEXT,
     FOREIGN KEY(domain_id) REFERENCES mock_domains(id) ON DELETE CASCADE

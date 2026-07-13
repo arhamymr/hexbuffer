@@ -28,6 +28,7 @@ export interface MockRoute {
   responseHeaders: Record<string, string>;
   matchers: RequestMatcher[];
   enabled: boolean;
+  matcherEnabled: boolean;
   requestQueryParams?: { key: string; value: string; enabled: boolean }[];
   requestBody?: string;
 }

@@ -5,47 +5,52 @@ import {
   DotsSixVerticalIcon,
   TagIcon,
 } from '@phosphor-icons/react';
+import { useDraggable } from '@dnd-kit/core';
 import type { KanbanCard } from '../types';
 import { PRIORITY_CONFIG } from '../constants';
 
 interface Props {
   card: KanbanCard;
   isDragging: boolean;
-  onDragStart: (id: string) => void;
-  onDragEnd: () => void;
+  isOverlay?: boolean;
   onToggleSubtask: (cardId: string, subtaskId: string) => void;
+  onClick: (id: string) => void;
 }
 
-export function KanbanCardItem({ card, isDragging, onDragStart, onDragEnd, onToggleSubtask }: Props) {
-  const priority = PRIORITY_CONFIG[card.priority];
-  const doneSubs  = card.subtasks.filter((s) => s.done).length;
-  const totalSubs = card.subtasks.length;
-  const progress  = totalSubs > 0 ? (doneSubs / totalSubs) * 100 : 0;
+export function KanbanCardItem({ card, isDragging, isOverlay = false, onToggleSubtask, onClick }: Props) {
+  const { attributes, listeners, setNodeRef } = useDraggable({
+    id: card.id,
+    disabled: isOverlay,
+  });
+
+  const priority = card.priority ? PRIORITY_CONFIG[card.priority] : undefined;
+  const doneSubs = (card.subtasks || []).filter((s) => s.done).length;
+  const totalSubs = card.subtasks ? card.subtasks.length : 0;
+  const progress = totalSubs > 0 ? (doneSubs / totalSubs) * 100 : 0;
 
   const isOverdue = card.dueDate && new Date(card.dueDate) < new Date();
 
   return (
     <div
-      draggable
-      onDragStart={(e) => {
-        e.dataTransfer.effectAllowed = 'move';
-        onDragStart(card.id);
-      }}
-      onDragEnd={onDragEnd}
-      className={`kanban-card group select-none rounded-md border border-border bg-card p-3 cursor-grab active:cursor-grabbing transition-all duration-150 ${
-        isDragging ? 'opacity-40 scale-[0.97] border-primary/40' : 'hover:border-border/80 hover:bg-card/80'
-      }`}
+      ref={isOverlay ? undefined : setNodeRef}
+      {...(isOverlay ? {} : attributes)}
+      {...(isOverlay ? {} : listeners)}
+      onClick={() => onClick(card.id)}
+      className={`kanban-card group select-none rounded-md border border-border bg-card p-3 cursor-pointer transition-all duration-150 ${isDragging ? 'opacity-40 scale-[0.97] border-primary/40' : 'hover:border-primary/50 hover:bg-muted'
+        }`}
     >
       {/* Priority dot + Title */}
       <div className="flex items-start gap-2">
-        <span
-          title={priority.label}
-          className={`mt-[5px] h-1.5 w-1.5 shrink-0 rounded-full ${priority.dot}`}
-        />
+        {priority && (
+          <span
+            title={priority.label}
+            className={`mt-[5px] h-1.5 w-1.5 shrink-0 rounded-full ${priority.dot}`}
+          />
+        )}
         <span className="flex-1 text-[13px] font-medium leading-snug text-foreground">
           {card.title}
         </span>
-        <DotsSixVerticalIcon className="h-3.5 w-3.5 shrink-0 text-muted-foreground opacity-0 group-hover:opacity-60 transition-opacity duration-150" />
+        <DotsSixVerticalIcon className="size-4 shrink-0" />
       </div>
 
       {/* Description */}
@@ -105,9 +110,8 @@ export function KanbanCardItem({ card, isDragging, onDragStart, onDragEnd, onTog
         )}
         {card.dueDate && (
           <span
-            className={`inline-flex items-center gap-1 text-[10px] font-mono ${
-              isOverdue ? 'text-red-400' : 'text-muted-foreground'
-            }`}
+            className={`inline-flex items-center gap-1 text-[10px] font-mono ${isOverdue ? 'text-red-400' : 'text-muted-foreground'
+              }`}
           >
             <CalendarBlankIcon className="h-2.5 w-2.5" />
             {card.dueDate}

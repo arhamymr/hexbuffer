@@ -13,7 +13,7 @@ export function useDesktopPage() {
     const baseItems = allNavItems.filter((item) => item.label !== 'Desktop');
     
     const activeItems = import.meta.env.PROD
-      ? baseItems.filter((item) => !item.devOnly)
+      ? baseItems.filter((item) => item.flag !== 'alpha')
       : baseItems;
 
     return activeItems.filter((item) => {

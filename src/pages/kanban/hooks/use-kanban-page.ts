@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, useRef } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import type { KanbanCard, KanbanColumn, GroupBy } from '../types';
 import { STATUS_COLUMNS, PRIORITY_COLUMNS, SEED_CARDS } from '../constants';
 
@@ -22,9 +22,6 @@ export function useKanbanPage() {
   const [cards, setCards] = useState<KanbanCard[]>(SEED_CARDS);
   const [groupBy, setGroupBy] = useState<GroupBy>('status');
   const [draggingId, setDraggingId] = useState<string | null>(null);
-  const [dragOverCol, setDragOverCol] = useState<string | null>(null);
-  // ponytail: ref so handleDrop always reads current draggingId, not stale closure
-  const draggingIdRef = useRef<string | null>(null);
 
   const columns: KanbanColumn[] = useMemo(() => {
     if (groupBy === 'status')    return STATUS_COLUMNS;
@@ -39,41 +36,49 @@ export function useKanbanPage() {
     return cards.filter((c) => c.assignee === key);
   }, [cards, groupBy]);
 
-  // ponytail: optimistic drag-drop, no external library needed for column-to-column moves
+  // ponytail: @dnd-kit simplifies drag handlers. PointerSensor distance constraint bypasses mouse-drag vs click collision.
   const handleDragStart = useCallback((cardId: string) => {
-    draggingIdRef.current = cardId;
     setDraggingId(cardId);
   }, []);
 
-  const handleDragOver = useCallback((colId: string) => {
-    setDragOverCol(colId);
-  }, []);
-
-  const handleDrop = useCallback((targetColId: string) => {
-    const id = draggingIdRef.current;
-    if (!id) return;
-    setCards((prev) =>
-      prev.map((c) => {
-        if (c.id !== id) return c;
-        if (groupBy === 'status')   return { ...c, columnId: targetColId };
-        if (groupBy === 'priority') return { ...c, priority: targetColId as KanbanCard['priority'] };
-        const assignee = targetColId === 'Unassigned' ? undefined : targetColId;
-        return { ...c, assignee };
-      })
-    );
-    draggingIdRef.current = null;
+  const handleDragEnd = useCallback((cardId: string, targetColId: string | null) => {
+    if (targetColId) {
+      setCards((prev) =>
+        prev.map((c) => {
+          if (c.id !== cardId) return c;
+          if (groupBy === 'status')   return { ...c, columnId: targetColId };
+          if (groupBy === 'priority') return { ...c, priority: targetColId as KanbanCard['priority'] };
+          const assignee = targetColId === 'Unassigned' ? undefined : targetColId;
+          return { ...c, assignee };
+        })
+      );
+    }
     setDraggingId(null);
-    setDragOverCol(null);
   }, [groupBy]);
-
-  const handleDragEnd = useCallback(() => {
-    draggingIdRef.current = null;
-    setDraggingId(null);
-    setDragOverCol(null);
-  }, []);
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [activeAddColumnId, setActiveAddColumnId] = useState<string>('todo');
+
+  const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
+
+  const openDetailModal = useCallback((cardId: string) => {
+    setSelectedCardId(cardId);
+  }, []);
+
+  const closeDetailModal = useCallback(() => {
+    setSelectedCardId(null);
+  }, []);
+
+  const updateCard = useCallback((cardId: string, updatedFields: Partial<KanbanCard>) => {
+    setCards((prev) =>
+      prev.map((c) => (c.id === cardId ? { ...c, ...updatedFields } : c))
+    );
+  }, []);
+
+  const deleteCard = useCallback((cardId: string) => {
+    setCards((prev) => prev.filter((c) => c.id !== cardId));
+    setSelectedCardId(null);
+  }, []);
 
   const openAddModal = useCallback((colId?: string) => {
     if (colId) {
@@ -88,7 +93,6 @@ export function useKanbanPage() {
     setIsAddModalOpen(false);
   }, []);
 
-  // ponytail: crypto.randomUUID() — no uuid lib needed
   const addCard = useCallback((cardData: Omit<KanbanCard, 'id'>) => {
     if (!cardData.title.trim()) return;
     setCards((prev) => [
@@ -119,11 +123,12 @@ export function useKanbanPage() {
 
   return {
     cards, columns, groupBy, setGroupBy,
-    draggingId, dragOverCol,
+    draggingId,
     getColumnCards,
-    handleDragStart, handleDragOver, handleDrop, handleDragEnd,
+    handleDragStart, handleDragEnd,
     toggleSubtask, addCard,
     isAddModalOpen, activeAddColumnId, openAddModal, closeAddModal,
+    selectedCardId, openDetailModal, closeDetailModal, updateCard, deleteCard,
     totalCards, doneCards,
   };
 }

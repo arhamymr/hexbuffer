@@ -592,3 +592,57 @@ pub async fn list_regression_runs(
 
     Ok(runs)
 }
+
+#[tauri::command]
+pub async fn list_projects(
+    state: tauri::State<'_, Database>,
+) -> Result<serde_json::Value, String> {
+    let records = state
+        .list_projects()
+        .map_err(|e| format!("Failed to list projects: {}", e))?;
+    serde_json::to_value(records).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn list_environments(
+    state: tauri::State<'_, Database>,
+) -> Result<serde_json::Value, String> {
+    let records = state
+        .list_environments()
+        .map_err(|e| format!("Failed to list environments: {}", e))?;
+    serde_json::to_value(records).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn list_regression_runs_relational(
+    state: tauri::State<'_, Database>,
+    project_id: Option<String>,
+    environment_id: Option<String>,
+) -> Result<serde_json::Value, String> {
+    let records = state
+        .list_regression_runs_relational(project_id.as_deref(), environment_id.as_deref())
+        .map_err(|e| format!("Failed to list relational runs: {}", e))?;
+    serde_json::to_value(records).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn list_test_run_results(
+    state: tauri::State<'_, Database>,
+    run_id: String,
+) -> Result<serde_json::Value, String> {
+    let records = state
+        .list_test_run_results(&run_id)
+        .map_err(|e| format!("Failed to list test run results: {}", e))?;
+    serde_json::to_value(records).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn list_error_signatures(
+    state: tauri::State<'_, Database>,
+) -> Result<serde_json::Value, String> {
+    let records = state
+        .list_error_signatures()
+        .map_err(|e| format!("Failed to list error signatures: {}", e))?;
+    serde_json::to_value(records).map_err(|e| e.to_string())
+}
+

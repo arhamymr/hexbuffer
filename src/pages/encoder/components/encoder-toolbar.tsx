@@ -38,7 +38,7 @@ export function EncoderToolbar({
           <Button
             variant="outline"
             className={cn(
-              'h-6 text-xs px-2.5',
+              'hover:text-green-500 ',
               activeType === 'url' && 'text-green-500',
             )}
             data-state={activeType === 'url' ? 'on' : 'off'}
@@ -49,7 +49,7 @@ export function EncoderToolbar({
           <Button
             variant="outline"
             className={cn(
-              'h-6 text-xs px-2.5',
+              'hover:text-green-500 h-6 text-xs px-2.5',
               activeType === 'base64' && 'text-green-500',
             )}
             data-state={activeType === 'base64' ? 'on' : 'off'}
@@ -60,7 +60,7 @@ export function EncoderToolbar({
           <Button
             variant="outline"
             className={cn(
-              'h-6 text-xs px-2.5',
+              'hover:text-green-500 h-6 text-xs px-2.5',
               activeType === 'hex' && 'text-green-500',
             )}
             data-state={activeType === 'hex' ? 'on' : 'off'}
@@ -74,7 +74,7 @@ export function EncoderToolbar({
           <Button
             variant="outline"
             className={cn(
-              'h-6 text-xs px-2.5',
+              'hover:text-green-500 h-6 text-xs px-2.5',
               mode === 'encode' && 'text-green-500',
             )}
             data-state={mode === 'encode' ? 'on' : 'off'}
@@ -85,7 +85,7 @@ export function EncoderToolbar({
           <Button
             variant="outline"
             className={cn(
-              'h-6 text-xs px-2.5',
+              'hover:text-green-500 h-6 text-xs px-2.5',
               mode === 'decode' && 'text-green-500',
             )}
             data-state={mode === 'decode' ? 'on' : 'off'}

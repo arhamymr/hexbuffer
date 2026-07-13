@@ -156,7 +156,8 @@ run(esbuildPath, [
   '--external:@ai-sdk/openai',
   '--external:playwright',
   '--external:playwright-core',
-  '--outfile=sidecars/dist/index.cjs'
+  '--outfile=sidecars/dist/index.cjs',
+  '--define:import.meta.url=undefined'
 ]);
 
 buildSidecar({

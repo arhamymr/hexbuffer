@@ -67,6 +67,14 @@ export function useSettingsPage() {
 
   const clearBrowserAutomationArtifactPaths = useBrowserAutomationStore((state) => state.clearArtifactPaths);
 
+  const [r2AccountId, setR2AccountId] = React.useState('');
+  const [r2AccessKeyId, setR2AccessKeyId] = React.useState('');
+  const [r2SecretAccessKey, setR2SecretAccessKey] = React.useState('');
+  const [r2CustomEndpointUrl, setR2CustomEndpointUrl] = React.useState('');
+  const [r2HasSecretKey, setR2HasSecretKey] = React.useState(false);
+  const [r2Saving, setR2Saving] = React.useState(false);
+  const [r2Loading, setR2Loading] = React.useState(true);
+
   const {
     currentVersion,
     checking: updateChecking,
@@ -135,6 +143,92 @@ export function useSettingsPage() {
   React.useEffect(() => {
     void loadAiSettings();
   }, [loadAiSettings]);
+
+  const loadR2Settings = React.useCallback(async () => {
+    try {
+      setR2Loading(true);
+      const settings = await invoke<{
+        accountId: string;
+        accessKeyId: string;
+        secretAccessKey: string;
+        customEndpointUrl?: string;
+      } | null>('get_r2_settings');
+
+      if (settings) {
+        setR2AccountId(settings.accountId);
+        setR2AccessKeyId(settings.accessKeyId);
+        setR2SecretAccessKey('');
+        setR2CustomEndpointUrl(settings.customEndpointUrl ?? '');
+        setR2HasSecretKey(!!settings.secretAccessKey);
+      } else {
+        setR2AccountId('');
+        setR2AccessKeyId('');
+        setR2SecretAccessKey('');
+        setR2CustomEndpointUrl('');
+        setR2HasSecretKey(false);
+      }
+    } catch (error) {
+      console.error('Failed to load R2 settings:', error);
+    } finally {
+      setR2Loading(false);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    void loadR2Settings();
+  }, [loadR2Settings]);
+
+  const handleSaveR2Settings = React.useCallback(async () => {
+    try {
+      setR2Saving(true);
+      let secretToSave = r2SecretAccessKey.trim();
+      if (!secretToSave && r2HasSecretKey) {
+        const settings = await invoke<{ secretAccessKey: string } | null>('get_r2_settings');
+        if (settings) {
+          secretToSave = settings.secretAccessKey;
+        }
+      }
+
+      if (!r2AccountId.trim() || !r2AccessKeyId.trim() || !secretToSave) {
+        toast.error('Account ID, Access Key ID, and Secret Access Key must not be empty');
+        return;
+      }
+
+      await invoke('save_r2_credentials', {
+        accountId: r2AccountId.trim(),
+        accessKeyId: r2AccessKeyId.trim(),
+        secretAccessKey: secretToSave,
+        customEndpointUrl: r2CustomEndpointUrl.trim() || null,
+      });
+
+      setR2SecretAccessKey('');
+      setR2HasSecretKey(true);
+      toast.success('R2 settings saved successfully');
+    } catch (error) {
+      console.error('Failed to save R2 settings:', error);
+      toast.error(`Failed to save R2 settings: ${error}`);
+    } finally {
+      setR2Saving(false);
+    }
+  }, [r2AccountId, r2AccessKeyId, r2SecretAccessKey, r2CustomEndpointUrl, r2HasSecretKey]);
+
+  const handleClearR2Credentials = React.useCallback(async () => {
+    try {
+      setR2Saving(true);
+      await invoke('clear_r2_credentials');
+      setR2AccountId('');
+      setR2AccessKeyId('');
+      setR2SecretAccessKey('');
+      setR2CustomEndpointUrl('');
+      setR2HasSecretKey(false);
+      toast.success('R2 settings cleared');
+    } catch (error) {
+      console.error('Failed to clear R2 settings:', error);
+      toast.error(`Failed to clear R2 settings: ${error}`);
+    } finally {
+      setR2Saving(false);
+    }
+  }, []);
 
   React.useEffect(() => {
     invoke<StorageInfo>('get_storage_info')
@@ -397,6 +491,19 @@ export function useSettingsPage() {
     updateVersion,
     handleCheckForUpdates: checkForUpdates,
     handleInstallUpdate: installUpdate,
+    r2AccountId,
+    setR2AccountId,
+    r2AccessKeyId,
+    setR2AccessKeyId,
+    r2SecretAccessKey,
+    setR2SecretAccessKey,
+    r2CustomEndpointUrl,
+    setR2CustomEndpointUrl,
+    r2HasSecretKey,
+    r2Saving,
+    r2Loading,
+    handleSaveR2Settings,
+    handleClearR2Credentials,
   };
 }
 

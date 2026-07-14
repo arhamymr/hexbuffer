@@ -23,11 +23,11 @@ export function HashInputPanel({ input, isEmpty, onInputChange, onClear }: HashI
           </span>
         </div>
         <Button
-          variant="ghost"
+          variant="destructive"
           size="icon"
           onClick={onClear}
           disabled={isEmpty}
-          className="h-6 w-6 text-muted-foreground hover:text-foreground hover:bg-muted/30 transition-colors"
+          className="h-6 w-6"
           title="Clear Input"
         >
           <TrashIcon className="h-3.5 w-3.5" />

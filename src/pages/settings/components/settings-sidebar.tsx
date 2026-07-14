@@ -6,10 +6,11 @@ import {
   FlowArrowIcon,
   PaletteIcon,
   InfoIcon,
+  HardDriveIcon,
 } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils';
 
-export type SettingsCategory = 'general' | 'ca-cert' | 'ai' | 'automation' | 'appearance' | 'about';
+export type SettingsCategory = 'general' | 'ca-cert' | 'ai' | 'automation' | 'appearance' | 'about' | 'r2';
 
 interface SettingsNavItem {
   id: SettingsCategory;
@@ -21,6 +22,7 @@ const NAV_ITEMS: SettingsNavItem[] = [
   { id: 'general', label: 'General', Icon: GearIcon },
   { id: 'ca-cert', label: 'CA Certificate', Icon: ShieldCheckIcon },
   { id: 'ai', label: 'AI', Icon: SparkleIcon },
+  { id: 'r2', label: 'R2 Storage', Icon: HardDriveIcon },
   { id: 'automation', label: 'Automation', Icon: FlowArrowIcon },
   { id: 'appearance', label: 'Appearance', Icon: PaletteIcon },
   { id: 'about', label: 'About', Icon: InfoIcon },

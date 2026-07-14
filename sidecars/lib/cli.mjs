@@ -6,6 +6,7 @@ import { scrapePageStructure } from './regression/scraper.mjs';
 import { runSingleStep } from './regression/executor.mjs';
 import { testStepSchema } from './regression/types.mjs';
 import { runAudit } from './audit/agent.mjs';
+import { runPixelGenerate } from './pixel/generate.mjs';
 import { getApiKeyEnvName } from './ai/provider.mjs';
 import { emit } from './events.mjs';
 
@@ -26,6 +27,10 @@ export async function runCli() {
   }
   if (mode === 'invoker-auto-mark') {
     await runInvokerAutoMark();
+    return;
+  }
+  if (mode === 'pixel-generate') {
+    await runPixelGenerate();
     return;
   }
   if (mode === 'regression') {

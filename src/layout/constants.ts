@@ -1,5 +1,5 @@
 import React from 'react';
-import { HouseIcon, ArrowsDownUpIcon, BugIcon, PauseCircleIcon, FlaskIcon, BinaryIcon, AppWindowIcon, DatabaseIcon, FingerprintIcon, GearSixIcon, GitDiffIcon, LightningIcon, WifiHighIcon, SpinnerIcon, BlueprintIcon, MarkdownLogoIcon, InfinityIcon, StarFourIcon, CloverIcon, CubeFocusIcon, TargetIcon, SquaresFourIcon, BroadcastIcon, PencilIcon } from '@phosphor-icons/react';
+import { HouseIcon, ArrowsDownUpIcon, BugIcon, PauseCircleIcon, FlaskIcon, BinaryIcon, AppWindowIcon, DatabaseIcon, FingerprintIcon, GearSixIcon, GitDiffIcon, LightningIcon, WifiHighIcon, SpinnerIcon, BlueprintIcon, MarkdownLogoIcon, InfinityIcon, StarFourIcon, CloverIcon, CubeFocusIcon, TargetIcon, SquaresFourIcon, BroadcastIcon, PencilIcon, PaintBrushIcon, HardDriveIcon } from '@phosphor-icons/react';
 
 export interface NavItem {
   label: string;
@@ -202,6 +202,22 @@ export const allNavItems: NavItem[] = [
     href: '/regression',
     description: 'Execute automated regression tests on target endpoints.',
     colors: { bg: 'bg-indigo-600 dark:bg-indigo-600', hoverBg: 'group-hover:bg-indigo-600 dark:group-hover:bg-indigo-600', border: 'border-indigo-600 dark:border-indigo-600' },
+    flag: 'alpha'
+  },
+  {
+    label: 'Pixel',
+    icon: PaintBrushIcon,
+    href: '/pixel',
+    description: 'Generate and edit pixel art matrices using AI prompting.',
+    colors: { bg: 'bg-emerald-500 dark:bg-emerald-500', hoverBg: 'group-hover:bg-emerald-500 dark:group-hover:bg-emerald-500', border: 'border-emerald-500 dark:border-emerald-500' },
+    flag: 'alpha'
+  },
+  {
+    label: 'File Explorer',
+    icon: HardDriveIcon,
+    href: '/file-explorer',
+    description: 'Browse, stream, and manage Cloudflare R2 object storage files.',
+    colors: { bg: 'bg-zinc-600 dark:bg-zinc-600', hoverBg: 'group-hover:bg-zinc-600 dark:group-hover:bg-zinc-600', border: 'border-zinc-600 dark:border-zinc-600' },
     flag: 'alpha'
   }
 ];

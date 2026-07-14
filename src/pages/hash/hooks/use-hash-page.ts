@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { toast } from 'sonner';
 import type { HashType } from '../types';
 import { computeHash } from '../lib/hash-functions';
 
@@ -19,6 +20,7 @@ export function useHashPage() {
   const handleCopy = useCallback(async () => {
     if (output) {
       await navigator.clipboard.writeText(output);
+      toast.success('Hash copied to clipboard');
     }
   }, [output]);
 

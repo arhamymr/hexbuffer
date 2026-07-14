@@ -197,6 +197,43 @@ pub(crate) struct AiEngineInvokerAutoMarkMessage {
     pub(crate) message: Option<String>,
 }
 
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PixelGenerationRequest {
+    pub prompt: String,
+    pub width: usize,
+    pub height: usize,
+    pub palette: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PixelGeneratedData {
+    pub name: String,
+    pub width: usize,
+    pub height: usize,
+    pub matrix: Vec<Vec<usize>>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PixelGenerationResponse {
+    pub provider: String,
+    pub model: String,
+    pub data: PixelGeneratedData,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct AiEnginePixelMessage {
+    #[serde(rename = "type")]
+    pub(crate) message_type: String,
+    pub(crate) provider: Option<String>,
+    pub(crate) model: Option<String>,
+    pub(crate) data: Option<PixelGeneratedData>,
+    pub(crate) message: Option<String>,
+}
+
 fn default_ai_key_status() -> BTreeMap<String, bool> {
     use super::providers::AI_PROVIDERS;
     let mut status = BTreeMap::new();

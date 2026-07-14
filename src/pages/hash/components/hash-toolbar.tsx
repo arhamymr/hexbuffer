@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/button';
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { ButtonGroup } from '@/components/ui/button-group';
+import { cn } from '@/lib/utils';
 import { CopyIcon, TrashIcon } from '@phosphor-icons/react';
 import type { HashType } from '../types';
 import { HASH_OPTIONS } from '../constants';
@@ -24,27 +25,22 @@ export function HashToolbar({
   return (
     <div className="flex h-11 shrink-0 items-center justify-between border-b bg-muted/20 px-3 gap-3 select-none">
       {/* Hash Type Selector */}
-      <ToggleGroup
-        type="single"
-        value={activeType}
-        onValueChange={(v) => {
-          if (v) onTypeChange(v as HashType);
-        }}
-        className="gap-1 bg-muted/50 p-0.5 rounded-md border border-border/30"
-      >
+      <ButtonGroup>
         {HASH_OPTIONS.map((opt) => (
-          <ToggleGroupItem
+          <Button
             key={opt.value}
-            value={opt.value}
-            size="sm"
-            className="text-[10px] h-7 px-2.5 rounded font-medium text-muted-foreground transition-all duration-150
-              hover:text-foreground
-              data-[state=on]:bg-primary/10 data-[state=on]:text-primary dark:data-[state=on]:text-emerald-400 data-[state=on]:border data-[state=on]:border-primary/20 data-[state=on]:font-semibold shadow-none"
+            variant="outline"
+            className={cn(
+              'hover:text-green-500 h-6 text-xs px-2.5',
+              activeType === opt.value && 'text-green-500',
+            )}
+            data-state={activeType === opt.value ? 'on' : 'off'}
+            onClick={() => onTypeChange(opt.value)}
           >
             {opt.label}
-          </ToggleGroupItem>
+          </Button>
         ))}
-      </ToggleGroup>
+      </ButtonGroup>
 
       {/* Action Controls */}
       <div className="flex items-center gap-1.5">
@@ -60,11 +56,11 @@ export function HashToolbar({
         </Button>
         
         <Button
-          variant="ghost"
+          variant="destructive"
           size="icon"
           onClick={onClear}
           disabled={isEmpty}
-          className="h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors"
+          className="h-7 w-7"
           title="Clear inputs and outputs"
         >
           <TrashIcon className="h-4 w-4" />

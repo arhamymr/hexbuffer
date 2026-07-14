@@ -9,6 +9,7 @@ import { AiSettingsTab } from './ai-settings-tab';
 import { AutomationSettingsTab } from './automation-settings-tab';
 import { AppearanceSettingsTab } from './appearance-settings-tab';
 import { AboutSettingsTab } from './about-settings-tab';
+import { R2SettingsTab } from './r2-settings-tab';
 
 interface SettingsLayoutProps {
   settings: SettingsPageState;
@@ -23,6 +24,7 @@ const CATEGORY_LABELS: Record<SettingsCategory, string> = {
   general: 'General',
   'ca-cert': 'CA Certificate',
   ai: 'AI',
+  r2: 'R2 Storage',
   automation: 'Automation',
   appearance: 'Appearance',
   about: 'About',
@@ -45,13 +47,14 @@ function CategoryContent({ settings, active }: CategoryContentProps) {
           {active === 'automation' && <AutomationSettingsTab />}
           {active === 'appearance' && <AppearanceSettingsTab />}
           {active === 'about' && <AboutSettingsTab />}
+          {active === 'r2' && <R2SettingsTab settings={settings} />}
         </div>
       </div>
     </div>
   );
 }
 
-const VALID_TABS: SettingsCategory[] = ['general', 'ca-cert', 'ai', 'automation', 'appearance', 'about'];
+const VALID_TABS: SettingsCategory[] = ['general', 'ca-cert', 'ai', 'r2', 'automation', 'appearance', 'about'];
 
 export function SettingsLayout({ settings }: SettingsLayoutProps) {
   const [searchParams] = useSearchParams();

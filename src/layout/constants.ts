@@ -1,5 +1,5 @@
 import React from 'react';
-import { HouseIcon, ArrowsDownUpIcon, BugIcon, PauseCircleIcon, FlaskIcon, BinaryIcon, AppWindowIcon, DatabaseIcon, FingerprintIcon, GearSixIcon, GitDiffIcon, LightningIcon, WifiHighIcon, SpinnerIcon, BlueprintIcon, MarkdownLogoIcon, InfinityIcon, StarFourIcon, CloverIcon, CubeFocusIcon, TargetIcon, SquaresFourIcon, BroadcastIcon, PencilIcon, PaintBrushIcon, HardDriveIcon } from '@phosphor-icons/react';
+import { HouseIcon, ArrowsDownUpIcon, BugIcon, PauseCircleIcon, FlaskIcon, BinaryIcon, AppWindowIcon, DatabaseIcon, FingerprintIcon, GearSixIcon, GitDiffIcon, LightningIcon, WifiHighIcon, SpinnerIcon, BlueprintIcon, MarkdownLogoIcon, InfinityIcon, StarFourIcon, CloverIcon, CubeFocusIcon, TargetIcon, SquaresFourIcon, BroadcastIcon, PencilIcon, PaintBrushIcon, HardDriveIcon, FolderOpenIcon } from '@phosphor-icons/react';
 
 export interface NavItem {
   label: string;
@@ -214,10 +214,10 @@ export const allNavItems: NavItem[] = [
   },
   {
     label: 'File Explorer',
-    icon: HardDriveIcon,
+    icon: FolderOpenIcon,
     href: '/file-explorer',
     description: 'Browse, stream, and manage Cloudflare R2 object storage files.',
-    colors: { bg: 'bg-zinc-600 dark:bg-zinc-600', hoverBg: 'group-hover:bg-zinc-600 dark:group-hover:bg-zinc-600', border: 'border-zinc-600 dark:border-zinc-600' },
+    colors: { bg: 'bg-zinc-900 dark:bg-zinc-900', hoverBg: 'group-hover:bg-zinc-900 dark:group-hover:bg-zinc-900', border: 'border-zinc-900 dark:border-zinc-900' },
     flag: 'alpha'
   }
 ];

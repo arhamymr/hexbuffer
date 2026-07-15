@@ -1,8 +1,18 @@
 import * as React from 'react';
-import { DatabaseIcon, PlusIcon, TrashIcon, WarningIcon } from '@phosphor-icons/react';
+import { DatabaseIcon, PlusIcon, TrashIcon } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface ExplorerSidebarProps {
   buckets: string[];
@@ -36,19 +46,6 @@ export function ExplorerSidebar({
     setConfirmRemove(bucket);
   };
 
-  const handleConfirmRemove = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (confirmRemove) {
-      onRemoveBucket(confirmRemove);
-      setConfirmRemove(null);
-    }
-  };
-
-  const handleCancelRemove = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setConfirmRemove(null);
-  };
-
   return (
     <div className="w-56 border-r border-border bg-background/50 flex flex-col shrink-0 justify-between">
       <div className="flex-1 flex flex-col min-h-0">
@@ -70,39 +67,6 @@ export function ExplorerSidebar({
           ) : (
             buckets.map((bucket) => {
               const active = bucket === currentBucket;
-              const isConfirming = confirmRemove === bucket;
-
-              if (isConfirming) {
-                return (
-                  <div
-                    key={bucket}
-                    className="rounded-md border border-destructive/40 bg-destructive/10 p-2 space-y-1.5"
-                  >
-                    <div className="flex items-center gap-1.5 text-[10px] text-destructive font-medium">
-                      <WarningIcon className="size-3.5 shrink-0" />
-                      <span className="truncate">Remove <strong>{bucket}</strong>?</span>
-                    </div>
-                    <div className="flex gap-1">
-                      <Button
-                        size="xs"
-                        variant="destructive"
-                        className="h-5 text-[10px] flex-1 px-2"
-                        onClick={handleConfirmRemove}
-                      >
-                        Remove
-                      </Button>
-                      <Button
-                        size="xs"
-                        variant="outline"
-                        className="h-5 text-[10px] flex-1 px-2"
-                        onClick={handleCancelRemove}
-                      >
-                        Cancel
-                      </Button>
-                    </div>
-                  </div>
-                );
-              }
 
               return (
                 <div key={bucket} className="group flex items-center gap-1">
@@ -136,7 +100,6 @@ export function ExplorerSidebar({
       <div className="p-3 border-t border-border bg-background/40">
         <form onSubmit={handleSubmit} className="flex gap-1">
           <Input
-            size="xs"
             value={newBucketName}
             onChange={(e) => setNewBucketName(e.target.value)}
             placeholder="Add bucket manually…"
@@ -147,6 +110,32 @@ export function ExplorerSidebar({
           </Button>
         </form>
       </div>
+
+      {/* Confirmation Dialog */}
+      <AlertDialog open={confirmRemove !== null} onOpenChange={(open) => !open && setConfirmRemove(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove Bucket</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to remove bucket "{confirmRemove}"? You can add it back manually later.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              onClick={() => {
+                if (confirmRemove) {
+                  onRemoveBucket(confirmRemove);
+                  setConfirmRemove(null);
+                }
+              }}
+            >
+              Remove
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -1,7 +1,7 @@
 {
   "name": "hexbuffer",
   "private": true,
-  "version": "2026.0.70",
+  "version": "2026.0.71",
   "type": "module",
   "scripts": {
     "dev": "vite",

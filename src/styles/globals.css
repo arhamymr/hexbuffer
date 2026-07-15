@@ -35,7 +35,7 @@
 }
 
 :root {
-  --background: oklch(99.405% 0.00011 271.152);
+  --background: oklch(98.802% 0.02162 139.198);
   --foreground: oklch(27.274% 0.00003 271.152);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.145 0 0);
@@ -70,7 +70,7 @@
 }
 
 .dark {
-  --background: oklch(20.904% 0.00002 271.152);
+  --background: oklch(28.908% 0.00003 271.152);
   --foreground: oklch(0.985 0 0);
   --card: oklch(0.205 0 0);
   --card-foreground: oklch(0.985 0 0);

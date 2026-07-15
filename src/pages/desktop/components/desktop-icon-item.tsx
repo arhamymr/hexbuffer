@@ -31,11 +31,11 @@ export function DesktopIconItem({ href, label, icon: IconComp, onClick }: Deskto
   return (
     <div
       onClick={() => onClick(href)}
-      className={`group relative flex flex-col items-center justify-center ${CONTAINER_SIZE} rounded-sm border border-transparent transition-all duration-200 cursor-pointer text-center select-none`}
+      className={`group relative flex flex-col items-center justify-center ${CONTAINER_SIZE} rounded-sm transition-all duration-200 cursor-pointer text-center select-none`}
       title={description}
     >
       <div className="relative">
-        <div className={`flex items-center justify-center ${INNER_SIZE} rounded-sm border ${colors.border} ${colors.bg} ${colors.hoverBg} transition-all duration-200 shadow-sm`}>
+        <div className={`flex items-center justify-center ${INNER_SIZE} rounded-sm border ${colors.bg} ${colors.hoverBg} transition-all duration-200 shadow-sm`}>
           <CustomIcon className={`${ICON_SIZE} text-white transition-colors duration-200`} />
         </div>
         {item?.flag && item.flag !== 'release' && (
@@ -48,9 +48,10 @@ export function DesktopIconItem({ href, label, icon: IconComp, onClick }: Deskto
         )}
       </div>
 
-      <span className={`${TEXT_SIZE} font-medium text-muted-foreground group-hover:text-foreground mt-3 leading-tight px-1 break-all`}>
+      <span className={`${TEXT_SIZE} font-medium text-muted-foreground group-hover:text-foreground mt-2 leading-tight px-2 break-all bg-muted rounded-xs`}>
         {label}
       </span>
+
     </div>
   );
 }

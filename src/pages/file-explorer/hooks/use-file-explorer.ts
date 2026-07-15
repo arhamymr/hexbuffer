@@ -1,6 +1,5 @@
 import * as React from 'react';
 import { invoke } from '@tauri-apps/api/core';
-import { HttpResponse } from '@smithy/protocol-http';
 import { open } from '@tauri-apps/plugin-dialog';
 import { writeFile, readFile, exists, mkdir } from '@tauri-apps/plugin-fs';
 import { openPath } from '@tauri-apps/plugin-opener';
@@ -14,80 +13,12 @@ import {
   PutObjectCommand,
   DeleteObjectCommand,
   GetObjectCommand,
-  CreateMultipartUploadCommand,
-  UploadPartCommand,
-  CompleteMultipartUploadCommand,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
-import { MULTIPART_CHUNK_SIZE, MULTIPART_THRESHOLD } from '../constants';
-
-const tauriRequestHandler = {
-  handle: async (request: any) => {
-    const queryParams = new URLSearchParams();
-    if (request.query) {
-      for (const [k, v] of Object.entries(request.query)) {
-        if (v !== undefined && v !== null) {
-          queryParams.set(k, String(v));
-        }
-      }
-    }
-    const queryString = queryParams.toString();
-    const portString = request.port ? `:${request.port}` : '';
-    const url = `${request.protocol}//${request.hostname}${portString}${request.path}${queryString ? `?${queryString}` : ''}`;
-
-    let bodyData: Uint8Array | null = null;
-    if (request.body) {
-      if (request.body instanceof Uint8Array) {
-        bodyData = request.body;
-      } else if (typeof request.body === 'string') {
-        bodyData = new TextEncoder().encode(request.body);
-      } else if (request.body instanceof ArrayBuffer) {
-        bodyData = new Uint8Array(request.body);
-      } else if (ArrayBuffer.isView(request.body)) {
-        bodyData = new Uint8Array(request.body.buffer, request.body.byteOffset, request.body.byteLength);
-      }
-    }
-
-    const tauriResponse = await invoke<{
-      status: number;
-      headers: Record<string, string>;
-      body: number[];
-    }>('r2_http_request', {
-      method: request.method,
-      url,
-      headers: request.headers,
-      body: bodyData,
-    });
-
-    const headers: Record<string, string> = {};
-    for (const [k, v] of Object.entries(tauriResponse.headers)) {
-      headers[k.toLowerCase()] = v;
-    }
-
-    return {
-      response: new HttpResponse({
-        statusCode: tauriResponse.status,
-        headers,
-        body: new Uint8Array(tauriResponse.body),
-      }),
-    };
-  },
-};
-
-export interface R2Item {
-  type: 'folder' | 'file';
-  name: string;
-  key: string;
-  size?: number;
-  lastModified?: Date;
-}
-
-export interface R2Credentials {
-  accountId: string;
-  accessKeyId: string;
-  secretAccessKey: string;
-  customEndpointUrl?: string;
-}
+import { MULTIPART_THRESHOLD } from '../constants';
+import { tauriRequestHandler } from '../lib/tauri-s3-transport';
+import { uploadMultipart } from '../lib/s3-multipart-upload';
+import type { R2Item, R2Credentials } from '../types';
 
 export function useFileExplorer() {
   const [loading, setLoading] = React.useState(true);
@@ -195,7 +126,7 @@ export function useFileExplorer() {
       
       const errMsg = String(err);
       if (errMsg.includes('DOMParser') || errMsg.includes('XML') || errMsg.includes('deserialization') || errMsg.includes('404')) {
-        toast.error('S3 endpoint returned an invalid response. If using a bucket-specific custom domain (e.g. dist.0xbuffer.com), please clear Custom Endpoint in Settings, save, and add your bucket name manually here.');
+        toast.error('S3 endpoint returned an invalid response. If using a bucket-specific custom domain, clear Custom Endpoint in Settings and manually add bucket.');
       } else {
         toast.error(`Could not autodiscover R2 Buckets: ${err}. You can manually add a bucket name in the sidebar.`);
       }
@@ -224,7 +155,6 @@ export function useFileExplorer() {
 
       const folders: R2Item[] = (res.CommonPrefixes ?? []).map((p) => {
         const fullPrefix = p.Prefix ?? '';
-        // Extract the folder name
         const parts = fullPrefix.slice(0, -1).split('/');
         const name = parts[parts.length - 1] ?? '';
         return {
@@ -242,7 +172,6 @@ export function useFileExplorer() {
           size: c.Size,
           lastModified: c.LastModified,
         }))
-        // Filter out the current folder's placeholder object itself
         .filter((file) => file.key !== currentPrefix && file.name !== '');
 
       setItems([...folders, ...files]);
@@ -289,7 +218,7 @@ export function useFileExplorer() {
   const navigateUp = () => {
     if (!currentPrefix) return;
     const parts = currentPrefix.slice(0, -1).split('/');
-    parts.pop(); // Remove current folder name
+    parts.pop();
     const newPrefix = parts.length > 0 ? parts.join('/') + '/' : '';
     setCurrentPrefix(newPrefix);
   };
@@ -298,12 +227,10 @@ export function useFileExplorer() {
   const handleCopyPublicUrl = async (item: R2Item) => {
     if (!credentials) return;
     
-    // Cloudflare public URL formats
     let publicUrl = '';
     if (credentials.customEndpointUrl) {
       publicUrl = `${credentials.customEndpointUrl.replace(/\/$/, '')}/${item.key}`;
     } else {
-      // Standard public URL: https://pub-<hash>.r2.dev or bucket sub-domain
       publicUrl = `https://${credentials.accountId}.r2.cloudflarestorage.com/${currentBucket}/${item.key}`;
     }
     
@@ -388,7 +315,6 @@ export function useFileExplorer() {
       const fileName = (filePath as string).split(/[/\\]/).pop() ?? 'uploaded-file';
       const key = `${currentPrefix}${fileName}`;
 
-      // Helper to detect mime-type
       const getMimeType = (name: string): string => {
         const ext = name.split('.').pop()?.toLowerCase();
         switch (ext) {
@@ -410,86 +336,30 @@ export function useFileExplorer() {
         }
       };
 
+      const contentType = getMimeType(fileName);
+
       if (fileBytes.length <= MULTIPART_THRESHOLD) {
-        // Direct upload
         setUploadProgress({ fileName, progress: 10 });
         const command = new PutObjectCommand({
           Bucket: currentBucket,
           Key: key,
           Body: fileBytes,
-          ContentType: getMimeType(fileName),
+          ContentType: contentType,
         });
         await s3Client.send(command);
         setUploadProgress({ fileName, progress: 100 });
         toast.success(`Uploaded '${fileName}' successfully`);
       } else {
-        // Concurrent Multipart upload
         setUploadProgress({ fileName, progress: 0 });
-        
-        const initCommand = new CreateMultipartUploadCommand({
-          Bucket: currentBucket,
-          Key: key,
-          ContentType: getMimeType(fileName),
+        await uploadMultipart({
+          s3Client,
+          bucket: currentBucket,
+          key,
+          fileBytes,
+          contentType,
+          onProgress: (p) => setUploadProgress({ fileName, progress: p }),
         });
-        const initRes = await s3Client.send(initCommand);
-        const uploadId = initRes.UploadId;
-
-        if (!uploadId) throw new Error('Multipart upload failed to initialize');
-
-        const chunkSize = MULTIPART_CHUNK_SIZE;
-        const totalSize = fileBytes.length;
-        const numParts = Math.ceil(totalSize / chunkSize);
-        const parts = [];
-
-        for (let i = 0; i < numParts; i++) {
-          const start = i * chunkSize;
-          const end = Math.min(start + chunkSize, totalSize);
-          const chunk = fileBytes.slice(start, end);
-          parts.push({
-            partNumber: i + 1,
-            body: chunk,
-          });
-        }
-
-        const uploadedParts: { ETag: string; PartNumber: number }[] = [];
-        let completedParts = 0;
-
-        // Process parts concurrently in pairs to be aggressive but prevent heap crash
-        const batchSize = 3;
-        for (let idx = 0; idx < parts.length; idx += batchSize) {
-          const batch = parts.slice(idx, idx + batchSize);
-          const promises = batch.map(async (part) => {
-            const uploadPartCommand = new UploadPartCommand({
-              Bucket: currentBucket,
-              Key: key,
-              UploadId: uploadId,
-              PartNumber: part.partNumber,
-              Body: part.body,
-            });
-            const res = await s3Client.send(uploadPartCommand);
-            if (res.ETag) {
-              uploadedParts.push({ ETag: res.ETag, PartNumber: part.partNumber });
-            }
-            completedParts++;
-            setUploadProgress({
-              fileName,
-              progress: Math.round((completedParts / numParts) * 100),
-            });
-          });
-          await Promise.all(promises);
-        }
-
-        // Complete multipart upload
-        const completeCommand = new CompleteMultipartUploadCommand({
-          Bucket: currentBucket,
-          Key: key,
-          UploadId: uploadId,
-          MultipartUpload: {
-            Parts: uploadedParts.sort((a, b) => a.PartNumber - b.PartNumber),
-          },
-        });
-        await s3Client.send(completeCommand);
-        toast.success(`Multipart uploaded '${fileName}' successfully (${(totalSize / 1024 / 1024).toFixed(2)} MB)`);
+        toast.success(`Multipart uploaded '${fileName}' successfully (${(fileBytes.length / 1024 / 1024).toFixed(2)} MB)`);
       }
 
       setUploadProgress(null);
@@ -511,7 +381,6 @@ export function useFileExplorer() {
       const localData = await appLocalDataDir();
       const localPath = await join(localData, 'r2_cache', currentBucket, item.key);
 
-      // Check if cached
       const fileExists = await exists(localPath);
       if (fileExists) {
         toast.info(`Opening '${item.name}' instantly from local cache`);
@@ -519,7 +388,6 @@ export function useFileExplorer() {
         return;
       }
 
-      // Stream download via S3 API
       toast.loading(`Streaming '${item.name}' from Cloudflare R2...`);
       const command = new GetObjectCommand({
         Bucket: currentBucket,
@@ -532,7 +400,6 @@ export function useFileExplorer() {
         throw new Error('Empty file content received');
       }
 
-      // Ensure folders exist
       const lastSlash = localPath.lastIndexOf('/');
       if (lastSlash !== -1) {
         const parentDir = localPath.substring(0, lastSlash);
@@ -541,10 +408,8 @@ export function useFileExplorer() {
         }
       }
 
-      // Save to local cache
       await writeFile(localPath, bytes);
       
-      // Update cache map
       setCacheStatus((prev) => ({
         ...prev,
         [item.key]: { isCached: true, localPath },
@@ -562,7 +427,6 @@ export function useFileExplorer() {
     }
   };
 
-  // Filtered items computed
   const filteredItems = React.useMemo(() => {
     if (!searchQuery.trim()) return items;
     const query = searchQuery.toLowerCase();

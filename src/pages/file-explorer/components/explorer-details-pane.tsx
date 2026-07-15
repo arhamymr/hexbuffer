@@ -4,10 +4,8 @@ import {
   FolderIcon,
   CheckCircleIcon,
   CloudArrowDownIcon,
+  CopyIcon,
   LinkSimpleIcon,
-  KeyIcon,
-  ArrowSquareOutIcon,
-  DownloadSimpleIcon,
 } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
 import {
@@ -18,7 +16,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { PRESIGNED_URL_EXPIRATIONS } from '../constants';
-import type { R2Item } from '../hooks/use-file-explorer';
+import type { R2Item } from '../types';
 
 interface ExplorerDetailsPaneProps {
   item: R2Item | null;
@@ -47,7 +45,7 @@ export function ExplorerDetailsPane({
 
   if (!item) {
     return (
-      <div className="w-80 border-l border-border bg-background/30 flex flex-col items-center justify-center p-6 text-center text-muted-foreground select-none shrink-0">
+      <div className="w-full h-full flex-1 bg-background/30 flex flex-col items-center justify-center p-6 text-center text-muted-foreground select-none">
         <FileIcon className="size-8 text-muted-foreground/35 mb-2" />
         <p className="text-xs font-medium">No item selected</p>
         <p className="text-[10px] text-muted-foreground/80 mt-0.5">
@@ -61,7 +59,7 @@ export function ExplorerDetailsPane({
   const localPath = cacheStatus[item.key]?.localPath;
 
   return (
-    <div className="w-80 border-l border-border bg-background flex flex-col select-none shrink-0 overflow-y-auto">
+    <div className="w-full h-full flex-1 bg-background flex flex-col select-none overflow-y-auto">
       {/* Header */}
       <div className="p-4 border-b border-border flex flex-col items-center text-center">
         {item.type === 'folder' ? (
@@ -118,104 +116,94 @@ export function ExplorerDetailsPane({
                   <div className="flex items-start gap-1.5 text-green-500 text-xs">
                     <CheckCircleIcon className="size-4 mt-0.5 shrink-0" />
                     <div>
-                      <p className="font-medium">Stored Locally</p>
-                      <p className="text-[10px] text-muted-foreground break-all mt-0.5 font-mono">
+                      <p className="font-semibold">Local Cached Sync</p>
+                      <p className="text-[10px] text-muted-foreground mt-0.5 leading-relaxed break-all font-mono">
                         {localPath}
                       </p>
                     </div>
                   </div>
                   <Button
-                    size="xs"
-                    className="w-full text-xs"
+                    variant="outline"
+                    className="w-full text-xs h-8 gap-1.5"
                     onClick={() => onOpenFile(item)}
                   >
-                    <ArrowSquareOutIcon className="mr-1.5 size-3.5" />
                     Open Local File
                   </Button>
                 </div>
               ) : (
                 <div className="space-y-3">
-                  <div className="flex items-start gap-1.5 text-zinc-500 text-xs">
+                  <div className="flex items-start gap-1.5 text-muted-foreground text-xs">
                     <CloudArrowDownIcon className="size-4 mt-0.5 shrink-0" />
                     <div>
-                      <p className="font-medium">Available on R2 Cloud</p>
-                      <p className="text-[10px] text-muted-foreground mt-0.5">
-                        Double-click or download to stream and write to local cache.
+                      <p className="font-medium text-foreground">Remote Object Only</p>
+                      <p className="text-[10px] mt-0.5 leading-relaxed">
+                        File is not cached locally. Click stream to download and open.
                       </p>
                     </div>
                   </div>
                   <Button
-                    size="xs"
-                    className="w-full text-xs"
+                    variant="default"
+                    className="w-full text-xs h-8 gap-1.5"
                     onClick={() => onOpenFile(item)}
                   >
-                    <DownloadSimpleIcon className="mr-1.5 size-3.5" />
-                    Download & Open
+                    Stream & Open File
                   </Button>
                 </div>
               )}
             </div>
 
-            {/* Sharing / Link generation */}
-            <div className="space-y-3">
+            {/* Presigned URL copy card */}
+            <div className="border border-border rounded-lg p-3 bg-muted/10 space-y-3">
               <h4 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-                Object Links
+                Temporary URL Access
               </h4>
-              <div className="flex flex-col gap-2">
-                {/* Copy public link */}
-                <Button
-                  size="xs"
-                  variant="outline"
-                  className="w-full justify-start text-xs font-normal"
-                  onClick={() => onCopyPublicUrl(item)}
+              <div className="flex items-center gap-2">
+                <Select
+                  value={expiration}
+                  onValueChange={setExpiration}
                 >
-                  <LinkSimpleIcon className="mr-2 size-3.5 text-primary shrink-0" />
-                  Copy Public Object URL
+                  <SelectTrigger className="h-8 text-xs font-sans">
+                    <SelectValue placeholder="Expiration" />
+                  </SelectTrigger>
+                  <SelectContent className="font-sans text-xs">
+                    {PRESIGNED_URL_EXPIRATIONS.map((opt) => (
+                      <SelectItem key={opt.seconds} value={opt.seconds.toString()}>
+                        {opt.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-8 gap-1 shrink-0 text-xs"
+                  onClick={() => onCopyPresignedUrl(item, parseInt(expiration, 10))}
+                >
+                  <LinkSimpleIcon className="size-3.5" />
+                  Presigned
                 </Button>
-
-                {/* Generate presigned URL */}
-                <div className="border border-border rounded-lg p-2.5 space-y-2.5">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-[11px] text-muted-foreground flex items-center gap-1.5">
-                      <KeyIcon className="size-3.5 text-primary" />
-                      Presigned URL
-                    </span>
-                    <Select
-                      value={expiration}
-                      onValueChange={setExpiration}
-                    >
-                      <SelectTrigger className="w-24 h-6 text-[10px] p-1.5">
-                        <SelectValue placeholder="Expires in" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {PRESIGNED_URL_EXPIRATIONS.map((opt) => (
-                          <SelectItem key={opt.seconds} value={String(opt.seconds)}>
-                            {opt.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <Button
-                    size="xs"
-                    variant="outline"
-                    className="w-full text-xs"
-                    onClick={() => onCopyPresignedUrl(item, Number(expiration))}
-                  >
-                    Generate & Copy Link
-                  </Button>
-                </div>
               </div>
             </div>
+
+            {/* Public URL copy action */}
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full text-xs h-8 gap-1.5"
+              onClick={() => onCopyPublicUrl(item)}
+            >
+              <CopyIcon className="size-3.5" />
+              Copy Public URL
+            </Button>
           </>
         )}
 
         {item.type === 'folder' && (
-          <div className="border border-border rounded-lg p-3 bg-muted/20 text-center">
-            <FolderIcon className="size-8 text-yellow-500/60 mx-auto mb-1.5" />
-            <p className="text-xs font-semibold">Virtual Prefix Directory</p>
-            <p className="text-[10px] text-muted-foreground mt-0.5 leading-relaxed">
-              Folders are virtual nodes representing key prefixes. Double-click to browse files inside this directory path.
+          <div className="flex-1 flex flex-col items-center justify-center p-6 text-center text-muted-foreground">
+            <FolderIcon className="size-8 text-yellow-500/60 mb-1.5" />
+            <p className="text-xs font-medium">Selected Folder</p>
+            <p className="text-[10px] text-muted-foreground/80 mt-0.5 leading-normal">
+              Folder path key: <span className="font-mono text-foreground">{item.key}</span>
             </p>
           </div>
         )}

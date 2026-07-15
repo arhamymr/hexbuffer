@@ -80,6 +80,7 @@ export function FileExplorerPage() {
     handleCopyPresignedUrl,
     handleCreateFolder,
     handleDeleteItem,
+    deletingKey,
     handleUploadFile,
     handleOpenFile,
     handleAddCustomBucket,
@@ -233,6 +234,7 @@ export function FileExplorerPage() {
                     items={items.map((item) => ({ ...item, id: item.key }))}
                     selectedItem={selectedItem ? { ...selectedItem, id: selectedItem.key } : null}
                     loading={loading}
+                    deletingId={deletingKey}
                     onSelectItem={(item) => setSelectedItem(items.find((i) => i.key === item.id) ?? null)}
                     onDoubleClickItem={(item) => {
                       const orig = items.find((i) => i.key === item.id);
@@ -337,6 +339,7 @@ export function FileExplorerPage() {
                 items={local.items.map((item) => ({ ...item, id: item.path }))}
                 selectedItem={local.selectedItem ? { ...local.selectedItem, id: local.selectedItem.path } : null}
                 loading={local.loading}
+                deletingId={local.deletingPath}
                 onSelectItem={(item) => local.setSelectedItem(local.items.find((i) => i.path === item.id) ?? null)}
                 onDoubleClickItem={(item) => {
                   const orig = local.items.find((i) => i.path === item.id);

@@ -41,6 +41,7 @@ interface FileGridProps<T extends FileItem> {
   onRenameCommit?: (item: T) => void;
   onRenameCancel?: () => void;
   renameInputRef?: React.RefObject<HTMLInputElement | null>;
+  deletingId?: string | null;
 }
 
 export function FileGrid<T extends FileItem>({
@@ -62,6 +63,7 @@ export function FileGrid<T extends FileItem>({
   onRenameCommit,
   onRenameCancel,
   renameInputRef,
+  deletingId,
 }: FileGridProps<T>) {
   const [itemToDelete, setItemToDelete] = React.useState<T | null>(null);
 
@@ -109,6 +111,7 @@ export function FileGrid<T extends FileItem>({
                 onRenameCommit={onRenameCommit}
                 onRenameCancel={onRenameCancel}
                 renameInputRef={renameInputRef}
+                isDeleting={deletingId === item.id}
               />
             ))}
           </div>
@@ -146,6 +149,7 @@ export function FileGrid<T extends FileItem>({
                   onRenameCommit={onRenameCommit}
                   onRenameCancel={onRenameCancel}
                   renameInputRef={renameInputRef}
+                  isDeleting={deletingId === item.id}
                 />
               ))}
             </tbody>

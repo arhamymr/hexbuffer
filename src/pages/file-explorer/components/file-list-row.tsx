@@ -26,6 +26,7 @@ interface FileListRowProps<T extends FileItem> {
   onRenameCommit?: (item: T) => void;
   onRenameCancel?: () => void;
   renameInputRef?: React.RefObject<HTMLInputElement | null>;
+  isDeleting?: boolean;
 }
 
 function formatBytes(bytes?: number): string {
@@ -51,6 +52,7 @@ export function FileListRow<T extends FileItem>({
   onRenameCommit,
   onRenameCancel,
   renameInputRef,
+  isDeleting,
 }: FileListRowProps<T>) {
   return (
     <ContextMenu>
@@ -61,7 +63,8 @@ export function FileListRow<T extends FileItem>({
           onContextMenu={() => onSelectItem(item)}
           className={cn(
             'hover:bg-muted/40 cursor-pointer transition-colors group',
-            isSelected ? 'bg-muted/80 text-foreground' : 'text-muted-foreground hover:text-foreground'
+            isSelected ? 'bg-muted/80 text-foreground' : 'text-muted-foreground hover:text-foreground',
+            isDeleting && 'opacity-40 pointer-events-none'
           )}
         >
           {/* Name */}

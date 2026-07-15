@@ -33,6 +33,7 @@ export function useFileExplorer() {
   const [cacheStatus, setCacheStatus] = React.useState<Record<string, { isCached: boolean; localPath: string }>>({});
   const [creatingFolder, setCreatingFolder] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState('');
+  const [deletingKey, setDeletingKey] = React.useState<string | null>(null);
   const [customBuckets, setCustomBuckets] = React.useState<string[]>(() => {
     try {
       const saved = localStorage.getItem('r2_custom_buckets');
@@ -282,20 +283,29 @@ export function useFileExplorer() {
   // 9. Delete item
   const handleDeleteItem = async (item: R2Item) => {
     if (!s3Client || !currentBucket) return;
-    try {
-      setLoading(true);
+    setDeletingKey(item.key);
+    // ponytail: use toast.promise for clean loading, success, and error feedback without boilerplate
+    const deletePromise = (async () => {
       const command = new DeleteObjectCommand({
         Bucket: currentBucket,
         Key: item.key,
       });
       await s3Client.send(command);
-      toast.success(`Deleted ${item.type === 'folder' ? 'folder' : 'file'} '${item.name}'`);
-      void listItems();
+      await listItems();
+    })();
+
+    toast.promise(deletePromise, {
+      loading: `Deleting ${item.type === 'folder' ? 'folder' : 'file'} '${item.name}'...`,
+      success: `Deleted ${item.type === 'folder' ? 'folder' : 'file'} '${item.name}'`,
+      error: (err) => `Delete failed: ${err}`,
+    });
+
+    try {
+      await deletePromise;
     } catch (err) {
       console.error('Failed to delete item:', err);
-      toast.error(`Delete failed: ${err}`);
     } finally {
-      setLoading(false);
+      setDeletingKey(null);
     }
   };
 
@@ -455,6 +465,7 @@ export function useFileExplorer() {
     handleCopyPresignedUrl,
     handleCreateFolder,
     handleDeleteItem,
+    deletingKey,
     handleUploadFile,
     handleOpenFile,
     handleAddCustomBucket,

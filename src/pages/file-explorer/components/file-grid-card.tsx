@@ -27,6 +27,7 @@ interface FileGridCardProps<T extends FileItem> {
   onRenameCommit?: (item: T) => void;
   onRenameCancel?: () => void;
   renameInputRef?: React.RefObject<HTMLInputElement | null>;
+  isDeleting?: boolean;
 }
 
 export function FileGridCard<T extends FileItem>({
@@ -44,6 +45,7 @@ export function FileGridCard<T extends FileItem>({
   onRenameCommit,
   onRenameCancel,
   renameInputRef,
+  isDeleting,
 }: FileGridCardProps<T>) {
   const cardContent = (
     <ContextMenuTrigger asChild>
@@ -55,7 +57,8 @@ export function FileGridCard<T extends FileItem>({
           'relative flex flex-col items-center p-2 rounded-md justify-between text-center cursor-pointer transition-all duration-150 ease-out active:scale-[0.97] group',
           isSelected
             ? 'bg-muted/80'
-            : ''
+            : '',
+          isDeleting && 'opacity-40 pointer-events-none'
         )}
         style={{ height: '100px' }}
       >

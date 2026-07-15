@@ -20,6 +20,7 @@ interface ExplorerGridProps {
   viewMode: 'list' | 'grid';
   onCopyPublicUrl?: (item: R2Item) => void;
   onCopyPresignedUrl?: (item: R2Item, seconds: number) => void;
+  deletingId?: string | null;
 }
 
 export function ExplorerGrid({
@@ -33,6 +34,7 @@ export function ExplorerGrid({
   viewMode,
   onCopyPublicUrl,
   onCopyPresignedUrl,
+  deletingId,
 }: ExplorerGridProps) {
   // Map R2Item to FileItem shape
   const gridItems = React.useMemo(() =>
@@ -57,6 +59,7 @@ export function ExplorerGrid({
       items={gridItems}
       selectedItem={selectedGridItem}
       loading={loading}
+      deletingId={deletingId}
       onSelectItem={(item) => onSelectItem(getOriginalItem(item))}
       onDoubleClickItem={(item) => onDoubleClickItem(getOriginalItem(item))}
       onDeleteItem={(item) => onDeleteItem(getOriginalItem(item))}

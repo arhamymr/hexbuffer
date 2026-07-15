@@ -23,6 +23,7 @@ export function useLocalStorage() {
   const [loading, setLoading] = React.useState(false);
   const [selectedItem, setSelectedItem] = React.useState<LocalItem | null>(null);
   const [searchQuery, setSearchQuery] = React.useState('');
+  const [deletingPath, setDeletingPath] = React.useState<string | null>(null);
 
   // Resolve and ensure the dedicated workspace folder on mount
   React.useEffect(() => {
@@ -111,13 +112,24 @@ export function useLocalStorage() {
   }, [navigateInto]);
 
   const handleDeleteItem = React.useCallback(async (item: LocalItem) => {
+    setDeletingPath(item.path);
+    // ponytail: use toast.promise for clean loading, success, and error feedback without boilerplate
+    const deletePromise = remove(item.path, { recursive: item.type === 'folder' });
+
+    toast.promise(deletePromise, {
+      loading: `Deleting ${item.type === 'folder' ? 'folder' : 'file'} '${item.name}'...`,
+      success: `Deleted ${item.type === 'folder' ? 'folder' : 'file'} '${item.name}'`,
+      error: (err) => `Failed to delete: ${err}`,
+    });
+
     try {
-      await remove(item.path, { recursive: item.type === 'folder' });
+      await deletePromise;
       setItems((prev) => prev.filter((i) => i.path !== item.path));
       setSelectedItem((prev) => (prev?.path === item.path ? null : prev));
-      toast.success(`Deleted '${item.name}'`);
     } catch (err) {
-      toast.error(`Failed to delete: ${err}`);
+      console.error('Failed to delete file:', err);
+    } finally {
+      setDeletingPath(null);
     }
   }, []);
 
@@ -199,6 +211,7 @@ export function useLocalStorage() {
     navigateUp,
     handleOpenFile,
     handleDeleteItem,
+    deletingPath,
     handleCreateFolder,
     handleRenameItem,
     handleImportFile,

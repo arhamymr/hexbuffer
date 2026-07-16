@@ -163,12 +163,15 @@ export function useTerminalPage() {
   }, []);
 
   // Spawn initial terminal on first mount if none exist, or restore saved sessions
+  const hasInitializedRef = useRef(false);
+
   useEffect(() => {
     console.log('[Terminal Hook] Spawn check. sessions.length:', sessions.length);
     if (sessions.length === 0) {
       console.log('[Terminal Hook] No sessions found. Spawning initial session.');
       createSession();
-    } else {
+    } else if (!hasInitializedRef.current) {
+      hasInitializedRef.current = true;
       console.log('[Terminal Hook] Restoring saved sessions.');
       const store = useTerminalStore.getState();
       store.initSavedSessions().then(() => {
@@ -176,7 +179,7 @@ export function useTerminalPage() {
         const activeSession = store.sessions.find((s) => s.id === store.activeId);
         if (activeSession && activeSession.status === 'exited') {
           console.log('[Terminal Hook] Auto-waking up inactive active session on mount:', store.activeId);
-          store.restartSession(store.activeId);
+          store.restartSession(store.activeId!);
         }
       });
     }

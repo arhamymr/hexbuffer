@@ -21,6 +21,9 @@ export interface TerminalSessionInstances {
 // Module-level map to store active instances that persist for the lifetime of the app
 export const terminalInstances = new Map<string, TerminalSessionInstances>();
 
+// Prevent rapid restart loops (e.g. macOS wake kills PTY → onExit → restart → onExit → …)
+const restartCooldowns = new Map<string, number>();
+
 const STORAGE_KEYS = {
   FONT_SIZE: 'apprecon:terminal:font-size',
   SHELL_PATH: 'apprecon:terminal:shell-path',
@@ -258,6 +261,9 @@ export const useTerminalStore = create<TerminalState>((set, get) => ({
       });
 
       pty.onExit(({ exitCode }) => {
+        // Guard: only mark exited if this PTY is still the active one for this session.
+        // A killed/replaced PTY must not overwrite the status of a fresh replacement.
+        if (terminalInstances.get(id)?.pty !== pty) return;
         term.write(`\r\n[Process completed with exit code ${exitCode}]\r\n`);
         const current = get().sessions.map((s) => s.id === id ? { ...s, status: 'exited' as const } : s);
         set({ sessions: current });
@@ -445,7 +451,10 @@ export const useTerminalStore = create<TerminalState>((set, get) => ({
     // ponytail: only restore the process for the active tab to save CPU/memory on startup
     const targetId = activeId || sessions[0].id;
 
-    for (const s of sessions) {
+    // Work on a shallow copy to avoid mutating Zustand state directly
+    const updatedSessions = sessions.map((s) => ({ ...s }));
+
+    for (const s of updatedSessions) {
       if (s.id !== targetId) {
         s.status = 'spawning';
         continue;
@@ -503,6 +512,8 @@ export const useTerminalStore = create<TerminalState>((set, get) => ({
         });
 
         pty.onExit(({ exitCode }) => {
+          // Guard: only mark exited if this PTY is still the active one for this session.
+          if (terminalInstances.get(s.id)?.pty !== pty) return;
           term.write(`\r\n[Process completed with exit code ${exitCode}]\r\n`);
           const current = get().sessions.map((item) => item.id === s.id ? { ...item, status: 'exited' as const } : item);
           set({ sessions: current });
@@ -519,17 +530,32 @@ export const useTerminalStore = create<TerminalState>((set, get) => ({
       }
     }
 
-    set({ sessions: [...sessions] });
+    set({ sessions: updatedSessions });
     console.log('[Terminal Store] initSavedSessions finished. Triggered re-render.');
   },
 
   restartSession: async (id) => {
-    const { sessions, shellPath, fontSize, log } = get();
+    const { sessions, fontSize, log } = get();
     const s = sessions.find((item) => item.id === id);
     if (!s) {
       log(`[Restart] Session not found for id: ${id}`);
       return;
     }
+
+    // Guard: skip if already spawning to prevent concurrent restart storms
+    if (s.status === 'spawning') {
+      log(`[Restart] Skipping restart for ${id} — already spawning`);
+      return;
+    }
+
+    // Guard: enforce 2 s cooldown to prevent rapid restart loops on macOS wake
+    const now = Date.now();
+    const lastAttempt = restartCooldowns.get(id) || 0;
+    if (now - lastAttempt < 2000) {
+      log(`[Restart] Skipping restart for ${id} — cooldown active (${now - lastAttempt}ms)`);
+      return;
+    }
+    restartCooldowns.set(id, now);
 
     log(`[Restart] Restarting terminal session: ${id} (${s.name}) using shell: ${s.shell}`);
 
@@ -599,6 +625,8 @@ export const useTerminalStore = create<TerminalState>((set, get) => ({
       });
 
       pty.onExit(({ exitCode }) => {
+        // Guard: only mark exited if this PTY is still the active one for this session.
+        if (terminalInstances.get(id)?.pty !== pty) return;
         term.write(`\r\n[Process completed with exit code ${exitCode}]\r\n`);
         const current = get().sessions.map((item) => item.id === id ? { ...item, status: 'exited' as const } : item);
         set({ sessions: current });

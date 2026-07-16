@@ -41,7 +41,7 @@ let unlistenLog: UnlistenFn | null = null;
 let unlistenStatus: UnlistenFn | null = null;
 
 export const useVpnStore = create<VpnState>()(
-  persist<VpnState, [], [], Omit<VpnState, 'status' | 'logs' | 'error' | 'connect' | 'disconnect' | 'fetchStatus' | 'initListeners'>>(
+  persist<VpnState, [], [], Omit<VpnState, 'status' | 'logs' | 'error' | 'clearLogs' | 'connect' | 'disconnect' | 'fetchStatus' | 'initListeners' | 'setConfigPath' | 'setAccess' | 'setServer' | 'setProtocol' | 'setPort' | 'setUsername' | 'setPassword' | 'setShowCredentials'>>(
     (set, get) => ({
       status: 'disconnected',
       error: null,

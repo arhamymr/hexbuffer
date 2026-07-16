@@ -1,5 +1,5 @@
 import { convertFileSrc } from '@tauri-apps/api/core';
-import { useCallback, useState } from 'react';
+import { memo, useCallback, useState } from 'react';
 import { CopyIcon, ArrowSquareOutIcon, FileCodeIcon, ImageIcon, SpinnerGapIcon, ArrowsOutIcon, StarIcon } from '@phosphor-icons/react';
 import { readTextFile } from '@tauri-apps/plugin-fs';
 import { InterestingBadge } from '@/components/status-badge';
@@ -67,7 +67,7 @@ function ArtifactActions({ label, path, onView }: { label: string; path?: string
   );
 }
 
-export function PageDetailPanel({ page, searchQuery = '' }: PageDetailPanelProps) {
+function PageDetailPanelComponent({ page, searchQuery = '' }: PageDetailPanelProps) {
   const session = useBrowserAutomationStore((s) => s.getActiveTab()?.session ?? null);
   const markPageInteresting = useBrowserAutomationStore((s) => s.markPageInteresting);
 
@@ -255,3 +255,5 @@ export function PageDetailPanel({ page, searchQuery = '' }: PageDetailPanelProps
     </div>
   );
 }
+
+export const PageDetailPanel = memo(PageDetailPanelComponent);

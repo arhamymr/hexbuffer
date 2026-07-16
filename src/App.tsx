@@ -85,6 +85,9 @@ const PixelPage = React.lazy(() =>
 const FileExplorerPage = React.lazy(() =>
   import("@/pages/file-explorer").then((m) => ({ default: m.FileExplorerPage }))
 );
+const TerminalPage = React.lazy(() =>
+  import("@/pages/terminal").then((m) => ({ default: m.TerminalPage }))
+);
 
 
 
@@ -136,6 +139,7 @@ function AppRoutes() {
           <Route path="/kanban" element={<KanbanPage />} />
           <Route path="/pixel" element={<PixelPage />} />
           <Route path="/file-explorer" element={<FileExplorerPage />} />
+          <Route path="/terminal" element={<TerminalPage />} />
 
 
         </Routes>

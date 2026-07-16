@@ -20,6 +20,10 @@ pub(crate) fn log(msg: &str) {
 }
 
 fn main() {
+    // Set a larger Tokio thread pool size to prevent tauri-plugin-pty's blocking loops
+    // from starving the worker threads and freezing the entire app.
+    std::env::set_var("TOKIO_WORKER_THREADS", "32");
+
     // Start a fresh log file on each launch
     let _ = std::fs::write("/tmp/hexbuffer.log", "");
     log("Application starting...");
@@ -189,6 +193,9 @@ fn main() {
             hexbuffer::commands::r2::save_r2_credentials,
             hexbuffer::commands::r2::clear_r2_credentials,
             hexbuffer::commands::r2::r2_http_request,
+            hexbuffer::commands::vpn::start_vpn,
+            hexbuffer::commands::vpn::stop_vpn,
+            hexbuffer::commands::vpn::get_vpn_status,
             app_commands::show_main_window,
             app_commands::safe_start_dragging,
             app_commands::get_cdp_targets,

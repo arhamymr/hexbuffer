@@ -109,7 +109,7 @@ export function CollectionsWidget() {
   };
 
   return (
-    <div className="p-2 rounded-md border bg-muted backdrop-blur-md flex flex-col gap-2 max-h-[200px] overflow-y-auto scrollbar-thin">
+    <div className="p-3 rounded-md border bg-muted/60 backdrop-blur-md flex flex-col gap-3 transition-shadow duration-200 hover:shadow-md max-h-[200px] overflow-y-auto scrollbar-thin">
       <span className="text-[10px] font-mono font-bold tracking-wider text-muted-foreground uppercase">
         API Collections
       </span>

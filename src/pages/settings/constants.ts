@@ -1,11 +1,10 @@
-import { WarningCircleIcon, GitBranchIcon, InfoIcon, ChatCircleIcon } from '@phosphor-icons/react';
+import { WarningCircleIcon, GitBranchIcon, ChatCircleIcon } from '@phosphor-icons/react';
 
 export const INSTALLATION_GUIDES = [
   {
     id: 'chrome-windows',
     title: 'Chrome / Edge (Windows)',
     steps: [
-      'FloppyDiskIcon the CA certificate above to a location you can find',
       'Open Chrome and go to Settings → Privacy and security',
       'Click "Manage certificates"',
       'Go to the "Authorities" tab',
@@ -18,7 +17,6 @@ export const INSTALLATION_GUIDES = [
     id: 'chrome-mac',
     title: 'Chrome / Edge (macOS)',
     steps: [
-      'FloppyDiskIcon the CA certificate above to a location you can find',
       'Open Chrome and go to Settings → Privacy and security → Security',
       'Scroll down and click "Manage certificates"',
       'Click "Import" in the dialog that appears',
@@ -31,7 +29,6 @@ export const INSTALLATION_GUIDES = [
     id: 'firefox',
     title: 'Firefox (All Platforms)',
     steps: [
-      'FloppyDiskIcon the CA certificate above to a location you can find',
       'Open Firefox and go to Options → Privacy & Security',
       'Scroll to "Certificates" section and click "View Certificates"',
       'Click "Authorities" tab',
@@ -44,7 +41,6 @@ export const INSTALLATION_GUIDES = [
     id: 'safari',
     title: 'Safari (macOS)',
     steps: [
-      'FloppyDiskIcon the CA certificate above to a location you can find',
       'Open Safari → Preferences → Privacy',
       'Click "Manage Websites" then "Certificates"',
       'Import the saved hexbuffer-ca.pem file',
@@ -52,37 +48,6 @@ export const INSTALLATION_GUIDES = [
       'Authenticate with Touch ID if prompted',
       'Restart Safari',
     ],
-  },
-  {
-    id: 'ios',
-    title: 'iOS (iPhone / iPad)',
-    steps: [
-      'FloppyDiskIcon the CA certificate on your device (Files app recommended)',
-      'Go to Settings → General → VPN & Device Management',
-      'Tap the downloaded profile to install it',
-      'Go to Settings → General → About → Certificate Trust Settings',
-      'Enable full trust for "Hexbuffer security Tools Root CA"',
-    ],
-    note: {
-      Icon: InfoIcon,
-      message: 'On iOS 13+, you may need to allow the profile in Settings → General → Profiles',
-    },
-  },
-  {
-    id: 'android',
-    title: 'Android',
-    steps: [
-      'FloppyDiskIcon the CA certificate to your device',
-      'Go to Settings → Security → Advanced → Encryption & credentials',
-      'Tap "Install a certificate" → "CA certificate"',
-      'Select the saved hexbuffer-ca.pem file',
-      'Name the certificate and confirm installation',
-      'Some devices may require a PIN or password',
-    ],
-    note: {
-      Icon: InfoIcon,
-      message: 'Android 7.0+ blocks user-installed CAs for apps by default. Some apps may need additional configuration.',
-    },
   },
 ];
 
@@ -117,7 +82,6 @@ export const TROUBLESHOOTING_GUIDES = [
       'Correctly imported the CA certificate',
       'Set the CA to "Trusted" or "Always Trust" in your browser settings',
       'Restarted your browser after installing the certificate',
-      'On iOS, enabled full trust in Certificate Trust Settings',
     ],
   },
   {
@@ -132,8 +96,6 @@ export const TROUBLESHOOTING_GUIDES = [
       'Windows: Internet Options → Content → Certificates → Authorities → Select "Hexbuffer security Tools Root CA" → Remove',
       'macOS: Keychain Access → System → Certificates → Delete "Hexbuffer security Tools Root CA"',
       'Firefox: Options → Privacy → Certificates → View Certificates → Authorities → Delete',
-      'iOS: Settings → General → Profiles → Delete hexbuffer profile',
-      'Android: Settings → Security → Advanced → Encryption → Trusted certificates → Remove',
     ],
   },
 ];

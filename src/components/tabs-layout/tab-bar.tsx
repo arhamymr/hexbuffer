@@ -209,7 +209,7 @@ export function PageTabBar({
           {onTabAdd && (
             <button
               type="button"
-              className="mb-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-t-md border text-muted-foreground hover:bg-muted hover:text-foreground"
+              className="mb-0.5 flex h-5.5 w-7 shrink-0 items-center justify-center rounded-t-md border text-muted-foreground hover:bg-muted hover:text-foreground"
               onClick={onTabAdd}
               aria-label="Add tab"
             >
@@ -219,7 +219,7 @@ export function PageTabBar({
           {onTabManage && (
             <button
               type="button"
-              className="mb-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-t-md border text-muted-foreground hover:bg-muted hover:text-foreground"
+              className="mb-0.5 flex h-5.5 w-7 shrink-0 items-center justify-center rounded-t-md border text-muted-foreground hover:bg-muted hover:text-foreground"
               onClick={onTabManage}
               aria-label="Manage workspaces"
               title="Manage Workspaces"

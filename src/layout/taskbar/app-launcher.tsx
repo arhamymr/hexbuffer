@@ -118,7 +118,7 @@ export function AppLauncher() {
                     )}
                   </div>
                   <div className={cn(
-                    "size-5 rounded-sm flex items-center justify-center mr-2 border shadow-sm shrink-0",
+                    "size-5 rounded-sm flex items-center justify-center mr-2 border shadow-sm shrink-0 p-2",
                     item.colors ? `${item.colors.bg} ${item.colors.border} text-white` : "bg-muted/40 border-transparent text-muted-foreground"
                   )}>
                     <item.icon className="size-3" />

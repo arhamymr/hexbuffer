@@ -1,4 +1,4 @@
-import { Info, PlayIcon, SquareIcon, PauseIcon, ArrowCounterClockwiseIcon } from '@phosphor-icons/react';
+import { PlayIcon, SquareIcon, PauseIcon, ArrowCounterClockwiseIcon, InfoIcon } from '@phosphor-icons/react';
 import { AiInsightsPanel } from './components/insight-panel';
 import { ActionLogPanel } from './components/ActionLogPanel';
 import { CrawlSetupScreen } from './components/setup-screen';
@@ -49,7 +49,7 @@ export function BrowserAutomationPage() {
       {!page.browserAutomationSafetyAlertDismissed && (
         <div className="p-2">
           <Alert variant="default" className="min-h-12 mb-0 shrink-0 border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-500/50 dark:bg-amber-500/10 dark:text-amber-200">
-            <Info className="!text-amber-600 shrink-0" />
+            <InfoIcon className="!text-amber-600 shrink-0" />
             <AlertDescription className="text-amber-600">
               The browser automation will interact with external websites. Only scan targets you own or are authorized to assess. Unauthorized scanning may violate terms of service or applicable laws.
             </AlertDescription>
@@ -76,32 +76,32 @@ export function BrowserAutomationPage() {
       >
         <div className="flex h-full min-h-0 flex-col bg-background">
           <header className="bg-muted p-1">
-            <div className="flex flex-wrap justify-between items-center gap-2">
+            <div className="flex flex-wrap justify-end items-center gap-2 p-1">
               <div className="flex items-center gap-2">
                 <CrawlStatusBadge status={page.status} />
 
                 {/* Start/Stop/Pause/Resume */}
                 {(page.status === 'idle' || page.status === 'completed' || page.status === 'failed' || page.status === 'stopped') && (
-                  <Button size="sm" className="h-7 text-xs" onClick={startBrowserCrawl}>
+                  <Button size="sm" onClick={startBrowserCrawl}>
                     <PlayIcon className="size-3" /> Start
                   </Button>
                 )}
                 {page.status === 'running' && (
                   <>
-                    <Button size="sm" variant="outline" className="h-7 text-xs" onClick={toggleBrowserCrawl}>
+                    <Button size="sm" variant="outline" onClick={toggleBrowserCrawl}>
                       <PauseIcon className="size-3" /> Pause
                     </Button>
-                    <Button size="sm" variant="destructive" className="h-7 text-xs" onClick={stopBrowserCrawl}>
+                    <Button size="sm" variant="destructive" onClick={stopBrowserCrawl}>
                       <SquareIcon className="size-3" /> Stop
                     </Button>
                   </>
                 )}
                 {page.status === 'paused' && (
                   <>
-                    <Button size="sm" variant="outline" className="h-7 text-xs" onClick={toggleBrowserCrawl}>
+                    <Button size="sm" variant="outline" onClick={toggleBrowserCrawl}>
                       <ArrowCounterClockwiseIcon className="size-3" /> Resume
                     </Button>
-                    <Button size="sm" variant="destructive" className="h-7 text-xs" onClick={stopBrowserCrawl}>
+                    <Button size="sm" variant="destructive" onClick={stopBrowserCrawl}>
                       <SquareIcon className="size-3" /> Stop
                     </Button>
                   </>

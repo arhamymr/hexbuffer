@@ -13,6 +13,8 @@ import {
   PutObjectCommand,
   DeleteObjectCommand,
   GetObjectCommand,
+  CreateBucketCommand,
+  DeleteBucketCommand,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { MULTIPART_THRESHOLD } from '../constants';
@@ -43,27 +45,7 @@ export function useFileExplorer() {
     }
   });
 
-  const handleAddCustomBucket = React.useCallback((name: string) => {
-    const clean = name.trim();
-    if (!clean) return;
-    setCustomBuckets((prev) => {
-      const updated = Array.from(new Set([...prev, clean]));
-      localStorage.setItem('r2_custom_buckets', JSON.stringify(updated));
-      return updated;
-    });
-    setBuckets((prev) => Array.from(new Set([...prev, clean])));
-    setCurrentBucket(clean);
-  }, []);
 
-  const handleRemoveBucket = React.useCallback((name: string) => {
-    setCustomBuckets((prev) => {
-      const updated = prev.filter((b) => b !== name);
-      localStorage.setItem('r2_custom_buckets', JSON.stringify(updated));
-      return updated;
-    });
-    setBuckets((prev) => prev.filter((b) => b !== name));
-    setCurrentBucket((prev) => (prev === name ? '' : prev));
-  }, []);
 
   // 1. Fetch credentials on mount
   const fetchCredentials = React.useCallback(async () => {
@@ -137,6 +119,67 @@ export function useFileExplorer() {
   }, [s3Client, currentBucket, customBuckets]);
 
   React.useEffect(() => {
+    if (s3Client) {
+      void loadBuckets();
+    }
+  }, [s3Client, loadBuckets]);
+
+  // ponytail: support actual R2 bucket CRUD, with local fallback for custom buckets if server actions fail (e.g. permission limits)
+  const handleAddCustomBucket = React.useCallback(async (name: string) => {
+    const clean = name.trim();
+    if (!clean) return;
+    if (buckets.includes(clean)) {
+      setCurrentBucket(clean);
+      return;
+    }
+    setLoading(true);
+    if (s3Client) {
+      try {
+        await s3Client.send(new CreateBucketCommand({ Bucket: clean }));
+        toast.success(`Bucket '${clean}' created on R2`);
+      } catch (err) {
+        console.warn('R2 bucket creation failed, fallback to local registration:', err);
+        const errMsg = String(err);
+        if (errMsg.includes('BucketAlreadyExists') || errMsg.includes('BucketAlreadyOwnedByYou')) {
+          toast.info(`Bucket '${clean}' already exists, registered locally`);
+        } else {
+          toast.info(`Added bucket '${clean}' locally (Server: ${err})`);
+        }
+      }
+    } else {
+      toast.info(`Added bucket '${clean}' locally`);
+    }
+
+    setCustomBuckets((prev) => {
+      const updated = Array.from(new Set([...prev, clean]));
+      localStorage.setItem('r2_custom_buckets', JSON.stringify(updated));
+      return updated;
+    });
+    setBuckets((prev) => Array.from(new Set([...prev, clean])));
+    setCurrentBucket(clean);
+    setLoading(false);
+  }, [s3Client, buckets]);
+
+  const handleRemoveBucket = React.useCallback(async (name: string) => {
+    setLoading(true);
+    if (s3Client) {
+      try {
+        await s3Client.send(new DeleteBucketCommand({ Bucket: name }));
+        toast.success(`Bucket '${name}' deleted from R2`);
+      } catch (err) {
+        console.error('Failed to delete bucket from R2:', err);
+        toast.error(`Could not delete bucket from R2: ${err}`);
+      }
+    }
+
+    setCustomBuckets((prev) => {
+      const updated = prev.filter((b) => b !== name);
+      localStorage.setItem('r2_custom_buckets', JSON.stringify(updated));
+      return updated;
+    });
+    setBuckets((prev) => prev.filter((b) => b !== name));
+    setCurrentBucket((prev) => (prev === name ? '' : prev));
+    setLoading(false);
     if (s3Client) {
       void loadBuckets();
     }

@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { memo, useMemo } from 'react';
 import { WarningCircleIcon, CircleIcon, StopCircleIcon, FileTextIcon, ShieldSlashIcon, SpinnerIcon } from '@phosphor-icons/react';
 import { Badge } from '@/components/ui/badge';
 import { TreeView, type TreeNodeData } from '@/components/tree-view';
@@ -70,7 +70,7 @@ function toTreeNode(node: CrawlTreeNode, crawlStopped: boolean): TreeNodeData<Cr
   };
 }
 
-export function CrawlTreePanel({
+function CrawlTreePanelComponent({
   nodes,
   selectedPageId,
   expandedPageIds,
@@ -113,3 +113,5 @@ export function CrawlTreePanel({
     </section>
   );
 }
+
+export const CrawlTreePanel = memo(CrawlTreePanelComponent);

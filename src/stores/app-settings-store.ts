@@ -11,6 +11,7 @@ interface AppSettingsState {
   bgType: BgType
   bgValue: string // hex color or data URL
   theme: AppTheme
+  hiddenWidgets: string[]
   setBg: (type: BgType, value: string) => void
   clearBg: () => void
   setTheme: (t: AppTheme) => void
@@ -20,9 +21,11 @@ interface AppSettingsState {
   reorderPinnedNavItems: (fromIndex: number, toIndex: number) => void
   addRecentApp: (href: string) => void
   removeRecentApp: (href: string) => void
+  toggleWidget: (widgetId: string) => void
+  resetHiddenWidgets: () => void
 }
 
-type PersistedSettings = Pick<AppSettingsState, 'hiddenNavItems' | 'pinnedNavItems' | 'recentApps' | 'bgType' | 'bgValue' | 'theme'>
+type PersistedSettings = Pick<AppSettingsState, 'hiddenNavItems' | 'pinnedNavItems' | 'recentApps' | 'bgType' | 'bgValue' | 'theme' | 'hiddenWidgets'>
 
 export const useAppSettingsStore = create<AppSettingsState>()(
   persist<AppSettingsState, [], [], PersistedSettings>(
@@ -40,6 +43,7 @@ export const useAppSettingsStore = create<AppSettingsState>()(
       bgType: 'none',
       bgValue: '',
       theme: 'dark',
+      hiddenWidgets: [],
       setBg: (type, value) => set({ bgType: type, bgValue: value }),
       clearBg: () => set({ bgType: 'none', bgValue: '' }),
       setTheme: (t) => set({ theme: t }),
@@ -73,6 +77,13 @@ export const useAppSettingsStore = create<AppSettingsState>()(
         set((state) => ({
           recentApps: (state.recentApps || []).filter((h) => h !== href),
         })),
+      toggleWidget: (widgetId) =>
+        set((state) => ({
+          hiddenWidgets: (state.hiddenWidgets || []).includes(widgetId)
+            ? (state.hiddenWidgets || []).filter((w) => w !== widgetId)
+            : [...(state.hiddenWidgets || []), widgetId],
+        })),
+      resetHiddenWidgets: () => set({ hiddenWidgets: [] }),
     }),
     {
       name: 'hexbuffer-app-settings',
@@ -83,6 +94,7 @@ export const useAppSettingsStore = create<AppSettingsState>()(
         bgType: state.bgType,
         bgValue: state.bgValue,
         theme: state.theme,
+        hiddenWidgets: state.hiddenWidgets,
       }),
       merge: (persisted, current): AppSettingsState => {
         const base = current as AppSettingsState
@@ -95,6 +107,7 @@ export const useAppSettingsStore = create<AppSettingsState>()(
           bgType: state?.bgType ?? base.bgType,
           bgValue: state?.bgValue ?? base.bgValue,
           theme: state?.theme ?? base.theme,
+          hiddenWidgets: state?.hiddenWidgets ?? base.hiddenWidgets,
         }
       },
     }

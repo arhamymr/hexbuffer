@@ -17,39 +17,45 @@ export function PortScannerPage() {
   }, [page.target, page.setTarget, page.handlePresetChange, page.startScan]);
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] h-full min-h-0 bg-background overflow-hidden">
-      <ScannerSidebar
-        target={page.target}
-        onTargetChange={page.setTarget}
-        preset={page.preset}
-        onPresetChange={page.handlePresetChange}
-        ports={page.ports}
-        onPortsChange={page.setPorts}
-        timeoutMs={page.timeoutMs}
-        onTimeoutChange={page.setTimeoutMs}
-        concurrency={page.concurrency}
-        onConcurrencyChange={page.setConcurrency}
-        bannerGrab={page.bannerGrab}
-        onBannerGrabChange={page.setBannerGrab}
-        selectedPortLabel={page.selectedPortLabel}
-        isRunning={page.isRunning}
-        canScan={page.canScan}
-        onStart={page.startScan}
-        onStop={page.stopScan}
-      />
+    <div className='p-2 h-full'>
+      <div className="grid rounded-md grid-cols-[300px_1fr] h-full min-h-0 bg-background overflow-hidden border">
+        <ScannerSidebar
+          target={page.target}
+          onTargetChange={page.setTarget}
+          preset={page.preset}
+          onPresetChange={page.handlePresetChange}
+          ports={page.ports}
+          onPortsChange={page.setPorts}
+          timeoutMs={page.timeoutMs}
+          onTimeoutChange={page.setTimeoutMs}
+          concurrency={page.concurrency}
+          onConcurrencyChange={page.setConcurrency}
+          bannerGrab={page.bannerGrab}
+          onBannerGrabChange={page.setBannerGrab}
+          selectedPortLabel={page.selectedPortLabel}
+          isRunning={page.isRunning}
+          canScan={page.canScan}
+          onStart={page.startScan}
+          onStop={page.stopScan}
+        />
 
-      <ScanResults
-        openResults={page.openResults}
-        hasResults={page.hasResults}
-        isRunning={page.isRunning}
-        hasRun={page.hasRun}
-        progress={page.progress}
-        error={page.error}
-        target={page.target}
-        concurrency={page.concurrency}
-        onClear={page.clearResults}
-        onQuickStart={handleQuickStart}
-      />
+        <ScanResults
+          openResults={page.openResults}
+          hasResults={page.hasResults}
+          isRunning={page.isRunning}
+          hasRun={page.hasRun}
+          progress={page.progress}
+          error={page.error}
+          target={page.target}
+          concurrency={page.concurrency}
+          onClear={page.clearResults}
+          onQuickStart={handleQuickStart}
+          onCopy={page.copyOpenPorts}
+          onExportJson={page.handleExportJson}
+          onExportCsv={page.handleExportCsv}
+        />
+      </div>
     </div>
+
   );
 }

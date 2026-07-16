@@ -13,4 +13,5 @@ pub mod storage;
 pub mod api_collection;
 pub mod mock_forge;
 pub mod r2;
+pub mod vpn;
 

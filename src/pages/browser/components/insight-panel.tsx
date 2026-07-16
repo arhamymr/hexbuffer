@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { memo, useMemo, useState } from 'react';
 import type { KeyboardEvent } from 'react';
 import { CheckCircleIcon, ScanSmileyIcon } from '@phosphor-icons/react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -84,7 +84,7 @@ interface AiInsightsPanelProps {
   searchQuery?: string;
 }
 
-export function AiInsightsPanel({
+function AiInsightsPanelComponent({
   insights,
   interestingPages,
   searchQuery = '',
@@ -93,7 +93,6 @@ export function AiInsightsPanel({
   const [detailItem, setDetailItem] = useState<DetailItem | null>(null);
   const selectPage = useBrowserAutomationStore((s) => s.selectPage);
   const toggleInsightReviewed = useBrowserAutomationStore((s) => s.toggleInsightReviewed);
-  const pages = useBrowserAutomationStore((s) => s.getActiveTab()?.pages ?? []);
 
   const visibleInsights = useMemo(() => {
     return [...insights]
@@ -102,6 +101,8 @@ export function AiInsightsPanel({
   }, [insights, severityFilter]);
 
   function findPageForInsight(insight: AIInsight) {
+    // ponytail: get pages on demand to avoid subscribing to pages state
+    const pages = useBrowserAutomationStore.getState().getActiveTab()?.pages ?? [];
     const pageById = insight.pageId
       ? pages.find((item) => item.id === insight.pageId)
       : null;
@@ -347,3 +348,5 @@ export function AiInsightsPanel({
     </section>
   );
 }
+
+export const AiInsightsPanel = memo(AiInsightsPanelComponent);

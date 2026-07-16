@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useCallback } from 'react';
+import { useMemo, useRef, useCallback } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 import type { PortScanResult } from '../types';
@@ -6,6 +6,7 @@ import { PORT_PRESETS } from '../constants';
 import type { PortPreset } from '../constants';
 import { parsePorts, sortScanResults, describePortPreset } from '../lib/port-helpers';
 import { exportAsJson, exportAsCsv } from '../lib/export-helpers';
+import { usePortScannerStore } from '@/stores/port-scanner';
 
 type ProgressEvent =
   | { type: 'Update'; current: number; total: number }
@@ -13,20 +14,32 @@ type ProgressEvent =
   | { type: 'Cancelled' };
 
 export function usePortScannerPage() {
-  // ── Config state ────────────────────────────
-  const [target, setTarget] = useState('');
-  const [preset, setPreset] = useState<PortPreset>('quick');
-  const [ports, setPorts] = useState(PORT_PRESETS.quick);
-  const [timeoutMs, setTimeoutMs] = useState('800');
-  const [concurrency, setConcurrency] = useState('100');
-  const [bannerGrab, setBannerGrab] = useState(true);
+  const {
+    target,
+    setTarget,
+    preset,
+    setPreset,
+    ports,
+    setPorts,
+    timeoutMs,
+    setTimeoutMs,
+    concurrency,
+    setConcurrency,
+    bannerGrab,
+    setBannerGrab,
+    results,
+    setResults,
+    progress,
+    setProgress,
+    isRunning,
+    setIsRunning,
+    hasRun,
+    setHasRun,
+    error,
+    setError,
+    clearResults,
+  } = usePortScannerStore();
 
-  // ── Scan state ──────────────────────────────
-  const [results, setResults] = useState<PortScanResult[]>([]);
-  const [progress, setProgress] = useState({ current: 0, total: 0 });
-  const [isRunning, setIsRunning] = useState(false);
-  const [hasRun, setHasRun] = useState(false);
-  const [error, setError] = useState('');
   const scanIdRef = useRef<string | null>(null);
 
   // ── Derived ──────────────────────────────────
@@ -43,7 +56,7 @@ export function usePortScannerPage() {
     if (nextPreset !== 'custom') {
       setPorts(PORT_PRESETS[nextPreset]);
     }
-  }, []);
+  }, [setPreset, setPorts]);
 
   // ── Scan ─────────────────────────────────────
   const startScan = useCallback(async (targetOverride?: string | unknown, presetOverride?: PortPreset | unknown) => {
@@ -100,21 +113,24 @@ export function usePortScannerPage() {
       unlisteners.forEach((u) => u());
       scanIdRef.current = null;
     }
-  }, [target, ports, timeoutMs, concurrency, bannerGrab]);
+  }, [
+    target,
+    ports,
+    timeoutMs,
+    concurrency,
+    bannerGrab,
+    setResults,
+    setProgress,
+    setError,
+    setIsRunning,
+    setHasRun,
+  ]);
 
   const stopScan = useCallback(async () => {
     if (!scanIdRef.current) return;
     await invoke('stop_port_scan', { scanId: scanIdRef.current });
     setIsRunning(false);
-  }, []);
-
-  // ── Actions ──────────────────────────────────
-  const clearResults = useCallback(() => {
-    setResults([]);
-    setProgress({ current: 0, total: 0 });
-    setError('');
-    setHasRun(false);
-  }, []);
+  }, [setIsRunning]);
 
   const copyOpenPorts = useCallback(async () => {
     await navigator.clipboard.writeText(

@@ -22,17 +22,11 @@ export function ProxyWidget() {
   const activePort = proxyPort ?? proxyDefaultPort;
 
   return (
-    <div className="p-2 rounded-md border bg-muted backdrop-blur-md flex flex-col gap-3 select-none">
+    <div className="p-3 rounded-md border bg-muted/60 backdrop-blur-md flex flex-col gap-3 select-none transition-shadow duration-200 hover:shadow-md">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-1.5">
           <span className="text-[10px] font-mono font-bold tracking-wider text-muted-foreground uppercase">Proxy</span>
         </div>
-        {proxyStatus === 'connected' && (
-          <span className="relative flex h-1.5 w-1.5">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
-          </span>
-        )}
       </div>
 
       <div className="flex items-center justify-between gap-4 mt-0.5">

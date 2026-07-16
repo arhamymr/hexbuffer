@@ -14,10 +14,9 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import {
   PlayIcon,
   SquareIcon,
-  GearSixIcon,
   CaretDownIcon,
   CaretRightIcon,
-  Info,
+  InfoIcon,
 } from '@phosphor-icons/react';
 import type { PortPreset } from '../constants';
 import { PRESET_OPTIONS } from '../constants';
@@ -65,15 +64,31 @@ export function ScannerSidebar({
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   return (
-    <aside className="flex flex-col h-full bg-card/45 backdrop-blur-sm border-r shrink-0 w-full lg:w-[300px] select-none">
-      {/* Header */}
-      <div className="flex h-12 items-center gap-2 border-b px-4 bg-muted/10">
-        <GearSixIcon className="h-4 w-4 text-primary animate-[spin_8s_linear_infinite]" />
-        <h2 className="font-semibold text-sm tracking-tight">Scan Configuration</h2>
-      </div>
-
+    <aside className="flex flex-col h-full backdrop-blur-sm border-r shrink-0 w-full lg:w-[300px] select-none">
       {/* Main Settings Content */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="flex-1 overflow-y-auto p-4 space-y-2">
+
+        {/* Action Footer */}
+        <div className="flex flex-end">
+          {isRunning ? (
+            <Button
+              variant="destructive"
+              onClick={() => onStop()}
+            >
+              <SquareIcon className="h-3.5 w-3.5 fill-current animate-pulse" />
+              Stop Port Scan
+            </Button>
+          ) : (
+            <Button
+              disabled={!canScan}
+              onClick={() => onStart()}
+            >
+              <PlayIcon className="h-3.5 w-3.5 fill-current" />
+              Start Port Scan
+            </Button>
+          )}
+        </div>
+
         {/* Target */}
         <div className="space-y-1.5">
           <Label htmlFor="target-input" className="text-[11px] font-semibold uppercase text-muted-foreground tracking-wider">
@@ -100,7 +115,7 @@ export function ScannerSidebar({
                   type="button"
                   className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer outline-none"
                 >
-                  <Info className="h-3.5 w-3.5" />
+                  <InfoIcon className="size-4" />
                 </button>
               </TooltipTrigger>
               <TooltipContent side="right" className="max-w-[280px] text-xs bg-popover border text-popover-foreground p-2 rounded-sm shadow-md animate-in fade-in zoom-in-95 duration-150">
@@ -199,28 +214,7 @@ export function ScannerSidebar({
         </div>
       </div>
 
-      {/* Action Footer */}
-      <div className="p-4 border-t bg-muted/10">
-        {isRunning ? (
-          <Button
-            variant="destructive"
-            onClick={() => onStop()}
-            className="w-full h-9 text-xs font-medium gap-1.5 active:scale-[0.97] transition-all duration-150 relative overflow-hidden"
-          >
-            <SquareIcon className="h-3.5 w-3.5 fill-current animate-pulse" />
-            Stop Port Scan
-          </Button>
-        ) : (
-          <Button
-            disabled={!canScan}
-            onClick={() => onStart()}
-            className="w-full h-9 text-xs font-medium gap-1.5 active:scale-[0.97] transition-all duration-150 disabled:opacity-50 disabled:active:scale-100 relative bg-primary hover:bg-primary/95 text-primary-foreground shadow-sm shadow-primary/20"
-          >
-            <PlayIcon className="h-3.5 w-3.5 fill-current" />
-            Start Port Scan
-          </Button>
-        )}
-      </div>
+
     </aside>
   );
 }

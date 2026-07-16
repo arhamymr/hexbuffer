@@ -42,6 +42,7 @@ pub fn init(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
     app.manage(hexbuffer::automation::AutomationRuntimeState::default());
     app.manage(database);
     app.manage(history);
+    app.manage(hexbuffer::commands::vpn::VpnState::default());
 
     // ponytail: manage MockForgeState
     let mock_forge = hexbuffer::commands::mock_forge::MockForgeState::new();

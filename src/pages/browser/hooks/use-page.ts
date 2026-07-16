@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { listen } from '@tauri-apps/api/event';
 import { useAppStore } from '@/stores/app';
 import { useBrowserAutomationStore, type ActionLogEntry } from '@/stores/browser-automation';
@@ -167,8 +167,30 @@ export function useBrowserAutomationPage() {
     );
   }, [search, logs]);
 
+  const lastInterestingPagesRef = useRef<CrawlPage[]>([]);
   const interestingPages = useMemo(() => {
-    return pages.filter((page) => page.interesting && page.status !== 'queued');
+    const next = pages.filter((page) => page.interesting && page.status !== 'queued');
+    const last = lastInterestingPagesRef.current;
+    
+    // ponytail: compare key fields of the list items to preserve array reference when contents are identical
+    const isSame =
+      next.length === last.length &&
+      next.every((p, idx) => {
+        const l = last[idx];
+        return (
+          p.id === l.id &&
+          p.title === l.title &&
+          p.url === l.url &&
+          p.aiSummary === l.aiSummary &&
+          p.status === l.status
+        );
+      });
+
+    if (isSame) {
+      return last;
+    }
+    lastInterestingPagesRef.current = next;
+    return next;
   }, [pages]);
 
   // Safety alert state from app store

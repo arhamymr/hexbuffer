@@ -209,7 +209,7 @@ export function FileExplorerPage() {
               loading={loading}
             />
 
-            <div className="flex-1 flex flex-col min-w-0">
+            <div className="flex-1 flex flex-col min-w-0 min-h-0">
               <FileToolbar
                 breadcrumbs={r2Breadcrumbs}
                 isAtRoot={!currentPrefix}
@@ -317,7 +317,7 @@ export function FileExplorerPage() {
           </>
         ) : (
           /* Local Storage tab */
-          <div className="flex-1 flex flex-col min-w-0">
+          <div className="flex-1 flex flex-col min-w-0 min-h-0">
             <FileToolbar
               breadcrumbs={localBreadcrumbs}
               isAtRoot={local.isAtRoot}

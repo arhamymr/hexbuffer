@@ -24,6 +24,7 @@ const RegressionPage = React.lazy(() => import("@/pages/regression").then((m) =>
 const AssistantPage = React.lazy(() => import("@/layout/assistant").then((m) => ({ default: m.AssistantPage })));
 const ScratchpadPage = React.lazy(() => import("@/pages/scratchpad").then((m) => ({ default: m.ScratchpadPage })));
 const MockForgePage = React.lazy(() => import("@/pages/mock-forge").then((m) => ({ default: m.MockForgePage })));
+const TerminalPage = React.lazy(() => import("@/pages/terminal").then((m) => ({ default: m.TerminalPage })));
 
 export const pageComponentMap: Record<string, React.ComponentType<any>> = {
   '/': DesktopPage,
@@ -49,4 +50,5 @@ export const pageComponentMap: Record<string, React.ComponentType<any>> = {
   '/assistant': AssistantPage,
   '/scratchpad': ScratchpadPage,
   '/mock-forge': MockForgePage,
+  '/terminal': TerminalPage,
 };

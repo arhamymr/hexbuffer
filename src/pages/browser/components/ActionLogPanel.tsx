@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { memo, useEffect, useRef } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { ActivityStatusBadge, statusActivity } from '@/components/status-badge';
@@ -20,7 +20,7 @@ function mapTypeToActivity(type: ActionLogEntry['type']): StatusActivityValue {
   }
 }
 
-export function ActionLogPanel({ actions, onClear }: ActionLogPanelProps) {
+function ActionLogPanelComponent({ actions, onClear }: ActionLogPanelProps) {
   const topRef = useRef<HTMLDivElement>(null);
   const reversed = [...actions].reverse();
 
@@ -60,3 +60,5 @@ export function ActionLogPanel({ actions, onClear }: ActionLogPanelProps) {
     </div>
   );
 }
+
+export const ActionLogPanel = memo(ActionLogPanelComponent);

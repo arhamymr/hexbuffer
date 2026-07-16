@@ -5,6 +5,7 @@ import { ImageIcon, PaletteIcon, TrashIcon } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
 import { useAppSettingsStore } from '@/stores/app-settings-store';
 import { SettingsGroup, SettingsRow } from './settings-group';
+import { ShortcutManager } from '@/pages/desktop/components/shortcut-manager';
 
 const PRESET_COLORS = [
   '#0f0f0f', '#1a1a2e', '#16213e', '#0f3460',
@@ -97,6 +98,12 @@ export function AppearanceSettingsTab() {
             />
           </SettingsRow>
         )}
+      </SettingsGroup>
+
+      <SettingsGroup label="Workspace Customization" description="Configure shortcuts and widgets shown on your desktop and sidebar.">
+        <div className="p-4 rounded-md border border-border/80 bg-muted/10">
+          <ShortcutManager />
+        </div>
       </SettingsGroup>
     </>
   );

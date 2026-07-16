@@ -55,7 +55,7 @@ export function ExplorerSidebar({
           </h2>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-2 space-y-1">
+        <div className="flex-1 overflow-y-auto p-1 space-y-1">
           {loading && buckets.length === 0 ? (
             <div className="p-2 text-xs text-muted-foreground animate-pulse">
               Discovering buckets…
@@ -85,7 +85,7 @@ export function ExplorerSidebar({
                   <button
                     onClick={(e) => handleRemoveClick(e, bucket)}
                     className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:text-destructive text-muted-foreground shrink-0"
-                    title={`Remove ${bucket}`}
+                    title={`Delete ${bucket}`}
                   >
                     <TrashIcon className="size-3" />
                   </button>
@@ -115,9 +115,9 @@ export function ExplorerSidebar({
       <AlertDialog open={confirmRemove !== null} onOpenChange={(open) => !open && setConfirmRemove(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Remove Bucket</AlertDialogTitle>
+            <AlertDialogTitle>Delete Bucket</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to remove bucket "{confirmRemove}"? You can add it back manually later.
+              Are you sure you want to delete bucket "{confirmRemove}"? This will delete the bucket from Cloudflare R2 (the bucket must be empty to be deleted).
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -131,7 +131,7 @@ export function ExplorerSidebar({
                 }
               }}
             >
-              Remove
+              Delete
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

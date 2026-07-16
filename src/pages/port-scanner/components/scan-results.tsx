@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
@@ -15,6 +15,8 @@ import {
   SpinnerGapIcon,
   CheckCircleIcon,
   TrashIcon,
+  CopyIcon,
+  CheckIcon,
 } from '@phosphor-icons/react';
 import type { PortScanResult } from '../types';
 import type { PortPreset } from '../constants';
@@ -30,6 +32,9 @@ interface ScanResultsProps {
   concurrency: string;
   onClear: () => void;
   onQuickStart: (preset: PortPreset) => void;
+  onCopy: () => void | Promise<void>;
+  onExportJson: () => void;
+  onExportCsv: () => void;
 }
 
 export function ScanResults({
@@ -43,7 +48,21 @@ export function ScanResults({
   concurrency,
   onClear,
   onQuickStart,
+  onCopy,
+  onExportJson,
+  onExportCsv,
 }: ScanResultsProps) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async () => {
+    try {
+      await onCopy();
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy', err);
+    }
+  };
   // ponytail: calculate percentage in-line safely
   const percent = useMemo(() => {
     if (!progress.total) return 0;
@@ -179,6 +198,42 @@ export function ScanResults({
           </div>
 
           <div className="flex items-center gap-1.5">
+            {hasResults && (
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleCopy}
+                >
+                  {copied ? (
+                    <>
+                      <CheckIcon className="mr-1.5 h-3.5 w-3.5 text-emerald-500" />
+                      Copied!
+                    </>
+                  ) : (
+                    <>
+                      <CopyIcon className="mr-1.5 h-3.5 w-3.5" />
+                      Copy Open Ports
+                    </>
+                  )}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={onExportJson}
+                >
+                  Export JSON
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={onExportCsv}
+                >
+                  Export CSV
+                </Button>
+                <div className="w-[1px] h-4 bg-muted mx-1" />
+              </>
+            )}
             <Button
               variant="ghost"
               size="icon"

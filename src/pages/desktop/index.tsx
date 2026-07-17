@@ -24,10 +24,9 @@ export function DesktopPage() {
     handleItemClick,
     handleClearSearch,
   } = useDesktopPage();
-  const bgType = useAppSettingsStore((s) => s.bgType);
   const hiddenWidgets = useAppSettingsStore((s) => s.hiddenWidgets || []);
 
-  const rootBg = bgType === 'none' ? 'bg-background' : 'bg-transparent';
+  const rootBg = 'bg-transparent';
 
   // ponytail: filter out widgets that have been hidden by the user
   const showCollections = !hiddenWidgets.includes('collections');

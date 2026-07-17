@@ -21,8 +21,8 @@ export function DesktopWorkspace({ activeChild }: DesktopWorkspaceProps) {
     [windows]
   );
 
-  // Transparent when custom bg is active so BgLayer (behind this) shows through
-  const rootBg = bgType === 'none' ? 'bg-[#0a0a0b]' : 'bg-transparent';
+  // Transparent so BgLayer (behind this) shows through
+  const rootBg = 'bg-transparent';
 
   return (
     <div

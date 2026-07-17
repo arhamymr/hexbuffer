@@ -17,22 +17,41 @@ import { MonitorIcon, SunIcon, MoonIcon, ImageIcon, GearSixIcon } from '@phospho
 import { AppSidebar } from './taskbar';
 import { DesktopWorkspace } from './desktop-workspace';
 
+import whiteWallpaper from '@/assets/white-walpaper.png';
+import blackWallpaper from '@/assets/black-walpaper.png';
+
 // ponytail: inline — rendered behind everything, transparent when no bg set
 function BgLayer() {
   const bgType = useAppSettingsStore((s) => s.bgType);
   const bgValue = useAppSettingsStore((s) => s.bgValue);
+  const { theme } = useTheme();
 
-  if (bgType === 'none' || !bgValue) return null;
+  let style: React.CSSProperties = {};
 
-  const style: React.CSSProperties =
-    bgType === 'image'
-      ? {
-        backgroundImage: `url(${convertFileSrc(bgValue)})`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat',
-      }
-      : { backgroundColor: bgValue };
+  if (bgType === 'image' && bgValue) {
+    const isPreset = bgValue === 'default-light' || bgValue === 'default-dark';
+    const bgUrl = isPreset 
+      ? (bgValue === 'default-light' ? whiteWallpaper : blackWallpaper)
+      : convertFileSrc(bgValue);
+
+    style = {
+      backgroundImage: `url(${bgUrl})`,
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+      backgroundRepeat: 'no-repeat',
+    };
+  } else if (bgType === 'color' && bgValue) {
+    style = { backgroundColor: bgValue };
+  } else {
+    // bgType === 'none' — use theme-specific default wallpaper
+    const wallpaper = theme === 'light' ? whiteWallpaper : blackWallpaper;
+    style = {
+      backgroundImage: `url(${wallpaper})`,
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+      backgroundRepeat: 'no-repeat',
+    };
+  }
 
   return (
     <div

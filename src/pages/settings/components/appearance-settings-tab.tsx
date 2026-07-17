@@ -1,11 +1,14 @@
 import * as React from 'react';
 import { open } from '@tauri-apps/plugin-dialog';
 import { convertFileSrc } from '@tauri-apps/api/core';
-import { ImageIcon, PaletteIcon, TrashIcon } from '@phosphor-icons/react';
+import { ImageIcon, PaletteIcon, TrashIcon, ArrowCounterClockwise } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
 import { useAppSettingsStore } from '@/stores/app-settings-store';
 import { SettingsGroup, SettingsRow } from './settings-group';
 import { ShortcutManager } from '@/pages/desktop/components/shortcut-manager';
+
+import whiteWallpaper from '@/assets/white-walpaper.png';
+import blackWallpaper from '@/assets/black-walpaper.png';
 
 const PRESET_COLORS = [
   '#0f0f0f', '#1a1a2e', '#16213e', '#0f3460',
@@ -44,13 +47,47 @@ export function AppearanceSettingsTab() {
           <div className="flex items-center gap-2">
             <Button size="xs" variant="outline" onClick={handlePickImage}>
               <ImageIcon className="mr-1.5 size-3.5" />
-              {bgType === 'image' ? 'Change image' : 'Pick image'}
+              {bgType === 'image' && bgValue !== 'default-light' && bgValue !== 'default-dark' ? 'Change image' : 'Pick image'}
             </Button>
             {bgType !== 'none' && (
               <Button size="xs" variant="ghost" onClick={clearBg}>
                 <TrashIcon className="size-3.5" />
               </Button>
             )}
+          </div>
+        </SettingsRow>
+
+        <SettingsRow
+          label="Preset wallpapers"
+          description="Choose a default theme wallpaper."
+        >
+          <div className="flex items-center gap-3 justify-end">
+            <button
+              type="button"
+              title="Light Wallpaper"
+              onClick={() => setBg('image', 'default-light')}
+              className="group relative h-12 w-20 rounded-md border border-border overflow-hidden transition-transform hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              style={{
+                outline: bgType === 'image' && bgValue === 'default-light' ? '2px solid var(--primary)' : undefined,
+                outlineOffset: '2px',
+              }}
+            >
+              <img src={whiteWallpaper} alt="Light Wallpaper" className="h-full w-full object-cover" />
+              <div className="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-colors" />
+            </button>
+            <button
+              type="button"
+              title="Dark Wallpaper"
+              onClick={() => setBg('image', 'default-dark')}
+              className="group relative h-12 w-20 rounded-md border border-border overflow-hidden transition-transform hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              style={{
+                outline: bgType === 'image' && bgValue === 'default-dark' ? '2px solid var(--primary)' : undefined,
+                outlineOffset: '2px',
+              }}
+            >
+              <img src={blackWallpaper} alt="Dark Wallpaper" className="h-full w-full object-cover" />
+              <div className="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-colors" />
+            </button>
           </div>
         </SettingsRow>
 
@@ -92,10 +129,29 @@ export function AppearanceSettingsTab() {
               className="h-16 w-40 rounded-md border border-border overflow-hidden"
               style={
                 bgType === 'image'
-                  ? { backgroundImage: `url(${convertFileSrc(bgValue)})`, backgroundSize: 'cover', backgroundPosition: 'center' }
+                  ? {
+                      backgroundImage: `url(${
+                        bgValue === 'default-light'
+                          ? whiteWallpaper
+                          : bgValue === 'default-dark'
+                          ? blackWallpaper
+                          : convertFileSrc(bgValue)
+                      })`,
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center',
+                    }
                   : { backgroundColor: bgValue }
               }
             />
+          </SettingsRow>
+        )}
+
+        {bgType !== 'none' && (
+          <SettingsRow label="Reset background" description="Restore the default light/dark theme wallpaper.">
+            <Button size="xs" variant="outline" onClick={clearBg}>
+              <ArrowCounterClockwise className="mr-1.5 size-3.5" />
+              Reset to default
+            </Button>
           </SettingsRow>
         )}
       </SettingsGroup>

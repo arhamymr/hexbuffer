@@ -87,7 +87,20 @@ export type { SendToRepeaterOptions, SendToCollectionOptions, CollectionNode } f
 
 export { writeDocument } from './documents';
 export type { WriteDocumentOptions } from './documents';
-
 export { openApp } from './navigation';
 
-
+export {
+  createTerminalSession,
+  closeTerminalSession,
+  renameTerminalSession,
+  closeTerminalTabsToLeft,
+  closeTerminalTabsToRight,
+  clearActiveTerminalSessionBuffer,
+  setTerminalFontSize,
+  setTerminalShellPath,
+  clearRecentTerminalCommands,
+  runTerminalCommand,
+  toggleTerminalSidebar,
+  restartTerminalSession,
+  setActiveTerminalId,
+} from './terminal';

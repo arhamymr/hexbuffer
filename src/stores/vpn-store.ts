@@ -95,8 +95,10 @@ export const useVpnStore = create<VpnState>()(
       disconnect: async () => {
         try {
           await invoke('stop_vpn');
+          set({ logs: [], error: null });
         } catch (e: any) {
           console.error(e);
+          set({ logs: [], error: null });
           toast.error(e.toString() || 'Failed to stop VPN');
         }
       },

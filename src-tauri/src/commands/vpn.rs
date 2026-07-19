@@ -231,6 +231,13 @@ pub async fn start_vpn(
         .stdout(Stdio::piped())
         .stderr(Stdio::piped());
 
+    // Create a new process group so we can kill all subprocesses atomically on disconnect
+    #[cfg(unix)]
+    {
+        use std::os::unix::process::CommandExt;
+        command.process_group(0);
+    }
+
     // Set working directory to the config folder so relative paths to certs/keys resolve correctly
     let config_path_buf = PathBuf::from(&config_path);
     if let Some(parent) = config_path_buf.parent() {
@@ -385,18 +392,70 @@ pub async fn start_vpn(
     Ok(())
 }
 
+#[cfg(target_os = "macos")]
+fn clear_stale_vpn_routes() {
+    let script_path = concat!(env!("CARGO_MANIFEST_DIR"), "/../scripts/clear_routes.sh");
+
+    let osa = format!(
+        "do shell script \"bash '{}'\" with administrator privileges",
+        script_path
+    );
+
+    match std::process::Command::new("osascript")
+        .arg("-e")
+        .arg(&osa)
+        .output()
+    {
+        Ok(output) => {
+            if output.status.success() {
+                let stdout = String::from_utf8_lossy(&output.stdout);
+                eprintln!("{}", stdout.trim());
+            } else {
+                let stderr = String::from_utf8_lossy(&output.stderr);
+                eprintln!("Route cleanup skipped or failed: {}", stderr.trim());
+            }
+        }
+        Err(e) => {
+            eprintln!("Failed to spawn route cleanup: {}", e);
+        }
+    }
+}
+
 #[tauri::command]
 pub async fn stop_vpn(app: AppHandle, state: State<'_, VpnState>) -> Result<(), String> {
     let state_inner = state.inner().clone();
     let mut child_guard = state_inner.child.lock().unwrap();
     if let Some(mut child) = child_guard.take() {
-        let _ = child.kill();
+        // Kill the entire process group on Unix so no subprocess survives
+        #[cfg(unix)]
+        {
+            let pgid = child.id();
+            // killpg: sends SIGKILL to every process in the OpenVPN process group
+            let _ = std::process::Command::new("kill")
+                .args(["-KILL", "--", &format!("-{}", pgid)])
+                .output();
+        }
+        #[cfg(not(unix))]
+        {
+            let _ = child.kill();
+        }
         let _ = child.wait();
     }
 
+    // Clear any stale routes left on utun virtual interfaces
+    #[cfg(target_os = "macos")]
+    clear_stale_vpn_routes();
+
+    // Destroy the temporary auth file
     let mut auth_file_guard = state_inner.auth_file.lock().unwrap();
     if let Some(path) = auth_file_guard.take() {
         let _ = std::fs::remove_file(path);
+    }
+
+    // Wipe all logs so the next connect is a completely fresh start
+    {
+        let mut logs = state_inner.logs.lock().unwrap();
+        logs.clear();
     }
 
     let mut status_guard = state_inner.status.lock().unwrap();

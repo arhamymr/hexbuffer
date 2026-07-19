@@ -183,7 +183,7 @@ const DesktopWindow = React.memo(function DesktopWindow({
         {(isDragging || isResizing) && (
           <div className="absolute inset-0 z-40" />
         )}
-        <WindowProvider windowElement={windowRef.current}>
+        <WindowProvider id={id} windowElement={windowRef.current}>
           <WindowContent
             id={id}
             isCurrentRoute={isCurrentRoute}

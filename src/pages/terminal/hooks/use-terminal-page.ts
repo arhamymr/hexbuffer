@@ -1,6 +1,21 @@
 import React, { useEffect, useRef, useCallback } from 'react';
 import { useTerminalStore, terminalInstances } from '@/stores/terminal';
 import { useTheme } from '@/components/theme-provider';
+import {
+  createTerminalSession,
+  closeTerminalSession,
+  renameTerminalSession,
+  closeTerminalTabsToLeft,
+  closeTerminalTabsToRight,
+  clearActiveTerminalSessionBuffer,
+  setTerminalFontSize,
+  setTerminalShellPath,
+  clearRecentTerminalCommands,
+  runTerminalCommand,
+  toggleTerminalSidebar,
+  restartTerminalSession,
+  setActiveTerminalId,
+} from '@/triggers';
 
 const LIGHT_THEME = {
   background: '#fafafa',
@@ -53,22 +68,11 @@ export function useTerminalPage() {
 
   const sessions = useTerminalStore((s) => s.sessions);
   const activeId = useTerminalStore((s) => s.activeId);
-  const setActiveId = useTerminalStore((s) => s.setActiveId);
-  const createSession = useTerminalStore((s) => s.createSession);
-  const closeSession = useTerminalStore((s) => s.closeSession);
-  const renameSession = useTerminalStore((s) => s.renameSession);
-  const closeTabsToLeft = useTerminalStore((s) => s.closeTabsToLeft);
-  const closeTabsToRight = useTerminalStore((s) => s.closeTabsToRight);
-  const clearActiveSessionBuffer = useTerminalStore((s) => s.clearActiveSessionBuffer);
   const fontSize = useTerminalStore((s) => s.fontSize);
-  const setFontSize = useTerminalStore((s) => s.setFontSize);
   const shellPath = useTerminalStore((s) => s.shellPath);
-  const setShellPath = useTerminalStore((s) => s.setShellPath);
   const recentCommands = useTerminalStore((s) => s.recentCommands);
-  const clearRecentCommands = useTerminalStore((s) => s.clearRecentCommands);
-  const runCommand = useTerminalStore((s) => s.runCommand);
   const isSidebarOpen = useTerminalStore((s) => s.isSidebarOpen);
-  const toggleSidebar = useTerminalStore((s) => s.toggleSidebar);
+  const logHistory = useTerminalStore((s) => s.logHistory);
 
   console.log('[Terminal Hook] Rendered hook. sessions:', sessions.length, 'activeId:', activeId, 'cached instances:', terminalInstances.size);
 
@@ -169,7 +173,7 @@ export function useTerminalPage() {
     console.log('[Terminal Hook] Spawn check. sessions.length:', sessions.length);
     if (sessions.length === 0) {
       console.log('[Terminal Hook] No sessions found. Spawning initial session.');
-      createSession();
+      createTerminalSession();
     } else if (!hasInitializedRef.current) {
       hasInitializedRef.current = true;
       console.log('[Terminal Hook] Restoring saved sessions.');
@@ -179,11 +183,11 @@ export function useTerminalPage() {
         const activeSession = store.sessions.find((s) => s.id === store.activeId);
         if (activeSession && activeSession.status === 'exited') {
           console.log('[Terminal Hook] Auto-waking up inactive active session on mount:', store.activeId);
-          store.restartSession(store.activeId!);
+          restartTerminalSession(store.activeId!);
         }
       });
     }
-  }, [sessions.length, createSession]);
+  }, [sessions.length]);
 
   // Dynamically sync terminal colors when application theme toggles
   useEffect(() => {
@@ -196,32 +200,31 @@ export function useTerminalPage() {
   const isSessionReady = useCallback((id: string) => {
     return terminalInstances.has(id);
   }, []);
-  const restartSession = useTerminalStore((s) => s.restartSession);
-  const logHistory = useTerminalStore((s) => s.logHistory);
 
   return {
     sessions,
     activeId,
-    setActiveId,
-    createSession,
-    closeSession,
-    renameSession,
-    closeTabsToLeft,
-    closeTabsToRight,
+    setActiveId: setActiveTerminalId,
+    createSession: createTerminalSession,
+    closeSession: closeTerminalSession,
+    renameSession: renameTerminalSession,
+    closeTabsToLeft: closeTerminalTabsToLeft,
+    closeTabsToRight: closeTerminalTabsToRight,
     registerContainer,
-    clearActiveSessionBuffer,
+    clearActiveSessionBuffer: clearActiveTerminalSessionBuffer,
     workspaceRef,
     fontSize,
-    setFontSize,
+    setFontSize: setTerminalFontSize,
     shellPath,
-    setShellPath,
+    setShellPath: setTerminalShellPath,
     recentCommands,
-    clearRecentCommands,
-    runCommand,
+    clearRecentCommands: clearRecentTerminalCommands,
+    runCommand: runTerminalCommand,
     isSidebarOpen,
-    toggleSidebar,
+    toggleSidebar: toggleTerminalSidebar,
     isSessionReady,
-    restartSession,
+    restartSession: restartTerminalSession,
     logHistory,
   };
 }
+

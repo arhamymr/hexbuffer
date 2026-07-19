@@ -3,6 +3,7 @@ import * as React from "react"
 export const WindowContext = React.createContext<{
   isInWindow: boolean
   windowElement: HTMLElement | null
+  id?: string
 }>({
   isInWindow: false,
   windowElement: null,
@@ -10,17 +11,20 @@ export const WindowContext = React.createContext<{
 
 export function WindowProvider({
   windowElement,
+  id,
   children,
 }: {
   windowElement: HTMLElement | null
+  id?: string
   children: React.ReactNode
 }) {
   const value = React.useMemo(
     () => ({
       isInWindow: !!windowElement,
       windowElement,
+      id,
     }),
-    [windowElement]
+    [windowElement, id]
   )
 
   return (

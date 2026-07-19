@@ -50,7 +50,7 @@ export const allNavItems: NavItem[] = [
     href: '/browser',
     description: 'Control an automated browser session to crawl websites and capture elements.',
     colors: { bg: 'bg-sky-500 dark:bg-sky-500', hoverBg: 'group-hover:bg-sky-500 dark:group-hover:bg-sky-500', border: 'border-sky-500 dark:border-sky-500' },
-    flag: 'release'
+    flag: 'beta'
   },
   {
     label: 'Intercept',
@@ -98,7 +98,7 @@ export const allNavItems: NavItem[] = [
     href: '/repeater',
     description: 'Modify HTTP requests, reissue them, and analyze responses side-by-side.',
     colors: { bg: 'bg-cyan-500 dark:bg-cyan-500', hoverBg: 'group-hover:bg-cyan-500 dark:group-hover:bg-cyan-500', border: 'border-cyan-500 dark:border-cyan-500' },
-    flag: 'release'
+    flag: 'beta'
   },
   {
     label: 'MockForge',
@@ -178,7 +178,7 @@ export const allNavItems: NavItem[] = [
     href: '/sql-injection',
     description: 'Test databases for SQL injection vulnerabilities.',
     colors: { bg: 'bg-cyan-600 dark:bg-cyan-600', hoverBg: 'group-hover:bg-cyan-600 dark:group-hover:bg-cyan-600', border: 'border-cyan-600 dark:border-cyan-600' },
-    flag: 'beta'
+    flag: 'alpha'
   },
   {
     label: 'Settings',

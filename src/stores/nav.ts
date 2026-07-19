@@ -21,8 +21,11 @@ interface NavState {
   // Window Manager
   windows: WindowState[];
   activeWindowId: string | null;
+  closeHandlers: Record<string, () => boolean | Promise<boolean>>;
+  registerCloseHandler: (id: string, handler: () => boolean | Promise<boolean>) => void;
+  unregisterCloseHandler: (id: string) => void;
   openWindow: (id: string, title: string) => void;
-  closeWindow: (id: string, navigate?: (path: string) => void) => void;
+  closeWindow: (id: string, navigate?: (path: string) => void) => void | Promise<void>;
   minimizeWindow: (id: string, navigate?: (path: string) => void) => void;
   maximizeWindow: (id: string) => void;
   focusWindow: (id: string, navigate?: (path: string) => void) => void;
@@ -51,6 +54,19 @@ export const useNavStore = create<NavState>()((set, get) => ({
   // Window manager implementation
   windows: [],
   activeWindowId: null,
+  closeHandlers: {},
+  registerCloseHandler: (id, handler) => {
+    set((state) => ({
+      closeHandlers: { ...state.closeHandlers, [id]: handler },
+    }));
+  },
+  unregisterCloseHandler: (id) => {
+    set((state) => {
+      const next = { ...state.closeHandlers };
+      delete next[id];
+      return { closeHandlers: next };
+    });
+  },
 
   openWindow: (id, title) => {
     // Desktop is the background, not a window
@@ -111,11 +127,25 @@ export const useNavStore = create<NavState>()((set, get) => ({
     }
   },
 
-  closeWindow: (id, navigate) => {
+  closeWindow: async (id, navigate) => {
+    const handler = get().closeHandlers[id];
+    if (handler) {
+      try {
+        const shouldClose = await handler();
+        if (!shouldClose) return;
+      } catch (e) {
+        console.error("Error in window close handler:", e);
+      }
+    }
+
     const { windows, activeWindowId } = get();
     // Filter out the closed window to reset its size and position next time it is opened
     const updated = windows.filter((w) => w.id !== id);
-    set({ windows: updated });
+    // ponytail: clean up handler on close
+    const nextCloseHandlers = { ...get().closeHandlers };
+    delete nextCloseHandlers[id];
+
+    set({ windows: updated, closeHandlers: nextCloseHandlers });
 
     if (activeWindowId === id) {
       // Find the next window to focus (highest zIndex that is open and not minimized)
@@ -205,8 +235,8 @@ export const useNavStore = create<NavState>()((set, get) => ({
   },
 
   closeAllWindows: (navigate) => {
-    // ponytail: wipe all window entries so they reset on next open
-    set({ windows: [], activeWindowId: null });
+    // ponytail: wipe all window entries so they reset on next open, and clear close handlers
+    set({ windows: [], activeWindowId: null, closeHandlers: {} });
     if (navigate) navigate('/');
   },
 }));

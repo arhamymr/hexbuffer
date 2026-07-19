@@ -85,7 +85,7 @@ export function PixelPage() {
 
         {/* Content Workspace Split */}
         <main className="min-h-0 flex-1 bg-background">
-          <ResizablePanelGroup orientation="horizontal">
+          <ResizablePanelGroup orientation="horizontal" className="h-full">
             {/* Left side: Canvas Editor */}
             <ResizablePanel defaultSize={60} minSize={35}>
               <div className="h-full bg-background/50">

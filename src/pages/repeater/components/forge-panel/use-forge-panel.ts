@@ -123,7 +123,25 @@ export function useForgePanel() {
   );
 
   const handleBodyChange = useCallback(
-    (body: string) => store.updateActiveRequest(() => ({ body })),
+    (body: string, contentType?: string) => {
+      store.updateActiveRequest((current) => {
+        const next: Partial<typeof current> = { body };
+        if (contentType) {
+          // ponytail: update or append Content-Type header when uploading file/image
+          const headers = [...current.headers];
+          const ctIndex = headers.findIndex(
+            (h) => h.key.toLowerCase() === 'content-type'
+          );
+          if (ctIndex !== -1) {
+            headers[ctIndex] = { ...headers[ctIndex], value: contentType, enabled: true };
+          } else {
+            headers.push({ key: 'Content-Type', value: contentType, enabled: true });
+          }
+          next.headers = headers;
+        }
+        return next;
+      });
+    },
     [store],
   );
 

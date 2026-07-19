@@ -1,14 +1,14 @@
 import * as React from 'react';
 import { open } from '@tauri-apps/plugin-dialog';
 import { convertFileSrc } from '@tauri-apps/api/core';
-import { ImageIcon, PaletteIcon, TrashIcon, ArrowCounterClockwise } from '@phosphor-icons/react';
+import { ImageIcon, PaletteIcon, TrashIcon, ArrowCounterClockwiseIcon } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
 import { useAppSettingsStore } from '@/stores/app-settings-store';
 import { SettingsGroup, SettingsRow } from './settings-group';
 import { ShortcutManager } from '@/pages/desktop/components/shortcut-manager';
 
-import whiteWallpaper from '@/assets/white-walpaper.png';
-import blackWallpaper from '@/assets/black-walpaper.png';
+import whiteWallpaper from '@/assets/white-wallpaper.png';
+import blackWallpaper from '@/assets/black-wallpaper.png';
 
 const PRESET_COLORS = [
   '#0f0f0f', '#1a1a2e', '#16213e', '#0f3460',
@@ -36,6 +36,13 @@ export function AppearanceSettingsTab() {
   const handlePickColor = React.useCallback((hex: string) => {
     setBg('color', hex);
   }, [setBg]);
+
+  const backgroundSrc = React.useMemo(() => {
+    if (bgType !== 'image') return null;
+    if (bgValue === 'default-light') return whiteWallpaper;
+    if (bgValue === 'default-dark') return blackWallpaper;
+    return convertFileSrc(bgValue);
+  }, [bgType, bgValue]);
 
   return (
     <>
@@ -130,13 +137,7 @@ export function AppearanceSettingsTab() {
               style={
                 bgType === 'image'
                   ? {
-                      backgroundImage: `url(${
-                        bgValue === 'default-light'
-                          ? whiteWallpaper
-                          : bgValue === 'default-dark'
-                          ? blackWallpaper
-                          : convertFileSrc(bgValue)
-                      })`,
+                      backgroundImage: `url(${backgroundSrc})`,
                       backgroundSize: 'cover',
                       backgroundPosition: 'center',
                     }
@@ -149,7 +150,7 @@ export function AppearanceSettingsTab() {
         {bgType !== 'none' && (
           <SettingsRow label="Reset background" description="Restore the default light/dark theme wallpaper.">
             <Button size="xs" variant="outline" onClick={clearBg}>
-              <ArrowCounterClockwise className="mr-1.5 size-3.5" />
+              <ArrowCounterClockwiseIcon className="mr-1.5 size-3.5" />
               Reset to default
             </Button>
           </SettingsRow>

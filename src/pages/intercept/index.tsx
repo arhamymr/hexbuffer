@@ -158,7 +158,7 @@ export function InterceptPage() {
 
           {/* Main workspace layout */}
           <div className="flex-1 min-h-0">
-            <ResizablePanelGroup orientation="horizontal">
+            <ResizablePanelGroup orientation="horizontal" className="h-full">
               <ResizablePanel defaultSize={35} minSize={20}>
                 <InterceptQueuePanel />
               </ResizablePanel>

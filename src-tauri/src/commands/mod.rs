@@ -5,7 +5,6 @@ pub mod collaborator;
 pub mod history;
 pub mod intercept;
 pub mod invoker;
-pub mod license;
 pub mod proxy;
 pub mod regression;
 pub mod repeater;

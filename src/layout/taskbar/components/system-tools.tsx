@@ -5,7 +5,6 @@ import {
   GearSixIcon,
   SunIcon,
   ArrowUpIcon,
-  DiamondIcon,
   DotsThreeIcon,
   StarFourIcon,
 } from '@phosphor-icons/react';
@@ -153,7 +152,7 @@ export function SystemTools({
           <DotsThreeIcon className="size-4" />
         </button>
 
-        <div className="flex max-w-0 items-center gap-1 overflow-hidden opacity-0 transition-all duration-200 ease-out group-hover:max-w-[140px] group-hover:opacity-100">
+        <div className="flex max-w-0 items-center gap-1 overflow-hidden opacity-0 transition-all duration-200 ease-out group-hover:max-w-[80px] group-hover:opacity-100">
           {/* Settings */}
           <button
             type="button"
@@ -173,19 +172,6 @@ export function SystemTools({
               <SunIcon className="size-4" />
             ) : (
               <MoonIcon className="size-4" />
-            )}
-          </button>
-
-          {/* License */}
-          <button
-            type="button"
-            className="flex size-7 shrink-0 items-center justify-center rounded-sm text-muted-foreground transition-all hover:bg-muted/80 hover:text-foreground hover:scale-105"
-            onClick={() => dock.setLicenseModalOpen(true)}
-          >
-            {dock.licenseStatus === "lifetime" ? (
-              <DiamondIcon className="text-red-500 size-4" />
-            ) : (
-              <DiamondIcon className="text-yellow-500 size-4" />
             )}
           </button>
         </div>

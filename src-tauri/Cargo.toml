@@ -1,6 +1,6 @@
 [package]
 name = "hexbuffer"
-version = "2026.0.73"
+version = "2026.0.76"
 description = "Proxy App"
 authors = ["Arham"]
 edition = "2021"

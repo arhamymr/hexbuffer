@@ -3,6 +3,8 @@ use std::time::Instant;
 use reqwest::Method;
 use serde::{Deserialize, Serialize};
 use tauri::State;
+use base64::{engine::general_purpose, Engine};
+
 
 use crate::{
     HistoryBridge, StashRecord, StashEndpointRecord, ContextRecord, ChronicleLogRecord
@@ -42,7 +44,21 @@ pub async fn send_forge_request(request: ForgeRequest) -> Result<ForgeResponse, 
     }
 
     if !request.body.is_empty() {
-        builder = builder.body(request.body);
+        // ponytail: check if body is a base64 Data URL, decode it to binary bytes if so
+        if request.body.starts_with("data:") && request.body.contains(";base64,") {
+            if let Some(pos) = request.body.find(";base64,") {
+                let base64_data = &request.body[pos + 8..];
+                if let Ok(decoded) = general_purpose::STANDARD.decode(base64_data) {
+                    builder = builder.body(decoded);
+                } else {
+                    builder = builder.body(request.body);
+                }
+            } else {
+                builder = builder.body(request.body);
+            }
+        } else {
+            builder = builder.body(request.body);
+        }
     }
 
     let started_at = Instant::now();

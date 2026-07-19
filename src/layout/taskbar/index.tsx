@@ -19,7 +19,6 @@ import {
 } from "@dnd-kit/sortable";
 
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { LicenseModal } from "@/components/license-modal";
 import { useSidebarNav } from "./hooks/use-taskbar-nav";
 import { useSidebarDock } from "./hooks/use-taskbar-dock";
 import { AppLauncher } from "./app-launcher";
@@ -223,11 +222,6 @@ export function AppSidebar() {
         updateVersion={dock.updateVersion}
         updateConfirmReady={dock.updateConfirmReady}
         onInstall={dock.handleInstallUpdate}
-      />
-
-      <LicenseModal
-        open={dock.licenseModalOpen}
-        onOpenChange={dock.setLicenseModalOpen}
       />
     </>
   );

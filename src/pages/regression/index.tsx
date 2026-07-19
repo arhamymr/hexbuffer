@@ -146,7 +146,7 @@ export function RegressionPage() {
                             onCancel={page.handleCancelEdit}
                           />
                         ) : (
-                          <ResizablePanelGroup orientation="vertical" className="min-h-0">
+                          <ResizablePanelGroup orientation="vertical" className="h-full min-h-0">
                             <ResizablePanel defaultSize={58} minSize={30}>
                               <TestRunner
                                 testCase={tab.tabTestCase}

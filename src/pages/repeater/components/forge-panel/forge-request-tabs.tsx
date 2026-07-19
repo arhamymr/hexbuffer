@@ -1,3 +1,4 @@
+import { useState, useRef } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
@@ -5,7 +6,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { TextEditor } from "@/components/ui/text-editor";
-import { TrashIcon, PlusIcon } from '@phosphor-icons/react';
+import { Switch } from "@/components/ui/switch";
+import { TrashIcon, PlusIcon, UploadSimpleIcon, ImageSquareIcon } from '@phosphor-icons/react';
 import type { KeyValuePair, ActiveRequestState } from "@/stores/collections";
 import { cn } from "@/lib/utils";
 import { ColorizedUrlInput } from "@/components/ui/select-env-input";
@@ -105,7 +107,7 @@ interface ForgeRequestTabsProps {
   onAddHeader: () => void;
   onRemoveHeader: (index: number) => void;
   onBodyTypeChange: (bodyType: string) => void;
-  onBodyChange: (body: string) => void;
+  onBodyChange: (body: string, contentType?: string) => void;
   onPreScriptChange: (script: string) => void;
   onTestScriptChange: (script: string) => void;
 }
@@ -130,6 +132,62 @@ export function ForgeRequestTabs({
   onPreScriptChange,
   onTestScriptChange,
 }: ForgeRequestTabsProps) {
+  const [isImageMode, setIsImageMode] = useState(() => {
+    // ponytail: default to image mode if the body is already an image data URL
+    return req.body.startsWith("data:image/");
+  });
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const result = reader.result as string;
+      if (result) {
+        onBodyChange(result, file.type);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file && file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const result = reader.result as string;
+        if (result) {
+          onBodyChange(result, file.type);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const getFileInfo = () => {
+    if (!req.body.startsWith("data:image/")) return null;
+    const match = req.body.match(/^data:([^;]+);base64,/);
+    const mimeType = match ? match[1] : "unknown";
+    const base64Len = req.body.split(",")[1]?.length || 0;
+    const sizeBytes = Math.round((base64Len * 3) / 4);
+    const sizeKb = (sizeBytes / 1024).toFixed(1);
+    return { mimeType, sizeKb };
+  };
+
+  const fileInfo = getFileInfo();
   return (
     <div className="border rounded-lg p-2 bg-background/50 flex flex-col min-h-0">
       <div className="flex-1 flex flex-col min-h-0">
@@ -186,31 +244,120 @@ export function ForgeRequestTabs({
 
         {/* ── Body tab ── */}
         {activeReqTab === "body" && (
-          <div className="flex-1 min-h-0 mt-2 flex flex-col">
-            <div className="flex items-center space-x-4 mb-2 shrink-0">
-              <span className="text-[10px] uppercase font-bold text-muted-foreground">
-                Body Format:
-              </span>
-              <RadioGroup
-                value={req.bodyType}
-                onValueChange={onBodyTypeChange}
-                className="flex space-x-3"
-              >
-                {BODY_OPTIONS.map((t) => (
-                  <label
-                    key={t}
-                    className="flex items-center space-x-1 cursor-pointer font-medium text-xs"
-                  >
-                    <RadioGroupItem value={t} />
-                    <span className="capitalize">{t}</span>
-                  </label>
-                ))}
-              </RadioGroup>
+          <div className="flex-1 min-h-0 mt-2 flex flex-col font-sans">
+            <div className="flex items-center justify-between mb-2 shrink-0">
+              <div className="flex items-center space-x-4">
+                <span className="text-[10px] uppercase font-bold text-muted-foreground">
+                  Body Format:
+                </span>
+                <RadioGroup
+                  value={req.bodyType}
+                  onValueChange={onBodyTypeChange}
+                  className="flex space-x-3"
+                >
+                  {BODY_OPTIONS.map((t) => (
+                    <label
+                      key={t}
+                      className="flex items-center space-x-1 cursor-pointer font-medium text-xs"
+                    >
+                      <RadioGroupItem value={t} />
+                      <span className="capitalize">{t}</span>
+                    </label>
+                  ))}
+                </RadioGroup>
+              </div>
+
+              {req.bodyType !== "none" && (
+                <div className="flex items-center space-x-2">
+                  <Label htmlFor="image-mode-switch" className="text-xs text-muted-foreground cursor-pointer font-medium">
+                    Image mode
+                  </Label>
+                  <Switch
+                    id="image-mode-switch"
+                    checked={isImageMode}
+                    onCheckedChange={setIsImageMode}
+                  />
+                </div>
+              )}
             </div>
+
             <div className="flex-1 min-h-0 border rounded-md overflow-hidden bg-background">
               {req.bodyType === "none" ? (
                 <div className="h-full flex items-center justify-center text-xs text-muted-foreground font-medium">
                   This request does not have a body payload.
+                </div>
+              ) : isImageMode ? (
+                <div className="h-full flex flex-col items-center justify-center p-6 bg-muted/5">
+                  {req.body.startsWith("data:image/") ? (
+                    <div className="flex flex-col items-center space-y-4 w-full max-w-md">
+                      <div className="relative group max-h-60 border rounded-lg overflow-hidden bg-muted/20 flex items-center justify-center p-2 shadow-sm">
+                        <img
+                          src={req.body}
+                          alt="Request body preview"
+                          className="max-h-56 object-contain rounded-md select-none"
+                        />
+                      </div>
+                      {fileInfo && (
+                        <div className="text-center space-y-1">
+                          <p className="text-xs font-mono text-muted-foreground">
+                            {fileInfo.mimeType} • {fileInfo.sizeKb} KB
+                          </p>
+                        </div>
+                      )}
+                      <div className="flex items-center space-x-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => fileInputRef.current?.click()}
+                        >
+                          <UploadSimpleIcon className="h-4 w-4 mr-1.5" />
+                          Replace Image
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                          onClick={() => onBodyChange("")}
+                        >
+                          <TrashIcon className="h-4 w-4 mr-1.5" />
+                          Remove
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div
+                      onDragOver={handleDragOver}
+                      onDragLeave={handleDragLeave}
+                      onDrop={handleDrop}
+                      className={cn(
+                        "w-full max-w-md border-2 border-dashed rounded-lg p-8 flex flex-col items-center justify-center space-y-3 transition-colors",
+                        isDragging ? "border-primary bg-primary/5" : "border-muted-foreground/20 hover:border-muted-foreground/40"
+                      )}
+                    >
+                      <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center text-muted-foreground">
+                        <ImageSquareIcon className="h-6 w-6" />
+                      </div>
+                      <div className="text-center space-y-1">
+                        <p className="text-sm font-semibold">Upload an image</p>
+                        <p className="text-xs text-muted-foreground">
+                          Drag and drop your image file here, or click below
+                        </p>
+                      </div>
+                      <Button
+                        size="sm"
+                        onClick={() => fileInputRef.current?.click()}
+                      >
+                        Choose File
+                      </Button>
+                    </div>
+                  )}
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleFileChange}
+                    accept="image/*"
+                    className="hidden"
+                  />
                 </div>
               ) : (
                 <TextEditor

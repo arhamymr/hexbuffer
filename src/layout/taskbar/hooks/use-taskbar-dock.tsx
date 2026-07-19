@@ -5,7 +5,6 @@ import { toast } from 'sonner';
 import { useNavStore } from '@/stores/nav';
 
 import { useTheme } from '@/components/theme-provider';
-import { useLicenseStore } from '@/stores/license';
 import { useUpdater } from '@/hooks/use-updater';
 import { ManualUpdateCommand } from '@/pages/settings/components/manual-update-command';
 import { formatBytes } from '../../footer/utils';
@@ -18,9 +17,6 @@ export function useSidebarDock() {
   // ── Theme toggle ────────────────────────────────────────────────────────
   const { theme, toggleTheme } = useTheme();
 
-  // ── License ─────────────────────────────────────────────────────────────
-  const licenseStatus = useLicenseStore((state) => state.status);
-  const [licenseModalOpen, setLicenseModalOpen] = React.useState(false);
 
   // ── Updater ─────────────────────────────────────────────────────────────
   const {
@@ -205,10 +201,7 @@ export function useSidebarDock() {
     // Theme
     theme,
     toggleTheme,
-    // License
-    licenseStatus,
-    licenseModalOpen,
-    setLicenseModalOpen,
+
     // Updater
     updateAvailable,
     updateVersion,

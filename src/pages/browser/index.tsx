@@ -118,9 +118,9 @@ export function BrowserAutomationPage() {
           </header>
 
           <main className="min-h-0 flex-1">
-            <ResizablePanelGroup orientation="vertical" className="min-h-0">
+            <ResizablePanelGroup orientation="vertical" className="h-full min-h-0">
               <ResizablePanel defaultSize={60} minSize={20}>
-                <ResizablePanelGroup orientation="horizontal" className="min-h-0">
+                <ResizablePanelGroup orientation="horizontal" className="h-full min-h-0">
                   <ResizablePanel defaultSize={20} minSize={20}>
                     <CrawlTreePanel
                       nodes={page.crawlTree}

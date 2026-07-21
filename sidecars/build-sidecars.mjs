@@ -143,9 +143,10 @@ removeLegacySidecars(targetTriple);
 
 // ponytail: bundle ES modules into CommonJS before running pkg to avoid bytecode and module system mismatch errors
 console.log('[sidecars] Bundling sidecar with esbuild...');
-const esbuildPath = path.join(root, 'node_modules', '.pnpm', 'node_modules', '.bin', 'esbuild');
 fs.mkdirSync(path.join(root, 'sidecars', 'dist'), { recursive: true });
-run(esbuildPath, [
+run('pnpm', [
+  'exec',
+  'esbuild',
   'sidecars/index.mjs',
   '--bundle',
   '--platform=node',

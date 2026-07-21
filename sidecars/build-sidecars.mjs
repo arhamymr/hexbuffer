@@ -12,9 +12,12 @@ const binariesDir = path.join(root, 'src-tauri', 'binaries');
 const pkgCacheDir = path.join(root, 'src-tauri', '.pkg-cache');
 
 function run(command, args, options = {}) {
-  execFileSync(command, args, {
+  const isWin = process.platform === 'win32';
+  const bin = isWin && command === 'pnpm' ? 'pnpm.cmd' : command;
+  execFileSync(bin, args, {
     cwd: root,
     stdio: 'inherit',
+    shell: isWin,
     env: {
       ...process.env,
       ...options.env,

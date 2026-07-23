@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Info, PlayIcon, SquareIcon } from '@phosphor-icons/react';
+import { InfoIcon, PlayIcon, SquareIcon } from '@phosphor-icons/react';
 import { TabbedPageLayout } from '@/components/tabs-layout/tabbed-page-layout';
 import { InvokerConfigDialog } from './components/invoker-config';
 import { InvokerPayloadDialog } from './components/payload-dialog';
@@ -37,7 +37,7 @@ export function InvokerPage() {
         <div className="p-2 shrink-0">
           <Alert variant="default" className="min-h-10 border-amber-500/30 bg-amber-500/5 text-amber-900 dark:border-amber-500/25 dark:bg-amber-500/10 dark:text-amber-200 flex items-center justify-between gap-3 px-3 py-1.5 rounded-md">
             <div className="flex items-center gap-2">
-              <Info className="size-4 shrink-0 text-amber-600 dark:text-amber-400" />
+              <InfoIcon className="size-4 shrink-0 text-amber-600 dark:text-amber-400" />
               <AlertDescription className="text-xs text-amber-800 dark:text-amber-300 font-sans leading-normal">
                 Only run invoker tests against systems you own or are explicitly authorized to assess. Unauthorized assessments can be illegal.
               </AlertDescription>
@@ -60,7 +60,7 @@ export function InvokerPage() {
         onTabChange={page.setActiveTabId}
         onTabRename={page.renameTab}
         onTabClose={page.closeTab}
-        contentClassName="flex-1 border rounded-lg overflow-hidden bg-background min-h-0"
+        contentClassName="flex-1 border rounded-lg overflow-hidden bg-card min-h-0"
       >
         <div className="flex h-full min-h-0 flex-col">
           {/* Top Control Toolbar */}
@@ -121,8 +121,8 @@ export function InvokerPage() {
           </div>
 
           {/* Main workspace (Simplified 50/50 Grid layout) */}
-          <div className="flex-1 min-h-0 min-w-0 bg-muted/10">
-            <div className="grid grid-cols-2 h-full min-h-0 divide-x divide-border bg-background">
+          <div className="flex-1 min-h-0 min-w-0">
+            <div className="grid grid-cols-2 h-full min-h-0 divide-x divide-border">
               {/* Left Column: Attack configurations and Request templates */}
               <div className="flex flex-col min-h-0 p-3 overflow-auto">
                 <InvokerConfigDialog 

@@ -259,11 +259,10 @@ export function TargetDialogForm({ target, onCancel, onSaved }: TargetDialogForm
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel type="button" size="xs">Cancel</AlertDialogCancel>
+                <AlertDialogCancel type="button">Cancel</AlertDialogCancel>
                 <AlertDialogAction
                   type="button"
                   variant="destructive"
-                  size="xs"
                   onClick={deleteTarget}
                 >
                   Delete Target

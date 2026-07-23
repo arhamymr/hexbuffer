@@ -1,9 +1,5 @@
-// ponytail: extracted from main.rs to keep main entry point clean and focused.
-
-use std::sync::Mutex;
 use tauri::{AppHandle, Manager};
 use hexbuffer::commands::invoker::InvokerState;
-use hexbuffer::commands::repeater::WsRepeaterState;
 use hexbuffer::{
     AiBrowserState, BrowserProcessState, CollaboratorPollingState, HistoryBridge,
     PortScanState, ProxyState, SqliScanState,
@@ -21,7 +17,7 @@ pub fn init(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
         .app_data_dir()
         .expect("Failed to get app data dir");
     std::fs::create_dir_all(&app_dir).expect("Failed to create app data dir");
-    hexbuffer::proxy::https::cert::init_ca_dir(app_dir.clone());
+    hexbuffer::proxy::ca::init_ca_dir(app_dir.clone());
 
     let db_path = app_dir.join("hexbuffer.db");
     crate::log(&format!("Opening database at {:?}", db_path));
@@ -31,13 +27,12 @@ pub fn init(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
     let history = HistoryBridge::new(db_path).expect("Failed to initialize history bridge");
     crate::log("History bridge initialized");
 
-    app.manage(Mutex::new(ProxyState::new()));
+    app.manage(ProxyState::new());
     app.manage(InvokerState::default());
     app.manage(PortScanState::default());
     app.manage(BrowserProcessState::default());
     app.manage(AiBrowserState::default());
     app.manage(SqliScanState::new());
-    app.manage(WsRepeaterState::default());
     app.manage(CollaboratorPollingState::default());
     app.manage(hexbuffer::automation::AutomationRuntimeState::default());
     app.manage(database);

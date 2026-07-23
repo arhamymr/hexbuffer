@@ -1,4 +1,4 @@
-use crate::proxy::https::cert::{export_ca_cert_pem, regenerate_ca};
+use crate::proxy::ca::{export_ca_cert_pem, regenerate_ca};
 
 #[tauri::command]
 pub async fn save_ca_cert(path: String, content: String) -> Result<(), String> {

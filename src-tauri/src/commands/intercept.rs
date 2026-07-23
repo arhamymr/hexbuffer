@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::process::Command;
-use std::sync::Mutex;
 
 use serde::Deserialize;
 use sha2::{Digest, Sha256};
@@ -9,7 +8,7 @@ use tauri::{AppHandle, Manager, State};
 use uuid::Uuid;
 
 pub use crate::proxy::state::{
-    InterceptMode, InterceptStatus, PausedRequest, ProxyRequest, ProxyResponse,
+    InterceptMode, InterceptStatus, PausedRequest, ProxyRequest, ProxyResponse, ProxyState,
 };
 
 #[derive(Debug, Deserialize)]
@@ -57,19 +56,16 @@ fn sync_content_length(
 
 #[tauri::command]
 pub async fn get_intercept_status(
-    state: State<'_, Mutex<crate::proxy::ProxyState>>,
+    proxy_state: State<'_, ProxyState>,
 ) -> Result<InterceptStatus, String> {
-    let proxy_state = state.lock().map_err(|error| format!("{error}"))?;
     Ok(proxy_state.get_status())
 }
 
 #[tauri::command]
 pub async fn set_intercept_enabled(
-    state: State<'_, Mutex<crate::proxy::ProxyState>>,
+    proxy_state: State<'_, ProxyState>,
     enabled: bool,
 ) -> Result<InterceptStatus, String> {
-    let proxy_state = state.lock().map_err(|error| format!("{error}"))?;
-
     if enabled {
         proxy_state.set_mode(InterceptMode::Enabled);
     } else {
@@ -81,26 +77,24 @@ pub async fn set_intercept_enabled(
 
 #[tauri::command]
 pub async fn set_intercept_scope(
-    state: State<'_, Mutex<crate::proxy::ProxyState>>,
+    proxy_state: State<'_, ProxyState>,
     tab_id: String,
     capture_patterns: Vec<String>,
 ) -> Result<(), String> {
-    let proxy_state = state.lock().map_err(|error| format!("{error}"))?;
     proxy_state.set_intercept_scope(tab_id, capture_patterns);
     Ok(())
 }
 
 #[tauri::command]
 pub async fn get_paused_requests(
-    state: State<'_, Mutex<crate::proxy::ProxyState>>,
+    proxy_state: State<'_, ProxyState>,
 ) -> Result<Vec<PausedRequest>, String> {
-    let proxy_state = state.lock().map_err(|error| format!("{error}"))?;
     Ok(proxy_state.get_all_paused())
 }
 
 #[tauri::command]
 pub async fn forward_intercepted_request(
-    state: State<'_, Mutex<crate::proxy::ProxyState>>,
+    proxy_state: State<'_, ProxyState>,
     request_id: String,
     request: Option<InterceptForwardRequest>,
     intercept_response: Option<bool>,
@@ -116,7 +110,7 @@ pub async fn forward_intercepted_request(
             .map(|(_, v)| v.clone())
         {
             if !encoding.is_empty() {
-                match crate::proxy::lifecycle::body_decoder::encode_body(&encoding, &body) {
+                match crate::proxy::utils::encode_body(&encoding, &body) {
                     Ok(encoded) => body = encoded,
                     Err(e) => eprintln!("[intercept] re-encode failed ({encoding}): {e}"),
                 }
@@ -135,7 +129,6 @@ pub async fn forward_intercepted_request(
             content_decoded: false,
         }
     });
-    let proxy_state = state.lock().map_err(|error| format!("{error}"))?;
     let forwarded =
         proxy_state.forward_paused_request(&id, request, intercept_response.unwrap_or(false));
 
@@ -148,7 +141,7 @@ pub async fn forward_intercepted_request(
 
 #[tauri::command]
 pub async fn forward_intercepted_response(
-    state: State<'_, Mutex<crate::proxy::ProxyState>>,
+    proxy_state: State<'_, ProxyState>,
     request_id: String,
     response: Option<InterceptForwardResponse>,
 ) -> Result<(), String> {
@@ -163,7 +156,7 @@ pub async fn forward_intercepted_response(
             .map(|(_, v)| v.clone())
         {
             if !encoding.is_empty() {
-                match crate::proxy::lifecycle::body_decoder::encode_body(&encoding, &body) {
+                match crate::proxy::utils::encode_body(&encoding, &body) {
                     Ok(encoded) => body = encoded,
                     Err(e) => eprintln!("[intercept] response re-encode failed ({encoding}): {e}"),
                 }
@@ -182,7 +175,6 @@ pub async fn forward_intercepted_response(
             content_decoded: false,
         }
     });
-    let proxy_state = state.lock().map_err(|error| format!("{error}"))?;
     let forwarded = proxy_state.forward_paused_response(&id, response);
 
     if forwarded {
@@ -194,11 +186,10 @@ pub async fn forward_intercepted_response(
 
 #[tauri::command]
 pub async fn drop_intercepted_request(
-    state: State<'_, Mutex<crate::proxy::ProxyState>>,
+    proxy_state: State<'_, ProxyState>,
     request_id: String,
 ) -> Result<(), String> {
     let id = Uuid::parse_str(&request_id).map_err(|e| e.to_string())?;
-    let proxy_state = state.lock().map_err(|error| format!("{error}"))?;
     let dropped = proxy_state.drop_paused_request(&id);
 
     if dropped {
@@ -210,46 +201,41 @@ pub async fn drop_intercepted_request(
 
 #[tauri::command]
 pub async fn forward_intercepted_tab(
-    state: State<'_, Mutex<crate::proxy::ProxyState>>,
+    proxy_state: State<'_, ProxyState>,
     tab_id: String,
 ) -> Result<usize, String> {
-    let proxy_state = state.lock().map_err(|error| format!("{error}"))?;
     Ok(proxy_state.forward_paused_by_tab(&tab_id))
 }
 
 #[tauri::command]
 pub async fn get_intercept_bypass_patterns(
-    state: State<'_, Mutex<crate::proxy::ProxyState>>,
+    proxy_state: State<'_, ProxyState>,
 ) -> Result<Vec<String>, String> {
-    let proxy_state = state.lock().map_err(|error| format!("{error}"))?;
     Ok(proxy_state.get_bypass_patterns())
 }
 
 #[tauri::command]
 pub async fn set_intercept_bypass_patterns(
-    state: State<'_, Mutex<crate::proxy::ProxyState>>,
+    proxy_state: State<'_, ProxyState>,
     patterns: Vec<String>,
 ) -> Result<Vec<String>, String> {
-    let proxy_state = state.lock().map_err(|error| format!("{error}"))?;
     proxy_state.set_bypass_patterns(patterns);
     Ok(proxy_state.get_bypass_patterns())
 }
 
 #[tauri::command]
 pub async fn add_intercept_bypass_pattern(
-    state: State<'_, Mutex<crate::proxy::ProxyState>>,
+    proxy_state: State<'_, ProxyState>,
     pattern: String,
 ) -> Result<Vec<String>, String> {
-    let proxy_state = state.lock().map_err(|error| format!("{error}"))?;
     Ok(proxy_state.add_bypass_pattern(pattern))
 }
 
 #[tauri::command]
 pub async fn remove_intercept_bypass_pattern(
-    state: State<'_, Mutex<crate::proxy::ProxyState>>,
+    proxy_state: State<'_, ProxyState>,
     pattern: String,
 ) -> Result<Vec<String>, String> {
-    let proxy_state = state.lock().map_err(|error| format!("{error}"))?;
     Ok(proxy_state.remove_bypass_pattern(&pattern))
 }
 
@@ -314,7 +300,7 @@ fn write_intercept_ca(app: &AppHandle) -> Result<PathBuf, String> {
 
     let ca_path = app_data_dir.join("hexbuffer-ca.pem");
     let ca_pem =
-        crate::proxy::https::cert::export_ca_cert_pem().map_err(|error| format!("{error}"))?;
+        crate::proxy::ca::export_ca_cert_pem().map_err(|error| format!("{error}"))?;
     std::fs::write(&ca_path, ca_pem).map_err(|e| e.to_string())?;
 
     Ok(ca_path)

@@ -1,41 +1,66 @@
-pub mod https;
-pub mod intercept;
+pub mod ca;
+pub mod completion;
 pub mod lifecycle;
+pub mod mock_forge;
 pub mod state;
+pub mod types;
 pub mod utils;
 pub mod websocket;
 
-pub use https::cert::export_ca_cert_pem;
+pub use ca::export_ca_cert_pem;
 pub use state::{
     InterceptMode, PausedRequest, ProxyFilter, ProxyRecord, ProxyRequest, ProxyResponse, ProxyState,
 };
-pub use utils::ensure_port_free;
+pub use utils::{encode_body, ensure_port_free};
 
-use hudsucker::{rustls::crypto::aws_lc_rs, Proxy};
+use hexbuffer_proxy::ProxyBuilder;
 use std::io;
 use std::net::Ipv4Addr;
 use std::sync::{
-    atomic::{AtomicU16, Ordering},
-    Mutex, OnceLock,
+    atomic::{AtomicBool, AtomicU16, Ordering},
+    Arc, Mutex, OnceLock,
 };
 use tauri::AppHandle;
 use tokio::net::TcpListener;
 use tokio::sync::oneshot;
 
-use crate::proxy::https::cert::ensure_ca_exists;
+use crate::proxy::ca::ensure_ca_exists;
 
 pub struct ProxyConfig {
     pub port: u16,
     pub reuse: bool,
     pub tls_port: u16,
+    pub enabled: bool,
 }
 
 static ACTIVE_PROXY_PORT: AtomicU16 = AtomicU16::new(0);
 static DEFAULT_PROXY_PORT: AtomicU16 = AtomicU16::new(8888);
 static PROXY_SHUTDOWN: OnceLock<Mutex<Option<oneshot::Sender<()>>>> = OnceLock::new();
+static PROXY_ENABLED_HANDLE: OnceLock<Mutex<Option<Arc<AtomicBool>>>> = OnceLock::new();
 
 fn proxy_shutdown_sender() -> &'static Mutex<Option<oneshot::Sender<()>>> {
     PROXY_SHUTDOWN.get_or_init(|| Mutex::new(None))
+}
+
+fn proxy_enabled_handle() -> &'static Mutex<Option<Arc<AtomicBool>>> {
+    PROXY_ENABLED_HANDLE.get_or_init(|| Mutex::new(None))
+}
+
+pub fn set_proxy_enabled(enabled: bool) {
+    if let Ok(handle) = proxy_enabled_handle().lock() {
+        if let Some(ref flag) = *handle {
+            flag.store(enabled, Ordering::Relaxed);
+        }
+    }
+}
+
+pub fn is_proxy_enabled() -> bool {
+    if let Ok(handle) = proxy_enabled_handle().lock() {
+        if let Some(ref flag) = *handle {
+            return flag.load(Ordering::Relaxed);
+        }
+    }
+    true
 }
 
 pub fn active_proxy_port() -> Option<u16> {
@@ -121,6 +146,9 @@ fn clear_proxy_runtime() {
     if let Ok(mut shutdown) = proxy_shutdown_sender().lock() {
         *shutdown = None;
     }
+    if let Ok(mut handle) = proxy_enabled_handle().lock() {
+        *handle = None;
+    }
 }
 
 pub fn stop() -> Result<(), String> {
@@ -146,12 +174,13 @@ impl Default for ProxyConfig {
             port: 8888,
             reuse: false,
             tls_port: 8889,
+            enabled: true,
         }
     }
 }
 
 pub fn run(config: ProxyConfig, app_handle: AppHandle) {
-    eprintln!("[proxy] ========== Starting Hudsucker Proxy ==========");
+    eprintln!("[proxy] ========== Starting Hexbuffer Proxy ==========");
 
     ensure_ca_exists();
 
@@ -194,8 +223,8 @@ pub fn run(config: ProxyConfig, app_handle: AppHandle) {
     // Create AppHandler instance
     let handler = lifecycle::AppHandler::new(app_handle.clone());
 
-    // Create CA authority from existing rcgen CA
-    let authority = match https::cert::create_hudsucker_authority() {
+    // Create CA authority
+    let authority = match ca::create_proxy_authority() {
         Ok(auth) => auth,
         Err(e) => {
             eprintln!("[proxy] FATAL: Failed to create CA authority: {}", e);
@@ -222,20 +251,28 @@ pub fn run(config: ProxyConfig, app_handle: AppHandle) {
             return;
         }
     };
+    drop(listener);
     ACTIVE_PROXY_PORT.store(port, Ordering::SeqCst);
 
-    // Build proxy with Hudsucker
-    let proxy = match Proxy::builder()
-        .with_listener(listener)
+    let socket_addr: std::net::SocketAddr = (Ipv4Addr::UNSPECIFIED, port).into();
+
+    // Build proxy with hexbuffer-proxy
+    let builder = ProxyBuilder::new()
+        .with_addr(socket_addr)
         .with_ca(authority)
-        .with_rustls_connector(aws_lc_rs::default_provider())
-        .with_http_handler(handler.clone())
-        .with_websocket_handler(handler)
-        .with_graceful_shutdown(async move {
-            let _ = shutdown_rx.await;
-        })
-        .build()
-    {
+        .with_decompression(true)
+        .with_request_buffer_size(16384)
+        .with_enabled(config.enabled)
+        .add_http_handler(hexbuffer_proxy::decoder::DecodeHandler)
+        .add_http_handler(handler.clone())
+        .with_ws_handler(handler);
+
+    let enabled_flag = builder.enabled_flag();
+    if let Ok(mut handle) = proxy_enabled_handle().lock() {
+        *handle = Some(enabled_flag);
+    }
+
+    let proxy = match builder.build() {
         Ok(p) => p,
         Err(e) => {
             eprintln!("[proxy] FATAL: Failed to build proxy: {}", e);
@@ -249,9 +286,16 @@ pub fn run(config: ProxyConfig, app_handle: AppHandle) {
         port
     );
 
-    runtime.block_on(async {
-        if let Err(e) = proxy.start().await {
-            eprintln!("[proxy] Proxy stopped: {} ({:?})", e, e);
+    runtime.block_on(async move {
+        tokio::select! {
+            res = proxy.start() => {
+                if let Err(e) = res {
+                    eprintln!("[proxy] Proxy stopped: {} ({:?})", e, e);
+                }
+            }
+            _ = shutdown_rx => {
+                eprintln!("[proxy] Graceful shutdown signal received");
+            }
         }
     });
     clear_proxy_runtime();

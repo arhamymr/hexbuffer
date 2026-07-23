@@ -9,10 +9,10 @@ const DesktopPage = React.lazy(() =>
   import("@/pages/desktop").then((m) => ({ default: m.DesktopPage }))
 );
 const HttpHistoryPage = React.lazy(() =>
-  import("@/pages/http-history").then((m) => ({ default: m.HttpHistoryPage }))
+  import("@/pages/live-traffic/http-history").then((m) => ({ default: m.HttpHistoryPage }))
 );
 const WebSocketHistoryPage = React.lazy(() =>
-  import("@/pages/websocket-history").then((m) => ({ default: m.WebSocketHistoryPage }))
+  import("@/pages/live-traffic/websocket-history").then((m) => ({ default: m.WebSocketHistoryPage }))
 );
 const InvokerPage = React.lazy(() =>
   import("@/pages/invoker").then((m) => ({ default: m.InvokerPage }))

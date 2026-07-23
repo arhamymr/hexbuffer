@@ -1,4 +1,4 @@
-import { useHttpHistoryQueryStore } from '@/pages/http-history/state/history-query-store';
+import { useHttpHistoryQueryStore } from '@/stores/history';
 import { SearchInput } from './search-input';
 import { useDebouncedSearch } from './use-debounced-search';
 

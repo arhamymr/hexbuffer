@@ -2,7 +2,7 @@ import * as React from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { open, save } from '@tauri-apps/plugin-dialog';
 import { toast } from 'sonner';
-import { getCaCert, regenerateCaCert, saveCaCert, trustInterceptCa } from '@/pages/http-history/api';
+import { getCaCert, regenerateCaCert, saveCaCert, trustInterceptCa } from '@/pages/live-traffic/http-history/api';
 import { useUpdater } from '@/hooks/use-updater';
 import { DEFAULT_PROXY_PORT, MAX_PROXY_PORT, MIN_PROXY_PORT, isValidProxyPort, useAppStore } from '@/stores/app';
 import { useBrowserAutomationStore } from '@/stores/browser-automation';

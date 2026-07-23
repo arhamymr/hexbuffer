@@ -1,11 +1,15 @@
 use crate::{
     DocumentRecord, HistoryBridge, PaginatedResponse, ProxyFilter, ProxyLogSummary, ProxyRecord,
-    TreeNode, WebSocketConnectionDetail, WebSocketConnectionSummary, WebSocketFilter,
+    ProxyState, TreeNode, WebSocketConnectionDetail, WebSocketConnectionSummary, WebSocketFilter,
 };
 use tauri::State;
 
 #[tauri::command]
-pub async fn clear_proxy_all(history: State<'_, HistoryBridge>) -> Result<(), String> {
+pub async fn clear_proxy_all(
+    history: State<'_, HistoryBridge>,
+    proxy_state: State<'_, ProxyState>,
+) -> Result<(), String> {
+    proxy_state.clear_records();
     history.clear_all()
 }
 
@@ -35,8 +39,12 @@ pub async fn delete_document(
 #[tauri::command]
 pub async fn delete_proxy_by_id(
     history: State<'_, HistoryBridge>,
+    proxy_state: State<'_, ProxyState>,
     log_id: String,
 ) -> Result<(), String> {
+    if let Ok(id) = uuid::Uuid::parse_str(&log_id) {
+        proxy_state.delete_record(&id);
+    }
     history.delete_by_id(&log_id)
 }
 

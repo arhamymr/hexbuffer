@@ -89,9 +89,17 @@ export const useAppStore = create<AppState>()(
           }
 
           await invoke('start_proxy', { port, tlsPort: getTlsPort(port) });
-          await new Promise((resolve) => window.setTimeout(resolve, 300));
-          const status = await invoke<ProxyRuntimeStatus>('get_proxy_status');
-          if (!status.running || status.port === null) {
+          
+          let status: ProxyRuntimeStatus | null = null;
+          for (let attempt = 0; attempt < 10; attempt++) {
+            status = await invoke<ProxyRuntimeStatus>('get_proxy_status');
+            if (status.running && status.port !== null) {
+              break;
+            }
+            await new Promise((resolve) => window.setTimeout(resolve, 200));
+          }
+
+          if (!status || !status.running || status.port === null) {
             throw new Error(`Failed to start proxy on port ${port}`);
           }
 

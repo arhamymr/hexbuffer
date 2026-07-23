@@ -1,4 +1,4 @@
-import { getHttpLogDetail } from '@/pages/http-history/api';
+import { getHttpLogDetail } from '@/pages/live-traffic/http-history/api';
 import { useInvokerStore } from '@/stores/invoker';
 import { useNavStore } from '@/stores/nav';
 import {

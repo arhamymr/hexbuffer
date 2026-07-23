@@ -4,7 +4,6 @@ import { persist } from 'zustand/middleware';
 import {
   createWorkspaceTab,
   type RepeaterRequest,
-  type RepeaterWsRequest,
   type WorkspaceTab,
 } from '@/pages/repeater/types';
 import { DEFAULT_WORKSPACE_NAME } from '@/pages/repeater/constants';
@@ -27,8 +26,6 @@ export interface RepeaterState {
   addRequestTab: (request: RepeaterRequest) => string;
   /** @deprecated Use createWorkspace instead. */
   addEmptyHttpTab: () => string;
-  /** @deprecated Use createWorkspace + populate forge panel instead. */
-  addWsTab: (wsRequest: RepeaterWsRequest) => string;
   /** @deprecated Use createWorkspace or activate existing workspace instead. */
   addCollectionTab: (stashId: string, name: string) => string;
   /** @deprecated Use renameWorkspace instead. */
@@ -127,15 +124,6 @@ export const useRepeaterStore = create<RepeaterState>()(
 
       addEmptyHttpTab: () => {
         return get().createWorkspace(DEFAULT_WORKSPACE_NAME);
-      },
-
-      addWsTab: (_wsRequest) => {
-        const state = get();
-        let wsId = state.activeWorkspaceId;
-        if (!wsId || !state.workspaces.find((w) => w.id === wsId)) {
-          wsId = state.createWorkspace(DEFAULT_WORKSPACE_NAME);
-        }
-        return wsId;
       },
 
       addCollectionTab: (_stashId, _name) => {

@@ -25,14 +25,26 @@ pub async fn start_proxy(app: AppHandle, port: u16, tls_port: u16) -> Result<Str
                 port,
                 reuse: true,
                 tls_port,
+                enabled: true,
             },
             handle,
         );
     });
-    Ok(format!(
-        "Proxy starting on port {} (HTTP) and {} (HTTPS MITM)",
-        port, tls_port
-    ))
+
+    for _ in 0..30 {
+        tokio::time::sleep(Duration::from_millis(100)).await;
+        if let Some(active_port) = crate::proxy::active_proxy_port() {
+            let addr = SocketAddr::from(([127, 0, 0, 1], active_port));
+            if TcpStream::connect_timeout(&addr, Duration::from_millis(150)).is_ok() {
+                return Ok(format!(
+                    "Proxy started on port {} (HTTP) and {} (HTTPS MITM)",
+                    active_port, tls_port
+                ));
+            }
+        }
+    }
+
+    Err(format!("Timed out waiting for proxy to start on port {}", port))
 }
 
 #[tauri::command]

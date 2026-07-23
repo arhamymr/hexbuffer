@@ -1,4 +1,4 @@
-import { useWebSocketHistoryQueryStore } from '@/pages/websocket-history/state/query-store';
+import { useWebSocketHistoryQueryStore } from '@/stores/history';
 import { SearchInput } from './search-input';
 import { useDebouncedSearch } from './use-debounced-search';
 

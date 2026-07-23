@@ -39,7 +39,7 @@ pub use history::{
     WebSocketConnectionSummary,
 };
 pub use port_scanner::{scan_ports, stop_port_scan, PortScanState};
-pub use proxy::https::cert::export_ca_cert_pem;
+pub use proxy::ca::export_ca_cert_pem;
 pub use proxy::state::{
     InterceptMode, InterceptStatus, PausedRequest, ProxyFilter, ProxyRecord, ProxyRequest,
     ProxyResponse, WebSocketConnectionRecord, WebSocketConnectionState, WebSocketFilter,

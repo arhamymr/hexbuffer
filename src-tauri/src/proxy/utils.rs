@@ -105,3 +105,26 @@ pub fn ensure_port_free(port: u16, reuse: bool) -> Result<(), String> {
     }
     Ok(())
 }
+
+// ponytail: delegate body re-compression to hexbuffer_proxy::decoder
+pub fn encode_body(encoding: &str, body: &[u8]) -> Result<Vec<u8>, String> {
+    let full = hexbuffer_proxy::Body::Full(bytes::Bytes::copy_from_slice(body));
+    match hexbuffer_proxy::decoder::encode_body(full, encoding, None) {
+        Ok(hexbuffer_proxy::Body::Full(bytes)) => Ok(bytes.to_vec()),
+        Ok(_) => Err("expected Body::Full from encoder".to_string()),
+        Err(e) => Err(format!("{e}")),
+    }
+}
+
+pub fn is_captive_portal(uri: &str) -> bool {
+    let lower = uri.to_lowercase();
+    lower.contains("generate_204")
+        || lower.contains("canonical.html")
+        || lower.contains("connecttest.txt")
+        || lower.contains("ncsi.txt")
+        || lower.contains("captive.apple.com")
+        || lower.contains("connectivitycheck.gstatic.com")
+        || lower.contains("msftconnecttest.com")
+}
+
+

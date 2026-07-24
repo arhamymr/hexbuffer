@@ -1,8 +1,8 @@
 pub mod auto_mark;
 pub mod chat;
 pub mod commands;
+
 pub mod keyring;
-pub mod pixel;
 pub mod providers;
 pub mod settings;
 pub mod types;
@@ -14,7 +14,6 @@ use tauri::{AppHandle, State};
 pub use types::{
     AiChatRequest, AiChatResponse, AiSettings, ChatMessageRecord, ChatSessionRecord,
     InvokerMarkerSuggestionRequest, InvokerMarkerSuggestionResponse,
-    PixelGenerationRequest, PixelGenerationResponse,
 };
 
 // Non-command function re-exports
@@ -75,10 +74,3 @@ pub async fn suggest_invoker_markers(
     auto_mark::suggest_invoker_markers_impl(app, request).await
 }
 
-#[tauri::command]
-pub async fn generate_pixel_matrix(
-    app: AppHandle,
-    request: PixelGenerationRequest,
-) -> Result<PixelGenerationResponse, String> {
-    pixel::generate_pixel_matrix_impl(app, request).await
-}

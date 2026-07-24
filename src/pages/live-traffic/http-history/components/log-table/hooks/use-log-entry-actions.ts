@@ -1,7 +1,7 @@
 import { useCallback, useMemo } from 'react';
 import { toast } from 'sonner';
 import type { ApiCall } from '@/types';
-import { deleteHistoryLog, fetchHistoryDetail } from '../../../services/history-service';
+import { getHttpLogDetail } from '../../../api';
 import { createDefaultAttackConfig, findRequestPayloadPositions } from '@/pages/invoker/types';
 import { useInvokerStore } from '@/stores/invoker';
 import { useDocumentsStore } from '@/stores/documents';
@@ -69,7 +69,7 @@ export function useLogEntryActions(call: ApiCall, onDelete?: (id: string) => voi
 
   const handleCopyCurlCommand = useCallback(async () => {
     try {
-      const detail = await fetchHistoryDetail(call.id);
+      const detail = await getHttpLogDetail(call.id);
       const request = adaptProxyRecordToApiCall(detail);
       const curl = buildHttpCurlCommand({
         method: request.method,
@@ -87,7 +87,7 @@ export function useLogEntryActions(call: ApiCall, onDelete?: (id: string) => voi
 
   const handleCopyUrl = useCallback(async () => {
     try {
-      const detail = await fetchHistoryDetail(call.id);
+      const detail = await getHttpLogDetail(call.id);
       const request = adaptProxyRecordToApiCall(detail);
       const cleaned = cleanUrl(request.url);
       if (await copyText(cleaned)) toast.success('Copied URL');
@@ -110,7 +110,7 @@ export function useLogEntryActions(call: ApiCall, onDelete?: (id: string) => voi
 
   const handleOpenInInvoker = useCallback(async () => {
     try {
-      const detail = await fetchHistoryDetail(call.id);
+      const detail = await getHttpLogDetail(call.id);
       const request = adaptProxyRecordToApiCall(detail);
       const baseRequest = {
         method: request.method,
@@ -137,7 +137,7 @@ export function useLogEntryActions(call: ApiCall, onDelete?: (id: string) => voi
 
   const handleOpenInRepeater = useCallback(async () => {
     try {
-      const detail = await fetchHistoryDetail(call.id);
+      const detail = await getHttpLogDetail(call.id);
       const request = adaptProxyRecordToApiCall(detail);
       const cleanedUrl = cleanUrl(request.url);
       useRepeaterStore.getState().addRequestTab({
@@ -159,7 +159,7 @@ export function useLogEntryActions(call: ApiCall, onDelete?: (id: string) => voi
 
   const handleSendToCollection = useCallback(async (stashId: string) => {
     try {
-      const detail = await fetchHistoryDetail(call.id);
+      const detail = await getHttpLogDetail(call.id);
       const request = adaptProxyRecordToApiCall(detail);
       await sendToCollection({
         stashId,
@@ -191,7 +191,7 @@ export function useLogEntryActions(call: ApiCall, onDelete?: (id: string) => voi
 
   const handleOpenInBrowserAutomation = useCallback(async () => {
     try {
-      const detail = await fetchHistoryDetail(call.id);
+      const detail = await getHttpLogDetail(call.id);
       const request = adaptProxyRecordToApiCall(detail);
       const targetUrl = buildAutomationTargetUrl(request);
       useBrowserAutomationStore.getState().addAutomationTab(
@@ -208,7 +208,7 @@ export function useLogEntryActions(call: ApiCall, onDelete?: (id: string) => voi
 
   const handleSendToMockForge = useCallback(async () => {
     try {
-      const detail = await fetchHistoryDetail(call.id);
+      const detail = await getHttpLogDetail(call.id);
       const request = adaptProxyRecordToApiCall(detail);
 
       const hostname = request.host;
@@ -299,7 +299,7 @@ export function useLogEntryActions(call: ApiCall, onDelete?: (id: string) => voi
 
   const handleSaveToDocuments = useCallback(async () => {
     try {
-      const detail = await fetchHistoryDetail(call.id);
+      const detail = await getHttpLogDetail(call.id);
       const request = adaptProxyRecordToApiCall(detail);
       useDocumentsStore.getState().addApiEntryToActiveDocument({
         sourceHistoryId: request.id,
@@ -322,7 +322,7 @@ export function useLogEntryActions(call: ApiCall, onDelete?: (id: string) => voi
 
   const handleDelete = useCallback(async () => {
     try {
-      await deleteHistoryLog(call.id);
+      await invoke('delete_proxy_by_id', { logId: call.id });
       usePinnedRequestsStore.getState().unpinId(call.id);
       removeRequestFromAllGroups(call.id);
       onDelete?.(call.id);

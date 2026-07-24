@@ -14,8 +14,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { METHOD_FILTERS, STATUS_FILTERS } from './log-table/utils';
-import { clearHistoryLogs } from '../services/history-service';
+import { invoke } from '@tauri-apps/api/core';
 import {
   type HistoryFilterState,
   useHttpHistoryQueryStore,
@@ -62,7 +61,7 @@ export function LogFilters({
   const clearCalls = clearCallsProp ?? (async () => {
     setIsClearing(true);
     try {
-      await clearHistoryLogs();
+      await invoke('clear_proxy_all');
       storeSetSelectedCallId(null);
       triggerRefresh();
       await new Promise((r) => setTimeout(r, 3000));

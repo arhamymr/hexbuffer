@@ -6,7 +6,7 @@ import type {
   WebSocketMessageRecord,
 } from '../api';
 
-import { fetchWebSocketDetail } from '../services/history-service';
+import { getWebSocketDetail } from '../api';
 
 export interface WebSocketMessage {
   id: string;
@@ -89,7 +89,7 @@ export function useWebSocketDetail(selectedConnectionId: string | null) {
 
       try {
         setLoadError(null);
-        const result = await fetchWebSocketDetail(selectedConnectionId);
+        const result = await getWebSocketDetail(selectedConnectionId);
         if (!isCurrent) return;
 
         setConnection(result.connection);

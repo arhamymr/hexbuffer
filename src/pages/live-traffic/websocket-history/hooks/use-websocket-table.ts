@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import type { WebSocketConnectionSummary as WebSocketConnectionSummaryDto } from '../api';
 
-import { fetchWebSocketSummaries } from '../services/history-service';
+import { getWebSocketLogs } from '../api';
 import { useWebSocketQuery } from './use-websocket-query';
 import { useWebSocketHistoryQueryStore } from '@/stores/history';
 import { useShallow } from 'zustand/react/shallow';
@@ -83,10 +83,7 @@ export function useWebSocketTable() {
 
       try {
         setLoadError(null);
-        const result = await fetchWebSocketSummaries({
-          ...query,
-          page: pageToLoad,
-        });
+        const result = await getWebSocketLogs(pageToLoad, query.perPage, query.filter);
 
         setPagination({
           page: pageToLoad,

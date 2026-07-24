@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import type { ProxyLogSummary, ProxyRecord, ApiCall } from '@/types';
 
-import { fetchHistorySummaries } from '../../../services/history-service';
+import { getHttpLogs } from '../../../api';
 import { useHttpHistoryQueryStore } from '@/stores/history';
 import { useShallow } from 'zustand/react/shallow';
 import { buildHistoryQuery, hasActiveHistoryFilters } from '../../../state/build-history-query';
@@ -188,10 +188,7 @@ export function useHistoryTable({ isStreamPaused = false }: UseHistoryTableOptio
 
       try {
         setLoadError(null);
-        const result = await fetchHistorySummaries({
-          ...query,
-          page: pageToLoad,
-        });
+        const result = await getHttpLogs(pageToLoad, query.perPage, query.filter, query.sortOrder);
 
         setPagination({
           page: pageToLoad,

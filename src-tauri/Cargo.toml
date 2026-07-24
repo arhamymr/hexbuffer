@@ -51,4 +51,7 @@ sha2 = "0.10"
 md-5 = "0.10"
 rand = "0.8"
 hexbuffer-proxy = { git = "https://github.com/arhamymr/hexbuffer-proxy.git" }
+browser-crawler = { git = "https://github.com/arhamymr/browser-crawler.git" }
+hexbuffer-ai = { git = "https://github.com/arhamymr/hexbuffer-agent.git" }
+
 

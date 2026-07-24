@@ -154,6 +154,7 @@ pub(crate) fn upsert_page_memory(state: &AiBrowserState, page: CrawlPage) {
     }
 }
 
+#[allow(dead_code)]
 pub(crate) fn existing_page(
     state: &AiBrowserState,
     session_id: &str,

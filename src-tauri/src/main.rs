@@ -105,7 +105,6 @@ fn main() {
             hexbuffer::ai::save_ai_settings,
             hexbuffer::ai::send_ai_chat_message,
             hexbuffer::ai::suggest_invoker_markers,
-            hexbuffer::ai::generate_pixel_matrix,
             hexbuffer::commands::cert::get_ca_cert,
             hexbuffer::commands::cert::save_ca_cert,
             hexbuffer::commands::cert::regenerate_ca_cert,

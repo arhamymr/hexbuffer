@@ -11,10 +11,9 @@ pub mod proxy;
 pub mod sqli;
 
 pub use ai::{
-    clear_ai_api_key, generate_pixel_matrix, get_ai_key_status, get_ai_settings, save_ai_settings,
+    clear_ai_api_key, get_ai_key_status, get_ai_settings, save_ai_settings,
     send_ai_chat_message, set_ai_api_key, suggest_invoker_markers, AiSettings, ChatMessageRecord,
     ChatSessionRecord, InvokerMarkerSuggestionRequest, InvokerMarkerSuggestionResponse,
-    PixelGenerationRequest, PixelGenerationResponse,
 };
 pub use browser::{AIInsight, ActivityLog, AiBrowserState, CrawlConfig, CrawlPage, CrawlSession};
 pub use collaborator::{

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 
 import type { ApiCall } from '@/types';
 
-import { fetchHistoryDetail } from '../services/history-service';
+import { getHttpLogDetail } from '../api';
 import { adaptProxyRecordToApiCall } from '../components/log-table/hooks/use-history-table';
 import { useHttpHistoryQueryStore } from '@/stores/history';
 
@@ -24,7 +24,7 @@ export function useHistoryDetail() {
 
       try {
         setLoadError(null);
-        const result = await fetchHistoryDetail(selectedCallId);
+        const result = await getHttpLogDetail(selectedCallId);
         setCall(adaptProxyRecordToApiCall(result));
       } catch (error) {
         console.error('Failed to fetch call:', error);

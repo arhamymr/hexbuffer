@@ -8,7 +8,7 @@ import {
 import { PaperPlaneTiltIcon, TrashIcon } from '@phosphor-icons/react';
 import { toast } from 'sonner';
 import { useRepeaterStore } from '@/stores/repeater';
-import { deleteWebSocketConnection, fetchWebSocketDetail } from '../../services/history-service';
+import { deleteWebSocket, getWebSocketDetail } from '../../api';
 import { sendToCollection } from '@/triggers/repeater/send-to-collection';
 import { CollectionPickerSubmenu } from '@/triggers/repeater/collection-picker-submenu';
 
@@ -48,7 +48,7 @@ export function WebSocketContextMenu({
 
   const handleSendToCollection = async (stashId: string) => {
     try {
-      const detail = await fetchWebSocketDetail(connectionId);
+      const detail = await getWebSocketDetail(connectionId);
       const headers = detail.connection.handshake_request_headers || {};
       const url = connectionUrl || detail.connection.url || '';
 
@@ -71,7 +71,7 @@ export function WebSocketContextMenu({
 
   const handleDelete = async () => {
     try {
-      await deleteWebSocketConnection(connectionId);
+      await deleteWebSocket(connectionId);
       onDelete?.(connectionId);
     } catch (error) {
       console.error('Failed to delete WebSocket connection:', error);

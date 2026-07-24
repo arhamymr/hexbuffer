@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import { TargetSelectorDialog } from "@/pages/live-traffic/components/target-selector";
 import { useWebSocketHistoryPage } from "./hooks/use-websocket-history-page";
 import { useWebSocketHistoryQueryStore } from "@/stores/history";
-import { clearWebSocketLogs } from "./services/history-service";
+import { invoke } from "@tauri-apps/api/core";
 import { toast } from "sonner";
 import { TrashIcon, PlayIcon, PauseIcon, TargetIcon } from '@phosphor-icons/react';
 import { Button } from "@/components/ui/button";
@@ -23,7 +23,7 @@ export function WebSocketHistoryPage() {
   const handleClearAll = async () => {
     if (confirm("Are you sure you want to clear all WebSocket connection history?")) {
       try {
-        await clearWebSocketLogs();
+        await invoke("clear_websocket_all");
         useWebSocketHistoryQueryStore.getState().triggerRefresh();
         useWebSocketHistoryQueryStore.getState().setSelectedConnectionId(null);
         toast.success("WebSocket history cleared");

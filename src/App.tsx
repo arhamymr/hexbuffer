@@ -79,9 +79,6 @@ const MockForgePage = React.lazy(() =>
 const KanbanPage = React.lazy(() =>
   import("@/pages/kanban").then((m) => ({ default: m.KanbanPage }))
 );
-const PixelPage = React.lazy(() =>
-  import("@/pages/pixel").then((m) => ({ default: m.PixelPage }))
-);
 const FileExplorerPage = React.lazy(() =>
   import("@/pages/file-explorer").then((m) => ({ default: m.FileExplorerPage }))
 );
@@ -137,7 +134,6 @@ function AppRoutes() {
           <Route path="/scratchpad" element={<ScratchpadPage />} />
           <Route path="/mock-forge" element={<MockForgePage />} />
           <Route path="/kanban" element={<KanbanPage />} />
-          <Route path="/pixel" element={<PixelPage />} />
           <Route path="/file-explorer" element={<FileExplorerPage />} />
           <Route path="/terminal" element={<TerminalPage />} />
 

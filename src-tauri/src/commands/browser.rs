@@ -2,7 +2,7 @@ use crate::browser::crawl_helpers::{
     add_log, is_terminal_status, kill_child_process_group, normalize_strategy, now,
     persist_session, session_status, signal_child_process_group, update_session,
 };
-use crate::browser::crawl_sidecar::run_sidecar_crawl;
+use crate::browser::crawl_runner::run_browser_crawler_crawl;
 pub use crate::browser::{
     AIInsight, ActivityLog, AiBrowserState, CrawlConfig, CrawlPage, CrawlSession,
 };
@@ -661,7 +661,7 @@ pub async fn ai_browser_start_crawl(
     let session_id_for_task = session.id.clone();
     let worker_id_for_task = worker_id.clone();
     let settings = crate::ai::read_ai_settings(&app)?;
-    let api_key_for_task = match crate::ai::ensure_third_party_ai_sharing_allowed(&settings) {
+    let _api_key_for_task = match crate::ai::ensure_third_party_ai_sharing_allowed(&settings) {
         Ok(()) => match crate::ai::read_optional_ai_api_key(&settings.provider) {
             Ok(api_key) => api_key,
             Err(error) => {
@@ -712,28 +712,15 @@ pub async fn ai_browser_start_crawl(
     };
     let cancel_flag_for_task = cancel_flag.clone();
     tauri::async_runtime::spawn(async move {
-        let sidecar_result = {
-            let app = app_for_task.clone();
-            let state = state_for_task.clone();
-            let config = config.clone();
-            let session_id = session_id_for_task.clone();
-            let worker_id = worker_id_for_task.clone();
-            let cancel_flag = cancel_flag_for_task.clone();
-            tauri::async_runtime::spawn_blocking(move || {
-                run_sidecar_crawl(
-                    &app,
-                    &state,
-                    &config,
-                    &session_id,
-                    &worker_id,
-                    api_key_for_task.as_deref(),
-                    cancel_flag,
-                )
-            })
-            .await
-            .map_err(|error| error.to_string())
-            .and_then(|result| result)
-        };
+        let sidecar_result = run_browser_crawler_crawl(
+            app_for_task.clone(),
+            state_for_task.clone(),
+            config.clone(),
+            session_id_for_task.clone(),
+            worker_id_for_task.clone(),
+            cancel_flag_for_task.clone(),
+        )
+        .await;
 
         if let Ok(mut cancellations) = state_for_task.cancellations.lock() {
             if let Some(session_cancellations) = cancellations.get_mut(&session_id_for_task) {
